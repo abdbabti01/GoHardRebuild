@@ -28,7 +28,8 @@ class TodayScreen extends ConsumerWidget {
     final snapshot = ref.watch(dailySnapshotProvider);
     final reachable = ref.watch(connectionProvider);
     final localError = [ref.watch(plansProvider), ref.watch(workoutsProvider), ref.watch(contextRowProvider)].any((a) => a.hasError);
-    final foodError = ref.watch(foodProvider(day)).hasError;
+    final foodAsync = ref.watch(foodProvider(day));
+    final foodError = foodAsync.hasError;
     final pad = EdgeInsets.symmetric(horizontal: context.inset);
 
     return RefreshIndicator(

@@ -186,10 +186,11 @@ final dailySnapshotProvider = Provider<DailySnapshot?>((ref) {
   final owner = ref.watch(ownerProvider);
   final day = ref.watch(todayKeyProvider);
   final plans = ref.watch(plansProvider), workouts = ref.watch(workoutsProvider), food = ref.watch(foodProvider(day)), ctx = ref.watch(contextRowProvider);
-  if (owner == null || !plans.hasValue || !workouts.hasValue || !food.hasValue || !ctx.hasValue) return null;
+  // Food is deliberately not required: a journal that is loading or unreadable must never hide the training action.
+  if (owner == null || !plans.hasValue || !workouts.hasValue || !ctx.hasValue) return null;
   final all = ref.watch(workoutListProvider);
   final parked = ref.watch(parkedIdsProvider);
-  final entries = [for (final r in food.value!) if (!r.value.isDeleted) r.value];
+  final entries = [for (final r in food.value ?? const <Stored<FoodEntry>>[]) if (!r.value.isDeleted) r.value];
   return DailySnapshot(
     ownerId: owner,
     dayKey: day,

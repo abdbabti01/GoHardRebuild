@@ -100,7 +100,8 @@ class SyncEngine {
   final Api _api;
   final SessionManager _sessions;
   static const _uuid = Uuid();
-  bool _flushing = false, _again = false, _disposed = false;
+  bool _again = false, _disposed = false;
+  Future<void>? _running;
   Timer? _retry;
 
   /// Test seam: called just before a dispatch, after the outbound payload is persisted.
@@ -214,7 +215,7 @@ class SyncEngine {
   // ---------------------------------------------------------------- dispatch
 
   void kick() {
-    if (!_disposed) unawaited(flush());
+    if (!_disposed) flush().ignore(); // background pass: failures leave commands pending for the next trigger
   }
 
   void dispose() {
@@ -223,19 +224,34 @@ class SyncEngine {
   }
 
   /// Dispatches everything currently dispatchable for the signed-in owner. Single flight.
-  Future<void> flush() async {
-    if (_flushing) {
+  /// A caller that arrives while a pass is running waits for that pass plus one more, so "await flush()"
+  /// always means everything dispatchable at the time of the call has been tried.
+  Future<void> flush() {
+    if (_running != null) {
       _again = true;
-      return;
+      return _running!;
     }
-    _flushing = true;
-    try {
-      do {
-        _again = false;
+    return _running = _passes().whenComplete(() => _running = null);
+  }
+
+  Future<void> _passes() async {
+    do {
+      _again = false;
+      try {
         await _drain();
-      } while (_again && !_disposed);
-    } finally {
-      _flushing = false;
+      } on Object {
+        // Storage closing underneath a background pass (app shutdown) is not an error: commands stay pending.
+        if (!_disposed) rethrow;
+      }
+    } while (_again && !_disposed);
+  }
+
+  /// Completes when no dispatch pass is running. Used before closing the database.
+  Future<void> idle() async {
+    try {
+      await _running;
+    } on Object {
+      // The pass's own awaiter reports its failure.
     }
   }
 
