@@ -105,3 +105,27 @@ or a real field-state issue on the sign-in screen after an error; it has not bee
 
 `Foundation: .NET 10 API…` · `Flutter app: Evening Club shell…` · `Flutter tests…` · `Native Android journey test…` ·
 final documentation and scripts commit.
+
+## Update — 11 October 2026
+
+**Second native journey added and passing:** `integration_test/journey_secondary_test.dart` (screenshots `30`–`42`).
+`scripts\test-android.ps1` now runs both journeys, each from a clean install; final run: both **All tests passed**
+(2 m 55 s and 2 m 51 s), 36 screenshots in total. `flutter analyze` clean and 57 Flutter tests still pass.
+
+Now exercised on the device as well: manual workout with a bodyweight set (no load typed), workout pause/resume,
+save for later and resume from Train, parked workout not taking over Today, manual result, no-data finish, plan
+pause (Today shows "Plan paused", no planned start), reviewed resume, skip with its confirmation, block review and
+stop early (primary slot freed, block listed as "Stopped early"), name edit, workout history, account deletion
+refused on a wrong password, real deletion, and the deleted credentials failing to sign in.
+
+Still not exercised on a device: moving an occasion, replacing a primary plan, archive, proposals/substitution,
+fit feedback and the manual plan builder, conflict review, set edit/undo, in-workout substitution, pounds, runs,
+body measurements, offline/reconnect, account switch, midnight/DST, system appearance, TalkBack, iOS.
+
+Defects found by the second journey and fixed:
+
+| Defect | Fix |
+|---|---|
+| "Save for later" was overwritten when the workout screen closed, so the workout still read "In progress" and stayed in the foreground | the parked state is now the last write; later draft writes are blocked |
+| The "plan started" message could sit over the bottom navigation bar and swallow taps | it is shown after returning to the shell, above the bar |
+| `run-android.ps1` / `test-android.ps1` picked the first emulator, which could be an unsupported 32-bit x86 image | scripts choose an x86_64/arm64 emulator and reject unsupported running devices with instructions |

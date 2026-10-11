@@ -334,14 +334,18 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
       if (!ok || !mounted) return;
     }
     setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final message = plan.startDate.compareTo(today) > 0 ? 'Plan saved. It starts ${shortDate(plan.startDate)}.' : 'Your plan has started.';
     final done = await runPlanDecision(context,
         () => ref.read(planRepositoryProvider).activate(plan, today: today, replacePrimaryId: current?.id, closePrimary: widget.closePrimary && current != null),
-        saved: plan.startDate.compareTo(today) > 0 ? 'Plan saved. It starts ${shortDate(plan.startDate)}.' : 'Your plan has started.');
+        saved: '');
     if (!mounted) return;
     setState(() => _busy = false);
     if (done) {
       ref.read(shellProvider.notifier).switchTab(0);
       Navigator.of(context).popUntil((r) => r.isFirst);
+      // Shown once back on the shell, so it sits above the navigation bar instead of covering it.
+      messenger.showSnackBar(SnackBar(content: Text(message)));
     }
   }
 

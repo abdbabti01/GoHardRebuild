@@ -26,7 +26,7 @@ Future<String?> pickDay(BuildContext context, {required String initial, String? 
 Future<bool> runPlanDecision(BuildContext context, Future<Receipt> Function() decision, {required String saved}) async {
   try {
     await decision();
-    if (context.mounted) toast(context, saved);
+    if (context.mounted && saved.isNotEmpty) toast(context, saved);
     return true;
   } on ScheduleRefused catch (e) {
     if (context.mounted) toast(context, e.codes.first == 'PRIMARY_EXISTS' ? 'Another plan is already your primary plan. Review the replacement first.' : e.message);

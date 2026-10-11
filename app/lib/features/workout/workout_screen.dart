@@ -257,8 +257,11 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
           if (mounted) toast(context, e.message);
         }
       case 'park':
+        // Typed input is folded in, then the parked state is the LAST write: leaving the screen must not overwrite it.
         _flushDraft();
-        await _repo.park(workout.id);
+        _closed = true;
+        ScaffoldMessenger.of(context).clearSnackBars();
+        await _repo.saveRuntime(workout.id, _runtime!.paused(_now, park: true));
         if (mounted) Navigator.pop(context);
       case 'discard':
         if (await confirm(context, title: 'Remove this workout?', body: 'This removes "${workout.title}" and every set recorded in it. This is the only way a workout is ever removed; it is never cleaned up automatically.', action: 'Remove workout')) {
