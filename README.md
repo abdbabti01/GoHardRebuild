@@ -47,10 +47,11 @@ Physical phone on the same Wi-Fi: `.\scripts\start-api.ps1 -Lan` and
 
 ```powershell
 # Everything automated: API build + 58 tests on disposable PostgreSQL + release publish,
-# then Flutter codegen + analyze + 57 unit / real-Drift / widget tests. Works while the API is running.
+# then Flutter codegen + analyze + 64 unit / real-Drift / widget tests. Works while the API is running.
 powershell -ExecutionPolicy Bypass -File .\scripts\test.ps1
 
-# Native Android journey on an emulator/device against the running local API; saves real screenshots
+# Three native Android journeys on an emulator against the running local API; saves real screenshots.
+# -Only journey_device_test runs just the reminders + GPS one (it grants permissions and simulates positions)
 powershell -ExecutionPolicy Bypass -File .\scripts\test-android.ps1
 ```
 

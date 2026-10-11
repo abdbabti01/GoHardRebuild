@@ -15,8 +15,7 @@ class AppConfig {
 
 /// Capabilities this build has NOT verified end to end stay off. Each is gated individually.
 class Capabilities {
-  static const deviceReminders = false; // OS notification scheduling
-  static const gpsRunTracking = false; // runs are timed manually; no route or distance is invented
+  static const routeMaps = false; // GPS measures distance only; no route is stored or drawn
   static const social = false;
   static const healthSync = false;
   static const music = false;

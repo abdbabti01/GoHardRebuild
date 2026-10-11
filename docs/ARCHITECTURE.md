@@ -120,5 +120,7 @@ backgrounding, restart, midnight and DST cannot change them. A form or workout p
 | Plan-draft creation and proposal create/accept/decline need the account (not queued offline) | The account builds/validates them. Answers are retained locally and retries reuse the same IDs |
 | Setup happens after sign-in, so there is no pre-auth setup flow token | Nothing to claim across authentication |
 | No AI provider is implemented, only the `IPlanAssistant` boundary with a no-op default | Core app never depends on AI. Capability stays off |
-| Reminders (OS notifications), GPS run tracking, social, health sync and music are not implemented | Shown as unavailable or absent; see `core/config.dart` `Capabilities` |
+| GPS measures run distance in the foreground only (no background service), reads the GPS provider directly, and stores distance but no route | Time away from the run screen becomes a counted gap that is left out, never estimated. No map. Upgrade: a foreground location service |
+| Reminders use inexact alarms | No exact-alarm permission needed; a reminder can arrive a few minutes late |
+| Social, health sync and music are not implemented | Absent from the app; see `core/config.dart` `Capabilities` |
 | The client does not yet read `/capabilities` to enforce a minimum contract | Only one contract version exists. Required before a second one ships |

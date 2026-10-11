@@ -129,3 +129,43 @@ Defects found by the second journey and fixed:
 | "Save for later" was overwritten when the workout screen closed, so the workout still read "In progress" and stayed in the foreground | the parked state is now the last write; later draft writes are blocked |
 | The "plan started" message could sit over the bottom navigation bar and swallow taps | it is shown after returning to the shell, above the bar |
 | `run-android.ps1` / `test-android.ps1` picked the first emulator, which could be an unsupported 32-bit x86 image | scripts choose an x86_64/arm64 emulator and reject unsupported running devices with instructions |
+
+## Update — reminders and GPS (11 October 2026)
+
+Added packages: `flutter_local_notifications` 22.3.1, `timezone` 0.11.1, `flutter_timezone` 5.1.1, `geolocator` 14.1.1.
+Android: notification, boot and location permissions, the plugin's receivers, core-library desugaring.
+iOS: `NSLocationWhenInUseUsageDescription` (still never built).
+
+**Reminders** (`features/me/reminders.dart`, switch and time in Me). One notification per pending workout of the
+active primary plan, at the chosen local time in the phone's current zone. Permission is asked only when the switch
+is turned on. None for a paused, closed or draft plan; none for skipped, recorded or in-progress workouts; all removed
+on sign-out. Re-timed on app resume so a zone change moves reminders, never plan dates.
+
+**GPS** (`features/activity/run_tracking.dart`, run screen). Distance is the sum of consecutive trustworthy readings
+while the run screen is open. Vague readings, standing jitter and position jumps add nothing; a stretch without
+readings is counted as a gap and left out; movement while paused is not counted. Typed distance still wins.
+
+| Command | Result |
+|---|---|
+| `flutter analyze` / `flutter test` | No issues / **64 passed** (7 new in `reminders_gps_test.dart`) |
+| `scripts\test-android.ps1` (journeys 1 and 2, after these changes) | both **All tests passed** |
+| `scripts\test-android.ps1 -Only journey_device_test` | **All tests passed** (1 m 36 s); screenshots `50`–`52` |
+
+What the device journey proves: the operating system's own pending-notification list is 0 with no plan, 23–24 with an
+active 8-week plan, 0 after pausing, back after resuming, 0 after sign-out; and a run's distance grows from positions
+fed through Android's test location provider and is saved with the run.
+
+What it does not prove: a reminder actually appearing at its time (only that it is scheduled); GPS behaviour on a
+physical phone outdoors (accuracy, battery, signal loss); iOS. API tests were not re-run (no API change).
+
+Defects found on the device and fixed:
+
+| Defect | Fix |
+|---|---|
+| Signing out left the previous owner's 24 reminders scheduled | removal is decided inside the one provider that schedules, keyed on the signed-in owner; replacements are serialized so an older request cannot re-add them |
+| No readings arrived through Google's fused provider with simulated positions | run tracking reads the GPS provider directly and asks for a reading every 2 s |
+
+Observed, not fixed: floating messages ("Plan paused.", "plan started") sit over the bottom of a list for about four
+seconds and swallow taps there; the journeys wait them out. One device run was aborted because the original GoHard
+app came to the foreground on the emulator by itself; its process was stopped (its data was not touched). One run
+failed on a navigation tap that passed in every other run.

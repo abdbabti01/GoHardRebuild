@@ -1,10 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../app/providers.dart';
-import '../../core/config.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
@@ -13,6 +14,7 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../me/account_repository.dart';
 import '../workout/workout_runtime.dart';
+import 'run_tracking.dart';
 
 /// Start run creates the owned run record first and navigates only once it exists. An open run is resumed
 /// rather than duplicated; a failed create leaves the user where they were.
@@ -32,7 +34,10 @@ Future<void> startRunFlow(BuildContext context, WidgetRef ref) async {
   }
 }
 
-/// A manually timed run. The clock is computed from saved anchors, so it survives backgrounding and restart.
+/// A timed run with GPS distance. The clock is computed from saved anchors, so it survives backgrounding and
+/// restart; distance comes only from real location readings taken while this screen is open.
+// ponytail: GPS is foreground-only (no background service). Time away from this screen becomes a counted gap,
+// never an estimate. Add a foreground location service when continuous background tracking is wanted.
 class RunScreen extends ConsumerStatefulWidget {
   const RunScreen({super.key, required this.runId});
   final String runId;
@@ -42,8 +47,14 @@ class RunScreen extends ConsumerStatefulWidget {
 
 class _RunScreenState extends ConsumerState<RunScreen> {
   Timer? _ticker;
+  StreamSubscription<Position>? _gps;
   final _km = TextEditingController();
-  String? _error;
+  String? _error, _gpsNote;
+  WorkoutRuntime? _rt;
+  bool _closed = false;
+  // Captured once: late location readings and dispose() must not reach for ref, and stay with this owner.
+  late final _sync = ref.read(syncProvider);
+  late final _owner = ref.read(ownerProvider)!;
 
   @override
   void initState() {
@@ -51,13 +62,53 @@ class _RunScreenState extends ConsumerState<RunScreen> {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+    _startGps(ask: false); // continues silently if permission was already given; never prompts on its own
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _gps?.cancel();
     _km.dispose();
     super.dispose();
+  }
+
+  Future<void> _save(WorkoutRuntime r) {
+    _rt = r;
+    return _sync.putLocal(_owner, LocalWrite(Kinds.runtime, widget.runId, r.j));
+  }
+
+  RunTrack _track(WorkoutRuntime? r) => RunTrack(r?.j['track'] as Json? ?? const {});
+
+  Future<void> _startGps({required bool ask}) async {
+    if (_gps != null) return;
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (ask && mounted) setState(() => _gpsNote = 'Location is turned off on this phone. Turn it on to measure distance.');
+        return;
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied && ask) permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        if (ask && mounted) setState(() => _gpsNote = 'Location permission was not given, so distance is not measured. You can still time the run and type a distance.');
+        return;
+      }
+      _gps = Geolocator.getPositionStream(
+          // Android is asked for a reading every 2 s; without this it may batch readings further apart than the gap limit.
+          locationSettings: defaultTargetPlatform == TargetPlatform.android
+              ? AndroidSettings(accuracy: LocationAccuracy.high, distanceFilter: 3, intervalDuration: const Duration(seconds: 2), forceLocationManager: true)
+              : const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 3)).listen(_onFix, onError: (Object _) {});
+      if (mounted) setState(() => _gpsNote = null);
+    } on Object {
+      if (ask && mounted) setState(() => _gpsNote = 'Location is not available on this device.');
+    }
+  }
+
+  void _onFix(Position p) {
+    final r = _rt;
+    if (r == null || r.isPaused || _closed) return; // paused movement is not part of the run
+    final track = _track(r).added(Fix(p.latitude, p.longitude, p.accuracy, p.timestamp.toUtc()));
+    _save(WorkoutRuntime(copyJson(r.j)..['track'] = track.j)).ignore();
   }
 
   @override
@@ -67,10 +118,10 @@ class _RunScreenState extends ConsumerState<RunScreen> {
     if (run == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final now = ref.read(clockProvider).utcNow();
     final runtime = runtimeRow == null ? null : WorkoutRuntime(runtimeRow.value);
+    if (!_closed) _rt = runtime;
+    final track = _track(runtime);
     final elapsed = run.isOpen ? (runtime?.elapsedSeconds(now) ?? now.difference(DateTime.parse(run.startedAtUtc)).inSeconds.clamp(0, 604800)) : run.activeDurationSeconds ?? 0;
-    final sync = ref.read(syncProvider);
-    final owner = ref.read(ownerProvider)!;
-    Future<void> save(WorkoutRuntime r) => sync.putLocal(owner, LocalWrite(Kinds.runtime, run.id, r.j));
+    String km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
 
     return EveningPage(title: run.isOpen ? 'Run' : 'Run recorded', children: [
       Text(longDate(run.dayKey), style: context.caption),
@@ -79,36 +130,53 @@ class _RunScreenState extends ConsumerState<RunScreen> {
         label: 'Run time ${durationText(elapsed)}',
         child: ExcludeSemantics(child: Text(clockText(elapsed), style: context.sansStyle(context.display(70), weight: FontWeight.w300).copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
       ),
-      if (!Capabilities.gpsRunTracking) const StatusLine(Icons.info_outline, 'This build times your run. It does not track GPS, so no route or distance is recorded unless you enter one.'),
-      const SizedBox(height: 18),
       if (run.isOpen) ...[
+        if (_gps != null) ...[
+          Text(km(track.distanceMeters), key: const Key('run-gps-distance'), style: context.serifStyle(33)),
+          StatusLine(Icons.gps_fixed, track.fixes == 0
+              ? 'Waiting for a GPS position…'
+              : 'Measured by GPS while this screen is open.${track.gaps > 0 ? ' ${track.gaps} stretch${track.gaps == 1 ? '' : 'es'} without readings ${track.gaps == 1 ? 'was' : 'were'} left out, not estimated.' : ''}'),
+        ] else ...[
+          SecondaryButton('Measure distance with GPS', key: const Key('run-gps-start'), icon: Icons.gps_not_fixed, onPressed: () => _startGps(ask: true)),
+          const SizedBox(height: 6),
+          Text('Distance is only recorded from real GPS readings, or from what you type below.', style: context.caption),
+        ],
+        if (_gpsNote != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.info_outline, _gpsNote!, tone: Tone.warning)),
+        const SizedBox(height: 18),
         SecondaryButton(runtime?.isPaused ?? false ? 'Resume' : 'Pause', icon: runtime?.isPaused ?? false ? Icons.play_arrow : Icons.pause,
-            onPressed: runtime == null ? null : () => save(runtime.isPaused ? runtime.resumed(now) : runtime.paused(now))),
+            onPressed: runtime == null
+                ? null
+                : () => _save(runtime.isPaused ? runtime.resumed(now) : WorkoutRuntime(copyJson(runtime.paused(now).j)..['track'] = track.detached().j))),
         const SizedBox(height: 16),
         TextField(key: const Key('run-distance'), controller: _km, keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Distance (optional)', suffixText: 'km', hintText: 'Unknown')),
+            decoration: InputDecoration(labelText: track.hasDistance ? 'Correct the distance (optional)' : 'Distance (optional)', suffixText: 'km', hintText: track.hasDistance ? (track.distanceMeters / 1000).toStringAsFixed(2) : 'Unknown')),
         const SizedBox(height: 12),
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
         PrimaryButton('Finish run', key: const Key('run-finish'), onPressed: () async {
-          final km = parseNonNegative(_km.text);
-          if (_km.text.trim().isNotEmpty && km == null) return setState(() => _error = 'Enter the distance as a number, or leave it blank.');
+          final typed = parseNonNegative(_km.text);
+          if (_km.text.trim().isNotEmpty && typed == null) return setState(() => _error = 'Enter the distance as a number, or leave it blank.');
+          // What you typed wins; otherwise the measured distance; otherwise distance stays unknown.
+          final meters = typed != null ? typed * 1000 : track.hasDistance ? double.parse(track.distanceMeters.toStringAsFixed(1)) : null;
           try {
-            await ref.read(activityRepositoryProvider).finishRun(run, activeSeconds: elapsed, distanceMeters: km == null ? null : km * 1000);
-            await sync.deleteLocal(owner, Kinds.runtime, run.id);
+            _closed = true;
+            await ref.read(activityRepositoryProvider).finishRun(run, activeSeconds: elapsed, distanceMeters: meters);
+            await _sync.deleteLocal(_owner, Kinds.runtime, run.id);
             if (context.mounted) Navigator.pop(context);
           } on LocalSaveFailure {
+            _closed = false;
             setState(() => _error = 'The run could not be saved on this phone. It is still open.');
           }
         }),
       ] else
-        Text('${durationText(elapsed)}${run.distanceMeters == null ? ' · distance not recorded' : ' · ${(run.distanceMeters! / 1000).toStringAsFixed(2)} km'}', style: context.body),
+        Text('${durationText(elapsed)}${run.distanceMeters == null ? ' · distance not recorded' : ' · ${km(run.distanceMeters!)}'}', style: context.body),
       const SizedBox(height: 8),
       Center(
         child: TextButton(
           onPressed: () async {
             if (!await confirm(context, title: 'Remove this run?', body: 'This removes the run from ${longDate(run.dayKey)} from your history.', action: 'Remove run')) return;
+            _closed = true;
             await ref.read(activityRepositoryProvider).deleteRun(run);
-            await sync.deleteLocal(owner, Kinds.runtime, run.id);
+            await _sync.deleteLocal(_owner, Kinds.runtime, run.id);
             if (context.mounted) Navigator.pop(context);
           },
           child: const Text('Remove run'),

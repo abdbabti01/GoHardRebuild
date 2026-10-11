@@ -13,6 +13,7 @@ import '../shell/home_shell.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import 'account_repository.dart';
+import 'reminders.dart';
 import 'sync_review_screen.dart';
 
 /// Me: identity, the current training setup, history, shared preferences and account lifecycle.
@@ -101,7 +102,45 @@ class MeScreen extends ConsumerWidget {
           subtitle: issues > 0 ? 'Nothing was lost. Tap to review.' : ref.watch(connectionProvider) == false ? 'Offline right now' : null,
           onTap: issues > 0 ? () => push(context, const SyncReviewScreen()) : () => refreshFromAccount(ref),
         ),
-        if (!Capabilities.deviceReminders) const ListRow(icon: Icons.notifications_off_outlined, title: 'Workout reminders', subtitle: 'Not available in this build'),
+        if (profile != null) ...[
+          ListRow(
+            key: const Key('me-reminders'),
+            icon: profile.remindersEnabled ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
+            title: 'Workout reminders',
+            subtitle: profile.remindersEnabled
+                ? 'On days with a planned workout. None while your plan is paused.'
+                : 'Off',
+            trailing: Switch(
+              value: profile.remindersEnabled,
+              onChanged: (on) async {
+                // Permission is asked for only here, when the user turns reminders on.
+                if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
+                  if (context.mounted) toast(context, 'Notifications are not allowed for GoHard, so reminders stay off. You can allow them in the phone\'s settings.');
+                  return;
+                }
+                try {
+                  await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
+                } on LocalSaveFailure {
+                  if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
+                }
+              },
+            ),
+          ),
+          if (profile.remindersEnabled)
+            ListRow(
+              key: const Key('me-reminder-time'),
+              icon: Icons.schedule,
+              title: 'Reminder time',
+              subtitle: '${profile.reminderLocalTime ?? '18:00'} · this phone\'s local time',
+              onTap: () async {
+                final parts = (profile.reminderLocalTime ?? '18:00').split(':');
+                final picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])));
+                if (picked == null) return;
+                await ref.read(profileRepositoryProvider).update(profile,
+                    reminderLocalTime: '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}');
+              },
+            ),
+        ],
         ListRow(
           key: const Key('me-sign-out'), icon: Icons.logout, title: 'Sign out',
           onTap: () async {

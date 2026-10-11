@@ -7,6 +7,7 @@ import '../core/config.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
 import '../features/auth/auth_screen.dart';
+import '../features/me/reminders.dart';
 import '../features/shell/home_shell.dart';
 import 'providers.dart';
 
@@ -40,6 +41,7 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(dateServiceProvider).refresh();
+      ref.invalidate(reminderSyncProvider); // the phone's zone may have changed: re-time future reminders, never the plan's dates
       _refresh();
     }
   }
@@ -50,6 +52,7 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(reminderSyncProvider); // keeps scheduled reminders equal to the accepted plan; removes them when signed out
     final owner = ref.watch(ownerProvider);
     final appearance = ref.watch(appearanceProvider);
     return MaterialApp(

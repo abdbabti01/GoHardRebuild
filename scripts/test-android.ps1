@@ -1,22 +1,61 @@
 <#
 .SYNOPSIS
-  Runs the native Android journey (integration_test) on an emulator/device against the local API and saves
-  real screenshots to docs\evidence\screenshots. Registers a disposable account on each run.
+  Runs the native Android journeys (integration_test) on an emulator/device against the local API and saves
+  real screenshots to docs\evidence\screenshots. Each journey registers its own disposable account.
+
+  journey_test            main path: register, plan, workout, food, themes, sign out/in
+  journey_secondary_test  manual workout, save for later, no-data finish, plan pause/resume/skip/stop, name, deletion
+  journey_device_test     OS reminders follow the plan; GPS measures a run (emulator only: positions are simulated)
+.PARAMETER Only
+  Run just one journey, for example -Only journey_device_test.
 #>
-param([string]$Avd, [string]$ApiBase = "http://10.0.2.2:5131")
+param([string]$Avd, [string]$ApiBase = "http://10.0.2.2:5131", [string]$Only)
 . "$PSScriptRoot\common.ps1"
 . "$PSScriptRoot\android-common.ps1"
 Assert-Tool flutter 'Install Flutter: https://docs.flutter.dev/get-started/install/windows'
 Assert-LocalApi $ApiBase
 $device = Start-AndroidDevice $Avd
+$appId = 'com.gohard.rebuild.debug'
+$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_device_test' }
+
 Push-Location $AppDir
 try {
-    foreach ($journey in 'journey_test', 'journey_secondary_test') {
+    foreach ($journey in $journeys) {
         # A clean install, so a journey never starts from another run's signed-in state. Only this app's debug identity is touched.
-        & $Adb -s $device uninstall com.gohard.rebuild.debug 2>$null | Out-Null
-        Step "Native journey '$journey' on $device against $ApiBase"
-        flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase
-        if ($LASTEXITCODE -ne 0) { Fail "The native journey '$journey' failed." }
+        & $Adb -s $device uninstall $appId 2>$null | Out-Null
+        $feeder = $null
+        if ($journey -eq 'journey_device_test') {
+            if ($device -notmatch '^emulator-') { Fail 'journey_device_test simulates GPS positions and so needs an emulator.' }
+            # A test cannot tap system permission dialogs, so the app is installed first and the permissions granted.
+            Step 'Building and installing the app to grant notification and location permission'
+            flutter build apk --debug --dart-define=GOHARD_API_BASE=$ApiBase | Out-Null
+            if ($LASTEXITCODE -ne 0) { Fail 'The debug build failed.' }
+            & $Adb -s $device install -r 'build\app\outputs\flutter-apk\app-debug.apk' | Out-Null
+            foreach ($p in 'POST_NOTIFICATIONS', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION') { & $Adb -s $device shell pm grant $appId "android.permission.$p" }
+            # Simulated walk north, about 8 m every 2 s, through Android's test location provider
+            # (the emulator console's "geo fix" does not move the position on this image).
+            & $Adb -s $device shell appops set com.android.shell android:mock_location allow
+            & $Adb -s $device shell cmd location providers add-test-provider gps 2>$null | Out-Null
+            & $Adb -s $device shell cmd location providers set-test-provider-enabled gps true | Out-Null
+            $feeder = Start-Job -ArgumentList $Adb, $device -ScriptBlock {
+                param($adb, $device)
+                for ($i = 1; $i -le 400; $i++) {
+                    $lat = [string]::Format([cultureinfo]::InvariantCulture, '{0:F6}', 45.5017 + $i * 0.00007)
+                    & $adb -s $device shell cmd location providers set-test-provider-location gps --location "$lat,-73.5673" --accuracy 5 | Out-Null
+                    Start-Sleep -Seconds 2
+                }
+            }
+        }
+        try {
+            Step "Native journey '$journey' on $device against $ApiBase"
+            flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase
+            if ($LASTEXITCODE -ne 0) { Fail "The native journey '$journey' failed." }
+        } finally {
+            if ($feeder) {
+                Stop-Job $feeder; Remove-Job $feeder
+                & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null   # give the emulator its own position back
+            }
+        }
     }
 } finally { Pop-Location }
-Write-Host "Native journey passed. Screenshots: $(Join-Path $Root 'docs\evidence\screenshots')" -ForegroundColor Green
+Write-Host "Native journeys passed. Screenshots: $(Join-Path $Root 'docs\evidence\screenshots')" -ForegroundColor Green

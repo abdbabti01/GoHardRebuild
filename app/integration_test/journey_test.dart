@@ -28,9 +28,9 @@ void main() {
   /// Lists build lazily: scroll the innermost list until the target exists.
   Future<void> reveal(WidgetTester tester, Finder finder) async {
     await settle(tester, 2);
-    if (finder.evaluate().isNotEmpty || find.byType(ListView).evaluate().isEmpty) return;
+    if (finder.evaluate().isNotEmpty || find.byType(ListView).hitTestable().evaluate().isEmpty) return;
     // The page list itself, not a text field's inner scrollable.
-    final list = find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first;
+    final list = find.descendant(of: find.byType(ListView).hitTestable().last, matching: find.byType(Scrollable)).first;
     for (final delta in const [300.0, -300.0]) {
       try {
         await tester.scrollUntilVisible(finder, delta, scrollable: list, maxScrolls: 25);
