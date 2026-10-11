@@ -33,7 +33,9 @@ class NutritionSurface extends StatelessWidget {
     final c = context.ec;
     final complete = NutrientCoverage.allComplete(coverage);
     final unknownSomewhere = coverage.values.any((t) => t.unknownEntries > 0);
-    final heading = entries.isEmpty ? 'No food logged yet' : complete ? 'Totals' : 'Known totals';
+    // Food logged with no nutrition at all is not "known totals" of anything.
+    final anyKnown = coverage.values.any((t) => t.hasAnyKnown);
+    final heading = entries.isEmpty ? 'No food logged yet' : complete ? 'Totals' : anyKnown ? 'Known totals' : 'No nutrition entered for this food yet';
     Widget cell(Nutrient n, String label) => Expanded(
           child: Semantics(
             label: _semantic(n, label),

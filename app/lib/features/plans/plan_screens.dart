@@ -113,9 +113,24 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
       setState(() => _error = ScheduleRules.describe(answer.code ?? 'UNKNOWN'));
     } else if (answer.data?['kind'] == 'fit_feedback') {
       setState(() => _fit = (answer.data!['feedback'] as List).cast<String>());
+      _showFitFeedback();
     } else {
       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => PlanReviewScreen(planId: answer.data!['planId'] as String)));
     }
+  }
+
+  /// The feedback sits at the end of a long form, so the page is scrolled to it: the answer to "Preview my plan"
+  /// must never be off screen.
+  void _showFitFeedback() {
+    void toEnd() {
+      final c = PrimaryScrollController.maybeOf(context);
+      if (mounted && c != null && c.hasClients) c.jumpTo(c.position.maxScrollExtent);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      toEnd();
+      WidgetsBinding.instance.addPostFrameCallback((_) => toEnd()); // the list's length is only known once its end is built
+    });
   }
 
   @override
@@ -345,7 +360,7 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
       ref.read(shellProvider.notifier).switchTab(0);
       Navigator.of(context).popUntil((r) => r.isFirst);
       // Shown once back on the shell, so it sits above the navigation bar instead of covering it.
-      messenger.showSnackBar(SnackBar(content: Text(message)));
+      messenger.showSnackBar(SnackBar(content: Text(message), duration: const Duration(milliseconds: 2200)));
     }
   }
 

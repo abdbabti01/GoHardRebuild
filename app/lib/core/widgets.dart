@@ -215,8 +215,10 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
     ) ??
     false;
 
-void toast(BuildContext context, String message) =>
-    ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(SnackBar(content: Text(message)));
+/// A short confirmation. It is brief and can be swiped away, because while it shows it covers the bottom of the page.
+void toast(BuildContext context, String message) => ScaffoldMessenger.of(context)
+  ..hideCurrentSnackBar()
+  ..showSnackBar(SnackBar(content: Text(message), duration: const Duration(milliseconds: 2200), dismissDirection: DismissDirection.horizontal));
 
 Future<T?> push<T>(BuildContext context, Widget page) => Navigator.of(context).push<T>(MaterialPageRoute(builder: (_) => page));
 

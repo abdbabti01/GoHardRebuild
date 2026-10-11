@@ -50,7 +50,7 @@ Physical phone on the same Wi-Fi: `.\scripts\start-api.ps1 -Lan` and
 # then Flutter codegen + analyze + 64 unit / real-Drift / widget tests. Works while the API is running.
 powershell -ExecutionPolicy Bypass -File .\scripts\test.ps1
 
-# Three native Android journeys on an emulator against the running local API; saves real screenshots.
+# Five native Android journeys on an emulator against the running local API; saves real screenshots.
 # -Only journey_device_test runs just the reminders + GPS one (it grants permissions and simulates positions)
 powershell -ExecutionPolicy Bypass -File .\scripts\test-android.ps1
 ```

@@ -16,7 +16,8 @@ Assert-Tool flutter 'Install Flutter: https://docs.flutter.dev/get-started/insta
 Assert-LocalApi $ApiBase
 $device = Start-AndroidDevice $Avd
 $appId = 'com.gohard.rebuild.debug'
-$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_device_test' }
+$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_more_test', 'journey_offline_test', 'journey_device_test' }
+& $Adb -s $device shell input keyevent KEYCODE_HOME   # start from the home screen, whatever app was in front
 
 Push-Location $AppDir
 try {
@@ -46,6 +47,21 @@ try {
                 }
             }
         }
+        if ($journey -eq 'journey_offline_test') {
+            # The journey prints GOHARD_NET:off / GOHARD_NET:on; this switches the device's Wi-Fi and mobile data to match,
+            # so the middle of the journey is genuinely offline. The connection is always restored afterwards.
+            & $Adb -s $device logcat -c
+            $feeder = Start-Job -ArgumentList $Adb, $device -ScriptBlock {
+                param($adb, $device)
+                & $adb -s $device logcat -s flutter:I | ForEach-Object {
+                    if ($_ -match 'GOHARD_NET:(off|on)') {
+                        $state = if ($Matches[1] -eq 'off') { 'disable' } else { 'enable' }
+                        & $adb -s $device shell svc wifi $state
+                        & $adb -s $device shell svc data $state
+                    }
+                }
+            }
+        }
         try {
             Step "Native journey '$journey' on $device against $ApiBase"
             flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase
@@ -53,7 +69,8 @@ try {
         } finally {
             if ($feeder) {
                 Stop-Job $feeder; Remove-Job $feeder
-                & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null   # give the emulator its own position back
+                if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
+                if ($journey -eq 'journey_offline_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

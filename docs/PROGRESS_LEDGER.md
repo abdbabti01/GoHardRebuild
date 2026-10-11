@@ -169,3 +169,50 @@ Observed, not fixed: floating messages ("Plan paused.", "plan started") sit over
 seconds and swallow taps there; the journeys wait them out. One device run was aborted because the original GoHard
 app came to the foreground on the emulator by itself; its process was stopped (its data was not touched). One run
 failed on a navigation tap that passed in every other run.
+
+## Update — remaining screens, offline and conflicts on the device (11 October 2026)
+
+Two more native journeys, sharing `integration_test/support.dart`. `scripts\test-android.ps1` now runs five
+(`journey_test`, `journey_secondary_test`, `journey_more_test`, `journey_offline_test`, `journey_device_test`).
+
+**`journey_more_test`** (screenshots `60`–`67`): fit feedback for an unsupported setup with nothing created; building
+my own plan and saving it as a draft; pounds at entry and display with the same record reading 45.4 kg afterwards;
+Undo of a recorded set; editing a set; a body measurement; moving a workout with its review ("originally" kept);
+a movement replacement reviewed and accepted, visible in a remaining workout; replacing the primary plan with an
+explicit confirmation; archiving the displaced plan.
+
+**`journey_offline_test`** (screenshots `70`–`73`): the script switches the emulator's Wi-Fi and mobile data off when
+the test asks. Offline: a manual workout with two sets and a food entry are recorded, shown as "sync pending", Today
+shows the offline notice, Me shows work waiting. Back online: the account then holds exactly one workout, two sets,
+one finish and one food entry (checked through the API). Then a second device changes the same food through the
+API while the phone has an edit ready; the phone's save conflicts; the review screen shows both versions; "keep the
+version on this phone" is chosen; the account ends with the phone's version and still exactly one entry.
+
+| Run | Result |
+|---|---|
+| `flutter analyze` / `flutter test` | No issues / 64 passed |
+| Combined `scripts\test-android.ps1` | journeys 1 and 2 passed; journey 3 failed on a test tap made while a sheet was closing (fixed in the test) |
+| Journeys 3, 4, 5 run individually afterwards | all **All tests passed** (3 m 41 s, 1 m 35 s, 1 m 46 s) |
+
+Not yet done: one clean combined run of all five after the last test-helper changes.
+
+Defects found and fixed in the app:
+
+| Defect | Fix |
+|---|---|
+| Fit feedback appeared at the end of the long setup form, off screen, so "Preview my plan" looked like it did nothing | the form scrolls to the feedback |
+| Pop-up messages covered the bottom of a list for about four seconds | plain confirmations now last about two seconds and can be swiped away |
+| Nutrition heading read "Known totals" when food was logged with no nutrition at all | reads "No nutrition entered for this food yet" |
+
+Resolved observation: the earlier "email needs retyping after a wrong password" was the test's simulated typing being
+dropped on the device (the field still held the old text right after the test typed). The journeys now focus the
+field, verify what was typed and retry. Journey 1 additionally asserts the email is still present after a failed
+sign-in, and passes.
+
+Test-environment notes: the emulator stopped launching the test app after several hours and needed a cold restart;
+the original GoHard app starts itself on emulator boot and can take the foreground, so the script now presses Home
+first; one run died in the Flutter tool with an RPC error before any step ran.
+
+Still not exercised on a device: set and plan conflicts through the review screen, in-workout movement replacement,
+account switch on one phone, a process kill while offline, midnight/DST, system appearance, TalkBack, a physical
+phone, iOS.

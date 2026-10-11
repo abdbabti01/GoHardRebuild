@@ -56,6 +56,11 @@ void main() {
         await waitFor(tester, finder);
         await tester.ensureVisible(finder.first);
         await settle(tester, 2);
+        // A row can still sit just under the navigation bar; nudge the list until the target can really be tapped.
+        for (var i = 0; i < 6 && finder.hitTestable().evaluate().isEmpty && find.byType(ListView).hitTestable().evaluate().isNotEmpty; i++) {
+          await tester.drag(find.byType(ListView).hitTestable().last, const Offset(0, -160));
+          await settle(tester, 2);
+        }
         await tester.tap(finder.first, warnIfMissed: false);
         break;
       } on StateError {
@@ -69,8 +74,17 @@ void main() {
   Future<void> type(WidgetTester tester, String key, String text) async {
     await reveal(tester, find.byKey(Key(key)));
     await waitFor(tester, find.byKey(Key(key)));
-    await tester.enterText(find.byKey(Key(key)), text);
-    await settle(tester, 2);
+
+    // On a real device the first enterText after a focus change can be dropped; focus first, then verify and retry.
+    final field = find.descendant(of: find.byKey(Key(key)), matching: find.byType(EditableText));
+    for (var attempt = 0; attempt < 4; attempt++) {
+      await tester.tap(find.byKey(Key(key)), warnIfMissed: false);
+      await settle(tester, 2);
+      await tester.enterText(find.byKey(Key(key)), text);
+      await settle(tester, 2);
+      if (tester.widget<EditableText>(field).controller.text == text) return;
+    }
+    fail('Could not type "$text" into $key');
   }
 
   /// What the operating system actually has scheduled for this app.

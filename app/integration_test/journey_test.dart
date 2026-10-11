@@ -55,8 +55,17 @@ void main() {
     await reveal(tester, find.byKey(Key(key)));
     await waitFor(tester, find.byKey(Key(key)));
     await tester.ensureVisible(find.byKey(Key(key)));
-    await tester.enterText(find.byKey(Key(key)), text);
-    await settle(tester, 2);
+
+    // On a real device the first enterText after a focus change can be dropped; focus first, then verify and retry.
+    final field = find.descendant(of: find.byKey(Key(key)), matching: find.byType(EditableText));
+    for (var attempt = 0; attempt < 4; attempt++) {
+      await tester.tap(find.byKey(Key(key)), warnIfMissed: false);
+      await settle(tester, 2);
+      await tester.enterText(find.byKey(Key(key)), text);
+      await settle(tester, 2);
+      if (tester.widget<EditableText>(field).controller.text == text) return;
+    }
+    fail('Could not type "$text" into $key');
   }
 
   Future<void> shot(WidgetTester tester, String name) async {
@@ -219,7 +228,8 @@ void main() {
     await type(tester, 'auth-password', 'wrong password');
     await tapKey(tester, 'auth-submit');
     await waitFor(tester, find.textContaining('do not match'));
-    await type(tester, 'auth-email', email);
+    // A failed attempt keeps what was typed: the email is still there and only the password is retyped.
+    expect(tester.widget<TextField>(find.byKey(const Key('auth-email'))).controller!.text, email);
     await type(tester, 'auth-password', password);
     await tapKey(tester, 'auth-submit');
     await waitFor(tester, find.text('DONE FOR TODAY'), what: 'the same account\'s day after signing back in');
