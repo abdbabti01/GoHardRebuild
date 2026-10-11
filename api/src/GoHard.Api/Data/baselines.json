@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "baselines": [
+    {
+      "id": "strength-full-gym-3x45-v1",
+      "title": "Foundations of strength",
+      "direction": "strength",
+      "equipment": "full_gym",
+      "sessionsPerWeek": 3,
+      "minutesMin": 40,
+      "minutesMax": 50,
+      "experience": ["basics", "comfortable"],
+      "blockWeeks": [4, 8, 12],
+      "minRecoveryDays": 1,
+      "workouts": [
+        {
+          "title": "Lower strength",
+          "exercises": [
+            { "occurrenceKey": "a1", "catalogKey": "back-squat", "name": "Back squat", "isTimed": false, "targetSets": 3, "targetRepsMin": 5, "targetRepsMax": 8, "restSeconds": 150 },
+            { "occurrenceKey": "a2", "catalogKey": "romanian-deadlift", "name": "Romanian deadlift", "isTimed": false, "targetSets": 3, "targetRepsMin": 8, "targetRepsMax": 10, "restSeconds": 120 },
+            { "occurrenceKey": "a3", "catalogKey": "leg-press", "name": "Leg press", "isTimed": false, "targetSets": 3, "targetRepsMin": 10, "targetRepsMax": 12, "restSeconds": 90 },
+            { "occurrenceKey": "a4", "catalogKey": "plank", "name": "Plank", "isTimed": true, "targetSets": 3, "targetDurationSeconds": 45, "restSeconds": 60 }
+          ]
+        },
+        {
+          "title": "Upper strength",
+          "exercises": [
+            { "occurrenceKey": "b1", "catalogKey": "bench-press", "name": "Bench press", "isTimed": false, "targetSets": 3, "targetRepsMin": 5, "targetRepsMax": 8, "restSeconds": 150 },
+            { "occurrenceKey": "b2", "catalogKey": "barbell-row", "name": "Barbell row", "isTimed": false, "targetSets": 3, "targetRepsMin": 6, "targetRepsMax": 10, "restSeconds": 120 },
+            { "occurrenceKey": "b3", "catalogKey": "overhead-press", "name": "Overhead press", "isTimed": false, "targetSets": 3, "targetRepsMin": 6, "targetRepsMax": 10, "restSeconds": 120 },
+            { "occurrenceKey": "b4", "catalogKey": "lat-pulldown", "name": "Lat pulldown", "isTimed": false, "targetSets": 3, "targetRepsMin": 8, "targetRepsMax": 12, "restSeconds": 90 }
+          ]
+        },
+        {
+          "title": "Full body",
+          "exercises": [
+            { "occurrenceKey": "c1", "catalogKey": "deadlift", "name": "Deadlift", "isTimed": false, "targetSets": 3, "targetRepsMin": 5, "targetRepsMax": 5, "restSeconds": 180 },
+            { "occurrenceKey": "c2", "catalogKey": "incline-dumbbell-press", "name": "Incline dumbbell press", "isTimed": false, "targetSets": 3, "targetRepsMin": 8, "targetRepsMax": 12, "restSeconds": 90 },
+            { "occurrenceKey": "c3", "catalogKey": "seated-cable-row", "name": "Seated cable row", "isTimed": false, "targetSets": 3, "targetRepsMin": 8, "targetRepsMax": 12, "restSeconds": 90 },
+            { "occurrenceKey": "c4", "catalogKey": "walking-lunge", "name": "Walking lunge", "isTimed": false, "targetSets": 2, "targetRepsMin": 10, "targetRepsMax": 12, "restSeconds": 90 }
+          ]
+        }
+      ]
+    }
+  ]
+}

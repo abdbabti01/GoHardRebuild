@@ -1,0 +1,223 @@
+namespace GoHard.Api.Persistence;
+
+// Units: *Kg = kilograms (canonical load), *Seconds = seconds, DayKey/…Date = calendar date (no zone),
+// *AtUtc = UTC instant. Revision columns are server-controlled and increase by one per accepted change.
+
+public class User
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; } = "";
+    public string PasswordHash { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string Appearance { get; set; } = "dark";
+    public string LoadUnit { get; set; } = "kg";
+    public bool RemindersEnabled { get; set; }
+    public string? ReminderLocalTime { get; set; }
+    public string? TrainingSetupJson { get; set; }
+    public int Revision { get; set; } = 1;
+    public string SecurityStamp { get; set; } = "";
+    public DateTime CreatedAtUtc { get; set; }
+}
+
+public class RefreshToken
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string TokenHash { get; set; } = "";
+    public DateTime ExpiresAtUtc { get; set; }
+    public DateTime? RevokedAtUtc { get; set; }
+}
+
+/// <summary>Terminal record of one owner-scoped command. Retained so a lost response can be replayed.</summary>
+public class Operation
+{
+    public Guid UserId { get; set; }
+    public Guid OperationId { get; set; }
+    public string Kind { get; set; } = "";
+    public string RequestHash { get; set; } = "";
+    public int HttpStatus { get; set; }
+    public string ResponseJson { get; set; } = "";
+    public DateTime CreatedAtUtc { get; set; }
+}
+
+public class TrainingContext
+{
+    public Guid UserId { get; set; }
+    public Guid? PrimaryPlanId { get; set; }
+    public int Revision { get; set; }
+}
+
+public class Plan
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string Title { get; set; } = "";
+    /// <summary>draft | active | paused | closed. Archive is visibility only.</summary>
+    public string Lifecycle { get; set; } = PlanLifecycles.Draft;
+    public string? ClosureIntent { get; set; }
+    public bool IsArchived { get; set; }
+    public DateOnly StartDate { get; set; }
+    public int BlockWeeks { get; set; }
+    public int MinRecoveryDays { get; set; }
+    public string SetupJson { get; set; } = "{}";
+    public string? BaselineId { get; set; }
+    public DateOnly? PausedOn { get; set; }
+    public DateOnly? ClosedOn { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
+    public List<Occasion> Occasions { get; set; } = [];
+}
+
+public static class PlanLifecycles
+{
+    public const string Draft = "draft", Active = "active", Paused = "paused", Closed = "closed";
+}
+
+public class Occasion
+{
+    public Guid Id { get; set; }
+    public Guid PlanId { get; set; }
+    public Guid UserId { get; set; }
+    public int WeekNumber { get; set; }
+    public int Ordinal { get; set; }
+    public string Title { get; set; } = "";
+    public DateOnly OriginalDate { get; set; }
+    public DateOnly ScheduledDate { get; set; }
+    public bool IsSkipped { get; set; }
+    /// <summary>null until an actual workout qualifies it: full | partial.</summary>
+    public string? ResultOutcome { get; set; }
+    public Guid? ResultWorkoutId { get; set; }
+    public string PrescriptionJson { get; set; } = "[]";
+}
+
+public class Workout
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid? PlanId { get; set; }
+    public Guid? OccasionId { get; set; }
+    /// <summary>planned | manual</summary>
+    public string Kind { get; set; } = "manual";
+    public string Title { get; set; } = "";
+    public DateOnly DayKey { get; set; }
+    public DateTime StartedAtUtc { get; set; }
+    public DateTime? FinishedAtUtc { get; set; }
+    public int? ActiveDurationSeconds { get; set; }
+    /// <summary>null while open: full | partial | no_data | manual_recorded.</summary>
+    public string? Outcome { get; set; }
+    public int PerformedSets { get; set; }
+    public int PerformedExercises { get; set; }
+    public bool QualifiedOccasion { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime? DeletedAtUtc { get; set; }
+    public List<WorkoutExercise> Exercises { get; set; } = [];
+}
+
+public class WorkoutExercise
+{
+    public Guid Id { get; set; }
+    public Guid WorkoutId { get; set; }
+    public Guid UserId { get; set; }
+    public int Ordinal { get; set; }
+    public string Name { get; set; } = "";
+    public string? CatalogKey { get; set; }
+    public string? OccurrenceKey { get; set; }
+    public bool IsPrescribed { get; set; }
+    public bool IsTimed { get; set; }
+    public int? TargetSets { get; set; }
+    public int? TargetRepsMin { get; set; }
+    public int? TargetRepsMax { get; set; }
+    public int? TargetDurationSeconds { get; set; }
+    public int? RestSeconds { get; set; }
+    public string? SubstitutedForKey { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+    public List<WorkoutSet> Sets { get; set; } = [];
+}
+
+public class WorkoutSet
+{
+    public Guid Id { get; set; }
+    public Guid ExerciseId { get; set; }
+    public Guid WorkoutId { get; set; }
+    public Guid UserId { get; set; }
+    public int? Reps { get; set; }
+    public decimal? LoadKg { get; set; }
+    public int? DurationSeconds { get; set; }
+    public DateTime PerformedAtUtc { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime? DeletedAtUtc { get; set; }
+}
+
+public class FoodEntry
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public DateOnly DayKey { get; set; }
+    public string Meal { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string AmountDescription { get; set; } = "";
+    // Null = unknown. Zero = the user entered zero. Never default these.
+    public decimal? Calories { get; set; }
+    public decimal? ProteinG { get; set; }
+    public decimal? CarbsG { get; set; }
+    public decimal? FatG { get; set; }
+    // entered | unknown | imported
+    public string CaloriesSource { get; set; } = "unknown";
+    public string ProteinSource { get; set; } = "unknown";
+    public string CarbsSource { get; set; } = "unknown";
+    public string FatSource { get; set; } = "unknown";
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+}
+
+public class CatalogExercise
+{
+    public string Key { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Category { get; set; } = "";
+    public string Equipment { get; set; } = "";
+    public bool IsTimed { get; set; }
+}
+
+public class Run
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public DateOnly DayKey { get; set; }
+    public DateTime StartedAtUtc { get; set; }
+    public DateTime? FinishedAtUtc { get; set; }
+    public int? ActiveDurationSeconds { get; set; }
+    public decimal? DistanceMeters { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime? DeletedAtUtc { get; set; }
+}
+
+public class BodyMetric
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public DateOnly DayKey { get; set; }
+    public decimal? WeightKg { get; set; }
+    public decimal? BodyFatPercent { get; set; }
+    public string? Note { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime? DeletedAtUtc { get; set; }
+}
+
+public class Proposal
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid PlanId { get; set; }
+    /// <summary>schedule | substitution</summary>
+    public string Kind { get; set; } = "";
+    /// <summary>open | accepted | declined | needs_review</summary>
+    public string State { get; set; } = "open";
+    public int BasePlanRevision { get; set; }
+    public string EvidenceHash { get; set; } = "";
+    public string ChangeJson { get; set; } = "{}";
+    public string Explanation { get; set; } = "";
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
+}

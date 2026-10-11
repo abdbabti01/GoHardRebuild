@@ -1,0 +1,23 @@
+# Dedicated GoHard rebuild development database. Never point this at another project's container or volume.
+name: gohard-rebuild
+services:
+  postgres:
+    image: postgres:17.6
+    container_name: gohard-rebuild-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gohard_rebuild_dev
+      POSTGRES_USER: gohard_rebuild
+      POSTGRES_PASSWORD: ${GOHARD_DB_PASSWORD:?run scripts/setup.ps1 first}
+    ports:
+      - "127.0.0.1:${GOHARD_DB_PORT:-5435}:5432"
+    volumes:
+      - gohard_rebuild_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gohard_rebuild -d gohard_rebuild_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  gohard_rebuild_pgdata:
+    name: gohard_rebuild_pgdata

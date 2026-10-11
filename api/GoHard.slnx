@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GoHard.Api/GoHard.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GoHard.Api.Tests/GoHard.Api.Tests.csproj" />
+  </Folder>
+</Solution>

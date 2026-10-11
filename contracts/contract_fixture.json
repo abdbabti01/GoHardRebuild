@@ -1,0 +1,246 @@
+{
+  "contractVersion": 1,
+  "note": "Single source of truth read by both the .NET and Dart test suites. Synthetic data only: fixed IDs, reviewed Friday 2026-10-09.",
+  "schedule": [
+    {
+      "name": "move_keeps_occasion_identity",
+      "minimumRecoveryDays": 1,
+      "occasions": [
+        { "id": "00000000-0000-4000-8000-000000000010", "originalDate": "2026-10-07", "scheduledDate": "2026-10-07", "weekNumber": 2, "isSkipped": false, "isRecorded": true, "isOpen": false },
+        { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-09", "scheduledDate": "2026-10-09", "weekNumber": 2, "isSkipped": false, "isRecorded": false, "isOpen": false },
+        { "id": "00000000-0000-4000-8000-000000000012", "originalDate": "2026-10-14", "scheduledDate": "2026-10-14", "weekNumber": 3, "isSkipped": false, "isRecorded": false, "isOpen": false }
+      ],
+      "changes": [ { "occasionId": "00000000-0000-4000-8000-000000000011", "from": "2026-10-09", "to": "2026-10-11" } ],
+      "expectErrors": [],
+      "expectChanged": [ { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-09", "scheduledDate": "2026-10-11", "weekNumber": 2 } ],
+      "expectBlockEnd": "2026-10-14"
+    },
+    {
+      "name": "open_workout_occasion_cannot_move",
+      "minimumRecoveryDays": 1,
+      "occasions": [
+        { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-09", "scheduledDate": "2026-10-09", "weekNumber": 2, "isSkipped": false, "isRecorded": false, "isOpen": true }
+      ],
+      "changes": [ { "occasionId": "00000000-0000-4000-8000-000000000011", "from": "2026-10-09", "to": "2026-10-11" } ],
+      "expectErrors": [ "OCCASION_NOT_ELIGIBLE" ],
+      "expectChanged": [],
+      "expectBlockEnd": "2026-10-09"
+    },
+    {
+      "name": "recorded_and_skipped_cannot_move",
+      "minimumRecoveryDays": 1,
+      "occasions": [
+        { "id": "00000000-0000-4000-8000-000000000010", "originalDate": "2026-10-07", "scheduledDate": "2026-10-07", "weekNumber": 2, "isSkipped": false, "isRecorded": true, "isOpen": false },
+        { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-09", "scheduledDate": "2026-10-09", "weekNumber": 2, "isSkipped": true, "isRecorded": false, "isOpen": false }
+      ],
+      "changes": [
+        { "occasionId": "00000000-0000-4000-8000-000000000010", "from": "2026-10-07", "to": "2026-10-20" },
+        { "occasionId": "00000000-0000-4000-8000-000000000011", "from": "2026-10-09", "to": "2026-10-22" }
+      ],
+      "expectErrors": [ "OCCASION_NOT_ELIGIBLE", "OCCASION_NOT_ELIGIBLE" ],
+      "expectChanged": [],
+      "expectBlockEnd": "2026-10-09"
+    },
+    {
+      "name": "recovery_collision_rejected",
+      "minimumRecoveryDays": 1,
+      "occasions": [
+        { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-09", "scheduledDate": "2026-10-09", "weekNumber": 2, "isSkipped": false, "isRecorded": false, "isOpen": false },
+        { "id": "00000000-0000-4000-8000-000000000012", "originalDate": "2026-10-14", "scheduledDate": "2026-10-14", "weekNumber": 3, "isSkipped": false, "isRecorded": false, "isOpen": false }
+      ],
+      "changes": [ { "occasionId": "00000000-0000-4000-8000-000000000011", "from": "2026-10-09", "to": "2026-10-13" } ],
+      "expectErrors": [ "RECOVERY_COLLISION" ],
+      "expectChanged": [ { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-09", "scheduledDate": "2026-10-13", "weekNumber": 2 } ],
+      "expectBlockEnd": "2026-10-14"
+    },
+    {
+      "name": "stale_review_and_duplicate_and_unknown",
+      "minimumRecoveryDays": 1,
+      "occasions": [
+        { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-09", "scheduledDate": "2026-10-09", "weekNumber": 2, "isSkipped": false, "isRecorded": false, "isOpen": false },
+        { "id": "00000000-0000-4000-8000-000000000012", "originalDate": "2026-10-14", "scheduledDate": "2026-10-14", "weekNumber": 3, "isSkipped": false, "isRecorded": false, "isOpen": false }
+      ],
+      "changes": [
+        { "occasionId": "00000000-0000-4000-8000-000000000011", "from": "2026-10-08", "to": "2026-10-11" },
+        { "occasionId": "00000000-0000-4000-8000-000000000012", "from": "2026-10-14", "to": "2026-10-18" },
+        { "occasionId": "00000000-0000-4000-8000-000000000012", "from": "2026-10-14", "to": "2026-10-19" },
+        { "occasionId": "00000000-0000-4000-8000-000000000099", "from": "2026-10-14", "to": "2026-10-19" }
+      ],
+      "expectErrors": [ "STALE_REVIEW", "DUPLICATE_OCCASION", "OCCASION_NOT_FOUND" ],
+      "expectChanged": [ { "id": "00000000-0000-4000-8000-000000000012", "originalDate": "2026-10-14", "scheduledDate": "2026-10-18", "weekNumber": 3 } ],
+      "expectBlockEnd": "2026-10-18"
+    },
+    {
+      "name": "dst_calendar_dates_are_plain_dates",
+      "minimumRecoveryDays": 1,
+      "occasions": [
+        { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-31", "scheduledDate": "2026-10-31", "weekNumber": 4, "isSkipped": false, "isRecorded": false, "isOpen": false },
+        { "id": "00000000-0000-4000-8000-000000000012", "originalDate": "2026-11-03", "scheduledDate": "2026-11-03", "weekNumber": 5, "isSkipped": false, "isRecorded": false, "isOpen": false }
+      ],
+      "changes": [ { "occasionId": "00000000-0000-4000-8000-000000000011", "from": "2026-10-31", "to": "2026-11-01" } ],
+      "expectErrors": [],
+      "expectChanged": [ { "id": "00000000-0000-4000-8000-000000000011", "originalDate": "2026-10-31", "scheduledDate": "2026-11-01", "weekNumber": 4 } ],
+      "expectBlockEnd": "2026-11-03"
+    }
+  ],
+  "generate": [
+    {
+      "name": "friday_start_is_not_snapped_to_monday",
+      "start": "2026-10-09", "weekdays": [1, 3, 5], "sessionsPerWeek": 3, "blockWeeks": 2, "minimumRecoveryDays": 1,
+      "expectErrors": [],
+      "expectDates": [ "2026-10-09", "2026-10-12", "2026-10-14", "2026-10-16", "2026-10-19", "2026-10-21" ]
+    },
+    {
+      "name": "invalid_weekday_count",
+      "start": "2026-10-09", "weekdays": [1, 3], "sessionsPerWeek": 3, "blockWeeks": 2, "minimumRecoveryDays": 1,
+      "expectErrors": [ "INVALID_WEEKDAY_COUNT" ], "expectDates": []
+    },
+    {
+      "name": "adjacent_days_compress_recovery",
+      "start": "2026-10-09", "weekdays": [1, 2, 5], "sessionsPerWeek": 3, "blockWeeks": 2, "minimumRecoveryDays": 1,
+      "expectErrors": [ "RECOVERY_COLLISION" ], "expectDates": []
+    },
+    {
+      "name": "sunday_monday_collide_across_the_week_boundary",
+      "start": "2026-10-05", "weekdays": [1, 4, 7], "sessionsPerWeek": 3, "blockWeeks": 2, "minimumRecoveryDays": 1,
+      "expectErrors": [ "RECOVERY_COLLISION" ], "expectDates": []
+    }
+  ],
+  "results": [
+    {
+      "name": "prefill_never_counts_as_performed",
+      "isManual": false,
+      "prescription": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "targetSets": 3 } ],
+      "sets": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 8, "loadKg": 60, "durationSeconds": null, "isDeleted": false } ],
+      "expect": { "outcome": "partial", "performedSets": 1, "performedExercises": 1, "qualifiesOccasion": true }
+    },
+    {
+      "name": "no_submitted_sets_is_no_data",
+      "isManual": false,
+      "prescription": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "targetSets": 3 } ],
+      "sets": [],
+      "expect": { "outcome": "no_data", "performedSets": 0, "performedExercises": 0, "qualifiesOccasion": false }
+    },
+    {
+      "name": "every_target_set_count_met_is_full_even_with_extra_sets",
+      "isManual": false,
+      "prescription": [
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "targetSets": 2 },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e2", "targetSets": 1 }
+      ],
+      "sets": [
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 5, "loadKg": 100, "durationSeconds": null, "isDeleted": false },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 3, "loadKg": 100, "durationSeconds": null, "isDeleted": false },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 2, "loadKg": 100, "durationSeconds": null, "isDeleted": false },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e2", "reps": null, "loadKg": null, "durationSeconds": 45, "isDeleted": false }
+      ],
+      "expect": { "outcome": "full", "performedSets": 4, "performedExercises": 2, "qualifiesOccasion": true }
+    },
+    {
+      "name": "unknown_target_cannot_produce_full",
+      "isManual": false,
+      "prescription": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "targetSets": null } ],
+      "sets": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 8, "loadKg": 0, "durationSeconds": null, "isDeleted": false } ],
+      "expect": { "outcome": "partial", "performedSets": 1, "performedExercises": 1, "qualifiesOccasion": true }
+    },
+    {
+      "name": "omitted_movement_is_partial",
+      "isManual": false,
+      "prescription": [
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "targetSets": 1 },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e2", "targetSets": 1 }
+      ],
+      "sets": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 8, "loadKg": 40, "durationSeconds": null, "isDeleted": false } ],
+      "expect": { "outcome": "partial", "performedSets": 1, "performedExercises": 1, "qualifiesOccasion": true }
+    },
+    {
+      "name": "deleted_and_invalid_sets_are_not_performed",
+      "isManual": false,
+      "prescription": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "targetSets": 1 } ],
+      "sets": [
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 8, "loadKg": 40, "durationSeconds": null, "isDeleted": true },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 0, "loadKg": 40, "durationSeconds": null, "isDeleted": false },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 8, "loadKg": -5, "durationSeconds": null, "isDeleted": false },
+        { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": -2, "loadKg": 10, "durationSeconds": 30, "isDeleted": false }
+      ],
+      "expect": { "outcome": "no_data", "performedSets": 0, "performedExercises": 0, "qualifiesOccasion": false }
+    },
+    {
+      "name": "manual_work_is_recorded_but_never_qualifies_an_occasion",
+      "isManual": true,
+      "prescription": [],
+      "sets": [ { "exerciseId": "00000000-0000-4000-8000-0000000000e1", "reps": 12, "loadKg": 20, "durationSeconds": null, "isDeleted": false } ],
+      "expect": { "outcome": "manual_recorded", "performedSets": 1, "performedExercises": 1, "qualifiesOccasion": false }
+    },
+    {
+      "name": "manual_without_sets_is_no_data",
+      "isManual": true,
+      "prescription": [],
+      "sets": [],
+      "expect": { "outcome": "no_data", "performedSets": 0, "performedExercises": 0, "qualifiesOccasion": false }
+    }
+  ],
+  "coverage": [
+    {
+      "name": "unknown_and_zero_stay_distinct",
+      "entries": [
+        { "calories": 400, "protein": 25, "carbs": 50, "fat": 11 },
+        { "calories": 110, "protein": null, "carbs": null, "fat": 0 },
+        { "calories": null, "protein": null, "carbs": null, "fat": null }
+      ],
+      "expect": {
+        "calories": { "knownTotal": 510, "knownEntries": 2, "unknownEntries": 1, "isComplete": false },
+        "protein": { "knownTotal": 25, "knownEntries": 1, "unknownEntries": 2, "isComplete": false },
+        "carbs": { "knownTotal": 50, "knownEntries": 1, "unknownEntries": 2, "isComplete": false },
+        "fat": { "knownTotal": 11, "knownEntries": 2, "unknownEntries": 1, "isComplete": false }
+      }
+    },
+    {
+      "name": "all_known_including_zero_is_complete",
+      "entries": [ { "calories": 0, "protein": 0, "carbs": 0, "fat": 0 }, { "calories": 250, "protein": 10, "carbs": 30, "fat": 9.5 } ],
+      "expect": {
+        "calories": { "knownTotal": 250, "knownEntries": 2, "unknownEntries": 0, "isComplete": true },
+        "protein": { "knownTotal": 10, "knownEntries": 2, "unknownEntries": 0, "isComplete": true },
+        "carbs": { "knownTotal": 30, "knownEntries": 2, "unknownEntries": 0, "isComplete": true },
+        "fat": { "knownTotal": 9.5, "knownEntries": 2, "unknownEntries": 0, "isComplete": true }
+      }
+    },
+    {
+      "name": "empty_journal_is_not_a_zero_total",
+      "entries": [],
+      "expect": {
+        "calories": { "knownTotal": 0, "knownEntries": 0, "unknownEntries": 0, "isComplete": false },
+        "protein": { "knownTotal": 0, "knownEntries": 0, "unknownEntries": 0, "isComplete": false },
+        "carbs": { "knownTotal": 0, "knownEntries": 0, "unknownEntries": 0, "isComplete": false },
+        "fat": { "knownTotal": 0, "knownEntries": 0, "unknownEntries": 0, "isComplete": false }
+      }
+    }
+  ],
+  "units": [
+    { "lb": 140, "kg": 63.5029318 },
+    { "lb": 45, "kg": 20.41165665 },
+    { "lb": 0, "kg": 0 }
+  ],
+  "wire": {
+    "foodEntry": {
+      "id": "22222222-2222-4222-8222-222222222222", "dayKey": "2026-10-09", "meal": "Breakfast", "name": "Greek yogurt",
+      "amountDescription": "200 g", "macros": { "calories": 0, "protein": null, "carbs": 9.5, "fat": null },
+      "provenance": { "calories": "entered", "protein": "unknown", "carbs": "entered", "fat": "unknown" }, "revision": 3, "isDeleted": false
+    },
+    "ackAccepted": {
+      "operationId": "11111111-1111-4111-8111-111111111111", "status": "accepted", "revision": 2,
+      "data": { "id": "33333333-3333-4333-8333-333333333333", "exerciseId": "44444444-4444-4444-8444-444444444444",
+        "workoutId": "55555555-5555-4555-8555-555555555555", "reps": 8, "loadKg": 63.503, "durationSeconds": null,
+        "performedAtUtc": "2026-10-09T23:59:30Z", "revision": 2, "isDeleted": false },
+      "code": null
+    },
+    "ackConflict": {
+      "operationId": "11111111-1111-4111-8111-111111111111", "status": "conflict", "revision": 4, "data": null, "code": "REVISION_CONFLICT"
+    },
+    "finishRequest": {
+      "operationId": "11111111-1111-4111-8111-111111111111", "expectedRevision": 1,
+      "acknowledgedSets": [ { "id": "33333333-3333-4333-8333-333333333333", "revision": 2 } ],
+      "activeDurationSeconds": 125, "finishedAtUtc": "2026-10-10T00:05:00Z"
+    }
+  }
+}

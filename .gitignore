@@ -1,0 +1,13 @@
+bin/
+obj/
+*.user
+.vs/
+.idea/
+.dart_tool/
+build/
+*.Local.json
+.env.local
+infrastructure/.env.local
+app/.flutter-plugins-dependencies
+docs/evidence/tmp/
+publish/
