@@ -40,7 +40,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
   LoadUnit? _entryUnit; // pinned while the entry is dirty
   bool _busy = false, _loaded = false;
 
-  WorkoutRepository get _repo => ref.read(workoutRepositoryProvider);
+  // Captured once: dispose() must not touch ref, and a late save must stay with the owner this screen opened for.
+  late final WorkoutRepository _repo = ref.read(workoutRepositoryProvider);
+  late LoadUnit _unitNow = ref.read(loadUnitProvider);
+  bool _closed = false;
   DateTime get _now => ref.read(clockProvider).utcNow();
 
   @override
@@ -87,7 +90,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
   }
 
   void _onTyped() {
-    _entryUnit ??= ref.read(loadUnitProvider);
+    _entryUnit ??= _unitNow;
     _draftDebounce?.cancel();
     _draftDebounce = Timer(const Duration(milliseconds: 400), _flushDraft);
   }
@@ -95,8 +98,8 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
   void _flushDraft() {
     _draftDebounce?.cancel();
     final r = _runtime, id = _boundExerciseId;
-    if (r == null || id == null) return;
-    final LoadUnit unit = _entryUnit ?? ref.read(loadUnitProvider);
+    if (r == null || id == null || _closed) return;
+    final LoadUnit unit = _entryUnit ?? _unitNow;
     final draft = EntryDraft.of(load: _load.text, reps: _reps.text, duration: _duration.text, unit: unit.name);
     _runtime = r.withDraft(id, draft);
     unawaited(_repo.saveRuntime(widget.workoutId, _runtime!));
@@ -144,6 +147,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
+          duration: const Duration(seconds: 4),
           content: Text('Saved on this phone: ${setText(set, ref.read(loadUnitProvider))}'),
           action: SnackBarAction(label: 'Undo', onPressed: () => _repo.deleteSet(set)),
         ));
@@ -226,9 +230,12 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
     );
     if (go != true || !mounted) return;
     try {
+      _closed = true; // the runtime is removed with the finish; nothing may write it back
+      ScaffoldMessenger.of(context).clearSnackBars(); // a lingering Undo must not cover the result's Done action
       await _repo.finish(workout);
       if (mounted) await Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => WorkoutDetailScreen(workoutId: workout.id, justFinished: true)));
     } on LocalSaveFailure {
+      _closed = false;
       if (mounted) toast(context, 'The workout could not be finished on this phone. Nothing changed. Try again.');
     }
   }
@@ -255,6 +262,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
         if (mounted) Navigator.pop(context);
       case 'discard':
         if (await confirm(context, title: 'Remove this workout?', body: 'This removes "${workout.title}" and every set recorded in it. This is the only way a workout is ever removed; it is never cleaned up automatically.', action: 'Remove workout')) {
+          _closed = true;
           await _repo.delete(workout);
           if (mounted) Navigator.pop(context);
         }
@@ -265,7 +273,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
   Widget build(BuildContext context) {
     final row = (ref.watch(workoutsProvider).value ?? const <Stored<Workout>>[]).where((r) => r.value.id == widget.workoutId).firstOrNull;
     final setRows = ref.watch(setsProvider(widget.workoutId)).value ?? const <Stored<WorkoutSet>>[];
-    final unit = ref.watch(loadUnitProvider);
+    final unit = _unitNow = ref.watch(loadUnitProvider);
     if (row == null || !_loaded) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final workout = row.value;
     if (!workout.isOpen) return WorkoutDetailScreen(workoutId: workout.id);

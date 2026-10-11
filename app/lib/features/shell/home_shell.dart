@@ -21,7 +21,10 @@ class ShellState {
 /// Current destination and the retained Train section. Visiting another tab never resets the Train view.
 class ShellController extends Notifier<ShellState> {
   @override
-  ShellState build() => const ShellState();
+  ShellState build() {
+    ref.watch(ownerProvider); // a different signed-in owner always starts on Today, with no navigation state carried over
+    return const ShellState();
+  }
   void switchTab(int tab, {TrainView? trainView}) => state = ShellState(tab: tab, trainView: trainView ?? state.trainView);
   void selectTrainView(TrainView view) => state = ShellState(tab: state.tab, trainView: view);
 }
