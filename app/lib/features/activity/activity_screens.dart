@@ -1,0 +1,197 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/providers.dart';
+import '../../core/config.dart';
+import '../../core/format.dart';
+import '../../core/theme.dart';
+import '../../core/units.dart';
+import '../../core/widgets.dart';
+import '../../data/models.dart';
+import '../../data/sync.dart';
+import '../me/account_repository.dart';
+import '../workout/workout_runtime.dart';
+
+/// Start run creates the owned run record first and navigates only once it exists. An open run is resumed
+/// rather than duplicated; a failed create leaves the user where they were.
+Future<void> startRunFlow(BuildContext context, WidgetRef ref) async {
+  final open = [for (final r in ref.read(runsProvider).value ?? const <Stored<Run>>[]) if (r.value.isOpen) r.value].firstOrNull;
+  if (open != null) {
+    await push(context, RunScreen(runId: open.id));
+    return;
+  }
+  try {
+    final run = await ref.read(activityRepositoryProvider).startRun(ref.read(todayKeyProvider));
+    final sync = ref.read(syncProvider);
+    await sync.putLocal(ref.read(ownerProvider)!, LocalWrite(Kinds.runtime, run.id, WorkoutRuntime.started(ref.read(clockProvider).utcNow()).j));
+    if (context.mounted) await push(context, RunScreen(runId: run.id));
+  } on LocalSaveFailure {
+    if (context.mounted) toast(context, 'The run could not be started on this phone. Nothing was recorded.');
+  }
+}
+
+/// A manually timed run. The clock is computed from saved anchors, so it survives backgrounding and restart.
+class RunScreen extends ConsumerStatefulWidget {
+  const RunScreen({super.key, required this.runId});
+  final String runId;
+  @override
+  ConsumerState<RunScreen> createState() => _RunScreenState();
+}
+
+class _RunScreenState extends ConsumerState<RunScreen> {
+  Timer? _ticker;
+  final _km = TextEditingController();
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _km.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final run = (ref.watch(runsProvider).value ?? const <Stored<Run>>[]).where((r) => r.value.id == widget.runId).firstOrNull?.value;
+    final runtimeRow = (ref.watch(runtimesProvider).value ?? const <Stored<Json>>[]).where((r) => r.rec.id == widget.runId).firstOrNull;
+    if (run == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final now = ref.read(clockProvider).utcNow();
+    final runtime = runtimeRow == null ? null : WorkoutRuntime(runtimeRow.value);
+    final elapsed = run.isOpen ? (runtime?.elapsedSeconds(now) ?? now.difference(DateTime.parse(run.startedAtUtc)).inSeconds.clamp(0, 604800)) : run.activeDurationSeconds ?? 0;
+    final sync = ref.read(syncProvider);
+    final owner = ref.read(ownerProvider)!;
+    Future<void> save(WorkoutRuntime r) => sync.putLocal(owner, LocalWrite(Kinds.runtime, run.id, r.j));
+
+    return EveningPage(title: run.isOpen ? 'Run' : 'Run recorded', children: [
+      Text(longDate(run.dayKey), style: context.caption),
+      const SizedBox(height: 10),
+      Semantics(
+        label: 'Run time ${durationText(elapsed)}',
+        child: ExcludeSemantics(child: Text(clockText(elapsed), style: context.sansStyle(context.display(70), weight: FontWeight.w300).copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
+      ),
+      if (!Capabilities.gpsRunTracking) const StatusLine(Icons.info_outline, 'This build times your run. It does not track GPS, so no route or distance is recorded unless you enter one.'),
+      const SizedBox(height: 18),
+      if (run.isOpen) ...[
+        SecondaryButton(runtime?.isPaused ?? false ? 'Resume' : 'Pause', icon: runtime?.isPaused ?? false ? Icons.play_arrow : Icons.pause,
+            onPressed: runtime == null ? null : () => save(runtime.isPaused ? runtime.resumed(now) : runtime.paused(now))),
+        const SizedBox(height: 16),
+        TextField(key: const Key('run-distance'), controller: _km, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Distance (optional)', suffixText: 'km', hintText: 'Unknown')),
+        const SizedBox(height: 12),
+        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
+        PrimaryButton('Finish run', key: const Key('run-finish'), onPressed: () async {
+          final km = parseNonNegative(_km.text);
+          if (_km.text.trim().isNotEmpty && km == null) return setState(() => _error = 'Enter the distance as a number, or leave it blank.');
+          try {
+            await ref.read(activityRepositoryProvider).finishRun(run, activeSeconds: elapsed, distanceMeters: km == null ? null : km * 1000);
+            await sync.deleteLocal(owner, Kinds.runtime, run.id);
+            if (context.mounted) Navigator.pop(context);
+          } on LocalSaveFailure {
+            setState(() => _error = 'The run could not be saved on this phone. It is still open.');
+          }
+        }),
+      ] else
+        Text('${durationText(elapsed)}${run.distanceMeters == null ? ' · distance not recorded' : ' · ${(run.distanceMeters! / 1000).toStringAsFixed(2)} km'}', style: context.body),
+      const SizedBox(height: 8),
+      Center(
+        child: TextButton(
+          onPressed: () async {
+            if (!await confirm(context, title: 'Remove this run?', body: 'This removes the run from ${longDate(run.dayKey)} from your history.', action: 'Remove run')) return;
+            await ref.read(activityRepositoryProvider).deleteRun(run);
+            await sync.deleteLocal(owner, Kinds.runtime, run.id);
+            if (context.mounted) Navigator.pop(context);
+          },
+          child: const Text('Remove run'),
+        ),
+      ),
+    ]);
+  }
+}
+
+class RunHistoryScreen extends ConsumerWidget {
+  const RunHistoryScreen({super.key});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final runs = [for (final r in ref.watch(runsProvider).value ?? const <Stored<Run>>[]) if (!r.value.isDeleted) r.value]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
+    return EveningPage(title: 'Run history', children: [
+      if (runs.isEmpty) EmptyState('No runs yet', 'Runs you record appear here, every one of them.', action: SecondaryButton('Start a run', onPressed: () => startRunFlow(context, ref))),
+      for (final r in runs)
+        ListRow(
+          icon: Icons.directions_run, title: shortDate(r.dayKey),
+          subtitle: r.isOpen ? 'In progress' : '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${(r.distanceMeters! / 1000).toStringAsFixed(2)} km'}',
+          onTap: () => push(context, RunScreen(runId: r.id)),
+        ),
+    ]);
+  }
+}
+
+/// Optional body measurements. Weight is stored in kilograms and shown in the chosen unit.
+class BodyMetricsScreen extends ConsumerStatefulWidget {
+  const BodyMetricsScreen({super.key});
+  @override
+  ConsumerState<BodyMetricsScreen> createState() => _BodyMetricsScreenState();
+}
+
+class _BodyMetricsScreenState extends ConsumerState<BodyMetricsScreen> {
+  final _weight = TextEditingController(), _fat = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _weight.dispose();
+    _fat.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = ref.watch(loadUnitProvider);
+    final metrics = [for (final r in ref.watch(metricsProvider).value ?? const <Stored<BodyMetric>>[]) if (!r.value.isDeleted) r.value]..sort((a, b) => b.dayKey.compareTo(a.dayKey));
+    return EveningPage(title: 'Body measurements', children: [
+      Text('Optional. Add a measurement only when it helps you; nothing here is required for a plan.', style: context.caption),
+      const SizedBox(height: 14),
+      Row(children: [
+        Expanded(child: TextField(key: const Key('metric-weight'), controller: _weight, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: 'Weight', suffixText: unit.name))),
+        const SizedBox(width: 10),
+        Expanded(child: TextField(key: const Key('metric-fat'), controller: _fat, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Body fat', suffixText: '%'))),
+      ]),
+      const SizedBox(height: 12),
+      if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
+      PrimaryButton('Add today\'s measurement', key: const Key('metric-save'), onPressed: () async {
+        final w = parseNonNegative(_weight.text), f = parseNonNegative(_fat.text);
+        if ((_weight.text.trim().isNotEmpty && w == null) || (_fat.text.trim().isNotEmpty && f == null)) return setState(() => _error = 'Enter numbers of zero or more, or leave a field blank.');
+        try {
+          await ref.read(activityRepositoryProvider).addMetric(ref.read(todayKeyProvider), weightKg: w == null ? null : loadInputToKg(w, unit), bodyFatPercent: f);
+          _weight.clear();
+          _fat.clear();
+          setState(() => _error = null);
+        } on AuthFailure catch (e) {
+          setState(() => _error = e.message);
+        } on LocalSaveFailure {
+          setState(() => _error = 'That could not be saved on this phone. Your entry is still here.');
+        }
+      }),
+      const SizedBox(height: 22),
+      const SectionLabel('History'),
+      if (metrics.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('No measurements recorded.', style: context.caption)),
+      for (final m in metrics)
+        ListRow(
+          title: [if (m.weightKg != null) formatLoad(m.weightKg, unit), if (m.bodyFatPercent != null) '${formatNumber(m.bodyFatPercent!)} % body fat'].join(' · '),
+          subtitle: longDate(m.dayKey),
+          trailing: IconButton(tooltip: 'Remove measurement', icon: const Icon(Icons.close, size: 18), onPressed: () async {
+            if (await confirm(context, title: 'Remove this measurement?', body: 'The measurement from ${longDate(m.dayKey)} will be removed.', action: 'Remove')) await ref.read(activityRepositoryProvider).deleteMetric(m);
+          }),
+        ),
+    ]);
+  }
+}
