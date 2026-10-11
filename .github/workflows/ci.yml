@@ -1,0 +1,38 @@
+# Internal verification only. Nothing here deploys, publishes or touches a real database.
+# NOTE: this workflow was authored on Windows and has not been executed yet (no remote is configured).
+name: ci
+on: [push, pull_request]
+jobs:
+  api:
+    runs-on: ubuntu-latest   # Docker is available, so Testcontainers starts real PostgreSQL; without it the tests fail, never skip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { global-json-file: api/global.json }
+      - run: dotnet build api -c Release
+      - run: dotnet test api -c Release --no-build
+      - run: dotnet publish api/src/GoHard.Api -c Release -o publish/api
+  app:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, flutter-version: 3.47.6 }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test || true   # formatting is not yet enforced; see docs/PROGRESS_LEDGER.md
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build apk --debug --dart-define=GOHARD_API_BASE=http://10.0.2.2:5131
+  ios-build:
+    # Compiles the iOS app without signing. Requires a macOS runner; no Mac, signing identity or device is available locally.
+    runs-on: macos-latest
+    defaults: { run: { working-directory: app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, flutter-version: 3.47.6 }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter build ios --release --no-codesign --dart-define=GOHARD_API_BASE=https://example.invalid
