@@ -8,12 +8,30 @@ function Get-AndroidDevice {
     (& $Adb devices | Select-String '^(\S+)\s+device$' | ForEach-Object { $_.Matches[0].Groups[1].Value }) | Select-Object -First 1
 }
 
+# Flutter no longer supports 32-bit x86 Android images; only these ABIs can run the app.
+$SupportedAbis = 'x86_64', 'arm64-v8a'
+
+function Get-SupportedAvd {
+    foreach ($name in (& $Emulator -list-avds)) {
+        $config = Join-Path $env:USERPROFILE ".android\avd\$name.avd\config.ini"
+        if ((Test-Path $config) -and ((Get-Content $config) -match "^abi\.type\s*=\s*($($SupportedAbis -join '|'))\s*$")) { return $name }
+    }
+}
+
+function Assert-SupportedDevice([string]$device) {
+    $abi = (& $Adb -s $device shell getprop ro.product.cpu.abi 2>$null | Out-String).Trim()
+    if ($SupportedAbis -notcontains $abi) {
+        $suggest = Get-SupportedAvd
+        Fail "The running device '$device' is a '$abi' image, which Flutter cannot run. Close that emulator and run this script again$(if ($suggest) { " with -Avd $suggest" } else { ' after creating an x86_64 emulator in Android Studio > Device Manager' })."
+    }
+}
+
 function Start-AndroidDevice([string]$Avd) {
     $device = Get-AndroidDevice
-    if ($device) { return $device }
+    if ($device) { Assert-SupportedDevice $device; return $device }
     if (-not (Test-Path $Emulator)) { Fail 'No Android device is connected and the emulator is not installed.' }
-    if (-not $Avd) { $Avd = & $Emulator -list-avds | Select-Object -First 1 }
-    if (-not $Avd) { Fail 'No Android device is connected and no emulator (AVD) exists. Create one in Android Studio > Device Manager.' }
+    if (-not $Avd) { $Avd = Get-SupportedAvd }
+    if (-not $Avd) { Fail 'No Android device is connected and no x86_64/arm64 emulator (AVD) exists. Create one in Android Studio > Device Manager.' }
     Step "Starting emulator '$Avd'"
     Start-Process -FilePath $Emulator -ArgumentList "-avd $Avd -no-snapshot-save -no-boot-anim" -WindowStyle Minimized
     $deadline = (Get-Date).AddMinutes(4)
@@ -23,6 +41,7 @@ function Start-AndroidDevice([string]$Avd) {
         $booted = if ($device) { (& $Adb -s $device shell getprop sys.boot_completed 2>$null) -match '1' } else { $false }
     } until ($booted -or (Get-Date) -gt $deadline)
     if (-not $booted) { Fail 'The emulator did not finish booting within 4 minutes.' }
+    Assert-SupportedDevice $device
     $device
 }
 
