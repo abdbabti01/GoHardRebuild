@@ -6,6 +6,7 @@
   journey_test            main path: register, plan, workout, food, themes, sign out/in
   journey_secondary_test  manual workout, save for later, no-data finish, plan pause/resume/skip/stop, name, deletion
   journey_device_test     OS reminders follow the plan; GPS measures a run (emulator only: positions are simulated)
+  journey_upgrade_test    an install from before appearance became a device setting keeps its Light or Dark
 .PARAMETER Only
   Run just one journey, for example -Only journey_device_test.
 #>
@@ -16,7 +17,7 @@ Assert-Tool flutter 'Install Flutter: https://docs.flutter.dev/get-started/insta
 Assert-LocalApi $ApiBase
 $device = Start-AndroidDevice $Avd
 $appId = 'com.gohard.rebuild.debug'
-$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_more_test', 'journey_offline_test', 'journey_device_test' }
+$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_more_test', 'journey_offline_test', 'journey_device_test', 'journey_upgrade_test' }
 & $Adb -s $device shell input keyevent KEYCODE_HOME   # start from the home screen, whatever app was in front
 
 Push-Location $AppDir

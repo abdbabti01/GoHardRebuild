@@ -168,6 +168,10 @@ the baseline plan content still needs your review.
 
 ## Fastest route: unsigned IPA + Sideloadly (no Apple certificate needed)
 
+State on 12 October 2026: the repository variable `GOHARD_TESTING_API_BASE` is set. The three signing secrets in Step 4
+are not, so only this unsigned route can produce an installable build today. To build the redesign before it is
+merged: Actions → **ios-unsigned-ipa** → **Run workflow** → choose branch `design/calm-momentum`.
+
 `.github/workflows/ios-unsigned-ipa.yml` builds an unsigned IPA with no secrets at all. It runs when started from
 the Actions tab, or when a tag starting with `ipa-` is pushed. Artifact: **GoHard-Dev-unsigned-ipa**.
 

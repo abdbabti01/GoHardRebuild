@@ -265,3 +265,37 @@ Not verified, and why:
 | Launch screen colour when the app is set to Light but the phone is Dark (or the reverse) | the launch screen follows the phone, because the OS draws it before the app can read its setting |
 | Profile-mode performance measurements | not run: the emulator is not representative |
 | `dart format` | not applied; the repository's wide-line style is kept and CI does not enforce it |
+
+## 12 October 2026 — iPhone build preparation for the redesign
+
+Branch `design/calm-momentum` was pushed (not merged into `main`). GitHub state found: repository variables 0,
+repository secrets 0, so the signed workflow had never been able to run.
+
+| Run | Commit | Result |
+|---|---|---|
+| `ci` (push) | `d2b67e3`, `aecbc0b` | success: API build and tests, app analyze and tests, debug APK |
+| `ios-unsigned-ipa` on the branch | `d2b67e3`, `aecbc0b` | success on macOS. The hand-edited launch storyboard compiled: the built app contains the `LaunchBackground` colour in `Assets.car` and the compiled storyboard refers to it |
+| `ios-dev-ipa` (signed) on the branch | `aecbc0b` | stopped at "Check configuration": secrets `IOS_CERTIFICATE_P12_BASE64`, `IOS_CERTIFICATE_PASSWORD`, `IOS_PROVISIONING_PROFILE_BASE64` are not set. No signed IPA exists |
+
+Done here: repository variable `GOHARD_TESTING_API_BASE` set to `https://gohardrebuild-production.up.railway.app`
+(the address the unsigned workflow already used). That API answered from this PC and from the GitHub runner: readiness
+200, contract 1 (the app's), sign-in with bad credentials 401. The unsigned IPA was downloaded and inspected: bundle
+ID `com.gohard.rebuild.dev`, API address `https://gohardrebuild-production.up.railway.app/api/v1`, no emulator or
+loopback address.
+
+Appearance migration changed: an install that was already signed in keeps its old Dark, Light or Match-this-phone
+exactly (previously Dark was dropped as "the old default"). A fresh install is still Blue + System. New native
+journey `journey_upgrade_test` reproduces the old version's state on the emulator (signed-in session, appearance
+saved the way the old Me screen saved it, no device record), restarts the app and checks Dark stays Dark and Light
+stays Light, then that a later choice on the device survives a restart: **All tests passed**. Flutter tests: 97.
+
+Emulator captures in `docs/evidence/screenshots/` were all regenerated on the new design and looked through. One
+inconsistency fixed: when a dialog's two actions did not fit on one line, the text link sat above the main button;
+the main button is now on top. A stale capture from the old design was removed and misleading file names corrected.
+
+Still pending, not done by anyone yet: the signed IPA; installing and running on the iPhone 13; display brightness
+comfort; VoiceOver; smoothness and profile-mode performance.
+
+Remaining feature, not part of this redesign: **editable nutrition goals with calorie and protein progress**. The
+approved layout shows goals and progress bars on Today and Eat; the app has nowhere to set or store a goal yet, so
+those bars are deliberately absent. It needs a goal setting, storage that syncs, and the progress display.
