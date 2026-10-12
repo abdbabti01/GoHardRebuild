@@ -93,6 +93,14 @@ phone and on the server and nothing needs remapping after sync.
 Workout time and rest are computed from persisted UTC anchors (`WorkoutRuntime`), never counted by a ticker, so
 backgrounding, restart, midnight and DST cannot change them. A form or workout pins its `dayKey` when it opens.
 
+## Food data
+
+Search and barcode lookup go phone → GoHard API → provider; the phone never holds a provider key. On the API,
+`Application/FoodDiscovery` has one thin adapter per provider (HTTP and parsing only), one normalized `FoodItem`, and
+one `FoodDiscoveryService` that owns the cache, the shared in-flight calls and the request budgets. On the phone,
+`FoodDiscovery` adds an owner-scoped offline cache, and saved foods and logged foods use the existing outbox with
+their own record kinds. Rules, limits and configuration: `docs/FOOD_DATA.md`.
+
 ## Domain decisions
 
 - Planned occasion, actual workout and result are separate. One `TrainingContext` row per account holds the primary

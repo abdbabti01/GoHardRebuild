@@ -154,6 +154,27 @@ not in the profile: add the device, regenerate the profile, update the secret an
       from a page. Note anything that stutters and where.
 - [ ] **VoiceOver** (optional): the pass reads the plan name, week and completed count; week tiles read their
       dates and state; the selected tab and segment are announced as selected.
+- [ ] **Nutrition goals:** Me → Nutrition goals. Both fields start empty. Set calories and protein, save: Today and
+      Eat show the same two progress lines. Clear one field and save: that line disappears, the other stays.
+- [ ] **Search a food:** Eat → Log food → type a food → "Search online". (Needs the USDA key on the testing API;
+      without it the screen says search is not set up.) Open a result, change the amount and the unit, check the
+      values change with it, press Log food: it appears in the journal and in the totals on Eat and Today.
+- [ ] **Scan a barcode (cannot be checked without a phone):** Log food → Scan barcode. The first time, iOS asks for
+      the camera with GoHard's explanation. Point at a packet: it should read within a second or two, buzz once, and
+      open that product's form once (not several times). Try a packet in poor light with the torch button. Try a QR
+      code from a poster: nothing should happen. Nothing is logged until you press Log food.
+- [ ] **Camera refused:** Settings → GoHard Dev → Camera off, then Scan barcode: the screen explains and offers the
+      typed barcode. Type the digits under a barcode: the same product opens.
+- [ ] **Leaving and returning while scanning:** with the scanner open, go to the Home screen and come back: the
+      camera view resumes. Press Cancel: the camera light or indicator goes off.
+- [ ] **Unknown product:** scan something obscure (or type 96385074): the app says no product was found and offers
+      manual entry. It must not invent a product.
+- [ ] **Recent, favourite, My foods:** log a food, open Log food again: it is under Recent. Open it, tap the star,
+      log it: it is now under Favourites. In a manual entry tap "Save to My foods without logging": it is under My
+      foods and the journal did not change.
+- [ ] **Offline food:** airplane mode → Log food: Recent, Favourites and My foods still work and can be logged;
+      searching says you are offline; a barcode scanned earlier still opens. Turn airplane mode off: Me returns to
+      "Everything is saved".
 - [ ] **Saving data:** Me shows "Everything is saved to your account". Sign out, sign in again: everything is still there.
 - [ ] **Restart:** start a workout, record a set, swipe the app away, reopen: Today offers "Resume workout" with the set.
 - [ ] **Offline:** airplane mode, record a set, turn it off again: Me returns to "Everything is saved".
@@ -163,7 +184,8 @@ not in the profile: add the device, regenerate the profile, update the secret an
       planned workout: a notification arrives. Pause the plan: no reminder.
 - [ ] **Both apps:** the original GoHard app is still installed and unchanged next to GoHard Dev.
 
-Known limits for this build: no route map, no background GPS, no social, health sync, music or AI features, and
+Known limits for this build: food search is in English and mostly United States foods; barcode data is strongest
+for European and North American products and can be incomplete; no route map, no background GPS, no social, health sync, music or AI features, and
 the baseline plan content still needs your review.
 
 ## Fastest route: unsigned IPA + Sideloadly (no Apple certificate needed)

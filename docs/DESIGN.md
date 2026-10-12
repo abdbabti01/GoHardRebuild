@@ -82,11 +82,34 @@ pages, large text at 320 px, 12- and 16-week plans, a new account. They use the 
 not captures from a phone. Captures from the Android emulator, made by the native journeys with a real account on the
 local API, are in `docs/evidence/screenshots/`.
 
+## Food: search, scanner, preview and goals
+
+Added on 12 October 2026 with the existing components only (`AppPage`, `ListRow`, `Panel`, `StatusLine`,
+`SecondaryButton`, `ProgressRail`, the themed text fields and dropdowns). No new colour, radius or type size.
+
+| Screen | File | Notes |
+|---|---|---|
+| Log food (search, scan, saved, recent, manual) | `features/nutrition/log_food_screen.dart` | Local matches as you type; online search is a separate button, because the food database is shared and counted per request. One list style for every origin. |
+| Scan a barcode | `features/nutrition/barcode_scan_screen.dart` | The camera sits in a rounded panel inside the normal page, with a plain white frame and a torch button only where the phone has one; the typed-barcode field is always below it. It never takes over the screen like a scanner SDK page. |
+| The food form | `features/nutrition/food_form.dart` | The same form for every entry path. A source card (name, brand, values per basis, credit) sits above the fields. Amount and unit side by side, stacked at large text or under 350 px. A corrected value is marked "Your value". |
+| Nutrition goals | `features/me/me_screen.dart` | Two optional fields that start empty. |
+| Update notice | `app/app.dart` | Drawn over the open screen, so nothing underneath is lost. |
+
+Checked by `test/food_ui_test.dart`: contrast, tap-target size and labels on search, results, a preview with unknown
+values, and the scanner's fallback, in all six themes; no overflow on search, preview, scanner and goals at twice
+the text size on a 320 px phone. Renders of each in all six themes are in `docs/evidence/design/`
+(`six-themes-log-food`, `-food-results`, `-food-preview`, `-scan`, `-goals`). In those renders the camera is a flat
+grey panel, because a widget render has no camera; the emulator capture `screenshots/97-scanner.png` shows the real
+camera view with its frame.
+
+Found and fixed while checking these: the Meal dropdown overflowed by 59 px at twice the text size on a 320 px phone
+(it now uses the full width), and a long text-and-icon button did not wrap (it is now plain text).
+
 ## Deliberate differences from the references
 
 | Reference | App | Why |
 |---|---|---|
-| Calories and protein against goals, with progress bars | totals only | the app stores no nutrition goals; a target would be invented |
+| Calories and protein against goals, with progress bars | the same, but only for a goal the person set; the rail stops at full while the words give the real total; "left" is stated only when every food that day has a value | no goal is suggested, and a remainder worked out from a partial sum would be invented |
 | Photographs of each meal and exercise, a profile photo | none; an initial for the profile | no such images exist in the account, and none are licensed |
 | A person in the workout photograph and on the pass | the existing dumbbell photograph; a plain pass | the only licensed photograph in the project; no synthetic anatomy to get wrong |
 | Week tiles four across with small text, selected tile without its label | three across at phone width, every tile shows week, dates and state | the reference's labels were too small to read; three across fits "Sep 28 – Oct 4" on one line |

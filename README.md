@@ -46,16 +46,24 @@ Physical phone on the same Wi-Fi: `.\scripts\start-api.ps1 -Lan` and
 ## Test it
 
 ```powershell
-# Everything automated: API build + 58 tests on disposable PostgreSQL + release publish,
-# then Flutter codegen + analyze + 64 unit / real-Drift / widget tests. Works while the API is running.
+# Everything automated: API build + 83 tests on disposable PostgreSQL + release publish,
+# then Flutter codegen + analyze + 134 unit / real-Drift / widget tests. Works while the API is running.
 powershell -ExecutionPolicy Bypass -File .\scripts\test.ps1
 
-# Five native Android journeys on an emulator against the running local API; saves real screenshots.
-# -Only journey_device_test runs just the reminders + GPS one (it grants permissions and simulates positions)
+# Seven native Android journeys on an emulator against the running local API; saves real screenshots.
+# -Only journey_device_test runs just the reminders + GPS one (it grants permissions and simulates positions).
+# journey_food_test needs the API started with:  .\scripts\start-api.ps1 -FoodFixtures
 powershell -ExecutionPolicy Bypass -File .\scripts\test-android.ps1
 ```
 
 `test.ps1 -SkipApp` / `-SkipApi` run one side. API tests need Docker: without it they **fail**, they do not skip.
+
+## Food search and barcodes
+
+Barcode lookup (Open Food Facts) works with no configuration. Text search (USDA FoodData Central) needs a free API
+key on the API: `GOHARD_FoodData__UsdaApiKey`, or `FoodData:UsdaApiKey` in `appsettings.Local.json`. Without it the
+app says search is not set up and everything else works. `start-api.ps1 -FoodFixtures` answers both from recorded
+responses instead of the providers. Details, limits and licences: `docs/FOOD_DATA.md`.
 
 ## What setup creates (and only this)
 

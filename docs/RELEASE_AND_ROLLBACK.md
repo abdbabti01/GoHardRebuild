@@ -8,6 +8,7 @@ Internal QA preparation only. Nothing here deploys, publishes to a store, or tou
 |---|---|
 | `20261011011030_Initial` | users, refresh tokens, operations, training contexts, plans, occasions, workouts, exercises, sets, food entries, exercise catalog |
 | `20261011011041_AddActivitiesAndProposals` | runs, body metrics, proposals (additive only) |
+| `20261012172306_AddFoodDiscoveryAndGoals` | `Users.CalorieGoal`, `Users.ProteinGoalG` (nullable), `FoodEntries.SourceJson` (nullable jsonb), new table `SavedFoods` (additive only; no existing row is rewritten) |
 
 - Apply: `dotnet run --project api\src\GoHard.Api -- migrate` (what `scripts\setup.ps1` does). It prints the readiness
   result and exits non-zero if the schema is not ready.
@@ -19,7 +20,8 @@ Internal QA preparation only. Nothing here deploys, publishes to a store, or tou
   is run. An `UnknownHistory` result (history contains migrations this build does not know) means a newer schema is
   deployed than the binary: deploy the matching build; do not edit history.
 
-Verified: fresh database → both migrations → Ready; Initial only → data → upgrade → data, unknown nutrients, entered
+Verified: fresh database → all three migrations → Ready; second migration only → a user and a food entry written
+as that schema stored them → upgrade → both intact, no goal and no source invented; Initial only → data → upgrade → data, unknown nutrients, entered
 zeros and operation records intact; unknown history and missing tables reported without repair.
 
 ## Local (phone) schema
@@ -32,9 +34,20 @@ that test; never drop or rewrite `commands.payload` / `commands.outbound`.
 ## Compatibility
 
 - Contract version 1 is the only version. `GET /api/v1/capabilities` (public) returns `contractVersion`,
-  `minimumClientContract` and the capability list the server really supports.
-- **Not yet enforced on the client.** Before a contract 2 ships, the app must read capabilities at sign-in and refuse
-  writes it cannot express, and the server must reject clients below `minimumClientContract`.
+  `minimumClientContract` and the capability list the server really supports (`food.search` only with a USDA key).
+- **Enforced on the client.** On start and resume the app reads capabilities with a 6-second limit. A server minimum
+  above the app's contract blocks the app over whatever was open, stops sync and keeps the outbox; the block is
+  remembered across restarts and lifts when a check passes. No answer changes nothing. The server does not itself
+  reject older clients yet.
+- `minimumClientContract` is the setting `Compatibility:MinimumClientContract` (default 1). Raise it only for a change
+  an older app cannot live with; added optional fields are not one.
+- **Additive fields and older apps.** Goal fields left out of `PUT /me` are kept and only an explicit `null` clears
+  them. `source` and `provenance` on food commands are optional. A field that is left out is also left out of the
+  command's semantic hash, so a retry of a command sent before this release still matches its recorded answer.
+  An app from before this release that edits a food logged from a provider turns its values into the user's own
+  (`entered`) and drops the stored source, which is what such an edit is.
+- **Newer app, older server.** The app hides Nutrition goals when the server does not declare
+  `profile.nutrition-goals`, treats a missing `savedFoods` list as empty, and shows search or barcode as not set up.
 - Operation records are kept indefinitely, so any retry of an old command is still answered with its original
   acknowledgement. Do not prune them without defining the supported offline-retry window first.
 
@@ -57,7 +70,9 @@ Before any real migration: back up the database, record `… -- readiness` outpu
 - Android release: `flutter build apk --release --dart-define=GOHARD_API_BASE=<https origin>`. It is signed with the
   **debug key** (Flutter's template default) and so is for internal testing only; release builds do not allow
   cleartext HTTP, so they need an HTTPS API. A real signing key and store listing are separate work.
-- iOS: bundle ID `com.gohard.rebuild`; never built (needs macOS and signing).
+- iOS: built unsigned by `.github/workflows/ios-unsigned-ipa.yml` on macOS. The barcode scanner adds the
+  `NSCameraUsageDescription` text in `ios/Runner/Info.plist`; Android adds the `CAMERA` permission, with the camera
+  marked not required so a phone without one can still install.
 
 ## Secrets
 

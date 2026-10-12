@@ -22,14 +22,16 @@ String describeRecord(String kind, Json j, LoadUnit unit) => switch (kind) {
       Kinds.workout => '${j['title']} · ${shortDate(j['dayKey'] as String)} · ${j['finishedAtUtc'] == null ? 'in progress' : 'finished (${j['outcome']})'}',
       Kinds.context => j['primaryPlanId'] == null ? 'No primary plan' : 'A primary plan is set',
       Kinds.plan => '${j['title']} · ${j['lifecycle']}',
-      Kinds.profile => '${j['displayName']} · ${j['appearance']} · ${j['loadUnit']}',
+      Kinds.profile => '${j['displayName']} · ${j['appearance']} · ${j['loadUnit']}'
+          '${j['calorieGoal'] == null ? '' : ' · goal ${j['calorieGoal']} kcal'}${j['proteinGoal'] == null ? '' : ' · goal ${j['proteinGoal']} g protein'}',
+      Kinds.savedFood => (j['isDeleted'] as bool? ?? false) ? 'Removed' : '${(j['item'] as Json?)?['name'] ?? 'Food'}${j['isFavourite'] == true ? ' · favourite' : ''}',
       Kinds.run => 'Run · ${shortDate(j['dayKey'] as String)}',
       _ => kind,
     };
 
 const _titles = {
   Kinds.set: 'Recorded set', Kinds.food: 'Food entry', Kinds.workout: 'Workout', Kinds.context: 'Primary plan change', Kinds.plan: 'Plan schedule change',
-  Kinds.profile: 'Profile', Kinds.run: 'Run', Kinds.metric: 'Body measurement', Kinds.proposal: 'Suggested change',
+  Kinds.profile: 'Profile', Kinds.run: 'Run', Kinds.metric: 'Body measurement', Kinds.proposal: 'Suggested change', Kinds.savedFood: 'Saved food',
 };
 
 String _reason(String? code) => switch (code) {
