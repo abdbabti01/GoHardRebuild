@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/session.dart';
 
 import 'ui_support.dart';
@@ -112,6 +113,16 @@ Future<void> _open(WidgetTester tester, String screen) async {
 void main() {
   if (!_enabled) return;
   setUpAll(_loadFonts);
+
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets('state: confirmation dialog ${mode.name}', (tester) async {
+      await pumpApp(tester, await _fixture(tester, Accent.blue, mode));
+      confirm(tester.element(find.byKey(const Key('nav-today'))),
+          title: 'Move this workout?', body: 'Workout: Full body (week 1)\nCurrent date: Friday, October 16\nProposed date: Saturday, October 17\n\nNo other workout changes.',
+          action: 'Move workout', cancel: 'Keep current dates').ignore();
+      await _save(tester, await _capture(tester), 'state-dialog-${mode.name}');
+    });
+  }
 
   for (final screen in ['today', 'train-plan', 'eat', 'me', 'appearance']) {
     testWidgets('six themes: $screen', (tester) async {

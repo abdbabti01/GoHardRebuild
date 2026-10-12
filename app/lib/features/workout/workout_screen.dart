@@ -169,6 +169,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
     final action = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
+        actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
         title: const Text('Edit set'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: load, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: 'Load', suffixText: unit.name, hintText: 'Bodyweight')),
@@ -216,6 +217,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
     final go = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
         title: Text(noData ? 'No training logged' : 'Finish workout?'),
         content: SingleChildScrollView(
           child: Text(noData

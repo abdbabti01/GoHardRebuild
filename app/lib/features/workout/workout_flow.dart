@@ -21,6 +21,7 @@ Future<bool> _clearForeground(BuildContext context, WidgetRef ref, String? wante
   final choice = await showDialog<String>(
     context: context,
     builder: (context) => AlertDialog(
+      actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
       title: Text('${current.title} is still open'),
       content: const Text('Only one workout is in front at a time. Resume it, or save it for later. Saving for later keeps every recorded set and never finishes it.'),
       actions: [

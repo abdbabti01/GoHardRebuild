@@ -410,6 +410,7 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
     await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
         title: Text(title),
         content: SingleChildScrollView(child: Text(body)),
         actions: [

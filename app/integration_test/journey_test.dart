@@ -82,7 +82,7 @@ void main() {
     await app.main();
     await binding.convertFlutterSurfaceToImage();
     await waitFor(tester, find.byKey(const Key('auth-submit')), what: 'the sign-in screen');
-    await shot(tester, '01-sign-in-dark');
+    await shot(tester, '01-sign-in');
 
     // --- Registration against the real API.
     await tapKey(tester, 'auth-toggle');
@@ -207,10 +207,10 @@ void main() {
     // --- Me: shared appearance, history, then non-destructive sign-out and sign-in.
     await tapKey(tester, 'nav-me');
     await waitFor(tester, find.text('Journey Tester'));
-    await shot(tester, '17-me-dark');
+    await shot(tester, '17-me');
     // Appearance has its own page: mode and accent are two independent choices, applied at once.
     await tapKey(tester, 'me-appearance');
-    await shot(tester, '17b-appearance-dark');
+    await shot(tester, '17b-appearance-system');
     await tapKey(tester, 'appearance-light');
     await tapKey(tester, 'accent-green');
     await settle(tester, 6);
@@ -224,14 +224,14 @@ void main() {
     await shot(tester, '18c-me-light');
     await tapKey(tester, 'nav-today');
     await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
-    await shot(tester, '19-today-light');
+    await shot(tester, '19-today-pink-light');
     await tapKey(tester, 'nav-train');
     await tapKey(tester, 'train-progress');
     await waitFor(tester, find.text('Am I following my plan?'));
     expect(find.textContaining('1 of 1 due workouts recorded'), findsOneWidget);
-    await shot(tester, '20-train-progress-light');
+    await shot(tester, '20-train-progress-pink-light');
     await tapKey(tester, 'train-workouts');
-    await shot(tester, '21-train-workouts-light');
+    await shot(tester, '21-train-workouts-pink-light');
 
     await tapKey(tester, 'nav-me');
     await tapKey(tester, 'me-appearance');
