@@ -1,5 +1,4 @@
 # Internal verification only. Nothing here deploys, publishes or touches a real database.
-# NOTE: this workflow was authored on Windows and has not been executed yet (no remote is configured).
 name: ci
 on: [push, pull_request]
 jobs:
@@ -17,6 +16,10 @@ jobs:
     defaults: { run: { working-directory: app } }
     steps:
       - uses: actions/checkout@v4
+      # The debug APK with the barcode scanner needs the NDK and several GB of build output; the hosted runner ran out
+      # of disk without this. These preinstalled toolchains are not used by this job.
+      - run: sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost && df -h / | tail -1
+        working-directory: .
       - uses: subosito/flutter-action@v2
         with: { channel: stable, flutter-version: 3.47.6 }
       - run: flutter pub get
