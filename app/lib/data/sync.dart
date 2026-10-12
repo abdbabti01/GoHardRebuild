@@ -66,6 +66,7 @@ List<ServerRec> recordsFromAck(String kind, dynamic data, String owner) {
     'food' => [_simple(Kinds.food, j)],
     'run' => [_simple(Kinds.run, j)],
     'metric' => [_simple(Kinds.metric, j)],
+    'savedfood' => [_simple(Kinds.savedFood, j)],
     'profile' => [_simple(Kinds.profile, j, idField: 'userId')],
     'plan' => kind == 'plan.draft' ? (j['context'] is Map ? _context(j['context'] as Json, owner) : const []) : _context(j, owner),
     'proposal' => kind == 'proposal.create'
@@ -84,6 +85,8 @@ List<ServerRec> recordsFromSnapshot(Json s, String owner) => [
       for (final m in s['bodyMetrics'] as List) _simple(Kinds.metric, m as Json),
       for (final p in s['proposals'] as List) _simple(Kinds.proposal, p as Json),
       for (final c in s['catalog'] as List) ServerRec(Kinds.catalog, (c as Json)['key'] as String, c, 1),
+      // Absent on a server from before reusable foods.
+      for (final f in s['savedFoods'] as List? ?? const []) _simple(Kinds.savedFood, f as Json),
     ];
 
 /// Local-first persistence and synchronization.
@@ -103,6 +106,10 @@ class SyncEngine {
   bool _again = false, _disposed = false;
   Future<void>? _running;
   Timer? _retry;
+
+  /// True while this build is known to be too old for the account's server. Nothing is sent or pulled then;
+  /// every command stays in the outbox, untouched, for when the check passes again.
+  bool Function() isBlocked = () => false;
 
   /// Test seam: called just before a dispatch, after the outbound payload is persisted.
   Future<void> Function(Cmd cmd)? beforeDispatch;
@@ -286,7 +293,7 @@ class SyncEngine {
 
   Future<void> _drain() async {
     final s = _sessions.current;
-    if (s == null) return;
+    if (s == null || isBlocked()) return;
     while (!_disposed) {
       if (_sessions.current?.epoch != s.epoch) return;
       final cmd = await _nextDispatchable(s.ownerId);
@@ -396,7 +403,7 @@ class SyncEngine {
   // ponytail: full-snapshot pull; add a `since` cursor when histories grow beyond a few thousand records.
   Future<bool> pull() async {
     final s = _sessions.current;
-    if (s == null) return false;
+    if (s == null || isBlocked()) return false;
     ApiResponse r;
     try {
       r = await _api.send('GET', '/sync/snapshot');

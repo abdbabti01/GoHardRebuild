@@ -7,6 +7,8 @@
   journey_secondary_test  manual workout, save for later, no-data finish, plan pause/resume/skip/stop, name, deletion
   journey_device_test     OS reminders follow the plan; GPS measures a run (emulator only: positions are simulated)
   journey_upgrade_test    an install from before appearance became a device setting keeps its Light or Dark
+  journey_food_test       goals, search, amount, log, reuse, barcode, manual fallback, restart. Needs the API started
+                          with start-api.ps1 -FoodFixtures (recorded provider responses, not the live providers)
 .PARAMETER Only
   Run just one journey, for example -Only journey_device_test.
 #>
@@ -17,7 +19,7 @@ Assert-Tool flutter 'Install Flutter: https://docs.flutter.dev/get-started/insta
 Assert-LocalApi $ApiBase
 $device = Start-AndroidDevice $Avd
 $appId = 'com.gohard.rebuild.debug'
-$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_more_test', 'journey_offline_test', 'journey_device_test', 'journey_upgrade_test' }
+$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_more_test', 'journey_offline_test', 'journey_device_test', 'journey_upgrade_test', 'journey_food_test' }
 & $Adb -s $device shell input keyevent KEYCODE_HOME   # start from the home screen, whatever app was in front
 
 Push-Location $AppDir
@@ -26,14 +28,17 @@ try {
         # A clean install, so a journey never starts from another run's signed-in state. Only this app's debug identity is touched.
         & $Adb -s $device uninstall $appId 2>$null | Out-Null
         $feeder = $null
-        if ($journey -eq 'journey_device_test') {
-            if ($device -notmatch '^emulator-') { Fail 'journey_device_test simulates GPS positions and so needs an emulator.' }
-            # A test cannot tap system permission dialogs, so the app is installed first and the permissions granted.
-            Step 'Building and installing the app to grant notification and location permission'
+        # A test cannot tap system permission dialogs, so for these journeys the app is installed first and the permissions granted.
+        $grants = @{ journey_device_test = 'POST_NOTIFICATIONS', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'; journey_food_test = @('CAMERA') }[$journey]
+        if ($grants) {
+            Step "Building and installing the app to grant: $($grants -join ', ')"
             flutter build apk --debug --dart-define=GOHARD_API_BASE=$ApiBase | Out-Null
             if ($LASTEXITCODE -ne 0) { Fail 'The debug build failed.' }
             & $Adb -s $device install -r 'build\app\outputs\flutter-apk\app-debug.apk' | Out-Null
-            foreach ($p in 'POST_NOTIFICATIONS', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION') { & $Adb -s $device shell pm grant $appId "android.permission.$p" }
+            foreach ($p in $grants) { & $Adb -s $device shell pm grant $appId "android.permission.$p" }
+        }
+        if ($journey -eq 'journey_device_test') {
+            if ($device -notmatch '^emulator-') { Fail 'journey_device_test simulates GPS positions and so needs an emulator.' }
             # Simulated walk north, about 8 m every 2 s, through Android's test location provider
             # (the emulator console's "geo fix" does not move the position on this image).
             & $Adb -s $device shell appops set com.android.shell android:mock_location allow

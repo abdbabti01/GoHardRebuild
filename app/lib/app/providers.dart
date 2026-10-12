@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
+import '../core/compatibility.dart';
 import '../core/config.dart';
 import '../core/units.dart';
 import '../data/db.dart';
@@ -11,6 +12,8 @@ import '../data/models.dart';
 import '../data/session.dart';
 import '../data/sync.dart';
 import '../features/me/account_repository.dart';
+import '../features/nutrition/food_discovery.dart';
+import '../features/nutrition/food_item.dart';
 import '../features/nutrition/food_repository.dart';
 import '../features/nutrition/nutrient_coverage.dart';
 import '../features/plans/plan_repository.dart';
@@ -30,6 +33,8 @@ final apiProvider = Provider<Api>((ref) => Api(ref.watch(transportProvider), ref
 
 final syncProvider = Provider<SyncEngine>((ref) {
   final engine = SyncEngine(ref.watch(dbProvider), ref.watch(apiProvider), ref.watch(sessionsProvider));
+  // Read at the moment of use: a build the server no longer accepts sends and pulls nothing, and keeps its outbox.
+  engine.isBlocked = () => ref.read(compatibilityProvider).blocked;
   ref.onDispose(engine.dispose);
   return engine;
 });
@@ -94,6 +99,12 @@ final allSetsProvider = StreamProvider<List<Stored<WorkoutSet>>>((ref) => _rows(
 final setsProvider = StreamProvider.family<List<Stored<WorkoutSet>>, String>((ref, workoutId) => _rows(ref, Kinds.set, WorkoutSet.new, parentId: workoutId));
 final runtimesProvider = StreamProvider<List<Stored<Json>>>((ref) => _rows(ref, Kinds.runtime, (j) => j));
 final foodProvider = StreamProvider.family<List<Stored<FoodEntry>>, String>((ref, dayKey) => _rows(ref, Kinds.food, FoodEntry.new, dayKey: dayKey));
+/// Every food entry of the owner, for "recent": the journal itself is the history of what was eaten.
+final foodJournalProvider = StreamProvider<List<Stored<FoodEntry>>>((ref) => _rows(ref, Kinds.food, FoodEntry.new));
+final savedFoodsProvider = StreamProvider<List<Stored<SavedFood>>>((ref) => _rows(ref, Kinds.savedFood, SavedFood.new));
+/// Provider foods kept on this phone for this owner, newest first.
+final seenFoodsProvider = StreamProvider<List<FoodItem>>((ref) => _rows(ref, Kinds.foodCache, (j) => j).map((rows) =>
+    [for (final r in [...rows]..sort((a, b) => (b.value['cachedAtUtc'] as String).compareTo(a.value['cachedAtUtc'] as String))) FoodItem(r.value['item'] as Json)]));
 final runsProvider = StreamProvider<List<Stored<Run>>>((ref) => _rows(ref, Kinds.run, Run.new));
 final metricsProvider = StreamProvider<List<Stored<BodyMetric>>>((ref) => _rows(ref, Kinds.metric, BodyMetric.new));
 final proposalsProvider = StreamProvider<List<Stored<Proposal>>>((ref) => _rows(ref, Kinds.proposal, Proposal.new));
@@ -142,6 +153,8 @@ T _owned<T>(Ref ref, T Function(SyncEngine sync, String owner) create) {
 final authRepositoryProvider = Provider((ref) => AuthRepository(ref.watch(apiProvider), ref.watch(sessionsProvider), ref.watch(syncProvider)));
 final planRepositoryProvider = Provider((ref) => _owned(ref, PlanRepository.new));
 final foodRepositoryProvider = Provider((ref) => _owned(ref, FoodRepository.new));
+final savedFoodRepositoryProvider = Provider((ref) => _owned(ref, SavedFoodRepository.new));
+final foodDiscoveryProvider = Provider((ref) => _owned(ref, (s, o) => FoodDiscovery(ref.watch(apiProvider), s, o, ref.watch(clockProvider))));
 final profileRepositoryProvider = Provider((ref) => _owned(ref, ProfileRepository.new));
 final workoutRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => WorkoutRepository(s, o, ref.watch(clockProvider))));
 final activityRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => ActivityRepository(s, o, ref.watch(clockProvider))));

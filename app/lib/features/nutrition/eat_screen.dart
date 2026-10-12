@@ -72,7 +72,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
           else if (!rows.hasValue)
             const Panel(child: StatusLine(Icons.hourglass_empty, 'Loading your journal…'))
           else ...[
-            NutritionSurface(entries: entries, coverage: NutrientCoverage.calculate(entries), pending: pendingCount > 0, onLogFood: () => openFoodForm(context, dayKey: day)),
+            NutritionSurface(entries: entries, coverage: NutrientCoverage.calculate(entries),
+                calorieGoal: ref.watch(profileProvider).value?.calorieGoal, proteinGoal: ref.watch(profileProvider).value?.proteinGoal, pending: pendingCount > 0, onLogFood: () => openFoodForm(context, dayKey: day)),
             const SizedBox(height: 28),
             SectionHeader(day == today ? 'Logged today' : 'Logged this day'),
             const SizedBox(height: 2),

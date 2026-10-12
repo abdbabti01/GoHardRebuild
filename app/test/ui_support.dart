@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/app/app.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/clock.dart';
@@ -11,6 +12,8 @@ import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/nutrition/food_item.dart';
+import 'package:gohard_rebuild/features/nutrition/food_repository.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 
 import 'support.dart';
@@ -29,7 +32,8 @@ Stored<T> stored<T>(T value, String kind, String id, Json body, {String state = 
     Stored(value, Rec(ownerId: 'one', kind: kind, id: id, body: jsonEncode(body), revision: 1, localRevision: 0, syncState: state));
 
 Future<List<Override>> overridesFor({required String day, List<Json> plans = const [], String? primaryPlanId, List<Json> workouts = const [], List<Json> sets = const [],
-    List<Json> food = const [], bool foodFails = false, AppearanceStore? appearance, String profileAppearance = 'dark'}) async {
+    List<Json> food = const [], bool foodFails = false, AppearanceStore? appearance, String profileAppearance = 'dark',
+    int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const []}) async {
   final sessions = SessionManager(MemorySecretStore());
   await sessions.signIn(authFor('one'));
   List<Stored<WorkoutSet>> setRows(String? workoutId) => [for (final s in sets) if (workoutId == null || s['workoutId'] == workoutId) stored(WorkoutSet(s), Kinds.set, s['id'] as String, s)];
@@ -37,7 +41,10 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     sessionsProvider.overrideWithValue(sessions),
     if (appearance != null) appearanceStoreProvider.overrideWithValue(appearance),
     todayKeyProvider.overrideWith(() => FixedDay(day)),
-    profileProvider.overrideWith((ref) => Stream.value(Profile({...authFor('one')['profile'] as Json, 'displayName': 'Alex Sample', 'appearance': profileAppearance}))),
+    profileProvider.overrideWith((ref) => Stream.value(Profile({...authFor('one')['profile'] as Json, 'displayName': 'Alex Sample', 'appearance': profileAppearance, 'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal}))),
+    foodJournalProvider.overrideWith((ref) => Stream.value([for (final f in food) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
+    savedFoodsProvider.overrideWith((ref) => Stream.value([for (final f in savedFoods) stored(SavedFood(f), Kinds.savedFood, f['id'] as String, f)])),
+    seenFoodsProvider.overrideWith((ref) => Stream.value([for (final f in seenFoods) FoodItem(f)])),
     contextRowProvider.overrideWith((ref) => Stream.value(stored(TrainingCtx({'contextRevision': 1, 'primaryPlanId': primaryPlanId}), Kinds.context, 'one', {}))),
     plansProvider.overrideWith((ref) => Stream.value([for (final p in plans) stored(Plan(p), Kinds.plan, p['id'] as String, p)])),
     workoutsProvider.overrideWith((ref) => Stream.value([for (final w in workouts) stored(Workout(w), Kinds.workout, w['id'] as String, w)])),
@@ -71,7 +78,7 @@ Future<ProviderContainer> pumpApp(WidgetTester tester, List<Override> overrides,
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: goTheme(a.accent, Brightness.light), darkTheme: goTheme(a.accent, Brightness.dark), themeMode: a.mode,
-        builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)), child: child!),
+        builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)), child: CompatibilityGate(child: child!)),
         home: home,
       );
     }),

@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/appearance.dart';
+import '../../core/compatibility.dart';
 import '../../core/config.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
@@ -96,6 +98,15 @@ class MeScreen extends ConsumerWidget {
           subtitle: '${appearance.accent.label} · ${modeLabel(appearance.mode)}',
           onTap: () => push(context, const AppearanceScreen()),
         ),
+        // Shown unless the server has said it cannot store goals: a goal that silently vanishes is worse than no row.
+        if (profile != null && ref.watch(compatibilityProvider).supports('profile.nutrition-goals'))
+          ListRow(
+            key: const Key('me-goals'), icon: Icons.flag_outlined, title: 'Nutrition goals',
+            subtitle: profile.calorieGoal == null && profile.proteinGoal == null
+                ? 'None set'
+                : [if (profile.calorieGoal != null) '${profile.calorieGoal} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
+            onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
+          ),
         const SizedBox(height: 14),
         Text('Units', style: context.sansStyle(16, weight: FontWeight.w500)),
         const SizedBox(height: 8),
@@ -365,6 +376,69 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
         ]),
         children: [
           TextField(key: const Key('name-field'), controller: _name, autofocus: true, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name shown in the app')),
+        ],
+      );
+}
+
+/// Optional daily calorie and protein goals. Both start empty and stay empty until the person types one:
+/// the app does not work out, suggest or pre-fill a goal.
+class NutritionGoalsScreen extends ConsumerStatefulWidget {
+  const NutritionGoalsScreen({super.key, required this.profile});
+  final Profile profile;
+  @override
+  ConsumerState<NutritionGoalsScreen> createState() => _NutritionGoalsScreenState();
+}
+
+class _NutritionGoalsScreenState extends ConsumerState<NutritionGoalsScreen> {
+  late final _calories = TextEditingController(text: widget.profile.calorieGoal?.toString() ?? '');
+  late final _protein = TextEditingController(text: widget.profile.proteinGoal?.toString() ?? '');
+  String? _error;
+
+  @override
+  void dispose() {
+    _calories.dispose();
+    _protein.dispose();
+    super.dispose();
+  }
+
+  /// Blank is "no goal". Anything else has to be a whole number.
+  static int? _whole(String raw, String what) {
+    if (raw.trim().isEmpty) return null;
+    final v = parsePositiveInt(raw);
+    if (v == null) throw AuthFailure('$what is a whole number, or left blank for no goal.');
+    return v;
+  }
+
+  Future<void> _save() async {
+    try {
+      // The newest profile on this phone, so a goal change never carries an older name or unit with it.
+      final current = ref.read(profileProvider).value ?? widget.profile;
+      await ref.read(profileRepositoryProvider).setGoals(current, calorieGoal: _whole(_calories.text, 'A calorie goal'), proteinGoal: _whole(_protein.text, 'A protein goal'));
+      if (mounted) Navigator.pop(context);
+    } on AuthFailure catch (e) {
+      setState(() => _error = e.message);
+    } on LocalSaveFailure {
+      setState(() => _error = 'Your goals could not be saved on this phone. What you typed is still here.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AppPage(
+        title: 'Nutrition goals',
+        subtitle: 'Optional. Today and Eat show your progress toward a goal once you set one.',
+        bottom: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
+          PrimaryButton('Save goals', key: const Key('goal-save'), onPressed: _save),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        ]),
+        children: [
+          TextField(key: const Key('goal-calories'), controller: _calories, keyboardType: TextInputType.number, textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(labelText: 'Daily calories', suffixText: 'kcal', hintText: 'No goal', helperText: '500 to 10,000. Leave blank for no calorie goal.')),
+          const SizedBox(height: 14),
+          TextField(key: const Key('goal-protein'), controller: _protein, keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Daily protein', suffixText: 'g', hintText: 'No goal', helperText: '10 to 500. Leave blank for no protein goal.')),
+          const SizedBox(height: 16),
+          Text('GoHard does not suggest a goal. If you are unsure what suits you, a dietitian or doctor can help.', style: context.caption),
         ],
       );
 }

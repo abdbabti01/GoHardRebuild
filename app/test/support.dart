@@ -44,7 +44,14 @@ Json authFor(String owner) => {
 class FakeServer implements Transport {
   final calls = <({String method, String path, String body, String? bearer})>[];
   final operations = <String, (String body, ApiResponse response)>{};
-  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{};
+  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{};
+
+  /// The account's profile as this authority holds it. A field a request leaves out is kept, as on the real server.
+  Json profile = {...authFor('owner-from-server')['profile'] as Json};
+
+  /// Answers for the read-only endpoints: food lookups by path, and what the server says it supports.
+  final lookups = <String, ApiResponse>{};
+  Json capabilities = {'contractVersion': 1, 'minimumClientContract': 1, 'capabilities': ['food.search', 'food.barcode', 'food.saved', 'profile.nutrition-goals']};
   bool offline = false, loseNextResponse = false;
   Completer<void>? hold;
 
@@ -70,11 +77,13 @@ class FakeServer implements Transport {
   ApiResponse _handle(String method, String path, Json? d, String body) {
     if (path == '/sync/snapshot') {
       return ApiResponse(200, {
-        'profile': authFor('owner-from-server')['profile'], 'context': {'contextRevision': 1, 'primaryPlanId': null, 'plans': []},
+        'profile': profile, 'context': {'contextRevision': 1, 'primaryPlanId': null, 'plans': []},
         'workouts': [for (final w in workouts.values) {...w, 'exercises': [for (final e in w['exercises'] as List) {...e as Json, 'sets': [for (final s in sets.values) if (s['exerciseId'] == e['id']) s]}]}],
-        'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': [], 'proposals': [], 'catalog': [],
+        'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': [], 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(),
       });
     }
+    if (path == '/capabilities') return ApiResponse(200, capabilities);
+    if (path.startsWith('/foods/')) return lookups[path] ?? const ApiResponse(404, {'code': 'NOT_FOUND'});
     final op = d?['operationId'] as String?;
     if (op == null) return const ApiResponse(400, null);
     final prior = operations[op];
@@ -121,9 +130,21 @@ class FakeServer implements Transport {
         food[f['id'] as String] = f;
         return _ack(op, 'accepted', 1, Map.of(f));
       case ['food-entries', final id] when method == 'PUT':
-        return _revisioned(food, id, d, op, (r) => r.addAll({for (final k in ['dayKey', 'meal', 'name', 'amountDescription', 'macros']) k: d[k]}));
+        return _revisioned(food, id, d, op, (r) => r.addAll({for (final k in ['dayKey', 'meal', 'name', 'amountDescription', 'macros', 'source', 'provenance']) k: d[k]}));
       case ['food-entries', final id, 'delete']:
         return _revisioned(food, id, d, op, (r) => r['isDeleted'] = true);
+      case ['saved-foods', final id] when method == 'PUT':
+        final row = savedFoods[id];
+        if ((row?['revision'] ?? 0) != d['expectedRevision']) return row == null ? const ApiResponse(404, null) : _ack(op, 'conflict', row['revision'] as int, row, 'REVISION_CONFLICT');
+        final next = {'id': id, 'item': d['item'], 'isFavourite': d['isFavourite'], 'revision': ((row?['revision'] as int?) ?? 0) + 1, 'isDeleted': false};
+        savedFoods[id] = next;
+        return _ack(op, 'accepted', next['revision'] as int, Map.of(next));
+      case ['saved-foods', final id, 'delete']:
+        return _revisioned(savedFoods, id, d, op, (r) => r['isDeleted'] = true);
+      case ['me'] when method == 'PUT':
+        if (profile['revision'] != d['expectedRevision']) return _ack(op, 'conflict', profile['revision'] as int, profile, 'REVISION_CONFLICT');
+        profile = {...profile, ...d, 'revision': (profile['revision'] as int) + 1}..remove('operationId')..remove('expectedRevision');
+        return _ack(op, 'accepted', profile['revision'] as int, Map.of(profile));
       default:
         return _ack(op, 'accepted', 1, null);
     }

@@ -167,6 +167,7 @@ void main() {
 
     // --- Food: blank protein stays unknown, entered zero stays zero; Today and Eat agree.
     await tapKey(tester, 'log-food');
+    await tapKey(tester, 'food-manual'); // typed by hand; search and barcode are journey_food_test
     await type(tester, 'food-name', 'Greek yogurt');
     await type(tester, 'food-amount', '200 g');
     await type(tester, 'food-calories', '110');
@@ -192,6 +193,7 @@ void main() {
     await tapKey(tester, 'food-save');
     await waitFor(tester, find.text('20 g'));
     await tapKey(tester, 'log-food');
+    await tapKey(tester, 'food-manual');
     await type(tester, 'food-name', 'Toast');
     await type(tester, 'food-amount', '2 slices');
     await tapKey(tester, 'food-save');

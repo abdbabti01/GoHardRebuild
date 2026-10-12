@@ -80,6 +80,8 @@ class TodayScreen extends ConsumerWidget {
                 NutritionSurface(
                   entries: snapshot.food,
                   coverage: snapshot.coverage,
+                  calorieGoal: ref.watch(profileProvider).value?.calorieGoal,
+                  proteinGoal: ref.watch(profileProvider).value?.proteinGoal,
                   onLogFood: () => openFoodForm(context, dayKey: day),
                   footer: snapshot.food.isEmpty ? null : Text('Latest: ${snapshot.food.last.name} · ${snapshot.food.last.amountDescription}', style: context.caption),
                 ),

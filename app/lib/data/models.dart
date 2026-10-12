@@ -19,9 +19,11 @@ double? _d(Object? v) => (v as num?)?.toDouble();
 /// Record kinds in the local store.
 abstract final class Kinds {
   static const profile = 'profile', context = 'context', plan = 'plan', workout = 'workout', set = 'set', food = 'food';
-  static const run = 'run', metric = 'metric', proposal = 'proposal', catalog = 'catalog';
+  static const run = 'run', metric = 'metric', proposal = 'proposal', catalog = 'catalog', savedFood = 'saved_food';
   // Local-only kinds: never dispatched.
   static const runtime = 'runtime', setupDraft = 'setup_draft';
+  /// Provider foods this owner has looked at, kept so they can be found again without a connection.
+  static const foodCache = 'food_cache';
 }
 
 extension type Prescription(Json j) {
@@ -154,6 +156,10 @@ extension type FoodEntry(Json j) {
   double? get carbs => _d(macros['carbs']);
   double? get fat => _d(macros['fat']);
   bool get isDeleted => j['isDeleted'] as bool? ?? false;
+
+  /// Where the values came from when this was logged: `{item, quantity, unit}`. Null when typed by hand.
+  /// It is this entry's own copy; nothing that happens to the food later changes it.
+  Json? get source => j['source'] as Json?;
 }
 
 const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -166,6 +172,10 @@ extension type Profile(Json j) {
   String get loadUnit => j['loadUnit'] as String? ?? 'kg';
   bool get remindersEnabled => j['remindersEnabled'] as bool? ?? false;
   String? get reminderLocalTime => j['reminderLocalTime'] as String?;
+
+  /// Optional daily goals. Null = none set; the app never suggests one.
+  int? get calorieGoal => j['calorieGoal'] as int?;
+  int? get proteinGoal => j['proteinGoal'] as int?;
   int get revision => j['revision'] as int? ?? 0;
 }
 

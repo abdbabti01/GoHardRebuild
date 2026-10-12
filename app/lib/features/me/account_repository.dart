@@ -79,12 +79,29 @@ class ProfileRepository {
   final SyncEngine _sync;
   final String _owner;
 
-  Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime}) {
+  static const calorieGoalRange = (500, 10000), proteinGoalRange = (10, 500);
+
+  /// Goals are whole numbers the person chose. Null means no goal; nothing is ever suggested in its place.
+  static void validateGoals(int? calories, int? protein) {
+    if (calories != null && (calories < calorieGoalRange.$1 || calories > calorieGoalRange.$2)) throw const AuthFailure('A calorie goal is a whole number from 500 to 10,000, or left blank.');
+    if (protein != null && (protein < proteinGoalRange.$1 || protein > proteinGoalRange.$2)) throw const AuthFailure('A protein goal is a whole number from 10 to 500 grams, or left blank.');
+  }
+
+  /// Sets both goals; null clears one. The clearing is sent as an explicit null, which is what tells the server
+  /// "remove it" from "an older app that does not know about goals".
+  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal}) {
+    validateGoals(calorieGoal, proteinGoal);
+    return update(current, goals: {'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal});
+  }
+
+  Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) {
     final name = (displayName ?? current.displayName).trim();
     if (name.isEmpty || name.length > 80) throw const AuthFailure('Enter a name of 1 to 80 characters.');
     final fields = {
       'displayName': name, 'appearance': appearance ?? current.appearance, 'loadUnit': loadUnit ?? current.loadUnit,
       'remindersEnabled': remindersEnabled ?? current.remindersEnabled, 'reminderLocalTime': reminderLocalTime ?? current.reminderLocalTime,
+      // Goals travel only when they are the thing being changed. Left out, the server keeps what it has.
+      ...?goals,
     };
     return _sync.submit(_owner, kind: 'profile.update', method: 'PUT', path: '/me', targetKind: Kinds.profile, targetId: _owner,
         writes: [LocalWrite(Kinds.profile, _owner, {...current.j, ...fields})],

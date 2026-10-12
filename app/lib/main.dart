@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'app/app.dart';
 import 'app/providers.dart';
 import 'core/appearance.dart';
+import 'core/compatibility.dart';
 import 'data/db.dart';
 import 'data/session.dart';
 
@@ -28,9 +29,13 @@ Future<void> main() async {
   final appearance = AppearanceStore(const SecureSecretStore());
   await sessions.restore();
   await appearance.restore(signedIn: sessions.current != null);
+  // A confirmed "this build is too old" survives a restart, including one with no connection.
+  final compatibility = CompatibilityStore(const SecureSecretStore());
+  await compatibility.restore();
   runApp(ProviderScope(
     retry: (_, _) => null,
-    overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance)],
+    overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance),
+      compatibilityStoreProvider.overrideWithValue(compatibility)],
     child: const GoHardApp(),
   ));
 }

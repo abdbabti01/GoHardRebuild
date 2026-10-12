@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>GoHard uses the camera to read the barcode on a food packet when you choose Scan barcode. The picture stays on your phone.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GoHard uses your location to measure the distance of a run while the run screen is open.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

@@ -35,4 +35,11 @@ int? parsePositiveInt(String raw) {
   return v == null || v <= 0 ? null : v;
 }
 
+/// Up to two decimals, the precision the food journal stores: "161.7", "17.25", "30". Used wherever a stored
+/// nutrition value is put back into a field, so showing a value never changes it.
+String formatNumber2(num v) {
+  final s = v.toStringAsFixed(2);
+  return s.replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
 String formatNumber(num v) => v == v.roundToDouble() ? v.round().toString() : _trim(v.toDouble());

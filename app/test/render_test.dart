@@ -14,6 +14,7 @@ import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/session.dart';
 
+import 'food_fakes.dart';
 import 'ui_support.dart';
 
 /// Renders the real screens with the app's real fonts and photograph into PNG files for design review:
@@ -68,19 +69,27 @@ Future<ui.Image> _sheet(WidgetTester tester, Map<String, ui.Image> shots) async 
   return (await tester.runAsync(() => recorder.endRecording().toImage(gap + 3 * (w + gap), gap + 2 * (h + gap + label))))!;
 }
 
-Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {int weeks = 8, bool inProgress = true, String? start}) async {
+Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {int weeks = 8, bool inProgress = true, String? start, bool cameraRefused = false}) async {
   final plan = blockPlan(start: start ?? '2026-09-21', weeks: weeks, recorded: 8);
   final open = openWorkout(plan, 'o3-3', day: _today, recordedSets: 6);
   final food = [
     foodEntry('f1', _today, 'Breakfast', 'Greek yogurt, berries, granola', '1 bowl', calories: 380, protein: 24, carbs: 46, fat: 9),
     foodEntry('f2', _today, 'Lunch', 'Chicken, rice, vegetables', '1 plate', calories: 650, protein: 48, carbs: 70, fat: 16),
     foodEntry('f3', _today, 'Snack', 'Protein shake, banana', '1 shake', calories: 370, protein: 23, carbs: 42),
+    // An earlier day, logged from a searched food: it is what "Recent" offers again.
+    {...foodEntry('f0', '2026-10-09', 'Dinner', 'Rice, cooked, NFS', '1 cup, cooked', calories: 203.82, protein: 4.22, carbs: 44.22, fat: 0.44), 'source': {'item': riceCooked().j, 'quantity': 1, 'unit': 'serving:0'}},
   ];
+  // The scanner render stands in for the camera with a flat panel: there is no camera in a widget render.
+  final fakes = FoodFakes(discovery: ScriptedDiscovery(results: [chickenRaw(), riceCooked(), sparseDrink()], products: {'3017620422003': hazelnutSpread()}), cameraRefused: cameraRefused ? true : null);
   final store = AppearanceStore(MemorySecretStore())
     ..accent = accent
     ..mode = mode;
-  return (await tester.runAsync(() => overridesFor(
-      day: _today, plans: [plan], primaryPlanId: 'p1', workouts: inProgress ? [open.workout] : const [], sets: inProgress ? open.sets : const [], food: food, appearance: store)))!;
+  return [
+    ...(await tester.runAsync(() => overridesFor(
+        day: _today, plans: [plan], primaryPlanId: 'p1', workouts: inProgress ? [open.workout] : const [], sets: inProgress ? open.sets : const [], food: food, appearance: store,
+        calorieGoal: 2200, proteinGoal: 140, savedFoods: [savedFood('s-nut', hazelnutSpread(), favourite: true), savedFood('s-oats', ownOats())])))!,
+    ...fakes.overrides,
+  ];
 }
 
 Future<void> _open(WidgetTester tester, String screen) async {
@@ -98,6 +107,24 @@ Future<void> _open(WidgetTester tester, String screen) async {
       await tap('train-progress');
     case 'eat':
       await tap('nav-eat');
+    case 'log-food' || 'food-results' || 'food-preview' || 'food-preview-unknown' || 'scan':
+      await tap('nav-eat');
+      await tap('log-food');
+      if (screen == 'scan') {
+        await tap('food-scan');
+      } else if (screen != 'log-food') {
+        await tester.enterText(find.byKey(const Key('food-search')), 'rice');
+        await tester.pumpAndSettle();
+        await tap('food-search-online');
+        if (screen == 'food-preview') await tap('result-usda:2708402');
+        if (screen == 'food-preview-unknown') await tap('result-off:5449000000996');
+      }
+    case 'goals':
+      await tap('nav-me');
+      await tester.scrollUntilVisible(find.byKey(const Key('me-goals')), 200, scrollable: find.byType(Scrollable).last);
+      await tester.ensureVisible(find.byKey(const Key('me-goals')));
+      await tester.pumpAndSettle();
+      await tap('me-goals');
     case 'me':
       await tap('nav-me');
     case 'appearance':
@@ -124,7 +151,7 @@ void main() {
     });
   }
 
-  for (final screen in ['today', 'train-plan', 'eat', 'me', 'appearance']) {
+  for (final screen in ['today', 'train-plan', 'eat', 'me', 'appearance', 'log-food', 'food-results', 'food-preview', 'scan', 'goals']) {
     testWidgets('six themes: $screen', (tester) async {
       final shots = <String, ui.Image>{};
       for (final mode in [ThemeMode.light, ThemeMode.dark]) {
@@ -157,6 +184,12 @@ void main() {
     'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 2600), 2),
     'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 3400), 2),
     'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 1900), 2),
+    'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),
+    'full-food-preview-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-preview', const Size(390, 1500), 1),
+    'scan-camera-refused-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, cameraRefused: true), 'scan', const Size(390, 900), 1),
+    'large-text-log-food-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'log-food', const Size(320, 2400), 2),
+    'large-text-food-preview-320': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-preview', const Size(320, 3200), 2),
+    'large-text-eat-goals-320': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'eat', const Size(320, 2600), 2),
     'new-account-today': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'today', const Size(390, 1100), 1),
     'new-account-plan': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-plan', const Size(390, 844), 1),
     'new-account-eat': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'eat', const Size(390, 1000), 1),

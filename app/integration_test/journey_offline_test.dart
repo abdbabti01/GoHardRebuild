@@ -43,6 +43,7 @@ void main() {
 
     await j.tapKey('nav-today');
     await j.tapKey('log-food');
+    await j.tapKey('food-manual'); // manual entry needs no connection
     await j.type('food-name', 'Banana');
     await j.type('food-amount', '1 medium');
     await j.tapKey('food-save');
