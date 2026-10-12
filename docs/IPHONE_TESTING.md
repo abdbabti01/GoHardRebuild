@@ -149,3 +149,21 @@ not in the profile: add the device, regenerate the profile, update the secret an
 
 Known limits for this build: no route map, no background GPS, no social, health sync, music or AI features, and
 the baseline plan content still needs your review.
+
+## Fastest route: unsigned IPA + Sideloadly (no Apple certificate needed)
+
+`.github/workflows/ios-unsigned-ipa.yml` builds an unsigned IPA with no secrets at all. It runs when started from
+the Actions tab, or when a tag starting with `ipa-` is pushed. Artifact: **GoHard-Dev-unsigned-ipa**.
+
+Install from Windows:
+
+1. Install iTunes **from apple.com** (not the Microsoft Store version) and Sideloadly (sideloadly.io).
+2. Connect the iPhone by cable, unlock it, tap **Trust**.
+3. Unzip the downloaded artifact to get the `.ipa`, drag it into Sideloadly, enter your Apple ID, press **Start**.
+   Sideloadly signs the app with your Apple ID and installs it.
+4. On the iPhone: Settings → General → VPN & Device Management → your Apple ID → **Trust**.
+   On iOS 16 or later also: Settings → Privacy & Security → **Developer Mode** → On (the phone restarts).
+
+With a free Apple ID the app works for 7 days, then needs re-installing the same way; your data lives in the
+testing API, so nothing is lost. Sideloadly may change the bundle identifier to make it unique for your Apple ID.
+For a build that does not expire weekly, use the signed workflow above.

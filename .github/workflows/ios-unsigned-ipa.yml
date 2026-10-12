@@ -1,0 +1,60 @@
+# Builds an UNSIGNED "GoHard Dev" IPA. It needs no Apple certificate or secrets.
+# Install it on your own iPhone from Windows with Sideloadly, which signs it with your Apple ID
+# (a free Apple ID works; the app then runs for 7 days before it must be re-installed).
+#
+# Runs when started by hand, or when a tag starting with "ipa-" is pushed.
+# For a properly signed build that lasts, use ios-dev-ipa.yml instead.
+name: ios-unsigned-ipa
+on:
+  workflow_dispatch:
+  push:
+    tags: ['ipa-*']
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      # The TESTING API. Not a secret. A repository variable overrides it.
+      API_BASE: ${{ vars.GOHARD_TESTING_API_BASE || 'https://gohardrebuild-production.up.railway.app' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify the testing API before building
+        run: |
+          base="${API_BASE%/}"
+          case "$base" in https://*) ;; *) echo "::error::The API URL must be https://"; exit 1;; esac
+          ready=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' "$base/health/ready")
+          [ "$ready" = "200" ] || { echo "::error::Testing API is not ready ($ready) at $base/health/ready"; exit 1; }
+          app_contract=$(sed -n 's/.*contractVersion = \([0-9]*\).*/\1/p' app/lib/core/config.dart)
+          api_contract=$(curl -sS -m 30 "$base/api/v1/capabilities" | sed -n 's/.*"contractVersion":\([0-9]*\).*/\1/p')
+          echo "App contract $app_contract; API contract $api_contract"
+          [ "$app_contract" = "$api_contract" ] || { echo "::error::App and testing API are not compatible"; exit 1; }
+
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, flutter-version: 3.47.6, cache: true }
+
+      - name: Prepare the app
+        working-directory: app
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build (no code signing)
+        working-directory: app
+        run: flutter build ios --release --no-codesign --dart-define=GOHARD_API_BASE="${API_BASE%/}" --build-number="${{ github.run_number }}"
+
+      - name: Package the IPA
+        working-directory: app
+        run: |
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R build/ios/iphoneos/Runner.app "$RUNNER_TEMP/ipa/Payload/"
+          cd "$RUNNER_TEMP/ipa" && zip -qry "$RUNNER_TEMP/GoHard-Dev-unsigned-${{ github.run_number }}.ipa" Payload
+          ls -la "$RUNNER_TEMP"/*.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GoHard-Dev-unsigned-ipa
+          path: ${{ runner.temp }}/GoHard-Dev-unsigned-${{ github.run_number }}.ipa
+          if-no-files-found: error
+          retention-days: 14
