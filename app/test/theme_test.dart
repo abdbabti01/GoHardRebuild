@@ -5,6 +5,8 @@ import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/nutrition/food_form.dart';
+import 'package:gohard_rebuild/features/nutrition/food_repository.dart';
 import 'package:gohard_rebuild/features/plans/plan_progress.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 
@@ -95,7 +97,7 @@ void main() {
     test('a fresh install is Blue + System, and both choices survive a restart', () async {
       final disk = MemorySecretStore();
       final first = AppearanceStore(disk);
-      await first.restore();
+      await first.restore(signedIn: false);
       expect((first.accent, first.mode), (Accent.blue, null), reason: 'no mode chosen yet means follow the phone');
 
       first
@@ -103,14 +105,14 @@ void main() {
         ..mode = ThemeMode.dark;
       await first.save();
       final relaunched = AppearanceStore(disk);
-      await relaunched.restore();
+      await relaunched.restore(signedIn: true);
       expect((relaunched.accent, relaunched.mode), (Accent.pink, ThemeMode.dark));
     });
 
     test('an unreadable saved value falls back to the defaults instead of failing startup', () async {
       final disk = MemorySecretStore()..values['gohard.rebuild.appearance'] = 'teal|sideways|x';
       final store = AppearanceStore(disk);
-      await store.restore();
+      await store.restore(signedIn: false);
       expect((store.accent, store.mode), (Accent.blue, null));
     });
 
@@ -153,18 +155,74 @@ void main() {
       expect(_colors(tester).page, const Color(0xFFF6F6F4));
     });
 
-    test('an account that chose Light keeps Light only until this device has its own choice', () {
-      final fresh = AppearanceStore(MemorySecretStore());
-      final c1 = ProviderContainerFor(fresh);
-      c1.controller.adoptAccountAppearance('dark');
-      expect(c1.state.mode, ThemeMode.system, reason: 'dark was the old default, not a choice');
-      c1.controller.adoptAccountAppearance('light');
-      expect(c1.state.mode, ThemeMode.light);
+    test('upgrade: the look an existing install had (Light, Dark or following the phone) is kept exactly', () async {
+      for (final (account, expected) in [('light', ThemeMode.light), ('dark', ThemeMode.dark), ('system', ThemeMode.system)]) {
+        final disk = MemorySecretStore();
+        final store = AppearanceStore(disk);
+        await store.restore(signedIn: true); // first launch of this version over a signed-in install
+        final app = ProviderContainerFor(store);
+        expect(app.state, const Appearance(Accent.blue, ThemeMode.system), reason: 'until the saved profile is read');
+        app.controller.adoptAccountAppearance(null); // profile not loaded yet: nothing is decided
+        expect(store.migratesAccountMode, isTrue);
+        app.controller.adoptAccountAppearance(account);
+        expect(app.state, Appearance(Accent.blue, expected), reason: 'account said $account');
 
-      final chosen = AppearanceStore(MemorySecretStore())..mode = ThemeMode.dark;
-      final c2 = ProviderContainerFor(chosen);
-      c2.controller.adoptAccountAppearance('light');
-      expect(c2.state.mode, ThemeMode.dark, reason: 'an explicit choice on this device is never overwritten');
+        // It is carried over once. After a restart the device setting stands, whatever the account says later.
+        final relaunched = AppearanceStore(disk);
+        await relaunched.restore(signedIn: true);
+        final again = ProviderContainerFor(relaunched);
+        again.controller.adoptAccountAppearance(account == 'light' ? 'dark' : 'light');
+        expect(again.state.mode, expected);
+      }
+    });
+
+    test('upgrade interrupted before the profile was read is still an upgrade on the next launch', () async {
+      final disk = MemorySecretStore();
+      await AppearanceStore(disk).restore(signedIn: true);
+      final relaunched = AppearanceStore(disk);
+      await relaunched.restore(signedIn: true);
+      final app = ProviderContainerFor(relaunched)..controller.adoptAccountAppearance('dark');
+      expect(app.state.mode, ThemeMode.dark);
+    });
+
+    test('fresh install: Blue + System, and signing in to an account that says dark does not change it', () async {
+      final disk = MemorySecretStore();
+      final store = AppearanceStore(disk);
+      await store.restore(signedIn: false);
+      final app = ProviderContainerFor(store)..controller.adoptAccountAppearance('dark');
+      expect(app.state, const Appearance(Accent.blue, ThemeMode.system));
+
+      final relaunched = AppearanceStore(disk);
+      await relaunched.restore(signedIn: true); // now signed in, but this is not an upgrade
+      final again = ProviderContainerFor(relaunched)..controller.adoptAccountAppearance('dark');
+      expect(again.state, const Appearance(Accent.blue, ThemeMode.system));
+    });
+
+    test('a choice made on this device is never overwritten by the account', () async {
+      final store = AppearanceStore(MemorySecretStore());
+      await store.restore(signedIn: true);
+      final app = ProviderContainerFor(store)..controller.setMode(ThemeMode.dark);
+      app.controller.adoptAccountAppearance('light');
+      expect(app.state.mode, ThemeMode.dark);
+    });
+
+    testWidgets('an open form keeps what was typed when the phone changes mode and when the accent changes', (tester) async {
+      final store = AppearanceStore(MemorySecretStore());
+      final container = await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, appearance: store)))!,
+          home: FoodFormScreen(draft: FoodDraft(dayKey: _day, meal: 'Lunch')));
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      await tester.enterText(find.byKey(const Key('food-name')), 'Chicken and rice');
+      await tester.enterText(find.byKey(const Key('food-calories')), '650');
+
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      await tester.pumpAndSettle();
+      container.read(appearanceProvider.notifier).setAccent(Accent.pink);
+      await tester.pumpAndSettle();
+
+      expect(_colors(tester).accent, GoColors.of(Accent.pink, Brightness.dark).accent, reason: 'the look really changed under the form');
+      expect(find.text('Chicken and rice'), findsOneWidget);
+      expect(find.text('650'), findsOneWidget);
+      expect(find.text('Log food'), findsOneWidget, reason: 'still the same form, not a rebuilt one');
     });
   });
 

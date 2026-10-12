@@ -26,7 +26,8 @@ Future<void> main() async {
   final sessions = SessionManager(const SecureSecretStore());
   // Both are read before the first frame: the app opens signed in, and in the look that was chosen.
   final appearance = AppearanceStore(const SecureSecretStore());
-  await Future.wait([sessions.restore(), appearance.restore()]);
+  await sessions.restore();
+  await appearance.restore(signedIn: sessions.current != null);
   runApp(ProviderScope(
     retry: (_, _) => null,
     overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance)],

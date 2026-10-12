@@ -24,9 +24,12 @@ Two independent choices in **Me → Appearance**: accent (Blue, Green, Pink) and
 at once with a 200 ms cross-fade and no movement, and are saved in the platform's secure store next to the session,
 so they are read before the first frame. A fresh install is Blue + System.
 
-Mode used to be an account field. It is now a device setting. One rule carries the old value over: if this device has
-no mode yet and the account says `light`, Light is adopted. The account's `dark` was the old default rather than a
-choice, so it does not override following the phone. The account field is left as it is and is no longer written.
+Mode used to be an account field (Dark, Light or Match this phone). It is now a device setting, and an existing
+install keeps the look it had: the first launch of this version over an install that is already signed in copies the
+account's value across, once (Light stays Light, Dark stays Dark, Match this phone becomes System). After that, and
+for anything chosen on the device, the device setting stands. A fresh install starts on System and records that at
+once, so signing in later is not mistaken for an upgrade. On that single upgrade launch the app can open following
+the phone for a moment before the saved profile is read. The account field is left as it is and is no longer written.
 
 ## Tokens
 

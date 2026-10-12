@@ -29,11 +29,22 @@ class AppearanceStore {
   /// Null until a mode has been chosen on this device: a fresh install follows the phone.
   ThemeMode? mode;
 
-  Future<void> restore() async {
+  /// True on the first launch of this version over an install that was already signed in. Appearance used to be an
+  /// account field (Dark, Light or Match this phone), so that one launch carries the account's value over.
+  bool migratesAccountMode = false;
+
+  /// [signedIn]: whether a session was restored at startup, which is what tells an upgrade from a fresh install.
+  Future<void> restore({required bool signedIn}) async {
     try {
-      final parts = (await _store.read(_key))?.split('|') ?? const <String>[];
+      final raw = await _store.read(_key);
+      final parts = raw?.split('|') ?? const <String>[];
       if (parts.isNotEmpty) accent = Accent.parse(parts[0]);
       if (parts.length > 1) mode = ThemeMode.values.asNameMap()[parts[1]];
+      if (raw == null) {
+        migratesAccountMode = signedIn;
+        // A fresh install records its default now, so signing in later never looks like an upgrade.
+        if (!signedIn) await save();
+      }
     } on Object {
       // An unreadable preference is not worth failing startup for; the defaults apply.
     }
@@ -57,14 +68,16 @@ class AppearanceController extends Notifier<Appearance> {
   void setAccent(Accent accent) => _apply(accent, _saved.mode ?? ThemeMode.system);
   void setMode(ThemeMode mode) => _apply(_saved.accent, mode);
 
-  /// An account that chose Light before this device had its own setting keeps Light. The account's "dark" was
-  /// the old default rather than a choice, so it does not override following the phone.
+  /// Upgrade only: the look this install had before (Dark, Light or following the phone) is kept exactly, once.
+  /// A choice already made on this device is never overwritten, and a fresh install stays on System.
   void adoptAccountAppearance(String? appearance) {
-    if (_saved.mode == null && appearance == 'light') setMode(ThemeMode.light);
+    final mode = switch (appearance) { 'light' => ThemeMode.light, 'dark' => ThemeMode.dark, 'system' => ThemeMode.system, _ => null };
+    if (_saved.migratesAccountMode && mode != null) _apply(_saved.accent, mode);
   }
 
   void _apply(Accent accent, ThemeMode mode) {
     _saved
+      ..migratesAccountMode = false
       ..accent = accent
       ..mode = mode;
     state = Appearance(accent, mode);
