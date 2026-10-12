@@ -1,0 +1,213 @@
+{
+ "totalHits": 438,
+ "foods": [
+  {
+   "fdcId": 2759004,
+   "description": "Lunchmeat, chicken breast, sliced",
+   "dataType": "Foundation",
+   "publishedDate": "2026-04-30",
+   "foodCategory": "Sausages and Luncheon Meats",
+   "additionalDescriptions": "",
+   "foodMeasures": [],
+   "foodNutrients": []
+  },
+  {
+   "fdcId": 171515,
+   "description": "Chicken breast tenders, breaded, uncooked",
+   "dataType": "SR Legacy",
+   "publishedDate": "2019-04-01",
+   "foodCategory": "Poultry Products",
+   "additionalDescriptions": "",
+   "foodMeasures": [],
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 14.7
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 15.8
+    },
+    {
+     "nutrientId": 1087,
+     "nutrientName": "Calcium, Ca",
+     "unitName": "MG",
+     "value": 19
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 15
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 263
+    },
+    {
+     "nutrientId": 1062,
+     "nutrientName": "Energy",
+     "unitName": "kJ",
+     "value": 1100
+    }
+   ]
+  },
+  {
+   "fdcId": 174608,
+   "description": "Chicken breast, roll, oven-roasted",
+   "dataType": "SR Legacy",
+   "publishedDate": "2019-04-01",
+   "foodCategory": "Sausages and Luncheon Meats",
+   "additionalDescriptions": "",
+   "foodMeasures": [],
+   "foodNutrients": [
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 7.65
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 1.79
+    },
+    {
+     "nutrientId": 1087,
+     "nutrientName": "Calcium, Ca",
+     "unitName": "MG",
+     "value": 6
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 14.6
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 134
+    },
+    {
+     "nutrientId": 1062,
+     "nutrientName": "Energy",
+     "unitName": "kJ",
+     "value": 562
+    }
+   ]
+  },
+  {
+   "fdcId": 2708356,
+   "description": "Rice noodles, cooked",
+   "dataType": "Survey (FNDDS)",
+   "publishedDate": "2024-10-31",
+   "foodCategory": "Pasta, noodles, cooked grains",
+   "additionalDescriptions": "Chow fun rice noodles",
+   "foodMeasures": [
+    {
+     "disseminationText": "1 oz, dry, yields",
+     "gramWeight": 100
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 175
+    },
+    {
+     "disseminationText": "1 cup, cooked",
+     "gramWeight": 175
+    }
+   ],
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 1.78
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 0.2
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 23.87
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 107
+    },
+    {
+     "nutrientId": 1087,
+     "nutrientName": "Calcium, Ca",
+     "unitName": "MG",
+     "value": 4
+    }
+   ]
+  },
+  {
+   "fdcId": 2708402,
+   "description": "Rice, cooked, NFS",
+   "dataType": "Survey (FNDDS)",
+   "publishedDate": "2024-10-31",
+   "foodCategory": "Rice",
+   "additionalDescriptions": "",
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cup, cooked",
+     "gramWeight": 158
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 118
+    }
+   ],
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 2.67
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 0.28
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 27.99
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 129
+    },
+    {
+     "nutrientId": 1087,
+     "nutrientName": "Calcium, Ca",
+     "unitName": "MG",
+     "value": 10
+    }
+   ]
+  }
+ ]
+}

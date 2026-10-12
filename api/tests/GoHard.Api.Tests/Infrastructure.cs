@@ -71,9 +71,16 @@ public sealed class ApiFactory(string connectionString) : WebApplicationFactory<
         builder.UseSetting("ConnectionStrings:Default", connectionString);
         builder.UseSetting("Auth:SigningKey", "test-only-signing-key-0123456789-0123456789-abcdef");
         builder.UseSetting("Auth:RateLimitPerMinute", "1000000");
+        foreach (var (key, value) in Settings ?? []) builder.UseSetting(key, value);
+        // Outside providers are always replaced: by default with a recorded product, so no test run touches the network.
+        builder.ConfigureServices(s => s.ConfigureAll<Microsoft.Extensions.Http.HttpClientFactoryOptions>(o =>
+            o.HttpMessageHandlerBuilderActions.Add(b => b.PrimaryHandler = Provider ?? new StubProvider(_ => Task.FromResult(StubProvider.Json(StubProvider.Recorded("off_product_100g.json")))))));
         builder.ConfigureServices(s => Configure?.Invoke(s));
     }
     public Action<IServiceCollection>? Configure { get; init; }
+    public Dictionary<string, string>? Settings { get; init; }
+    public HttpMessageHandler? Provider { get; init; }
+    public string ConnectionString => connectionString;
 }
 
 public sealed record AckResult<T>(HttpStatusCode Http, CommandAck<T>? Ack, string Raw)

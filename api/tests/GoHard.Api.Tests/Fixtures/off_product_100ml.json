@@ -1,0 +1,123 @@
+{
+ "code": "5449000000996",
+ "errors": [],
+ "product": {
+  "brands": "COCA-COLA SERVICES SA/NV",
+  "code": "5449000000996",
+  "generic_name": "Bebida refrescante aromatizada",
+  "image_front_small_url": "https://images.openfoodfacts.org/images/products/544/900/000/0996/front_en.1129.200.jpg",
+  "lang": "es",
+  "nutrition": {
+   "aggregated_set": {
+    "nutrients": {
+     "carbohydrates": {
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "g",
+      "value": 10.6
+     },
+     "energy": {
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "kJ",
+      "value": 180,
+      "value_computed": 180.2
+     },
+     "energy-kcal": {
+      "modifier": "~",
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "kcal",
+      "value": 42.4
+     },
+     "energy-kj": {
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "kJ",
+      "value": 180,
+      "value_computed": 180.2
+     },
+     "fat": {
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "g",
+      "value": 0
+     },
+     "proteins": {
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "g",
+      "value": 0
+     },
+     "salt": {
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "g",
+      "value": 0
+     },
+     "sugars": {
+      "source": "packaging",
+      "source_index": 1,
+      "source_per": "100ml",
+      "unit": "g",
+      "value": 10.6
+     }
+    },
+    "per": "100g",
+    "preparation": "as_sold"
+   },
+   "input_sets": [
+    {
+     "last_updated_t": 1771584539,
+     "per": "100g",
+     "per_quantity": 100,
+     "per_unit": "g",
+     "preparation": "as_sold",
+     "source": "packaging"
+    },
+    {
+     "per": "100ml",
+     "per_quantity": 100,
+     "per_unit": "ml",
+     "preparation": "as_sold",
+     "source": "packaging"
+    },
+    {
+     "per": "serving",
+     "per_quantity": 330,
+     "per_unit": "ml",
+     "preparation": "as_sold",
+     "source": "packaging"
+    },
+    {
+     "per": "100g",
+     "per_quantity": 100,
+     "per_unit": "g",
+     "preparation": "as_sold",
+     "source": "estimate",
+     "source_description": "Estimate from ingredients"
+    }
+   ]
+  },
+  "product_name": "Coca-Cola Original",
+  "quantity": "330 ml",
+  "rev": 1182,
+  "serving_quantity": 330,
+  "serving_quantity_unit": "ml",
+  "serving_size": "1 portion (330 ml)"
+ },
+ "result": {
+  "id": "product_found",
+  "lc_name": "Product found",
+  "name": "Product found"
+ },
+ "status": "success",
+ "warnings": []
+}

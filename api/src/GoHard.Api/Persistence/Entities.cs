@@ -13,6 +13,9 @@ public class User
     public string LoadUnit { get; set; } = "kg";
     public bool RemindersEnabled { get; set; }
     public string? ReminderLocalTime { get; set; }
+    // Optional daily goals the person set. Null = no goal; none is ever suggested or defaulted.
+    public int? CalorieGoal { get; set; }
+    public int? ProteinGoalG { get; set; }
     public string? TrainingSetupJson { get; set; }
     public int Revision { get; set; } = 1;
     public string SecurityStamp { get; set; } = "";
@@ -166,6 +169,27 @@ public class FoodEntry
     public string ProteinSource { get; set; } = "unknown";
     public string CarbsSource { get; set; } = "unknown";
     public string FatSource { get; set; } = "unknown";
+    /// <summary>
+    /// Where the values came from, as they were when this was logged: the food, its basis, the quantity eaten.
+    /// A snapshot, so a later change at the provider or to a saved food never rewrites this meal. Null = typed by hand.
+    /// </summary>
+    public string? SourceJson { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+}
+
+/// <summary>
+/// A reusable food definition the person keeps: one they wrote, a provider food they corrected, or a favourite.
+/// Saving one never records anything as eaten.
+/// </summary>
+public class SavedFood
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    /// <summary>The food in the normalized shape (name, basis, nutrients, servings, origin).</summary>
+    public string ItemJson { get; set; } = "{}";
+    public bool IsFavourite { get; set; }
     public int Revision { get; set; } = 1;
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? DeletedAtUtc { get; set; }

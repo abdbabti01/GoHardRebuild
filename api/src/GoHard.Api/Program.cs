@@ -55,6 +55,10 @@ builder.Services.AddAuthorization();
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Per signed-in person, so one phone cannot spend the whole shared provider budget.
+    o.AddPolicy("food-data", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.User.FindFirstValue("sub") ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("FoodData:PerUserPerMinute", 30), Window = TimeSpan.FromMinutes(1) }));
     o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(
         ctx.Connection.RemoteIpAddress?.ToString() ?? "local",
         _ => new FixedWindowRateLimiterOptions

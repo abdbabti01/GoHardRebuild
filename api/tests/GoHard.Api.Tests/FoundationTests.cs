@@ -78,8 +78,11 @@ public class FoundationTests(PostgresFixture pg)
         var workout = new Workout { Id = Guid.NewGuid(), UserId = user.Id, Title = "Before upgrade", DayKey = Account.Friday, StartedAtUtc = DateTime.UtcNow };
         var food = new FoodEntry { Id = Guid.NewGuid(), UserId = user.Id, DayKey = Account.Friday, Meal = "Lunch", Name = "Soup", AmountDescription = "1 bowl", Calories = 0, CaloriesSource = "entered", CreatedAtUtc = DateTime.UtcNow };
         var op = new Operation { UserId = user.Id, OperationId = Guid.NewGuid(), Kind = "food.create", RequestHash = "h", HttpStatus = 200, ResponseJson = "{}", CreatedAtUtc = DateTime.UtcNow };
-        db.AddRange(user, workout, food, op);
-        await db.SaveChangesAsync();
+        // Written as the first schema stored them: the current model has columns that schema does not know yet.
+        await db.Database.ExecuteSqlAsync($"""INSERT INTO "Users" ("Id","Email","PasswordHash","DisplayName","Appearance","LoadUnit","RemindersEnabled","Revision","SecurityStamp","CreatedAtUtc") VALUES ({user.Id},{user.Email},'x','Old','dark','kg',false,1,'s',now())""");
+        await db.Database.ExecuteSqlAsync($"""INSERT INTO "Workouts" ("Id","UserId","Kind","Title","DayKey","StartedAtUtc","PerformedSets","PerformedExercises","QualifiedOccasion","Revision") VALUES ({workout.Id},{user.Id},'manual',{workout.Title},'2026-10-09',now(),0,0,false,1)""");
+        await db.Database.ExecuteSqlAsync($"""INSERT INTO "FoodEntries" ("Id","UserId","DayKey","Meal","Name","AmountDescription","Calories","CaloriesSource","ProteinSource","CarbsSource","FatSource","Revision","CreatedAtUtc") VALUES ({food.Id},{user.Id},'2026-10-09','Lunch','Soup','1 bowl',0,'entered','unknown','unknown','unknown',1,now())""");
+        await db.Database.ExecuteSqlAsync($"""INSERT INTO "Operations" ("UserId","OperationId","Kind","RequestHash","HttpStatus","ResponseJson","CreatedAtUtc") VALUES ({user.Id},{op.OperationId},'food.create','h',200,'',now())""");
 
         await db.Database.MigrateAsync();
 

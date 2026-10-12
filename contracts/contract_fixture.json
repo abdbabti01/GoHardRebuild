@@ -222,6 +222,14 @@
     { "lb": 0, "kg": 0 }
   ],
   "wire": {
+    "foodItem": {
+      "source": "off", "sourceId": "3017620422003", "barcode": "3017620422003", "name": "Nutella", "brand": "Nutella, Ferrero",
+      "description": "400 g e", "basis": "100g", "nutrients": { "calories": 539, "protein": 6.3, "carbs": 57.5, "fat": 30.9 },
+      "servings": [{ "label": "15 g", "grams": 15, "milliliters": null }],
+      "imageUrl": "https://images.openfoodfacts.org/images/products/301/762/042/2003/front_en.879.200.jpg",
+      "imageAttribution": "Photo: Open Food Facts contributors, CC BY-SA 3.0", "sourceVersion": "1013", "language": "fr",
+      "retrievedAtUtc": "2026-10-12T00:00:00Z"
+    },
     "foodEntry": {
       "id": "22222222-2222-4222-8222-222222222222", "dayKey": "2026-10-09", "meal": "Breakfast", "name": "Greek yogurt",
       "amountDescription": "200 g", "macros": { "calories": 0, "protein": null, "carbs": 9.5, "fat": null },

@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using GoHard.Api.Domain;
 
 namespace GoHard.Api.Application;
@@ -66,9 +68,22 @@ public sealed record Macros(decimal? Calories, decimal? Protein, decimal? Carbs,
 /// <summary>Per nutrient: entered | unknown | imported.</summary>
 public sealed record MacroProvenance(string Calories, string Protein, string Carbs, string Fat);
 public sealed record FoodEntryDto(Guid Id, DateOnly DayKey, string Meal, string Name, string AmountDescription,
-    Macros Macros, MacroProvenance Provenance, int Revision, bool IsDeleted);
-public sealed record FoodCreateRequest(Guid OperationId, Guid EntryId, DateOnly DayKey, string Meal, string Name, string AmountDescription, Macros Macros);
-public sealed record FoodUpdateRequest(Guid OperationId, int ExpectedRevision, DateOnly DayKey, string Meal, string Name, string AmountDescription, Macros Macros);
+    Macros Macros, MacroProvenance Provenance, int Revision, bool IsDeleted,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Source = null);
+// Source and Provenance are additive: a client that predates them leaves them out, and they are then left out of
+// the command's semantic hash too, so a retry of an older command still matches what was recorded.
+/// <param name="Source">Snapshot of the food and quantity the values were taken from; absent when typed by hand.</param>
+/// <param name="Provenance">Absent: every given value counts as entered. Present: imported values are told from corrected ones.</param>
+public sealed record FoodCreateRequest(Guid OperationId, Guid EntryId, DateOnly DayKey, string Meal, string Name, string AmountDescription, Macros Macros,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Source = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] MacroProvenance? Provenance = null);
+public sealed record FoodUpdateRequest(Guid OperationId, int ExpectedRevision, DateOnly DayKey, string Meal, string Name, string AmountDescription, Macros Macros,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Source = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] MacroProvenance? Provenance = null);
+
+public sealed record SavedFoodDto(Guid Id, JsonElement Item, bool IsFavourite, int Revision, bool IsDeleted);
+/// <param name="ExpectedRevision">0 creates the food; otherwise the revision being replaced.</param>
+public sealed record SavedFoodPutRequest(Guid OperationId, int ExpectedRevision, JsonElement Item, bool IsFavourite);
 
 public sealed record RunDto(Guid Id, DateOnly DayKey, DateTime StartedAtUtc, DateTime? FinishedAtUtc, int? ActiveDurationSeconds,
     decimal? DistanceMeters, int Revision, bool IsDeleted);
@@ -77,8 +92,12 @@ public sealed record RunFinishRequest(Guid OperationId, int ExpectedRevision, in
 public sealed record BodyMetricDto(Guid Id, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note, int Revision, bool IsDeleted);
 public sealed record BodyMetricRequest(Guid OperationId, Guid MetricId, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note);
 
+/// <param name="CalorieGoal">Left out: the stored goal is kept. Null: it is cleared. A number: it is set (500 to 10,000 kcal).</param>
+/// <param name="ProteinGoal">Same three cases, 10 to 500 g.</param>
 public sealed record ProfileUpdateRequest(Guid OperationId, int ExpectedRevision, string DisplayName, string Appearance, string LoadUnit,
-    bool RemindersEnabled, string? ReminderLocalTime);
+    bool RemindersEnabled, string? ReminderLocalTime,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt CalorieGoal = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt ProteinGoal = default);
 public sealed record DeleteAccountRequest(string Password);
 
 public sealed record ProposalMove(Guid OccasionId, DateOnly From, DateOnly To);
@@ -93,4 +112,4 @@ public sealed record ProposalResult(ProposalDto Proposal, PlanContextDto? Contex
 
 public sealed record CatalogExerciseDto(string Key, string Name, string Category, string Equipment, bool IsTimed);
 public sealed record SnapshotDto(ProfileDto Profile, PlanContextDto Context, List<WorkoutDto> Workouts, List<FoodEntryDto> FoodEntries,
-    List<RunDto> Runs, List<BodyMetricDto> BodyMetrics, List<ProposalDto> Proposals, List<CatalogExerciseDto> Catalog, DateTime ServerTimeUtc);
+    List<RunDto> Runs, List<BodyMetricDto> BodyMetrics, List<ProposalDto> Proposals, List<CatalogExerciseDto> Catalog, DateTime ServerTimeUtc, List<SavedFoodDto>? SavedFoods = null);

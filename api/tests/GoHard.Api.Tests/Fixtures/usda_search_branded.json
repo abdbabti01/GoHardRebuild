@@ -1,0 +1,97 @@
+{
+ "totalHits": 23435,
+ "foods": [
+  {
+   "fdcId": 2035482,
+   "description": "GREEK YOGURT",
+   "dataType": "Branded",
+   "gtinUpc": "031200037206",
+   "publishedDate": "2021-10-28",
+   "brandOwner": "Ocean Spray Cranberries, Inc.",
+   "brandName": "OCEAN SPRAY",
+   "foodCategory": "Popcorn, Peanuts, Seeds & Related Snacks",
+   "servingSizeUnit": "g",
+   "servingSize": 30,
+   "householdServingFullText": "2 Tbsp",
+   "foodMeasures": [],
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 3.33
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 20
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 70
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 467
+    },
+    {
+     "nutrientId": 1087,
+     "nutrientName": "Calcium, Ca",
+     "unitName": "MG",
+     "value": 133
+    }
+   ]
+  },
+  {
+   "fdcId": 2038865,
+   "description": "GREEK YOGURT",
+   "dataType": "Branded",
+   "gtinUpc": "894700010038",
+   "publishedDate": "2021-10-28",
+   "brandOwner": "Chobani, Inc.",
+   "brandName": "CHOBANI",
+   "foodCategory": "Yogurt",
+   "servingSizeUnit": "g",
+   "servingSize": 150,
+   "householdServingFullText": "1 CONTAINER",
+   "foodMeasures": [],
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 8.67
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 10.7
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 80
+    },
+    {
+     "nutrientId": 1087,
+     "nutrientName": "Calcium, Ca",
+     "unitName": "MG",
+     "value": 100
+    }
+   ]
+  }
+ ]
+}

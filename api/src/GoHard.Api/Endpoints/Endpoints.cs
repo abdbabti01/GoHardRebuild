@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using GoHard.Api.Application;
+using GoHard.Api.Application.FoodDiscovery;
 using GoHard.Api.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,21 +15,41 @@ public static class GoHardEndpoints
     [
         "auth.password", "commands.idempotent", "plans.lifecycle", "plans.baseline-drafts", "plans.manual-drafts", "plans.proposals",
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
+        "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode",
     ];
+    /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
+    public const string SearchCapability = "food.search";
 
     public static IServiceCollection AddGoHardModules(this IServiceCollection services, IConfiguration config) => services
         .AddSingleton<BaselineCatalog>()
         .AddSingleton<IPlanAssistant, NoPlanAssistant>()
-        .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>()
+        .AddFoodDiscovery(config)
+        .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>()
         .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>();
 
     /// <summary>Ownership always comes from the validated token, never from a client-supplied user ID.</summary>
     private static Guid UserId(this ClaimsPrincipal p) => Guid.Parse(p.FindFirstValue("sub")!);
 
+    /// <summary>Provider trouble is reported as what it is, so the app can say something true and offer manual entry.</summary>
+    private static IResult Lookup<T>(Lookup<T> lookup, Func<T, object> body) => lookup.Status switch
+    {
+        LookupStatus.Ok => Results.Json(body(lookup.Value!), CommandRunner.Json),
+        LookupStatus.NotFound => Results.Json(new { code = "NOT_FOUND" }, statusCode: 404),
+        LookupStatus.Invalid => Results.Json(new { code = "INVALID_QUERY" }, statusCode: 422),
+        LookupStatus.RateLimited => Results.Json(new { code = "PROVIDER_RATE_LIMITED" }, statusCode: 429),
+        LookupStatus.NotConfigured => Results.Json(new { code = "PROVIDER_NOT_CONFIGURED" }, statusCode: 503),
+        _ => Results.Json(new { code = "PROVIDER_UNAVAILABLE" }, statusCode: 503),
+    };
+
     public static void MapGoHardEndpoints(this WebApplication app)
     {
         var api = app.MapGroup("/api/v1");
-        api.MapGet("/capabilities", () => Results.Ok(new { contractVersion = ContractVersion, minimumClientContract = 1, capabilities = Capabilities }));
+        // minimumClientContract rises only for a change an older app cannot live with. Added optional fields are not one.
+        api.MapGet("/capabilities", (FoodDiscoveryService food) => Results.Ok(new
+        {
+            contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 1),
+            capabilities = food.SearchConfigured ? [.. Capabilities, SearchCapability] : Capabilities,
+        }));
 
         var auth = api.MapGroup("/auth").RequireRateLimiting("auth");
         auth.MapPost("/register", async (RegisterRequest r, AuthService s, CancellationToken ct) =>
@@ -52,7 +73,7 @@ public static class GoHardEndpoints
             await s.DeleteOwnAccountAsync(u.UserId(), r.Password, ct) ? Results.NoContent() : Results.Json(new AuthError("WRONG_PASSWORD"), statusCode: 400));
 
         me.MapGet("/sync/snapshot", async (ClaimsPrincipal u, GoHardDb db, PlanService plans, WorkoutService workouts, FoodService food,
-            ProposalService proposals, CancellationToken ct) =>
+            ProposalService proposals, SavedFoodService saved, CancellationToken ct) =>
         {
             var id = u.UserId();
             return Results.Ok(new SnapshotDto(
@@ -62,7 +83,7 @@ public static class GoHardEndpoints
                 (await db.BodyMetrics.AsNoTracking().Where(x => x.UserId == id).OrderBy(x => x.DayKey).ToListAsync(ct)).Select(ActivityService.ToDto).ToList(),
                 await proposals.ListAsync(id, ct),
                 await db.CatalogExercises.AsNoTracking().OrderBy(c => c.Name).Select(c => new CatalogExerciseDto(c.Key, c.Name, c.Category, c.Equipment, c.IsTimed)).ToListAsync(ct),
-                DateTime.UtcNow));
+                DateTime.UtcNow, await saved.ListAsync(id, ct)));
         });
 
         // Plans
@@ -119,6 +140,17 @@ public static class GoHardEndpoints
             run.RunAsync(u.UserId(), r.OperationId, "food.update", new { id, r }, () => s.UpdateAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/food-entries/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, FoodService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "food.delete", new { id, r }, () => s.DeleteAsync(u.UserId(), id, r, ct), ct));
+
+        // Reusable foods and favourites
+        me.MapPut("/saved-foods/{id:guid}", (Guid id, SavedFoodPutRequest r, ClaimsPrincipal u, CommandRunner run, SavedFoodService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "savedfood.put", new { id, r }, () => s.PutAsync(u.UserId(), id, r, ct), ct));
+        me.MapPost("/saved-foods/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, SavedFoodService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "savedfood.delete", new { id, r }, () => s.DeleteAsync(u.UserId(), id, r, ct), ct));
+
+        // Food data from outside providers. Reading only: nothing here records anything as eaten.
+        var foods = me.MapGroup("/foods").RequireRateLimiting("food-data");
+        foods.MapGet("/search", async (string? q, FoodDiscoveryService s, CancellationToken ct) => Lookup(await s.SearchAsync(q, ct), r => new { results = r.Results }));
+        foods.MapGet("/barcode/{code}", async (string code, FoodDiscoveryService s, CancellationToken ct) => Lookup(await s.BarcodeAsync(code, ct), item => new { item }));
 
         // Supporting activities
         me.MapPost("/runs", (RunStartRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>

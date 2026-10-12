@@ -146,6 +146,9 @@ namespace GoHard.Api.Persistence.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
 
+                    b.Property<string>("SourceJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -413,6 +416,39 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("Runs");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.SavedFood", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsFavourite")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ItemJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SavedFoods");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.TrainingContext", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -440,6 +476,9 @@ namespace GoHard.Api.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("CalorieGoal")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -460,6 +499,9 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("ProteinGoalG")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ReminderLocalTime")
                         .HasColumnType("text");
@@ -734,6 +776,15 @@ namespace GoHard.Api.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.Run", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.SavedFood", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()
