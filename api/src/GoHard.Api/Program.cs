@@ -70,7 +70,9 @@ if (args.Length > 0 && args[0] is "migrate" or "seed-catalog" or "readiness")
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<GoHardDb>();
-    if (args[0] == "migrate")
+    // Several commands may be given at once ("migrate seed-catalog"), so a host that runs the pre-deploy command
+    // without a shell needs no "&&".
+    if (args.Contains("migrate"))
     {
         // Guard: only ever migrate an empty database or one this project already owns. A database that holds
         // someone else's tables (for example another project's production data) is refused, never altered.
@@ -83,7 +85,7 @@ if (args.Length > 0 && args[0] is "migrate" or "seed-catalog" or "readiness")
         await db.Database.MigrateAsync();
         Console.WriteLine("Migrations applied.");
     }
-    if (args[0] == "seed-catalog") Console.WriteLine($"Catalog entries: {await CatalogSeeder.SeedAsync(db, default)}");
+    if (args.Contains("seed-catalog")) Console.WriteLine($"Catalog entries: {await CatalogSeeder.SeedAsync(db, default)}");
     var state = await SchemaReadinessService.CheckAsync(db, default);
     Console.WriteLine($"Readiness: {state.Kind} - {state.Detail}");
     return state.IsReady ? 0 : 2;
