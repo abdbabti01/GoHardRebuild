@@ -1,0 +1,158 @@
+# Builds a SIGNED, installable "GoHard Dev" IPA for testing on a registered iPhone.
+# Manual trigger only. It never uploads to App Store Connect or TestFlight.
+#
+# Repository secrets (Settings > Secrets and variables > Actions > Secrets):
+#   IOS_CERTIFICATE_P12_BASE64        base64 of the signing certificate + private key (.p12)
+#   IOS_CERTIFICATE_PASSWORD          the .p12 export password
+#   IOS_PROVISIONING_PROFILE_BASE64   base64 of a .mobileprovision for the bundle ID below that includes your iPhone
+# Repository variables (same page > Variables):
+#   GOHARD_TESTING_API_BASE           https origin of the TESTING API, e.g. https://xxxx.up.railway.app
+#   IOS_BUNDLE_ID                     optional; default com.gohard.rebuild.dev
+#   IPHONE_UDID                       optional; when set, the build fails early if the profile does not include it
+name: ios-dev-ipa
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      API_BASE: ${{ vars.GOHARD_TESTING_API_BASE }}
+      BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'com.gohard.rebuild.dev' }}
+      IPHONE_UDID: ${{ vars.IPHONE_UDID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check configuration
+        env:
+          P12: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          missing=""
+          [ -n "$API_BASE" ] || missing="$missing variable:GOHARD_TESTING_API_BASE"
+          [ -n "$P12" ] || missing="$missing secret:IOS_CERTIFICATE_P12_BASE64"
+          [ -n "$P12_PASSWORD" ] || missing="$missing secret:IOS_CERTIFICATE_PASSWORD"
+          [ -n "$PROFILE" ] || missing="$missing secret:IOS_PROVISIONING_PROFILE_BASE64"
+          if [ -n "$missing" ]; then echo "::error::Missing configuration:$missing (see docs/IPHONE_TESTING.md)"; exit 1; fi
+          case "$API_BASE" in https://*) ;; *) echo "::error::GOHARD_TESTING_API_BASE must be an https:// URL (iOS release builds block plain HTTP)"; exit 1;; esac
+
+      - name: Verify the testing API before building
+        run: |
+          base="${API_BASE%/}"
+          ready=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' "$base/health/ready")
+          [ "$ready" = "200" ] || { echo "::error::Testing API is not ready ($ready) at $base/health/ready"; exit 1; }
+          app_contract=$(sed -n 's/.*contractVersion = \([0-9]*\).*/\1/p' app/lib/core/config.dart)
+          caps=$(curl -sS -m 30 "$base/api/v1/capabilities")
+          api_contract=$(echo "$caps" | sed -n 's/.*"contractVersion":\([0-9]*\).*/\1/p')
+          min_client=$(echo "$caps" | sed -n 's/.*"minimumClientContract":\([0-9]*\).*/\1/p')
+          echo "App contract $app_contract; API contract $api_contract (minimum client $min_client)"
+          [ "$app_contract" = "$api_contract" ] && [ "$min_client" -le "$app_contract" ] || { echo "::error::App and testing API are not compatible"; exit 1; }
+          login=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -d '{"email":"nobody@example.test","password":"not-a-real-password"}' "$base/api/v1/auth/login")
+          [ "$login" = "401" ] || { echo "::error::Authentication endpoint answered $login instead of 401 for bad credentials"; exit 1; }
+
+      - name: Install signing certificate and provisioning profile
+        env:
+          P12: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          echo "$PROFILE" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychain -d user -s "$KEYCHAIN"
+
+          security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$RUNNER_TEMP/profile.plist"; }
+          PROFILE_UUID=$(plist UUID); PROFILE_NAME=$(plist Name); TEAM_ID=$(plist TeamIdentifier:0)
+          APP_ID=$(plist Entitlements:application-identifier)
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+
+          # The profile must be for this bundle ID (or a wildcard that covers it) and must list devices.
+          case "$APP_ID" in "$TEAM_ID.$BUNDLE_ID"|"$TEAM_ID.*") ;; *) echo "::error::The provisioning profile is for '${APP_ID#*.}', not '$BUNDLE_ID'. Create a profile for $BUNDLE_ID."; exit 1;; esac
+          DEVICES=$(plist ProvisionedDevices 2>/dev/null || true)
+          [ -n "$DEVICES" ] || { echo "::error::The profile lists no devices (it looks like an App Store profile). Use an Ad Hoc or Development profile that includes your iPhone."; exit 1; }
+          if [ -n "$IPHONE_UDID" ] && ! echo "$DEVICES" | grep -qi "$IPHONE_UDID"; then echo "::error::The profile does not include the iPhone in IPHONE_UDID. Add the device in the Apple Developer portal and regenerate the profile."; exit 1; fi
+          if [ "$(plist Entitlements:get-task-allow)" = "true" ]; then METHOD=debugging; IDENTITY="Apple Development"; else METHOD=release-testing; IDENTITY="Apple Distribution"; fi
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "$IDENTITY" || { echo "::error::The certificate is not an '$IDENTITY' certificate, which this profile type needs."; exit 1; }
+          echo "Profile '$PROFILE_NAME' (team $TEAM_ID), export method $METHOD"
+          { echo "PROFILE_NAME=$PROFILE_NAME"; echo "TEAM_ID=$TEAM_ID"; echo "EXPORT_METHOD=$METHOD"; echo "SIGN_IDENTITY=$IDENTITY"; } >> "$GITHUB_ENV"
+
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, flutter-version: 3.47.6, cache: true }
+
+      - name: Prepare the app
+        working-directory: app
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+          flutter analyze
+          flutter test
+
+      - name: Apply manual signing to the Runner target
+        working-directory: app/ios
+        run: |
+          flutter precache --ios
+          ruby - <<'RUBY'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('Runner.xcodeproj')
+          target = project.targets.find { |t| t.name == 'Runner' }
+          target.build_configurations.each do |config|
+            s = config.build_settings
+            s['PRODUCT_BUNDLE_IDENTIFIER'] = ENV['BUNDLE_ID']
+            s['CODE_SIGN_STYLE'] = 'Manual'
+            s['DEVELOPMENT_TEAM'] = ENV['TEAM_ID']
+            s['PROVISIONING_PROFILE_SPECIFIER'] = ENV['PROFILE_NAME']
+            s['CODE_SIGN_IDENTITY'] = ENV['SIGN_IDENTITY']
+          end
+          project.save
+          RUBY
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>$EXPORT_METHOD</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key><dict><key>$BUNDLE_ID</key><string>$PROFILE_NAME</string></dict>
+            <key>compileBitcode</key><false/>
+            <key>stripSwiftSymbols</key><true/>
+          </dict></plist>
+          EOF
+
+      - name: Build the signed IPA
+        working-directory: app
+        run: |
+          flutter build ipa --release \
+            --dart-define=GOHARD_API_BASE="${API_BASE%/}" \
+            --build-number="${{ github.run_number }}" \
+            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
+          ls -la build/ios/ipa
+          IPA=$(ls build/ios/ipa/*.ipa | head -1)
+          cp "$IPA" "$RUNNER_TEMP/GoHard-Dev-${{ github.run_number }}.ipa"
+          # Prove the artifact is really signed for this bundle ID.
+          unzip -q "$IPA" -d "$RUNNER_TEMP/ipa"
+          codesign -dv "$RUNNER_TEMP/ipa/Payload/Runner.app" 2>&1 | grep -E "Identifier|TeamIdentifier|Authority" || true
+          codesign --verify --deep --strict "$RUNNER_TEMP/ipa/Payload/Runner.app"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GoHard-Dev-ipa
+          path: ${{ runner.temp }}/GoHard-Dev-${{ github.run_number }}.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision || true
