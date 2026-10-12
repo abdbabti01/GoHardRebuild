@@ -61,6 +61,12 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
     return AppPage(
       title: 'Scan a barcode',
       subtitle: unavailable ? null : 'Hold the barcode on the packet inside the frame.',
+      // The actions are pinned, which also makes this a page that keeps every field built: the keyboard opening
+      // under a tall camera view must never drop the field that was just tapped.
+      bottom: Column(mainAxisSize: MainAxisSize.min, children: [
+        SecondaryButton('Look up this barcode', key: const Key('barcode-typed-submit'), onPressed: _submitTyped),
+        TextButton(key: const Key('barcode-cancel'), onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+      ]),
       children: [
         if (unavailable)
           Panel(
@@ -88,10 +94,6 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
           onSubmitted: (_) => _submitTyped(),
           decoration: InputDecoration(labelText: 'Barcode digits', errorText: _typedError),
         ),
-        const SizedBox(height: 12),
-        SecondaryButton('Look up this barcode', key: const Key('barcode-typed-submit'), onPressed: _submitTyped),
-        const SizedBox(height: 8),
-        Center(child: TextButton(key: const Key('barcode-cancel'), onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
       ],
     );
   }
