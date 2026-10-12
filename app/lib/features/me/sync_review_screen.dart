@@ -51,7 +51,7 @@ class SyncReviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final issues = ref.watch(issuesProvider).value ?? const <Rec>[];
-    return EveningPage(title: 'Review saved changes', children: [
+    return AppPage(title: 'Review saved changes', children: [
       Text('Everything below is saved on this phone. Each item differs from your account or was not accepted, so it needs your decision.', style: context.caption),
       if (issues.isEmpty) const EmptyState('Nothing to review', 'All your changes are either synced or waiting to sync normally.'),
       for (final rec in issues) _Issue(rec),
@@ -90,11 +90,11 @@ class _Issue extends ConsumerWidget {
               const SizedBox(height: 6),
               Text(_reason(cmd?.lastError), style: context.body),
               const SizedBox(height: 12),
-              Text('On this phone', style: context.sansStyle(12, color: context.ec.secondary)),
+              Text('On this phone', style: context.caption),
               Text(describeRecord(rec.kind, local, unit), style: context.sansStyle(15, weight: FontWeight.w600)),
               if (server != null) ...[
                 const SizedBox(height: 8),
-                Text('In your account', style: context.sansStyle(12, color: context.ec.secondary)),
+                Text('In your account', style: context.caption),
                 Text(describeRecord(rec.kind, server, unit), style: context.sansStyle(15, weight: FontWeight.w600)),
               ],
               const SizedBox(height: 14),

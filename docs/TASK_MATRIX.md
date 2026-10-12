@@ -12,7 +12,7 @@ Historical results from the original project count for nothing here.
 
 | Task | Fresh modules | Evidence | Status |
 |---|---|---|---|
-| A1 Theme, four tabs, retained Train view | `core/theme.dart`, `core/widgets.dart`, `features/shell/home_shell.dart`, `features/plans/train_screen.dart` | `widget_test: train_selection_survives_tab_switch`; Native (all tabs, retained Plan section, dark + light) | Verified. System appearance is implemented, not exercised |
+| A1 Theme, four tabs, retained Train view | `core/theme.dart`, `core/widgets.dart`, `features/shell/home_shell.dart`, `features/plans/train_screen.dart` | `widget_test: train_selection_survives_tab_switch`; Native (all tabs, retained Plan section, dark + light) | Verified. Redesigned 12 Oct 2026 (Calm Momentum, three accents × Light/Dark/System): see `docs/DESIGN.md`; `theme_test` covers contrast, persistence and System following the phone |
 | A2 Shared calendar date, lifecycle refresh | `core/clock.dart`, `app/app.dart` | `projection_test: midnight_preserves_pinned_entry_date`, `resume_refreshes_day_without_utc_shift` | Verified by unit test. Midnight/DST not run on a device |
 | A3 Owned observable daily facts | `app/providers.dart` (`dailySnapshotProvider`, owner-scoped streams), `features/today/daily.dart` | `projection_test` Today priority group; `data_layer_test: account_switch…`, `late pull for a previous owner is dropped` | Verified |
 | A4 Today hub, truthful states | `features/today/today_screen.dart`, `features/nutrition/nutrition_surface.dart` | `widget_test: a new account sees only truthful empty states`, `section_failure_keeps_workout_action`, `narrow_scaled_today_has_no_overflow`; Native | Verified |

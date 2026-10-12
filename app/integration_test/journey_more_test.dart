@@ -33,7 +33,7 @@ void main() {
     expect(find.text('My plan'), findsWidgets);
     await j.tapKey('plan-save-later');
     await j.settle(6);
-    await j.waitFor(find.text('YOUR PLAN IS READY TO REVIEW'), what: 'Today offering the saved draft, not a started plan');
+    await j.waitFor(find.text('Your plan is ready to review'), what: 'Today offering the saved draft, not a started plan');
 
     // --- Pounds at the boundary, undo and edit of a recorded set.
     await j.tapKey('nav-me');
@@ -45,6 +45,23 @@ void main() {
     await j.tapKey('manual-start');
     await j.type('set-load', '100');
     await j.type('set-reps', '5');
+    // Changing the look in the middle of a workout loses nothing: the typed entry and the open workout are still there.
+    await tester.pageBack();
+    await j.settle();
+    await j.tapKey('nav-me');
+    await j.tapKey('me-appearance');
+    await j.tapKey('accent-green');
+    await j.tapKey('appearance-dark');
+    await j.shot('62a-appearance-green-dark');
+    await tester.pageBack();
+    await j.settle();
+    await j.tapKey('nav-today');
+    await j.shot('62b-today-in-progress-green-dark');
+    await j.tapKey('today-resume');
+    await j.waitFor(find.byKey(const Key('complete-set')));
+    String typed(String key) => tester.widget<EditableText>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(EditableText))).controller.text;
+    expect((typed('set-load'), typed('set-reps')), ('100', '5'), reason: 'the unsaved entry survives a theme change');
+    expect(find.byKey(const Key('set-row-0')), findsNothing, reason: 'and nothing was saved twice or by itself');
     await j.tapKey('complete-set');
     await j.waitFor(find.byKey(const Key('set-row-0')));
     expect(find.textContaining('100 lb × 5'), findsWidgets);
@@ -93,7 +110,7 @@ void main() {
     await j.tapKey('plan-start');
     await j.waitFor(find.byKey(const Key('today-start')));
     await j.tapKey('nav-train');
-    await j.waitFor(find.textContaining('Plan week 1 of').hitTestable());
+    await j.waitFor(find.textContaining('Week 1 of').hitTestable());
     await j.tapKey('occasion-1-3');
     await j.tapKey('occasion-move');
     await j.waitFor(find.text('OK'));
@@ -128,7 +145,7 @@ void main() {
     await j.shot('66-replace-primary-review');
     await j.tapKey('plan-start');
     await j.confirmWith('Pause and start');
-    await j.waitFor(find.text('YOUR TRAINING · WEEK 1'), what: 'Today driven by the new primary plan');
+    await j.waitFor(find.text('Due today'), what: 'Today driven by the new primary plan');
     await j.tapKey('nav-train');
     await j.tapText('Foundations of strength');
     await j.waitFor(find.textContaining('Archive'));

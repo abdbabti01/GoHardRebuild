@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/appearance.dart';
 import '../core/config.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
@@ -55,12 +57,20 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
     ref.watch(reminderSyncProvider); // keeps scheduled reminders equal to the accepted plan; removes them when signed out
     final owner = ref.watch(ownerProvider);
     final appearance = ref.watch(appearanceProvider);
+    ref.listen(profileProvider, (_, next) => ref.read(appearanceProvider.notifier).adoptAccountAppearance(next.value?.appearance));
+    final accent = appearance.accent;
     return MaterialApp(
       title: 'GoHard',
       debugShowCheckedModeBanner: false,
-      theme: eveningTheme(Brightness.light),
-      darkTheme: eveningTheme(Brightness.dark),
-      themeMode: switch (appearance) { 'light' => ThemeMode.light, 'system' => ThemeMode.system, _ => ThemeMode.dark },
+      // System mode follows the phone as it changes; the accent stays. Increased Contrast gets its own variants.
+      theme: goTheme(accent, Brightness.light),
+      darkTheme: goTheme(accent, Brightness.dark),
+      highContrastTheme: goTheme(accent, Brightness.light, highContrast: true),
+      highContrastDarkTheme: goTheme(accent, Brightness.dark, highContrast: true),
+      themeMode: appearance.mode,
+      // A short cross-fade between looks, without movement. Navigation, drafts and timers are untouched by it.
+      themeAnimationDuration: Motion.quick,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(value: Theme.of(context).appBarTheme.systemOverlayStyle!, child: child!),
       home: AppConfig.problem != null
           ? _ConfigProblem(AppConfig.problem!)
           : owner == null
@@ -80,7 +90,7 @@ class _ConfigProblem extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.all(context.inset),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Serif('Not configured'),
+              const Heading('Not configured', size: 30),
               const SizedBox(height: 12),
               Text(problem, style: context.body),
               const SizedBox(height: 12),

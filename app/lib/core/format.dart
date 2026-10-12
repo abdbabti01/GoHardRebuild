@@ -34,3 +34,12 @@ String durationText(int seconds) {
   final h = seconds ~/ 3600, m = (seconds % 3600) ~/ 60;
   return h > 0 ? '$h h $m min' : '$m min';
 }
+
+/// "Oct"
+String monthShort(int month) => _months[month - 1].substring(0, 3);
+
+/// "Oct 9"
+String dayMonth(String dayKey) {
+  final d = parseDayKey(dayKey);
+  return '${monthShort(d.month)} ${d.day}';
+}

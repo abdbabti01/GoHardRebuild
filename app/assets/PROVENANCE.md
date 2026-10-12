@@ -2,6 +2,10 @@
 
 These files were copied unchanged from the verified GoHard native source checkpoint. The native screenshots contain explicitly synthetic widget fixtures, not a new implementation or signed-in device account. Fonts were parsed successfully with fontTools and retain their original OFL license/source files. The gym hero/GH raster mark retain the original asset notes. They are permitted visual/design references; the runtime application code must be written fresh.
 
+Update, 12 October 2026: the Calm Momentum redesign sets all type in Inter, so the Source Serif 4 files and their
+license file (`OFL.txt`) were removed from the app. Inter and `Inter-OFL.txt` remain. The gym photograph is now the
+workout feature on Today; the GH mark is used on the sign-in screen. The list below is the original record.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",

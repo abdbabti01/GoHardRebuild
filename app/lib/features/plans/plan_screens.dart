@@ -138,9 +138,9 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
     final s = _s;
     if (s == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     Widget dropdown(String key, String label, List<int> options, String Function(int) text) => DropdownButtonFormField<int>(
-        key: Key('setup-$key'), initialValue: s[key] as int, decoration: InputDecoration(labelText: label), dropdownColor: context.ec.input,
+        key: Key('setup-$key'), initialValue: s[key] as int, decoration: InputDecoration(labelText: label), dropdownColor: context.c.surface,
         items: [for (final o in options) DropdownMenuItem(value: o, child: Text(text(o)))], onChanged: (v) => _set(key, v));
-    return EveningPage(
+    return AppPage(
       title: 'Create my plan',
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
@@ -188,7 +188,7 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
           const SizedBox(height: 18),
           Panel(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Serif('No reviewed plan fits these answers', size: 23),
+              const Heading('No reviewed plan fits these answers', size: 20),
               const SizedBox(height: 8),
               for (final code in _fit) Padding(padding: const EdgeInsets.only(bottom: 6), child: StatusLine(Icons.info_outline, _feedback[code] ?? code)),
               const SizedBox(height: 6),
@@ -228,7 +228,7 @@ class _ManualPlanBuilderState extends State<ManualPlanBuilder> {
   }
 
   @override
-  Widget build(BuildContext context) => EveningPage(
+  Widget build(BuildContext context) => AppPage(
         title: 'Build my own plan',
         bottom: Column(mainAxisSize: MainAxisSize.min, children: [
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
@@ -302,14 +302,14 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 20 + MediaQuery.viewInsetsOf(context).bottom),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              const Serif('Change the schedule', size: 27),
+              const Heading('Change the schedule', size: 24),
               ListRow(key: const Key('draft-start'), icon: Icons.event, title: 'Start date', subtitle: longDate(start), onTap: () async {
                 final d = await pickDay(context, initial: start, first: ref.read(todayKeyProvider), help: 'Start date');
                 if (d != null) set(() => start = d);
               }),
               const SizedBox(height: 8),
               DropdownButtonFormField<int>(
-                  initialValue: weeks, decoration: const InputDecoration(labelText: 'Block length'), dropdownColor: context.ec.input,
+                  initialValue: weeks, decoration: const InputDecoration(labelText: 'Block length'), dropdownColor: context.c.surface,
                   items: [for (final w in const [4, 8, 12]) DropdownMenuItem(value: w, child: Text('$w weeks'))], onChanged: (v) => set(() => weeks = v ?? weeks)),
               const SizedBox(height: 8),
               Text('Training days (choose $sessions)', style: context.caption),
@@ -372,7 +372,7 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
     final current = primary?.id == plan.id ? null : primary;
     final firstWeek = plan.occasions.where((o) => o.weekNumber == 1).toList();
     final setup = plan.setup;
-    return EveningPage(
+    return AppPage(
       title: plan.title,
       bottom: !plan.isDraft
           ? null
@@ -441,7 +441,7 @@ class _ResumeReviewScreenState extends ConsumerState<ResumeReviewScreen> {
     final primary = ref.watch(primaryPlanProvider);
     final displaces = primary != null && primary.id != plan.id ? primary : null;
     final titles = {for (final o in plan.occasions) o.id: o.title};
-    return EveningPage(
+    return AppPage(
       title: 'Resume ${plan.title}',
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (!v.isValid) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, ScheduleRules.describe(v.errors.first), tone: Tone.error)),
@@ -497,7 +497,7 @@ class BlockReviewScreen extends ConsumerWidget {
       if (await runPlanDecision(context, () => repo.close(plan, intent: intent, today: today), saved: 'Block closed. Your history is kept.') && context.mounted) Navigator.pop(context);
     }
 
-    return EveningPage(title: 'Review this block', children: [
+    return AppPage(title: 'Review this block', children: [
       Text(plan.title, style: context.sansStyle(16, weight: FontWeight.w600)),
       Text('${longDate(plan.startDate)} to ${plan.endDate == null ? '—' : longDate(plan.endDate!)}', style: context.caption),
       const SizedBox(height: 16),
@@ -505,7 +505,7 @@ class BlockReviewScreen extends ConsumerWidget {
         ('Finished', c[OccasionStatus.finished]!), ('Partial', c[OccasionStatus.partial]!), ('Skipped', c[OccasionStatus.skipped]!),
         ('Missed', c[OccasionStatus.missed]!), ('Still ahead or in progress', remaining),
       ])
-        Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Row(children: [Expanded(child: Text(label, style: context.body)), Text('$n', style: context.serifStyle(23))])),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Row(children: [Expanded(child: Text(label, style: context.body)), Text('$n', style: context.titleStyle(21))])),
       const SizedBox(height: 8),
       Text('Counts come from what was actually recorded for each planned workout. Reaching the end date does not by itself mean the training happened.', style: context.caption),
       if (plan.isClosed)
@@ -545,7 +545,7 @@ class PlanDetailScreen extends ConsumerWidget {
     final workouts = ref.watch(workoutListProvider);
     final isPrimary = ref.watch(primaryPlanProvider)?.id == plan.id;
     final repo = ref.read(planRepositoryProvider);
-    return EveningPage(title: plan.title, children: [
+    return AppPage(title: plan.title, children: [
       SectionLabel(plan.isClosed ? (plan.closureIntent == 'stopped_early' ? 'Stopped early' : 'Finished for now') : plan.lifecycle),
       const SizedBox(height: 8),
       if (plan.setup != null) Text(setupSummary(plan.setup!), style: context.body),
@@ -574,7 +574,7 @@ class PlanDetailScreen extends ConsumerWidget {
 class ArchivedPlansScreen extends ConsumerWidget {
   const ArchivedPlansScreen({super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) => EveningPage(title: 'Archived plans', children: [
+  Widget build(BuildContext context, WidgetRef ref) => AppPage(title: 'Archived plans', children: [
         Text('Archiving only hides a plan. Its outcome and recorded workouts are unchanged.', style: context.caption),
         for (final p in ref.watch(planListProvider).where((p) => p.isArchived)) ListRow(title: p.title, subtitle: p.lifecycle, onTap: () => push(context, PlanDetailScreen(planId: p.id))),
       ]);
@@ -599,7 +599,7 @@ class _SubstitutionRequestScreenState extends ConsumerState<SubstitutionRequestS
     if (plan == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final eligible = {for (final s in scheduleOf(plan, ref.watch(workoutListProvider))) if (s.isEligible) s.id};
     final movements = {for (final o in plan.occasions) if (eligible.contains(o.id)) for (final e in o.prescription) if (e.catalogKey != null) e.catalogKey!: e.name};
-    return EveningPage(
+    return AppPage(
       title: 'Replace a movement',
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
@@ -675,7 +675,7 @@ class _ProposalReviewScreenState extends ConsumerState<ProposalReviewScreen> {
     final plan = ref.watch(planListProvider).where((x) => x.id == p.planId).firstOrNull;
     final occasions = {for (final o in plan?.occasions ?? const <Occasion>[]) o.id: o};
     final stale = p.state == 'needs_review', open = p.state == 'open';
-    return EveningPage(
+    return AppPage(
       title: 'Suggested change',
       bottom: !(open || stale)
           ? null

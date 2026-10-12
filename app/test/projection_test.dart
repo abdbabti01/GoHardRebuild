@@ -107,7 +107,7 @@ void main() {
     test('occasion statuses are honest text states', () {
       final plan = _plan([_occ('a', '2026-10-07'), _occ('b', '2026-10-09'), _occ('c', '2026-10-12'), _occ('d', '2026-10-05', outcome: 'full'), _occ('e', '2026-10-06', skipped: true)]);
       String status(String id, {Plan? p, List<Workout> w = const []}) => statusOf((p ?? plan).occasions.firstWhere((o) => o.id == id), p ?? plan, today, w).label;
-      expect([status('a'), status('b'), status('c'), status('d'), status('e')], ['Missed', 'Due', 'Upcoming', 'Finished', 'Skipped']);
+      expect([status('a'), status('b'), status('c'), status('d'), status('e')], ['Missed', 'Due', 'Planned', 'Completed', 'Skipped']);
       expect(status('b', w: [_workout('w', occasionId: 'b')]), 'In progress');
       expect(status('b', w: [_workout('w', occasionId: 'b', outcome: 'partial', qualified: true)]), 'Partial');
       final paused = _plan([_occ('a', '2026-10-07'), _occ('b', '2026-10-09')], lifecycle: 'paused', pausedOn: '2026-10-08');

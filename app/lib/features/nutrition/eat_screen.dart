@@ -12,7 +12,7 @@ import 'food_form.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
 
-/// The dated food journal: Breakfast, Lunch, Dinner and Snack, built only from food the user logged.
+/// The dated food journal: Breakfast, Lunch, Dinner and Snack, built only from food the user logged as eaten.
 class EatScreen extends ConsumerStatefulWidget {
   const EatScreen({super.key});
   @override
@@ -33,6 +33,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     return parts.isEmpty ? 'No nutrition entered' : parts.join(' · ');
   }
 
+  /// A meal's calories from its own entries: a sum of what is known, labelled when some are unknown.
+  static String _mealCalories(List<FoodEntry> entries) {
+    final t = NutrientCoverage.calculate(entries)[Nutrient.calories]!;
+    return !t.hasAnyKnown ? 'Calories unknown' : '${formatNumber(t.knownTotal)} kcal${t.isComplete ? '' : ' known'}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = ref.watch(todayKeyProvider);
@@ -45,46 +51,59 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     return RefreshIndicator(
       onRefresh: () => refreshFromAccount(ref),
       child: ListView(
-        padding: EdgeInsets.fromLTRB(context.inset, 12, context.inset, 28),
+        padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
         children: [
-          Row(children: [
-            const Expanded(child: Serif('Eat')),
-            IconButton(key: const Key('eat-add'), tooltip: 'Log food', icon: const Icon(Icons.add), onPressed: () => openFoodForm(context, dayKey: day)),
-          ]),
+          const Heading('Eat'),
+          const SizedBox(height: 4),
           Row(children: [
             IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
-            Expanded(child: Text(day == today ? 'Today · ${longDate(day)}' : longDate(day), textAlign: TextAlign.center, style: context.sansStyle(14, color: context.ec.secondary))),
+            Expanded(
+              child: Semantics(
+                liveRegion: true,
+                child: Text(day == today ? 'Today · ${longDate(day)}' : longDate(day), textAlign: TextAlign.center, style: context.sansStyle(15.5, weight: FontWeight.w600)),
+              ),
+            ),
             IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
           ]),
           if (day != today) Center(child: TextButton(onPressed: () => setState(() => _picked = null), child: const Text('Back to today'))),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           if (rows.hasError)
-            const StatusLine(Icons.error_outline, 'Your food journal could not be read from this phone. Pull down to try again.', tone: Tone.error)
+            const Panel(child: StatusLine(Icons.error_outline, 'Your food journal could not be read from this phone. Pull down to try again.', tone: Tone.error))
           else if (!rows.hasValue)
-            const StatusLine(Icons.hourglass_empty, 'Loading your journal…')
+            const Panel(child: StatusLine(Icons.hourglass_empty, 'Loading your journal…'))
           else ...[
             NutritionSurface(entries: entries, coverage: NutrientCoverage.calculate(entries), pending: pendingCount > 0, onLogFood: () => openFoodForm(context, dayKey: day)),
-            const SizedBox(height: 26),
-            const Serif('Your food journal', size: 27),
-            const SizedBox(height: 4),
+            const SizedBox(height: 28),
+            SectionHeader(day == today ? 'Logged today' : 'Logged this day'),
+            const SizedBox(height: 2),
             Text('Only food you logged as eaten appears here.', style: context.caption),
-            for (final meal in meals) ...[
-              const SizedBox(height: 20),
-              Text(meal, style: context.sansStyle(13, color: context.ec.secondary, weight: FontWeight.w600)),
-              if (live.where((r) => r.value.meal == meal).isEmpty)
-                Padding(padding: const EdgeInsets.only(top: 6), child: Text('Nothing logged for ${meal.toLowerCase()}.', style: context.caption)),
-              for (final r in live.where((r) => r.value.meal == meal))
-                ListRow(
-                  key: Key('food-row-${r.value.id}'),
-                  title: r.value.name,
-                  subtitle: '${r.value.amountDescription} · ${_known(r.value)}${r.needsReview ? ' · needs review' : r.isPending ? ' · sync pending' : ''}',
-                  onTap: () => openFoodForm(context, dayKey: day, entry: r.value),
-                ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(onPressed: () => openFoodForm(context, dayKey: day, meal: meal), icon: const Icon(Icons.add, size: 18), label: Text('Add to ${meal.toLowerCase()}')),
-              ),
-            ],
+            for (final meal in meals)
+              () {
+                final mine = [for (final r in live) if (r.value.meal == meal) r];
+                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Semantics(header: true, child: Text(meal, style: context.sansStyle(17, weight: FontWeight.w700))),
+                        Text(mine.isEmpty ? 'Nothing logged' : _mealCalories([for (final r in mine) r.value]), style: context.caption),
+                      ]),
+                    ),
+                    IconButton(
+                      key: Key('eat-add-${meal.toLowerCase()}'), tooltip: 'Add to ${meal.toLowerCase()}',
+                      icon: Icon(Icons.add_circle_outline, color: context.c.accent), onPressed: () => openFoodForm(context, dayKey: day, meal: meal),
+                    ),
+                  ]),
+                  const Rule(),
+                  for (final r in mine)
+                    ListRow(
+                      key: Key('food-row-${r.value.id}'),
+                      title: r.value.name,
+                      subtitle: '${r.value.amountDescription} · ${_known(r.value)}${r.needsReview ? ' · needs review' : r.isPending ? ' · sync pending' : ''}',
+                      onTap: () => openFoodForm(context, dayKey: day, entry: r.value),
+                    ),
+                ]);
+              }(),
           ],
         ],
       ),

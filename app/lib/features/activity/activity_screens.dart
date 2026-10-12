@@ -123,7 +123,7 @@ class _RunScreenState extends ConsumerState<RunScreen> {
     final elapsed = run.isOpen ? (runtime?.elapsedSeconds(now) ?? now.difference(DateTime.parse(run.startedAtUtc)).inSeconds.clamp(0, 604800)) : run.activeDurationSeconds ?? 0;
     String km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
 
-    return EveningPage(title: run.isOpen ? 'Run' : 'Run recorded', children: [
+    return AppPage(title: run.isOpen ? 'Run' : 'Run recorded', children: [
       Text(longDate(run.dayKey), style: context.caption),
       const SizedBox(height: 10),
       Semantics(
@@ -132,7 +132,7 @@ class _RunScreenState extends ConsumerState<RunScreen> {
       ),
       if (run.isOpen) ...[
         if (_gps != null) ...[
-          Text(km(track.distanceMeters), key: const Key('run-gps-distance'), style: context.serifStyle(33)),
+          Text(km(track.distanceMeters), key: const Key('run-gps-distance'), style: context.titleStyle(30)),
           StatusLine(Icons.gps_fixed, track.fixes == 0
               ? 'Waiting for a GPS position…'
               : 'Measured by GPS while this screen is open.${track.gaps > 0 ? ' ${track.gaps} stretch${track.gaps == 1 ? '' : 'es'} without readings ${track.gaps == 1 ? 'was' : 'were'} left out, not estimated.' : ''}'),
@@ -191,7 +191,7 @@ class RunHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final runs = [for (final r in ref.watch(runsProvider).value ?? const <Stored<Run>>[]) if (!r.value.isDeleted) r.value]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
-    return EveningPage(title: 'Run history', children: [
+    return AppPage(title: 'Run history', children: [
       if (runs.isEmpty) EmptyState('No runs yet', 'Runs you record appear here, every one of them.', action: SecondaryButton('Start a run', onPressed: () => startRunFlow(context, ref))),
       for (final r in runs)
         ListRow(
@@ -225,7 +225,7 @@ class _BodyMetricsScreenState extends ConsumerState<BodyMetricsScreen> {
   Widget build(BuildContext context) {
     final unit = ref.watch(loadUnitProvider);
     final metrics = [for (final r in ref.watch(metricsProvider).value ?? const <Stored<BodyMetric>>[]) if (!r.value.isDeleted) r.value]..sort((a, b) => b.dayKey.compareTo(a.dayKey));
-    return EveningPage(title: 'Body measurements', children: [
+    return AppPage(title: 'Body measurements', children: [
       Text('Optional. Add a measurement only when it helps you; nothing here is required for a plan.', style: context.caption),
       const SizedBox(height: 14),
       Row(children: [

@@ -4,12 +4,12 @@ import '../nutrition/nutrient_coverage.dart';
 /// How one planned occasion reads today. Always shown as text, never by colour alone.
 enum OccasionStatus {
   inProgress('In progress'),
-  finished('Finished'),
+  finished('Completed'),
   partial('Partial'),
   skipped('Skipped'),
   missed('Missed'),
   due('Due'),
-  upcoming('Upcoming'),
+  upcoming('Planned'),
   paused('Paused');
 
   const OccasionStatus(this.label);

@@ -34,7 +34,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final sets = [for (final r in ref.watch(setsProvider(workoutId)).value ?? const <Stored<WorkoutSet>>[]) if (!r.value.isDeleted) r.value]
       ..sort((a, b) => a.performedAtUtc.compareTo(b.performedAtUtc));
 
-    return EveningPage(
+    return AppPage(
       title: justFinished ? WorkoutResultRules.label(w.outcome) : w.title,
       bottom: justFinished ? PrimaryButton('Done', key: const Key('result-done'), onPressed: () => Navigator.pop(context)) : null,
       actions: [
@@ -70,7 +70,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
           Text(e.name, style: context.sansStyle(16, weight: FontWeight.w600)),
           if (e.isPrescribed) Text('Planned · ${e.target}', style: context.caption),
           if (sets.where((s) => s.exerciseId == e.id).isEmpty)
-            Padding(padding: const EdgeInsets.only(top: 4), child: Text(e.isPrescribed ? 'Not recorded.' : 'No sets recorded.', style: context.sansStyle(14, color: context.ec.secondary)))
+            Padding(padding: const EdgeInsets.only(top: 4), child: Text(e.isPrescribed ? 'Not recorded.' : 'No sets recorded.', style: context.sansStyle(14, color: context.c.secondary)))
           else
             for (final (i, s) in sets.where((s) => s.exerciseId == e.id).indexed)
               Padding(padding: const EdgeInsets.only(top: 4), child: Text('${i + 1}.  ${setText(s, unit)}', style: context.sansStyle(15).copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
@@ -89,8 +89,8 @@ class _Fact extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: context.sansStyle(12, color: context.ec.secondary)),
-          Text(value, style: context.serifStyle(25)),
+          Text(label, style: context.caption),
+          Text(value, style: context.titleStyle(23)),
         ]),
       );
 }
@@ -101,7 +101,7 @@ class WorkoutHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workouts = [for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted) w]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
-    return EveningPage(title: 'Workout history', children: [
+    return AppPage(title: 'Workout history', children: [
       if (workouts.isEmpty) const EmptyState('No workouts yet', 'Workouts you record will appear here with what you actually did.'),
       for (final w in workouts) WorkoutRow(w),
     ]);

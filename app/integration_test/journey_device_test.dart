@@ -135,7 +135,7 @@ void main() {
 
     // Pausing the plan removes every reminder: no nags while paused.
     await tapKey(tester, 'nav-train');
-    await waitFor(tester, find.textContaining('Plan week 1 of').hitTestable());
+    await waitFor(tester, find.textContaining('Week 1 of').hitTestable());
     await tap(tester, find.text('Pause plan'));
     await tap(tester, find.widgetWithText(FilledButton, 'Pause this plan'));
     expect(await scheduled(tester, (c) => c == 0), 0, reason: 'a paused plan has no reminders');

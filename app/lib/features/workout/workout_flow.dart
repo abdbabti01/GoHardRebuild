@@ -89,7 +89,7 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
     final catalog = ref.watch(catalogProvider).value ?? const <CatalogExercise>[];
     final q = _query.trim().toLowerCase();
     final shown = [for (final e in catalog) if (q.isEmpty || e.name.toLowerCase().contains(q) || e.category.toLowerCase().contains(q)) e];
-    return EveningPage(title: widget.title, children: [
+    return AppPage(title: widget.title, children: [
       TextField(key: const Key('exercise-search'), decoration: const InputDecoration(labelText: 'Search or type your own', prefixIcon: Icon(Icons.search)), onChanged: (v) => setState(() => _query = v)),
       const SizedBox(height: 8),
       if (catalog.isEmpty) const StatusLine(Icons.cloud_off, 'The movement list has not been downloaded yet. You can still type your own movement.', tone: Tone.warning),
@@ -122,7 +122,7 @@ class _ManualWorkoutSetupState extends ConsumerState<ManualWorkoutSetup> {
   }
 
   @override
-  Widget build(BuildContext context) => EveningPage(
+  Widget build(BuildContext context) => AppPage(
         title: 'Manual workout',
         bottom: PrimaryButton('Start workout', key: const Key('manual-start'), onPressed: () => Navigator.pop(context, (_title.text, List.of(_chosen)))),
         children: [

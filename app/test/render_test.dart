@@ -1,0 +1,161 @@
+@Tags(['render'])
+library;
+
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/data/session.dart';
+
+import 'ui_support.dart';
+
+/// Renders the real screens with the app's real fonts and photograph into PNG files for design review:
+///
+///   flutter test test/render_test.dart --dart-define=GOHARD_RENDER=true
+///
+/// Without that flag it does nothing, so the normal test run stays fast and writes no files. The data is the
+/// fixture in ui_support.dart (illustrative, like the design reference), never an account's records. These are
+/// renders of the Flutter widgets, not captures from a phone: they show layout and colour, not device behaviour.
+const _enabled = bool.fromEnvironment('GOHARD_RENDER');
+const _out = '../docs/evidence/design';
+const _today = '2026-10-11';
+
+Future<void> _loadFonts() async {
+  final inter = FontLoader('Inter');
+  for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+    inter.addFont(File('assets/fonts/Inter-$w.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)));
+  }
+  await inter.load();
+  final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+  await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+}
+
+Future<ui.Image> _capture(WidgetTester tester) async {
+  // The photograph decodes on a real timer; give it one, then paint.
+  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 250)));
+  await tester.pumpAndSettle();
+  final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot')));
+  return (await tester.runAsync(() => boundary.toImage(pixelRatio: 2)))!;
+}
+
+Future<void> _save(WidgetTester tester, ui.Image image, String name) => tester.runAsync(() async {
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      final file = File('$_out/$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(bytes!.buffer.asUint8List());
+    });
+
+/// Lays the six theme renders of one screen side by side: light on top, dark below.
+Future<ui.Image> _sheet(WidgetTester tester, Map<String, ui.Image> shots) async {
+  final images = shots.values.toList();
+  final w = images.first.width, h = images.first.height;
+  const gap = 36, label = 64;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder)..drawColor(const Color(0xFFDADCE0), BlendMode.src);
+  for (final (i, entry) in shots.entries.indexed) {
+    final x = (gap + (i % 3) * (w + gap)).toDouble(), y = (gap + (i ~/ 3) * (h + gap + label)).toDouble();
+    final text = TextPainter(text: TextSpan(text: entry.key, style: const TextStyle(fontFamily: 'Inter', fontSize: 36, fontWeight: FontWeight.w700, color: Color(0xFF121417))), textDirection: TextDirection.ltr)..layout();
+    text.paint(canvas, Offset(x, y));
+    canvas.drawImage(entry.value, Offset(x, y + label), Paint());
+  }
+  return (await tester.runAsync(() => recorder.endRecording().toImage(gap + 3 * (w + gap), gap + 2 * (h + gap + label))))!;
+}
+
+Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {int weeks = 8, bool inProgress = true, String? start}) async {
+  final plan = blockPlan(start: start ?? '2026-09-21', weeks: weeks, recorded: 8);
+  final open = openWorkout(plan, 'o3-3', day: _today, recordedSets: 6);
+  final food = [
+    foodEntry('f1', _today, 'Breakfast', 'Greek yogurt, berries, granola', '1 bowl', calories: 380, protein: 24, carbs: 46, fat: 9),
+    foodEntry('f2', _today, 'Lunch', 'Chicken, rice, vegetables', '1 plate', calories: 650, protein: 48, carbs: 70, fat: 16),
+    foodEntry('f3', _today, 'Snack', 'Protein shake, banana', '1 shake', calories: 370, protein: 23, carbs: 42),
+  ];
+  final store = AppearanceStore(MemorySecretStore())
+    ..accent = accent
+    ..mode = mode;
+  return (await tester.runAsync(() => overridesFor(
+      day: _today, plans: [plan], primaryPlanId: 'p1', workouts: inProgress ? [open.workout] : const [], sets: inProgress ? open.sets : const [], food: food, appearance: store)))!;
+}
+
+Future<void> _open(WidgetTester tester, String screen) async {
+  Future<void> tap(String key) async {
+    await tester.tap(find.byKey(Key(key)));
+    await tester.pumpAndSettle();
+  }
+
+  switch (screen) {
+    case 'train-plan':
+      await tap('nav-train');
+      await tap('train-plan');
+    case 'train-progress':
+      await tap('nav-train');
+      await tap('train-progress');
+    case 'eat':
+      await tap('nav-eat');
+    case 'me':
+      await tap('nav-me');
+    case 'appearance':
+      await tap('nav-me');
+      await tester.scrollUntilVisible(find.byKey(const Key('me-appearance')), 200, scrollable: find.byType(Scrollable).last);
+      await tester.ensureVisible(find.byKey(const Key('me-appearance')));
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
+      await tap('me-appearance');
+  }
+}
+
+void main() {
+  if (!_enabled) return;
+  setUpAll(_loadFonts);
+
+  for (final screen in ['today', 'train-plan', 'eat', 'me', 'appearance']) {
+    testWidgets('six themes: $screen', (tester) async {
+      final shots = <String, ui.Image>{};
+      for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+        for (final accent in Accent.values) {
+          await pumpApp(tester, await _fixture(tester, accent, mode));
+          await _open(tester, screen);
+          final image = await _capture(tester);
+          shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
+          if (accent == Accent.blue) await _save(tester, image, '$screen-blue-${mode.name}');
+          await tester.pumpWidget(const SizedBox()); // a fresh app for the next theme
+        }
+      }
+      await _save(tester, await _sheet(tester, shots), 'six-themes-$screen');
+    });
+  }
+
+  // Whole pages and other states, for checking what sits below the fold and the states a fixture can reach.
+  final states = <String, (Future<List<Override>> Function(WidgetTester), String, Size, double)>{
+    'full-today-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(390, 1640), 1),
+    'full-today-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'today', const Size(390, 1640), 1),
+    'full-plan-light': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'train-plan', const Size(390, 1900), 1),
+    'full-plan-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(390, 1900), 1),
+    'full-me-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'me', const Size(390, 1700), 1),
+    'full-eat-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'eat', const Size(390, 1300), 1),
+    'today-due-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false), 'today', const Size(390, 1500), 1),
+    'today-rest-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22'), 'today', const Size(390, 1100), 1),
+    'progress-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'train-progress', const Size(390, 1100), 1),
+    'plan-12-weeks-mid-week-start': ((t) => _fixture(t, Accent.green, ThemeMode.light, weeks: 12, start: '2026-09-23'), 'train-plan', const Size(390, 1900), 1),
+    'plan-16-weeks-collapsed': ((t) => _fixture(t, Accent.blue, ThemeMode.light, weeks: 16), 'train-plan', const Size(390, 1500), 1),
+    'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 2600), 2),
+    'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 3400), 2),
+    'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 1900), 2),
+    'new-account-today': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'today', const Size(390, 1100), 1),
+    'new-account-plan': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-plan', const Size(390, 844), 1),
+    'new-account-eat': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'eat', const Size(390, 1000), 1),
+  };
+  for (final MapEntry(key: name, value: (fixture, screen, size, scale)) in states.entries) {
+    testWidgets('state: $name', (tester) async {
+      await pumpApp(tester, await fixture(tester), size: size, textScale: scale);
+      await _open(tester, screen);
+      await _save(tester, await _capture(tester), 'state-$name');
+      expect(tester.takeException(), isNull);
+    });
+  }
+}

@@ -151,7 +151,7 @@ void main() {
     await tapKey(tester, 'plan-start');
     await waitFor(tester, find.byKey(const Key('today-start')));
     await tapKey(tester, 'nav-train');
-    await waitFor(tester, find.textContaining('Plan week 1 of').hitTestable(), what: 'the Plan view actually on screen');
+    await waitFor(tester, find.textContaining('Week 1 of').hitTestable(), what: 'the Plan view actually on screen');
 
     await tap(tester, find.text('Pause plan'));
     await confirmWith(tester, 'Pause this plan');
@@ -159,7 +159,7 @@ void main() {
     await waitFor(tester, find.byKey(const Key('plan-resume')));
     await shot(tester, '35-plan-paused');
     await tapKey(tester, 'nav-today');
-    await waitFor(tester, find.text('PLAN PAUSED'));
+    await waitFor(tester, find.text('Plan paused'));
     expect(find.byKey(const Key('today-start')), findsNothing, reason: 'a paused plan offers no new planned start');
     await tapKey(tester, 'nav-train');
     await tapKey(tester, 'plan-resume');
@@ -176,8 +176,8 @@ void main() {
     await waitFor(tester, find.text('Undo skip'));
     await tester.tapAt(const Offset(20, 60)); // close the sheet
     await settle(tester, 6);
-    await reveal(tester, find.textContaining('· Skipped'));
-    await waitFor(tester, find.textContaining('· Skipped'));
+    await reveal(tester, find.text('Skipped'));
+    await waitFor(tester, find.text('Skipped'));
     await shot(tester, '38-plan-with-skipped');
 
     await tap(tester, find.text('Review or finish this block'));

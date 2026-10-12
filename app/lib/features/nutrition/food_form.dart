@@ -101,7 +101,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
             decoration: InputDecoration(labelText: label, suffixText: suffix, hintText: 'Unknown'),
           ),
         );
-    return EveningPage(
+    return AppPage(
       title: editing ? 'Edit food' : 'Log food',
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
@@ -122,7 +122,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           key: const Key('food-meal'), initialValue: _meal, decoration: const InputDecoration(labelText: 'Meal'),
-          dropdownColor: context.ec.input,
+          dropdownColor: context.c.surface,
           items: [for (final m in meals) DropdownMenuItem(value: m, child: Text(m))],
           onChanged: (m) => setState(() => _meal = m ?? _meal),
         ),

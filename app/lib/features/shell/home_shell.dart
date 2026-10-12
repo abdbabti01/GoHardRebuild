@@ -46,7 +46,7 @@ class HomeShell extends ConsumerWidget {
         // Attention appears only when saved data cannot converge without a decision. Ordinary pending upload stays quiet.
         if (issues.isNotEmpty)
           Material(
-            color: context.ec.input,
+            color: context.c.sunken,
             child: InkWell(
               onTap: () => push(context, const SyncReviewScreen()),
               child: Padding(
@@ -55,27 +55,28 @@ class HomeShell extends ConsumerWidget {
               ),
             ),
           ),
-        EveningNavigationBar(currentIndex: shell.tab, onTap: (i) => ref.read(shellProvider.notifier).switchTab(i)),
+        GoNavigationBar(currentIndex: shell.tab, onTap: (i) => ref.read(shellProvider.notifier).switchTab(i)),
       ]),
     );
   }
 }
 
-class EveningNavigationBar extends StatelessWidget {
-  const EveningNavigationBar({super.key, required this.currentIndex, required this.onTap});
+class GoNavigationBar extends StatelessWidget {
+  const GoNavigationBar({super.key, required this.currentIndex, required this.onTap});
   final int currentIndex;
   final ValueChanged<int> onTap;
 
+  // (label, unselected, selected): the selected destination is filled, heavier and in the accent.
   static const _items = [
-    ('Today', Icons.home_outlined),
-    ('Train', Icons.fitness_center),
-    ('Eat', Icons.restaurant),
-    ('Me', Icons.person_outline),
+    ('Today', Icons.home_outlined, Icons.home_rounded),
+    ('Train', Icons.fitness_center_outlined, Icons.fitness_center),
+    ('Eat', Icons.restaurant_outlined, Icons.restaurant),
+    ('Me', Icons.person_outline, Icons.person),
   ];
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(color: context.ec.canvas, border: Border(top: BorderSide(color: context.ec.divider))),
+        decoration: BoxDecoration(color: context.c.surface, border: Border(top: BorderSide(color: context.c.divider))),
         child: SafeArea(
           top: false,
           child: Row(children: [
@@ -92,10 +93,10 @@ class EveningNavigationBar extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Column(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
-                            Icon(item.$2, size: 22, color: i == currentIndex ? context.ec.text : context.ec.secondary),
-                            const SizedBox(height: 4),
+                            Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? context.c.accent : context.c.secondary),
+                            const SizedBox(height: 3),
                             Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                style: context.sansStyle(12, color: i == currentIndex ? context.ec.text : context.ec.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w400)),
+                                style: context.sansStyle(12.5, color: i == currentIndex ? context.c.accent : context.c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500)),
                           ]),
                         ),
                       ),

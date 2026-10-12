@@ -93,7 +93,7 @@ Future<void> showOccasionSheet(BuildContext context, WidgetRef ref, Plan plan, O
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
               SectionLabel('Week ${o.weekNumber} · ${status.label}'),
               const SizedBox(height: 6),
-              Serif(o.title, size: 30),
+              Heading(o.title, size: 26),
               Text('${longDate(o.scheduledDate)}${o.wasMoved ? ' · originally ${shortDate(o.originalDate)}' : ''}', style: context.caption),
               const SizedBox(height: 14),
               for (final (i, e) in o.prescription.indexed)
@@ -101,7 +101,7 @@ Future<void> showOccasionSheet(BuildContext context, WidgetRef ref, Plan plan, O
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(children: [
                     SizedBox(width: 24, child: Text('${i + 1}', style: context.caption)),
-                    Expanded(child: Text(e.name, style: context.sansStyle(15))),
+                    Expanded(child: Text(e.name, style: context.sansStyle(16))),
                     Text(targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds), style: context.caption),
                   ]),
                 ),

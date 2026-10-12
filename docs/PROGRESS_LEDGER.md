@@ -216,3 +216,52 @@ first; one run died in the Flutter tool with an RPC error before any step ran.
 Still not exercised on a device: set and plan conflicts through the review screen, in-workout movement replacement,
 account switch on one phone, a process kill while offline, midnight/DST, system appearance, TalkBack, a physical
 phone, iOS.
+
+## 12 October 2026 — Calm Momentum redesign (branch `design/calm-momentum`)
+
+The interface was rebuilt on a new design system: Inter throughout, three accents (Blue, Green, Pink) in Light, Dark
+and System, a photographic workout feature on Today, a training pass and week grid on Train › Plan, and an Appearance
+page. Data contracts, the API and the deployment configuration are unchanged. Details and the differences from the
+approved references: `docs/DESIGN.md`.
+
+| Command | Result |
+|---|---|
+| `scripts\test.ps1 -SkipApi` | codegen → `flutter analyze`: **No issues found** → **93 Flutter tests passed** (was 64) |
+| `flutter test test/render_test.dart --dart-define=GOHARD_RENDER=true` | 22 renders written to `docs/evidence/design/` |
+| `flutter build apk --debug --dart-define=GOHARD_API_BASE=http://10.0.2.2:5131` | built `app-debug.apk` |
+| `scripts\test-android.ps1 -Only <journey>`, each of the five, Pixel_7 emulator, local API | all five **All tests passed** on the final code |
+| `journey_device_test` with the emulator in dark mode (`adb shell cmd uimode night yes`) | passed; a fresh install opened dark showing "Blue · System" (`50-me-reminders-on.png`) |
+
+API tests were not rerun: no API file changed.
+
+New automated coverage (`app/test/theme_test.dart`): measured contrast of every token pair in all six themes and
+their increased-contrast variants; rendered text contrast, tap-target size and labels on the four tabs in all six
+themes; fresh-install default, persistence across a restart, an unreadable saved value; choices applying at once
+without resetting navigation; System following an OS change while keeping the accent; week boundaries for a mid-week
+start and a 12-week block; completion counting recorded results only; recorded-set progress never counting targets.
+`journey_more_test` now changes accent and mode in the middle of a workout and checks the typed, unsaved entry is
+still there and nothing was saved by itself.
+
+Defects found by running the app and fixed:
+
+| Found by | Defect | Fix |
+|---|---|---|
+| Native journey | In a form, tapping a field low on the page while the keyboard opened could drop that field from the page (the lazily built list discarded it as the page shrank) | pages with a pinned action keep every field built |
+| Tap-target check | the three-way switch was 42 px high | 48 px |
+| Contrast test | accent-coloured text on the selection tint was under 4.5:1 for light Blue and Pink | accents darkened slightly |
+| Renders | week dates wrapped unevenly four across; a workout row orphaned "sets" | three tiles across with equal heights; date and summary on their own lines |
+
+Tool notes: two journey runs ended with the Flutter tool's "Service has disappeared" after the on-device tests had
+passed, and later runs could not connect at all until the emulator was cold-restarted (the same emulator ageing
+noted above). Editing `app/lib` while a journey is building breaks that build.
+
+Not verified, and why:
+
+| Item | Status |
+|---|---|
+| iOS build with the new launch background (`LaunchBackground.colorset`, storyboard named colour) | written by hand on Windows, never compiled; the first `ios-unsigned-ipa` / `ios-dev-ipa` run will show whether Xcode accepts it |
+| Display brightness comfort, smoothness and frame timing on the iPhone 13 | needs the phone; checklist in `docs/IPHONE_TESTING.md` |
+| VoiceOver / TalkBack by ear, Reduce Motion and Increased Contrast on a device | implemented and covered by semantics and token tests only |
+| Launch screen colour when the app is set to Light but the phone is Dark (or the reverse) | the launch screen follows the phone, because the OS draws it before the app can read its setting |
+| Profile-mode performance measurements | not run: the emulator is not representative |
+| `dart format` | not applied; the repository's wide-line style is kept and CI does not enforce it |

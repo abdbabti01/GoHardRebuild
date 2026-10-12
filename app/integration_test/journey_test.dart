@@ -61,6 +61,9 @@ void main() {
     for (var attempt = 0; attempt < 4; attempt++) {
       await tester.tap(find.byKey(Key(key)), warnIfMissed: false);
       await settle(tester, 2);
+      if (field.evaluate().isEmpty) {
+        fail('Field $key left the screen after it was tapped (attempt $attempt). On screen: ${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').where((x) => x.isNotEmpty).take(30).join(' | ')}');
+      }
       await tester.enterText(find.byKey(Key(key)), text);
       await settle(tester, 2);
       if (tester.widget<EditableText>(field).controller.text == text) return;
@@ -105,7 +108,7 @@ void main() {
     await shot(tester, '03-plan-setup');
     await tapKey(tester, 'setup-submit');
     await waitFor(tester, find.byKey(const Key('plan-start')), what: 'the plan review');
-    expect(find.text('FIRST WEEK'), findsOneWidget);
+    expect(find.text('First week'), findsOneWidget);
     await shot(tester, '04-plan-review');
     await tapKey(tester, 'plan-start');
     await waitFor(tester, find.byKey(const Key('today-start')), what: 'today\'s due workout');
@@ -114,12 +117,12 @@ void main() {
     // --- All four tabs; Train keeps its selected section.
     await tapKey(tester, 'nav-train');
     await tapKey(tester, 'train-plan');
-    await waitFor(tester, find.textContaining('Plan week 1 of'));
+    await waitFor(tester, find.textContaining('Week 1 of'));
     await shot(tester, '06-train-plan');
     await tapKey(tester, 'nav-eat');
     await tapKey(tester, 'nav-me');
     await tapKey(tester, 'nav-train');
-    expect(find.textContaining('Plan week 1 of'), findsOneWidget, reason: 'Train retained the Plan section');
+    expect(find.textContaining('Week 1 of'), findsOneWidget, reason: 'Train retained the Plan section');
     await tapKey(tester, 'nav-today');
 
     // --- Actual workout: entered values become the set; rest starts; nothing advances by itself.
@@ -158,7 +161,7 @@ void main() {
     await waitFor(tester, find.text('Finished partially'));
     await shot(tester, '11-result-partial');
     await tapKey(tester, 'result-done');
-    await waitFor(tester, find.text('DONE FOR TODAY'));
+    await waitFor(tester, find.text('Done for today'));
     expect(find.byKey(const Key('today-start')), findsNothing, reason: 'the recorded occasion is not offered again');
     await shot(tester, '12-today-done');
 
@@ -188,7 +191,7 @@ void main() {
     await type(tester, 'food-protein', '20');
     await tapKey(tester, 'food-save');
     await waitFor(tester, find.text('20 g'));
-    await tapKey(tester, 'eat-add');
+    await tapKey(tester, 'log-food');
     await type(tester, 'food-name', 'Toast');
     await type(tester, 'food-amount', '2 slices');
     await tapKey(tester, 'food-save');
@@ -205,9 +208,20 @@ void main() {
     await tapKey(tester, 'nav-me');
     await waitFor(tester, find.text('Journey Tester'));
     await shot(tester, '17-me-dark');
+    // Appearance has its own page: mode and accent are two independent choices, applied at once.
+    await tapKey(tester, 'me-appearance');
+    await shot(tester, '17b-appearance-dark');
     await tapKey(tester, 'appearance-light');
+    await tapKey(tester, 'accent-green');
     await settle(tester, 6);
-    await shot(tester, '18-me-light');
+    await shot(tester, '18-appearance-green-light');
+    await tapKey(tester, 'accent-pink');
+    await settle(tester, 6);
+    await shot(tester, '18b-appearance-pink-light');
+    await tester.pageBack();
+    await settle(tester, 4);
+    await waitFor(tester, find.text('Pink · Light'));
+    await shot(tester, '18c-me-light');
     await tapKey(tester, 'nav-today');
     await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
     await shot(tester, '19-today-light');
@@ -220,7 +234,11 @@ void main() {
     await shot(tester, '21-train-workouts-light');
 
     await tapKey(tester, 'nav-me');
+    await tapKey(tester, 'me-appearance');
     await tapKey(tester, 'appearance-dark');
+    await tapKey(tester, 'accent-blue');
+    await tester.pageBack();
+    await settle(tester, 4);
     await tapKey(tester, 'me-sign-out');
     await tap(tester, find.widgetWithText(FilledButton, 'Sign out'));
     await waitFor(tester, find.byKey(const Key('auth-submit')), what: 'the sign-in screen after sign-out');
@@ -232,7 +250,7 @@ void main() {
     expect(tester.widget<TextField>(find.byKey(const Key('auth-email'))).controller!.text, email);
     await type(tester, 'auth-password', password);
     await tapKey(tester, 'auth-submit');
-    await waitFor(tester, find.text('DONE FOR TODAY'), what: 'the same account\'s day after signing back in');
+    await waitFor(tester, find.text('Done for today'), what: 'the same account\'s day after signing back in');
     await waitFor(tester, find.text('Known totals'));
     expect(find.text('110'), findsOneWidget);
     await shot(tester, '22-today-after-sign-in-again');

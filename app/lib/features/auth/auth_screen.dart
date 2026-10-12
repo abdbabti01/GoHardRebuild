@@ -57,9 +57,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           children: [
             const Align(alignment: Alignment.centerLeft, child: GhMark(height: 26)),
             const SizedBox(height: 36),
-            Serif(_register ? 'Create your account' : 'Welcome back', size: 39),
+            Heading(_register ? 'Create your account' : 'Welcome back', size: 32),
             const SizedBox(height: 10),
-            Text('Know what to do next, and keep a record of what you actually did.', style: context.sansStyle(15, color: context.ec.secondary)),
+            Text('Know what to do next, and keep a record of what you actually did.', style: context.sansStyle(16, color: context.c.secondary)),
             const SizedBox(height: 26),
             if (notice != null) ...[StatusLine(Icons.info_outline, notice, tone: Tone.warning), const SizedBox(height: 16)],
             if (_register) ...[

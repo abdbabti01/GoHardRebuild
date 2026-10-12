@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'app/app.dart';
 import 'app/providers.dart';
+import 'core/appearance.dart';
 import 'data/db.dart';
 import 'data/session.dart';
 
@@ -23,10 +24,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final db = AppDb(driftDatabase(name: 'gohard_rebuild'));
   final sessions = SessionManager(const SecureSecretStore());
-  await sessions.restore();
+  // Both are read before the first frame: the app opens signed in, and in the look that was chosen.
+  final appearance = AppearanceStore(const SecureSecretStore());
+  await Future.wait([sessions.restore(), appearance.restore()]);
   runApp(ProviderScope(
     retry: (_, _) => null,
-    overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions)],
+    overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance)],
     child: const GoHardApp(),
   ));
 }

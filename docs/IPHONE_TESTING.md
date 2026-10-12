@@ -137,7 +137,23 @@ not in the profile: add the device, regenerate the profile, update the secret an
 - [ ] **Train:** switch Workouts / Plan / Progress; go to another tab and back: the section you chose is still selected.
 - [ ] **Eat:** log a food with calories and a blank protein. Totals read "Known totals", protein shows a dash.
       Today shows the same numbers.
-- [ ] **Me:** change appearance to Light and back; edit your name.
+- [ ] **Me:** edit your name.
+- [ ] **Appearance** (Me → Appearance): choose Light, Dark and System, and each of Blue, Green and Pink. The whole
+      app changes at once, including the tab bar and any open sheet. Close the app from the app switcher and reopen:
+      the same look comes back, with no flash of another colour while it opens.
+- [ ] **System mode:** choose System, then switch the iPhone between Light and Dark (Control Centre → hold the
+      brightness slider → Dark Mode). The app follows and keeps your accent.
+- [ ] **Nothing is lost by changing the look:** start a workout, type a load without saving it, change the accent
+      from Me → Appearance, go back: the timer kept running and the typed load is still there.
+- [ ] **Brightness and comfort** (cannot be judged from screenshots): at low, medium and full screen brightness,
+      in a lit room and a dim one, read Today, Train › Plan and Eat in Light and in Dark. Small grey text should
+      stay readable at low brightness; Light should not dazzle in the dim room; nothing should glow in Dark.
+- [ ] **Large text:** Settings → Display & Brightness → Text Size, largest. Train › Plan and Today still read
+      without cut-off labels (week tiles and the three-way switch stack instead of shrinking).
+- [ ] **Smoothness:** scroll Today and Train › Plan, tap between weeks, open and close a workout sheet, swipe back
+      from a page. Note anything that stutters and where.
+- [ ] **VoiceOver** (optional): the pass reads the plan name, week and completed count; week tiles read their
+      dates and state; the selected tab and segment are announced as selected.
 - [ ] **Saving data:** Me shows "Everything is saved to your account". Sign out, sign in again: everything is still there.
 - [ ] **Restart:** start a workout, record a set, swipe the app away, reopen: Today offers "Resume workout" with the set.
 - [ ] **Offline:** airplane mode, record a set, turn it off again: Me returns to "Everything is saved".

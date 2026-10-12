@@ -10,6 +10,7 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../plans/plan_progress.dart';
 import 'progress.dart';
 import 'result_rules.dart';
 import 'workout_detail_screen.dart';
@@ -308,7 +309,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
             PopupMenuButton<String>(
               key: const Key('workout-menu'),
               tooltip: 'Workout options',
-              color: context.ec.input,
               onSelected: (a) => _menu(a, workout, selected),
               itemBuilder: (_) => [
                 const PopupMenuItem(value: 'add', child: Text('Add a movement')),
@@ -329,7 +329,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                 Expanded(
                   child: Semantics(
                     label: 'Workout time ${durationText(runtime.elapsedSeconds(_now))}${runtime.isPaused ? ', paused' : ''}',
-                    child: ExcludeSemantics(child: Text(clockText(runtime.elapsedSeconds(_now)), style: context.sansStyle(27, weight: FontWeight.w600).copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
+                    child: ExcludeSemantics(child: Text(clockText(runtime.elapsedSeconds(_now)), style: context.titleStyle(30))),
                   ),
                 ),
                 SecondaryButton(runtime.isPaused ? 'Resume' : 'Pause', key: const Key('workout-pause'), expand: false, icon: runtime.isPaused ? Icons.play_arrow : Icons.pause,
@@ -338,20 +338,34 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
               if (runtime.isPaused) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.pause_circle_outline, 'Workout paused. Time and rest are frozen until you resume.')),
               if (row.needsReview)
                 const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, 'Saved on this phone; this workout needs review before it can sync. See the review notice below the screen.', tone: Tone.warning)),
-              const SizedBox(height: 18),
+              // Recorded work against the plan, for the whole workout. Targets alone never move it.
+              Builder(builder: (context) {
+                final p = SetProgress.of(workout, [for (final r in live) r.value]);
+                return Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: p.planned == null
+                      ? Text('${p.recorded} ${p.recorded == 1 ? 'set' : 'sets'} recorded', style: context.caption)
+                      : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('${p.counted} of ${p.planned} planned sets recorded', style: context.caption),
+                          const SizedBox(height: 6),
+                          ProgressRail(p.fraction, label: 'Planned sets recorded', height: 6),
+                        ]),
+                );
+              }),
+              const SizedBox(height: 22),
               if (selected == null)
                 EmptyState('No movements yet', 'Add a movement to start recording sets.',
                     action: SecondaryButton('Add a movement', icon: Icons.add, onPressed: () => _menu('add', workout, null)))
               else ...[
                 SectionLabel('Movement ${exercises.indexOf(selected) + 1} of ${exercises.length}${selected.isPrescribed ? '' : ' · extra'}'),
                 const SizedBox(height: 6),
-                Serif(selected.name, size: 33),
+                Heading(selected.name, size: 28),
                 if (selected.substitutedForKey != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text('Recorded as ${selected.name}, in place of the planned movement.', style: context.caption)),
                 const SizedBox(height: 8),
-                Text('Target · ${selected.target}', style: context.sansStyle(14, color: context.ec.secondary)),
+                Text('Target · ${selected.target}', style: context.sansStyle(15, color: context.c.secondary)),
                 Text(
                   previous == null ? 'No previous record for this movement.' : 'Last time (${shortDate(previous.dayKey)}) · ${previous.sets.map((s) => setText(s, unit)).join(', ')}',
-                  style: context.sansStyle(14, color: context.ec.secondary),
+                  style: context.sansStyle(15, color: context.c.secondary),
                 ),
                 const SizedBox(height: 16),
                 if (rest != null)
@@ -405,7 +419,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                     key: Key('set-row-$i'),
                     title: '${i + 1}.  ${setText(r.value, unit)}',
                     subtitle: r.needsReview ? 'Needs review' : r.isPending ? 'Saved on this phone · sync pending' : null,
-                    trailing: Icon(Icons.edit_outlined, size: 18, color: context.ec.secondary),
+                    trailing: Icon(Icons.edit_outlined, size: 20, color: context.c.secondary),
                     onTap: () => _editSet(r.value, selected),
                   ),
               ],
@@ -416,14 +430,14 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                   key: Key('exercise-row-${e.ordinal}'),
                   title: e.name,
                   subtitle: '${setsOf(e.id).length}${e.targetSets == null ? '' : ' of ${e.targetSets}'} sets recorded${e.id == selected?.id ? ' · current' : ''}',
-                  trailing: e.id == selected?.id ? Icon(Icons.radio_button_checked, size: 18, color: context.ec.text) : null,
+                  trailing: e.id == selected?.id ? Icon(Icons.radio_button_checked, size: 20, color: context.c.accent) : null,
                   onTap: e.id == selected?.id ? null : () {
                     _flushDraft();
                     _save(_runtime!.selecting(e.id));
                   },
                 ),
               const SizedBox(height: 22),
-              SecondaryButton('Finish workout', key: const Key('finish-workout'), onPressed: () => _finish(workout)),
+              SecondaryButton('Finish workout', key: const Key('finish-workout'), icon: Icons.flag_outlined, onPressed: () => _finish(workout)),
               Center(child: TextButton(onPressed: () => _menu('park', workout, selected), child: const Text('Save for later'))),
             ],
           ),
@@ -454,7 +468,7 @@ class _BigField extends StatelessWidget {
             labelText: suffix.isEmpty ? label : '$label ($suffix)',
             floatingLabelBehavior: FloatingLabelBehavior.always,
             hintText: hint,
-            hintStyle: context.sansStyle(20, color: context.ec.secondary),
+            hintStyle: context.sansStyle(20, color: context.c.secondary),
             contentPadding: const EdgeInsets.fromLTRB(8, 26, 8, 14),
           ),
         ),

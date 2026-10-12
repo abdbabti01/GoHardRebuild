@@ -1,7 +1,7 @@
-# GoHard — fresh rebuild (Evening Club)
+# GoHard — fresh rebuild
 
 A new Flutter app, .NET 10 API and dedicated PostgreSQL development database, built from scratch from the
-GoHard product and Evening Club design references. It shares no code, database, container or app identity
+GoHard product references. Its look is the Calm Momentum design (`docs/DESIGN.md`). It shares no code, database, container or app identity
 with the original GoHard projects, which are untouched.
 
 **Today / Train / Eat / Me.** Train has Workouts / Plan / Progress and keeps its selected section.

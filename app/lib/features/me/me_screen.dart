@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/appearance.dart';
 import '../../core/config.dart';
+import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
+import '../plans/plan_progress.dart';
 import '../plans/plan_screens.dart';
 import '../shell/home_shell.dart';
+import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import 'account_repository.dart';
 import 'reminders.dart';
 import 'sync_review_screen.dart';
 
-/// Me: identity, the current training setup, history, shared preferences and account lifecycle.
+/// Me: identity, a real training overview, history, preferences and account lifecycle.
 class MeScreen extends ConsumerWidget {
   const MeScreen({super.key});
 
@@ -24,36 +29,41 @@ class MeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider).value;
     final session = ref.watch(sessionProvider);
+    final today = ref.watch(todayKeyProvider);
     final primary = ref.watch(primaryPlanProvider);
     final drafts = ref.watch(planListProvider).where((p) => p.isDraft && !p.isArchived).toList();
-    final workouts = [for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted) w];
+    final allWorkouts = ref.watch(workoutListProvider);
+    final workouts = [for (final w in allWorkouts) if (!w.isDeleted) w];
     final open = workouts.where((w) => w.isOpen).toList();
     final pending = ref.watch(pendingCountProvider).value ?? 0;
     final issues = ref.watch(issuesProvider).value?.length ?? 0;
+    final appearance = ref.watch(appearanceProvider);
     final name = profile?.displayName ?? session?.email ?? '';
+    void openPlan() => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
 
-    Future<void> setPreference({String? appearance, String? loadUnit}) async {
+    Future<void> setUnit(String loadUnit) async {
       if (profile == null) return;
       try {
-        await ref.read(profileRepositoryProvider).update(profile, appearance: appearance, loadUnit: loadUnit);
+        await ref.read(profileRepositoryProvider).update(profile, loadUnit: loadUnit);
       } on LocalSaveFailure {
         if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
       }
     }
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(context.inset, 12, context.inset, 28),
+      padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
       children: [
-        const Serif('Me'),
+        const Heading('Me'),
         const SizedBox(height: 16),
         Row(children: [
+          // An initial, not a photograph: the account has no picture, so none is invented.
           ExcludeSemantics(
-            child: CircleAvatar(radius: 30, backgroundColor: context.ec.selected, child: Text(name.isEmpty ? '' : name[0].toUpperCase(), style: context.sansStyle(24, weight: FontWeight.w600))),
+            child: CircleAvatar(radius: 32, backgroundColor: context.c.accentSoft, child: Text(name.isEmpty ? '' : name[0].toUpperCase(), style: context.sansStyle(26, weight: FontWeight.w700, color: context.c.accent))),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, key: const Key('me-name'), style: context.serifStyle(30)),
+              Text(name, key: const Key('me-name'), style: context.titleStyle(24)),
               if (session != null) Text(session.email, style: context.caption),
             ]),
           ),
@@ -63,53 +73,42 @@ class MeScreen extends ConsumerWidget {
         else
           const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.hourglass_empty, 'Your profile has not loaded on this phone yet.')),
 
-        const SizedBox(height: 22),
-        const Serif('Your training', size: 27),
-        const SizedBox(height: 8),
-        if (primary != null)
-          ListRow(icon: Icons.event_note, title: primary.title, subtitle: '${primary.isPaused ? 'Paused · ' : ''}${primary.setup == null ? 'Your own plan' : setupSummary(primary.setup!)}',
-              onTap: () => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan))
-        else if (drafts.isNotEmpty)
+        const SizedBox(height: 18),
+        const SectionHeader('Your training'),
+        const SizedBox(height: 10),
+        if (primary != null) ...[
+          _Overview(plan: primary, today: today, workouts: allWorkouts, onTap: openPlan),
+        ] else if (drafts.isNotEmpty)
           ListRow(icon: Icons.event_note, title: drafts.last.title, subtitle: 'Draft · not started', onTap: () => push(context, PlanReviewScreen(planId: drafts.last.id)))
         else
           ListRow(icon: Icons.event_note, title: 'No plan yet', subtitle: 'Create a plan to review', onTap: () => push(context, const PlanSetupScreen())),
         for (final w in open) ListRow(icon: Icons.timelapse, title: w.title, subtitle: 'In progress', onTap: () => resumeWorkout(context, ref, w)),
         ListRow(key: const Key('me-history'), icon: Icons.history, title: 'Workout history', subtitle: workouts.isEmpty ? 'Nothing recorded yet' : '${workouts.length} workout${workouts.length == 1 ? '' : 's'}', onTap: () => push(context, const WorkoutHistoryScreen())),
-        ListRow(icon: Icons.insights, title: 'Progress', onTap: () => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.progress)),
+        ListRow(icon: Icons.insights, title: 'Progress', subtitle: 'Follow-through, consistency and strength', onTap: () => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.progress)),
         ListRow(icon: Icons.directions_run, title: 'Run history', onTap: () => push(context, const RunHistoryScreen())),
         ListRow(icon: Icons.monitor_weight_outlined, title: 'Body measurements', onTap: () => push(context, const BodyMetricsScreen())),
 
-        const SizedBox(height: 22),
-        const Serif('Appearance', size: 27),
-        const SizedBox(height: 10),
-        for (final (value, label) in const [('dark', 'Dark'), ('light', 'Light'), ('system', 'Match this phone')])
-          ChoiceTile(key: Key('appearance-$value'), value: value, groupValue: ref.watch(appearanceProvider), title: label, onChanged: (v) => setPreference(appearance: v)),
-
-        const SizedBox(height: 14),
-        const Serif('Units', size: 27),
-        const SizedBox(height: 10),
-        for (final (value, label) in const [('kg', 'Kilograms'), ('lb', 'Pounds')])
-          ChoiceTile(key: Key('unit-$value'), value: value, groupValue: profile?.loadUnit ?? 'kg', title: label, onChanged: (v) => setPreference(loadUnit: v)),
-        Text('Changes how loads are entered and shown. Your recorded training is stored in kilograms and is never rewritten. Time is shown in minutes and seconds.', style: context.caption),
-
-        const SizedBox(height: 22),
-        const Serif('Account', size: 27),
-        const SizedBox(height: 8),
+        const SizedBox(height: 26),
+        const SectionHeader('Preferences'),
+        const SizedBox(height: 4),
         ListRow(
-          key: const Key('me-sync'),
-          icon: issues > 0 ? Icons.rule : pending > 0 ? Icons.phone_iphone : Icons.cloud_done_outlined,
-          title: issues > 0 ? '$issues saved ${issues == 1 ? 'change needs' : 'changes need'} review' : pending > 0 ? '$pending ${pending == 1 ? 'change' : 'changes'} saved on this phone, waiting to sync' : 'Everything is saved to your account',
-          subtitle: issues > 0 ? 'Nothing was lost. Tap to review.' : ref.watch(connectionProvider) == false ? 'Offline right now' : null,
-          onTap: issues > 0 ? () => push(context, const SyncReviewScreen()) : () => refreshFromAccount(ref),
+          key: const Key('me-appearance'), icon: Icons.palette_outlined, title: 'Appearance',
+          subtitle: '${appearance.accent.label} · ${modeLabel(appearance.mode)}',
+          onTap: () => push(context, const AppearanceScreen()),
         ),
+        const SizedBox(height: 14),
+        Text('Units', style: context.sansStyle(16, weight: FontWeight.w500)),
+        const SizedBox(height: 8),
+        Segmented<String>(values: const ['kg', 'lb'], selected: profile?.loadUnit ?? 'kg', keyPrefix: 'unit', label: (v) => v == 'kg' ? 'Kilograms' : 'Pounds', onChanged: setUnit),
+        const SizedBox(height: 8),
+        Text('Changes how loads are entered and shown. Your recorded training is stored in kilograms and is never rewritten. Time is shown in minutes and seconds.', style: context.caption),
+        const SizedBox(height: 6),
         if (profile != null) ...[
           ListRow(
             key: const Key('me-reminders'),
             icon: profile.remindersEnabled ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
             title: 'Workout reminders',
-            subtitle: profile.remindersEnabled
-                ? 'On days with a planned workout. None while your plan is paused.'
-                : 'Off',
+            subtitle: profile.remindersEnabled ? 'On days with a planned workout. None while your plan is paused.' : 'Off',
             trailing: Switch(
               value: profile.remindersEnabled,
               onChanged: (on) async {
@@ -141,6 +140,17 @@ class MeScreen extends ConsumerWidget {
               },
             ),
         ],
+
+        const SizedBox(height: 26),
+        const SectionHeader('Account'),
+        const SizedBox(height: 4),
+        ListRow(
+          key: const Key('me-sync'),
+          icon: issues > 0 ? Icons.rule : pending > 0 ? Icons.phone_iphone : Icons.cloud_done_outlined,
+          title: issues > 0 ? '$issues saved ${issues == 1 ? 'change needs' : 'changes need'} review' : pending > 0 ? '$pending ${pending == 1 ? 'change' : 'changes'} saved on this phone, waiting to sync' : 'Everything is saved to your account',
+          subtitle: issues > 0 ? 'Nothing was lost. Tap to review.' : ref.watch(connectionProvider) == false ? 'Offline right now' : null,
+          onTap: issues > 0 ? () => push(context, const SyncReviewScreen()) : () => refreshFromAccount(ref),
+        ),
         ListRow(
           key: const Key('me-sign-out'), icon: Icons.logout, title: 'Sign out',
           onTap: () async {
@@ -159,6 +169,162 @@ class MeScreen extends ConsumerWidget {
       ],
     );
   }
+}
+
+String modeLabel(ThemeMode mode) => switch (mode) { ThemeMode.light => 'Light', ThemeMode.dark => 'Dark', ThemeMode.system => 'System' };
+
+/// The primary plan at a glance, from recorded results only: completion, calendar position, and each week so far.
+class _Overview extends StatelessWidget {
+  const _Overview({required this.plan, required this.today, required this.workouts, required this.onTap});
+  final Plan plan;
+  final String today;
+  final List<Workout> workouts;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final block = Completion.of(plan.occasions, workouts);
+    final position = planWeek(plan, today);
+    // Weeks that have begun; the three most recent, newest last.
+    final begun = [for (final w in planWeeks(plan, today, workouts)) if (w.isPast || w.isCurrent) w];
+    final recent = begun.length > 3 ? begun.sublist(begun.length - 3) : begun;
+    return Semantics(
+      button: true,
+      child: Material(
+        color: context.c.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: context.c.divider)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: const Key('me-plan'),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Wrap(alignment: WrapAlignment.spaceBetween, spacing: 12, children: [
+                Text(plan.title, style: context.titleStyle(19)),
+                Text('${plan.isPaused ? 'Paused · ' : ''}${position == 0 ? 'Starts ${dayMonth(plan.startDate)}' : 'Week $position of ${plan.blockWeeks}'}', style: context.sansStyle(14.5, color: context.c.secondary)),
+              ]),
+              const SizedBox(height: 10),
+              Text('${block.completed} of ${block.eligible} workouts completed', style: context.sansStyle(16, weight: FontWeight.w600)),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: ProgressRail(block.fraction, label: 'Workouts completed in this plan')),
+                const SizedBox(width: 12),
+                ExcludeSemantics(child: Text('${(block.fraction * 100).round()}%', style: context.sansStyle(15, weight: FontWeight.w600))),
+              ]),
+              if (recent.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Rule(),
+                const SizedBox(height: 12),
+                Text('Week history', style: context.label),
+                for (final w in recent)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Wrap(alignment: WrapAlignment.spaceBetween, spacing: 12, children: [
+                      Text('Week ${w.number} · ${w.range}', style: context.sansStyle(15)),
+                      Text(w.completion.eligible == 0 ? 'No workouts' : '${w.completion.completed} of ${w.completion.eligible} completed', style: context.sansStyle(15, color: context.c.secondary)),
+                    ]),
+                  ),
+              ],
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Appearance: two independent choices, applied at once everywhere and remembered on this phone.
+class AppearanceScreen extends ConsumerWidget {
+  const AppearanceScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appearance = ref.watch(appearanceProvider);
+    final set = ref.read(appearanceProvider.notifier);
+    final brightness = Theme.of(context).brightness;
+    final plan = ref.watch(primaryPlanProvider);
+    final today = ref.watch(todayKeyProvider);
+    final block = plan == null ? null : Completion.of(plan.occasions, ref.watch(workoutListProvider));
+    final position = plan == null ? 0 : planWeek(plan, today);
+    return AppPage(title: 'Appearance', subtitle: 'Make GoHard feel like you.', children: [
+      const SectionHeader('Theme'),
+      const SizedBox(height: 10),
+      Segmented<ThemeMode>(values: const [ThemeMode.light, ThemeMode.dark, ThemeMode.system], selected: appearance.mode, keyPrefix: 'appearance', label: modeLabel, onChanged: set.setMode),
+      const SizedBox(height: 8),
+      Text(switch (appearance.mode) {
+        ThemeMode.system => 'Matches your phone, and follows it when it changes.',
+        ThemeMode.light => 'Always light, whatever your phone is set to.',
+        ThemeMode.dark => 'Always dark, whatever your phone is set to.',
+      }, style: context.caption),
+      const SizedBox(height: 26),
+      const SectionHeader('Accent color'),
+      const SizedBox(height: 12),
+      Row(children: [
+        for (final a in Accent.values)
+          Expanded(child: _Swatch(accent: a, colors: GoColors.of(a, brightness), selected: a == appearance.accent, onTap: () => set.setAccent(a))),
+      ]),
+      const SizedBox(height: 8),
+      Text('Applies across Today, Train, Eat and Me.', style: context.caption),
+      const SizedBox(height: 26),
+      const SectionHeader('Preview'),
+      const SizedBox(height: 12),
+      PassCard(
+        title: plan?.title ?? 'No plan yet',
+        week: plan == null || position == 0 ? null : 'Week $position of ${plan.blockWeeks}',
+        count: block == null ? '0' : '${block.completed} / ${block.eligible}', caption: 'Workouts completed', progress: block?.fraction ?? 0,
+      ),
+      if (plan != null) ...[
+        const SizedBox(height: 14),
+        PrimaryButton('View plan', key: const Key('appearance-view-plan'), onPressed: () {
+          ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
+          Navigator.of(context).popUntil((r) => r.isFirst);
+        }),
+      ],
+      const SizedBox(height: 12),
+      Text('Changes apply immediately and are remembered on this phone.', style: context.caption),
+    ]);
+  }
+}
+
+/// One accent choice. Selected shows as a ring, a check mark and a heavier label, not only as a colour.
+class _Swatch extends StatelessWidget {
+  const _Swatch({required this.accent, required this.colors, required this.selected, required this.onTap});
+  final Accent accent;
+  final GoColors colors;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true, selected: selected, inMutuallyExclusiveGroup: true, label: '${accent.label} accent',
+        child: InkWell(
+          key: Key('accent-${accent.name}'),
+          borderRadius: BorderRadius.circular(Radii.tile),
+          onTap: () {
+            if (!selected) HapticFeedback.selectionClick();
+            onTap();
+          },
+          child: ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(children: [
+                AnimatedContainer(
+                  duration: context.motion(Motion.quick),
+                  width: 64, height: 64, padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: selected ? colors.accent : Colors.transparent, width: 3)),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: colors.accent),
+                    child: selected ? Icon(Icons.check_rounded, size: 28, color: colors.onAccent) : null,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(accent.label, style: context.sansStyle(15, weight: selected ? FontWeight.w700 : FontWeight.w500)),
+              ]),
+            ),
+          ),
+        ),
+      );
 }
 
 /// Display name is free text you see in the app. It is not your sign-in email. Save or cancel explicitly.
@@ -180,7 +346,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => EveningPage(
+  Widget build(BuildContext context) => AppPage(
         title: 'Your name',
         bottom: Column(mainAxisSize: MainAxisSize.min, children: [
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
@@ -242,7 +408,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   @override
   Widget build(BuildContext context) {
     final pending = ref.watch(pendingCountProvider).value ?? 0;
-    return EveningPage(
+    return AppPage(
       title: 'Delete account',
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),

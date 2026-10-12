@@ -111,18 +111,8 @@ final pendingCountProvider = StreamProvider<int>((ref) {
   return owner == null ? Stream.value(0) : ref.watch(syncProvider).watchPendingCount(owner);
 });
 
-/// Display preferences. Before sign-in, and until the profile loads, the appearance defaults to dark.
+/// Display preferences. Appearance (accent and mode) is a device setting: see core/appearance.dart.
 final loadUnitProvider = Provider<LoadUnit>((ref) => LoadUnit.parse(ref.watch(profileProvider).value?.loadUnit));
-final appearanceProvider = Provider<String>((ref) => ref.watch(profileProvider).value?.appearance ?? ref.watch(deviceAppearanceProvider));
-
-/// Appearance remembered on this device for the signed-out screens.
-class DeviceAppearance extends Notifier<String> {
-  @override
-  String build() => 'dark';
-  void set(String value) => state = value;
-}
-
-final deviceAppearanceProvider = NotifierProvider<DeviceAppearance, String>(DeviceAppearance.new);
 
 /// Whether the last attempt to reach the account succeeded. Null = not tried yet.
 class Connection extends Notifier<bool?> {
