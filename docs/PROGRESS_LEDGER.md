@@ -299,3 +299,78 @@ comfort; VoiceOver; smoothness and profile-mode performance.
 Remaining feature, not part of this redesign: **editable nutrition goals with calorie and protein progress**. The
 approved layout shows goals and progress bars on Today and Eat; the app has nowhere to set or store a goal yet, so
 those bars are deliberately absent. It needs a goal setting, storage that syncs, and the progress display.
+
+(Done on the same day: see the next section.)
+
+## 12 October 2026 — food search, barcode scanning, reusable foods, nutrition goals, compatibility gate
+
+Branch `feature/food-discovery`, on top of `design/calm-momentum`. How it works, the provider rules, limits and
+configuration: `docs/FOOD_DATA.md`. The design additions: `docs/DESIGN.md`.
+
+What was added: `Log food` now opens one place to find a food (search, barcode, favourites, recent, own foods,
+manual), and every path opens the one existing food form, which logs only on its confirmation. A logged food keeps
+its own copy of the source food, the amount and per-nutrient provenance. Optional calorie and protein goals on the
+profile, with progress on Today and Eat. The app is blocked, with its outbox kept, when the server's minimum
+contract is above its own.
+
+| Command | Result |
+|---|---|
+| `scripts\test.ps1` | API build 0 warnings → **83 API tests passed** (was 58) on disposable PostgreSQL → release publish → codegen → `flutter analyze`: **No issues found** → **134 Flutter tests passed** (was 97) |
+| `flutter test test/render_test.dart --dart-define=GOHARD_RENDER=true` | 35 render tests passed; `docs/evidence/design/` (55 images) now holds the new screens in all six themes and at large text |
+| `scripts\test-android.ps1` (all seven journeys, one run, final code, Pixel_7 emulator, local API with `-FoodFixtures`) | **all seven passed**: main 3 m 12 s, secondary 2 m 41 s, more 3 m 40 s, offline 1 m 40 s, device 1 m 19 s, upgrade 39 s, food 1 m 51 s |
+| `scripts\verify-api.ps1 -BaseUrl http://127.0.0.1:5131` (local API on recorded provider responses) | all checks passed, including goals set / kept by an older payload / cleared, a saved food, barcode found and not found, search |
+| GitHub `ci` on the branch | API build and tests, app analyze and tests, debug APK: success |
+| GitHub `ios-unsigned-ipa` on the branch | success on macOS: the app compiles for iOS with the scanner and the camera permission text |
+
+New automated coverage:
+
+- **Provider adapters on recorded responses** (`FoodProviderTests`, no network): the shared wire sample; per-100 ml
+  values not filed as grams; a stated zero stays zero; missing, estimated and mixed-basis values stay unknown;
+  kilojoule-only energy; a per-serving label with and without a known serving unit; USDA IDs, units and only the
+  portions that have a weight; barcode normalization; identical lookups sharing one call; cache; a provider rate
+  limit pausing further calls; the shared budget; one retry and a bounded timeout; search needing a real key.
+- **API on real PostgreSQL** (`FoodDataTests`): goals kept by a payload without goal fields and cleared only by an
+  explicit null; older commands keep their semantic hash; a logged food keeps its snapshot when the saved food it
+  came from changes; imported and corrected values told apart; saved foods owned, revision-checked, invisible to
+  another account, erased with the account; lookup endpoints need a sign-in and report provider trouble as what it
+  is; `food.search` declared only with a key; one person cannot spend the shared budget; upgrade from the previous
+  schema keeps existing rows.
+- **App on the real Drift database** (`food_test`): scaling and units; offline logging of a found food and its
+  restart; a manual entry sent in exactly the old shape; saved foods offline, retried once, private per account;
+  search and barcode cache used offline; six detections of one barcode are one request; goals offline and across
+  restart; the compatibility gate (unknown is not a block, a confirmed block survives an offline restart and keeps
+  the queue, a passing check lifts it).
+- **Screens** (`food_ui_test`): search → amount → log produces one entry; cancelling logs nothing and keeps the
+  search; repeated detections and a web-link code; a double tap logs once; camera refused; unknown barcode; offline;
+  recent and favourite reuse; corrections kept while the amount changes; goal progress rules; Today and Eat agree;
+  the update notice over an open form with the form intact afterwards; contrast, tap targets and labels in all six
+  themes; twice the text size at 320 px.
+
+Defects found by this testing and fixed:
+
+| Found by | Defect | Fix |
+|---|---|---|
+| Real-database test | a lookup's shared future waited on itself, so the first search or scan never finished | the cleanup no longer returns that future |
+| Real-database test | an invalid barcode or query was thrown instead of reported as a failed lookup | lookups always fail as lookups |
+| Large-text test | the Meal dropdown overflowed by 59 px at twice the text size on a 320 px phone (older than this work) | it uses the full width |
+| Native journey | on the scanner the typed-barcode field could be dropped from the page when the keyboard opened (the same kind of defect fixed earlier on forms) | the scanner's actions are pinned, which keeps every field built |
+| Native journey | a food returned by the online search was listed twice, once as "seen before" | listed once, under Online |
+| Reading the code | a stored value such as 17.25 was put back into its field as 17.3, so opening and saving an entry could change it | fields show up to two decimals, the precision stored |
+| CI | the hosted runner ran out of disk building the APK with the scanner | unused toolchains are removed first |
+
+Test-tool note: two combined emulator runs stalled with the Flutter tool unable to connect to the app after the
+first journey ("taking an unusually long time to connect to the VM"), both right after the emulator was cold
+restarted. The run recorded above was made on the already-running emulator and went through all seven without a
+stall. An earlier combined run passed six and failed the food journey on the scanner defect listed above.
+
+Not verified, and why:
+
+| Item | Status |
+|---|---|
+| Reading a real barcode with a camera | not possible without a phone. The emulator opens the real camera view (`screenshots/97-scanner.png`) but has nothing to scan, so journeys type the digits. Repeated detections are tested with a simulated camera only |
+| The camera permission prompt, refusal and return from Settings on a phone | implemented; tested with a simulated refusal. Checklist in `docs/IPHONE_TESTING.md` |
+| Torch | implemented; the emulator has no torch |
+| Live USDA search with a configured key | no key exists in any configuration. The adapter was written against live responses fetched once with the public demo key while building, and is tested on recordings of them |
+| Signed iOS build, anything on the iPhone | unchanged: signing secrets are not set |
+| TalkBack / VoiceOver by ear on the new screens | covered by label and semantics tests only |
+| Emulator journeys against the live providers | by design they use recordings; the live check is `verify-api.ps1` against a deployed API (see below) |
