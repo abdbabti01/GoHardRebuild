@@ -377,12 +377,13 @@ Not verified, and why:
 
 ### Merge and hosted testing API (12 October 2026)
 
- was fast-forwarded to this work (it now also contains the Calm Momentum redesign) and pushed after CI passed.
-Before pushing, the Railway target was confirmed to be the rebuild's own: reported exactly this project's two migrations and capability list. Railway then deployed from ; its
-pre-deploy step applied the third migration, and the address reported  and the new
+`main` was fast-forwarded to this work (it now also contains the Calm Momentum redesign) and pushed after CI passed.
+Before pushing, the Railway target was confirmed to be the rebuild's own: `gohardrebuild-production.up.railway.app`
+reported exactly this project's two migrations and capability list. Railway then deployed from `main`; its
+pre-deploy step applied the third migration, and the address reported `3 migration(s) applied` and the new
 capabilities within a few minutes.
 
- against the hosted API, with an account it creates and deletes:
+`scripts\verify-api.ps1` against the hosted API, with an account it creates and deletes:
 
 | Check | Result |
 |---|---|
@@ -391,18 +392,15 @@ capabilities within a few minutes.
 | A saved food, with the journal unchanged | pass |
 | **Live** barcode lookup through Open Food Facts (3017620422003) | pass: Nutella, 539 kcal per 100 g |
 | Unknown barcode | pass: 404, nothing invented |
-| Food search | not configured: no USDA key is set on the service, so  is not declared and search was not checked |
+| Food search | not configured: no USDA key is set on the service, so `food.search` is not declared and search was not checked |
 | Exercise catalog seeded | **fail: the hosted catalog is empty** |
 
-The empty catalog is not part of this change (the seeding code and  are untouched, and locally the
+The empty catalog is not part of this change (the seeding code and `api/railway.json` are untouched, and locally the
 catalog has 26 movements), but it means the hosted API offers no movements to pick for a manual workout. The
 migration half of the pre-deploy command ran, so the likely cause is a pre-deploy command set in the Railway
-dashboard that says only . It needs the service's pre-deploy command to be
-Possible reasons for this include:
-  * You misspelled a built-in dotnet command.
-  * You intended to execute a .NET program, but dotnet-GoHard.Api.dll does not exist.
-  * You intended to run a global tool, but a dotnet-prefixed executable with this name could not be found on the PATH., or that command run once; this could not be done from here.
+dashboard that says only `migrate`. It needs the service's pre-deploy command to be
+`dotnet GoHard.Api.dll migrate seed-catalog`, or that command run once. This could not be done from here, and
+whether the catalog was already empty before this deployment is not known.
 
-To finish the hosted setup: add the variable  on the Railway service (free key from
-fdc.nal.usda.gov/api-key-signup), fix the catalog seeding, then run  again.
-
+To finish the hosted setup: add the variable `GOHARD_FoodData__UsdaApiKey` on the Railway service (free key from
+fdc.nal.usda.gov/api-key-signup), fix the catalog seeding, then run `verify-api.ps1` again.
