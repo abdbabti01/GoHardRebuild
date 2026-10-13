@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
@@ -15,6 +17,7 @@ import '../features/me/account_repository.dart';
 import '../features/nutrition/food_discovery.dart';
 import '../features/nutrition/food_item.dart';
 import '../features/nutrition/food_repository.dart';
+import '../features/nutrition/food_search.dart';
 import '../features/nutrition/nutrient_coverage.dart';
 import '../features/plans/plan_repository.dart';
 import '../features/today/daily.dart';
@@ -216,3 +219,8 @@ final dailySnapshotProvider = Provider<DailySnapshot?>((ref) {
 
 final progressProvider = Provider<TrainingProgress>((ref) => TrainingProgressProjection.build(
     today: ref.watch(todayKeyProvider), primary: ref.watch(primaryPlanProvider), workouts: ref.watch(workoutListProvider), sets: ref.watch(trustedSetsProvider)));
+
+/// The everyday foods bundled with the app, read once. It is the same for every account and needs no connection.
+/// Read as bytes: `loadString` would decode a file this size on another isolate, for nothing.
+final commonFoodsProvider = FutureProvider<CommonFoodCatalog>(
+    (ref) async => CommonFoodCatalog.parse(utf8.decode(Uint8List.sublistView(await rootBundle.load('assets/data/common-foods.json')))));

@@ -5,8 +5,11 @@ import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../data/sync.dart';
 import 'food_item.dart';
+import 'food_search.dart';
 
-enum LookupProblem { offline, notFound, invalid, rateLimited, notConfigured, unavailable }
+/// `offline` is "the request did not get through": the app cannot tell a phone without a connection from a
+/// server that is down, so nothing built on it may claim the phone is offline. `timeout` is no answer in time.
+enum LookupProblem { offline, timeout, notFound, invalid, rateLimited, notConfigured, unavailable }
 
 /// A lookup that produced no food. The reason is kept so the screen can say something true and offer a way on.
 class LookupFailure implements Exception {
@@ -39,8 +42,8 @@ class FoodDiscovery {
   Future<ApiResponse> _get(String path) async {
     try {
       return await _api.send('GET', path);
-    } on TransportFailure {
-      throw const LookupFailure(LookupProblem.offline);
+    } on TransportFailure catch (e) {
+      throw LookupFailure(e.message.toLowerCase().contains('timeout') ? LookupProblem.timeout : LookupProblem.offline);
     }
   }
 
@@ -54,7 +57,8 @@ class FoodDiscovery {
         _ => LookupProblem.unavailable,
       });
 
-  /// Text search of basic and branded foods. Always asked for explicitly, never per keystroke.
+  /// Text search of basic and branded foods in the wider database. Never per keystroke: the screen asks on a
+  /// tap, or once after a pause when the phone itself has nothing for what was typed.
   Future<List<FoodItem>> search(String query) async {
     final q = query.trim().split(RegExp(r'\s+')).join(' ');
     if (q.length < 2) throw const LookupFailure(LookupProblem.invalid);
@@ -117,11 +121,12 @@ class FoodDiscovery {
   }
 }
 
-/// Where a suggestion on the phone came from. Shown with it, and decides the order: your own first.
-enum Origin { favourite, mine, recent, seen }
+/// Where a suggestion came from. The first four are the owner's, on this phone; `common` is the bundled catalog;
+/// `found` is an answer from the wider database.
+enum Origin { favourite, mine, recent, seen, common, found }
 
 class Suggestion {
-  const Suggestion(this.item, this.origin, {this.saved, this.entry});
+  const Suggestion(this.item, this.origin, {this.saved, this.entry, this.common});
   final FoodItem item;
   final Origin origin;
 
@@ -130,6 +135,9 @@ class Suggestion {
 
   /// The journal entry behind a recent food: choosing it starts from the same amount and values again.
   final FoodEntry? entry;
+
+  /// The catalog entry when this is that very record: the everyday name and preparation it is shown by.
+  final CommonFood? common;
 }
 
 /// What the phone already knows, without a connection: favourites and the owner's foods, then foods logged

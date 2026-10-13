@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -10,6 +11,7 @@ import 'package:gohard_rebuild/features/nutrition/barcode_scan_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/food_discovery.dart';
 import 'package:gohard_rebuild/features/nutrition/food_item.dart';
 import 'package:gohard_rebuild/features/nutrition/food_repository.dart';
+import 'package:gohard_rebuild/features/nutrition/food_search.dart';
 
 /// Stand-ins for the screens' collaborators in widget tests: they record what the screens asked for. The real
 /// repositories are exercised against the real database in food_test.dart. None of this ships in the app.
@@ -104,6 +106,21 @@ class ScriptedDiscovery implements FoodDiscovery {
   Future<void> remember(List<FoodItem> items) async {}
 }
 
+/// A wider search whose answers arrive when the test says so, in any order: each search waits on its own
+/// completer, keyed by what was asked.
+class HeldDiscovery extends ScriptedDiscovery {
+  final pending = <String, Completer<List<FoodItem>>>{};
+
+  @override
+  Future<List<FoodItem>> search(String query) {
+    searches.add(query);
+    return (pending[query] = Completer<List<FoodItem>>()).future;
+  }
+}
+
+/// The catalog the app ships, read straight from the asset file the app bundles.
+CommonFoodCatalog shippedCatalog() => CommonFoodCatalog.parse(File('assets/data/common-foods.json').readAsStringSync());
+
 class RecordingProfiles implements ProfileRepository {
   final goals = <(int?, int?)>[];
 
@@ -158,6 +175,7 @@ class FoodFakes {
         savedFoodRepositoryProvider.overrideWithValue(savedFoods),
         profileRepositoryProvider.overrideWithValue(profiles),
         foodDiscoveryProvider.overrideWithValue(discovery),
+        commonFoodsProvider.overrideWith((ref) => shippedCatalog()),
         scannerCameraProvider.overrideWithValue(({required onCode, required onUnavailable}) => FakeCamera(onCode: onCode, onUnavailable: onUnavailable, codes: codes, refused: cameraRefused)),
       ];
 }
