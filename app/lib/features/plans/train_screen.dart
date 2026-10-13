@@ -160,6 +160,14 @@ class _PlanViewState extends ConsumerState<_PlanView> {
         const SizedBox(height: 26),
         SectionHeader(week.isCurrent ? 'This week' : 'Week ${week.number}', detail: week.range,
             trailing: week.completion.eligible == 0 ? null : Text('${week.completion.completed} of ${week.completion.eligible} completed', style: context.sansStyle(14.5, weight: FontWeight.w600))),
+        if (week.completion.eligible > 0) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: ProgressRail(week.completion.fraction, label: 'Workouts completed in this week')),
+            const SizedBox(width: 12),
+            ExcludeSemantics(child: Text('${(week.completion.fraction * 100).round()}%', style: context.sansStyle(14.5, color: context.c.secondary, weight: FontWeight.w600))),
+          ]),
+        ],
         const SizedBox(height: 14),
         WeekDayStrip(week: week, plan: plan, today: today, workouts: workouts),
         const SizedBox(height: 8),

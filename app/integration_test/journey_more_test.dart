@@ -91,7 +91,7 @@ void main() {
     await j.settle();
 
     // --- Body measurement.
-    await j.tapKey('nav-today');
+    await j.tapKey('nav-me');
     await j.tapText('Body measurements');
     await j.type('metric-weight', '82.4');
     await j.tapKey('metric-save');

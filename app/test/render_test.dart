@@ -170,18 +170,18 @@ void main() {
 
   // Whole pages and other states, for checking what sits below the fold and the states a fixture can reach.
   final states = <String, (Future<List<Override>> Function(WidgetTester), String, Size, double)>{
-    'full-today-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(390, 1640), 1),
-    'full-today-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'today', const Size(390, 1640), 1),
+    'full-today-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(390, 1000), 1),
+    'full-today-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'today', const Size(390, 1000), 1),
     'full-plan-light': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'train-plan', const Size(390, 1900), 1),
     'full-plan-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(390, 1900), 1),
     'full-me-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'me', const Size(390, 1700), 1),
     'full-eat-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'eat', const Size(390, 1300), 1),
-    'today-due-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false), 'today', const Size(390, 1500), 1),
-    'today-rest-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22'), 'today', const Size(390, 1100), 1),
+    'today-due-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false), 'today', const Size(390, 844), 1),
+    'today-rest-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22'), 'today', const Size(390, 844), 1),
     'progress-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'train-progress', const Size(390, 1100), 1),
     'plan-12-weeks-mid-week-start': ((t) => _fixture(t, Accent.green, ThemeMode.light, weeks: 12, start: '2026-09-23'), 'train-plan', const Size(390, 1900), 1),
     'plan-16-weeks-collapsed': ((t) => _fixture(t, Accent.blue, ThemeMode.light, weeks: 16), 'train-plan', const Size(390, 1500), 1),
-    'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 2600), 2),
+    'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 1900), 2),
     'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 3400), 2),
     'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 1900), 2),
     'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),
@@ -190,7 +190,7 @@ void main() {
     'large-text-log-food-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'log-food', const Size(320, 2400), 2),
     'large-text-food-preview-320': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-preview', const Size(320, 3200), 2),
     'large-text-eat-goals-320': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'eat', const Size(320, 2600), 2),
-    'new-account-today': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'today', const Size(390, 1100), 1),
+    'new-account-today': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'today', const Size(390, 844), 1),
     'new-account-plan': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-plan', const Size(390, 844), 1),
     'new-account-eat': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'eat', const Size(390, 1000), 1),
   };

@@ -47,9 +47,12 @@ void main() {
     await j.type('food-name', 'Banana');
     await j.type('food-amount', '1 medium');
     await j.tapKey('food-save');
-    await j.waitFor(find.textContaining('Latest: Banana'), what: 'the food on Today while offline');
+    await j.waitFor(find.textContaining(RegExp('foods? logged')), what: 'the food on Today while offline');
     await tester.drag(find.byType(ListView).hitTestable().last, const Offset(0, 500)); // pull to refresh: the account cannot be reached
-    await j.waitFor(find.textContaining('Offline. Showing'), what: 'the offline notice');
+    await j.waitFor(find.textContaining('Can\'t reach your account'), what: 'the short notice that the account cannot be reached');
+    expect(find.textContaining('waiting to sync'), findsOneWidget, reason: 'the notice counts what is still only on this phone');
+    await j.tapKey('today-connection');
+    await j.waitFor(find.text('Try again'), what: 'the details behind the notice');
     await j.shot('71-today-offline');
     await j.tapKey('nav-me');
     await j.reveal(find.textContaining('waiting to sync'));

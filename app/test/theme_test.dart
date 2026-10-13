@@ -258,9 +258,9 @@ void main() {
       final handle = tester.ensureSemantics();
       final plan = blockPlan(start: '2026-09-21', recorded: 8);
       await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, plans: [plan], primaryPlanId: 'p1')))!, size: const Size(390, 1800));
-      expect(find.bySemanticsLabel(RegExp('Workouts complete this week')), findsOneWidget);
       await _tap(tester, 'nav-train');
       await _tap(tester, 'train-plan');
+      expect(find.bySemanticsLabel(RegExp('Workouts completed in this week')), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp(r'Strength block\. Week\s+3 of 8\. 8 / 24 workouts completed, 33%')), findsOneWidget);
       expect(find.bySemanticsLabel('Week 3, Oct 5 – 11, this week, 2 of 3 workouts completed'), findsOneWidget);
       expect(tester.getSemantics(find.byKey(const Key('week-3'))), isSemantics(isSelected: true, isButton: true));

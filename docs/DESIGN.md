@@ -105,6 +105,23 @@ camera view with its frame.
 Found and fixed while checking these: the Meal dropdown overflowed by 59 px at twice the text size on a 320 px phone
 (it now uses the full width), and a long text-and-icon button did not wrap (it is now plain text).
 
+## Today: what it holds and what it leaves to the other tabs
+
+Refined on 12 October 2026 so the workout action and the day's food values share the first screen at normal text
+size (390 × 844). With large text the page simply grows.
+
+| Part | What it shows | Where the rest lives |
+|---|---|---|
+| Workout card (`_Feature` in `features/today/today_screen.dart`) | State label, the workout's real name, exercise and set counts, up to three movement names, recorded-set progress while in progress, and one button (Start or Resume). The title row with its chevron opens the workout's sheet. | The week's calendar and its progress rail: Train › Plan. The full prescription: the sheet behind the title. |
+| Quiet actions under the card | "Start a manual workout" where a plan does not own the day, and "Start a run" ("Continue your run" while one is open). | Train › Workouts has both as buttons. |
+| Nutrition (`NutritionSummary` in `features/nutrition/nutrition_surface.dart`) | Calories and protein from the same coverage Eat reads, a goal rail only for a goal that was set, one line when values are missing, Log food. | Carbs, fat, the per-food list and the longer explanation: Eat (the missing-values line opens it). |
+| Recorded today | Workouts finished today and runs, in their own words ("Manual workout · Recorded · 1 set"). Absent when nothing was recorded. | Histories: Train and Me. Body measurements: Me. |
+| Account not reached | One line, with the number of changes still only on this phone; a tap opens the explanation and "Try again". | Changes that need a decision keep their notice above the navigation bar. |
+
+The minutes on a due workout are the session length chosen in plan setup (`setup.minutesPerSession`), so they read
+"45 min planned", never "about 45 min": nothing is estimated from the exercises. The photograph is kept as a band
+beside the state label; under all text the overlay is still at least 82% black.
+
 ## Deliberate differences from the references
 
 | Reference | App | Why |

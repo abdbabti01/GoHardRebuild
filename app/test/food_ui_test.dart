@@ -283,11 +283,14 @@ void main() {
       final fakes = FoodFakes();
       final food = [foodEntry('f1', _day, 'Breakfast', 'Yogurt', '1 bowl', calories: 380, protein: 24), foodEntry('f2', _day, 'Lunch', 'Chicken and rice', '1 plate', calories: 650, protein: 48)];
       await pumpApp(tester, await _overrides(tester, fakes, food: food, calorieGoal: 2200, proteinGoal: 140), size: const Size(390, 2000));
-      for (final tab in ['nav-today', 'nav-eat']) {
-        await _tap(tester, tab);
-        expect(find.text('1,030 of 2,200 kcal · 1,170 kcal left').hitTestable(), findsOneWidget, reason: tab);
-        expect(find.text('Protein 72 of 140 g · 68 g left').hitTestable(), findsOneWidget, reason: tab);
+      // Today shows the same numbers in its shorter form.
+      await _tap(tester, 'nav-today');
+      for (final text in ['1,030', 'of 2,200 · 1,170 left', '72', 'of 140 · 68 left']) {
+        expect(find.text(text).hitTestable(), findsOneWidget, reason: text);
       }
+      await _tap(tester, 'nav-eat');
+      expect(find.text('1,030 of 2,200 kcal · 1,170 kcal left').hitTestable(), findsOneWidget);
+      expect(find.text('Protein 72 of 140 g · 68 g left').hitTestable(), findsOneWidget);
     });
 
     testWidgets('goals start empty, are checked, and blank means none', (tester) async {

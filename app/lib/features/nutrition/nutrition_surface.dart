@@ -6,8 +6,11 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import 'nutrient_coverage.dart';
 
-/// The nutrition summary shared by Today and Eat. Both pass the same entries, coverage and goals, so the two
-/// screens can never disagree. Unknown nutrients show a dash, never a zero; partial sums are labelled.
+// Thousands are grouped for reading only ("1,400"); stored and editable values are never reformatted.
+String _grouped(num v) => formatNumber(v).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+
+/// The full nutrition panel of Eat. Today's [NutritionSummary] is given the same entries, coverage and goals, so
+/// the two screens can never disagree. Unknown nutrients show a dash, never a zero; partial sums are labelled.
 /// A goal is drawn only when the person set one; none is ever suggested.
 class NutritionSurface extends StatelessWidget {
   const NutritionSurface({super.key, required this.entries, required this.coverage, this.calorieGoal, this.proteinGoal, this.onLogFood, this.pending = false, this.footer});
@@ -17,9 +20,6 @@ class NutritionSurface extends StatelessWidget {
   final VoidCallback? onLogFood;
   final bool pending;
   final Widget? footer;
-
-  // Thousands are grouped for reading only ("1,400"); stored and editable values are never reformatted.
-  static String _grouped(num v) => formatNumber(v).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   String _value(Nutrient n) {
     final t = coverage[n]!;
@@ -122,6 +122,89 @@ class NutritionSurface extends StatelessWidget {
           const SizedBox(height: 16),
           PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.add_circle, onPressed: onLogFood),
         ],
+      ]),
+    );
+  }
+}
+
+/// Today's glance at the same day: calories and protein, their goals when the person set them, and Log food.
+/// It reads the coverage Eat reads. An unknown value is a dash, a partial sum is called "known" and never gets a
+/// remainder, and the full breakdown and explanation stay in Eat, one tap away.
+class NutritionSummary extends StatelessWidget {
+  const NutritionSummary({super.key, required this.entries, required this.coverage, this.calorieGoal, this.proteinGoal, required this.onLogFood, required this.onDetails});
+  final List<FoodEntry> entries;
+  final Map<Nutrient, NutrientTotal> coverage;
+  final int? calorieGoal, proteinGoal;
+  final VoidCallback onLogFood, onDetails;
+
+  Widget _cell(BuildContext context, Nutrient n, String label, String unit, int? goal) {
+    final t = coverage[n]!;
+    final partial = t.hasAnyKnown && !t.isComplete;
+    final of = goal == null ? '' : 'of ${_grouped(goal)}'; // the unit is beside the value above
+    final note = goal == null
+        ? null
+        : !t.hasAnyKnown
+            ? 'Goal ${_grouped(goal)} $unit'
+            : partial
+                ? '$of · known so far'
+                : t.knownTotal > goal
+                    ? '$of · ${_grouped(t.knownTotal - goal)} over'
+                    : '$of · ${_grouped(goal - t.knownTotal)} left';
+    return Semantics(
+      label: '$label ${t.hasAnyKnown ? '${_grouped(t.knownTotal)} ${unit == 'kcal' ? 'kilocalories' : 'grams'}' : 'unknown'}'
+          '${partial ? ', from ${t.knownEntries} of ${t.knownEntries + t.unknownEntries} foods' : ''}${note == null ? '' : ', $note'}',
+      child: ExcludeSemantics(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(partial ? '$label · known' : label, style: context.caption),
+          Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 5, children: [
+            Text(t.hasAnyKnown ? _grouped(t.knownTotal) : '—', style: context.titleStyle(26)),
+            if (t.hasAnyKnown) Padding(padding: const EdgeInsets.only(bottom: 3), child: Text(unit, style: context.sansStyle(14.5, color: context.c.secondary))),
+          ]),
+          if (goal != null)
+            Column(key: Key('today-goal-${n.name}'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const SizedBox(height: 6),
+              ProgressRail(t.hasAnyKnown ? t.knownTotal / goal : 0, label: '$label goal', height: 6),
+              const SizedBox(height: 4),
+              Text(note!, style: context.caption),
+            ]),
+        ]),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final goals = [if (calorieGoal != null) '${_grouped(calorieGoal!)} kcal', if (proteinGoal != null) '$proteinGoal g protein'];
+    final calories = _cell(context, Nutrient.calories, 'Calories', 'kcal', calorieGoal), protein = _cell(context, Nutrient.protein, 'Protein', 'g', proteinGoal);
+    // Side by side; one under the other when the text is large.
+    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13;
+    return Panel(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (entries.isEmpty) ...[
+          Text('No food logged yet', style: context.sansStyle(16, weight: FontWeight.w600)),
+          if (goals.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text('Your daily goal: ${goals.join(' · ')}', style: context.caption)),
+        ] else ...[
+          if (stacked) ...[calories, const SizedBox(height: 12), protein] else Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: calories), const SizedBox(width: 16), Expanded(child: protein)]),
+          // Any food without a value for any nutrient: said here in a line, explained in Eat.
+          if (coverage.values.any((t) => t.unknownEntries > 0))
+            Semantics(
+              button: true, hint: 'Opens the food journal',
+              child: InkWell(
+                key: const Key('today-nutrition-missing'),
+                onTap: onDetails,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: Targets.minimum),
+                  child: Row(children: [
+                    Expanded(child: StatusLine(Icons.info_outline, coverage.values.any((t) => t.hasAnyKnown) ? 'Some nutrition values are missing' : 'No nutrition values entered yet')),
+                    Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
+                  ]),
+                ),
+              ),
+            ),
+        ],
+        const SizedBox(height: 12),
+        SecondaryButton('Log food', key: const Key('log-food'), icon: Icons.add, onPressed: onLogFood),
       ]),
     );
   }

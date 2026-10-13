@@ -113,6 +113,12 @@ void main() {
     await tapKey(tester, 'plan-start');
     await waitFor(tester, find.byKey(const Key('today-start')), what: 'today\'s due workout');
     await shot(tester, '05-today-workout-due');
+    // The title opens the workout's details; the button underneath stays the one main action.
+    await tapKey(tester, 'today-details');
+    await waitFor(tester, find.byKey(const Key('occasion-start')), what: 'the workout details');
+    await shot(tester, '05b-today-workout-details');
+    await tester.tapAt(const Offset(20, 60)); // close the sheet
+    await settle(tester, 4);
 
     // --- All four tabs; Train keeps its selected section.
     await tapKey(tester, 'nav-train');
@@ -174,14 +180,15 @@ void main() {
     await type(tester, 'food-fat', '0');
     await shot(tester, '13-food-form');
     await tapKey(tester, 'food-save');
-    await waitFor(tester, find.text('Known totals'));
+    await waitFor(tester, find.text('Some nutrition values are missing'));
     expect(find.text('110'), findsOneWidget);
-    expect(find.text('0 g'), findsOneWidget);
-    expect(find.text('—'), findsNWidgets(2), reason: 'protein and carbs are unknown, not zero');
+    expect(find.text('—'), findsOneWidget, reason: 'protein is unknown, not zero');
     await shot(tester, '14-today-nutrition-known-totals');
-    await tapKey(tester, 'nav-eat');
+    await tapKey(tester, 'today-nutrition-missing'); // the short note leads to the full explanation in Eat
     await waitFor(tester, find.text('Greek yogurt'));
     expect(find.text('Known totals'), findsWidgets);
+    expect(find.text('0 g'), findsOneWidget);
+    expect(find.text('—'), findsNWidgets(2), reason: 'protein and carbs are unknown, not zero');
     await shot(tester, '15-eat-journal');
     // Edit then cancel keeps the recorded version; then a real edit; then confirmed removal.
     await tap(tester, find.text('Greek yogurt'));
@@ -253,7 +260,7 @@ void main() {
     await type(tester, 'auth-password', password);
     await tapKey(tester, 'auth-submit');
     await waitFor(tester, find.text('Done for today'), what: 'the same account\'s day after signing back in');
-    await waitFor(tester, find.text('Known totals'));
+    await waitFor(tester, find.text('Some nutrition values are missing'));
     expect(find.text('110'), findsOneWidget);
     await shot(tester, '22-today-after-sign-in-again');
   });

@@ -427,3 +427,43 @@ The pre-deploy command was also verified in the API's own container image agains
 catalog empty, and a failed step exits non-zero. Passing the whole command as one argument starts the web server
 instead of running either step.
 
+## 12 October 2026 — Today refined (branch `feature/today-refine`, not committed)
+
+Today now holds the day's training action, a short nutrition summary and what was recorded; the week calendar is
+in Train › Plan only and Body measurements in Me only. The layout is described in `docs/DESIGN.md` ("Today: what it
+holds"). App only: no API, contract or stored-data change.
+
+| Change | Where |
+|---|---|
+| Compact workout card: state, name, counts, up to three movement names, recorded-set progress, one button; the title row opens the workout sheet. "View workout" row and the "Workout preview" section removed | `features/today/today_screen.dart` |
+| "Your week" removed from Today; the selected week in Train › Plan gained the progress rail and percentage it had on Today | `features/plans/train_screen.dart` |
+| `NutritionSummary`: calories and protein from the same coverage as Eat, goal rails only for set goals, "Some nutrition values are missing" opening Eat | `features/nutrition/nutrition_surface.dart` |
+| "Recorded today" shown only when something was recorded; run and manual-workout actions sit quietly under the card; an open run reads "Continue your run" | `features/today/today_screen.dart` |
+| One-line "Can't reach your account" with the waiting-changes count, expandable to the explanation and "Try again" | `features/today/today_screen.dart` |
+| The food form names the amount its values are for ("Nutrition for 1 g · optional") | `features/nutrition/food_form.dart` |
+
+Three things were looked into rather than assumed:
+
+- **"About 45 min".** It is `setup.minutesPerSession`, the "Time available" answer from plan setup, not a figure
+  worked out from the exercises. It now reads "45 min planned".
+- **The connection notice.** `connectionProvider` is false whenever the last `SyncEngine.pull()` did not complete:
+  no network, but also any non-success answer from the server. So "Offline" was sometimes the wrong word; the
+  notice now says the account could not be reached and names both causes. What sets the state was not changed.
+  Me still says "Offline right now" under the sync row.
+- **A food logged as 1 g.** No calculation defect: 1 g of a per-100 g food is a hundredth of its values. A new
+  entry starts at one serving (or 100 g when the food has none), and choosing "g" in the unit list keeps the "1",
+  which is how 1 serving becomes 1 g. Nothing is converted and no stored entry is touched; the form now spells
+  out the amount beside the values.
+
+Checked on the final code: `flutter analyze` clean; `flutter test` 139 passed (six new in `widget_test`'s
+"compact Today" group, three existing ones updated); the design renders regenerated in `docs/evidence/design/`
+and looked at (six themes, twice the text size at 320 px, due, in progress, rest day, new account, Train › Plan).
+On the Android emulator against the local API with recorded food responses: `journey_test`, `journey_more_test`,
+`journey_offline_test`, `journey_device_test`, `journey_upgrade_test` and `journey_food_test` passed with their
+captures saved. `journey_secondary_test` passed its steps on three runs, but each time Windows refused to
+overwrite one screenshot that was open elsewhere on the PC (`38-plan-with-skipped.png`, then `39-block-review.png`),
+so the script reported failure and the captures from 39 onward in that journey are the previous ones.
+
+Not checked: any physical phone (safe areas with a notch or home indicator, the phone's own largest text setting,
+real connectivity changes), and iPhone at all.
+

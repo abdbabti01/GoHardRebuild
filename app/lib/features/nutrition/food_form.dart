@@ -225,7 +225,10 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
           onChanged: (m) => setState(() => _meal = m ?? _meal),
         ),
         const SizedBox(height: 22),
-        const SectionLabel('Nutrition for this amount · optional'),
+        // The amount is spelled out with its unit: "1 g" and "1 cup" look the same in the number field alone.
+        SectionLabel(
+            item != null && (_amountEaten ?? 0) > 0 ? 'Nutrition for ${FoodScaling.amountText(_amountEaten!, FoodScaling.unit(item, _unitId))} · optional' : 'Nutrition for this amount · optional',
+            key: const Key('food-amount-echo')),
         const SizedBox(height: 6),
         Text(
             item == null
