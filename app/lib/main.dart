@@ -7,6 +7,7 @@ import 'app/app.dart';
 import 'app/providers.dart';
 import 'core/appearance.dart';
 import 'core/compatibility.dart';
+import 'core/device_prefs.dart';
 import 'data/db.dart';
 import 'data/session.dart';
 
@@ -29,12 +30,15 @@ Future<void> main() async {
   final appearance = AppearanceStore(const SecureSecretStore());
   await sessions.restore();
   await appearance.restore(signedIn: sessions.current != null);
+  final devicePrefs = DevicePrefsStore(const SecureSecretStore());
+  await devicePrefs.restore();
   // A confirmed "this build is too old" survives a restart, including one with no connection.
   final compatibility = CompatibilityStore(const SecureSecretStore());
   await compatibility.restore();
   runApp(ProviderScope(
     retry: (_, _) => null,
     overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance),
+      devicePrefsStoreProvider.overrideWithValue(devicePrefs),
       compatibilityStoreProvider.overrideWithValue(compatibility)],
     child: const GoHardApp(),
   ));

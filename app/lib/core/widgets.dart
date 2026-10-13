@@ -1,16 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 
+import 'device_prefs.dart';
 import 'theme.dart';
 
-/// Shared Calm Momentum building blocks. Spacing and quiet separators come before containers; no card inside a card.
+/// Shared Calm Momentum building blocks: one button, card, list, sheet and form system for every screen.
+/// Spacing and quiet separators come before containers; no card inside a card.
 
-/// The main action: a filled accent pill, at least 52 px high.
+/// Scales its child to [Motion.pressScale] while pressed. With Reduce Motion nothing scales; the tint still shows.
+class _PressScale extends StatelessWidget {
+  const _PressScale({required this.down, required this.child});
+  final bool down;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) =>
+      AnimatedScale(scale: down && !context.reduceMotion ? Motion.pressScale : 1, duration: context.motion(Motion.press), curve: Motion.curve, child: child);
+}
+
+/// Gives a Material button the same press scale, driven by the button's own pressed state.
+class _ScaledButton extends StatefulWidget {
+  const _ScaledButton(this.builder);
+  final Widget Function(WidgetStatesController states) builder;
+  @override
+  State<_ScaledButton> createState() => _ScaledButtonState();
+}
+
+class _ScaledButtonState extends State<_ScaledButton> {
+  final _states = WidgetStatesController();
+  bool _down = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _states.addListener(_changed);
+  }
+
+  void _changed() {
+    final down = _states.value.contains(WidgetState.pressed);
+    if (down == _down || !mounted) return;
+    // A button disabled in the middle of a press reports it while the tree is building.
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _changed());
+    } else {
+      setState(() => _down = down);
+    }
+  }
+
+  @override
+  void dispose() {
+    _states.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _PressScale(down: _down, child: widget.builder(_states));
+}
+
+/// The main action: a filled accent rounded rectangle, at least 52 px high. One per screen or card.
+/// [busy] shows a spinner and ignores taps; a null [onPressed] is the disabled state. [destructive] fills it with the
+/// error colour for an action that erases something (the label still has to say what it does).
 class PrimaryButton extends StatelessWidget {
-  const PrimaryButton(this.label, {super.key, required this.onPressed, this.busy = false, this.expand = true, this.icon});
+  const PrimaryButton(this.label, {super.key, required this.onPressed, this.busy = false, this.expand = true, this.icon, this.destructive = false});
   final String label;
   final VoidCallback? onPressed;
-  final bool busy, expand;
+  final bool busy, expand, destructive;
   final IconData? icon;
 
   @override
@@ -18,13 +71,15 @@ class PrimaryButton extends StatelessWidget {
     final child = busy
         ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: context.c.secondary, semanticsLabel: 'Working'))
         : Text(label, textAlign: TextAlign.center);
-    final button = icon == null || busy
-        ? FilledButton(onPressed: busy ? null : onPressed, child: child)
-        : FilledButton.icon(onPressed: onPressed, icon: Icon(icon, size: 22), label: child);
+    final style = destructive ? FilledButton.styleFrom(backgroundColor: context.c.error, foregroundColor: context.c.page) : null;
+    final button = _ScaledButton((states) => icon == null || busy
+        ? FilledButton(onPressed: busy ? null : onPressed, style: style, statesController: states, child: child)
+        : FilledButton.icon(onPressed: onPressed, style: style, statesController: states, icon: Icon(icon, size: 22), label: child));
     return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
 
+/// The quieter action beside or below a [PrimaryButton]: the same shape and height, outlined.
 class SecondaryButton extends StatelessWidget {
   const SecondaryButton(this.label, {super.key, required this.onPressed, this.expand = true, this.icon});
   final String label;
@@ -35,8 +90,137 @@ class SecondaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = Text(label, textAlign: TextAlign.center);
-    final button = icon == null ? OutlinedButton(onPressed: onPressed, child: child) : OutlinedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 20), label: child);
+    final button = _ScaledButton((states) => icon == null
+        ? OutlinedButton(onPressed: onPressed, statesController: states, child: child)
+        : OutlinedButton.icon(onPressed: onPressed, statesController: states, icon: Icon(icon, size: 20), label: child));
     return expand ? SizedBox(width: double.infinity, child: button) : button;
+  }
+}
+
+/// Wraps a card, row or custom control with the system's press feedback: a quiet tint and a light scale (no scale
+/// under Reduce Motion), a target of at least 48 px, button semantics, and focus/keyboard activation.
+///
+///     Pressable(onTap: openRun, semanticLabel: 'Open run', child: Panel(child: ...))
+///
+/// A null [onTap] is the disabled state. [semanticLabel] replaces what the child would announce; leave it out when
+/// the child's own text is the right label. [haptic] adds a selection tick (silent when Haptics is Off).
+class Pressable extends StatefulWidget {
+  const Pressable({super.key, required this.onTap, required this.child, this.semanticLabel, this.selected, this.haptic = false,
+      this.borderRadius = const BorderRadius.all(Radius.circular(Radii.panel))});
+  final VoidCallback? onTap;
+  final Widget child;
+  final String? semanticLabel;
+
+  /// Announced as selected / not selected when set (a choice among several).
+  final bool? selected;
+  final bool haptic;
+
+  /// The shape of the press tint; match the child's corners.
+  final BorderRadius borderRadius;
+
+  @override
+  State<Pressable> createState() => _PressableState();
+}
+
+class _PressableState extends State<Pressable> {
+  bool _down = false;
+
+  void _tap() {
+    if (widget.haptic) Haptics.selection();
+    widget.onTap!();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.onTap != null;
+    final labelled = widget.semanticLabel != null;
+    return Semantics(
+      container: true, button: true, enabled: enabled, selected: widget.selected, label: widget.semanticLabel,
+      excludeSemantics: labelled, onTap: labelled && enabled ? _tap : null,
+      child: _PressScale(
+        down: _down,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: enabled ? _tap : null,
+            onHighlightChanged: (down) => setState(() => _down = down),
+            borderRadius: widget.borderRadius,
+            child: ConstrainedBox(constraints: const BoxConstraints(minWidth: Targets.minimum, minHeight: Targets.minimum), child: widget.child),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small capitals above a group of rows or inside a card ("PERSONAL", "WORKOUT"). It is drawn in the secondary
+/// text colour, which keeps 4.5:1 on every surface, and is announced in its normal case.
+///
+///     const Overline('Preferences')
+class Overline extends StatelessWidget {
+  const Overline(this.text, {super.key, this.color});
+  final String text;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) => Text(text.toUpperCase(),
+      semanticsLabel: text, style: context.sansStyle(12.5, color: color ?? context.c.secondary, weight: FontWeight.w600, spacing: 1.1));
+}
+
+/// The top of each of the four tabs, the same everywhere: an optional quiet line (the date, "Your profile"), the
+/// large title, and the small GH mark at the top trailing edge. [trailing] is an optional control placed before
+/// the mark; [below] is an optional line under the title (Today's greeting). It has no padding of its own: put it
+/// first in the tab's list, inside the page inset.
+///
+///     TabHeader(title: 'Today', overline: longDate(today), below: Text('Good evening, Alex'))
+class TabHeader extends StatelessWidget {
+  const TabHeader({super.key, required this.title, this.overline, this.trailing, this.below});
+  final String title;
+  final String? overline;
+  final Widget? trailing, below;
+
+  @override
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (overline != null) Padding(padding: const EdgeInsets.only(bottom: 2), child: Text(overline!, style: context.sansStyle(15, color: context.c.secondary))),
+              Heading(title),
+            ]),
+          ),
+          if (trailing != null) Padding(padding: const EdgeInsets.only(left: 8), child: trailing),
+          const Padding(padding: EdgeInsets.only(left: 12, top: 6), child: GhMark()),
+        ]),
+        if (below != null) Padding(padding: const EdgeInsets.only(top: 10), child: below),
+      ]);
+}
+
+/// The small rounded tinted square that holds an icon: beside a row title, at the head of a card. [tone] picks the
+/// tint (accent by default, neutral for quiet rows, a status tone for a status). It is decoration unless
+/// [semanticLabel] is given; a status must also be said in words next to it.
+///
+///     const IconTile(Icons.directions_run)                         // 40 px, accent tint
+///     const IconTile(Icons.rule, tone: Tone.warning, size: 36)
+class IconTile extends StatelessWidget {
+  const IconTile(this.icon, {super.key, this.size = 40, this.tone = Tone.accent, this.semanticLabel});
+  final IconData icon;
+  final double size;
+  final Tone tone;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final (fill, ink) = switch (tone) {
+      Tone.accent => (c.accentSoft, c.accent),
+      Tone.neutral => (c.sunken, c.text),
+      _ => (Color.alphaBlend(_toneColor(context, tone).withValues(alpha: 0.14), c.surface), _toneColor(context, tone)),
+    };
+    final tile = Container(
+      width: size, height: size,
+      decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(size * 0.3)),
+      child: Icon(icon, size: size * 0.55, color: ink, semanticLabel: semanticLabel),
+    );
+    return semanticLabel == null ? ExcludeSemantics(child: tile) : tile;
   }
 }
 
@@ -125,6 +309,8 @@ class StatusPill extends StatelessWidget {
 }
 
 /// A labelled progress rail. The words beside it carry the value; this announces it once for a screen reader.
+/// It appears at its value and moves only when the value really changes: a rebuild, a theme change or the tab
+/// coming back never replays it from zero.
 class ProgressRail extends StatelessWidget {
   const ProgressRail(this.value, {super.key, required this.label, this.color, this.track, this.height = 8});
   final double value;
@@ -140,7 +326,7 @@ class ProgressRail extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(height),
         child: TweenAnimationBuilder<double>(
-          tween: Tween(end: v), duration: context.motion(Motion.large), curve: Curves.easeOutCubic,
+          tween: Tween(end: v), duration: context.motion(Motion.progress), curve: Motion.curve,
           builder: (context, shown, _) => LinearProgressIndicator(value: shown, minHeight: height, color: color ?? context.c.accent, backgroundColor: track ?? context.c.sunken),
         ),
       ),
@@ -188,6 +374,72 @@ class ListRow extends StatelessWidget {
       ]);
 }
 
+/// A bordered group of [GroupRow]s with thin inset separators between them (Me's "Personal", a meal's foods).
+/// Give it rows, not other cards.
+///
+///     GroupCard(children: [GroupRow(...), GroupRow(...)])
+class GroupCard extends StatelessWidget {
+  const GroupCard({super.key, required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: context.c.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: context.c.divider)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          for (final (i, child) in children.indexed) ...[
+            if (i > 0) Divider(color: context.c.divider, height: 1, indent: 16, endIndent: 16),
+            child,
+          ],
+        ]),
+      );
+}
+
+/// One row of a [GroupCard]: an [IconTile], a title, an optional second line, an optional value at the trailing
+/// edge ("Blue · System") and a chevron when it opens something. With large text or a long value, the value moves
+/// under the title instead of being cut, and at very large text the decorative tile gives its width to the words.
+/// [trailing] replaces the chevron (a switch); [destructive] marks a row that erases something. Only give
+/// [onTap] a real destination.
+///
+///     GroupRow(icon: Icons.palette_outlined, title: 'Appearance', value: 'Blue · System', onTap: openAppearance)
+class GroupRow extends StatelessWidget {
+  const GroupRow({super.key, required this.title, this.subtitle, this.icon, this.tone = Tone.accent, this.value, this.trailing, this.onTap, this.destructive = false});
+  final String title;
+  final String? subtitle, value;
+  final IconData? icon;
+  final Tone tone;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final roomy = MediaQuery.textScalerOf(context).scale(10) <= 15;
+    final row = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 64),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: roomy ? 16 : 12, vertical: 12),
+        child: Row(children: [
+          if (icon != null && roomy) ...[IconTile(icon!, tone: destructive ? Tone.error : tone), const SizedBox(width: 14)],
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+              // The value shares the title's line while both fit, and drops under it when they do not.
+              Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, runSpacing: 2, children: [
+                Text(title, style: context.sansStyle(16, weight: FontWeight.w600, color: destructive ? context.c.error : null)),
+                if (value != null) Text(value!, style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w500)),
+              ]),
+              if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 1), child: Text(subtitle!, style: context.caption)),
+            ]),
+          ),
+          if (trailing != null) Padding(padding: const EdgeInsets.only(left: 10), child: trailing) else if (onTap != null) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.chevron_right, size: 22, color: context.c.secondary)),
+        ]),
+      ),
+    );
+    return onTap == null ? row : Semantics(button: true, child: InkWell(onTap: onTap, child: row));
+  }
+}
+
 /// A selectable choice with radio semantics. Selection shows as a tint, a heavier border and a filled mark.
 class ChoiceTile<T> extends StatelessWidget {
   const ChoiceTile({super.key, required this.value, required this.groupValue, required this.onChanged, required this.title, this.subtitle});
@@ -208,7 +460,10 @@ class ChoiceTile<T> extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.field), side: BorderSide(color: selected ? context.c.accent : context.c.outline, width: selected ? 2 : 1)),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => onChanged(value),
+            onTap: () {
+              if (!selected) Haptics.selection();
+              onChanged(value);
+            },
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: Targets.primary),
               child: Padding(
@@ -232,7 +487,7 @@ class ChoiceTile<T> extends StatelessWidget {
 }
 
 /// Segmented choice: a recessed track with the chosen segment filled in the accent. With large text the
-/// segments stack, so no label is ever shrunk or cut.
+/// segments stack, so no label is ever shrunk or cut. Choosing another segment gives a selection tick.
 class Segmented<T> extends StatelessWidget {
   const Segmented({super.key, required this.values, required this.selected, required this.label, required this.onChanged, this.keyPrefix});
   final List<T> values;
@@ -253,17 +508,17 @@ class Segmented<T> extends StatelessWidget {
         selected: on, button: true, inMutuallyExclusiveGroup: true,
         child: InkWell(
           key: keyPrefix == null ? null : Key('$keyPrefix-$name'),
-          borderRadius: BorderRadius.circular(99),
+          borderRadius: BorderRadius.circular(Radii.field - 2),
           onTap: () {
-            if (!on) HapticFeedback.selectionClick();
+            if (!on) Haptics.selection();
             onChanged(v);
           },
           child: AnimatedContainer(
-            duration: context.motion(Motion.quick), curve: Curves.easeOut,
+            duration: context.motion(Motion.quick), curve: Motion.curve,
             constraints: const BoxConstraints(minHeight: Targets.minimum),
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(color: on ? context.c.accent : context.c.sunken, borderRadius: BorderRadius.circular(99)),
+            decoration: BoxDecoration(color: on ? context.c.accent : context.c.sunken, borderRadius: BorderRadius.circular(Radii.field - 2)),
             // Fill, weight and a strong luminance step mark the choice, so it also reads in grayscale.
             child: Text(label(v), textAlign: TextAlign.center, style: context.sansStyle(15, weight: on ? FontWeight.w700 : FontWeight.w500, color: on ? context.c.onAccent : context.c.text)),
           ),
@@ -273,7 +528,7 @@ class Segmented<T> extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(color: context.c.sunken, borderRadius: BorderRadius.circular(stacked ? Radii.panel : 99)),
+      decoration: BoxDecoration(color: context.c.sunken, borderRadius: BorderRadius.circular(Radii.field + 1)),
       child: stacked
           ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final v in values) segment(v)])
           : Row(children: [for (final v in values) Expanded(child: segment(v))]),
@@ -294,8 +549,8 @@ class Panel extends StatelessWidget {
       child: child);
 }
 
-/// The training pass: a landscape card in a deep shade of the accent with a second layer behind its top edge.
-/// It shows a plan's name, calendar position and completed workouts. It is not a payment card.
+/// The training pass: a plan's name, calendar position and completed workouts on one calm card, in the same
+/// surface and border as every other card (no gradient, shadow or stacked layer). It is not a payment card.
 class PassCard extends StatelessWidget {
   const PassCard({super.key, required this.title, this.week, required this.count, required this.caption, required this.progress, this.onTap});
   final String title, count, caption;
@@ -310,56 +565,32 @@ class PassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    const soft = Color(0xE6FFFFFF);
     final percent = progress == null ? null : '${(progress!.clamp(0.0, 1.0) * 100).round()}%';
-    final card = Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(Radii.hero),
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [c.passTop, c.passBottom]),
-        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 8))],
-      ),
-      child: Stack(children: [
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('GoHard', style: context.sansStyle(14, color: soft, weight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text(title, style: context.titleStyle(21, color: GoColors.onPass)),
-                ]),
-              ),
-              if (week != null) Padding(padding: const EdgeInsets.only(left: 12, top: 1), child: Text(week!, style: context.sansStyle(14.5, color: GoColors.onPass, weight: FontWeight.w600))),
-            ]),
-            const SizedBox(height: 16),
-            Text(count, style: context.titleStyle(40, color: GoColors.onPass)),
-            Text(caption, style: context.sansStyle(15, color: soft)),
-            if (progress != null) ...[
-              const SizedBox(height: 16),
-              Row(children: [
-                Expanded(child: ExcludeSemantics(child: ProgressRail(progress!, label: caption, color: c.passFill, track: const Color(0x59000000), height: 10))),
-                const SizedBox(width: 14),
-                Text(percent!, style: context.sansStyle(16, color: GoColors.onPass, weight: FontWeight.w700)),
-              ]),
-            ],
+    final card = Panel(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Overline('Training plan'),
+        const SizedBox(height: 4),
+        Text(title, style: context.titleStyle(24)),
+        if (week != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(week!, style: context.sansStyle(15, color: c.secondary, weight: FontWeight.w500))),
+        const SizedBox(height: 14),
+        Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
+          Text(count, style: context.titleStyle(34)),
+          Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(caption, style: context.sansStyle(15, color: c.secondary))),
+        ]),
+        if (progress != null) ...[
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: ProgressRail(progress!, label: caption)),
+            const SizedBox(width: 12),
+            Text(percent!, style: context.numStyle(15)),
           ]),
-        ),
-        if (onTap != null) Positioned.fill(child: Material(color: Colors.transparent, child: InkWell(onTap: onTap))),
+        ],
       ]),
     );
     return Semantics(
-      container: true, button: onTap != null,
+      container: true, button: onTap != null, onTap: onTap,
       label: '$title. ${week == null ? '' : '$week. '}$count ${caption.toLowerCase()}${percent == null ? '' : ', $percent'}.',
-      child: ExcludeSemantics(
-        child: Stack(children: [
-          // The layer behind: a controlled hint of depth, nothing more.
-          Positioned(top: 0, left: 16, right: 16, height: 40, child: DecoratedBox(decoration: BoxDecoration(color: Color.lerp(c.passTop, c.page, 0.45), borderRadius: BorderRadius.circular(Radii.hero)))),
-          Padding(padding: const EdgeInsets.only(top: 9), child: card),
-        ]),
-      ),
+      child: ExcludeSemantics(child: onTap == null ? card : Pressable(onTap: onTap, child: card)),
     );
   }
 }
@@ -405,8 +636,9 @@ class AppPage extends StatelessWidget {
   }
 }
 
-/// A specific confirmation. Returns true only when the named action was chosen.
-Future<bool> confirm(BuildContext context, {required String title, required String body, required String action, String cancel = 'Cancel'}) async =>
+/// A specific confirmation. Returns true only when the named action was chosen. [destructive] fills the action
+/// with the error colour, for something that cannot be undone.
+Future<bool> confirm(BuildContext context, {required String title, required String body, required String action, String cancel = 'Cancel', bool destructive = false}) async =>
     await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -415,7 +647,9 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
         content: SingleChildScrollView(child: Text(body)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(action)),
+          FilledButton(
+              style: destructive ? FilledButton.styleFrom(backgroundColor: context.c.error, foregroundColor: context.c.page) : null,
+              onPressed: () => Navigator.pop(context, true), child: Text(action)),
         ],
       ),
     ) ??
@@ -425,6 +659,32 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
 void toast(BuildContext context, String message) => ScaffoldMessenger.of(context)
   ..hideCurrentSnackBar()
   ..showSnackBar(SnackBar(content: Text(message), duration: const Duration(milliseconds: 2200), dismissDirection: DismissDirection.horizontal));
+
+/// The one way to open a modal bottom sheet: the system's shape and drag handle, [Motion.sheet] in with an ease-out
+/// and [Motion.quick] out (no travel under Reduce Motion), above the keyboard and the home indicator, and scrolling
+/// when its content is taller than the screen. [builder] returns the content only; padding, the optional [title]
+/// and scrolling are provided. Close it with `Navigator.pop(context, result)`.
+///
+///     final unit = await showGoSheet<String>(context, title: 'Units', builder: (context) => Column(children: [...]));
+Future<T?> showGoSheet<T>(BuildContext context, {required WidgetBuilder builder, String? title, bool isDismissible = true}) => showModalBottomSheet<T>(
+      context: context, isScrollControlled: true, useSafeArea: true, isDismissible: isDismissible,
+      sheetAnimationStyle: context.reduceMotion
+          ? AnimationStyle.noAnimation
+          : const AnimationStyle(duration: Motion.sheet, reverseDuration: Motion.quick, curve: Motion.curve, reverseCurve: Motion.exit),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 16),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              if (title != null) Padding(padding: const EdgeInsets.only(bottom: 14), child: Heading(title, size: 22)),
+              builder(context),
+            ]),
+          ),
+        ),
+      ),
+    );
 
 /// Opens a page with the platform's own transition (interactive back on iOS). With Reduce Motion it simply appears.
 Future<T?> push<T>(BuildContext context, Widget page) => Navigator.of(context).push<T>(MediaQuery.disableAnimationsOf(context)

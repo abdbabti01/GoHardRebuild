@@ -64,14 +64,21 @@ void main() {
               atLeast(4.5, c.accent, bg, 'accent text on $name');
             }
             atLeast(4.5, c.onAccent, c.accent, 'label on a filled accent control');
-            atLeast(4.5, GoColors.onPass, c.passTop, 'text on the pass');
-            atLeast(4.5, const Color(0xE6FFFFFF), c.passTop, 'secondary text on the pass');
+            atLeast(4.5, c.page, c.error, 'label on a destructive action');
             // Controls and graphics: 3:1 against what they sit next to.
             atLeast(3, c.outline, c.page, 'control boundary on page');
             atLeast(3, c.outline, c.surface, 'control boundary on surface');
             atLeast(3, c.accent, c.sunken, 'selected segment / progress fill against its track');
-            atLeast(3, c.passFill, Color.alphaBlend(const Color(0x59000000), c.passBottom), 'pass progress fill against its track');
-            atLeast(3, c.passFill, Color.alphaBlend(const Color(0x59000000), c.passTop), 'pass progress fill against its track (top)');
+            atLeast(3, c.accent, c.accentSoft, 'icon on an accent tile');
+            atLeast(3, c.text, c.sunken, 'icon on a neutral tile');
+            for (final (name, tone) in [('success', c.success), ('warning', c.warning), ('error', c.error)]) {
+              atLeast(3, tone, Color.alphaBlend(tone.withValues(alpha: 0.14), c.surface), 'icon on a $name tile');
+            }
+            // A card is told from the page by its surface first; the thin border only confirms it.
+            expect(c.surface, isNot(c.page));
+            expect(contrast(c.surface, c.page), greaterThan(1.04), reason: 'a raised surface is a visible step from the page');
+            expect(contrast(c.sunken, c.surface), greaterThan(1.15), reason: 'a recessed fill is a visible step from the surface');
+            if (brightness == Brightness.light) expect(c.page, isNot(const Color(0xFFFFFFFF)), reason: 'no glaring pure-white page');
             // White text on the photograph sits on a floor of at least 82% black, whatever is behind it.
             atLeast(4.5, Colors.white, Color.alphaBlend(const Color(0xD1000000), Colors.white), 'hero text over the brightest possible photograph');
             atLeast(4.5, const Color(0xE6FFFFFF), Color.alphaBlend(const Color(0xD1000000), Colors.white), 'hero secondary text');
@@ -80,15 +87,17 @@ void main() {
       }
     }
 
-    test('status colours are not the accent, and the dark pass is a deep shade, not the bright control colour', () {
+    test('status colours are not the accent, and success is a different hue from the Green accent', () {
       for (final accent in Accent.values) {
         for (final b in Brightness.values) {
           final c = GoColors.of(accent, b);
           expect({c.success, c.warning, c.error}.contains(c.accent), isFalse);
         }
-        final dark = GoColors.of(accent, Brightness.dark);
-        expect(dark.passTop.computeLuminance(), lessThan(0.08));
-        expect(dark.passTop.computeLuminance(), lessThan(dark.accent.computeLuminance() / 4));
+      }
+      for (final b in Brightness.values) {
+        final c = GoColors.of(Accent.green, b);
+        final apart = (HSLColor.fromColor(c.success).hue - HSLColor.fromColor(c.accent).hue).abs();
+        expect(apart, greaterThan(20), reason: '${b.name}: teal "completed" against the green accent (and it is always an icon and a word)');
       }
     });
   });
@@ -152,7 +161,7 @@ void main() {
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
       await tester.pumpAndSettle();
       expect(_colors(tester).accent, GoColors.of(Accent.pink, Brightness.light).accent);
-      expect(_colors(tester).page, const Color(0xFFF6F6F4));
+      expect(_colors(tester).page, const Color(0xFFF3F3EF));
     });
 
     test('upgrade: the look an existing install had (Light, Dark or following the phone) is kept exactly', () async {

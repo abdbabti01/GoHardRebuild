@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/device_prefs.dart';
 import '../../core/theme.dart';
 import '../me/me_screen.dart';
 import '../me/sync_review_screen.dart';
@@ -40,8 +41,8 @@ class HomeShell extends ConsumerWidget {
     final shell = ref.watch(shellProvider);
     final issues = ref.watch(issuesProvider).value ?? const [];
     return Scaffold(
-      // IndexedStack keeps each destination's state, scroll position and unfinished input while you are elsewhere.
-      body: SafeArea(bottom: false, child: IndexedStack(index: shell.tab, children: const [TodayScreen(), TrainScreen(), EatScreen(), MeScreen()])),
+      // Every destination stays built, so its state, scroll position and unfinished input wait while you are elsewhere.
+      body: SafeArea(bottom: false, child: _FadeStack(index: shell.tab, children: const [TodayScreen(), TrainScreen(), EatScreen(), MeScreen()])),
       bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
         // Attention appears only when saved data cannot converge without a decision. Ordinary pending upload stays quiet.
         if (issues.isNotEmpty)
@@ -50,15 +51,53 @@ class HomeShell extends ConsumerWidget {
             child: InkWell(
               onTap: () => push(context, const SyncReviewScreen()),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.inset, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: context.inset, vertical: 13),
                 child: StatusLine(Icons.rule, '${issues.length} saved ${issues.length == 1 ? 'change needs' : 'changes need'} your review. Nothing was lost. Tap to review.', tone: Tone.warning),
               ),
             ),
           ),
-        GoNavigationBar(currentIndex: shell.tab, onTap: (i) => ref.read(shellProvider.notifier).switchTab(i)),
+        GoNavigationBar(currentIndex: shell.tab, onTap: (i) {
+          if (i != shell.tab) Haptics.selection();
+          ref.read(shellProvider.notifier).switchTab(i);
+        }),
       ]),
     );
   }
+}
+
+/// An [IndexedStack] whose newly shown child fades in over [Motion.quick] (at once under Reduce Motion). Every
+/// child keeps the same place in the tree whether it is shown or not, so nothing is rebuilt, reset or scrolled.
+class _FadeStack extends StatefulWidget {
+  const _FadeStack({required this.index, required this.children});
+  final int index;
+  final List<Widget> children;
+  @override
+  State<_FadeStack> createState() => _FadeStackState();
+}
+
+class _FadeStackState extends State<_FadeStack> with SingleTickerProviderStateMixin {
+  late final _fade = AnimationController(vsync: this, value: 1);
+  late final _eased = CurvedAnimation(parent: _fade, curve: Motion.curve);
+
+  @override
+  void didUpdateWidget(_FadeStack old) {
+    super.didUpdateWidget(old);
+    if (old.index == widget.index) return;
+    _fade.duration = context.motion(Motion.quick);
+    _fade.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _eased.dispose();
+    _fade.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => IndexedStack(index: widget.index, children: [
+        for (final (i, child) in widget.children.indexed) FadeTransition(opacity: i == widget.index ? _eased : kAlwaysCompleteAnimation, child: child),
+      ]);
 }
 
 class GoNavigationBar extends StatelessWidget {
@@ -71,7 +110,7 @@ class GoNavigationBar extends StatelessWidget {
     ('Today', Icons.home_outlined, Icons.home_rounded),
     ('Train', Icons.fitness_center_outlined, Icons.fitness_center),
     ('Eat', Icons.restaurant_outlined, Icons.restaurant),
-    ('Me', Icons.person_outline, Icons.person),
+    ('Me', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
   @override
@@ -91,10 +130,10 @@ class GoNavigationBar extends StatelessWidget {
                       constraints: const BoxConstraints(minHeight: Targets.navigation),
                       child: ExcludeSemantics(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 9),
                           child: Column(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
                             Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? context.c.accent : context.c.secondary),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 4),
                             Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis,
                                 style: context.sansStyle(12.5, color: i == currentIndex ? context.c.accent : context.c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500)),
                           ]),

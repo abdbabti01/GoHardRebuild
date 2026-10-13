@@ -10,13 +10,14 @@ chosen accent, a photographic workout feature on Today and a training pass on Tr
 |---|---|
 | Colour tokens, type, radii, targets, motion, `ThemeData` | `app/lib/core/theme.dart` |
 | Accent + mode preference, saved on the device | `app/lib/core/appearance.dart` |
-| Shared components (buttons, segmented control, pass, rail, rows, page) | `app/lib/core/widgets.dart` |
+| Shared components (buttons, Pressable, tab header, icon tile, group card and rows, sheet, segmented control, pass, rail, page) | `app/lib/core/widgets.dart` |
+| Motion and haptics preference, the `Haptics` helper | `app/lib/core/device_prefs.dart` |
 | Week tiles, day strip, state pills | `app/lib/features/plans/week_widgets.dart` |
 | Completion, plan weeks, recorded-set progress (pure logic) | `app/lib/features/plans/plan_progress.dart` |
 | Appearance page | `AppearanceScreen` in `app/lib/features/me/me_screen.dart` |
 
 Screens read colours only through `context.c` (`GoColors`). No screen carries its own colour values, except white
-text on the workout photograph and on the pass, which sit on fixed dark surfaces.
+text on the workout photograph, which sits on a fixed dark scrim.
 
 ## Appearance
 
@@ -35,17 +36,23 @@ the phone for a moment before the saved profile is read. The account field is le
 
 | Role | Light | Dark |
 |---|---|---|
-| Page | `#F6F6F4` | `#101114` |
-| Raised surface | `#FFFFFF` | `#1C1F24` |
-| Recessed fill (tracks, unselected segments) | `#ECECE8` | `#272B32` |
-| Text / secondary text | `#121417` / `#555B63` | `#F3F4F6` / `#ADB3BC` |
-| Separator / control boundary | `#E0E0DB` / `#6E747D` | `#2E3239` / `#8A919B` |
-| Blue accent / selection tint | `#0062CC` / `#E7F0FC` | `#77B6FF` / `#172C47` |
-| Green accent / selection tint | `#147644` / `#E2F2E9` | `#6BD39C` / `#143527` |
-| Pink accent / selection tint | `#B32E70` / `#FBE9F1` | `#F58CB9` / `#3F1E33` |
-| Text on a filled accent | `#FFFFFF` | `#101114` |
-| Pass (top → bottom), blue | `#0A63CB` → `#073F8C` | `#15457F` → `#0C2748` |
+| Page | `#F3F3EF` | `#131417` |
+| Raised surface (cards, sheets, dialogs, fields) | `#FCFCFA` | `#1D2025` |
+| Recessed fill (tracks, unselected segments, neutral icon tiles) | `#E8E8E3` | `#2A2E35` |
+| Text / secondary text | `#14161A` / `#555B63` | `#F2F3F5` / `#ADB3BC` |
+| Separator and card border / control boundary | `#DCDCD6` / `#6E747D` | `#33373E` / `#8A919B` |
+| Blue accent / selection tint | `#0062CC` / `#E6EFFB` | `#77B6FF` / `#172C47` |
+| Green accent / selection tint | `#147644` / `#E1F1E8` | `#6BD39C` / `#143527` |
+| Pink accent / selection tint | `#B32E70` / `#FAE8F0` | `#F58CB9` / `#3F1E33` |
+| Text on a filled accent | `#FFFFFF` | `#131417` |
 | Success / warning / error | `#0C6B63` / `#7D5200` / `#B3261E` | `#5FD4C4` / `#F2C36B` / `#FFB4AB` |
+
+Refined on 13 October 2026 for the four-tab redesign: the light page is pearl and the raised surface is an off-white
+one step above it, so a card reads as raised before its thin border is noticed and no page is pure white; the dark
+page is charcoal rather than near-black, with the same step up to cards and recessed fills. The training pass no
+longer has its own gradient colours: it is an ordinary card. Radii are 12 (fields, choices), 14 (buttons, tiles),
+18 (cards, dialogs) and 22 (the top of a sheet). Buttons are rounded rectangles; the pill is kept for status labels.
+A destructive action is filled with the error colour and labelled in the page colour.
 
 Changes from the brief's starting values, each made because the measured contrast asked for it: light blue
 `#0068D9` → `#0062CC` and light pink `#B83275` → `#B32E70` (accent-coloured text on the selection tint was under
@@ -54,6 +61,28 @@ Changes from the brief's starting values, each made because the measured contras
 With the phone's Increased Contrast setting, secondary text, separators and control boundaries move toward the
 primary text colour (`highContrastTheme`). Nothing in the app uses blur or translucent panels, so Reduce Transparency
 has nothing to change. With Reduce Motion, pages appear without a slide and rails and segments change without easing.
+
+## Motion and haptics
+
+One place for timing, `Motion` in `theme.dart`, always read through `context.motion(...)`:
+
+| What | Timing |
+|---|---|
+| Press feedback (`Pressable`, the buttons): scale to 0.98 and back | 100 ms |
+| Selection, tab cross-fade, look change, a sheet leaving | 200 ms |
+| A sheet arriving (`showGoSheet`) | 280 ms, ease-out |
+| A progress rail moving to a new real value | 360 ms, ease-out |
+
+Nothing loops, bounces or slides a whole page. A rail appears at its value and moves only when the value changes;
+a rebuild or a tab coming back replays nothing. The tabs stay built in an `IndexedStack`; the cross-fade only
+changes the opacity of the tab being shown.
+
+**Me › Motion & haptics** holds two device preferences, saved in the platform secure store beside the appearance
+(`gohard.rebuild.device-prefs`) and read before the first frame. They are not part of the account. Motion is Device
+or Reduced: Reduced is presented to the whole app as the phone's own Reduce Motion (`DevicePrefsScope` sets
+`MediaQuery.disableAnimations` above the navigator), so there is one code path and changing it rebuilds no route.
+Haptics is Device or Off: every haptic goes through `Haptics.selection()` / `Haptics.confirm()`, which do nothing
+when it is Off. Haptics are for something the person just did, never for sync or typing.
 
 ## What is measured, and how
 
@@ -150,6 +179,22 @@ The minutes on a due workout are the session length chosen in plan setup (`setup
 "50 min planned", never "about 50 min": nothing is estimated from the exercises.
 
 
+## Me
+
+Redesigned on 13 October 2026 from `me-reference.png`. Me is identity, personal information, preferences and the
+account, as grouped rows (`GroupCard` / `GroupRow`): the profile's own name with its initial and Edit profile;
+Personal (Body measurements, Nutrition goals); Preferences (Appearance, Units, Motion & haptics, Workout reminders);
+Account (Sync status, Delete account); Sign out, with the signed-in email. Every row opens something real.
+
+The training overview, week history, open workouts and the Workout history, Progress and Run history rows that used
+to be here are gone from Me: they are in Train (Workouts lists recent workouts and Run history; Progress ends with
+Workout history; Plan has the pass and weeks). Units is a row that opens a sheet rather than a switch in place.
+
+Sync status says one word and one sentence from the real state: "Needs review" when a change needs a decision,
+"Not synced" with "Can't sync right now" when the last attempt to reach the account failed (plus the number
+waiting), "Waiting" while changes are only on this phone, and "Saved" only when none of those is true. Nutrition
+goals shows the goals that were set, and "None set" otherwise; no number ever stands in for a goal.
+
 ## Deliberate differences from the references
 
 | Reference | App | Why |
@@ -159,6 +204,8 @@ The minutes on a due workout are the session length chosen in plan setup (`setup
 | A person in the workout photograph and on the pass | the supplied dumbbell illustration; a plain pass | the photographs supplied with the Today brief show no face; no synthetic anatomy to get wrong |
 | Week tiles four across with small text, selected tile without its label | three across at phone width, every tile shows week, dates and state | the reference's labels were too small to read; three across fits "Sep 28 – Oct 4" on one line |
 | System segment stays blue with Green selected | selected controls always use the chosen accent | a flaw in the reference |
-| "Week history" and "Progress overview" as separate cards on Me | one card: completion, then the last three weeks | a card inside a card otherwise |
-| Units, Appearance, History, Settings as four rows | Appearance has its own page; units is a two-way switch in place | one tap fewer for a two-value choice |
+| "Account & privacy" row on Me | "Delete account" directly in the Account group | it is the only account action there is; a page holding one row would be a detour |
+| "Metric" for Units, "Device settings" for Motion & haptics | "Kilograms" / "Pounds"; "Device", or what was changed | the app's real choices, short enough to stay on the row's line |
+| "YOUR PROFILE" in capitals, the mark above the title | "Your profile" in the same quiet line every tab uses, the mark at the top trailing edge | one header for all four tabs |
+| A deep-coloured gradient pass | the pass is a plain card | no glossy gradients or heavy shadows |
 | Green check marks for completed days | teal check marks | completion must not depend on, or be confused with, the accent |

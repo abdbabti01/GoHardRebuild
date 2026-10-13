@@ -55,13 +55,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           padding: EdgeInsets.fromLTRB(context.inset, 28, context.inset, 28),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            const Align(alignment: Alignment.centerLeft, child: GhMark(height: 26)),
-            const SizedBox(height: 36),
-            Heading(_register ? 'Create your account' : 'Welcome back', size: 32),
-            const SizedBox(height: 10),
+            // The mark sits where every tab has it: small, at the top trailing edge.
+            const Align(alignment: Alignment.centerRight, child: GhMark()),
+            const SizedBox(height: 32),
+            Heading(_register ? 'Create your account' : 'Welcome back'),
+            const SizedBox(height: 8),
             Text('Know what to do next, and keep a record of what you actually did.', style: context.sansStyle(16, color: context.c.secondary)),
-            const SizedBox(height: 26),
-            if (notice != null) ...[StatusLine(Icons.info_outline, notice, tone: Tone.warning), const SizedBox(height: 16)],
+            const SizedBox(height: 24),
+            if (notice != null) ...[Panel(padding: const EdgeInsets.all(14), child: StatusLine(Icons.info_outline, notice, tone: Tone.warning)), const SizedBox(height: 16)],
             if (_register) ...[
               TextField(key: const Key('auth-name'), controller: _name, textInputAction: TextInputAction.next, textCapitalization: TextCapitalization.words,
                   autofillHints: const [AutofillHints.name], decoration: const InputDecoration(labelText: 'Your name')),

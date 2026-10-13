@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Calm Momentum design tokens: pearl surfaces in light, graphite layers in dark, and one chosen accent.
+/// Calm Momentum design tokens: pearl surfaces in light, charcoal layers in dark, and one chosen accent.
 /// Every screen reads colours from here; nothing is patched per screen.
 enum Accent {
   blue('Blue'),
@@ -16,10 +16,10 @@ enum Accent {
 @immutable
 class GoColors extends ThemeExtension<GoColors> {
   const GoColors({required this.page, required this.surface, required this.sunken, required this.text, required this.secondary, required this.divider,
-      required this.outline, required this.accent, required this.onAccent, required this.accentSoft, required this.passTop, required this.passBottom,
-      required this.passFill, required this.success, required this.warning, required this.error});
+      required this.outline, required this.accent, required this.onAccent, required this.accentSoft, required this.success, required this.warning, required this.error});
 
-  /// Page behind everything; raised cards; recessed fills (inputs, tracks, unselected segments).
+  /// Page behind everything; raised cards; recessed fills (tracks, unselected segments, neutral icon tiles).
+  /// Page and surface differ by a small step, so a card reads as raised before its thin border is noticed.
   final Color page, surface, sunken;
   final Color text, secondary;
 
@@ -29,35 +29,31 @@ class GoColors extends ThemeExtension<GoColors> {
   /// The chosen accent: fills, selected icons and accent-coloured text. [accentSoft] is the selection tint.
   final Color accent, onAccent, accentSoft;
 
-  /// The training pass: a deep shade of the accent, never the bright control colour. Text on it is [onPass].
-  final Color passTop, passBottom, passFill;
-
   /// Status colours stay the same whatever the accent, and are always paired with an icon or words.
+  /// [error] is also the fill of a destructive action; its label is drawn in [page].
   final Color success, warning, error;
-
-  static const onPass = Color(0xFFFFFFFF);
 
   factory GoColors.of(Accent accent, Brightness brightness, {bool highContrast = false}) {
     final dark = brightness == Brightness.dark;
-    final (a, soft, top, bottom, fill) = switch ((accent, dark)) {
-      (Accent.blue, false) => (0xFF0062CC, 0xFFE7F0FC, 0xFF0A63CB, 0xFF073F8C, 0xFFA8D2FF),
-      (Accent.green, false) => (0xFF147644, 0xFFE2F2E9, 0xFF147A46, 0xFF0B4A2A, 0xFF9AE6BC),
-      (Accent.pink, false) => (0xFFB32E70, 0xFFFBE9F1, 0xFFB52F72, 0xFF761A49, 0xFFFFB3D3),
-      (Accent.blue, true) => (0xFF77B6FF, 0xFF172C47, 0xFF15457F, 0xFF0C2748, 0xFF8CC2FF),
-      (Accent.green, true) => (0xFF6BD39C, 0xFF143527, 0xFF125536, 0xFF0A2E1E, 0xFF7EDDAA),
-      (Accent.pink, true) => (0xFFF58CB9, 0xFF3F1E33, 0xFF7A2552, 0xFF43122C, 0xFFF9A3C7),
+    final (a, soft) = switch ((accent, dark)) {
+      (Accent.blue, false) => (0xFF0062CC, 0xFFE6EFFB),
+      (Accent.green, false) => (0xFF147644, 0xFFE1F1E8),
+      (Accent.pink, false) => (0xFFB32E70, 0xFFFAE8F0),
+      (Accent.blue, true) => (0xFF77B6FF, 0xFF172C47),
+      (Accent.green, true) => (0xFF6BD39C, 0xFF143527),
+      (Accent.pink, true) => (0xFFF58CB9, 0xFF3F1E33),
     };
+    final page = Color(dark ? 0xFF131417 : 0xFFF3F3EF);
     return GoColors(
-      page: Color(dark ? 0xFF101114 : 0xFFF6F6F4),
-      surface: Color(dark ? 0xFF1C1F24 : 0xFFFFFFFF),
-      sunken: Color(dark ? 0xFF272B32 : 0xFFECECE8),
-      text: Color(dark ? 0xFFF3F4F6 : 0xFF121417),
+      page: page,
+      surface: Color(dark ? 0xFF1D2025 : 0xFFFCFCFA),
+      sunken: Color(dark ? 0xFF2A2E35 : 0xFFE8E8E3),
+      text: Color(dark ? 0xFFF2F3F5 : 0xFF14161A),
       // Increased contrast: muted text and separators move toward the primary text and control boundary.
       secondary: Color(highContrast ? (dark ? 0xFFD5D9DF : 0xFF33383F) : (dark ? 0xFFADB3BC : 0xFF555B63)),
-      divider: Color(highContrast ? (dark ? 0xFF8A919B : 0xFF6E747D) : (dark ? 0xFF2E3239 : 0xFFE0E0DB)),
+      divider: Color(highContrast ? (dark ? 0xFF8A919B : 0xFF6E747D) : (dark ? 0xFF33373E : 0xFFDCDCD6)),
       outline: Color(highContrast ? (dark ? 0xFFB4BAC3 : 0xFF4A5059) : (dark ? 0xFF8A919B : 0xFF6E747D)),
-      accent: Color(a), onAccent: Color(dark ? 0xFF101114 : 0xFFFFFFFF), accentSoft: Color(soft),
-      passTop: Color(top), passBottom: Color(bottom), passFill: Color(fill),
+      accent: Color(a), onAccent: dark ? page : const Color(0xFFFFFFFF), accentSoft: Color(soft),
       success: Color(dark ? 0xFF5FD4C4 : 0xFF0C6B63),
       warning: Color(dark ? 0xFFF2C36B : 0xFF7D5200),
       error: Color(dark ? 0xFFFFB4AB : 0xFFB3261E),
@@ -74,26 +70,41 @@ class GoColors extends ThemeExtension<GoColors> {
     return GoColors(
         page: f(page, other.page), surface: f(surface, other.surface), sunken: f(sunken, other.sunken), text: f(text, other.text),
         secondary: f(secondary, other.secondary), divider: f(divider, other.divider), outline: f(outline, other.outline), accent: f(accent, other.accent),
-        onAccent: f(onAccent, other.onAccent), accentSoft: f(accentSoft, other.accentSoft), passTop: f(passTop, other.passTop),
-        passBottom: f(passBottom, other.passBottom), passFill: f(passFill, other.passFill), success: f(success, other.success),
+        onAccent: f(onAccent, other.onAccent), accentSoft: f(accentSoft, other.accentSoft), success: f(success, other.success),
         warning: f(warning, other.warning), error: f(error, other.error));
   }
 }
 
 const sans = 'Inter';
 
-/// Corner radii, smallest to largest: controls, tiles, cards, the hero and the pass.
+/// Corner radii, smallest to largest: fields and choices, buttons and tiles, cards and dialogs, the top of a sheet.
 abstract final class Radii {
-  static const field = 12.0, tile = 14.0, panel = 20.0, hero = 26.0;
+  static const field = 12.0, tile = 14.0, panel = 18.0, sheet = 22.0;
 }
 
 abstract final class Targets {
   static const minimum = 48.0, primary = 52.0, navigation = 58.0, logging = 88.0;
 }
 
-/// Small state changes, and larger presentations.
+/// The one place for timing. Always pass a duration through `context.motion(...)`, which makes it zero under
+/// Reduce Motion (the phone's setting, or Me > Motion & haptics > Reduced). Nothing loops, bounces or pulses.
 abstract final class Motion {
-  static const quick = Duration(milliseconds: 200), large = Duration(milliseconds: 300);
+  /// Press feedback: a control settles to [pressScale] and back.
+  static const press = Duration(milliseconds: 100);
+
+  /// Selection, tab and content changes, and a sheet or a look leaving.
+  static const quick = Duration(milliseconds: 200);
+
+  /// A sheet arriving.
+  static const sheet = Duration(milliseconds: 280);
+
+  /// A progress rail moving to a new real value. It never plays for a rebuild or a tab coming back.
+  static const progress = Duration(milliseconds: 360);
+
+  static const pressScale = 0.98;
+
+  /// Ease-out for anything arriving or changing; [exit] for anything leaving.
+  static const Curve curve = Curves.easeOutCubic, exit = Curves.easeInCubic;
 }
 
 extension GoContext on BuildContext {
@@ -105,8 +116,11 @@ extension GoContext on BuildContext {
   /// Display type shrinks a little on narrow phones so controls keep their readable size.
   double display(double size) => MediaQuery.sizeOf(this).width < 350 ? size * 0.85 : size;
 
+  /// True under the phone's Reduce Motion, or when Motion is set to Reduced in the app.
+  bool get reduceMotion => MediaQuery.disableAnimationsOf(this);
+
   /// Reduce Motion: state still changes, it just does not travel.
-  Duration motion(Duration d) => MediaQuery.disableAnimationsOf(this) ? Duration.zero : d;
+  Duration motion(Duration d) => reduceMotion ? Duration.zero : d;
 
   TextStyle sansStyle(double size, {Color? color, FontWeight weight = FontWeight.w400, double? spacing}) =>
       TextStyle(fontFamily: sans, fontFamilyFallback: const ['Arial', 'sans-serif'], fontSize: size, height: 1.35, fontWeight: weight, color: color ?? c.text, letterSpacing: spacing);
@@ -114,6 +128,11 @@ extension GoContext on BuildContext {
   /// Headings and large numbers: bold, tight, with figures that do not jiggle as values change.
   TextStyle titleStyle(double size, {Color? color, FontWeight weight = FontWeight.w700}) =>
       sansStyle(display(size), color: color, weight: weight, spacing: size >= 24 ? -0.6 : -0.2).copyWith(height: 1.15, fontFeatures: const [FontFeature.tabularFigures()]);
+
+  /// A changing value at reading size ("82.4 kg", "1,480 kcal"): digits keep one width, so nothing shifts as it
+  /// updates. For large figures use [titleStyle], which is tabular too.
+  TextStyle numStyle(double size, {Color? color, FontWeight weight = FontWeight.w600}) =>
+      sansStyle(size, color: color, weight: weight).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
   TextStyle get body => sansStyle(16);
   TextStyle get caption => sansStyle(13.5, color: c.secondary);
   TextStyle get label => sansStyle(13.5, color: c.secondary, weight: FontWeight.w600);
@@ -135,7 +154,8 @@ ThemeData goTheme(Accent accent, Brightness brightness, {bool highContrast = fal
       systemNavigationBarColor: c.page, systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark, systemNavigationBarDividerColor: Colors.transparent);
   OutlineInputBorder border(Color color, [double width = 1]) =>
       OutlineInputBorder(borderRadius: BorderRadius.circular(Radii.field), borderSide: BorderSide(color: color, width: width));
-  const pill = StadiumBorder();
+  // Buttons are rounded rectangles like the cards they sit in; the pill is kept for status labels only.
+  final button = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile));
   return base.copyWith(
     extensions: [c],
     textTheme: base.textTheme.apply(bodyColor: c.text, displayColor: c.text, fontFamily: sans),
@@ -152,12 +172,12 @@ ThemeData goTheme(Accent accent, Brightness brightness, {bool highContrast = fal
     filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
             backgroundColor: c.accent, foregroundColor: c.onAccent, disabledBackgroundColor: c.sunken, disabledForegroundColor: c.secondary,
-            minimumSize: const Size(64, Targets.primary), padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: pill,
+            minimumSize: const Size(64, Targets.primary), padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: button,
             textStyle: const TextStyle(fontFamily: sans, fontSize: 16.5, fontWeight: FontWeight.w600))),
     outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-            foregroundColor: c.text, side: BorderSide(color: c.outline), minimumSize: const Size(64, Targets.primary),
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: pill,
+            foregroundColor: c.text, backgroundColor: c.surface, side: BorderSide(color: c.outline), minimumSize: const Size(64, Targets.primary),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: button,
             textStyle: const TextStyle(fontFamily: sans, fontSize: 16.5, fontWeight: FontWeight.w600))),
     textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -170,7 +190,7 @@ ThemeData goTheme(Accent accent, Brightness brightness, {bool highContrast = fal
         contentTextStyle: TextStyle(fontFamily: sans, fontSize: 15.5, height: 1.4, color: c.text)),
     bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: c.surface, surfaceTintColor: Colors.transparent, showDragHandle: true, dragHandleColor: c.outline,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.hero)))),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)))),
     popupMenuTheme: PopupMenuThemeData(color: c.surface, surfaceTintColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile)),
         textStyle: TextStyle(fontFamily: sans, fontSize: 16, color: c.text)),
     // The message bar is a neutral inverse surface, so it reads the same under every accent.
@@ -191,6 +211,8 @@ ThemeData goTheme(Accent accent, Brightness brightness, {bool highContrast = fal
     datePickerTheme: DatePickerThemeData(backgroundColor: c.surface, surfaceTintColor: Colors.transparent),
     timePickerTheme: TimePickerThemeData(backgroundColor: c.surface),
     listTileTheme: ListTileThemeData(iconColor: c.secondary, textColor: c.text),
-    splashFactory: InkSparkle.splashFactory,
+    // Press feedback is a quiet tint (and a small scale on Pressable and the buttons), not a ripple.
+    splashFactory: NoSplash.splashFactory, splashColor: Colors.transparent,
+    highlightColor: c.text.withValues(alpha: 0.06), hoverColor: c.text.withValues(alpha: 0.04), focusColor: c.accent.withValues(alpha: 0.14),
   );
 }

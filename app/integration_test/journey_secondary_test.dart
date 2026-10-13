@@ -197,12 +197,16 @@ void main() {
     await tapKey(tester, 'name-save');
     await reveal(tester, find.text('Renamed Tester'));
     await waitFor(tester, find.text('Renamed Tester'));
-    await tapKey(tester, 'me-history');
+    // History lives in Train, not Me.
+    await tapKey(tester, 'nav-train');
+    await tapKey(tester, 'train-progress');
+    await tap(tester, find.text('Workout history'));
     await waitFor(tester, find.textContaining('No training logged'));
     expect(find.textContaining('Recorded'), findsWidgets);
     await shot(tester, '40-history');
     await tester.pageBack();
     await settle(tester);
+    await tapKey(tester, 'nav-me');
 
     await tapKey(tester, 'me-delete-account');
     await type(tester, 'delete-password', 'not my password');

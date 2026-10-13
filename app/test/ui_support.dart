@@ -8,6 +8,7 @@ import 'package:gohard_rebuild/app/app.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/clock.dart';
+import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
@@ -33,7 +34,8 @@ Stored<T> stored<T>(T value, String kind, String id, Json body, {String state = 
 
 Future<List<Override>> overridesFor({required String day, List<Json> plans = const [], String? primaryPlanId, List<Json> workouts = const [], List<Json> sets = const [],
     List<Json> food = const [], bool foodFails = false, AppearanceStore? appearance, String profileAppearance = 'dark',
-    int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const [], List<Json> runs = const []}) async {
+    int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const [], List<Json> runs = const [],
+    int pending = 0, List<Rec> issues = const [], Json profile = const {}, bool profileLoaded = true}) async {
   final sessions = SessionManager(MemorySecretStore());
   await sessions.signIn(authFor('one'));
   List<Stored<WorkoutSet>> setRows(String? workoutId) => [for (final s in sets) if (workoutId == null || s['workoutId'] == workoutId) stored(WorkoutSet(s), Kinds.set, s['id'] as String, s)];
@@ -41,7 +43,7 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     sessionsProvider.overrideWithValue(sessions),
     if (appearance != null) appearanceStoreProvider.overrideWithValue(appearance),
     todayKeyProvider.overrideWith(() => FixedDay(day)),
-    profileProvider.overrideWith((ref) => Stream.value(Profile({...authFor('one')['profile'] as Json, 'displayName': 'Alex Sample', 'appearance': profileAppearance, 'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal}))),
+    profileProvider.overrideWith((ref) => Stream.value(!profileLoaded ? null : Profile({...authFor('one')['profile'] as Json, 'displayName': 'Alex Sample', 'appearance': profileAppearance, 'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal, ...profile}))),
     foodJournalProvider.overrideWith((ref) => Stream.value([for (final f in food) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
     savedFoodsProvider.overrideWith((ref) => Stream.value([for (final f in savedFoods) stored(SavedFood(f), Kinds.savedFood, f['id'] as String, f)])),
     seenFoodsProvider.overrideWith((ref) => Stream.value([for (final f in seenFoods) FoodItem(f)])),
@@ -56,8 +58,8 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     metricsProvider.overrideWith((ref) => Stream.value(const [])),
     proposalsProvider.overrideWith((ref) => Stream.value(const [])),
     catalogProvider.overrideWith((ref) => Stream.value(const [])),
-    issuesProvider.overrideWith((ref) => Stream.value(const [])),
-    pendingCountProvider.overrideWith((ref) => Stream.value(0)),
+    issuesProvider.overrideWith((ref) => Stream.value(issues)),
+    pendingCountProvider.overrideWith((ref) => Stream.value(pending)),
   ];
 }
 
@@ -78,7 +80,7 @@ Future<ProviderContainer> pumpApp(WidgetTester tester, List<Override> overrides,
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: goTheme(a.accent, Brightness.light), darkTheme: goTheme(a.accent, Brightness.dark), themeMode: a.mode,
-        builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)), child: CompatibilityGate(child: child!)),
+        builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)), child: DevicePrefsScope(child: CompatibilityGate(child: child!))),
         home: home,
       );
     }),

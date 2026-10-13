@@ -37,6 +37,7 @@ void main() {
 
     // --- Pounds at the boundary, undo and edit of a recorded set.
     await j.tapKey('nav-me');
+    await j.tapKey('me-units'); // Units is a row that opens a sheet; choosing closes it
     await j.tapKey('unit-lb');
     await j.tapKey('nav-train');
     await j.tapKey('start-manual');
@@ -81,8 +82,12 @@ void main() {
     await j.tapKey('result-done');
     // The same record in kilograms: stored once in kg, only its presentation changes.
     await j.tapKey('nav-me');
+    await j.tapKey('me-units');
     await j.tapKey('unit-kg');
-    await j.tapKey('me-history');
+    // History lives in Train, not Me.
+    await j.tapKey('nav-train');
+    await j.tapKey('train-progress');
+    await j.tapText('Workout history');
     await j.tap(find.text('Workout'));
     await j.waitFor(find.textContaining('45.4 kg × 6'));
     await tester.pageBack();

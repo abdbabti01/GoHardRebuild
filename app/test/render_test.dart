@@ -135,6 +135,13 @@ Future<void> _open(WidgetTester tester, String screen) async {
       await tap('me-goals');
     case 'me':
       await tap('nav-me');
+    case 'motion' || 'units' || 'edit-profile' || 'delete-account':
+      await tap('nav-me');
+      final key = const {'motion': 'me-motion', 'units': 'me-units', 'edit-profile': 'me-edit-name', 'delete-account': 'me-delete-account'}[screen]!;
+      await tester.scrollUntilVisible(find.byKey(Key(key)), 200, scrollable: find.byType(Scrollable).last);
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+      await tap(key);
     case 'appearance':
       await tap('nav-me');
       await tester.scrollUntilVisible(find.byKey(const Key('me-appearance')), 200, scrollable: find.byType(Scrollable).last);
@@ -182,7 +189,14 @@ void main() {
     'full-today-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'today', const Size(390, 1500), 1),
     'full-plan-light': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'train-plan', const Size(390, 1900), 1),
     'full-plan-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(390, 1900), 1),
-    'full-me-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'me', const Size(390, 1700), 1),
+    'full-me-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'me', const Size(390, 1250), 1),
+    'full-me-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'me', const Size(390, 1250), 1),
+    'large-text-me-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'me', const Size(320, 2700), 2),
+    'new-account-me': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'me', const Size(390, 1250), 1),
+    'me-motion-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'motion', const Size(390, 844), 1),
+    'me-units-sheet-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'units', const Size(390, 844), 1),
+    'me-edit-profile-light': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'edit-profile', const Size(390, 844), 1),
+    'me-delete-account-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'delete-account', const Size(390, 844), 1),
     'full-eat-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'eat', const Size(390, 1300), 1),
     'today-due-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false), 'today', const Size(390, 1400), 1),
     // Nothing logged yet: Run and Nutrition sit side by side. An open run, and a pink accent to show nothing is hard-coded blue.

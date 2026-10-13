@@ -1,29 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/appearance.dart';
 import '../../core/compatibility.dart';
 import '../../core/config.dart';
-import '../../core/format.dart';
+import '../../core/device_prefs.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
-import '../plans/plan_progress.dart';
-import '../plans/plan_screens.dart';
-import '../shell/home_shell.dart';
-import '../today/daily.dart';
-import '../workout/workout_detail_screen.dart';
-import '../workout/workout_flow.dart';
 import 'account_repository.dart';
 import 'reminders.dart';
 import 'sync_review_screen.dart';
 
-/// Me: identity, a real training overview, history, preferences and account lifecycle.
+/// Me: who is signed in, personal information, preferences for this phone and the account. Training, history and
+/// progress live in Train; nothing here repeats them.
 class MeScreen extends ConsumerWidget {
   const MeScreen({super.key});
 
@@ -31,20 +25,15 @@ class MeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider).value;
     final session = ref.watch(sessionProvider);
-    final today = ref.watch(todayKeyProvider);
-    final primary = ref.watch(primaryPlanProvider);
-    final drafts = ref.watch(planListProvider).where((p) => p.isDraft && !p.isArchived).toList();
-    final allWorkouts = ref.watch(workoutListProvider);
-    final workouts = [for (final w in allWorkouts) if (!w.isDeleted) w];
-    final open = workouts.where((w) => w.isOpen).toList();
     final pending = ref.watch(pendingCountProvider).value ?? 0;
     final issues = ref.watch(issuesProvider).value?.length ?? 0;
+    final unreachable = ref.watch(connectionProvider) == false;
     final appearance = ref.watch(appearanceProvider);
+    final prefs = ref.watch(devicePrefsProvider);
     final name = profile?.displayName ?? session?.email ?? '';
-    void openPlan() => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
 
     Future<void> setUnit(String loadUnit) async {
-      if (profile == null) return;
+      if (profile == null || loadUnit == profile.loadUnit) return;
       try {
         await ref.read(profileRepositoryProvider).update(profile, loadUnit: loadUnit);
       } on LocalSaveFailure {
@@ -52,202 +41,221 @@ class MeScreen extends ConsumerWidget {
       }
     }
 
+    void chooseUnit() => showGoSheet<void>(context, title: 'Units', builder: (sheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          for (final unit in const ['kg', 'lb'])
+            ChoiceTile<String>(
+              key: Key('unit-$unit'), value: unit, groupValue: profile?.loadUnit ?? 'kg', title: unit == 'kg' ? 'Kilograms' : 'Pounds',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                setUnit(chosen);
+              },
+            ),
+          const SizedBox(height: 4),
+          Text('Changes how loads are entered and shown. Your recorded training is stored in kilograms and is never rewritten. Time is shown in minutes and seconds.', style: context.caption),
+        ]));
+
+    // What is true about the account right now, in a word and a sentence. "Saved" is said only when nothing is
+    // waiting, nothing needs a decision and the last attempt to reach the account did not fail.
+    final (syncIcon, syncTone, syncWord, syncDetail) = issues > 0
+        ? (Icons.rule, Tone.warning, 'Needs review', '$issues saved ${issues == 1 ? 'change needs' : 'changes need'} review. Nothing was lost. Tap to review.')
+        : unreachable
+            // With the account out of reach, "everything is saved" would claim more than is known.
+            ? (Icons.cloud_off, Tone.neutral, 'Not synced', '${pending > 0 ? '${waitingToSync(pending)}, saved on this phone.\n' : ''}$cantSyncLabel · tap to try again')
+            : pending > 0
+                ? (Icons.phone_iphone, Tone.neutral, 'Waiting', '$pending ${pending == 1 ? 'change' : 'changes'} saved on this phone, waiting to sync')
+                : (Icons.cloud_done_outlined, Tone.success, 'Saved', 'Everything is saved to your account');
+
     return ListView(
       padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
       children: [
-        const Heading('Me'),
-        const SizedBox(height: 16),
-        Row(children: [
-          // An initial, not a photograph: the account has no picture, so none is invented.
-          ExcludeSemantics(
-            child: CircleAvatar(radius: 32, backgroundColor: context.c.accentSoft, child: Text(name.isEmpty ? '' : name[0].toUpperCase(), style: context.sansStyle(26, weight: FontWeight.w700, color: context.c.accent))),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, key: const Key('me-name'), style: context.titleStyle(24)),
-              if (session != null) Text(session.email, style: context.caption),
-            ]),
+        const TabHeader(title: 'Me', overline: 'Your profile'),
+        const SizedBox(height: 18),
+        GroupCard(children: [
+          Semantics(
+            button: profile != null,
+            child: InkWell(
+              key: const Key('me-edit-name'),
+              onTap: profile == null ? null : () => push(context, EditNameScreen(profile: profile)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(children: [
+                  // An initial, not a photograph: the account has no picture, so none is invented.
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 52, height: 52, alignment: Alignment.center,
+                      decoration: BoxDecoration(color: context.c.accentSoft, shape: BoxShape.circle),
+                      child: Text(name.isEmpty ? '' : name[0].toUpperCase(), textScaler: TextScaler.noScaling, style: context.sansStyle(22, weight: FontWeight.w700, color: context.c.accent)),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, runSpacing: 4, children: [
+                      Text(name, key: const Key('me-name'), style: context.titleStyle(21)),
+                      if (profile != null)
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Flexible(child: Text('Edit profile', style: context.sansStyle(15, weight: FontWeight.w600, color: context.c.accent))),
+                          Icon(Icons.chevron_right, size: 22, color: context.c.accent),
+                        ]),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
           ),
         ]),
-        if (profile != null)
-          Align(alignment: Alignment.centerLeft, child: TextButton(key: const Key('me-edit-name'), onPressed: () => push(context, EditNameScreen(profile: profile)), child: const Text('Edit name')))
-        else
-          const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.hourglass_empty, 'Your profile has not loaded on this phone yet.')),
+        if (profile == null) const Padding(padding: EdgeInsets.only(top: 10), child: StatusLine(Icons.hourglass_empty, 'Your profile has not loaded on this phone yet.')),
 
-        const SizedBox(height: 18),
-        const SectionHeader('Your training'),
-        const SizedBox(height: 10),
-        if (primary != null) ...[
-          _Overview(plan: primary, today: today, workouts: allWorkouts, onTap: openPlan),
-        ] else if (drafts.isNotEmpty)
-          ListRow(icon: Icons.event_note, title: drafts.last.title, subtitle: 'Draft · not started', onTap: () => push(context, PlanReviewScreen(planId: drafts.last.id)))
-        else
-          ListRow(icon: Icons.event_note, title: 'No plan yet', subtitle: 'Create a plan to review', onTap: () => push(context, const PlanSetupScreen())),
-        for (final w in open) ListRow(icon: Icons.timelapse, title: w.title, subtitle: 'In progress', onTap: () => resumeWorkout(context, ref, w)),
-        ListRow(key: const Key('me-history'), icon: Icons.history, title: 'Workout history', subtitle: workouts.isEmpty ? 'Nothing recorded yet' : '${workouts.length} workout${workouts.length == 1 ? '' : 's'}', onTap: () => push(context, const WorkoutHistoryScreen())),
-        ListRow(icon: Icons.insights, title: 'Progress', subtitle: 'Follow-through, consistency and strength', onTap: () => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.progress)),
-        ListRow(icon: Icons.directions_run, title: 'Run history', onTap: () => push(context, const RunHistoryScreen())),
-        ListRow(icon: Icons.monitor_weight_outlined, title: 'Body measurements', onTap: () => push(context, const BodyMetricsScreen())),
-
-        const SizedBox(height: 26),
-        const SectionHeader('Preferences'),
-        const SizedBox(height: 4),
-        ListRow(
-          key: const Key('me-appearance'), icon: Icons.palette_outlined, title: 'Appearance',
-          subtitle: '${appearance.accent.label} · ${modeLabel(appearance.mode)}',
-          onTap: () => push(context, const AppearanceScreen()),
-        ),
-        // Shown unless the server has said it cannot store goals: a goal that silently vanishes is worse than no row.
-        if (profile != null && ref.watch(compatibilityProvider).supports('profile.nutrition-goals'))
-          ListRow(
-            key: const Key('me-goals'), icon: Icons.flag_outlined, title: 'Nutrition goals',
-            subtitle: profile.calorieGoal == null && profile.proteinGoal == null
-                ? 'None set'
-                : [if (profile.calorieGoal != null) '${profile.calorieGoal} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
-            onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
-          ),
-        const SizedBox(height: 14),
-        Text('Units', style: context.sansStyle(16, weight: FontWeight.w500)),
-        const SizedBox(height: 8),
-        Segmented<String>(values: const ['kg', 'lb'], selected: profile?.loadUnit ?? 'kg', keyPrefix: 'unit', label: (v) => v == 'kg' ? 'Kilograms' : 'Pounds', onChanged: setUnit),
-        const SizedBox(height: 8),
-        Text('Changes how loads are entered and shown. Your recorded training is stored in kilograms and is never rewritten. Time is shown in minutes and seconds.', style: context.caption),
-        const SizedBox(height: 6),
-        if (profile != null) ...[
-          ListRow(
-            key: const Key('me-reminders'),
-            icon: profile.remindersEnabled ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
-            title: 'Workout reminders',
-            subtitle: profile.remindersEnabled ? 'On days with a planned workout. None while your plan is paused.' : 'Off',
-            trailing: Switch(
-              value: profile.remindersEnabled,
-              onChanged: (on) async {
-                // Permission is asked for only here, when the user turns reminders on.
-                if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
-                  if (context.mounted) toast(context, 'Notifications are not allowed for GoHard, so reminders stay off. You can allow them in the phone\'s settings.');
-                  return;
-                }
-                try {
-                  await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
-                } on LocalSaveFailure {
-                  if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
-                }
-              },
+        const _Group('Personal'),
+        GroupCard(children: [
+          GroupRow(key: const Key('me-body'), icon: Icons.monitor_weight_outlined, title: 'Body measurements', subtitle: 'Weight and body fat', onTap: () => push(context, const BodyMetricsScreen())),
+          // Shown unless the server has said it cannot store goals: a goal that silently vanishes is worse than no row.
+          if (profile != null && ref.watch(compatibilityProvider).supports('profile.nutrition-goals'))
+            GroupRow(
+              key: const Key('me-goals'), icon: Icons.restaurant_outlined, title: 'Nutrition goals',
+              // Only a goal the person set is shown; nothing is suggested in its place.
+              subtitle: profile.calorieGoal == null && profile.proteinGoal == null ? 'None set' : null,
+              value: profile.calorieGoal == null && profile.proteinGoal == null
+                  ? null
+                  : [if (profile.calorieGoal != null) '${profile.calorieGoal} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
+              onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
             ),
-          ),
-          if (profile.remindersEnabled)
-            ListRow(
-              key: const Key('me-reminder-time'),
-              icon: Icons.schedule,
-              title: 'Reminder time',
-              subtitle: '${profile.reminderLocalTime ?? '18:00'} · this phone\'s local time',
-              onTap: () async {
-                final parts = (profile.reminderLocalTime ?? '18:00').split(':');
-                final picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])));
-                if (picked == null) return;
-                await ref.read(profileRepositoryProvider).update(profile,
-                    reminderLocalTime: '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}');
-              },
-            ),
-        ],
+        ]),
 
-        const SizedBox(height: 26),
-        const SectionHeader('Account'),
-        const SizedBox(height: 4),
-        ListRow(
-          key: const Key('me-sync'),
-          icon: issues > 0 ? Icons.rule : pending > 0 ? Icons.phone_iphone : ref.watch(connectionProvider) == false ? Icons.cloud_off : Icons.cloud_done_outlined,
-          title: issues > 0
-              ? '$issues saved ${issues == 1 ? 'change needs' : 'changes need'} review'
-              : pending > 0
-                  ? '$pending ${pending == 1 ? 'change' : 'changes'} saved on this phone, waiting to sync'
-                  // With the account out of reach, "everything is saved" would claim more than is known.
-                  : ref.watch(connectionProvider) == false ? 'Nothing is waiting to sync' : 'Everything is saved to your account',
-          // The same words as Today's notice; tapping the row asks the account again.
-          subtitle: issues > 0 ? 'Nothing was lost. Tap to review.' : ref.watch(connectionProvider) == false ? '$cantSyncLabel · tap to try again' : null,
-          onTap: issues > 0 ? () => push(context, const SyncReviewScreen()) : () => refreshFromAccount(ref),
-        ),
-        ListRow(
-          key: const Key('me-sign-out'), icon: Icons.logout, title: 'Sign out',
-          onTap: () async {
-            if (!await confirm(context,
-                title: 'Sign out?',
-                body: 'Your workouts, food and plans stay saved${pending > 0 ? ', including $pending change${pending == 1 ? '' : 's'} not yet synced' : ''}. They stay private to your account on this phone and continue syncing when you sign in again.',
-                action: 'Sign out')) {
-              return;
-            }
-            await ref.read(authRepositoryProvider).signOut();
-          },
-        ),
-        ListRow(key: const Key('me-delete-account'), icon: Icons.delete_forever_outlined, title: 'Delete account', subtitle: 'Permanently erases your account and data', onTap: () => push(context, const DeleteAccountScreen())),
-        const SizedBox(height: 14),
+        const _Group('Preferences'),
+        GroupCard(children: [
+          GroupRow(
+            key: const Key('me-appearance'), icon: Icons.palette_outlined, title: 'Appearance',
+            value: '${appearance.accent.label} · ${modeLabel(appearance.mode)}',
+            onTap: () => push(context, const AppearanceScreen()),
+          ),
+          if (profile != null)
+            GroupRow(key: const Key('me-units'), icon: Icons.straighten, title: 'Units', value: LoadUnit.parse(profile.loadUnit) == LoadUnit.kg ? 'Kilograms' : 'Pounds', onTap: chooseUnit),
+          GroupRow(key: const Key('me-motion'), icon: Icons.animation, title: 'Motion & haptics', value: motionLabel(prefs), onTap: () => push(context, const MotionHapticsScreen())),
+          if (profile != null) ...[
+            MergeSemantics(
+              child: GroupRow(
+                key: const Key('me-reminders'),
+                icon: profile.remindersEnabled ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
+                title: 'Workout reminders',
+                subtitle: profile.remindersEnabled ? 'On days with a planned workout. None while your plan is paused.' : 'Off',
+                trailing: Switch(
+                  value: profile.remindersEnabled,
+                  onChanged: (on) async {
+                    // Permission is asked for only here, when the user turns reminders on.
+                    if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
+                      if (context.mounted) toast(context, 'Notifications are not allowed for GoHard, so reminders stay off. You can allow them in the phone\'s settings.');
+                      return;
+                    }
+                    try {
+                      await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
+                      Haptics.selection();
+                    } on LocalSaveFailure {
+                      if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
+                    }
+                  },
+                ),
+              ),
+            ),
+            if (profile.remindersEnabled)
+              GroupRow(
+                key: const Key('me-reminder-time'),
+                icon: Icons.schedule,
+                title: 'Reminder time',
+                subtitle: 'This phone\'s local time',
+                value: profile.reminderLocalTime ?? '18:00',
+                onTap: () async {
+                  final parts = (profile.reminderLocalTime ?? '18:00').split(':');
+                  final picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])));
+                  if (picked == null) return;
+                  await ref.read(profileRepositoryProvider).update(profile,
+                      reminderLocalTime: '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}');
+                },
+              ),
+          ],
+        ]),
+
+        const _Group('Account'),
+        GroupCard(children: [
+          // The same words as Today's notice. Tapping the row opens the review, or asks the account again.
+          GroupRow(
+            key: const Key('me-sync'), icon: syncIcon, tone: syncTone, title: 'Sync status', subtitle: syncDetail, value: syncWord,
+            onTap: issues > 0 ? () => push(context, const SyncReviewScreen()) : () => refreshFromAccount(ref),
+          ),
+          GroupRow(key: const Key('me-delete-account'), icon: Icons.delete_outline, tone: Tone.neutral, title: 'Delete account', subtitle: 'Permanently erases your account and data', onTap: () => push(context, const DeleteAccountScreen())),
+        ]),
+        const SizedBox(height: 12),
+        GroupCard(children: [
+          GroupRow(
+            key: const Key('me-sign-out'), icon: Icons.logout, tone: Tone.neutral, title: 'Sign out', subtitle: session?.email,
+            onTap: () async {
+              if (!await confirm(context,
+                  title: 'Sign out?',
+                  body: 'Your workouts, food and plans stay saved${pending > 0 ? ', including $pending change${pending == 1 ? '' : 's'} not yet synced' : ''}. They stay private to your account on this phone and continue syncing when you sign in again.',
+                  action: 'Sign out')) {
+                return;
+              }
+              await ref.read(authRepositoryProvider).signOut();
+            },
+          ),
+        ]),
+        const SizedBox(height: 16),
         Text('GoHard 0.1.0 · contract ${AppConfig.contractVersion}\nServer: ${AppConfig.apiBase}', style: context.caption),
       ],
     );
   }
 }
 
+/// The small-capitals label above each group of rows.
+class _Group extends StatelessWidget {
+  const _Group(this.title);
+  final String title;
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(4, 24, 4, 8), child: Semantics(header: true, child: Overline(title)));
+}
+
 String modeLabel(ThemeMode mode) => switch (mode) { ThemeMode.light => 'Light', ThemeMode.dark => 'Dark', ThemeMode.system => 'System' };
 
-/// The primary plan at a glance, from recorded results only: completion, calendar position, and each week so far.
-class _Overview extends StatelessWidget {
-  const _Overview({required this.plan, required this.today, required this.workouts, required this.onTap});
-  final Plan plan;
-  final String today;
-  final List<Workout> workouts;
-  final VoidCallback onTap;
+/// What Me shows beside "Motion & haptics": the two device preferences as they really are.
+String motionLabel(DevicePrefs prefs) => switch ((prefs.motion, prefs.haptics)) {
+      (MotionPref.device, HapticsPref.device) => 'Device',
+      (MotionPref.reduced, HapticsPref.device) => 'Reduced motion',
+      (MotionPref.device, HapticsPref.off) => 'Haptics off',
+      (MotionPref.reduced, HapticsPref.off) => 'Reduced · Haptics off',
+    };
+
+/// Motion and haptics for this phone. Both apply at once, are remembered here and are never sent to the account.
+class MotionHapticsScreen extends ConsumerWidget {
+  const MotionHapticsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final block = Completion.of(plan.occasions, workouts);
-    final position = planWeek(plan, today);
-    // Weeks that have begun; the three most recent, newest last.
-    final begun = [for (final w in planWeeks(plan, today, workouts)) if (w.isPast || w.isCurrent) w];
-    final recent = begun.length > 3 ? begun.sublist(begun.length - 3) : begun;
-    return Semantics(
-      button: true,
-      child: Material(
-        color: context.c.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: context.c.divider)),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          key: const Key('me-plan'),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Wrap(alignment: WrapAlignment.spaceBetween, spacing: 12, children: [
-                Text(plan.title, style: context.titleStyle(19)),
-                Text('${plan.isPaused ? 'Paused · ' : ''}${position == 0 ? 'Starts ${dayMonth(plan.startDate)}' : 'Week $position of ${plan.blockWeeks}'}', style: context.sansStyle(14.5, color: context.c.secondary)),
-              ]),
-              const SizedBox(height: 10),
-              Text('${block.completed} of ${block.eligible} workouts completed', style: context.sansStyle(16, weight: FontWeight.w600)),
-              const SizedBox(height: 10),
-              Row(children: [
-                Expanded(child: ProgressRail(block.fraction, label: 'Workouts completed in this plan')),
-                const SizedBox(width: 12),
-                ExcludeSemantics(child: Text('${(block.fraction * 100).round()}%', style: context.sansStyle(15, weight: FontWeight.w600))),
-              ]),
-              if (recent.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Rule(),
-                const SizedBox(height: 12),
-                Text('Week history', style: context.label),
-                for (final w in recent)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Wrap(alignment: WrapAlignment.spaceBetween, spacing: 12, children: [
-                      Text('Week ${w.number} · ${w.range}', style: context.sansStyle(15)),
-                      Text(w.completion.eligible == 0 ? 'No workouts' : '${w.completion.completed} of ${w.completion.eligible} completed', style: context.sansStyle(15, color: context.c.secondary)),
-                    ]),
-                  ),
-              ],
-            ]),
-          ),
-        ),
-      ),
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(devicePrefsProvider);
+    final set = ref.read(devicePrefsProvider.notifier);
+    // The phone's own setting, read below the app's override so "Device" can say what it currently means.
+    final phoneReduces = View.of(context).platformDispatcher.accessibilityFeatures.disableAnimations;
+    return AppPage(title: 'Motion & haptics', subtitle: 'How GoHard moves and taps on this phone.', children: [
+      const SectionHeader('Motion'),
+      const SizedBox(height: 10),
+      Segmented<MotionPref>(values: MotionPref.values, selected: prefs.motion, keyPrefix: 'motion', label: (m) => m.label, onChanged: set.setMotion),
+      const SizedBox(height: 8),
+      Text(switch (prefs.motion) {
+        MotionPref.device => phoneReduces
+            ? 'Follows your phone. Reduce Motion is on there, so screens and progress change without movement.'
+            : 'Follows your phone\'s Reduce Motion setting. It is off there, so short transitions are shown.',
+        MotionPref.reduced => 'Screens, sheets and progress change without movement, whatever your phone is set to.',
+      }, key: const Key('motion-explanation'), style: context.caption),
+      const SizedBox(height: 26),
+      const SectionHeader('Haptics'),
+      const SizedBox(height: 10),
+      Segmented<HapticsPref>(values: HapticsPref.values, selected: prefs.haptics, keyPrefix: 'haptics', label: (h) => h.label, onChanged: set.setHaptics),
+      const SizedBox(height: 8),
+      Text(switch (prefs.haptics) {
+        HapticsPref.device => 'A light tap when you make a selection or confirm an action, if your phone allows vibration. Never for syncing or typing.',
+        HapticsPref.off => 'GoHard does not vibrate this phone.',
+      }, style: context.caption),
+      const SizedBox(height: 26),
+      Text('Changes apply immediately and are remembered on this phone.', style: context.caption),
+    ]);
   }
 }
 
@@ -260,10 +268,6 @@ class AppearanceScreen extends ConsumerWidget {
     final appearance = ref.watch(appearanceProvider);
     final set = ref.read(appearanceProvider.notifier);
     final brightness = Theme.of(context).brightness;
-    final plan = ref.watch(primaryPlanProvider);
-    final today = ref.watch(todayKeyProvider);
-    final block = plan == null ? null : Completion.of(plan.occasions, ref.watch(workoutListProvider));
-    final position = plan == null ? 0 : planWeek(plan, today);
     return AppPage(title: 'Appearance', subtitle: 'Make GoHard feel like you.', children: [
       const SectionHeader('Theme'),
       const SizedBox(height: 10),
@@ -277,28 +281,16 @@ class AppearanceScreen extends ConsumerWidget {
       const SizedBox(height: 26),
       const SectionHeader('Accent color'),
       const SizedBox(height: 12),
-      Row(children: [
-        for (final a in Accent.values)
-          Expanded(child: _Swatch(accent: a, colors: GoColors.of(a, brightness), selected: a == appearance.accent, onTap: () => set.setAccent(a))),
-      ]),
-      const SizedBox(height: 8),
-      Text('Applies across Today, Train, Eat and Me.', style: context.caption),
-      const SizedBox(height: 26),
-      const SectionHeader('Preview'),
-      const SizedBox(height: 12),
-      PassCard(
-        title: plan?.title ?? 'No plan yet',
-        week: plan == null || position == 0 ? null : 'Week $position of ${plan.blockWeeks}',
-        count: block == null ? '0' : '${block.completed} / ${block.eligible}', caption: 'Workouts completed', progress: block?.fraction ?? 0,
+      Panel(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          for (final a in Accent.values)
+            Expanded(child: _Swatch(accent: a, colors: GoColors.of(a, brightness), selected: a == appearance.accent, onTap: () => set.setAccent(a))),
+        ]),
       ),
-      if (plan != null) ...[
-        const SizedBox(height: 14),
-        PrimaryButton('View plan', key: const Key('appearance-view-plan'), onPressed: () {
-          ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
-          Navigator.of(context).popUntil((r) => r.isFirst);
-        }),
-      ],
-      const SizedBox(height: 12),
+      const SizedBox(height: 8),
+      Text('Selected controls, links and progress use it across Today, Train, Eat and Me.', style: context.caption),
+      const SizedBox(height: 26),
       Text('Changes apply immediately and are remembered on this phone.', style: context.caption),
     ]);
   }
@@ -319,7 +311,7 @@ class _Swatch extends StatelessWidget {
           key: Key('accent-${accent.name}'),
           borderRadius: BorderRadius.circular(Radii.tile),
           onTap: () {
-            if (!selected) HapticFeedback.selectionClick();
+            if (!selected) Haptics.selection();
             onTap();
           },
           child: ExcludeSemantics(
@@ -328,15 +320,15 @@ class _Swatch extends StatelessWidget {
               child: Column(children: [
                 AnimatedContainer(
                   duration: context.motion(Motion.quick),
-                  width: 64, height: 64, padding: const EdgeInsets.all(4),
+                  width: 56, height: 56, padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: selected ? colors.accent : Colors.transparent, width: 3)),
                   child: DecoratedBox(
                     decoration: BoxDecoration(shape: BoxShape.circle, color: colors.accent),
-                    child: selected ? Icon(Icons.check_rounded, size: 28, color: colors.onAccent) : null,
+                    child: selected ? Icon(Icons.check_rounded, size: 24, color: colors.onAccent) : null,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(accent.label, style: context.sansStyle(15, weight: selected ? FontWeight.w700 : FontWeight.w500)),
+                Text(accent.label, textAlign: TextAlign.center, style: context.sansStyle(15, weight: selected ? FontWeight.w700 : FontWeight.w500)),
               ]),
             ),
           ),
@@ -344,7 +336,8 @@ class _Swatch extends StatelessWidget {
       );
 }
 
-/// Display name is free text you see in the app. It is not your sign-in email. Save or cancel explicitly.
+/// Edit profile: the display name, free text you see in the app. It is not your sign-in email, which is shown
+/// but cannot be changed here. Save or cancel explicitly.
 class EditNameScreen extends ConsumerStatefulWidget {
   const EditNameScreen({super.key, required this.profile});
   final Profile profile;
@@ -364,7 +357,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
 
   @override
   Widget build(BuildContext context) => AppPage(
-        title: 'Your name',
+        title: 'Edit profile',
         bottom: Column(mainAxisSize: MainAxisSize.min, children: [
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
           PrimaryButton('Save name', key: const Key('name-save'), onPressed: () async {
@@ -382,6 +375,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
         ]),
         children: [
           TextField(key: const Key('name-field'), controller: _name, autofocus: true, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name shown in the app')),
+          if (ref.watch(sessionProvider) case final session?) Padding(padding: const EdgeInsets.only(top: 14), child: StatusLine(Icons.alternate_email, 'Signed in as ${session.email}')),
         ],
       );
 }
@@ -469,7 +463,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
   Future<void> _delete() async {
     if (_password.text.isEmpty) return setState(() => _error = 'Enter your password to confirm.');
-    if (!await confirm(context, title: 'Delete your account?', body: 'Your account and all of its workouts, food, plans and measurements will be permanently erased. This cannot be undone.', action: 'Delete everything') || !mounted) return;
+    if (!await confirm(context, title: 'Delete your account?', body: 'Your account and all of its workouts, food, plans and measurements will be permanently erased. This cannot be undone.', action: 'Delete everything', destructive: true) || !mounted) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -492,7 +486,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       title: 'Delete account',
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-        PrimaryButton('Delete my account', key: const Key('delete-confirm'), busy: _busy, onPressed: _delete),
+        PrimaryButton('Delete my account', key: const Key('delete-confirm'), busy: _busy, destructive: true, onPressed: _delete),
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep my account')),
       ]),
       children: [
@@ -500,7 +494,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
         if (pending > 0)
           Padding(padding: const EdgeInsets.only(top: 12), child: StatusLine(Icons.warning_amber, '$pending change${pending == 1 ? '' : 's'} on this phone ${pending == 1 ? 'has' : 'have'} not synced yet and will be erased too.', tone: Tone.warning)),
         const SizedBox(height: 16),
-        TextField(key: const Key('delete-password'), controller: _password, obscureText: true, decoration: const InputDecoration(labelText: 'Your password')),
+        TextField(key: const Key('delete-password'), controller: _password, obscureText: true, autofillHints: const [AutofillHints.password], decoration: const InputDecoration(labelText: 'Your password')),
       ],
     );
   }

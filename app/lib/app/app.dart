@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/appearance.dart';
 import '../core/compatibility.dart';
 import '../core/config.dart';
+import '../core/device_prefs.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
 import '../features/auth/auth_screen.dart';
@@ -68,6 +69,8 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
     final appearance = ref.watch(appearanceProvider);
     ref.listen(profileProvider, (_, next) => ref.read(appearanceProvider.notifier).adoptAccountAppearance(next.value?.appearance));
     final accent = appearance.accent;
+    // Reduce Motion, from the phone or from Me > Motion & haptics, also removes the cross-fade between looks.
+    final still = ref.watch(devicePrefsProvider).motion == MotionPref.reduced || (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     return MaterialApp(
       title: 'GoHard',
       debugShowCheckedModeBanner: false,
@@ -78,10 +81,12 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
       highContrastDarkTheme: goTheme(accent, Brightness.dark, highContrast: true),
       themeMode: appearance.mode,
       // A short cross-fade between looks, without movement. Navigation, drafts and timers are untouched by it.
-      themeAnimationDuration: Motion.quick,
-      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-          value: Theme.of(context).appBarTheme.systemOverlayStyle!,
-          child: CompatibilityGate(child: child!)),
+      themeAnimationDuration: still ? Duration.zero : Motion.quick,
+      // The motion preference is applied here, above the navigator: changing it rebuilds no route.
+      builder: (context, child) => DevicePrefsScope(
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+              value: Theme.of(context).appBarTheme.systemOverlayStyle!,
+              child: CompatibilityGate(child: child!))),
       home: AppConfig.problem != null
           ? _ConfigProblem(AppConfig.problem!)
           : owner == null
@@ -121,14 +126,15 @@ class _UpdateRequiredScreenState extends ConsumerState<UpdateRequiredScreen> {
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(context.inset),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Heading('Update GoHard to continue', size: 30),
-            const SizedBox(height: 12),
+          child: _Notice(title: 'Update GoHard to continue', icon: Icons.system_update_outlined, children: [
             Text('This version of the app is too old for your account\'s server, so it has stopped syncing.', style: context.body),
-            const SizedBox(height: 12),
-            StatusLine(Icons.phone_iphone, pending == 0
-                ? 'Everything you saved on this phone is still here.'
-                : 'Everything you saved on this phone is still here, including $pending change${pending == 1 ? '' : 's'} waiting to sync. They will sync after you update.'),
+            const SizedBox(height: 14),
+            Panel(
+              padding: const EdgeInsets.all(14),
+              child: StatusLine(Icons.phone_iphone, pending == 0
+                  ? 'Everything you saved on this phone is still here.'
+                  : 'Everything you saved on this phone is still here, including $pending change${pending == 1 ? '' : 's'} waiting to sync. They will sync after you update.'),
+            ),
             const SizedBox(height: 22),
             SecondaryButton('Check again', key: const Key('compat-recheck'), onPressed: _checking
                 ? null
@@ -146,6 +152,29 @@ class _UpdateRequiredScreenState extends ConsumerState<UpdateRequiredScreen> {
   }
 }
 
+/// A full-screen notice in the system's look: the mark, an icon tile, a title, then what is true and what to do.
+/// It scrolls, so large text is never cut.
+class _Notice extends StatelessWidget {
+  const _Notice({required this.title, required this.icon, required this.children});
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) => Center(
+        child: SingleChildScrollView(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            const GhMark(),
+            const SizedBox(height: 28),
+            IconTile(icon, tone: Tone.neutral, size: 44),
+            const SizedBox(height: 16),
+            Heading(title, size: 28),
+            const SizedBox(height: 10),
+            ...children,
+          ]),
+        ),
+      );
+}
+
 class _ConfigProblem extends StatelessWidget {
   const _ConfigProblem(this.problem);
   final String problem;
@@ -154,9 +183,7 @@ class _ConfigProblem extends StatelessWidget {
         body: SafeArea(
           child: Padding(
             padding: EdgeInsets.all(context.inset),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Heading('Not configured', size: 30),
-              const SizedBox(height: 12),
+            child: _Notice(title: 'Not configured', icon: Icons.settings_outlined, children: [
               Text(problem, style: context.body),
               const SizedBox(height: 12),
               Text('This build has no default server on purpose. Start it with the development script so it knows which API to use.', style: context.caption),
