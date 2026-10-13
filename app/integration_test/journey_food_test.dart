@@ -74,9 +74,10 @@ void main() {
     expect(find.textContaining('Protein 8.4 of 140 g'), findsOneWidget);
     await j.shot('94-eat-goal-progress');
     await j.tapKey('nav-today');
-    await j.waitFor(find.textContaining('of 2,200 · 1,792.4 left'), what: 'the same progress on Today, in its short form');
+    await j.waitFor(find.text('/ 2,200 kcal'), what: 'the same progress on Today, in its short form');
     expect(find.text('407.6'), findsOneWidget);
-    expect(find.text('of 140 · 131.6 left'), findsOneWidget);
+    expect(find.text('8.4'), findsOneWidget);
+    expect(find.text('/ 140 g protein'), findsOneWidget);
     await j.shot('95-today-goal-progress');
 
     // --- The same food again from Recent, for another meal, and marked as a favourite on the way.

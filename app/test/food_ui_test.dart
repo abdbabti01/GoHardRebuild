@@ -685,7 +685,7 @@ void main() {
       await pumpApp(tester, await _overrides(tester, fakes, food: food, calorieGoal: 2200, proteinGoal: 140), size: const Size(390, 2000));
       // Today shows the same numbers in its shorter form.
       await _tap(tester, 'nav-today');
-      for (final text in ['1,030', 'of 2,200 · 1,170 left', '72', 'of 140 · 68 left']) {
+      for (final text in ['1,030', '/ 2,200 kcal', '72', '/ 140 g protein']) {
         expect(find.text(text).hitTestable(), findsOneWidget, reason: text);
       }
       await _tap(tester, 'nav-eat');
