@@ -520,3 +520,11 @@ Still not checked, and not claimed: anything on a physical phone (notch and home
 own largest text size, TalkBack or VoiceOver by ear, the on-screen keyboard over the portion dialog on a small
 phone, a real walk with GPS, real loss of signal) and anything on an iPhone beyond the unsigned build compiling.
 
+
+### CI and merge (13 October 2026)
+
+CI run 18 passed on `31a4a81` (API job and app job, including the debug APK build). This note was then added as a
+documentation-only commit, which went through CI again before `main` was fast-forwarded to it and pushed. The API
+code is unchanged, so the hosted testing API redeploys the same service; before the push it reported
+`Ready, 3 migration(s) applied`. The unsigned iOS build is started from that final commit with the
+`ios-unsigned-ipa` workflow; its run and artifact are in the Actions tab under that commit.
