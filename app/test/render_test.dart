@@ -115,6 +115,10 @@ Future<void> _open(WidgetTester tester, String screen) async {
       await tap('train-progress');
     case 'eat':
       await tap('nav-eat');
+    case 'run':
+      await tap('today-run');
+    case 'run-history':
+      await tap('today-run-history');
     case 'log-food' || 'food-results' || 'food-preview' || 'food-preview-unknown' || 'scan':
       await tap('nav-eat');
       await tap('log-food');
@@ -198,10 +202,13 @@ void main() {
     'me-edit-profile-light': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'edit-profile', const Size(390, 844), 1),
     'me-delete-account-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'delete-account', const Size(390, 844), 1),
     'full-eat-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'eat', const Size(390, 1300), 1),
+    'full-eat-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'eat', const Size(390, 1300), 1),
     'today-due-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false), 'today', const Size(390, 1400), 1),
-    // Nothing logged yet: Run and Nutrition sit side by side. An open run, and a pink accent to show nothing is hard-coded blue.
+    // Nothing logged yet, an open run, and a pink accent to show nothing is hard-coded blue.
     'today-due-no-food-open-run-pink-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark, inProgress: false, withFood: false, runs: [_run('r1', open: true)]), 'today', const Size(390, 1050), 1),
     'today-due-no-food-green-light': ((t) => _fixture(t, Accent.green, ThemeMode.light, inProgress: false, withFood: false, runs: [_run('r0')]), 'today', const Size(390, 1050), 1),
+    'run-open-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, runs: [_run('r1', open: true)]), 'run', const Size(390, 844), 1),
+    'run-history-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark, runs: [_run('r1', open: true), _run('r0')]), 'run-history', const Size(390, 844), 1),
     'today-done-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false, recorded: 9), 'today', const Size(390, 1300), 1),
     'today-manual-one-exercise-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22', withFood: false, extraWorkouts: [_manual], extraSets: [_manualSet]), 'today', const Size(390, 1000), 1),
     'today-narrow-320-no-food': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false, withFood: false), 'today', const Size(320, 1300), 1),
@@ -228,6 +235,7 @@ void main() {
       await _open(tester, screen);
       await _save(tester, await _capture(tester), 'state-$name');
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox()); // stops an open run screen's display timer
     });
   }
 }

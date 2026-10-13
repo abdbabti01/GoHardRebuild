@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +20,7 @@ import '../shell/home_shell.dart';
 import '../workout/result_rules.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
+import '../workout/workout_runtime.dart';
 import 'daily.dart';
 
 /// The three photographs of Today. They are bundled decoration made for this app: not the user's workout, not a
@@ -25,9 +29,9 @@ abstract final class _Photos {
   static const workout = 'assets/images/workout-hero.webp', run = 'assets/images/run-cover.webp', nutrition = 'assets/images/nutrition-cover.webp';
 }
 
-/// Today: the date, the one training action that matters now, running and today's food at a glance, and what was
-/// recorded. The week and its calendar live in Train › Plan; the full food breakdown lives in Eat.
-/// Every value comes from the signed-in owner's records. Nothing here is a sample.
+/// Today: the date and a greeting, then three modules of one family (workout, run, nutrition), each with its real
+/// state and one action. The week and its calendar live in Train › Plan; the exercise list lives in the workout's
+/// sheet; the full food breakdown lives in Eat. Every value comes from the signed-in owner's records.
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
 
@@ -38,53 +42,56 @@ class TodayScreen extends ConsumerWidget {
     final reachable = ref.watch(connectionProvider);
     final localError = [ref.watch(plansProvider), ref.watch(workoutsProvider), ref.watch(contextRowProvider)].any((a) => a.hasError);
     final foodError = ref.watch(foodProvider(day)).hasError;
-    final pad = EdgeInsets.symmetric(horizontal: context.inset);
     final finishedRuns = [for (final r in snapshot?.runs ?? const <Run>[]) if (!r.isOpen) r];
-
-    // Side by side while both are short: nothing logged yet, normal text, a phone wide enough for real labels.
-    // Logged food brings values and goal rails that need the full width, so the two cards stack instead.
-    final sideBySide = !foodError && snapshot != null && snapshot.food.isEmpty && MediaQuery.textScalerOf(context).scale(10) <= 11.5 && MediaQuery.sizeOf(context).width >= 350;
-    final run = _RunCard(finishedToday: finishedRuns, fill: sideBySide);
-    final nutrition = _NutritionCard(day: day, snapshot: snapshot, failed: foodError, fill: sideBySide);
 
     return RefreshIndicator(
       onRefresh: () => refreshFromAccount(ref),
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 28),
+        padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 12),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(longDate(day), style: context.sansStyle(15.5, color: context.c.secondary, weight: FontWeight.w500)),
-              const Heading('Today'),
-            ]),
-          ),
-          if (reachable == false) Padding(padding: pad.copyWith(bottom: 8), child: const _ConnectionStatus()),
+          TabHeader(title: 'Today', overline: longDate(day), below: const _Greeting()),
+          const SizedBox(height: 14),
+          if (reachable == false) const Padding(padding: EdgeInsets.only(bottom: 8), child: _ConnectionStatus()),
 
           // --- Training. A nutrition problem never hides this section, and the reverse.
-          Padding(
-            padding: pad,
-            child: localError
-                ? const Panel(child: StatusLine(Icons.error_outline, 'Your training could not be read from this phone. Pull down to try again.', tone: Tone.error))
-                : snapshot == null
-                    ? const Panel(child: StatusLine(Icons.hourglass_empty, 'Loading your training…'))
-                    : _TrainingSection(snapshot),
-          ),
+          if (localError)
+            const Panel(child: StatusLine(Icons.error_outline, 'Your training could not be read from this phone. Pull down to try again.', tone: Tone.error))
+          else if (snapshot == null)
+            const Panel(child: StatusLine(Icons.hourglass_empty, 'Loading your training…'))
+          else
+            _TrainingSection(snapshot),
           const SizedBox(height: 12),
-
-          // --- Running and nutrition: the same card, the same button, each with its own state.
-          Padding(
-            padding: pad,
-            child: sideBySide
-                ? IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: run), const SizedBox(width: 10), Expanded(child: nutrition)]))
-                : Column(children: [run, const SizedBox(height: 12), nutrition]),
-          ),
+          _RunCard(today: day, finishedToday: finishedRuns),
+          const SizedBox(height: 12),
+          _NutritionCard(day: day, snapshot: snapshot, failed: foodError),
 
           // --- What was actually recorded today. Absent when there is nothing to show.
-          if (snapshot != null && (snapshot.finishedToday.isNotEmpty || finishedRuns.length > 1)) Padding(padding: pad.copyWith(top: 24), child: _ActivitySection(snapshot, finishedRuns)),
+          if (snapshot != null && (snapshot.finishedToday.isNotEmpty || finishedRuns.length > 1)) Padding(padding: const EdgeInsets.only(top: 24), child: _ActivitySection(snapshot, finishedRuns)),
         ],
       ),
     );
+  }
+}
+
+/// "Good evening, Alex": the phone's local time and the first word of the name on the profile. Without a name it
+/// is just the greeting. It is worked out when Today is built, which is often enough for a part of the day.
+class _Greeting extends ConsumerWidget {
+  const _Greeting();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hour = ref.watch(clockProvider).utcNow().toLocal().hour;
+    final (words, icon) = hour >= 5 && hour < 12
+        ? ('Good morning', Icons.wb_sunny_outlined)
+        : hour >= 12 && hour < 18
+            ? ('Good afternoon', Icons.wb_sunny_outlined)
+            : ('Good evening', Icons.nightlight_outlined);
+    final name = (ref.watch(profileProvider).value?.j['displayName'] as String? ?? '').trim().split(RegExp(r'\s+')).first;
+    return Row(children: [
+      IconTile(icon, size: 28),
+      const SizedBox(width: 10),
+      Expanded(child: Text(name.isEmpty ? words : '$words, $name', key: const Key('today-greeting'), style: context.sansStyle(16, color: context.c.secondary))),
+    ]);
   }
 }
 
@@ -131,215 +138,227 @@ class _ConnectionStatusState extends ConsumerState<_ConnectionStatus> {
   }
 }
 
-// ---------------------------------------------------------------------------- the shared card
+// ---------------------------------------------------------------------------- the shared module
 
-/// A decorative photograph across the top of a card. Decoded once at the width of the phone, whichever card
-/// it is in, so scrolling, a layout change or a new theme never decodes it again.
+/// A small decorative crop at the trailing side of a module. It is decoded for the size it is drawn at, not for
+/// the screen: the bundled photographs are 3:2, so covering the crop needs its width or 1.5 × its height,
+/// whichever is larger, in device pixels (rounded up to a step of 64 so a few pixels of height change nothing).
 class _Photo extends StatelessWidget {
-  const _Photo(this.asset, {required this.alignment});
+  const _Photo(this.asset, {super.key, required this.alignment});
   final String asset;
   final Alignment alignment;
 
   @override
-  Widget build(BuildContext context) {
-    final width = (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round().clamp(320, 1536);
-    return ExcludeSemantics(
-      child: Image.asset(asset, fit: BoxFit.cover, alignment: alignment, cacheWidth: width, errorBuilder: (context, _, _) => ColoredBox(color: context.c.sunken)),
-    );
-  }
-}
-
-/// The card all three sections of Today share: one radius, one border, an optional photograph, then the content
-/// on the theme's own surface.
-class _Card extends StatelessWidget {
-  const _Card({this.header, required this.child, this.fill = false});
-  final Widget? header;
-  final Widget child;
-
-  /// The card has been given a height (it sits beside another one): its content fills it, so buttons line up.
-  final bool fill;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(Radii.panel), border: Border.all(color: context.c.divider)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min, children: [
-          ?header,
-          if (fill) Expanded(child: Padding(padding: const EdgeInsets.all(14), child: child)) else Padding(padding: const EdgeInsets.all(14), child: child),
-        ]),
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: LayoutBuilder(builder: (context, box) {
+          final pixels = math.max(box.maxWidth, box.maxHeight * 1.5) * MediaQuery.devicePixelRatioOf(context);
+          return Image.asset(asset, width: box.maxWidth, height: box.maxHeight, fit: BoxFit.cover, alignment: alignment,
+              cacheWidth: ((pixels / 64).ceil() * 64).clamp(64, 1536), errorBuilder: (context, _, _) => ColoredBox(color: context.c.sunken));
+        }),
       );
 }
 
-/// The heading of a companion card: an icon in the accent tint, the title, and one line of real state.
-class _CardTitle extends StatelessWidget {
-  const _CardTitle({required this.icon, required this.title, required this.state, this.stateIcon, this.active = false});
-  final IconData icon;
-  final String title, state;
-  final IconData? stateIcon;
+/// A state in an icon and a word ("In progress", "Due today"), beside the module's label. The tone only adds to
+/// the word: accent for what is live or due, the success colour for what is finished, quiet otherwise.
+typedef _Status = (String label, IconData icon, Tone tone);
 
-  /// Something is going on right now: the state is said in the accent, with its icon.
-  final bool active;
+/// One module of Today. All three are built from this: an icon tile, the label and state, the content, a small
+/// photograph at the trailing side when one fits and does not mislead, and one row of actions (the main button
+/// and a quiet link). Heights follow the content. With large text the photograph and then the tile give their
+/// room to the words, and the two actions stack.
+class _Module extends StatelessWidget {
+  const _Module({super.key, required this.icon, required this.label, this.status, this.head = const [], this.body = const [], this.footer, this.photo, this.photoAlignment = Alignment.center, required this.action, this.quiet});
+  final IconData icon;
+  final String label;
+  final _Status? status;
+
+  /// Beside the tile, under the label. [body] follows under both, at the full width left of the photograph.
+  final List<Widget> head, body;
+
+  /// A line under all of that, at the full width of the module (the note that some food values are missing).
+  final Widget? footer;
+  final String? photo;
+  final Alignment photoAlignment;
+  final Widget action;
+  final Widget? quiet;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final color = active ? c.accent : c.secondary;
-    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      ExcludeSemantics(
-        child: Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(color: c.accentSoft, borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, size: 21, color: c.accent),
-        ),
-      ),
-      const SizedBox(width: 8),
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Semantics(header: true, child: Text(title, style: context.titleStyle(18))),
-          const SizedBox(height: 1),
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (stateIcon != null) Padding(padding: const EdgeInsets.only(right: 4, top: 2), child: Icon(stateIcon, size: 15, color: color)),
-            Flexible(child: Text(state, style: context.sansStyle(13.5, color: color, weight: active ? FontWeight.w600 : FontWeight.w400))),
-          ]),
+    final scale = MediaQuery.textScalerOf(context).scale(10) / 10;
+    final large = scale > 1.3, narrow = MediaQuery.sizeOf(context).width < 350;
+    final photoWidth = photo == null || large ? 0.0 : narrow ? 64.0 : 88.0;
+    final s = status;
+    final statusColor = s == null ? null : switch (s.$3) { Tone.accent => c.accent, Tone.success => c.success, Tone.warning => c.warning, Tone.error => c.error, Tone.neutral => c.secondary };
+    final top = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: photoWidth == 0 ? 0 : 56),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (scale <= 1.5) ...[IconTile(icon, size: 36), const SizedBox(width: 10)],
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Wrap(spacing: 8, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Semantics(header: true, child: Overline(label)),
+                if (s != null)
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(s.$2, size: 15, color: statusColor),
+                    const SizedBox(width: 4),
+                    Flexible(child: Text(s.$1, style: context.sansStyle(13, color: statusColor, weight: FontWeight.w600))),
+                  ]),
+              ]),
+              ...head,
+            ]),
+          ),
         ]),
-      ),
-    ]);
+        ...body,
+      ]),
+    );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(Radii.panel), border: Border.all(color: c.divider)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        if (photoWidth == 0)
+          top
+        else
+          Stack(children: [
+            Padding(padding: EdgeInsets.only(right: photoWidth + 12), child: top),
+            Positioned(
+              top: 0, bottom: 0, right: 0, width: photoWidth,
+              child: ClipRRect(borderRadius: BorderRadius.circular(Radii.field), child: _Photo(photo!, key: Key('today-photo-$label'.toLowerCase()), alignment: photoAlignment)),
+            ),
+          ]),
+        ?footer,
+        const SizedBox(height: 10),
+        if (quiet == null)
+          action
+        else if (large || narrow)
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [action, Align(alignment: Alignment.centerLeft, child: quiet)])
+        else
+          Row(children: [Expanded(child: action), const SizedBox(width: 4), quiet!]),
+      ]),
+    );
   }
 }
 
-/// The one button of a companion card. Outlined, so the workout's filled button stays the main action of the
-/// page; a little narrower inside than the app's default so "Continue run" stays on one line in a half-width card.
-class _CardButton extends StatelessWidget {
-  const _CardButton(this.label, {super.key, required this.onPressed});
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: double.infinity,
-        child: OutlinedButton(
-          onPressed: onPressed,
-          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
-          child: Text(label, textAlign: TextAlign.center),
-        ),
-      );
-}
-
 // ---------------------------------------------------------------------------- training
-
-/// "4 × 6–8", "3 × 30 s", "4 sets", "8 reps": what the plan prescribes for a movement. Null when it prescribes
-/// nothing. This is a target, never something that was done.
-String? _prescribed({int? sets, int? repsMin, int? repsMax, int? seconds}) {
-  final each = seconds != null
-      ? '$seconds s'
-      : repsMin != null && repsMax != null && repsMin != repsMax
-          ? '$repsMin–$repsMax'
-          : (repsMin ?? repsMax)?.toString();
-  if (sets == null) return each == null ? null : seconds != null ? each : '$each reps';
-  return each == null ? '$sets ${sets == 1 ? 'set' : 'sets'}' : '$sets × $each';
-}
-
-/// One movement of the workout preview: its name, what is prescribed, and what has actually been recorded.
-typedef _Movement = ({String name, String? target, String? recorded});
 
 class _TrainingSection extends ConsumerWidget {
   const _TrainingSection(this.snapshot);
   final DailySnapshot snapshot;
 
+  static String _count(int n, String one) => '$n ${n == 1 ? one : '${one}s'}';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final a = snapshot.training;
+    final c = context.c;
     String nextText(Occasion? next) => next == null ? 'No further workout is scheduled in this block.' : 'Next: ${next.title} on ${longDate(next.scheduledDate)}.';
     void openPlan() => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
-    List<_Movement> planned(List<Prescription> prescription) => [
-          for (final e in prescription) (name: e.name, target: _prescribed(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds), recorded: null),
-        ];
+    Widget title(String text) => Padding(padding: const EdgeInsets.only(top: 2), child: Text(text, style: context.titleStyle(21)));
+    Widget line(String text, {double top = 6}) => Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: context.sansStyle(14, color: c.secondary)));
+    Widget details(VoidCallback onPressed) => TextButton(key: const Key('today-details'), onPressed: onPressed, child: const Text('Details', semanticsLabel: 'Workout details'));
+
+    /// A day with a workout to do: the only variant with the training photograph.
+    Widget workout({required _Status status, required String name, required List<Widget> body, required Widget action, required VoidCallback onDetails}) => _Module(
+        key: const Key('today-module-workout'), icon: Icons.fitness_center, label: 'Workout', status: status, head: [title(name)], body: body,
+        // The dumbbells sit low and right in the picture.
+        photo: _Photos.workout, photoAlignment: const Alignment(0.75, 0.8), action: action, quiet: details(onDetails));
+
+    /// Rest, paused, finished, not started, nothing planned: the same module in words only. A picture of training
+    /// must not sit beside "Rest today" or "No plan yet".
+    Widget plain({_Status? status, required String name, required String text, required Widget action, VoidCallback? onDetails}) => _Module(
+        key: const Key('today-module-workout'), icon: Icons.fitness_center, label: 'Workout', status: status, head: [title(name)], body: [line(text, top: 8)],
+        action: action, quiet: onDetails == null ? null : details(onDetails));
 
     final (Widget card, bool offerManual) = switch (a) {
-      ResumeWorkout(:final workout) => () {
-          final trusted = ref.watch(trustedSetsProvider);
-          final sets = SetProgress.of(workout, trusted);
-          final n = workout.exercises.length;
+      ResumeWorkout(workout: final w) => () {
+          final sets = SetProgress.of(w, ref.watch(trustedSetsProvider));
+          final n = w.exercises.length;
           // A planned workout opens its plan entry; a manual one opens its own record of what was done so far.
-          final plan = ref.watch(planListProvider).where((p) => p.id == workout.planId).firstOrNull;
-          final occasion = plan?.occasions.where((o) => o.id == workout.occasionId).firstOrNull;
+          final plan = ref.watch(planListProvider).where((p) => p.id == w.planId).firstOrNull;
+          final occasion = plan?.occasions.where((o) => o.id == w.occasionId).firstOrNull;
           return (
-            _WorkoutCard(
-              state: 'In progress', stateIcon: Icons.timelapse, title: workout.title,
-              summary: n == 0 ? 'No exercise added yet' : '$n ${n == 1 ? 'exercise' : 'exercises'}${sets.planned == null ? '' : ' · ${sets.planned} sets'}',
-              movements: [
-                for (final e in workout.exercises)
-                  () {
-                    final done = trusted.where((s) => s.workoutId == workout.id && s.exerciseId == e.id).length;
-                    final target = e.isPrescribed ? e.targetSets : null;
-                    return (
-                      name: e.name,
-                      target: e.isPrescribed ? _prescribed(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds) : null,
-                      // Counts only. Nothing here calls a movement finished or current.
-                      // With a single movement and no target the total under the list already says it.
-                      recorded: done == 0 || (n == 1 && target == null) ? null : target == null ? '$done ${done == 1 ? 'set' : 'sets'} recorded' : '$done of $target sets recorded',
-                    );
-                  }(),
+            workout(
+              status: ('In progress', Icons.timelapse, Tone.accent), name: w.title,
+              body: [
+                line(n == 0 ? 'No exercise added yet' : '${_count(n, 'exercise')}${sets.planned == null ? '' : ' · ${sets.planned} planned sets'}'),
+                // Recorded is a count of sets, never a claim that a movement or the workout is complete.
+                if (sets.planned != null) ...[
+                  const SizedBox(height: 8),
+                  Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Expanded(child: Text('${sets.counted} of ${sets.planned} sets recorded', style: context.numStyle(15))),
+                    const SizedBox(width: 8),
+                    Text('${(sets.fraction * 100).round()}%', style: context.numStyle(14, color: c.secondary)),
+                  ]),
+                  const SizedBox(height: 6),
+                  ProgressRail(sets.fraction, label: 'Planned sets recorded', height: 6),
+                ] else if (sets.recorded > 0)
+                  // No planned total exists for a manual workout, so there is a count and no percentage.
+                  Padding(padding: const EdgeInsets.only(top: 8), child: Text('${_count(sets.recorded, 'set')} recorded', style: context.numStyle(15))),
               ],
-              progress: sets,
-              onDetails: occasion != null ? () => showOccasionSheet(context, ref, plan!, occasion) : () => push(context, WorkoutDetailScreen(workoutId: workout.id)),
-              action: PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, onPressed: () => resumeWorkout(context, ref, workout)),
+              onDetails: occasion != null ? () => showOccasionSheet(context, ref, plan!, occasion) : () => push(context, WorkoutDetailScreen(workoutId: w.id)),
+              action: PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, onPressed: () => resumeWorkout(context, ref, w)),
             ),
             false
           );
         }(),
-      WorkoutDue(:final plan, :final occasion) => (
-          _WorkoutCard(
-            state: 'Due today', stateIcon: Icons.today, title: occasion.title,
-            // The minutes are the session length chosen when the plan was set up. They are not worked out from
-            // the exercises, so they are labelled as planned time and never as an estimate.
-            summary: 'Week ${occasion.weekNumber} · ${prescriptionSummary(occasion.prescription)}${plan.setup?['minutesPerSession'] == null ? '' : ' · ${plan.setup!['minutesPerSession']} min planned'}',
-            movements: planned(occasion.prescription),
-            onDetails: () => showOccasionSheet(context, ref, plan, occasion),
-            action: PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, onPressed: () => startPlannedWorkout(context, ref, plan, occasion)),
-          ),
-          false
-        ),
+      WorkoutDue(:final plan, :final occasion) => () {
+          final sets = occasion.prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
+          // The minutes are the session length chosen when the plan was set up. They are not worked out from
+          // the exercises, so they are labelled as planned time and never as an estimate.
+          final minutes = plan.setup?['minutesPerSession'];
+          return (
+            workout(
+              status: ('Due today', Icons.today, Tone.accent), name: occasion.title,
+              body: [
+                line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}'),
+                line('Week ${occasion.weekNumber}${minutes == null ? '' : ' · $minutes min planned'}', top: 2),
+              ],
+              onDetails: () => showOccasionSheet(context, ref, plan, occasion),
+              action: PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, onPressed: () => startPlannedWorkout(context, ref, plan, occasion)),
+            ),
+            false
+          );
+        }(),
       DoneToday(:final plan, :final occasion, :final outcome, :final next) => (
-          _WorkoutCard(
-            state: 'Done for today', stateIcon: Icons.check_circle, title: occasion.title,
-            body: '${outcome == WorkoutResultRules.full ? 'Finished: all planned sets recorded.' : 'Finished partially: some planned work was not recorded.'} ${nextText(next)}',
+          plain(
+            status: ('Done for today', Icons.check_circle, Tone.success), name: occasion.title,
+            text: '${outcome == WorkoutResultRules.full ? 'Finished: all planned sets recorded.' : 'Finished partially: some planned work was not recorded.'} ${nextText(next)}',
             onDetails: () => showOccasionSheet(context, ref, plan, occasion),
             action: SecondaryButton('View plan', onPressed: openPlan),
           ),
           false
         ),
-      // No photograph from here on: a picture of training must not sit above "rest today" or "no plan yet".
       PlanPausedAction(:final plan) => (
-          _PlainCard(state: 'Plan paused', stateIcon: Icons.pause_circle_outline, title: plan.title, body: 'No workouts are expected while the plan is paused, and nothing counts as missed.',
+          plain(status: ('Plan paused', Icons.pause_circle_outline, Tone.neutral), name: plan.title, text: 'No workouts are expected while the plan is paused, and nothing counts as missed.',
               action: PrimaryButton('Resume plan', onPressed: () => push(context, ResumeReviewScreen(planId: plan.id)))),
           true
         ),
       StartsLater(:final plan, :final first) => (
-          _PlainCard(state: 'Starts ${shortDate(plan.startDate)}', stateIcon: Icons.event, title: first.title, body: 'Your first workout is on ${longDate(first.scheduledDate)}. Nothing is due before then.',
+          plain(status: ('Starts ${shortDate(plan.startDate)}', Icons.event, Tone.neutral), name: first.title, text: 'Your first workout is on ${longDate(first.scheduledDate)}. Nothing is due before then.',
               action: SecondaryButton('View plan', onPressed: openPlan)),
           true
         ),
       BlockReviewDue(:final plan) => (
-          _PlainCard(state: 'Block ready to review', stateIcon: Icons.flag_outlined, title: plan.title,
-              body: 'This block has reached its end or has nothing left to do. Review what was actually recorded and choose what comes next.',
+          plain(status: ('Block ready to review', Icons.flag_outlined, Tone.accent), name: plan.title,
+              text: 'This block has reached its end or has nothing left to do. Review what was actually recorded and choose what comes next.',
               action: PrimaryButton('Review this block', key: const Key('today-block-review'), onPressed: () => push(context, BlockReviewScreen(planId: plan.id)))),
           true
         ),
       RecoveryDay(:final next, :final missed) => (
-          _PlainCard(state: 'Recovery day', stateIcon: Icons.spa_outlined, title: 'Rest today',
-              body: '${nextText(next)}${missed.isEmpty ? '' : ' ${missed.length} earlier workout${missed.length == 1 ? ' is' : 's are'} unresolved; move or skip ${missed.length == 1 ? 'it' : 'them'} when you choose.'}',
+          plain(status: ('Recovery day', Icons.spa_outlined, Tone.neutral), name: 'Rest today',
+              text: '${nextText(next)}${missed.isEmpty ? '' : ' ${missed.length} earlier workout${missed.length == 1 ? ' is' : 's are'} unresolved; move or skip ${missed.length == 1 ? 'it' : 'them'} when you choose.'}',
               action: missed.isEmpty ? SecondaryButton('View plan', onPressed: openPlan) : SecondaryButton('Resolve missed training', key: const Key('today-missed'), onPressed: openPlan)),
           true
         ),
       ReviewDraft(:final draft) => (
-          _PlainCard(state: 'Your plan is ready to review', stateIcon: Icons.fact_check_outlined, title: draft.title, body: 'This draft has not started. Nothing is scheduled until you start it.',
+          plain(status: ('Your plan is ready to review', Icons.fact_check_outlined, Tone.accent), name: draft.title, text: 'This draft has not started. Nothing is scheduled until you start it.',
               action: PrimaryButton('Review your plan', key: const Key('today-review-draft'), onPressed: () => push(context, PlanReviewScreen(planId: draft.id)))),
           true
         ),
       CreatePlan() => (
-          _PlainCard(state: 'Your training', stateIcon: Icons.fitness_center, title: 'No plan yet', body: 'Answer a few questions and review a plan before you commit, or just train manually today.',
+          plain(name: 'No plan yet', text: 'Answer a few questions and review a plan before you commit, or just train manually today.',
               action: PrimaryButton('Create my plan', key: const Key('today-create-plan'), onPressed: () => push(context, const PlanSetupScreen()))),
           true
         ),
@@ -348,199 +367,106 @@ class _TrainingSection extends ConsumerWidget {
       card,
       if (offerManual) TextButton(key: const Key('today-manual'), onPressed: () => startManualWorkout(context, ref), child: const Text('Start a manual workout')),
       // Workouts saved for later stay recoverable without taking over the day.
-      for (final w in snapshot.parked)
-        ListRow(icon: Icons.bookmark_outline, title: w.title, subtitle: 'Saved for later · started ${shortDate(w.dayKey)}', divider: false, onTap: () => resumeWorkout(context, ref, w)),
+      if (snapshot.parked.isNotEmpty)
+        Padding(
+          padding: EdgeInsets.only(top: offerManual ? 0 : 12),
+          child: GroupCard(children: [
+            for (final w in snapshot.parked)
+              GroupRow(icon: Icons.bookmark_outline, tone: Tone.neutral, title: w.title, subtitle: 'Saved for later · started ${shortDate(w.dayKey)}', onTap: () => resumeWorkout(context, ref, w)),
+          ]),
+        ),
     ]);
   }
 }
 
-/// A day with a workout: the photograph carries its name and state, the card below says what is in it and how
-/// far it has got, and one button starts or resumes it.
-class _WorkoutCard extends StatelessWidget {
-  const _WorkoutCard({required this.state, required this.stateIcon, required this.title, this.summary, this.movements = const [], this.body, this.progress, this.onDetails, required this.action});
-  final String state, title;
-  final IconData stateIcon;
-  final String? summary, body;
-  final List<_Movement> movements;
-  final SetProgress? progress;
-  final VoidCallback? onDetails;
-  final Widget action;
+// ---------------------------------------------------------------------------- running
 
-  /// How many movements the card lists itself; the rest are behind "See all".
-  static const shown = 3;
+/// "5.20 km"
+String _km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
+
+/// Labelled values of a run ("Distance", "Time"). Only ever built from values that were saved.
+class _Cells extends StatelessWidget {
+  const _Cells(this.cells);
+  final List<(String label, String value)> cells;
 
   @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    final p = progress;
-    // With large text the name gets the whole width and the photograph is fully covered by the scrim.
-    final wide = MediaQuery.textScalerOf(context).scale(10) > 13;
-    final header = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 124),
-      child: Stack(children: [
-        // The dumbbells sit low and right in the picture; the words sit left.
-        const Positioned.fill(child: _Photo(_Photos.workout, alignment: Alignment(0.6, 0.72))),
-        // A dark floor under the words, at least 82% black wherever they can be; the photograph shows beside it.
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: wide
-                  ? const LinearGradient(colors: [Color(0xD9000000), Color(0xD9000000)])
-                  : const LinearGradient(stops: [0, 0.62, 1], colors: [Color(0xE6000000), Color(0xD1000000), Color(0x14000000)]),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-          child: FractionallySizedBox(
-            widthFactor: wide ? 1 : 0.62, alignment: Alignment.centerLeft,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text('WORKOUT', style: context.sansStyle(12.5, color: const Color(0xE6FFFFFF), weight: FontWeight.w600).copyWith(letterSpacing: 0.8)),
-              const SizedBox(height: 2),
-              Semantics(header: true, child: Text(title, style: context.titleStyle(24, color: Colors.white))),
-              const SizedBox(height: 8),
-              // The state is a filled accent label: a word and an icon, readable on any photograph.
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-                decoration: BoxDecoration(color: c.accent, borderRadius: BorderRadius.circular(99)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(stateIcon, size: 15, color: c.onAccent),
-                  const SizedBox(width: 6),
-                  Flexible(child: Text(state, style: context.sansStyle(13, color: c.onAccent, weight: FontWeight.w700))),
-                ]),
-              ),
-            ]),
-          ),
-        ),
-      ]),
-    );
-    final more = movements.length - shown;
-    return _Card(
-      header: header,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (summary != null) Text(summary!, style: context.sansStyle(14.5, color: c.secondary)),
-        if (body != null) Text(body!, style: context.sansStyle(15, color: c.secondary)),
-        // Plain rows: there is no page for a single movement, so they do not pretend to be buttons.
-        for (final (i, m) in movements.take(shown).indexed) ...[
-          if (i == 0) const SizedBox(height: 6) else const Rule(),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            child: MergeSemantics(
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(m.name, style: context.sansStyle(16, weight: FontWeight.w500)),
-                    if (wide && m.target != null) Text(m.target!, semanticsLabel: 'planned ${m.target}', style: context.sansStyle(15, color: c.secondary)),
-                    if (m.recorded != null) Text(m.recorded!, style: context.caption),
-                  ]),
-                ),
-                if (!wide && m.target != null) Padding(padding: const EdgeInsets.only(left: 12, top: 1), child: Text(m.target!, semanticsLabel: 'planned ${m.target}', style: context.sansStyle(15, color: c.secondary))),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Wrap(spacing: 18, runSpacing: 4, children: [
+          for (final (label, value) in cells)
+            MergeSemantics(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(label, style: context.caption),
+                Text(value, style: context.titleStyle(19)),
               ]),
             ),
-          ),
-        ],
-        if (onDetails != null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              key: const Key('today-details'),
-              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)),
-              onPressed: onDetails,
-              child: Text(more > 0 ? 'See all ${movements.length} exercises' : 'Workout details'),
-            ),
-          ),
-        if (p != null && (p.planned != null || p.recorded > 0)) ...[
-          const SizedBox(height: 4),
-          if (p.planned == null)
-            Text('${p.recorded} ${p.recorded == 1 ? 'set' : 'sets'} recorded', style: context.sansStyle(15, weight: FontWeight.w600))
-          else ...[
-            Row(children: [
-              Expanded(child: Text('${p.counted} of ${p.planned} sets recorded', style: context.sansStyle(15, weight: FontWeight.w600))),
-              Text('${(p.fraction * 100).round()}%', style: context.sansStyle(14.5, color: c.secondary, weight: FontWeight.w600)),
-            ]),
-            const SizedBox(height: 7),
-            ProgressRail(p.fraction, label: 'Planned sets recorded', height: 7),
-          ],
-        ],
-        const SizedBox(height: 14),
-        action,
-      ]),
-    );
-  }
-}
-
-/// Rest days, paused plans, drafts and the empty start: the same card without a photograph.
-class _PlainCard extends StatelessWidget {
-  const _PlainCard({required this.state, required this.stateIcon, required this.title, required this.body, required this.action});
-  final String state, title, body;
-  final IconData stateIcon;
-  final Widget action;
-
-  @override
-  Widget build(BuildContext context) => _Card(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          StatusPill(state, icon: stateIcon, tone: Tone.accent),
-          const SizedBox(height: 10),
-          Semantics(header: true, child: Text(title, style: context.titleStyle(24))),
-          Padding(padding: const EdgeInsets.only(top: 6), child: Text(body, style: context.sansStyle(15, color: context.c.secondary))),
-          const SizedBox(height: 14),
-          action,
         ]),
       );
 }
 
-// ---------------------------------------------------------------------------- running
-
 /// Today's one way into running, on every kind of day. An open run is read from the saved records, whatever day
-/// it began, so it is continued (never started twice) also after the app was closed. The photograph is not a
-/// map and says nothing about tracking: distance is measured only while the run's own screen is open.
-class _RunCard extends ConsumerWidget {
-  const _RunCard({required this.finishedToday, required this.fill});
+/// it began, so it is continued (never started twice) also after the app was closed. Distance and time appear
+/// only when they were saved: there is no target, no percentage and no route. The photograph is not a map and
+/// says nothing about tracking; distance is measured only while the run's own screen is open.
+class _RunCard extends ConsumerStatefulWidget {
+  const _RunCard({required this.today, required this.finishedToday});
+  final String today;
   final List<Run> finishedToday;
-  final bool fill;
+  @override
+  ConsumerState<_RunCard> createState() => _RunCardState();
+}
 
-  static String _km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
+class _RunCardState extends ConsumerState<_RunCard> {
+  /// Runs only while an open run's clock is running, so its minutes stay true without anything animating.
+  Timer? _minute;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _minute?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final open = [for (final r in ref.watch(runsProvider).value ?? const <Stored<Run>>[]) if (r.value.isOpen) r.value].firstOrNull;
-    final String state;
-    if (open != null) {
-      // Only a distance that was really measured so far; the clock is on the run's own screen.
-      final runtime = (ref.watch(runtimesProvider).value ?? const <Stored<Json>>[]).where((r) => r.rec.id == open.id).firstOrNull;
-      final track = RunTrack(runtime?.value['track'] as Json? ?? const {});
-      state = track.hasDistance ? 'In progress · ${_km(track.distanceMeters)} so far' : 'In progress';
-    } else if (finishedToday.isNotEmpty) {
-      final last = finishedToday.last;
-      state = 'Today: ${durationText(last.activeDurationSeconds ?? 0)}${last.distanceMeters == null ? '' : ' · ${_km(last.distanceMeters!)}'}';
+    final row = open == null ? null : (ref.watch(runtimesProvider).value ?? const <Stored<Json>>[]).where((r) => r.rec.id == open.id).firstOrNull;
+    final runtime = row == null ? null : WorkoutRuntime(row.value);
+    final ticking = runtime != null && !runtime.isPaused;
+    if (ticking) {
+      _minute ??= Timer.periodic(const Duration(seconds: 20), (_) => setState(() {}));
     } else {
-      state = 'No run today';
+      _minute?.cancel();
+      _minute = null;
     }
-    final title = _CardTitle(icon: Icons.directions_run, title: 'Run', state: state, stateIcon: open == null ? null : Icons.timelapse, active: open != null);
-    final label = open == null ? 'Start run' : 'Continue run';
-    void go() => startRunFlow(context, ref);
-    // On its own row the card is short: the title and the button share a line unless the text is large.
-    final inline = !fill && MediaQuery.textScalerOf(context).scale(10) <= 13;
-    return _Card(
-      fill: fill,
-      header: const SizedBox(height: 92, child: _Photo(_Photos.run, alignment: Alignment(0.55, 0.25))),
-      child: inline
-          ? Row(children: [
-              Expanded(child: title),
-              const SizedBox(width: 12),
-              OutlinedButton(key: const Key('today-run'), onPressed: go, child: Text(label)),
-            ])
-          : Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                title,
-                // The quiet way to what was run before; starting or continuing stays the card's one button.
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)), onPressed: () => push(context, const RunHistoryScreen()), child: const Text('Run history')),
-                ),
-              ]),
-              _CardButton(label, key: const Key('today-run'), onPressed: go),
-            ]),
+
+    String time(int seconds) => seconds < 60 ? 'Under 1 min' : durationText(seconds);
+    final _Status? status;
+    final String? note;
+    var cells = const <(String, String)>[];
+    if (open != null) {
+      // The saved clock and the distance measured so far. Without them the card says only that a run is open.
+      final track = RunTrack(runtime?.j['track'] as Json? ?? const {});
+      cells = [if (track.hasDistance) ('Distance', _km(track.distanceMeters)), if (runtime != null) ('Time', time(runtime.elapsedSeconds(ref.read(clockProvider).utcNow())))];
+      status = runtime?.isPaused ?? false ? ('Paused', Icons.pause_circle_outline, Tone.accent) : ('In progress', Icons.timelapse, Tone.accent);
+      note = open.dayKey == widget.today ? (cells.isEmpty ? 'Started today' : null) : 'Started ${shortDate(open.dayKey)}';
+    } else if (widget.finishedToday.isNotEmpty) {
+      final last = widget.finishedToday.last;
+      cells = [if (last.distanceMeters != null) ('Distance', _km(last.distanceMeters!)), if (last.activeDurationSeconds != null) ('Time', time(last.activeDurationSeconds!))];
+      status = ('Finished today', Icons.check, Tone.neutral);
+      note = null;
+    } else {
+      status = null;
+      note = 'No run today';
+    }
+    return _Module(
+      key: const Key('today-module-run'), icon: Icons.directions_run, label: 'Run', status: status,
+      head: [
+        if (note != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note, style: context.sansStyle(14, color: context.c.secondary))),
+        if (cells.isNotEmpty) _Cells(cells),
+      ],
+      photo: _Photos.run, photoAlignment: const Alignment(0.7, 0.5),
+      action: SecondaryButton(open == null ? 'Start run' : 'Continue run', key: const Key('today-run'), onPressed: () => startRunFlow(context, ref)),
+      quiet: TextButton(key: const Key('today-run-history'), onPressed: () => push(context, const RunHistoryScreen()), child: const Text('History', semanticsLabel: 'Run history')),
     );
   }
 }
@@ -550,44 +476,37 @@ class _RunCard extends ConsumerWidget {
 /// Today's food at a glance, from the same entries and coverage Eat shows in full. The bowl in the photograph is
 /// decoration: it is not an entry, and it is there on a day with nothing logged too.
 class _NutritionCard extends ConsumerWidget {
-  const _NutritionCard({required this.day, required this.snapshot, required this.failed, required this.fill});
+  const _NutritionCard({required this.day, required this.snapshot, required this.failed});
   final String day;
   final DailySnapshot? snapshot;
-  final bool failed, fill;
+  final bool failed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = snapshot;
     final profile = ref.watch(profileProvider).value;
-    final foods = s?.food.length ?? 0;
     final goals = NutritionSummary.goalsText(profile?.calorieGoal, profile?.proteinGoal);
+    final logged = !failed && s != null && s.food.isNotEmpty;
     void openEat() => ref.read(shellProvider.notifier).switchTab(2);
-    return _Card(
-      fill: fill,
-      header: const SizedBox(height: 92, child: _Photo(_Photos.nutrition, alignment: Alignment(0.45, 0.1))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-       Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        _CardTitle(
-          icon: Icons.restaurant, title: 'Nutrition',
-          state: failed ? 'Could not be read' : s == null ? 'Loading…' : foods == 0 ? 'No food logged today' : '$foods ${foods == 1 ? 'food' : 'foods'} logged',
-        ),
+    Widget line(String text) => Padding(padding: const EdgeInsets.only(top: 2), child: Text(text, style: context.sansStyle(14, color: context.c.secondary)));
+    return _Module(
+      key: const Key('today-module-nutrition'), icon: Icons.restaurant, label: 'Nutrition',
+      head: [
         if (failed)
-          const Padding(padding: EdgeInsets.only(top: 10), child: StatusLine(Icons.error_outline, 'Today\'s food could not be read from this phone.', tone: Tone.error))
-        else if (s != null && foods == 0 && goals != null)
-          Padding(padding: const EdgeInsets.only(top: 8), child: Text('Your daily goal: $goals', style: context.caption))
-        else if (s != null && foods > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: NutritionSummary(coverage: s.coverage, calorieGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, onDetails: openEat),
-          ),
-        // A quiet way to the full journal; logging stays the card's one button.
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(key: const Key('today-open-eat'), style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)), onPressed: openEat, child: const Text('Food journal')),
-        ),
-       ]),
-        _CardButton('Log food', key: const Key('log-food'), onPressed: () => openFoodForm(context, dayKey: day)),
-      ]),
+          const Padding(padding: EdgeInsets.only(top: 4), child: StatusLine(Icons.error_outline, 'Today\'s food could not be read from this phone.', tone: Tone.error))
+        else if (s == null)
+          line('Loading…')
+        else if (s.food.isEmpty) ...[
+          line('No food logged today'),
+          if (goals != null) line('Your daily goal: $goals'),
+        ] else
+          Padding(padding: const EdgeInsets.only(top: 2), child: NutritionSummary(coverage: s.coverage, calorieGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal)),
+      ],
+      // Any food without a value: said here in a line, explained in Eat.
+      footer: logged ? NutritionMissingNote(coverage: s.coverage, onDetails: openEat) : null,
+      photo: _Photos.nutrition, photoAlignment: const Alignment(0.3, 0),
+      action: SecondaryButton('Log food', key: const Key('log-food'), onPressed: () => openFoodForm(context, dayKey: day)),
+      quiet: TextButton(key: const Key('today-open-eat'), onPressed: openEat, child: const Text('Journal', semanticsLabel: 'Food journal')),
     );
   }
 }
@@ -595,7 +514,8 @@ class _NutritionCard extends ConsumerWidget {
 // ---------------------------------------------------------------------------- recorded today
 
 /// What was recorded today, in its own words: a manual workout is "Recorded", never a completed plan day.
-/// A single finished run is already said on the Run card, so runs are listed here only when there are several.
+/// A single finished run is already said on the Run module, so runs are listed here only when there are several;
+/// an open run is never listed.
 class _ActivitySection extends ConsumerWidget {
   const _ActivitySection(this.snapshot, this.finishedRuns);
   final DailySnapshot snapshot;
@@ -603,18 +523,21 @@ class _ActivitySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const SectionHeader('Recorded today'),
-        for (final w in snapshot.finishedToday)
-          ListRow(
-            title: w.title,
-            subtitle: '${w.isManual ? 'Manual workout' : 'Planned workout'} · ${WorkoutResultRules.label(w.outcome)}${w.performedSets > 0 ? ' · ${w.performedSets} set${w.performedSets == 1 ? '' : 's'}' : ''}',
-            onTap: () => push(context, WorkoutDetailScreen(workoutId: w.id)),
-          ),
-        if (finishedRuns.length > 1)
-          for (final r in finishedRuns)
-            ListRow(
-              icon: Icons.directions_run, title: 'Run',
-              subtitle: '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${(r.distanceMeters! / 1000).toStringAsFixed(2)} km'}',
+        Padding(padding: const EdgeInsets.only(left: 4, bottom: 8), child: Semantics(header: true, child: const Overline('Recorded today'))),
+        GroupCard(children: [
+          for (final w in snapshot.finishedToday)
+            GroupRow(
+              icon: Icons.fitness_center, tone: Tone.neutral, title: w.title,
+              subtitle: '${w.isManual ? 'Manual workout' : 'Planned workout'} · ${WorkoutResultRules.label(w.outcome)}${w.performedSets > 0 ? ' · ${w.performedSets} set${w.performedSets == 1 ? '' : 's'}' : ''}',
+              onTap: () => push(context, WorkoutDetailScreen(workoutId: w.id)),
             ),
+          if (finishedRuns.length > 1)
+            for (final r in finishedRuns)
+              GroupRow(
+                icon: Icons.directions_run, tone: Tone.neutral, title: 'Run',
+                subtitle: '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${_km(r.distanceMeters!)}'}',
+                onTap: () => push(context, RunScreen(runId: r.id)),
+              ),
+        ]),
       ]);
 }

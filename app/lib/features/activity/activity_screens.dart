@@ -123,27 +123,50 @@ class _RunScreenState extends ConsumerState<RunScreen> {
     final elapsed = run.isOpen ? (runtime?.elapsedSeconds(now) ?? now.difference(DateTime.parse(run.startedAtUtc)).inSeconds.clamp(0, 604800)) : run.activeDurationSeconds ?? 0;
     String km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
 
-    return AppPage(title: run.isOpen ? 'Run' : 'Run recorded', children: [
-      Text(longDate(run.dayKey), style: context.caption),
-      const SizedBox(height: 10),
-      Semantics(
-        label: 'Run time ${durationText(elapsed)}',
-        child: ExcludeSemantics(child: Text(clockText(elapsed), style: context.sansStyle(context.display(70), weight: FontWeight.w300).copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
+    final paused = runtime?.isPaused ?? false;
+    return AppPage(title: run.isOpen ? 'Run' : 'Run recorded', subtitle: longDate(run.dayKey), children: [
+      Panel(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const IconTile(Icons.directions_run, size: 36),
+            const SizedBox(width: 10),
+            Expanded(child: Overline(run.isOpen && paused ? 'Time · paused' : 'Time')),
+          ]),
+          const SizedBox(height: 6),
+          Semantics(
+            label: 'Run time ${durationText(elapsed)}',
+            child: ExcludeSemantics(child: Text(clockText(elapsed), style: context.titleStyle(60, weight: FontWeight.w500))),
+          ),
+          if (run.isOpen && _gps != null) ...[
+            const SizedBox(height: 12),
+            const Rule(),
+            const SizedBox(height: 12),
+            const Overline('Distance'),
+            Text(km(track.distanceMeters), key: const Key('run-gps-distance'), style: context.titleStyle(30)),
+            const SizedBox(height: 6),
+            StatusLine(Icons.gps_fixed, track.fixes == 0
+                ? 'Waiting for a GPS position…'
+                : 'Measured by GPS while this screen is open.${track.gaps > 0 ? ' ${track.gaps} stretch${track.gaps == 1 ? '' : 'es'} without readings ${track.gaps == 1 ? 'was' : 'were'} left out, not estimated.' : ''}'),
+          ] else if (!run.isOpen) ...[
+            const SizedBox(height: 12),
+            const Rule(),
+            const SizedBox(height: 12),
+            const Overline('Distance'),
+            Text(run.distanceMeters == null ? '—' : km(run.distanceMeters!), semanticsLabel: run.distanceMeters == null ? 'Distance not recorded' : null, style: context.titleStyle(30)),
+            if (run.distanceMeters == null) Text('Distance not recorded', style: context.caption),
+          ],
+        ]),
       ),
       if (run.isOpen) ...[
-        if (_gps != null) ...[
-          Text(km(track.distanceMeters), key: const Key('run-gps-distance'), style: context.titleStyle(30)),
-          StatusLine(Icons.gps_fixed, track.fixes == 0
-              ? 'Waiting for a GPS position…'
-              : 'Measured by GPS while this screen is open.${track.gaps > 0 ? ' ${track.gaps} stretch${track.gaps == 1 ? '' : 'es'} without readings ${track.gaps == 1 ? 'was' : 'were'} left out, not estimated.' : ''}'),
-        ] else ...[
+        if (_gps == null) ...[
+          const SizedBox(height: 12),
           SecondaryButton('Measure distance with GPS', key: const Key('run-gps-start'), icon: Icons.gps_not_fixed, onPressed: () => _startGps(ask: true)),
           const SizedBox(height: 6),
           Text('Distance is only recorded from real GPS readings, or from what you type below.', style: context.caption),
         ],
         if (_gpsNote != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.info_outline, _gpsNote!, tone: Tone.warning)),
-        const SizedBox(height: 18),
-        SecondaryButton(runtime?.isPaused ?? false ? 'Resume' : 'Pause', icon: runtime?.isPaused ?? false ? Icons.play_arrow : Icons.pause,
+        const SizedBox(height: 12),
+        SecondaryButton(paused ? 'Resume' : 'Pause', icon: paused ? Icons.play_arrow : Icons.pause,
             onPressed: runtime == null
                 ? null
                 : () => _save(runtime.isPaused ? runtime.resumed(now) : WorkoutRuntime(copyJson(runtime.paused(now).j)..['track'] = track.detached().j))),
@@ -167,13 +190,12 @@ class _RunScreenState extends ConsumerState<RunScreen> {
             setState(() => _error = 'The run could not be saved on this phone. It is still open.');
           }
         }),
-      ] else
-        Text('${durationText(elapsed)}${run.distanceMeters == null ? ' · distance not recorded' : ' · ${km(run.distanceMeters!)}'}', style: context.body),
+      ],
       const SizedBox(height: 8),
       Center(
         child: TextButton(
           onPressed: () async {
-            if (!await confirm(context, title: 'Remove this run?', body: 'This removes the run from ${longDate(run.dayKey)} from your history.', action: 'Remove run')) return;
+            if (!await confirm(context, title: 'Remove this run?', body: 'This removes the run from ${longDate(run.dayKey)} from your history.', action: 'Remove run', destructive: true)) return;
             _closed = true;
             await ref.read(activityRepositoryProvider).deleteRun(run);
             await _sync.deleteLocal(_owner, Kinds.runtime, run.id);
@@ -193,12 +215,16 @@ class RunHistoryScreen extends ConsumerWidget {
     final runs = [for (final r in ref.watch(runsProvider).value ?? const <Stored<Run>>[]) if (!r.value.isDeleted) r.value]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
     return AppPage(title: 'Run history', children: [
       if (runs.isEmpty) EmptyState('No runs yet', 'Runs you record appear here, every one of them.', action: SecondaryButton('Start a run', onPressed: () => startRunFlow(context, ref))),
-      for (final r in runs)
-        ListRow(
-          icon: Icons.directions_run, title: shortDate(r.dayKey),
-          subtitle: r.isOpen ? 'In progress' : '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${(r.distanceMeters! / 1000).toStringAsFixed(2)} km'}',
-          onTap: () => push(context, RunScreen(runId: r.id)),
-        ),
+      // ponytail: every run is built at once inside one card; make it a lazy list if histories reach the thousands.
+      if (runs.isNotEmpty)
+        GroupCard(children: [
+          for (final r in runs)
+            GroupRow(
+              icon: Icons.directions_run, tone: r.isOpen ? Tone.accent : Tone.neutral, title: shortDate(r.dayKey),
+              subtitle: r.isOpen ? 'In progress' : '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${(r.distanceMeters! / 1000).toStringAsFixed(2)} km'}',
+              onTap: () => push(context, RunScreen(runId: r.id)),
+            ),
+        ]),
     ]);
   }
 }
@@ -250,16 +276,20 @@ class _BodyMetricsScreenState extends ConsumerState<BodyMetricsScreen> {
         }
       }),
       const SizedBox(height: 22),
-      const SectionLabel('History'),
-      if (metrics.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('No measurements recorded.', style: context.caption)),
-      for (final m in metrics)
-        ListRow(
-          title: [if (m.weightKg != null) formatLoad(m.weightKg, unit), if (m.bodyFatPercent != null) '${formatNumber(m.bodyFatPercent!)} % body fat'].join(' · '),
-          subtitle: longDate(m.dayKey),
-          trailing: IconButton(tooltip: 'Remove measurement', icon: const Icon(Icons.close, size: 18), onPressed: () async {
-            if (await confirm(context, title: 'Remove this measurement?', body: 'The measurement from ${longDate(m.dayKey)} will be removed.', action: 'Remove')) await ref.read(activityRepositoryProvider).deleteMetric(m);
-          }),
-        ),
+      const Padding(padding: EdgeInsets.only(left: 4, bottom: 8), child: Overline('History')),
+      if (metrics.isEmpty)
+        Text('No measurements recorded.', style: context.caption)
+      else
+        GroupCard(children: [
+          for (final m in metrics)
+            GroupRow(
+              title: [if (m.weightKg != null) formatLoad(m.weightKg, unit), if (m.bodyFatPercent != null) '${formatNumber(m.bodyFatPercent!)} % body fat'].join(' · '),
+              subtitle: longDate(m.dayKey),
+              trailing: IconButton(tooltip: 'Remove measurement', icon: const Icon(Icons.close, size: 20), onPressed: () async {
+                if (await confirm(context, title: 'Remove this measurement?', body: 'The measurement from ${longDate(m.dayKey)} will be removed.', action: 'Remove', destructive: true)) await ref.read(activityRepositoryProvider).deleteMetric(m);
+              }),
+            ),
+        ]),
     ]);
   }
 }
