@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../core/device_prefs.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import 'food_item.dart';
@@ -43,7 +44,7 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
     final code = normalizeBarcode(raw);
     if (_done || code == null || !mounted) return;
     _done = true;
-    HapticFeedback.mediumImpact();
+    Haptics.confirm();
     Navigator.pop(context, code);
   }
 

@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/compatibility.dart';
+import '../../core/device_prefs.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
@@ -440,7 +440,7 @@ class _Tabs<T extends Enum> extends StatelessWidget {
                 child: InkWell(
                   key: Key('$keyPrefix-${v.name}'),
                   onTap: () {
-                    if (v != selected) HapticFeedback.selectionClick();
+                    if (v != selected) Haptics.selection();
                     onChanged(v);
                   },
                   child: AnimatedContainer(
@@ -479,7 +479,7 @@ class _Chips extends StatelessWidget {
                 child: InkWell(
                   key: Key('food-category-${v ?? 'all'}'), customBorder: const StadiumBorder(),
                   onTap: () {
-                    if (v != selected) HapticFeedback.selectionClick();
+                    if (v != selected) Haptics.selection();
                     onChanged(v);
                   },
                   // A 48 px target around a 38 px pill.

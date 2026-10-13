@@ -124,7 +124,8 @@ Future<void> _open(WidgetTester tester, String screen) async {
         await tester.enterText(find.byKey(const Key('food-search')), 'rice');
         await tester.pumpAndSettle();
         await tap('food-search-online');
-        if (screen == 'food-preview') await tap('result-usda:2708402');
+        // The fixture already logged this rice, so it is listed once, under Your foods, and not again as a wider result.
+        if (screen == 'food-preview') await tap(find.byKey(const Key('local-usda:2708402')).evaluate().isEmpty ? 'result-usda:2708402' : 'local-usda:2708402');
         if (screen == 'food-preview-unknown') await tap('result-off:5449000000996');
       }
     case 'food-common' || 'food-common-preview':
