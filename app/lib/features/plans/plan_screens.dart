@@ -177,13 +177,16 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
         const SizedBox(height: 8),
         Text('Training days (choose ${s['sessionsPerWeek']}, with a recovery day between them)', style: context.caption),
         _WeekdayChecks(selected: (s['weekdays'] as List).cast<int>(), onChanged: (v) => _set('weekdays', v)),
-        ListRow(
-          key: const Key('setup-start'), icon: Icons.event, title: 'Start date', subtitle: longDate(s['startDate'] as String),
-          onTap: () async {
-            final d = await pickDay(context, initial: s['startDate'] as String, first: ref.read(todayKeyProvider), help: 'Start date');
-            if (d != null) _set('startDate', d);
-          },
-        ),
+        const SizedBox(height: 6),
+        GroupCard(children: [
+          GroupRow(
+            key: const Key('setup-start'), icon: Icons.event, title: 'Start date', subtitle: longDate(s['startDate'] as String),
+            onTap: () async {
+              final d = await pickDay(context, initial: s['startDate'] as String, first: ref.read(todayKeyProvider), help: 'Start date');
+              if (d != null) _set('startDate', d);
+            },
+          ),
+        ]),
         if (_fit.isNotEmpty) ...[
           const SizedBox(height: 18),
           Panel(
@@ -293,21 +296,19 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
     var start = plan.startDate, weeks = plan.blockWeeks;
     var days = ((plan.setup?['weekdays'] as List?) ?? const [1, 3, 5]).cast<int>();
     final sessions = (plan.setup?['sessionsPerWeek'] as int?) ?? days.length;
-    final apply = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
+    final apply = await showGoSheet<bool>(
+      context,
+      title: 'Change the schedule',
       builder: (sheet) => StatefulBuilder(builder: (context, set) {
         final check = ScheduleRules.generate(start, days, sessions, weeks, plan.minRecoveryDays);
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 20 + MediaQuery.viewInsetsOf(context).bottom),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              const Heading('Change the schedule', size: 24),
-              ListRow(key: const Key('draft-start'), icon: Icons.event, title: 'Start date', subtitle: longDate(start), onTap: () async {
-                final d = await pickDay(context, initial: start, first: ref.read(todayKeyProvider), help: 'Start date');
-                if (d != null) set(() => start = d);
-              }),
-              const SizedBox(height: 8),
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              GroupCard(children: [
+                GroupRow(key: const Key('draft-start'), icon: Icons.event, title: 'Start date', subtitle: longDate(start), onTap: () async {
+                  final d = await pickDay(context, initial: start, first: ref.read(todayKeyProvider), help: 'Start date');
+                  if (d != null) set(() => start = d);
+                }),
+              ]),
+              const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                   initialValue: weeks, decoration: const InputDecoration(labelText: 'Block length'), dropdownColor: context.c.surface,
                   items: [for (final w in const [4, 8, 12]) DropdownMenuItem(value: w, child: Text('$w weeks'))], onChanged: (v) => set(() => weeks = v ?? weeks)),
@@ -318,9 +319,7 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
               const SizedBox(height: 12),
               PrimaryButton('Update the draft', key: const Key('draft-update'), onPressed: check.errors.isEmpty ? () => Navigator.pop(sheet, true) : null),
               Center(child: TextButton(onPressed: () => Navigator.pop(sheet, false), child: const Text('Cancel and keep the reviewed schedule'))),
-            ]),
-          ),
-        );
+            ]);
       }),
     );
     if (apply != true || !mounted) return;
@@ -402,10 +401,14 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
           for (final (i, e) in o.prescription.indexed)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Row(children: [
-                SizedBox(width: 22, child: Text('${i + 1}', style: context.caption)),
-                Expanded(child: Text(e.name, style: context.sansStyle(15))),
-                Text(targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds), style: context.caption),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SizedBox(width: 22, child: Text('${i + 1}', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400))),
+                Expanded(
+                  child: Wrap(alignment: WrapAlignment.spaceBetween, spacing: 10, children: [
+                    Text(e.name, style: context.sansStyle(15)),
+                    Text(targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds), style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w500)),
+                  ]),
+                ),
               ]),
             ),
           const SizedBox(height: 12),
@@ -451,10 +454,12 @@ class _ResumeReviewScreenState extends ConsumerState<ResumeReviewScreen> {
         TextButton(key: const Key('resume-keep-paused'), onPressed: () => Navigator.pop(context), child: const Text('Keep paused')),
       ]),
       children: [
-        ListRow(key: const Key('resume-date'), icon: Icons.event, title: 'Next workout on', subtitle: longDate(resumeDate), onTap: () async {
-          final d = await pickDay(context, initial: resumeDate, first: today, help: 'Resume date');
-          if (d != null) setState(() => _resumeDate = d);
-        }),
+        GroupCard(children: [
+          GroupRow(key: const Key('resume-date'), icon: Icons.event, title: 'Next workout on', subtitle: longDate(resumeDate), onTap: () async {
+            final d = await pickDay(context, initial: resumeDate, first: today, help: 'Resume date');
+            if (d != null) setState(() => _resumeDate = d);
+          }),
+        ]),
         if (displaces != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.swap_horiz, 'This makes it your primary plan and pauses "${displaces.title}".', tone: Tone.warning)),
         const SizedBox(height: 14),
         Text(changes.isEmpty
@@ -501,12 +506,19 @@ class BlockReviewScreen extends ConsumerWidget {
       Text(plan.title, style: context.sansStyle(16, weight: FontWeight.w600)),
       Text('${longDate(plan.startDate)} to ${plan.endDate == null ? '—' : longDate(plan.endDate!)}', style: context.caption),
       const SizedBox(height: 16),
-      for (final (label, n) in [
-        ('Finished', c[OccasionStatus.finished]!), ('Partial', c[OccasionStatus.partial]!), ('Skipped', c[OccasionStatus.skipped]!),
-        ('Missed', c[OccasionStatus.missed]!), ('Still ahead or in progress', remaining),
-      ])
-        Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Row(children: [Expanded(child: Text(label, style: context.body)), Text('$n', style: context.titleStyle(21))])),
-      const SizedBox(height: 8),
+      Panel(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        child: Column(children: [
+          for (final (i, (label, n)) in [
+            ('Finished', c[OccasionStatus.finished]!), ('Partial', c[OccasionStatus.partial]!), ('Skipped', c[OccasionStatus.skipped]!),
+            ('Missed', c[OccasionStatus.missed]!), ('Still ahead or in progress', remaining),
+          ].indexed) ...[
+            if (i > 0) const Rule(),
+            Padding(padding: const EdgeInsets.symmetric(vertical: 9), child: Row(children: [Expanded(child: Text(label, style: context.body)), Text('$n', style: context.titleStyle(21))])),
+          ],
+        ]),
+      ),
+      const SizedBox(height: 10),
       Text('Counts come from what was actually recorded for each planned workout. Reaching the end date does not by itself mean the training happened.', style: context.caption),
       if (plan.isClosed)
         Padding(padding: const EdgeInsets.only(top: 16), child: StatusLine(Icons.flag_outlined, plan.closureIntent == 'stopped_early' ? 'This block was stopped early.' : 'This block was finished for now.'))
@@ -628,10 +640,13 @@ class _SubstitutionRequestScreenState extends ConsumerState<SubstitutionRequestS
         if (movements.isEmpty) Text('No remaining workout has a movement to replace.', style: context.caption),
         for (final e in movements.entries) ChoiceTile<String?>(key: Key('substitute-from-${e.key}'), value: e.key, groupValue: _from, title: e.value, onChanged: (v) => setState(() => _from = v)),
         const SizedBox(height: 10),
-        ListRow(key: const Key('substitute-to'), icon: Icons.swap_horiz, title: 'With', subtitle: _to?.name ?? 'Choose a movement', onTap: () async {
-          final e = await push<CatalogExercise>(context, const ExercisePicker(title: 'Replace with'));
-          if (e != null) setState(() => _to = e);
-        }),
+        GroupCard(children: [
+          GroupRow(key: const Key('substitute-to'), icon: Icons.swap_horiz, title: 'With', subtitle: _to?.name ?? 'Choose a movement', onTap: () async {
+            final e = await push<CatalogExercise>(context, const ExercisePicker(title: 'Replace with'));
+            if (e != null) setState(() => _to = e);
+          }),
+        ]),
+        const SizedBox(height: 8),
         if (_to != null && _to!.key == null) const StatusLine(Icons.info_outline, 'Choose a movement from the list. Custom movements can be used inside a workout, not in a plan change.', tone: Tone.warning),
       ],
     );

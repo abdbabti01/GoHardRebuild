@@ -133,9 +133,14 @@ class _ManualWorkoutSetupState extends ConsumerState<ManualWorkoutSetup> {
           const SizedBox(height: 18),
           const SectionLabel('Movements'),
           if (_chosen.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('None yet. You can also add movements after starting.', style: context.caption)),
-          for (final (i, e) in _chosen.indexed)
-            ListRow(title: e.name, trailing: IconButton(tooltip: 'Remove ${e.name}', icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() => _chosen.removeAt(i)))),
-          const SizedBox(height: 8),
+          if (_chosen.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            GroupCard(children: [
+              for (final (i, e) in _chosen.indexed)
+                GroupRow(title: e.name, trailing: IconButton(tooltip: 'Remove ${e.name}', icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() => _chosen.removeAt(i)))),
+            ]),
+          ],
+          const SizedBox(height: 10),
           SecondaryButton('Add a movement', key: const Key('manual-add-exercise'), icon: Icons.add, onPressed: () async {
             final e = await push<CatalogExercise>(context, const ExercisePicker());
             if (e != null) setState(() => _chosen.add(e));

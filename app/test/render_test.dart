@@ -100,6 +100,15 @@ const Json _manual = {'id': 'w-manual', 'kind': 'manual', 'title': 'Back', 'dayK
   'exercises': [{'id': 'm1', 'ordinal': 1, 'name': 'Barbell row', 'catalogKey': 'barbell-row', 'isDeleted': false}]};
 const Json _manualSet = {'id': 'ms1', 'exerciseId': 'm1', 'workoutId': 'w-manual', 'reps': 8, 'loadKg': 60, 'performedAtUtc': '2026-10-11T16:05:00Z', 'isDeleted': false};
 
+/// A manual workout finished two days ago with two movements and five recorded sets.
+const Json _finished = {'id': 'w-done', 'kind': 'manual', 'title': 'Push day', 'dayKey': '2026-10-09', 'startedAtUtc': '2026-10-09T16:00:00Z', 'finishedAtUtc': '2026-10-09T16:42:00Z', 'activeDurationSeconds': 2520,
+  'outcome': 'manual_recorded', 'performedSets': 5, 'performedExercises': 2, 'qualifiedOccasion': false, 'isDeleted': false,
+  'exercises': [{'id': 'd1', 'ordinal': 1, 'name': 'Bench press', 'catalogKey': 'bench-press', 'isDeleted': false}, {'id': 'd2', 'ordinal': 2, 'name': 'Overhead press', 'catalogKey': 'overhead-press', 'isDeleted': false}]};
+final List<Json> _finishedSets = [
+  for (final (i, (exercise, load, reps)) in [('d1', 80, 6), ('d1', 80, 6), ('d1', 82.5, 5), ('d2', 50, 8), ('d2', 50, 7)].indexed)
+    {'id': 'ds$i', 'exerciseId': exercise, 'workoutId': 'w-done', 'reps': reps, 'loadKg': load, 'performedAtUtc': '2026-10-09T16:${10 + i}:00Z', 'isDeleted': false},
+];
+
 Future<void> _open(WidgetTester tester, String screen) async {
   Future<void> tap(String key) async {
     await tester.tap(find.byKey(Key(key)));
@@ -113,6 +122,20 @@ Future<void> _open(WidgetTester tester, String screen) async {
     case 'train-progress':
       await tap('nav-train');
       await tap('train-progress');
+    case 'train-workouts' || 'workout-detail':
+      await tap('nav-train');
+      await tap('train-workouts');
+      if (screen == 'workout-detail') {
+        await tester.tap(find.text('Push day'));
+        await tester.pumpAndSettle();
+      }
+    case 'train-plan-week-5' || 'train-plan-occasion':
+      await tap('nav-train');
+      await tap('train-plan');
+      final key = screen == 'train-plan-week-5' ? 'week-5' : 'occasion-3-3';
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+      await tap(key);
     case 'eat':
       await tap('nav-eat');
     case 'run':
@@ -199,8 +222,8 @@ void main() {
   final states = <String, (Future<List<Override>> Function(WidgetTester), String, Size, double)>{
     'full-today-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(390, 1500), 1),
     'full-today-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'today', const Size(390, 1500), 1),
-    'full-plan-light': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'train-plan', const Size(390, 1900), 1),
-    'full-plan-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(390, 1900), 1),
+    'full-plan-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'train-plan', const Size(390, 1900), 1),
+    'full-plan-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'train-plan', const Size(390, 1900), 1),
     'full-me-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'me', const Size(390, 1250), 1),
     'full-me-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'me', const Size(390, 1250), 1),
     'large-text-me-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'me', const Size(320, 2700), 2),
@@ -223,9 +246,21 @@ void main() {
     'today-rest-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22'), 'today', const Size(390, 1150), 1),
     'progress-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'train-progress', const Size(390, 1100), 1),
     'plan-12-weeks-mid-week-start': ((t) => _fixture(t, Accent.green, ThemeMode.light, weeks: 12, start: '2026-09-23'), 'train-plan', const Size(390, 1900), 1),
-    'plan-16-weeks-collapsed': ((t) => _fixture(t, Accent.blue, ThemeMode.light, weeks: 16), 'train-plan', const Size(390, 1500), 1),
+    'plan-16-weeks': ((t) => _fixture(t, Accent.blue, ThemeMode.light, weeks: 16), 'train-plan', const Size(390, 2200), 1),
+    // Two of week 1's three workouts recorded and nothing in week 2: neither week may read Done. Green, to show the states do not lean on the accent.
+    'plan-unrecorded-past-weeks-green': ((t) => _fixture(t, Accent.green, ThemeMode.light, inProgress: false, recorded: 2), 'train-plan', const Size(390, 1900), 1),
+    'plan-other-week-selected': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'train-plan-week-5', const Size(390, 1900), 1),
+    'plan-occasion-sheet-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'train-plan-occasion', const Size(390, 844), 1),
+    'workouts-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, extraWorkouts: [_finished], extraSets: _finishedSets), 'train-workouts', const Size(390, 1150), 1),
+    'workouts-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark, extraWorkouts: [_finished], extraSets: _finishedSets), 'train-workouts', const Size(390, 1150), 1),
+    'workout-detail-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, extraWorkouts: [_finished], extraSets: _finishedSets), 'workout-detail', const Size(390, 844), 1),
+    'progress-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark, extraWorkouts: [_finished], extraSets: _finishedSets), 'train-progress', const Size(390, 1100), 1),
+    'large-text-workouts-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light, extraWorkouts: [_finished], extraSets: _finishedSets), 'train-workouts', const Size(320, 2600), 2),
+    'large-text-progress-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light, extraWorkouts: [_finished], extraSets: _finishedSets), 'train-progress', const Size(320, 2800), 2),
+    'new-account-workouts': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-workouts', const Size(390, 844), 1),
+    'new-account-progress': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-progress', const Size(390, 844), 1),
     'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 3900), 2),
-    'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 3400), 2),
+    'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 4600), 2),
     'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 1900), 2),
     'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),
     'full-food-preview-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-preview', const Size(390, 1500), 1),
