@@ -42,6 +42,10 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
   late FoodItem? _item = widget.draft.item;
   late String? _unitId = widget.draft.item == null ? null : FoodScaling.unit(widget.draft.item!, widget.draft.unitId).id;
 
+  /// How much, exactly. The field shows it to two decimals; this is what is converted and scaled, so saying an
+  /// amount in another unit and back returns the amount it started as. Typing in the field replaces it.
+  late double? _exact = widget.draft.quantity;
+
   /// Nutrients whose value is the user's own rather than the source's for this amount. Changing the amount
   /// rescales every other value and leaves these alone.
   late final Set<String> _corrected = {
@@ -77,7 +81,14 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     return v;
   }
 
-  double? get _amountEaten => parseNonNegative(_quantity.text);
+  double? get _amountEaten => _exact;
+
+  /// The amount as shown when that is what it is but for float noise (100, not 100.00000000000001); otherwise
+  /// the exact amount, whose display is only its rounding (0.63 cup for 100 g of a 158 g cup).
+  static double _settled(double q) {
+    final shown = double.parse(formatNumber2(q));
+    return (shown - q).abs() < 1e-9 ? shown : q;
+  }
 
   /// The source's values for the amount now entered, written into every field the user has not corrected.
   void _rescale() {
@@ -95,7 +106,10 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     final item = _item, quantity = _amountEaten;
     if (item == null || id == null || id == _unitId) return;
     final from = FoodScaling.unit(item, _unitId), to = FoodScaling.unit(item, id);
-    if ((quantity ?? 0) > 0) _quantity.text = _text(FoodScaling.convert(quantity!, from, to));
+    if ((quantity ?? 0) > 0) {
+      _exact = _settled(FoodScaling.exact(quantity!, from, to));
+      _quantity.text = _text(_exact);
+    }
     _unitId = to.id;
     _rescale();
   }
@@ -247,7 +261,11 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
           pair(
             TextField(
               key: const Key('food-quantity'), controller: _quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.next,
-              onChanged: (_) => setState(_rescale), decoration: const InputDecoration(labelText: 'How much?'),
+              onChanged: (v) => setState(() {
+                _exact = parseNonNegative(v);
+                _rescale();
+              }),
+              decoration: const InputDecoration(labelText: 'How much?'),
             ),
             KeyedSubtree(
               key: const Key('food-unit'),

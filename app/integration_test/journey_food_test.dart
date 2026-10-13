@@ -6,6 +6,8 @@ import 'package:integration_test/integration_test.dart';
 import 'support.dart';
 
 /// Native journey 7: nutrition goals; search → amount → log → the same totals and goal progress on Eat and Today;
+/// a common food found by typing (bundled with the app, nothing asked of the server), previewed, cancelled, then
+/// logged once, and still found after the restart;
 /// logging a recent food again and marking a favourite; a cancelled preview that logs nothing; a typed barcode
 /// that finds a product; an unknown barcode that falls back to manual entry; what the account then holds; restart.
 ///
@@ -41,8 +43,13 @@ void main() {
     await j.tapKey('log-food');
     await j.shot('91-log-food-nothing-saved-yet');
     await j.type('food-search', 'rice');
+    // Plain rice is found on the phone at once; the wider database is one deliberate tap further.
+    await j.waitFor(find.byKey(const Key('common-white-rice')), what: 'common foods for what was typed');
+    expect(find.byKey(const Key('common-rice-cakes')), findsOneWidget, reason: 'rice cakes stay their own food');
+    await j.shot('91b-common-foods-for-rice');
+    await j.reveal(find.byKey(const Key('food-search-online')));
     await j.tapKey('food-search-online');
-    await j.waitFor(find.text('Online'), what: 'the search to answer');
+    await j.waitFor(find.text('More foods'), what: 'the wider search to answer');
     await j.reveal(find.byKey(const Key('result-usda:2708402')));
     await j.waitFor(find.byKey(const Key('result-usda:2708402')), what: 'search results');
     await j.shot('92-search-results');
@@ -75,7 +82,7 @@ void main() {
     // --- The same food again from Recent, for another meal, and marked as a favourite on the way.
     await j.tapKey('nav-eat');
     await j.tapKey('eat-add-lunch');
-    await j.waitFor(find.text('Recent'), what: 'the food just logged, offered again');
+    await j.waitFor(find.byKey(const Key('recent-usda:2708402')), what: 'the food just logged, offered again');
     await j.tapKey('recent-usda:2708402');
     expect(field('food-quantity'), '2', reason: 'starts from the amount it was logged with');
     await j.tapKey('food-favourite');
@@ -84,11 +91,14 @@ void main() {
 
     // --- A preview that is cancelled logs nothing, and the search is still there.
     await j.tapKey('log-food');
-    await j.waitFor(find.text('Favourites'), what: 'the favourite just marked');
+    await j.tapKey('food-scope-favourites');
+    await j.waitFor(find.byKey(const Key('favourite-usda:2708402')), what: 'the favourite just marked');
     await j.shot('96-favourites-and-recent');
+    await j.tapKey('food-scope-search');
+    // The rice search above also returned rice noodles; a food seen before is found on the phone, with no new request.
     await j.type('food-search', 'noodles');
-    await j.tapKey('food-search-online');
-    await j.tapKey('result-usda:2708356');
+    await j.waitFor(find.byKey(const Key('local-usda:2708356')), what: 'a food seen before, found on the phone');
+    await j.tapKey('local-usda:2708356');
     await j.waitFor(find.byKey(const Key('food-source')));
     await j.tapKey('food-cancel');
     expect(field('food-search'), 'noodles');
@@ -129,14 +139,35 @@ void main() {
     expect(find.text('Known totals'), findsOneWidget, reason: 'one food has no values, so the sum is a known sum');
     expect(find.textContaining('896.1 of 2,200 kcal · known so far'), findsOneWidget, reason: 'and no remainder is claimed');
 
-    // --- What the account holds: four entries, three with their source, one favourite, the goals.
+    // --- A common food: found by typing, previewed and cancelled without logging, then logged exactly once.
+    await j.tapKey('log-food');
+    await j.type('food-search', 'eggs');
+    await j.waitFor(find.byKey(const Key('common-eggs')), what: 'the whole egg among common foods');
+    expect(find.byKey(const Key('common-egg-whites')), findsOneWidget, reason: 'egg whites are a separate, separately named food');
+    await j.shot('99b-common-eggs');
+    await j.tapKey('common-eggs');
+    await j.waitFor(find.byKey(const Key('food-source')), what: 'the preview of the egg');
+    expect((field('food-name'), field('food-quantity'), field('food-calories')), ('Eggs', '1', '71.5'));
+    expect(find.text('Egg, whole, raw'), findsOneWidget, reason: 'the full provider title is on the preview');
+    expect(find.textContaining('USDA FoodData Central'), findsWidgets);
+    await j.shot('99c-common-egg-preview');
+    await j.tapKey('food-cancel');
+    expect(field('food-search'), 'eggs', reason: 'cancelling keeps the search');
+    await j.tapKey('common-eggs');
+    await j.waitFor(find.byKey(const Key('food-source')));
+    await j.tapKey('food-save');
+    await j.waitFor(find.textContaining('967.6 of 2,200 kcal · known so far'), what: 'one egg added to the total, once');
+
+    // --- What the account holds: five entries, four with their source, one favourite, the goals.
     late Map<String, dynamic> account;
     await j.waitUntil(() async {
       account = await j.snapshot(await j.apiToken());
-      return (account['foodEntries'] as List).length == 4 && (account['savedFoods'] as List).length == 1;
+      return (account['foodEntries'] as List).length == 5 && (account['savedFoods'] as List).length == 1;
     }, what: 'the food to reach the account');
     final entries = (account['foodEntries'] as List).cast<Map>();
-    expect(entries.where((e) => e['source'] != null).length, 3);
+    expect(entries.where((e) => e['source'] != null).length, 4);
+    final egg = entries.singleWhere((e) => e['name'] == 'Eggs');   // logged once, with the catalog's record as its source
+    expect((((egg['source'] as Map)['item'] as Map)['source'], ((egg['source'] as Map)['item'] as Map)['sourceId'], egg['amountDescription']), ('usda', '2707152', '1 egg (50 g)'));
     expect(entries.singleWhere((e) => e['name'] == 'Nutella')['provenance'], {'calories': 'imported', 'protein': 'imported', 'carbs': 'imported', 'fat': 'imported'});
     expect(((account['savedFoods'] as List).single as Map)['isFavourite'], true);
     expect(((account['profile'] as Map)['calorieGoal'], (account['profile'] as Map)['proteinGoal']), (2200, 140));
@@ -145,7 +176,12 @@ void main() {
     await app.main();
     await j.waitFor(find.byKey(const Key('nav-eat')), what: 'the app after a restart');
     await j.tapKey('nav-eat');
-    await j.waitFor(find.textContaining('896.1 of 2,200 kcal · known so far'), what: 'the same totals after a restart');
+    await j.waitFor(find.textContaining('967.6 of 2,200 kcal · known so far'), what: 'the same totals after a restart');
     await j.shot('100-eat-after-restart');
+    // The common foods are part of the app, so they are found again straight after a restart.
+    await j.tapKey('log-food');
+    await j.type('food-search', 'egg');
+    await j.waitFor(find.byKey(const Key('common-eggs')), what: 'the common food after a restart');
+    await j.shot('101-common-food-after-restart');
   });
 }

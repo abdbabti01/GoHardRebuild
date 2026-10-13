@@ -20,11 +20,13 @@ class FoodDraft {
         item: source?['item'] is Map ? FoodItem(source!['item'] as Json) : null, quantity: (source?['quantity'] as num?)?.toDouble(), unitId: source?['unit'] as String?);
   }
 
-  /// A new entry for a chosen food: one serving (or 100 g / 100 ml) of it, with that amount's values.
-  factory FoodDraft.of(FoodItem item, {required String dayKey, required String meal}) {
-    final (quantity, unit) = FoodScaling.initial(item);
+  /// A new entry for a chosen food: one serving (or 100 g / 100 ml) of it, with that amount's values. A catalog
+  /// food gives the everyday `name` it is logged under and the `unitId` it starts in; the food itself is the same.
+  factory FoodDraft.of(FoodItem item, {required String dayKey, required String meal, String? name, String? unitId}) {
+    final start = unitId == null ? null : FoodScaling.unit(item, unitId);
+    final (double quantity, FoodUnit unit) = start == null ? FoodScaling.initial(item) : (start.id.startsWith('serving') ? 1 : 100, start);
     final scaled = FoodScaling.scale(item, quantity, unit);
-    return FoodDraft(dayKey: dayKey, meal: meal, name: item.name, amount: FoodScaling.describe(item, quantity, unit),
+    return FoodDraft(dayKey: dayKey, meal: meal, name: name ?? item.name, amount: FoodScaling.describe(item, quantity, unit),
         calories: scaled['calories'], protein: scaled['protein'], carbs: scaled['carbs'], fat: scaled['fat'], item: item, quantity: quantity, unitId: unit.id);
   }
 

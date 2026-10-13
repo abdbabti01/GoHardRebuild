@@ -127,6 +127,13 @@ Future<void> _open(WidgetTester tester, String screen) async {
         if (screen == 'food-preview') await tap('result-usda:2708402');
         if (screen == 'food-preview-unknown') await tap('result-off:5449000000996');
       }
+    case 'food-common' || 'food-common-preview':
+      // Everyday foods found by typing, with nothing asked of the wider database, and the preview one of them opens.
+      await tap('nav-eat');
+      await tap('log-food');
+      await tester.enterText(find.byKey(const Key('food-search')), 'egg');
+      await tester.pumpAndSettle();
+      if (screen == 'food-common-preview') await tap('common-eggs');
     case 'goals':
       await tap('nav-me');
       await tester.scrollUntilVisible(find.byKey(const Key('me-goals')), 200, scrollable: find.byType(Scrollable).last);
@@ -215,6 +222,10 @@ void main() {
     'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),
     'full-food-preview-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-preview', const Size(390, 1500), 1),
     'scan-camera-refused-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, cameraRefused: true), 'scan', const Size(390, 900), 1),
+    'food-common-egg-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-common', const Size(390, 844), 1),
+    'food-common-egg-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-common', const Size(390, 844), 1),
+    'food-common-preview-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'food-common-preview', const Size(390, 1500), 1),
+    'large-text-food-common-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-common', const Size(320, 1500), 2),
     'large-text-log-food-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'log-food', const Size(320, 2400), 2),
     'large-text-food-preview-320': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-preview', const Size(320, 3200), 2),
     'large-text-eat-goals-320': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'eat', const Size(320, 2600), 2),

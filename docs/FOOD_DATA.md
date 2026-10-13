@@ -4,14 +4,20 @@ How the app finds foods, where the numbers come from, what has to be configured,
 
 ## What the user gets
 
-Eat → **Log food** (also from Today, and the + beside each meal) opens one place to find a food:
+Eat → **Log food** (also from Today, and the + beside each meal) opens **Add food**, one place to find a food:
 
-- **Search foods**: foods already on the phone appear as you type. Searching online is a separate, deliberate tap.
-- **Scan barcode**: the camera reads a product barcode, or the digits can be typed.
-- **Favourites**, **Recent**, **My foods**: foods marked, logged before, or written by the user.
-- **Enter it yourself**: the manual form, as before.
+- **Search**: everyday foods bundled with the app (see "Common foods") and the user's own foods appear as you
+  type, with no connection. **Search more foods** asks USDA for the same words; when the phone has nothing for
+  what was typed (three letters or more), that is asked by itself after a 0.6 s pause. Category chips filter the
+  common foods only, and say so: your own foods and USDA results have no category and are not shown under one.
+- **Scan** (top right): the camera reads a product barcode, or the digits can be typed.
+- **Recent**, **Favourites**, **My foods**: the user's own lists, narrowed by what is typed.
+- **Can't find it? Create your own food**: the manual form, as before.
+- The meal under the title starts as the meal the screen was opened for and can be changed; it carries into the form.
 
-Every one of these opens the same form. It shows the food, its source and the values it has, takes an amount and a
+A row shows the name, what tells the food apart (preparation or brand), the amount its values are for ("1 egg
+(50 g)", "100 g"), calories and protein; an unknown value is a dash. The row and its plus ("Choose Eggs") both open
+the form. Every one of these opens the same form. It shows the food, its source and the values it has, takes an amount and a
 unit, and logs only when **Log food** is pressed. Searching, scanning, previewing, marking a favourite and
 "Save to My foods without logging" never write a journal entry.
 
@@ -47,10 +53,12 @@ data can be wrong or out of date; the form says where each value came from and l
   portion stated as one of something ("1 egg", "1 slice", "1 cup, cooked") is a counting unit: "2 eggs",
   "½ slice", "2 cups, cooked". A size word stays as it is ("2 large"). A serving the source only weighed is
   "1 serving (15 g)". A portion of several things ("2 biscuits (25 g)") is counted as that portion. Fractions are
-  allowed. A new entry starts at one of the first countable unit, otherwise 100 g or 100 ml.
+  allowed. A new entry starts at one of the first countable unit, otherwise 100 g or 100 ml; a common food starts
+  at the portion its catalog entry names, which is always one the record itself states.
 - **Changing the unit keeps the amount.** Every unit of a food is defined against the food's one basis, so any
-  two convert exactly (to the two decimals an amount has): one 30 g serving becomes 30 g, 45 g becomes 1.5
-  servings. A unit with no such definition is not offered at all, so "1 serving" can never turn into "1 g".
+  two convert exactly: one 30 g serving becomes 30 g, 45 g becomes 1.5 servings. The form keeps the amount
+  unrounded and rounds only what it shows, so 100 g said in 158 g cups reads "0.63" and is still 100 g when said
+  in grams again (`FoodScaling.exact`). A unit with no such definition is not offered at all, so "1 serving" can never turn into "1 g".
 - **No weight is ever taken from a food's name.** Where the source gives no usable portion, the user can add
   their own ("1 slice = 30 g", or on a per-serving food "1 slice = 0.125 × 1 pizza") with **Add your own
   portion**. It is stored on the food as a serving marked `definedBy: user`, used for that food only, and no
@@ -61,6 +69,47 @@ data can be wrong or out of date; the form says where each value came from and l
 - Energy given only in kilojoules is converted at 4.184 kJ per kcal.
 - Barcodes are text. Leading zeros are kept, and codes follow Open Food Facts' documented normalization (8 digits
   for short codes, otherwise 13), so a UPC-A and its EAN-13 form are one product.
+
+## Common foods
+
+`app/assets/data/common-foods.json` is a small, versioned catalog of everyday foods bundled with the app, so
+"egg", "rice" or "poulet" find a recognizable food at once, offline and straight after a restart. There is no
+table, endpoint or contract change behind it.
+
+- **Each entry is one real USDA FoodData Central record**, exactly as this API normalizes it in
+  `GET /api/v1/foods/search`: `source: usda`, `sourceId` the FDC ID, and the record's own values, basis and
+  portions. Nothing in an item was typed by hand. The file states its `version` and `provenance` (source,
+  retrieval date, method).
+- Around the item, GoHard adds only what finds and labels it: a stable `id`, the everyday `name` ("Eggs"), a
+  `qualifier` saying which preparation the record is ("Whole · raw", "Baked or roasted · skinless"), one of eight
+  `category` values, English and French `aliases`, and `portion`: which of the record's own portions a new entry
+  starts from ("1 egg"), or null for 100 g. These are labels, not USDA data, and are not copied into a meal.
+- **Identity is the record.** A common food, the same record returned by a wider search, and a favourite or a
+  logged meal made from it all share `usda:<fdcId>` and are listed once, under the everyday name. Foods are never
+  merged because their names are alike: the user's own "Eggs" stays a separate food with its own values.
+- A meal logged from a common food stores the provider's record untouched as its snapshot, under the everyday
+  name. The form shows the provider's full title and "Source: USDA FoodData Central".
+- **Rebuilding it:** `node scripts/build-common-foods.mjs --cache <dir outside the repo>` reads
+  `scripts/common-foods.spec.json` (everyday name → query → the FDC ID chosen by review), asks the testing API
+  for anything not in the cache through one disposable account that it deletes afterwards (at most 20 lookups a
+  minute), and refuses a portion the record does not state. `--candidates` lists what the API returned for an
+  entry so a record can be chosen. Raise `VERSION` in the script when the foods change.
+- Left out on purpose: "Protein bar" (USDA has only specific branded bars, no generic one) and "String cheese"
+  (it is the part-skim mozzarella record, which is found by that name too). Records without count portions
+  (mostly SR Legacy) start at 100 g; none was given an invented portion.
+
+**Relevance** (`features/nutrition/food_search.dart`, one rule for common foods, the user's foods and USDA's
+answer): case, spacing, accents and ligatures are ignored and simple plurals folded; every word typed has to be
+found; an exact name or alias comes before a name that starts with the words, then whole words among name,
+aliases, preparation and brand, then beginnings of words, then parts of words. USDA's answer is re-ordered by the
+same rule (plain "Rice, …" before "Snacks, rice cakes"), never thinned.
+
+**What the search screen says when the wider search gives nothing** is one of six different things: the database
+answered with nothing; it could not be reached (this phone's connection or the server, the app cannot tell which);
+it took too long; too many requests for now; not answering; not set up on this server. A failure never removes the
+foods found on the phone and is never worded as "no foods" or "offline". An answer to an earlier question, or to
+one since cleared or re-scoped, is dropped when it arrives; an answer already given is reused while the screen is
+open.
 
 ## What is stored when food is logged
 
@@ -89,6 +138,8 @@ user's own copy, with a note of what it was based on; the provider's record is n
 | Endpoints `GET /api/v1/foods/search?q=`, `GET /api/v1/foods/barcode/{code}`, `PUT /api/v1/saved-foods/{id}` | `api/src/GoHard.Api/Endpoints/Endpoints.cs` |
 | Units and scaling on the phone | `app/lib/features/nutrition/food_item.dart` |
 | Lookup with offline cache, local suggestions | `app/lib/features/nutrition/food_discovery.dart` |
+| Common-food catalog, relevance, row facts | `app/lib/features/nutrition/food_search.dart`, `app/assets/data/common-foods.json` |
+| Catalog build (reproducible, cached) | `scripts/build-common-foods.mjs`, `scripts/common-foods.spec.json` |
 | Journal and saved foods (through the existing outbox) | `app/lib/features/nutrition/food_repository.dart` |
 | Search screen, scanner, shared form | `log_food_screen.dart`, `barcode_scan_screen.dart`, `food_form.dart` |
 
@@ -109,7 +160,8 @@ Both providers count requests per calling address, and every user of the API sha
 - After a provider answers "too many requests", nothing more is sent to it for 5 minutes.
 - Each call waits at most 8 seconds and is retried once.
 - The phone keeps up to 300 foods it has seen, per account, and answers a barcode looked up in the last 7 days from
-  there. Search is never run per keystroke.
+  there. The wider search is never run per keystroke: it runs on a tap, or once after a 0.6 s pause when the
+  phone has no match, and an answer is reused while the search screen stays open.
 
 Known ceiling: the cache and the budgets live in one API process. A restart empties the cache, and a second API
 instance would need a shared cache before the budgets hold. At 10 barcode lookups a minute for all users, a busy

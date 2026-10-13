@@ -1,0 +1,3592 @@
+{
+ "version": 1,
+ "provenance": {
+  "source": "USDA FoodData Central (public domain, CC0)",
+  "retrieved": "2026-10-13",
+  "method": "Each item is one FoodData Central record exactly as the GoHard rebuild API normalized it in GET /api/v1/foods/search: sourceId is the FDC ID, and the values, basis and portions are the record's own. The record for each everyday name was chosen by review. Name, qualifier, category and aliases are GoHard's labels for finding the food; they are not USDA data. Built by scripts/build-common-foods.mjs from scripts/common-foods.spec.json."
+ },
+ "categories": [
+  "Proteins",
+  "Carbohydrates",
+  "Vegetables",
+  "Fruits",
+  "Dairy",
+  "Fats & Oils",
+  "Snacks",
+  "Beverages"
+ ],
+ "foods": [
+  {
+   "id": "chicken-breast",
+   "name": "Chicken breast",
+   "qualifier": "Baked or roasted · skinless",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken breast",
+    "grilled chicken",
+    "poulet",
+    "poitrine de poulet",
+    "blanc de poulet",
+    "filet de poulet"
+   ],
+   "portion": "1 medium breast",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705956",
+    "barcode": null,
+    "name": "Chicken breast, baked, broiled, or roasted, skin not eaten, from raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · NS as to skin eaten",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 161,
+     "protein": 30.22,
+     "carbs": 0,
+     "fat": 3.52
+    },
+    "servings": [
+     {
+      "label": "1 breast quarter (yield after cooking, bone removed)",
+      "grams": 155,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 small breast",
+      "grams": 105,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium slice",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 large or thick slice",
+      "grams": 85,
+      "milliliters": null
+     },
+     {
+      "label": "1 small or thin slice",
+      "grams": 30,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 large breast",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium breast",
+      "grams": 120,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:09:35.5182843Z"
+   }
+  },
+  {
+   "id": "eggs",
+   "name": "Eggs",
+   "qualifier": "Whole · raw",
+   "category": "Proteins",
+   "aliases": [
+    "egg",
+    "whole egg",
+    "oeuf",
+    "œuf",
+    "oeuf entier"
+   ],
+   "portion": "1 egg",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707152",
+    "barcode": null,
+    "name": "Egg, whole, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Eggs and omelets",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 143,
+     "protein": 12.4,
+     "carbs": 0.96,
+     "fat": 9.96
+    },
+    "servings": [
+     {
+      "label": "1 egg",
+      "grams": 50,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 245,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:01:49.645471Z"
+   }
+  },
+  {
+   "id": "salmon",
+   "name": "Salmon",
+   "qualifier": "Atlantic, farmed · cooked",
+   "category": "Proteins",
+   "aliases": [
+    "salmon fillet",
+    "saumon",
+    "filet de saumon"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "175168",
+    "barcode": null,
+    "name": "Fish, salmon, Atlantic, farmed, cooked, dry heat",
+    "brand": null,
+    "description": "SR Legacy · Finfish and Shellfish Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 206,
+     "protein": 22.1,
+     "carbs": 0,
+     "fat": 12.4
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:13.4760244Z"
+   }
+  },
+  {
+   "id": "ground-beef-90",
+   "name": "Ground beef 90% lean",
+   "qualifier": "Patty · broiled",
+   "category": "Proteins",
+   "aliases": [
+    "ground beef",
+    "lean ground beef",
+    "minced beef",
+    "beef mince",
+    "hamburger",
+    "boeuf haché",
+    "bœuf haché",
+    "boeuf haché maigre",
+    "steak haché"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "174031",
+    "barcode": null,
+    "name": "Beef, ground, 90% lean meat / 10% fat, patty, cooked, broiled",
+    "brand": null,
+    "description": "SR Legacy · Beef Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 217,
+     "protein": 26.1,
+     "carbs": 0,
+     "fat": 11.8
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:23.1813374Z"
+   }
+  },
+  {
+   "id": "greek-yogurt",
+   "name": "Greek yogurt",
+   "qualifier": "Plain · nonfat",
+   "category": "Proteins",
+   "aliases": [
+    "yogurt",
+    "yoghurt",
+    "greek yoghurt",
+    "yogourt grec",
+    "yaourt grec",
+    "yogourt",
+    "yaourt"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705424",
+    "barcode": null,
+    "name": "Yogurt, Greek, nonfat milk, plain",
+    "brand": null,
+    "description": "Survey (FNDDS) · Yogurt, Greek · fat free;0% fat;light",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 59,
+     "protein": 10.3,
+     "carbs": 3.64,
+     "fat": 0.37
+    },
+    "servings": [
+     {
+      "label": "1 container, NFS",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 5.3 oz container",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 6 oz container",
+      "grams": 170,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 245,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:26.3473951Z"
+   }
+  },
+  {
+   "id": "tofu",
+   "name": "Tofu",
+   "qualifier": "Firm · raw",
+   "category": "Proteins",
+   "aliases": [
+    "firm tofu",
+    "bean curd",
+    "tofu ferme"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "172475",
+    "barcode": null,
+    "name": "Tofu, raw, firm, prepared with calcium sulfate",
+    "brand": null,
+    "description": "SR Legacy · Legumes and Legume Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 144,
+     "protein": 17.3,
+     "carbs": 2.78,
+     "fat": 8.72
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:09:57.8528701Z"
+   }
+  },
+  {
+   "id": "tuna-canned-water",
+   "name": "Tuna",
+   "qualifier": "Light · canned in water, drained",
+   "category": "Proteins",
+   "aliases": [
+    "canned tuna",
+    "tuna in water",
+    "thon",
+    "thon en conserve",
+    "thon en boîte",
+    "thon au naturel"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "334194",
+    "barcode": null,
+    "name": "Fish, tuna, light, canned in water, drained solids",
+    "brand": null,
+    "description": "Foundation · Finfish and Shellfish Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 90,
+     "protein": 19,
+     "carbs": 0.08,
+     "fat": 0.94
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:32.6439092Z"
+   }
+  },
+  {
+   "id": "turkey-breast",
+   "name": "Turkey breast",
+   "qualifier": "Roasted · meat only",
+   "category": "Proteins",
+   "aliases": [
+    "turkey",
+    "dinde",
+    "poitrine de dinde",
+    "blanc de dinde"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "171496",
+    "barcode": null,
+    "name": "Turkey, whole, breast, meat only, cooked, roasted",
+    "brand": null,
+    "description": "SR Legacy · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 147,
+     "protein": 30.1,
+     "carbs": 0,
+     "fat": 2.08
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:42.3983149Z"
+   }
+  },
+  {
+   "id": "shrimp",
+   "name": "Shrimp",
+   "qualifier": "Cooked",
+   "category": "Proteins",
+   "aliases": [
+    "prawn",
+    "crevette"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "175180",
+    "barcode": null,
+    "name": "Crustaceans, shrimp, cooked",
+    "brand": null,
+    "description": "SR Legacy · Finfish and Shellfish Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 99,
+     "protein": 24,
+     "carbs": 0.2,
+     "fat": 0.28
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:51.8695985Z"
+   }
+  },
+  {
+   "id": "cottage-cheese-low-fat",
+   "name": "Cottage cheese",
+   "qualifier": "Low-fat · 1% milkfat",
+   "category": "Proteins",
+   "aliases": [
+    "low fat cottage cheese",
+    "fromage cottage"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "173417",
+    "barcode": null,
+    "name": "Cheese, cottage, lowfat, 1% milkfat",
+    "brand": null,
+    "description": "SR Legacy · Dairy and Egg Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 72,
+     "protein": 12.4,
+     "carbs": 2.72,
+     "fat": 1.02
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:55.1251842Z"
+   }
+  },
+  {
+   "id": "pork-tenderloin",
+   "name": "Pork tenderloin",
+   "qualifier": "Roasted · lean only",
+   "category": "Proteins",
+   "aliases": [
+    "pork",
+    "pork fillet",
+    "porc",
+    "filet de porc",
+    "filet mignon de porc"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "168250",
+    "barcode": null,
+    "name": "Pork, fresh, loin, tenderloin, separable lean only, cooked, roasted",
+    "brand": null,
+    "description": "SR Legacy · Pork Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 143,
+     "protein": 26.2,
+     "carbs": 0,
+     "fat": 3.51
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:02:58.5419307Z"
+   }
+  },
+  {
+   "id": "egg-whites",
+   "name": "Egg whites",
+   "qualifier": "Whites only · raw",
+   "category": "Proteins",
+   "aliases": [
+    "egg white",
+    "blanc d'oeuf",
+    "blanc d'œuf",
+    "blancs d'oeufs"
+   ],
+   "portion": "1 egg white",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707168",
+    "barcode": null,
+    "name": "Egg, white only, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Eggs and omelets",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 52,
+     "protein": 10.7,
+     "carbs": 2.36,
+     "fat": 0
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 245,
+      "milliliters": null
+     },
+     {
+      "label": "1 egg white",
+      "grams": 33,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:03:01.6862529Z"
+   }
+  },
+  {
+   "id": "tempeh",
+   "name": "Tempeh",
+   "qualifier": "Fermented soybean",
+   "category": "Proteins",
+   "aliases": [
+    "tempe"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "174272",
+    "barcode": null,
+    "name": "Tempeh",
+    "brand": null,
+    "description": "SR Legacy · Legumes and Legume Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 192,
+     "protein": 20.3,
+     "carbs": 7.64,
+     "fat": 10.8
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:03:11.0527394Z"
+   }
+  },
+  {
+   "id": "cod",
+   "name": "Cod",
+   "qualifier": "Atlantic · cooked",
+   "category": "Proteins",
+   "aliases": [
+    "cod fillet",
+    "morue",
+    "cabillaud"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "171956",
+    "barcode": null,
+    "name": "Fish, cod, Atlantic, cooked, dry heat",
+    "brand": null,
+    "description": "SR Legacy · Finfish and Shellfish Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 105,
+     "protein": 22.8,
+     "carbs": 0,
+     "fat": 0.86
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:03:14.4900205Z"
+   }
+  },
+  {
+   "id": "whey-protein-powder",
+   "name": "Whey protein powder",
+   "qualifier": "Whey based · dry powder",
+   "category": "Proteins",
+   "aliases": [
+    "whey",
+    "protein powder",
+    "whey protein",
+    "protéine en poudre",
+    "poudre de protéine",
+    "protéine de lactosérum"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "173180",
+    "barcode": null,
+    "name": "Beverages, Protein powder whey based",
+    "brand": null,
+    "description": "SR Legacy · Beverages",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 352,
+     "protein": 78.1,
+     "carbs": 6.25,
+     "fat": 1.56
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:03:24.0916072Z"
+   }
+  },
+  {
+   "id": "brown-rice",
+   "name": "Brown rice",
+   "qualifier": "Cooked · no added fat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "rice",
+    "riz",
+    "riz brun",
+    "riz complet"
+   ],
+   "portion": "1 cup, cooked",
+   "item": {
+    "source": "usda",
+    "sourceId": "2708414",
+    "barcode": null,
+    "name": "Rice, brown, cooked, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Rice · made without fat",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 123,
+     "protein": 2.43,
+     "carbs": 25.76,
+     "fat": 1.11
+    },
+    "servings": [
+     {
+      "label": "1 cup, cooked",
+      "grams": 195,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:01.1034493Z"
+   }
+  },
+  {
+   "id": "oatmeal",
+   "name": "Oats",
+   "qualifier": "Dry · uncooked",
+   "category": "Carbohydrates",
+   "aliases": [
+    "oat",
+    "oatmeal",
+    "rolled oats",
+    "porridge oats",
+    "avoine",
+    "flocon d'avoine",
+    "flocons d'avoine",
+    "gruau"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "2708489",
+    "barcode": null,
+    "name": "Oats, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Not included in a food category",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 379,
+     "protein": 13.15,
+     "carbs": 67.7,
+     "fat": 6.52
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 80,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:04.2168089Z"
+   }
+  },
+  {
+   "id": "sweet-potato",
+   "name": "Sweet potato",
+   "qualifier": "Baked · no added fat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "yam",
+    "patate douce"
+   ],
+   "portion": "1 medium",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709699",
+    "barcode": null,
+    "name": "Sweet potato, baked, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other red and orange vegetables · yam",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 82,
+     "protein": 1.64,
+     "carbs": 17.98,
+     "fat": 0.39
+    },
+    "servings": [
+     {
+      "label": "1 medium",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, mashed",
+      "grams": 250,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, raw, yields",
+      "grams": 25,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 235,
+      "milliliters": null
+     },
+     {
+      "label": "1 small",
+      "grams": 80,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:14.0890977Z"
+   }
+  },
+  {
+   "id": "quinoa",
+   "name": "Quinoa",
+   "qualifier": "Cooked · no added fat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "quinoa cuit"
+   ],
+   "portion": "1 cup, cooked",
+   "item": {
+    "source": "usda",
+    "sourceId": "2708400",
+    "barcode": null,
+    "name": "Quinoa, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Pasta, noodles, cooked grains · all liquids",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 120,
+     "protein": 4.38,
+     "carbs": 21.21,
+     "fat": 1.91
+    },
+    "servings": [
+     {
+      "label": "1 cup, cooked",
+      "grams": 170,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:03:36.7188012Z"
+   }
+  },
+  {
+   "id": "whole-wheat-bread",
+   "name": "Whole wheat bread",
+   "qualifier": "Sliced loaf",
+   "category": "Carbohydrates",
+   "aliases": [
+    "bread",
+    "wholemeal bread",
+    "whole grain bread",
+    "brown bread",
+    "pain",
+    "pain complet",
+    "pain de blé entier"
+   ],
+   "portion": "1 medium or regular slice",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707709",
+    "barcode": null,
+    "name": "Bread, whole wheat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Yeast breads · whole grain;pre-sliced, commercial",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 254,
+     "protein": 12.3,
+     "carbs": 43.1,
+     "fat": 3.55
+    },
+    "servings": [
+     {
+      "label": "1 slice, snack-size",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 large or thick slice",
+      "grams": 43,
+      "milliliters": null
+     },
+     {
+      "label": "1 cubic inch",
+      "grams": 3.2,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium or regular slice",
+      "grams": 36,
+      "milliliters": null
+     },
+     {
+      "label": "1 small or thin/very thin slice",
+      "grams": 24,
+      "milliliters": null
+     },
+     {
+      "label": "1 slice, crust not eaten",
+      "grams": 16,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:03:40.0896941Z"
+   }
+  },
+  {
+   "id": "white-rice",
+   "name": "White rice",
+   "qualifier": "Cooked · no added fat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "rice",
+    "riz",
+    "riz blanc"
+   ],
+   "portion": "1 cup, cooked",
+   "item": {
+    "source": "usda",
+    "sourceId": "2708408",
+    "barcode": null,
+    "name": "Rice, white, cooked, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Rice · basmati or jasmine rice",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 129,
+     "protein": 2.67,
+     "carbs": 27.99,
+     "fat": 0.28
+    },
+    "servings": [
+     {
+      "label": "1 cup, cooked",
+      "grams": 158,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:16.9468073Z"
+   }
+  },
+  {
+   "id": "whole-wheat-pasta",
+   "name": "Whole wheat pasta",
+   "qualifier": "Whole grain · cooked",
+   "category": "Carbohydrates",
+   "aliases": [
+    "pasta",
+    "spaghetti",
+    "wholemeal pasta",
+    "pâte",
+    "pâtes",
+    "pâtes complètes",
+    "pâtes de blé entier"
+   ],
+   "portion": "1 cup, cooked",
+   "item": {
+    "source": "usda",
+    "sourceId": "2708358",
+    "barcode": null,
+    "name": "Pasta, whole grain, cooked",
+    "brand": null,
+    "description": "Survey (FNDDS) · Pasta, noodles, cooked grains · whole wheat;macaroni, spaghetti, any shape of pasta",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 148,
+     "protein": 5.95,
+     "carbs": 29.89,
+     "fat": 1.7
+    },
+    "servings": [
+     {
+      "label": "1 cup, cooked",
+      "grams": 140,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, dry, yields",
+      "grams": 80,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:03:46.417175Z"
+   }
+  },
+  {
+   "id": "potato",
+   "name": "Potato",
+   "qualifier": "Baked · with skin",
+   "category": "Carbohydrates",
+   "aliases": [
+    "baked potato",
+    "pomme de terre",
+    "patate"
+   ],
+   "portion": "1 medium",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709524",
+    "barcode": null,
+    "name": "Potato, baked, peel eaten",
+    "brand": null,
+    "description": "Survey (FNDDS) · White potatoes, baked or boiled",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 93,
+     "protein": 2.49,
+     "carbs": 21.05,
+     "fat": 0.13
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 130,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 400,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium",
+      "grams": 285,
+      "milliliters": null
+     },
+     {
+      "label": "1 small",
+      "grams": 230,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:20.2399027Z"
+   }
+  },
+  {
+   "id": "black-beans",
+   "name": "Black beans",
+   "qualifier": "Cooked from dried · no added fat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "bean",
+    "black bean",
+    "haricot noir",
+    "haricots noirs"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707361",
+    "barcode": null,
+    "name": "Black beans, from dried, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Beans, peas, legumes · frozen",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 131,
+     "protein": 8.81,
+     "carbs": 23.57,
+     "fat": 0.54
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 180,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz dry, yield after cooking",
+      "grams": 70,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:23.3916702Z"
+   }
+  },
+  {
+   "id": "chickpeas",
+   "name": "Chickpeas",
+   "qualifier": "Cooked from dried · no added fat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "chickpea",
+    "garbanzo",
+    "garbanzo bean",
+    "pois chiche",
+    "pois chiches"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707416",
+    "barcode": null,
+    "name": "Chickpeas, from dried, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Beans, peas, legumes · garbanzos;ceci;frozen",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 163,
+     "protein": 8.81,
+     "carbs": 27.26,
+     "fat": 2.58
+    },
+    "servings": [
+     {
+      "label": "1 pea",
+      "grams": 2,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 180,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz dry, yield after cooking",
+      "grams": 70,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:26.5970365Z"
+   }
+  },
+  {
+   "id": "lentils",
+   "name": "Lentils",
+   "qualifier": "Cooked from dried · no added fat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "lentil",
+    "lentille"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707425",
+    "barcode": null,
+    "name": "Lentils, from dried, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Beans, peas, legumes · frozen",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 115,
+     "protein": 8.97,
+     "carbs": 20.01,
+     "fat": 0.38
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 180,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz dry, yield after cooking",
+      "grams": 70,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:29.7902349Z"
+   }
+  },
+  {
+   "id": "banana",
+   "name": "Banana",
+   "qualifier": "Raw",
+   "category": "Carbohydrates",
+   "aliases": [
+    "banane"
+   ],
+   "portion": "1 banana",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709224",
+    "barcode": null,
+    "name": "Banana, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Bananas",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 97,
+     "protein": 0.74,
+     "carbs": 22.71,
+     "fat": 0.28
+    },
+    "servings": [
+     {
+      "label": "1 cup, mashed",
+      "grams": 225,
+      "milliliters": null
+     },
+     {
+      "label": "1 banana",
+      "grams": 126,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 slice",
+      "grams": 6,
+      "milliliters": null
+     },
+     {
+      "label": "1 linear inch",
+      "grams": 15,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:08.7308033Z"
+   }
+  },
+  {
+   "id": "corn-tortilla",
+   "name": "Corn tortilla",
+   "qualifier": "Corn",
+   "category": "Carbohydrates",
+   "aliases": [
+    "tortilla",
+    "tortilla de maïs"
+   ],
+   "portion": "1 medium",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707823",
+    "barcode": null,
+    "name": "Tortilla, corn",
+    "brand": null,
+    "description": "Survey (FNDDS) · Tortillas",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 218,
+     "protein": 5.7,
+     "carbs": 44.64,
+     "fat": 2.85
+    },
+    "servings": [
+     {
+      "label": "1 large",
+      "grams": 44,
+      "milliliters": null
+     },
+     {
+      "label": "1 small",
+      "grams": 18,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium",
+      "grams": 28,
+      "milliliters": null
+     },
+     {
+      "label": "1 extra large",
+      "grams": 65,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:12.0771237Z"
+   }
+  },
+  {
+   "id": "bagel",
+   "name": "Bagel",
+   "qualifier": "Regular",
+   "category": "Carbohydrates",
+   "aliases": [
+    "plain bagel"
+   ],
+   "portion": "1 regular",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707684",
+    "barcode": null,
+    "name": "Bagel",
+    "brand": null,
+    "description": "Survey (FNDDS) · Bagels and English muffins · flavored bagel;egg bagel;bialy;water bagel;Bagel Thins",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 264,
+     "protein": 10.56,
+     "carbs": 52.38,
+     "fat": 1.32
+    },
+    "servings": [
+     {
+      "label": "1 Bagel Thin",
+      "grams": 46,
+      "milliliters": null
+     },
+     {
+      "label": "1 miniature",
+      "grams": 26,
+      "milliliters": null
+     },
+     {
+      "label": "1 small",
+      "grams": 69,
+      "milliliters": null
+     },
+     {
+      "label": "1 regular",
+      "grams": 105,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 131,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:15.3775375Z"
+   }
+  },
+  {
+   "id": "english-muffin",
+   "name": "English muffin",
+   "qualifier": "Whole wheat",
+   "category": "Carbohydrates",
+   "aliases": [
+    "whole wheat english muffin",
+    "muffin anglais"
+   ],
+   "portion": "1 muffin",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707741",
+    "barcode": null,
+    "name": "Muffin, English, whole wheat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Bagels and English muffins · whole grain",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 223,
+     "protein": 8.7,
+     "carbs": 44.8,
+     "fat": 2
+    },
+    "servings": [
+     {
+      "label": "1 muffin",
+      "grams": 58,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:18.5103586Z"
+   }
+  },
+  {
+   "id": "broccoli",
+   "name": "Broccoli",
+   "qualifier": "Raw",
+   "category": "Vegetables",
+   "aliases": [
+    "brocoli"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709643",
+    "barcode": null,
+    "name": "Broccoli, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Broccoli",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 39,
+     "protein": 2.57,
+     "carbs": 6.27,
+     "fat": 0.34
+    },
+    "servings": [
+     {
+      "label": "1 floweret",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 piece",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 90,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:21.8151585Z"
+   }
+  },
+  {
+   "id": "spinach",
+   "name": "Spinach",
+   "qualifier": "Raw",
+   "category": "Vegetables",
+   "aliases": [
+    "épinard"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709614",
+    "barcode": null,
+    "name": "Spinach, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Spinach",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 27,
+     "protein": 2.85,
+     "carbs": 2.41,
+     "fat": 0.62
+    },
+    "servings": [
+     {
+      "label": "1 leaf",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount in salad",
+      "grams": 50,
+      "milliliters": null
+     },
+     {
+      "label": "1 baby leaf",
+      "grams": 0.6,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 25,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:24.8807501Z"
+   }
+  },
+  {
+   "id": "kale",
+   "name": "Kale",
+   "qualifier": "Raw",
+   "category": "Vegetables",
+   "aliases": [
+    "chou frisé",
+    "chou kale"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709599",
+    "barcode": null,
+    "name": "Kale, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other dark green vegetables",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 43,
+     "protein": 2.92,
+     "carbs": 4.42,
+     "fat": 1.49
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 25,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount in salad",
+      "grams": 50,
+      "milliliters": null
+     },
+     {
+      "label": "1 baby leaf",
+      "grams": 1,
+      "milliliters": null
+     },
+     {
+      "label": "1 leaf",
+      "grams": 10,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:28.1050721Z"
+   }
+  },
+  {
+   "id": "bell-pepper",
+   "name": "Bell pepper",
+   "qualifier": "Red · raw",
+   "category": "Vegetables",
+   "aliases": [
+    "pepper",
+    "red pepper",
+    "sweet pepper",
+    "capsicum",
+    "poivron",
+    "poivron rouge"
+   ],
+   "portion": "1 regular",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709801",
+    "barcode": null,
+    "name": "Peppers, sweet, red, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other red and orange vegetables",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 31,
+     "protein": 0.9,
+     "carbs": 6.65,
+     "fat": 0.13
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 regular",
+      "grams": 120,
+      "milliliters": null
+     },
+     {
+      "label": "1 ring",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 piece",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 miniature",
+      "grams": 30,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:31.3058841Z"
+   }
+  },
+  {
+   "id": "carrots",
+   "name": "Carrots",
+   "qualifier": "Raw",
+   "category": "Vegetables",
+   "aliases": [
+    "carrot",
+    "carotte"
+   ],
+   "portion": "1 regular carrot",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709660",
+    "barcode": null,
+    "name": "Carrots, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Carrots",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 44,
+     "protein": 0.87,
+     "carbs": 9.68,
+     "fat": 0.24
+    },
+    "servings": [
+     {
+      "label": "1 single serving bag",
+      "grams": 80,
+      "milliliters": null
+     },
+     {
+      "label": "1 regular carrot",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 120,
+      "milliliters": null
+     },
+     {
+      "label": "1 piece/slice",
+      "grams": 5,
+      "milliliters": null
+     },
+     {
+      "label": "1 baby carrot",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 strip/stick",
+      "grams": 10,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:34.5080877Z"
+   }
+  },
+  {
+   "id": "cucumber",
+   "name": "Cucumber",
+   "qualifier": "Raw",
+   "category": "Vegetables",
+   "aliases": [
+    "concombre"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709784",
+    "barcode": null,
+    "name": "Cucumber, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other vegetables and combinations · cucumber, NFS",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 16,
+     "protein": 0.62,
+     "carbs": 2.95,
+     "fat": 0.18
+    },
+    "servings": [
+     {
+      "label": "1 piece/slice",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 stick",
+      "grams": 10,
+      "milliliters": null
+     },
+     {
+      "label": "1 regular",
+      "grams": 200,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 120,
+      "milliliters": null
+     },
+     {
+      "label": "1 miniature",
+      "grams": 65,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:37.8755252Z"
+   }
+  },
+  {
+   "id": "tomato",
+   "name": "Tomato",
+   "qualifier": "Raw",
+   "category": "Vegetables",
+   "aliases": [
+    "tomate"
+   ],
+   "portion": "1 whole",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709719",
+    "barcode": null,
+    "name": "Tomatoes, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Tomatoes · plum and Italian tomatoes",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 20,
+     "protein": 0.82,
+     "carbs": 4.04,
+     "fat": 0.31
+    },
+    "servings": [
+     {
+      "label": "1 slice",
+      "grams": 20,
+      "milliliters": null
+     },
+     {
+      "label": "1 cherry",
+      "grams": 17,
+      "milliliters": null
+     },
+     {
+      "label": "1 whole",
+      "grams": 125,
+      "milliliters": null
+     },
+     {
+      "label": "1 plum tomato",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 180,
+      "milliliters": null
+     },
+     {
+      "label": "1 Italian tomato",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 grape tomato",
+      "grams": 8,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:33.1694064Z"
+   }
+  },
+  {
+   "id": "asparagus",
+   "name": "Asparagus",
+   "qualifier": "Cooked · no added fat",
+   "category": "Vegetables",
+   "aliases": [
+    "asperge"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709834",
+    "barcode": null,
+    "name": "Asparagus, fresh, cooked, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other vegetables and combinations · cooking spray",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 21,
+     "protein": 2.36,
+     "carbs": 4.16,
+     "fat": 0.13
+    },
+    "servings": [
+     {
+      "label": "1 spear",
+      "grams": 16,
+      "milliliters": null
+     },
+     {
+      "label": "1 piece",
+      "grams": 4,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 180,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:44.2624644Z"
+   }
+  },
+  {
+   "id": "zucchini",
+   "name": "Zucchini",
+   "qualifier": "Raw · with skin",
+   "category": "Vegetables",
+   "aliases": [
+    "courgette",
+    "summer squash"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "169291",
+    "barcode": null,
+    "name": "Squash, summer, zucchini, includes skin, raw",
+    "brand": null,
+    "description": "SR Legacy · Vegetables and Vegetable Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 17,
+     "protein": 1.21,
+     "carbs": 3.11,
+     "fat": 0.32
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:47.455628Z"
+   }
+  },
+  {
+   "id": "cauliflower",
+   "name": "Cauliflower",
+   "qualifier": "Raw",
+   "category": "Vegetables",
+   "aliases": [
+    "chou-fleur",
+    "chou fleur"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709777",
+    "barcode": null,
+    "name": "Cauliflower, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other vegetables and combinations",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 25,
+     "protein": 1.92,
+     "carbs": 4.97,
+     "fat": 0.28
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 110,
+      "milliliters": null
+     },
+     {
+      "label": "1 floweret",
+      "grams": 13,
+      "milliliters": null
+     },
+     {
+      "label": "1 piece",
+      "grams": 13,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:50.5609199Z"
+   }
+  },
+  {
+   "id": "green-beans",
+   "name": "Green beans",
+   "qualifier": "Cooked · no added fat",
+   "category": "Vegetables",
+   "aliases": [
+    "green bean",
+    "string bean",
+    "haricot vert",
+    "haricots verts"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709852",
+    "barcode": null,
+    "name": "Green beans, fresh, cooked, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · String beans · snap;pole;string;french cut;cooking spray;Italian beans",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 42,
+     "protein": 2.05,
+     "carbs": 7.7,
+     "fat": 0.29
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 140,
+      "milliliters": null
+     },
+     {
+      "label": "1 bean",
+      "grams": 6,
+      "milliliters": null
+     },
+     {
+      "label": "1 cut piece",
+      "grams": 2,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:53.9688888Z"
+   }
+  },
+  {
+   "id": "brussels-sprouts",
+   "name": "Brussels sprouts",
+   "qualifier": "Cooked · no added fat",
+   "category": "Vegetables",
+   "aliases": [
+    "brussels sprout",
+    "brussel sprouts",
+    "chou de bruxelles",
+    "choux de bruxelles"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709881",
+    "barcode": null,
+    "name": "Brussels sprouts, fresh, cooked, no added fat",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other vegetables and combinations · cooking spray",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 45,
+     "protein": 3.51,
+     "carbs": 9.3,
+     "fat": 0.31
+    },
+    "servings": [
+     {
+      "label": "1 sprout",
+      "grams": 20,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 155,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:04:57.0808774Z"
+   }
+  },
+  {
+   "id": "apple",
+   "name": "Apple",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "pomme"
+   ],
+   "portion": "1 medium",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709215",
+    "barcode": null,
+    "name": "Apple, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Apples · apple, NFS",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 61,
+     "protein": 0.17,
+     "carbs": 14.8,
+     "fat": 0.15
+    },
+    "servings": [
+     {
+      "label": "1 small",
+      "grams": 165,
+      "milliliters": null
+     },
+     {
+      "label": "1 single serving package",
+      "grams": 34,
+      "milliliters": null
+     },
+     {
+      "label": "1 slice",
+      "grams": 25,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium",
+      "grams": 200,
+      "milliliters": null
+     },
+     {
+      "label": "1 extra large",
+      "grams": 295,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 242,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 125,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:39.5979479Z"
+   }
+  },
+  {
+   "id": "blueberries",
+   "name": "Blueberries",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "blueberry",
+    "bleuet",
+    "myrtille"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709275",
+    "barcode": null,
+    "name": "Blueberries, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Blueberries and other berries · blueberries, NFS",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 64,
+     "protein": 0.7,
+     "carbs": 14.57,
+     "fat": 0.31
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 berry",
+      "grams": 2,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:05:03.40007Z"
+   }
+  },
+  {
+   "id": "orange",
+   "name": "Orange",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "orange fruit"
+   ],
+   "portion": "1 fruit",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709171",
+    "barcode": null,
+    "name": "Orange, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Citrus fruits · Orange, NFS",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 50,
+     "protein": 0.92,
+     "carbs": 11.78,
+     "fat": 0.14
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 180,
+      "milliliters": null
+     },
+     {
+      "label": "1 fruit",
+      "grams": 154,
+      "milliliters": null
+     },
+     {
+      "label": "1 section/slice",
+      "grams": 15,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:05:06.5798938Z"
+   }
+  },
+  {
+   "id": "avocado",
+   "name": "Avocado",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "avocat"
+   ],
+   "portion": "1 fruit",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709223",
+    "barcode": null,
+    "name": "Avocado, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Other vegetables and combinations",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 160,
+     "protein": 2,
+     "carbs": 8.53,
+     "fat": 14.66
+    },
+    "servings": [
+     {
+      "label": "1 cup, mashed or pureed",
+      "grams": 230,
+      "milliliters": null
+     },
+     {
+      "label": "1 slice",
+      "grams": 15,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 fruit",
+      "grams": 150,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:05:09.9966117Z"
+   }
+  },
+  {
+   "id": "strawberries",
+   "name": "Strawberries",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "strawberry",
+    "fraise"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709283",
+    "barcode": null,
+    "name": "Strawberries, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Strawberries · strawberries, NFS",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 36,
+     "protein": 0.64,
+     "carbs": 7.96,
+     "fat": 0.22
+    },
+    "servings": [
+     {
+      "label": "1 fruit",
+      "grams": 18,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 150,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:05:13.2887649Z"
+   }
+  },
+  {
+   "id": "grapes",
+   "name": "Grapes",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "grape",
+    "raisin"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709237",
+    "barcode": null,
+    "name": "Grapes, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Grapes",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 83,
+     "protein": 0.9,
+     "carbs": 19.4,
+     "fat": 0.2
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 grape",
+      "grams": 7,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:05:16.3241068Z"
+   }
+  },
+  {
+   "id": "mango",
+   "name": "Mango",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "mangue"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709242",
+    "barcode": null,
+    "name": "Mango, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Mango and papaya · Mango, NFS",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 60,
+     "protein": 0.82,
+     "carbs": 14.98,
+     "fat": 0.38
+    },
+    "servings": [
+     {
+      "label": "1 mango",
+      "grams": 210,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 165,
+      "milliliters": null
+     },
+     {
+      "label": "1 slice/chunk",
+      "grams": 25,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:05:26.0488751Z"
+   }
+  },
+  {
+   "id": "pineapple",
+   "name": "Pineapple",
+   "qualifier": "Raw",
+   "category": "Fruits",
+   "aliases": [
+    "ananas"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2709260",
+    "barcode": null,
+    "name": "Pineapple, raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Pineapple · pineapple, NFS",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 60,
+     "protein": 0.46,
+     "carbs": 14.09,
+     "fat": 0.21
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 165,
+      "milliliters": null
+     },
+     {
+      "label": "1 slice",
+      "grams": 56,
+      "milliliters": null
+     },
+     {
+      "label": "1 chunk",
+      "grams": 15,
+      "milliliters": null
+     },
+     {
+      "label": "1 fruit",
+      "grams": 905,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:05:45.1019557Z"
+   }
+  },
+  {
+   "id": "milk-2",
+   "name": "Milk 2%",
+   "qualifier": "Reduced fat",
+   "category": "Dairy",
+   "aliases": [
+    "milk",
+    "2% milk",
+    "semi-skimmed milk",
+    "lait",
+    "lait 2%",
+    "lait demi-écrémé"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705386",
+    "barcode": null,
+    "name": "Milk, reduced fat (2%)",
+    "brand": null,
+    "description": "Survey (FNDDS) · Milk, reduced fat",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 50,
+     "protein": 3.36,
+     "carbs": 4.9,
+     "fat": 1.9
+    },
+    "servings": [
+     {
+      "label": "1 individual school container",
+      "grams": 244,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz",
+      "grams": 30.5,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per fl oz of beverage",
+      "grams": 2.5,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per cup of hot cereal",
+      "grams": 61,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 244,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:04.350222Z"
+   }
+  },
+  {
+   "id": "cheddar-cheese",
+   "name": "Cheddar cheese",
+   "qualifier": "Regular",
+   "category": "Dairy",
+   "aliases": [
+    "cheddar",
+    "cheese",
+    "fromage",
+    "fromage cheddar"
+   ],
+   "portion": "1 slice",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705709",
+    "barcode": null,
+    "name": "Cheese, Cheddar",
+    "brand": null,
+    "description": "Survey (FNDDS) · Cheese · Pioneer;New York;Tillamook;Coon;Longhorn;sharp cheese;Hoop;Wisconsin",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 409,
+     "protein": 23.3,
+     "carbs": 2.44,
+     "fat": 34
+    },
+    "servings": [
+     {
+      "label": "1 slice",
+      "grams": 21,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, diced",
+      "grams": 132,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, shredded",
+      "grams": 113,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, NFS",
+      "grams": 113,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, melted",
+      "grams": 244,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cubed",
+      "grams": 132,
+      "milliliters": null
+     },
+     {
+      "label": "1 cracker-size slice",
+      "grams": 9,
+      "milliliters": null
+     },
+     {
+      "label": "1 stick",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 cubic inch",
+      "grams": 17,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:07.5420601Z"
+   }
+  },
+  {
+   "id": "almond-milk-unsweetened",
+   "name": "Almond milk",
+   "qualifier": "Unsweetened",
+   "category": "Dairy",
+   "aliases": [
+    "unsweetened almond milk",
+    "lait d'amande",
+    "boisson d'amande"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705409",
+    "barcode": null,
+    "name": "Almond milk, unsweetened",
+    "brand": null,
+    "description": "Survey (FNDDS) · Plant-based milk · cashew or other nut milk;light",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 15,
+     "protein": 0.55,
+     "carbs": 0.34,
+     "fat": 1.22
+    },
+    "servings": [
+     {
+      "label": "Guideline amount per fl oz of beverage",
+      "grams": 2.5,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz",
+      "grams": 30.5,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 244,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per cup of hot cereal",
+      "grams": 61,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:10.7194995Z"
+   }
+  },
+  {
+   "id": "mozzarella-cheese",
+   "name": "Mozzarella",
+   "qualifier": "Part skim",
+   "category": "Dairy",
+   "aliases": [
+    "mozzarella cheese",
+    "cheese",
+    "string cheese",
+    "cheese stick",
+    "fromage",
+    "fromage mozzarella",
+    "fromage à effilocher"
+   ],
+   "portion": "1 slice",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705723",
+    "barcode": null,
+    "name": "Cheese, Mozzarella, part skim",
+    "brand": null,
+    "description": "Survey (FNDDS) · Cheese · Mootown Snackers;Stringsters;Chedarella Cheese;string cheese;Sorrento;reduced fat;cheese sticks, NS as to type of cheese;lowfat;County Line;made with 2% milk;Richfood;Poly-O",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 296,
+     "protein": 23.7,
+     "carbs": 4.44,
+     "fat": 20.4
+    },
+    "servings": [
+     {
+      "label": "1 cup, NFS",
+      "grams": 113,
+      "milliliters": null
+     },
+     {
+      "label": "1 cubic inch",
+      "grams": 17.6,
+      "milliliters": null
+     },
+     {
+      "label": "1 slice",
+      "grams": 21,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, diced",
+      "grams": 132,
+      "milliliters": null
+     },
+     {
+      "label": "1 stick",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 cracker-size slice",
+      "grams": 9,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, shredded",
+      "grams": 113,
+      "milliliters": null
+     },
+     {
+      "label": "1 string",
+      "grams": 4.7,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, melted",
+      "grams": 244,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:13.9224768Z"
+   }
+  },
+  {
+   "id": "skim-milk",
+   "name": "Skim milk",
+   "qualifier": "Fat free",
+   "category": "Dairy",
+   "aliases": [
+    "milk",
+    "skimmed milk",
+    "nonfat milk",
+    "fat free milk",
+    "lait",
+    "lait écrémé"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705388",
+    "barcode": null,
+    "name": "Milk, fat free (skim)",
+    "brand": null,
+    "description": "Survey (FNDDS) · Milk, nonfat",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 34,
+     "protein": 3.43,
+     "carbs": 4.92,
+     "fat": 0.08
+    },
+    "servings": [
+     {
+      "label": "1 fl oz",
+      "grams": 30.5,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 244,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per cup of hot cereal",
+      "grams": 61,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per fl oz of beverage",
+      "grams": 2.5,
+      "milliliters": null
+     },
+     {
+      "label": "1 individual school container",
+      "grams": 244,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:17.2714008Z"
+   }
+  },
+  {
+   "id": "parmesan-cheese",
+   "name": "Parmesan",
+   "qualifier": "Dry grated",
+   "category": "Dairy",
+   "aliases": [
+    "parmesan cheese",
+    "cheese",
+    "fromage",
+    "fromage parmesan"
+   ],
+   "portion": "1 tablespoon",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705728",
+    "barcode": null,
+    "name": "Cheese, Parmesan, dry grated",
+    "brand": null,
+    "description": "Survey (FNDDS) · Cheese · Asiago, aged;Romano, grated",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 412,
+     "protein": 29.87,
+     "carbs": 8.36,
+     "fat": 28.75
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 100,
+      "milliliters": null
+     },
+     {
+      "label": "1 tablespoon",
+      "grams": 6.2,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:20.3227979Z"
+   }
+  },
+  {
+   "id": "butter",
+   "name": "Butter",
+   "qualifier": "Stick",
+   "category": "Dairy",
+   "aliases": [
+    "beurre"
+   ],
+   "portion": "1 tablespoon",
+   "item": {
+    "source": "usda",
+    "sourceId": "2710155",
+    "barcode": null,
+    "name": "Butter, stick",
+    "brand": null,
+    "description": "Survey (FNDDS) · Butter and animal fats · pat",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 743,
+     "protein": 0.85,
+     "carbs": 0.06,
+     "fat": 82.2
+    },
+    "servings": [
+     {
+      "label": "1 stick",
+      "grams": 113,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per slice of bread/roll",
+      "grams": 7,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount on regular sandwich",
+      "grams": 14,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount on large sandwich",
+      "grams": 28,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 224,
+      "milliliters": null
+     },
+     {
+      "label": "1 pat",
+      "grams": 7,
+      "milliliters": null
+     },
+     {
+      "label": "1 tablespoon",
+      "grams": 14,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:10:42.8123061Z"
+   }
+  },
+  {
+   "id": "cream-cheese",
+   "name": "Cream cheese",
+   "qualifier": "Regular · plain",
+   "category": "Dairy",
+   "aliases": [
+    "fromage à la crème"
+   ],
+   "portion": "1 tablespoon",
+   "item": {
+    "source": "usda",
+    "sourceId": "2705760",
+    "barcode": null,
+    "name": "Cream cheese, regular, plain",
+    "brand": null,
+    "description": "Survey (FNDDS) · Cream cheese, sour cream, whipped cream",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 343,
+     "protein": 5.79,
+     "carbs": 4.56,
+     "fat": 33.49
+    },
+    "servings": [
+     {
+      "label": "1 individual container",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 tablespoon",
+      "grams": 15,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 240,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:42.9564427Z"
+   }
+  },
+  {
+   "id": "olive-oil",
+   "name": "Olive oil",
+   "qualifier": "Oil",
+   "category": "Fats & Oils",
+   "aliases": [
+    "oil",
+    "extra virgin olive oil",
+    "huile",
+    "huile d'olive"
+   ],
+   "portion": "1 tablespoon",
+   "item": {
+    "source": "usda",
+    "sourceId": "2710186",
+    "barcode": null,
+    "name": "Olive oil",
+    "brand": null,
+    "description": "Survey (FNDDS) · Salad dressings and vegetable oils",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 900,
+     "protein": 0,
+     "carbs": 0,
+     "fat": 100
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 224,
+      "milliliters": null
+     },
+     {
+      "label": "1 tablespoon",
+      "grams": 14,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:45.9653098Z"
+   }
+  },
+  {
+   "id": "almonds",
+   "name": "Almonds",
+   "qualifier": "Whole · raw",
+   "category": "Fats & Oils",
+   "aliases": [
+    "almond",
+    "amande"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "2346393",
+    "barcode": null,
+    "name": "Nuts, almonds, whole, raw",
+    "brand": null,
+    "description": "Foundation · Nut and Seed Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 584,
+     "protein": 21.5,
+     "carbs": 20,
+     "fat": 51.1
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2022-10-28",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:49.3415455Z"
+   }
+  },
+  {
+   "id": "peanut-butter",
+   "name": "Peanut butter",
+   "qualifier": "Regular",
+   "category": "Fats & Oils",
+   "aliases": [
+    "pb",
+    "beurre d'arachide",
+    "beurre de cacahuète"
+   ],
+   "portion": "1 tablespoon",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707537",
+    "barcode": null,
+    "name": "Peanut butter",
+    "brand": null,
+    "description": "Survey (FNDDS) · Nuts and seeds · NS as to type",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 598,
+     "protein": 22.21,
+     "carbs": 22.31,
+     "fat": 51.36
+    },
+    "servings": [
+     {
+      "label": "Guideline amount per sandwich",
+      "grams": 32,
+      "milliliters": null
+     },
+     {
+      "label": "1 single serving",
+      "grams": 45,
+      "milliliters": null
+     },
+     {
+      "label": "1 tablespoon",
+      "grams": 16,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per slice of bread/roll",
+      "grams": 16,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:52.4010801Z"
+   }
+  },
+  {
+   "id": "chia-seeds",
+   "name": "Chia seeds",
+   "qualifier": "Seeds",
+   "category": "Fats & Oils",
+   "aliases": [
+    "chia",
+    "chia seed",
+    "graine de chia",
+    "graines de chia"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "2707590",
+    "barcode": null,
+    "name": "Chia seeds",
+    "brand": null,
+    "description": "Survey (FNDDS) · Nuts and seeds",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 486,
+     "protein": 16.54,
+     "carbs": 42.12,
+     "fat": 30.74
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 168,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:06:55.7435424Z"
+   }
+  },
+  {
+   "id": "walnuts",
+   "name": "Walnuts",
+   "qualifier": "English walnuts",
+   "category": "Fats & Oils",
+   "aliases": [
+    "walnut",
+    "noix",
+    "noix de grenoble"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "170187",
+    "barcode": null,
+    "name": "Nuts, walnuts, english",
+    "brand": null,
+    "description": "SR Legacy · Nut and Seed Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 654,
+     "protein": 15.2,
+     "carbs": 13.7,
+     "fat": 65.2
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:05.262886Z"
+   }
+  },
+  {
+   "id": "coconut-oil",
+   "name": "Coconut oil",
+   "qualifier": "Oil",
+   "category": "Fats & Oils",
+   "aliases": [
+    "oil",
+    "huile",
+    "huile de coco",
+    "huile de noix de coco"
+   ],
+   "portion": "1 tablespoon",
+   "item": {
+    "source": "usda",
+    "sourceId": "2710182",
+    "barcode": null,
+    "name": "Coconut oil",
+    "brand": null,
+    "description": "Survey (FNDDS) · Salad dressings and vegetable oils",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 895,
+     "protein": 0,
+     "carbs": 0.84,
+     "fat": 99.1
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 224,
+      "milliliters": null
+     },
+     {
+      "label": "1 tablespoon",
+      "grams": 14,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:08.4406458Z"
+   }
+  },
+  {
+   "id": "hummus",
+   "name": "Hummus",
+   "qualifier": "Plain",
+   "category": "Snacks",
+   "aliases": [
+    "houmous",
+    "hommos",
+    "humus"
+   ],
+   "portion": "1 tablespoon",
+   "item": {
+    "source": "usda",
+    "sourceId": "2707402",
+    "barcode": null,
+    "name": "Hummus, plain",
+    "brand": null,
+    "description": "Survey (FNDDS) · Dips, gravies, other sauces · chickpea or garbanzo bean dip",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 243,
+     "protein": 7.35,
+     "carbs": 14.9,
+     "fat": 17.1
+    },
+    "servings": [
+     {
+      "label": "1 individual container",
+      "grams": 70,
+      "milliliters": null
+     },
+     {
+      "label": "1 tablespoon",
+      "grams": 15,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:18.1278532Z"
+   }
+  },
+  {
+   "id": "dark-chocolate-70",
+   "name": "Dark chocolate",
+   "qualifier": "70–85% cacao",
+   "category": "Snacks",
+   "aliases": [
+    "chocolate",
+    "dark chocolate 70%",
+    "chocolat",
+    "chocolat noir"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "170273",
+    "barcode": null,
+    "name": "Chocolate, dark, 70-85% cacao solids",
+    "brand": null,
+    "description": "SR Legacy · Sweets",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 598,
+     "protein": 7.79,
+     "carbs": 45.9,
+     "fat": 42.6
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:21.4637222Z"
+   }
+  },
+  {
+   "id": "rice-cakes",
+   "name": "Rice cakes",
+   "qualifier": "Brown rice · plain, unsalted",
+   "category": "Snacks",
+   "aliases": [
+    "rice cake",
+    "galette de riz",
+    "galettes de riz"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "170250",
+    "barcode": null,
+    "name": "Snacks, rice cakes, brown rice, plain, unsalted",
+    "brand": null,
+    "description": "SR Legacy · Snacks",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 387,
+     "protein": 8.2,
+     "carbs": 81.5,
+     "fat": 2.8
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:24.4619125Z"
+   }
+  },
+  {
+   "id": "trail-mix",
+   "name": "Trail mix",
+   "qualifier": "Regular",
+   "category": "Snacks",
+   "aliases": [
+    "mélange du randonneur",
+    "mélange montagnard"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "167561",
+    "barcode": null,
+    "name": "Snacks, trail mix, regular",
+    "brand": null,
+    "description": "SR Legacy · Snacks",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 462,
+     "protein": 13.8,
+     "carbs": 44.9,
+     "fat": 29.4
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:37.3634278Z"
+   }
+  },
+  {
+   "id": "beef-jerky",
+   "name": "Beef jerky",
+   "qualifier": "Chopped and formed",
+   "category": "Snacks",
+   "aliases": [
+    "jerky",
+    "boeuf séché",
+    "bœuf séché"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "167536",
+    "barcode": null,
+    "name": "Snacks, beef jerky, chopped and formed",
+    "brand": null,
+    "description": "SR Legacy · Snacks",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 410,
+     "protein": 33.2,
+     "carbs": 11,
+     "fat": 25.6
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:40.2594935Z"
+   }
+  },
+  {
+   "id": "popcorn-air-popped",
+   "name": "Popcorn",
+   "qualifier": "Air-popped · no butter",
+   "category": "Snacks",
+   "aliases": [
+    "air popped popcorn",
+    "pop corn",
+    "maïs soufflé",
+    "maïs éclaté"
+   ],
+   "portion": "1 cup, popped",
+   "item": {
+    "source": "usda",
+    "sourceId": "2708219",
+    "barcode": null,
+    "name": "Popcorn, air-popped, no butter added",
+    "brand": null,
+    "description": "Survey (FNDDS) · Popcorn · NS as to added butter",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 385,
+     "protein": 12.89,
+     "carbs": 77.47,
+     "fat": 4.52
+    },
+    "servings": [
+     {
+      "label": "1 kernel",
+      "grams": 0.2,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, popped",
+      "grams": 8,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, unpopped, yields",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, unpopped, yields",
+      "grams": 19,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:50.014016Z"
+   }
+  },
+  {
+   "id": "coffee-black",
+   "name": "Coffee",
+   "qualifier": "Brewed",
+   "category": "Beverages",
+   "aliases": [
+    "black coffee",
+    "café",
+    "café noir"
+   ],
+   "portion": "1 cup (8 fl oz)",
+   "item": {
+    "source": "usda",
+    "sourceId": "2710375",
+    "barcode": null,
+    "name": "Coffee, brewed",
+    "brand": null,
+    "description": "Survey (FNDDS) · Coffee · coffee singles, bags, pods, or K-cups;coffee, brewed, NS as to regular or decaffeinated",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 1,
+     "protein": 0.12,
+     "carbs": 0,
+     "fat": 0.02
+    },
+    "servings": [
+     {
+      "label": "1 fl oz",
+      "grams": 30,
+      "milliliters": null
+     },
+     {
+      "label": "1 large pot (60 FO, 12 servings)",
+      "grams": 1800,
+      "milliliters": null
+     },
+     {
+      "label": "1 small",
+      "grams": 360,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium",
+      "grams": 480,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup (8 fl oz)",
+      "grams": 240,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 600,
+      "milliliters": null
+     },
+     {
+      "label": "1 small pot (20 FO, 4 servings)",
+      "grams": 600,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:07:56.5273839Z"
+   }
+  },
+  {
+   "id": "green-tea",
+   "name": "Green tea",
+   "qualifier": "Hot · brewed from leaf",
+   "category": "Beverages",
+   "aliases": [
+    "tea",
+    "thé",
+    "thé vert"
+   ],
+   "portion": "1 cup",
+   "item": {
+    "source": "usda",
+    "sourceId": "2710490",
+    "barcode": null,
+    "name": "Tea, hot, leaf, green",
+    "brand": null,
+    "description": "Survey (FNDDS) · Tea · brewed;green tea blends;tea bags;Japanese green tea;unsweetened",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 1,
+     "protein": 0.22,
+     "carbs": 0,
+     "fat": 0
+    },
+    "servings": [
+     {
+      "label": "1 medium",
+      "grams": 480,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 240,
+      "milliliters": null
+     },
+     {
+      "label": "1 small",
+      "grams": 360,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 600,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz",
+      "grams": 30,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:11:01.9862369Z"
+   }
+  },
+  {
+   "id": "orange-juice",
+   "name": "Orange juice",
+   "qualifier": "100% · freshly squeezed",
+   "category": "Beverages",
+   "aliases": [
+    "oj",
+    "juice",
+    "jus",
+    "jus d'orange"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "2709187",
+    "barcode": null,
+    "name": "Orange juice, 100%,  freshly squeezed",
+    "brand": null,
+    "description": "Survey (FNDDS) · Citrus juice",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 47,
+     "protein": 0.81,
+     "carbs": 10.01,
+     "fat": 0.36
+    },
+    "servings": [
+     {
+      "label": "Juice of 1 orange (2-5/8\" dia)",
+      "grams": 86,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz (with ice)",
+      "grams": 23,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz (NFS)",
+      "grams": 31,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz (no ice)",
+      "grams": 31,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:11:05.2689366Z"
+   }
+  },
+  {
+   "id": "coconut-water",
+   "name": "Coconut water",
+   "qualifier": "Unsweetened",
+   "category": "Beverages",
+   "aliases": [
+    "eau de coco",
+    "eau de noix de coco"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "2707572",
+    "barcode": null,
+    "name": "Coconut water, unsweetened",
+    "brand": null,
+    "description": "Survey (FNDDS) · Fruit drinks · 100% coconut water or juice",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 18,
+     "protein": 0.22,
+     "carbs": 4.24,
+     "fat": 0
+    },
+    "servings": [
+     {
+      "label": "1 fl oz (with ice)",
+      "grams": 23,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz (no ice)",
+      "grams": 30,
+      "milliliters": null
+     },
+     {
+      "label": "1 coconut yields",
+      "grams": 206,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz (NFS)",
+      "grams": 30,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-10-13T23:08:12.6108021Z"
+   }
+  }
+ ]
+}

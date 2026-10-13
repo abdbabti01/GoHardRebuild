@@ -143,6 +143,10 @@ abstract final class FoodScaling {
   /// servings. Exact up to the two decimals an amount is entered with.
   static double convert(double quantity, FoodUnit from, FoodUnit to) => (quantity * from.basisPerUnit / to.basisPerUnit * 100).roundToDouble() / 100;
 
+  /// The same conversion with nothing rounded away. A form keeps this and rounds only what it shows, so going
+  /// from grams to cups and back returns the grams it started with.
+  static double exact(double quantity, FoodUnit from, FoodUnit to) => quantity * from.basisPerUnit / to.basisPerUnit;
+
   /// The values for `quantity` of `unit`, to two decimals like the journal stores them.
   /// An unknown nutrient stays unknown at any amount; a zero stays zero.
   static Map<String, double?> scale(FoodItem item, double quantity, FoodUnit unit) => {
