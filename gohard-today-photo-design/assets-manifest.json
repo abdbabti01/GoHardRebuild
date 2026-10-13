@@ -1,0 +1,23 @@
+[
+  {
+    "file": "assets/workout-hero.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 206714,
+    "sha256": "4f1e21446628f5db079d92673af97c574343a874c5bbfddfca4c0cbe2b6daafe"
+  },
+  {
+    "file": "assets/run-cover.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 210740,
+    "sha256": "a5cfc6da66e580c92868dcb56ec24b2b322089b5b00bbd0b67b2152378b284aa"
+  },
+  {
+    "file": "assets/nutrition-cover.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 271150,
+    "sha256": "25e0e91a5b32a7c29e0191a38f9e1ed358d0ee3439cf7024e2bf38f1cf522c05"
+  }
+]

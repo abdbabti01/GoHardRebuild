@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
+import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 
 import 'food_fakes.dart';
@@ -69,8 +70,8 @@ Future<ui.Image> _sheet(WidgetTester tester, Map<String, ui.Image> shots) async 
   return (await tester.runAsync(() => recorder.endRecording().toImage(gap + 3 * (w + gap), gap + 2 * (h + gap + label))))!;
 }
 
-Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {int weeks = 8, bool inProgress = true, String? start, bool cameraRefused = false}) async {
-  final plan = blockPlan(start: start ?? '2026-09-21', weeks: weeks, recorded: 8);
+Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {int weeks = 8, bool inProgress = true, String? start, bool cameraRefused = false, bool withFood = true, List<Json> runs = const [], List<Json> extraWorkouts = const [], List<Json> extraSets = const [], int recorded = 8}) async {
+  final plan = blockPlan(start: start ?? '2026-09-21', weeks: weeks, recorded: recorded);
   final open = openWorkout(plan, 'o3-3', day: _today, recordedSets: 6);
   final food = [
     foodEntry('f1', _today, 'Breakfast', 'Greek yogurt, berries, granola', '1 bowl', calories: 380, protein: 24, carbs: 46, fat: 9),
@@ -86,11 +87,18 @@ Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mo
     ..mode = mode;
   return [
     ...(await tester.runAsync(() => overridesFor(
-        day: _today, plans: [plan], primaryPlanId: 'p1', workouts: inProgress ? [open.workout] : const [], sets: inProgress ? open.sets : const [], food: food, appearance: store,
+        day: _today, plans: [plan], primaryPlanId: 'p1', workouts: [if (inProgress) open.workout, ...extraWorkouts], sets: [if (inProgress) ...open.sets, ...extraSets], food: withFood ? food : [food.last], runs: runs, appearance: store,
         calorieGoal: 2200, proteinGoal: 140, savedFoods: [savedFood('s-nut', hazelnutSpread(), favourite: true), savedFood('s-oats', ownOats())])))!,
     ...fakes.overrides,
   ];
 }
+
+Json _run(String id, {bool open = false}) => {'id': id, 'dayKey': _today, 'startedAtUtc': '${_today}T07:00:00Z', 'finishedAtUtc': open ? null : '${_today}T07:31:00Z', 'activeDurationSeconds': open ? null : 1860, 'distanceMeters': open ? null : 5200, 'isDeleted': false};
+
+/// A manual workout in progress with one movement, no targets, and one recorded set.
+const Json _manual = {'id': 'w-manual', 'kind': 'manual', 'title': 'Back', 'dayKey': _today, 'startedAtUtc': '2026-10-11T16:00:00Z', 'finishedAtUtc': null, 'isDeleted': false,
+  'exercises': [{'id': 'm1', 'ordinal': 1, 'name': 'Barbell row', 'catalogKey': 'barbell-row', 'isDeleted': false}]};
+const Json _manualSet = {'id': 'ms1', 'exerciseId': 'm1', 'workoutId': 'w-manual', 'reps': 8, 'loadKg': 60, 'performedAtUtc': '2026-10-11T16:05:00Z', 'isDeleted': false};
 
 Future<void> _open(WidgetTester tester, String screen) async {
   Future<void> tap(String key) async {
@@ -170,18 +178,24 @@ void main() {
 
   // Whole pages and other states, for checking what sits below the fold and the states a fixture can reach.
   final states = <String, (Future<List<Override>> Function(WidgetTester), String, Size, double)>{
-    'full-today-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(390, 1000), 1),
-    'full-today-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'today', const Size(390, 1000), 1),
+    'full-today-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(390, 1500), 1),
+    'full-today-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'today', const Size(390, 1500), 1),
     'full-plan-light': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'train-plan', const Size(390, 1900), 1),
     'full-plan-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(390, 1900), 1),
     'full-me-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'me', const Size(390, 1700), 1),
     'full-eat-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'eat', const Size(390, 1300), 1),
-    'today-due-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false), 'today', const Size(390, 844), 1),
-    'today-rest-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22'), 'today', const Size(390, 844), 1),
+    'today-due-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false), 'today', const Size(390, 1400), 1),
+    // Nothing logged yet: Run and Nutrition sit side by side. An open run, and a pink accent to show nothing is hard-coded blue.
+    'today-due-no-food-open-run-pink-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark, inProgress: false, withFood: false, runs: [_run('r1', open: true)]), 'today', const Size(390, 1050), 1),
+    'today-due-no-food-green-light': ((t) => _fixture(t, Accent.green, ThemeMode.light, inProgress: false, withFood: false, runs: [_run('r0')]), 'today', const Size(390, 1050), 1),
+    'today-done-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false, recorded: 9), 'today', const Size(390, 1300), 1),
+    'today-manual-one-exercise-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22', withFood: false, extraWorkouts: [_manual], extraSets: [_manualSet]), 'today', const Size(390, 1000), 1),
+    'today-narrow-320-no-food': ((t) => _fixture(t, Accent.blue, ThemeMode.light, inProgress: false, withFood: false), 'today', const Size(320, 1300), 1),
+    'today-rest-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark, inProgress: false, start: '2026-09-22'), 'today', const Size(390, 1150), 1),
     'progress-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'train-progress', const Size(390, 1100), 1),
     'plan-12-weeks-mid-week-start': ((t) => _fixture(t, Accent.green, ThemeMode.light, weeks: 12, start: '2026-09-23'), 'train-plan', const Size(390, 1900), 1),
     'plan-16-weeks-collapsed': ((t) => _fixture(t, Accent.blue, ThemeMode.light, weeks: 16), 'train-plan', const Size(390, 1500), 1),
-    'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 1900), 2),
+    'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 3900), 2),
     'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 3400), 2),
     'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 1900), 2),
     'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),

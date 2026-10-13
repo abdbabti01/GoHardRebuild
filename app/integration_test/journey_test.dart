@@ -91,7 +91,7 @@ void main() {
     await type(tester, 'auth-password', password);
     await tapKey(tester, 'auth-submit');
     await waitFor(tester, find.text('No plan yet'), what: 'Today for a new account');
-    expect(find.text('No food logged yet'), findsOneWidget, reason: 'a new account has no invented nutrition');
+    expect(find.text('No food logged today'), findsOneWidget, reason: 'a new account has no invented nutrition');
     expect(find.text('Resume workout'), findsNothing);
     await shot(tester, '02-today-new-account');
 

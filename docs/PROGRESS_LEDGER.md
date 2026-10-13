@@ -528,3 +528,59 @@ documentation-only commit, which went through CI again before `main` was fast-fo
 code is unchanged, so the hosted testing API redeploys the same service; before the push it reported
 `Ready, 3 migration(s) applied`. The unsigned iOS build is started from that final commit with the
 `ios-unsigned-ipa` workflow; its run and artifact are in the Actions tab under that commit.
+
+## 13 October 2026 — Today with photo cards (branch `feature/today-photo-cards`)
+
+Built from the brief in `gohard-today-photo-design/` (kept in the repository with its references and its
+`ASSETS.md`). Flutter presentation and bundled assets only: no API, contract, sync or stored-data change. The final
+layout and its rules are in `docs/DESIGN.md` ("Today: what it holds").
+
+| Change | Where |
+|---|---|
+| Workout card: photograph header with WORKOUT, the real name and the state; below it a summary, up to three movements with their prescription, per-movement recorded counts while in progress, the recorded-set rail, one Start or Resume button; "See all N exercises" or "Workout details" opens the existing sheet or record | `features/today/today_screen.dart` (`_WorkoutCard`) |
+| Rest day, paused plan, not started, block review, draft and no plan keep a card without a photograph | `_PlainCard` |
+| Run card: photograph, real state, "Start run" or "Continue run" for the saved open run; the only run entry on Today | `_RunCard` |
+| Nutrition card: photograph, "No food logged today" or the same calories, protein, goal rails and missing-values line as before, "Food journal" link, "Log food" | `_NutritionCard`; `NutritionSummary` in `features/nutrition/nutrition_surface.dart` now returns the values only |
+| Run and Nutrition side by side while both are short, stacked for logged food, large text or a narrow phone | `TodayScreen.build` |
+| Three supplied WebP photographs added; `evening-gym-hero.jpg` removed | `app/assets/images/` |
+| A two-phase journey for a real cold start | `integration_test/journey_coldstart_test.dart`, `scripts/test-android.ps1` |
+
+**Photographs.** The three files are byte-for-byte the ones in the brief (SHA-256 as in its `assets-manifest.json`),
+1536 × 1024 WebP, 688,604 bytes together; the JPEG they replace was 200,936 bytes, so the app's assets grow by
+about 0.49 MB. They are generated editorial illustrations made for this design, not stock, and not anyone's
+workout, route or meal. Decoded at the phone's width (at most 1536 px wide), one decode per image shared by every
+layout; that is about 4 MB of pixels per image on a 3× phone. Measured memory on a device was not taken.
+
+**Decisions the brief left open.** Movement rows are not buttons, because the app has no page for a single
+movement. Nothing marks a movement as current or complete; only counts are shown. Companion cards use outlined
+buttons so the workout keeps the one filled button. The two cards stack once food is logged rather than squeezing
+goal rails into half a screen. A single finished run is said on the Run card and no longer also listed under
+"Recorded today". "Run history" was added as a quiet link in the side-by-side Run card; it opens the existing
+screen.
+
+Checked on the final code:
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` | API build with warnings as errors, 83 of 83 API tests, release publish, `flutter analyze` with no issues, 150 of 150 Flutter tests |
+| New or rewritten Today tests (`widget_test`) | due workout with three rows, prescriptions and "See all 5"; in progress with per-movement and total counts, 33%, one Resume, rows not tappable, no completion icon; manual workout with unknown total (no percentage, no "of"), a long name at 320 px, four movements, none yet; completed and rest-day states; Start run / Continue run with real time and distance; side by side against stacked for empty, goals, logged food, 160% text, 320 px, and 200% text with food |
+| Existing guideline tests on Today in six themes | rendered-pixel text contrast, 48 px and 44 pt targets, labelled controls: pass |
+| Renders (`docs/evidence/design/`), regenerated and looked at | `six-themes-today`, `today-blue-light`, `today-blue-dark`, `state-full-today-light`, `-dark`, `state-today-due-light`, `state-today-due-no-food-open-run-pink-dark`, `state-today-due-no-food-green-light`, `state-today-done-light`, `state-today-rest-dark`, `state-today-manual-one-exercise-dark`, `state-today-narrow-320-no-food`, `state-large-text-today-320`, `state-new-account-today` |
+| Android emulator, local API with recorded food responses | all eight journeys pass and exit 0 with fresh captures written to a new folder per run and copied only after passing |
+
+**Cold start.** `journey_coldstart_test` runs twice on one install. Phase 1 leaves a manual workout open with one
+set, one logged food and an open run; the script then force-stops the app, confirms no process is left and the
+install is still there. Phase 2 is a new process: with no sign-in it shows "Continue run", "Resume workout",
+"1 set recorded" and "1 food logged", continues and finishes that run, and reopens the workout with its set
+(`screenshots/110-…`, `111-…`, `112-…`). This is a real process restart, unlike the other journeys' second call of
+`main()` in one process. Two things were learned on the way: the Flutter tool uninstalls the app when a drive run
+ends (so phase 1 keeps it running and the script kills it), and the first run's debugger port forward has to be
+removed or the tool cannot attach to the new process.
+
+During these runs the tool again failed once to attach to the app before any step ran; the journey passed when
+run again. One journey step still said "No food logged yet" and was updated to the new wording.
+
+Not checked, and not claimed: anything on a physical phone (how the three photographs crop on real screen sizes,
+notch and home-indicator safe areas, the phone's largest text size, TalkBack or VoiceOver by ear, memory while
+scrolling, a real run with GPS) and anything on an iPhone beyond the unsigned build compiling. The side-by-side
+layout was rendered at 390 px and on the emulator's 411 px; other widths between 350 and 430 px were not rendered.

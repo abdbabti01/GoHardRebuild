@@ -127,15 +127,21 @@ class NutritionSurface extends StatelessWidget {
   }
 }
 
-/// Today's glance at the same day: calories and protein, their goals when the person set them, and Log food.
-/// It reads the coverage Eat reads. An unknown value is a dash, a partial sum is called "known" and never gets a
-/// remainder, and the full breakdown and explanation stay in Eat, one tap away.
+/// Today's glance at the same day, for the Nutrition card: calories and protein, and their goals when the person
+/// set them. It reads the coverage Eat reads. An unknown value is a dash, a partial sum is called "known" and
+/// never gets a remainder, and the full breakdown and explanation stay in Eat, one tap away. Shown only when
+/// something was logged; the card around it owns the empty state and the Log food button.
 class NutritionSummary extends StatelessWidget {
-  const NutritionSummary({super.key, required this.entries, required this.coverage, this.calorieGoal, this.proteinGoal, required this.onLogFood, required this.onDetails});
-  final List<FoodEntry> entries;
+  const NutritionSummary({super.key, required this.coverage, this.calorieGoal, this.proteinGoal, required this.onDetails});
   final Map<Nutrient, NutrientTotal> coverage;
   final int? calorieGoal, proteinGoal;
-  final VoidCallback onLogFood, onDetails;
+  final VoidCallback onDetails;
+
+  /// "2,200 kcal · 140 g protein" for the goals that were set; null when none was.
+  static String? goalsText(int? calorieGoal, int? proteinGoal) {
+    final goals = [if (calorieGoal != null) '${_grouped(calorieGoal)} kcal', if (proteinGoal != null) '$proteinGoal g protein'];
+    return goals.isEmpty ? null : goals.join(' · ');
+  }
 
   Widget _cell(BuildContext context, Nutrient n, String label, String unit, int? goal) {
     final t = coverage[n]!;
@@ -174,38 +180,29 @@ class NutritionSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final goals = [if (calorieGoal != null) '${_grouped(calorieGoal!)} kcal', if (proteinGoal != null) '$proteinGoal g protein'];
     final calories = _cell(context, Nutrient.calories, 'Calories', 'kcal', calorieGoal), protein = _cell(context, Nutrient.protein, 'Protein', 'g', proteinGoal);
-    // Side by side; one under the other when the text is large.
-    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13;
-    return Panel(
-      padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (entries.isEmpty) ...[
-          Text('No food logged yet', style: context.sansStyle(16, weight: FontWeight.w600)),
-          if (goals.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text('Your daily goal: ${goals.join(' · ')}', style: context.caption)),
-        ] else ...[
-          if (stacked) ...[calories, const SizedBox(height: 12), protein] else Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: calories), const SizedBox(width: 16), Expanded(child: protein)]),
-          // Any food without a value for any nutrient: said here in a line, explained in Eat.
-          if (coverage.values.any((t) => t.unknownEntries > 0))
-            Semantics(
-              button: true, hint: 'Opens the food journal',
-              child: InkWell(
-                key: const Key('today-nutrition-missing'),
-                onTap: onDetails,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: Targets.minimum),
-                  child: Row(children: [
-                    Expanded(child: StatusLine(Icons.info_outline, coverage.values.any((t) => t.hasAnyKnown) ? 'Some nutrition values are missing' : 'No nutrition values entered yet')),
-                    Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
-                  ]),
-                ),
+    return LayoutBuilder(builder: (context, box) {
+      // Side by side when each value gets room for its goal line; one under the other with large text or in a narrow card.
+      final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || box.maxWidth < 280;
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        if (stacked) ...[calories, const SizedBox(height: 12), protein] else Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: calories), const SizedBox(width: 16), Expanded(child: protein)]),
+        // Any food without a value for any nutrient: said here in a line, explained in Eat.
+        if (coverage.values.any((t) => t.unknownEntries > 0))
+          Semantics(
+            button: true, hint: 'Opens the food journal',
+            child: InkWell(
+              key: const Key('today-nutrition-missing'),
+              onTap: onDetails,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: Targets.minimum),
+                child: Row(children: [
+                  Expanded(child: StatusLine(Icons.info_outline, coverage.values.any((t) => t.hasAnyKnown) ? 'Some nutrition values are missing' : 'No nutrition values entered yet')),
+                  Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
+                ]),
               ),
             ),
-        ],
-        const SizedBox(height: 12),
-        SecondaryButton('Log food', key: const Key('log-food'), icon: Icons.add, onPressed: onLogFood),
-      ]),
-    );
+          ),
+      ]);
+    });
   }
 }

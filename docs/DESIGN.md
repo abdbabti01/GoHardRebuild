@@ -107,20 +107,48 @@ Found and fixed while checking these: the Meal dropdown overflowed by 59 px at t
 
 ## Today: what it holds and what it leaves to the other tabs
 
-Refined on 12 October 2026 so the workout action and the day's food values share the first screen at normal text
-size (390 × 844). With large text the page simply grows.
+Redesigned on 13 October 2026 from the brief in `gohard-today-photo-design/` (three references and three
+photographs). Today is three cards of one family: the same 20 px radius, border, surface, title weight, 36 px icon
+tile and 52 px button. The workout card is full width and holds the page's only filled button; Run and Nutrition
+are companion cards with outlined buttons.
 
 | Part | What it shows | Where the rest lives |
 |---|---|---|
-| Workout card (`_Feature` in `features/today/today_screen.dart`) | State label, the workout's real name, exercise and set counts, up to three movement names, recorded-set progress while in progress, and one button (Start or Resume). The title row with its chevron opens the workout's sheet. | The week's calendar and its progress rail: Train › Plan. The full prescription: the sheet behind the title. |
-| Running, directly under the card | One outlined button with the running icon on every kind of day: "Start run", or "Continue your run" while any run is open (read from the saved records, so also after a restart or past midnight). It is Today's only way into a run; a run still going is not listed under "Recorded today". "Start a manual workout" sits beside it as a text link where a plan does not own the day. | Train › Workouts has both as buttons. |
-| Nutrition (`NutritionSummary` in `features/nutrition/nutrition_surface.dart`) | Calories and protein from the same coverage Eat reads, a goal rail only for a goal that was set, one line when values are missing, Log food. | Carbs, fat, the per-food list and the longer explanation: Eat (the missing-values line opens it). |
-| Recorded today | Workouts finished today and runs, in their own words ("Manual workout · Recorded · 1 set"). Absent when nothing was recorded. | Histories: Train and Me. Body measurements: Me. |
+| Workout card (`_WorkoutCard` in `features/today/today_screen.dart`) | A photograph about 124 px high carrying "WORKOUT", the workout's real name and a filled state label (Due today, In progress, Done for today). Below it, on the card's own surface: one summary line (exercise count, planned sets when known, the plan's session length as "50 min planned"), up to three movements in workout order with their prescription on the right when the plan has one ("4 × 6–8"), per-movement recorded counts while in progress, "X of Y sets recorded" with a rail, and one Start or Resume button. | "See all N exercises" (or "Workout details" with three or fewer) opens the existing workout sheet or record. The week's calendar: Train › Plan. |
+| Rest day, paused plan, plan not started, block to review, draft, no plan (`_PlainCard`) | The same card with no photograph, so a picture of training never sits above "Rest today". "Start a manual workout" stays as a text link under it. | Train › Plan. |
+| Run card (`_RunCard`) | Photograph, "Run", one line of real state ("No run today", "Today: 31 min · 5.20 km", "In progress", "In progress · 0.42 km so far" once a distance has been measured) and one button: "Start run", or "Continue run" for the saved open run, whatever day it began. It is Today's only way into a run. | "Run history" is a quiet link in the side-by-side layout. Train › Workouts has the same start. |
+| Nutrition card (`_NutritionCard`, values by `NutritionSummary`) | Photograph, "Nutrition", "No food logged today" or the number of foods, then calories and protein from the same coverage Eat reads, a goal rail only for a goal that was set, one line when values are missing, a quiet "Food journal" link and one "Log food" button. | Carbs, fat, the per-food list and the longer explanation: Eat. |
+| Recorded today | Workouts finished today in their own words ("Manual workout · Recorded · 1 set"). A single finished run is said on the Run card; runs are listed here only when there are several. Absent when there is nothing to list. | Histories: Train and Me. Body measurements: Me. |
 | Account not reached | One line, "Can't sync right now", with the number of changes still only on this phone; a tap opens the explanation and "Try again". Me's sync row uses the same words (`cantSyncLabel` in `app/providers.dart`). Neither says "Offline": the app knows an attempt failed, not whether the phone or the server was the cause. | Changes that need a decision keep their notice above the navigation bar. |
 
+**Layout.** Run and Nutrition sit side by side while both are short: nothing logged today, text size up to 115%,
+and a screen at least 350 px wide. Their buttons then share a baseline. Logged food brings values and goal rails
+that need the full width, so the two cards stack, and the Run card becomes one row (title and state on the left,
+button on the right). Large text or a narrow phone also stacks them. Nothing is truncated or shrunk to keep a
+layout: heights follow content and the page scrolls.
+
+**What the rows do and do not claim.** A movement row is plain text, not a button: there is no page for a single
+movement, so nothing pretends to be tappable. No row is highlighted for being first, and none is marked complete;
+"2 of 4 sets recorded" is a count. With no planned total (a manual workout) the card says "3 sets recorded" with
+no percentage and no "of".
+
+**Photographs.** `assets/images/workout-hero.webp`, `run-cover.webp` and `nutrition-cover.webp` (1536 × 1024,
+about 0.69 MB together) are the files supplied with the brief, unchanged. Per its `ASSETS.md` they are generated
+editorial illustrations made for this design on 13 October 2026: not stock photographs, not the user's workout,
+route or meal. They replace `evening-gym-hero.jpg`, which is removed. They are bundled, so they load with no
+network, and are excluded from screen-reader output. Each is cropped with `BoxFit.cover` and a focal alignment that
+keeps the dumbbells, the near shoe and the bowl in view; a file that fails to load leaves a plain recessed panel.
+Each is decoded once at the phone's width (`cacheWidth`), the same size in every layout, so scrolling, stacking and
+theme changes reuse the decoded image.
+
+**Contrast.** Only the workout photograph carries text. A left-to-right scrim keeps at least 82% black under the
+62% of the width the words may use (the same floor `theme_test.dart` checks), and lets the photograph show on the
+right. With large text the words take the full width and the scrim covers the whole header. The state label is a
+filled accent pill, so Blue, Green and Pink each keep their own colour; nothing on the card is hard-coded blue.
+
 The minutes on a due workout are the session length chosen in plan setup (`setup.minutesPerSession`), so they read
-"45 min planned", never "about 45 min": nothing is estimated from the exercises. The photograph is kept as a band
-beside the state label; under all text the overlay is still at least 82% black.
+"50 min planned", never "about 50 min": nothing is estimated from the exercises.
+
 
 ## Deliberate differences from the references
 
@@ -128,7 +156,7 @@ beside the state label; under all text the overlay is still at least 82% black.
 |---|---|---|
 | Calories and protein against goals, with progress bars | the same, but only for a goal the person set; the rail stops at full while the words give the real total; "left" is stated only when every food that day has a value | no goal is suggested, and a remainder worked out from a partial sum would be invented |
 | Photographs of each meal and exercise, a profile photo | none; an initial for the profile | no such images exist in the account, and none are licensed |
-| A person in the workout photograph and on the pass | the existing dumbbell photograph; a plain pass | the only licensed photograph in the project; no synthetic anatomy to get wrong |
+| A person in the workout photograph and on the pass | the supplied dumbbell illustration; a plain pass | the photographs supplied with the Today brief show no face; no synthetic anatomy to get wrong |
 | Week tiles four across with small text, selected tile without its label | three across at phone width, every tile shows week, dates and state | the reference's labels were too small to read; three across fits "Sep 28 – Oct 4" on one line |
 | System segment stays blue with Green selected | selected controls always use the chosen accent | a flaw in the reference |
 | "Week history" and "Progress overview" as separate cards on Me | one card: completion, then the last three weeks | a card inside a card otherwise |

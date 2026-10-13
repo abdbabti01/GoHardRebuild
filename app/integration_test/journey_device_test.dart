@@ -158,12 +158,12 @@ void main() {
 
     // Leaving the run does not end it: Today offers to continue it, also after the app is closed and opened again.
     await tester.pageBack();
-    await waitFor(tester, find.text('Continue your run'), what: 'the open run on Today');
+    await waitFor(tester, find.text('Continue run'), what: 'the open run on Today');
     expect(find.text('Start run'), findsNothing);
     await settle(tester, 8); // let the page transition finish before the capture
     await binding.takeScreenshot('51b-today-continue-run');
     await app.main();
-    await waitFor(tester, find.text('Continue your run'), what: 'the same open run after a restart');
+    await waitFor(tester, find.text('Continue run'), what: 'the same open run after a restart');
     await tapKey(tester, 'today-run');
     await waitFor(tester, find.byKey(const Key('run-gps-distance')), what: 'the same run, still measuring');
     expect(double.parse(tester.widget<Text>(find.byKey(const Key('run-gps-distance'))).data!.split(' ').first), greaterThanOrEqualTo(km), reason: 'the distance measured before the restart is kept');

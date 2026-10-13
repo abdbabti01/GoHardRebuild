@@ -45,7 +45,9 @@ void main() {
     expect(find.text('Friday, October 9'), findsOneWidget);
     expect(find.text('No plan yet'), findsOneWidget);
     expect(find.text('Your week'), findsNothing, reason: 'no plan, so no invented week');
-    await tester.scrollUntilVisible(find.text('No food logged yet'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('No food logged today'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('No run today'), findsOneWidget);
+    expect(find.text('WORKOUT'), findsNothing, reason: 'no workout, so no workout photograph above "No plan yet"');
     expect(find.text('Recorded today'), findsNothing, reason: 'no activity, so no activity section');
     expect(find.textContaining('kcal'), findsNothing, reason: 'no invented nutrition');
     expect(find.text('Resume workout'), findsNothing, reason: 'no invented training');
@@ -109,30 +111,124 @@ void main() {
       expect(find.text('Done for today'), findsNothing);
       expect(find.textContaining('50 min planned'), findsOneWidget, reason: 'the plan\'s chosen session length, not an estimate');
       expect(find.textContaining('about'), findsNothing);
-      expect(find.text('Bench press · Overhead press · Barbell row +2 more'), findsOneWidget);
+      // The first three movements in the plan's order, each with its prescription; the rest behind one link.
+      for (final name in ['Bench press', 'Overhead press', 'Barbell row']) {
+        expect(find.text(name), findsOneWidget, reason: name);
+      }
+      expect(find.text('4 × 6–8'), findsNWidgets(3), reason: 'a prescription, shown because the plan has one');
+      expect(find.text('Lat pulldown'), findsNothing);
+      expect(find.text('See all 5 exercises'), findsOneWidget);
+      expect(find.textContaining('sets recorded'), findsNothing, reason: 'nothing was recorded for a workout that has not started');
+      expect(tester.getBottomLeft(find.byKey(const Key('today-start'))).dy, lessThan(navTop), reason: 'the workout action is on the first screen');
       for (final gone in ['Workout preview', 'View workout', 'Your week', 'Body measurements']) {
         expect(find.text(gone), findsNothing, reason: gone);
       }
 
       // Calories are a partial-free sum here; protein is missing for one food and says so.
+      await tester.scrollUntilVisible(find.text('510'), 200, scrollable: find.byType(Scrollable).first);
       expect(find.text('510'), findsOneWidget);
-      expect(tester.getBottomLeft(find.text('510')).dy, lessThan(navTop), reason: 'nutrition values are on the first screen');
+      expect(find.text('2 foods logged'), findsOneWidget);
       expect(find.text('of 2,200 · 1,690 left'), findsOneWidget);
       expect(find.text('Protein · known'), findsOneWidget);
       expect(find.byKey(const Key('today-goal-protein')), findsNothing, reason: 'no protein goal was set, so no rail');
       expect(find.text('Some nutrition values are missing'), findsOneWidget);
 
       await tester.scrollUntilVisible(find.text('Manual workout · Recorded · 1 set'), 200, scrollable: find.byType(Scrollable).first);
-      expect(find.byKey(const Key('today-details')), findsOneWidget, reason: 'the title opens the workout details');
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('an in-progress workout shows its recorded sets', (tester) async {
+    testWidgets('an in-progress workout shows what is planned, what is recorded, and one Resume action', (tester) async {
+      final handle = tester.ensureSemantics();
       final plan = blockPlan(start: '2026-09-21', recorded: 8);
       final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
       await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, plans: [plan], primaryPlanId: 'p1', workouts: [open.workout], sets: open.sets)) ?? []);
+      expect(find.text('In progress'), findsOneWidget);
+      expect(find.text('5 exercises · 18 sets'), findsOneWidget);
+      // Counts per movement, and nothing that calls a movement finished or current.
+      expect(find.text('4 of 4 sets recorded'), findsOneWidget);
+      expect(find.text('2 of 4 sets recorded'), findsOneWidget);
       expect(find.text('6 of 18 sets recorded'), findsOneWidget);
+      expect(find.text('33%'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsNothing, reason: 'recorded sets are not a completed exercise');
       expect(find.byKey(const Key('today-resume')).hitTestable(), findsOneWidget);
+      expect(find.byKey(const Key('today-start')), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('Planned sets recorded')), findsOneWidget);
+      // The rows are not buttons: only the link, the action and the two companion cards can be tapped.
+      expect(find.ancestor(of: find.text('Bench press'), matching: find.byType(InkWell)), findsNothing);
+      handle.dispose();
+    });
+
+    testWidgets('a manual workout with no targets counts sets without a percentage or a made-up total', (tester) async {
+      Json exercise(int i, String name) => {'id': 'e$i', 'ordinal': i, 'name': name, 'catalogKey': null, 'isDeleted': false};
+      Json workout(List<Json> exercises) => {'id': 'w1', 'kind': 'manual', 'title': 'Back', 'dayKey': day, 'startedAtUtc': '${day}T15:00:00Z', 'finishedAtUtc': null, 'isDeleted': false, 'exercises': exercises};
+      Json set(int i, String exerciseId) => {'id': 's$i', 'exerciseId': exerciseId, 'workoutId': 'w1', 'reps': 8, 'loadKg': 60, 'performedAtUtc': '${day}T15:0$i:00Z', 'isDeleted': false};
+
+      // One movement, one set: the reference's "1 exercise · 1 set recorded".
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, workouts: [workout([exercise(1, 'Barbell row')])], sets: [set(1, 'e1')])) ?? []);
+      expect(find.text('1 exercise'), findsOneWidget);
+      expect(find.text('Barbell row'), findsOneWidget);
+      expect(find.text('1 set recorded'), findsOneWidget, reason: 'said once, not on the row and again below it');
+      expect(find.textContaining('%'), findsNothing);
+      expect(find.textContaining(' of '), findsNothing, reason: 'no planned total exists, so none is shown');
+      expect(find.text('Workout details'), findsOneWidget);
+      expect(find.text('Resume workout'), findsOneWidget);
+
+      // A long name and four movements: the name wraps, three are listed, the fourth is behind the link.
+      const long = 'Single-arm dumbbell row with a three second pause at the top of every repetition';
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, workouts: [workout([exercise(1, long), exercise(2, 'Lat pulldown'), exercise(3, 'Cable row'), exercise(4, 'Face pull')])], sets: [set(1, 'e1'), set(2, 'e1'), set(3, 'e3')])) ?? [],
+          size: const Size(320, 900));
+      expect(find.text(long), findsOneWidget);
+      expect(find.text('2 sets recorded'), findsOneWidget);
+      expect(find.text('3 sets recorded'), findsOneWidget, reason: 'the total of what was recorded');
+      expect(find.text('Face pull'), findsNothing);
+      expect(find.text('See all 4 exercises'), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'no overflow with a long name at 320 px');
+
+      // Nothing added yet: still one honest card and one action.
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, workouts: [workout(const [])])) ?? []);
+      expect(find.text('No exercise added yet'), findsOneWidget);
+      expect(find.textContaining('recorded'), findsNothing);
+    });
+
+    testWidgets('a completed workout says so and offers no second start; a rest day shows no workout photograph', (tester) async {
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, plans: [blockPlan(start: '2026-09-21', recorded: 9)], primaryPlanId: 'p1')) ?? []);
+      expect(find.text('Done for today'), findsOneWidget);
+      expect(find.textContaining('Finished: all planned sets recorded.'), findsOneWidget);
+      expect(find.byKey(const Key('today-start')), findsNothing);
+      expect(find.byKey(const Key('today-resume')), findsNothing);
+
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, plans: [blockPlan(start: '2026-09-22', recorded: 8)], primaryPlanId: 'p1')) ?? []);
+      expect(find.text('Rest today'), findsOneWidget);
+      expect(find.text('WORKOUT'), findsNothing);
+      expect(find.byKey(const Key('today-start')), findsNothing);
+      expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'running stays available on a rest day');
+    });
+
+    testWidgets('Run and Nutrition sit side by side while short, and stack for logged food, large text or a narrow phone', (tester) async {
+      final plan = blockPlan(start: '2026-09-21', recorded: 8);
+      Future<bool> sideBySide({List<Json> food = const [], Size size = const Size(390, 1600), double scale = 1, int? calorieGoal}) async {
+        await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, plans: [plan], primaryPlanId: 'p1', food: food, calorieGoal: calorieGoal)) ?? [], size: size, textScale: scale);
+        expect(tester.takeException(), isNull);
+        final run = tester.getTopLeft(find.text('Run')), nutrition = tester.getTopLeft(find.text('Nutrition'));
+        return (run.dy - nutrition.dy).abs() < 1 && nutrition.dx > run.dx;
+      }
+
+      expect(await sideBySide(), true);
+      expect(find.text('No food logged today'), findsOneWidget);
+      expect(find.textContaining('kcal'), findsNothing, reason: 'the bowl in the photograph is not an entry');
+      expect(tester.getSize(find.byKey(const Key('today-run'))).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(find.byKey(const Key('log-food'))).height, tester.getSize(find.byKey(const Key('today-run'))).height, reason: 'one button height for both');
+      expect(tester.getTopLeft(find.byKey(const Key('log-food'))).dy, tester.getTopLeft(find.byKey(const Key('today-run'))).dy, reason: 'the two buttons line up');
+
+      expect(await sideBySide(calorieGoal: 2200), true);
+      expect(find.text('Your daily goal: 2,200 kcal'), findsOneWidget, reason: 'a goal that was set is named; none is invented');
+
+      expect(await sideBySide(food: food, calorieGoal: 2200), false, reason: 'real values and a goal rail get the full width');
+      expect(find.text('510'), findsOneWidget);
+      expect(await sideBySide(scale: 1.6), false, reason: 'large text');
+      expect(await sideBySide(size: const Size(320, 1600)), false, reason: 'a narrow phone');
+      expect(await sideBySide(size: const Size(320, 4200), scale: 2, food: food, calorieGoal: 2200), false);
+      expect(find.text('of 2,200 · 1,690 left'), findsOneWidget, reason: 'nothing is hidden to save space');
     });
 
     testWidgets('the week calendar and its progress are in Train › Plan', (tester) async {
@@ -178,23 +274,30 @@ void main() {
       // No plan at all.
       await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day)) ?? []);
       expect(find.widgetWithText(OutlinedButton, 'Start run'), findsOneWidget);
-      expect(tester.getSize(find.byKey(const Key('today-run'))).height, greaterThanOrEqualTo(48));
-      expect(tester.getTopLeft(find.byKey(const Key('today-run'))).dy, lessThan(tester.getTopLeft(find.text('Nutrition')).dy), reason: 'between the training card and nutrition');
+      expect(find.text('No run today'), findsOneWidget);
+      expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one running entry point');
+
+      // A run finished today: its real time and distance, and a new run can be started.
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, runs: [run('r0', day, open: false)])) ?? []);
+      expect(find.text('Today: 30 min · 5.00 km'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Start run'), findsOneWidget);
+      expect(find.text('Recorded today'), findsNothing, reason: 'a single run is said once, on its card');
 
       // A rest day of a plan, with a run begun yesterday and still open (as after closing and reopening the app).
       final plan = blockPlan(start: '2026-09-22', recorded: 8);
       await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, plans: [plan], primaryPlanId: 'p1', runs: [run('r1', '2026-10-10'), run('r0', day, open: false)])) ?? []);
       expect(find.text('Rest today'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Continue your run'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Continue run'), findsOneWidget);
+      expect(find.textContaining('In progress', findRichText: true), findsOneWidget);
+      expect(find.textContaining('so far', findRichText: true), findsNothing, reason: 'no distance is claimed before one was measured');
       expect(find.text('Start run'), findsNothing, reason: 'an open run is never started twice');
-      expect(find.text('Run in progress'), findsNothing, reason: 'one way into the open run, not two');
-      expect(find.text('Run'), findsOneWidget, reason: 'the finished run is listed as recorded');
+      expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one way into the open run, not two');
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('unknown stays a dash and a goal never gets a remainder from a partial sum', (tester) async {
       Future<void> summary(List<FoodEntry> entries) => pumpApp(tester, const [],
-          home: Scaffold(body: NutritionSummary(entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: 2200, proteinGoal: 140, onLogFood: () {}, onDetails: () {})));
+          home: Scaffold(body: NutritionSummary(coverage: NutrientCoverage.calculate(entries), calorieGoal: 2200, proteinGoal: 140, onDetails: () {})));
       await summary([FoodEntry(foodEntry('a', day, 'Lunch', 'Rice', '1 bowl', calories: 400)), FoodEntry(foodEntry('b', day, 'Lunch', 'Toast', '2 slices'))]);
       expect(find.text('Calories · known'), findsOneWidget);
       expect(find.text('of 2,200 · known so far'), findsOneWidget);
