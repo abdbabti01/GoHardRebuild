@@ -404,3 +404,26 @@ whether the catalog was already empty before this deployment is not known.
 
 To finish the hosted setup: add the variable `GOHARD_FoodData__UsdaApiKey` on the Railway service (free key from
 fdc.nal.usda.gov/api-key-signup), fix the catalog seeding, then run `verify-api.ps1` again.
+
+### Hosted API after the USDA key and the catalog were set (12 October 2026)
+
+The owner added `GOHARD_FoodData__UsdaApiKey` on the Railway service and seeded the catalog. `scripts\verify-api.ps1`
+against `https://gohardrebuild-production.up.railway.app` then passed every check:
+
+| Check | Result |
+|---|---|
+| Declared capabilities | 17, now including `food.search` |
+| **Live** food search through USDA FoodData Central ("chicken breast") | pass: 25 results, first "Lunchmeat, chicken breast, sliced" |
+| **Live** barcode lookup through Open Food Facts (3017620422003) | pass: Nutella, 539 kcal per 100 g |
+| Exercise catalog | pass: 26 movements |
+| Goals, saved food, unknown barcode, idempotent save, cleanup | pass |
+
+This is the live-provider check the fixture tests are not. It supersedes the two "not configured" and "empty catalog"
+rows above.
+
+The pre-deploy command was also verified in the API's own container image against a throwaway PostgreSQL:
+`dotnet GoHard.Api.dll migrate seed-catalog` runs both steps (`Migrations applied.`, `Catalog entries: 26`,
+`Readiness: Ready - 3 migration(s) applied.`, exit 0), repeating it leaves 26 rows, `migrate` alone leaves the
+catalog empty, and a failed step exits non-zero. Passing the whole command as one argument starts the web server
+instead of running either step.
+
