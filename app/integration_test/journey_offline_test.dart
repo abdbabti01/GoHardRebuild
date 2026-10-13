@@ -49,7 +49,7 @@ void main() {
     await j.tapKey('food-save');
     await j.waitFor(find.textContaining(RegExp('foods? logged')), what: 'the food on Today while offline');
     await tester.drag(find.byType(ListView).hitTestable().last, const Offset(0, 500)); // pull to refresh: the account cannot be reached
-    await j.waitFor(find.textContaining('Can\'t reach your account'), what: 'the short notice that the account cannot be reached');
+    await j.waitFor(find.textContaining('Can\'t sync right now'), what: 'the short notice that the account cannot be reached');
     expect(find.textContaining('waiting to sync'), findsOneWidget, reason: 'the notice counts what is still only on this phone');
     await j.tapKey('today-connection');
     await j.waitFor(find.text('Try again'), what: 'the details behind the notice');
@@ -57,6 +57,9 @@ void main() {
     await j.tapKey('nav-me');
     await j.reveal(find.textContaining('waiting to sync'));
     await j.waitFor(find.textContaining('waiting to sync'), what: 'the pending count in Me');
+    expect(find.textContaining('Can\'t sync right now'), findsOneWidget, reason: 'Me uses the same words as Today');
+    expect(find.textContaining('Offline'), findsNothing);
+    await j.shot('71b-me-cant-sync');
 
     // --- Reconnect. Everything syncs once, without the user repeating anything.
     // ignore: avoid_print

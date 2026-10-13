@@ -38,18 +38,22 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
   late final _quantity = TextEditingController(text: _text(widget.draft.quantity));
   late final _macros = {for (final e in widget.draft.macros.entries) e.key: TextEditingController(text: _text(e.value))};
   late String _meal = widget.draft.meal, _dayKey = widget.draft.dayKey;
-  late final FoodItem? _item = widget.draft.item;
-  late String? _unitId = _item == null ? null : FoodScaling.unit(_item, widget.draft.unitId).id;
+  /// The food being logged. It only ever changes by gaining a portion the user defines here.
+  late FoodItem? _item = widget.draft.item;
+  late String? _unitId = widget.draft.item == null ? null : FoodScaling.unit(widget.draft.item!, widget.draft.unitId).id;
 
   /// Nutrients whose value is the user's own rather than the source's for this amount. Changing the amount
   /// rescales every other value and leaves these alone.
   late final Set<String> _corrected = {
-    if (_item != null && (widget.draft.quantity ?? 0) > 0)
-      for (final e in FoodScaling.scale(_item, widget.draft.quantity!, FoodScaling.unit(_item, widget.draft.unitId)).entries)
+    if (widget.draft.item != null && (widget.draft.quantity ?? 0) > 0)
+      for (final e in FoodScaling.scale(widget.draft.item!, widget.draft.quantity!, FoodScaling.unit(widget.draft.item!, widget.draft.unitId)).entries)
         if (widget.draft.macros[e.key] != e.value) e.key,
   };
   String? _error;
   bool _busy = false;
+
+  /// Counts portions defined here, so the unit list is rebuilt with the new one selected.
+  int _portions = 0;
 
   static String _text(double? v) => v == null ? '' : formatNumber2(v);
 
@@ -85,13 +89,45 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     }
   }
 
+  /// Says the same amount in another unit: 1 serving of 30 g becomes 30 g, never 1 g. Every unit offered for a
+  /// food is defined against the same basis, so the conversion always exists; a unit without one is not offered.
+  void _changeUnit(String? id) {
+    final item = _item, quantity = _amountEaten;
+    if (item == null || id == null || id == _unitId) return;
+    final from = FoodScaling.unit(item, _unitId), to = FoodScaling.unit(item, id);
+    if ((quantity ?? 0) > 0) _quantity.text = _text(FoodScaling.convert(quantity!, from, to));
+    _unitId = to.id;
+    _rescale();
+  }
+
+  /// "1 slice = 30 g": a portion of this food in the user's own words and with the user's own measure. It joins
+  /// the food's units here and on the copies of this food the user keeps. Nothing is logged by defining it.
+  Future<void> _definePortion() async {
+    final item = _item;
+    if (item == null) return;
+    final defined = await showDialog<(String, double)>(context: context, builder: (_) => _PortionDialog(item));
+    if (defined == null || !mounted) return;
+    final next = FoodScaling.withPortion(item, defined.$1, defined.$2);
+    final kept = [for (final r in ref.read(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted && r.value.item.key == item.key) r.value];
+    setState(() {
+      _item = next;
+      _portions++;
+      _changeUnit('serving:${next.servings.length - 1}');
+    });
+    await _guarded(() async {
+      for (final food in kept) {
+        await ref.read(savedFoodRepositoryProvider).keepPortions(food, next);
+      }
+    });
+  }
+
   FoodDraft _draft() {
     final item = _item;
     final quantity = _amountEaten;
     if (item != null && !((quantity ?? 0) > 0)) throw const InvalidFood('Enter how much you had, as a number above zero.');
     return FoodDraft(
         id: widget.draft.id, dayKey: _dayKey, meal: _meal, name: _name.text,
-        amount: item == null ? _amount.text : FoodScaling.amountText(quantity!, FoodScaling.unit(item, _unitId)),
+        amount: item == null ? _amount.text : FoodScaling.describe(item, quantity!, FoodScaling.unit(item, _unitId)),
         calories: _macro('calories'), protein: _macro('protein'), carbs: _macro('carbs'), fat: _macro('fat'), item: item, quantity: item == null ? null : quantity, unitId: _unitId);
   }
 
@@ -166,6 +202,11 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     final editing = widget.existing != null;
     final item = _item;
     final favourite = item != null && (ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]).any((r) => !r.value.isDeleted && r.value.isFavourite && r.value.item.key == item.key);
+    // "2 eggs (100 g)": what will be logged, in words. Null until there is a food and an amount above zero.
+    String? amountLine;
+    if (item != null && (_amountEaten ?? 0) > 0) {
+      amountLine = FoodScaling.describe(item, _amountEaten!, FoodScaling.unit(item, _unitId));
+    }
     // Side by side, or one under the other when the text is large or the phone narrow.
     final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
     Widget macro(String key, String label, String suffix) => TextField(
@@ -202,21 +243,30 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
         if (item == null)
           TextField(key: const Key('food-amount'), controller: _amount, textInputAction: TextInputAction.next,
               decoration: const InputDecoration(labelText: 'How much?', helperText: 'In your own words, for example "200 g" or "2 slices"'))
-        else
+        else ...[
           pair(
             TextField(
               key: const Key('food-quantity'), controller: _quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.next,
               onChanged: (_) => setState(_rescale), decoration: const InputDecoration(labelText: 'How much?'),
             ),
-            DropdownButtonFormField<String>(
-              key: const Key('food-unit'), initialValue: _unitId, isExpanded: true, decoration: const InputDecoration(labelText: 'Unit'), dropdownColor: context.c.surface,
-              items: [for (final u in FoodScaling.units(item)) DropdownMenuItem(value: u.id, child: Text(u.label, overflow: TextOverflow.ellipsis))],
-              onChanged: (u) => setState(() {
-                _unitId = u ?? _unitId;
-                _rescale();
-              }),
+            KeyedSubtree(
+              key: const Key('food-unit'),
+              child: DropdownButtonFormField<String>(
+                key: ValueKey(_portions), initialValue: _unitId, isExpanded: true, decoration: const InputDecoration(labelText: 'Unit'), dropdownColor: context.c.surface,
+                // The closed field shows the unit's name; the open list adds what one of them weighs.
+                selectedItemBuilder: (_) => [for (final u in FoodScaling.units(item)) Text(u.noun == null ? u.label : '${u.noun}${u.tail}', overflow: TextOverflow.ellipsis)],
+                items: [for (final u in FoodScaling.units(item)) DropdownMenuItem(key: Key('food-unit-${u.id}'), value: u.id, child: Text(u.menuLabel))],
+                onChanged: (u) => setState(() => _changeUnit(u)),
+              ),
             ),
           ),
+          // The amount in full, with its weight when the food states one, so the number and unit are read together.
+          if (amountLine != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(amountLine, key: const Key('food-amount-line'), style: context.sansStyle(15, weight: FontWeight.w600))),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(key: const Key('food-add-portion'), onPressed: _busy ? null : _definePortion, child: const Text('Add your own portion')),
+          ),
+        ],
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           key: const Key('food-meal'), initialValue: _meal, isExpanded: true, decoration: const InputDecoration(labelText: 'Meal'),
@@ -226,9 +276,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
         ),
         const SizedBox(height: 22),
         // The amount is spelled out with its unit: "1 g" and "1 cup" look the same in the number field alone.
-        SectionLabel(
-            item != null && (_amountEaten ?? 0) > 0 ? 'Nutrition for ${FoodScaling.amountText(_amountEaten!, FoodScaling.unit(item, _unitId))} · optional' : 'Nutrition for this amount · optional',
-            key: const Key('food-amount-echo')),
+        SectionLabel(amountLine == null ? 'Nutrition for this amount · optional' : 'Nutrition for $amountLine · optional', key: const Key('food-amount-echo')),
         const SizedBox(height: 6),
         Text(
             item == null
@@ -260,6 +308,61 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
           ),
         if (editing)
           Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('food-remove'), onPressed: _remove, icon: const Icon(Icons.delete_outline, size: 18), label: const Text('Remove this food'))),
+      ],
+    );
+  }
+}
+
+/// Asks for one portion of a food in the user's own terms. It returns the name and the amount, and changes nothing
+/// by itself. No amount is suggested: a weight is never guessed from what the food or the portion is called.
+class _PortionDialog extends StatefulWidget {
+  const _PortionDialog(this.item);
+  final FoodItem item;
+  @override
+  State<_PortionDialog> createState() => _PortionDialogState();
+}
+
+class _PortionDialogState extends State<_PortionDialog> {
+  final _name = TextEditingController(), _amount = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _amount.dispose();
+    super.dispose();
+  }
+
+  void _add() {
+    final name = _name.text.trim(), amount = parseNonNegative(_amount.text);
+    if (!RegExp(r'^[A-Za-z][A-Za-z \-]{0,23}$').hasMatch(name)) return setState(() => _error = 'Name one portion in a word or two, such as "slice" or "small bowl".');
+    if (FoodScaling.units(widget.item).any((u) => u.label.toLowerCase() == '1 ${name.toLowerCase()}')) return setState(() => _error = 'This food already has a portion called "$name".');
+    if (!((amount ?? 0) > 0) || amount! > 100000) return setState(() => _error = 'Enter how much one $name is, as a number above zero.');
+    Navigator.pop(context, (name, amount));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final measure = FoodScaling.portionMeasure(widget.item);
+    return AlertDialog(
+      actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
+      title: const Text('Add your own portion'),
+      content: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('For ${widget.item.name} only. Its nutrition values do not change, and nothing is logged.', style: context.caption),
+          const SizedBox(height: 14),
+          TextField(key: const Key('portion-name'), controller: _name, textInputAction: TextInputAction.next, decoration: const InputDecoration(labelText: 'One portion is called', hintText: 'slice')),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('portion-amount'), controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), onSubmitted: (_) => _add(),
+            decoration: InputDecoration(labelText: 'How much is one?', suffixText: measure),
+          ),
+          if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton(key: const Key('portion-add'), onPressed: _add, child: const Text('Add portion')),
       ],
     );
   }

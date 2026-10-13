@@ -49,11 +49,18 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     if (logged == true && mounted) Navigator.pop(context, true);
   }
 
+  /// A food found again (searched, scanned, or kept) with the portions the user defined on any copy of it they
+  /// kept or logged, so "1 slice = 30 g" is defined once.
+  FoodItem _withPortions(FoodItem item) => FoodScaling.withKnownPortions(item, [
+        for (final r in ref.read(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value.item,
+        for (final r in ref.read(foodJournalProvider).value ?? const <Stored<FoodEntry>>[]) if (!r.value.isDeleted && r.value.source?['item'] is Map) FoodItem(r.value.source!['item'] as Json),
+      ]);
+
   void _choose(Suggestion s) {
     final e = s.entry;
     // A food logged before starts from the same amount and values it was logged with, for the day and meal chosen now.
     _open(e == null
-        ? FoodDraft.of(s.item, dayKey: widget.dayKey, meal: widget.meal)
+        ? FoodDraft.of(_withPortions(s.item), dayKey: widget.dayKey, meal: widget.meal)
         : FoodDraft(dayKey: widget.dayKey, meal: widget.meal, name: e.name, amount: e.amountDescription, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat,
             item: e.source == null ? null : s.item, quantity: (e.source?['quantity'] as num?)?.toDouble(), unitId: e.source?['unit'] as String?));
   }
@@ -87,7 +94,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       final item = await ref.read(foodDiscoveryProvider).barcode(code);
       if (!mounted) return;
       setState(() => _lookingUp = null);
-      await _open(FoodDraft.of(item, dayKey: widget.dayKey, meal: widget.meal));
+      await _open(FoodDraft.of(_withPortions(item), dayKey: widget.dayKey, meal: widget.meal));
     } on LookupFailure catch (e) {
       if (!mounted) return;
       setState(() {

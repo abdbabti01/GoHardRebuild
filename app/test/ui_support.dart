@@ -33,7 +33,7 @@ Stored<T> stored<T>(T value, String kind, String id, Json body, {String state = 
 
 Future<List<Override>> overridesFor({required String day, List<Json> plans = const [], String? primaryPlanId, List<Json> workouts = const [], List<Json> sets = const [],
     List<Json> food = const [], bool foodFails = false, AppearanceStore? appearance, String profileAppearance = 'dark',
-    int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const []}) async {
+    int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const [], List<Json> runs = const []}) async {
   final sessions = SessionManager(MemorySecretStore());
   await sessions.signIn(authFor('one'));
   List<Stored<WorkoutSet>> setRows(String? workoutId) => [for (final s in sets) if (workoutId == null || s['workoutId'] == workoutId) stored(WorkoutSet(s), Kinds.set, s['id'] as String, s)];
@@ -52,7 +52,7 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     setsProvider.overrideWith((ref, id) => Stream.value(setRows(id))),
     runtimesProvider.overrideWith((ref) => Stream.value(const [])),
     foodProvider.overrideWith((ref, d) => foodFails ? Stream.error(StateError('disk')) : Stream.value([for (final f in food) if (f['dayKey'] == d) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
-    runsProvider.overrideWith((ref) => Stream.value(const [])),
+    runsProvider.overrideWith((ref) => Stream.value([for (final r in runs) stored(Run(r), Kinds.run, r['id'] as String, r)])),
     metricsProvider.overrideWith((ref) => Stream.value(const [])),
     proposalsProvider.overrideWith((ref) => Stream.value(const [])),
     catalogProvider.overrideWith((ref) => Stream.value(const [])),

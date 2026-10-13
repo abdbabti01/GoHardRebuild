@@ -134,6 +134,14 @@ class Connection extends Notifier<bool?> {
 
 final connectionProvider = NotifierProvider<Connection, bool?>(Connection.new);
 
+/// What Today and Me both say while that attempt has failed. The app knows only that the account did not answer
+/// properly: it cannot tell a phone without a connection from a server in trouble, so it never says "Offline".
+const cantSyncLabel = 'Can\'t sync right now';
+const cantSyncDetail = 'The last attempt to reach your account did not get through. That can be this phone\'s connection or the server.';
+
+/// "1 change waiting to sync": the real number of saved changes the account has not confirmed yet.
+String waitingToSync(int pending) => '$pending ${pending == 1 ? 'change' : 'changes'} waiting to sync';
+
 /// Pulls account state and pushes pending work. Safe to call often; never throws.
 Future<void> refreshFromAccount(WidgetRef ref) async {
   final sync = ref.read(syncProvider);

@@ -157,9 +157,15 @@ class MeScreen extends ConsumerWidget {
         const SizedBox(height: 4),
         ListRow(
           key: const Key('me-sync'),
-          icon: issues > 0 ? Icons.rule : pending > 0 ? Icons.phone_iphone : Icons.cloud_done_outlined,
-          title: issues > 0 ? '$issues saved ${issues == 1 ? 'change needs' : 'changes need'} review' : pending > 0 ? '$pending ${pending == 1 ? 'change' : 'changes'} saved on this phone, waiting to sync' : 'Everything is saved to your account',
-          subtitle: issues > 0 ? 'Nothing was lost. Tap to review.' : ref.watch(connectionProvider) == false ? 'Offline right now' : null,
+          icon: issues > 0 ? Icons.rule : pending > 0 ? Icons.phone_iphone : ref.watch(connectionProvider) == false ? Icons.cloud_off : Icons.cloud_done_outlined,
+          title: issues > 0
+              ? '$issues saved ${issues == 1 ? 'change needs' : 'changes need'} review'
+              : pending > 0
+                  ? '$pending ${pending == 1 ? 'change' : 'changes'} saved on this phone, waiting to sync'
+                  // With the account out of reach, "everything is saved" would claim more than is known.
+                  : ref.watch(connectionProvider) == false ? 'Nothing is waiting to sync' : 'Everything is saved to your account',
+          // The same words as Today's notice; tapping the row asks the account again.
+          subtitle: issues > 0 ? 'Nothing was lost. Tap to review.' : ref.watch(connectionProvider) == false ? '$cantSyncLabel · tap to try again' : null,
           onTap: issues > 0 ? () => push(context, const SyncReviewScreen()) : () => refreshFromAccount(ref),
         ),
         ListRow(

@@ -88,7 +88,7 @@ class TodayScreen extends ConsumerWidget {
           ),
 
           // --- What was actually recorded today. Absent when there is nothing to show.
-          if (snapshot != null && (snapshot.finishedToday.isNotEmpty || snapshot.runs.isNotEmpty)) Padding(padding: pad.copyWith(top: 24), child: _ActivitySection(snapshot)),
+          if (snapshot != null && (snapshot.finishedToday.isNotEmpty || snapshot.runs.any((r) => !r.isOpen))) Padding(padding: pad.copyWith(top: 24), child: _ActivitySection(snapshot)),
         ],
       ),
     );
@@ -121,7 +121,7 @@ class _ConnectionStatusState extends ConsumerState<_ConnectionStatus> {
             constraints: const BoxConstraints(minHeight: Targets.minimum),
             child: Row(children: [
               Expanded(
-                child: StatusLine(Icons.cloud_off, 'Can\'t reach your account${pending == 0 ? '' : ' · $pending ${pending == 1 ? 'change' : 'changes'} waiting to sync'}', tone: Tone.warning),
+                child: StatusLine(Icons.cloud_off, '$cantSyncLabel${pending == 0 ? '' : ' · ${waitingToSync(pending)}'}', tone: Tone.warning),
               ),
               Icon(_open ? Icons.expand_less : Icons.expand_more, size: 22, color: c.secondary),
             ]),
@@ -130,8 +130,7 @@ class _ConnectionStatusState extends ConsumerState<_ConnectionStatus> {
       ),
       if (_open) ...[
         Text(
-            'The last attempt to reach your account did not get through, because of this phone\'s connection or the server. '
-            'You are seeing what is saved on this phone. ${pending == 0 ? 'Nothing is waiting to sync.' : 'Your changes are kept here and sync by themselves once the account answers.'}',
+            '$cantSyncDetail You are seeing what is saved on this phone. ${pending == 0 ? 'Nothing is waiting to sync.' : 'Your changes are kept here and sync by themselves once the account answers.'}',
             style: context.caption),
         Align(alignment: Alignment.centerLeft, child: TextButton(key: const Key('today-connection-retry'), onPressed: () => refreshFromAccount(ref), child: const Text('Try again'))),
       ],
@@ -229,13 +228,15 @@ class _TrainingSection extends ConsumerWidget {
           true
         ),
     };
-    final runOpen = snapshot.runs.any((r) => r.isOpen);
+    // Any open run, whatever day it began: it is read from the saved records, so it is still here after a restart.
+    final runOpen = (ref.watch(runsProvider).value ?? const <Stored<Run>>[]).any((r) => r.value.isOpen);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       feature,
-      // Quiet ways to train outside the plan. An open run is continued, never started twice.
-      Wrap(children: [
+      const SizedBox(height: 10),
+      // Today's one way into running, on every kind of day. An open run is continued, never started twice.
+      Wrap(spacing: 4, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        SecondaryButton(runOpen ? 'Continue your run' : 'Start run', key: const Key('today-run'), icon: Icons.directions_run, expand: false, onPressed: () => startRunFlow(context, ref)),
         if (offerManual) TextButton(key: const Key('today-manual'), onPressed: () => startManualWorkout(context, ref), child: const Text('Start a manual workout')),
-        TextButton.icon(key: const Key('today-run'), onPressed: () => startRunFlow(context, ref), icon: const Icon(Icons.directions_run, size: 20), label: Text(runOpen ? 'Continue your run' : 'Start a run')),
       ]),
       // Workouts saved for later stay recoverable without taking over the day.
       for (final w in snapshot.parked)
@@ -356,11 +357,12 @@ class _ActivitySection extends ConsumerWidget {
             subtitle: '${w.isManual ? 'Manual workout' : 'Planned workout'} · ${WorkoutResultRules.label(w.outcome)}${w.performedSets > 0 ? ' · ${w.performedSets} set${w.performedSets == 1 ? '' : 's'}' : ''}',
             onTap: () => push(context, WorkoutDetailScreen(workoutId: w.id)),
           ),
+        // Finished runs only. A run still going is not recorded yet, and the button above is its one way back in.
         for (final r in snapshot.runs)
-          ListRow(
-            icon: Icons.directions_run, title: r.isOpen ? 'Run in progress' : 'Run',
-            subtitle: r.isOpen ? 'Tap to continue' : '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${(r.distanceMeters! / 1000).toStringAsFixed(2)} km'}',
-            onTap: r.isOpen ? () => push(context, RunScreen(runId: r.id)) : null,
-          ),
+          if (!r.isOpen)
+            ListRow(
+              icon: Icons.directions_run, title: 'Run',
+              subtitle: '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${(r.distanceMeters! / 1000).toStringAsFixed(2)} km'}',
+            ),
       ]);
 }

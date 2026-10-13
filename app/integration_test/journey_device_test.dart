@@ -155,7 +155,20 @@ void main() {
     expect(km, greaterThanOrEqualTo(0.03),
         reason: 'distance grows from real location readings. On screen: ${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').join(' | ')}');
     await binding.takeScreenshot('51-run-gps-distance');
+
+    // Leaving the run does not end it: Today offers to continue it, also after the app is closed and opened again.
+    await tester.pageBack();
+    await waitFor(tester, find.text('Continue your run'), what: 'the open run on Today');
+    expect(find.text('Start run'), findsNothing);
+    await settle(tester, 8); // let the page transition finish before the capture
+    await binding.takeScreenshot('51b-today-continue-run');
+    await app.main();
+    await waitFor(tester, find.text('Continue your run'), what: 'the same open run after a restart');
+    await tapKey(tester, 'today-run');
+    await waitFor(tester, find.byKey(const Key('run-gps-distance')), what: 'the same run, still measuring');
+    expect(double.parse(tester.widget<Text>(find.byKey(const Key('run-gps-distance'))).data!.split(' ').first), greaterThanOrEqualTo(km), reason: 'the distance measured before the restart is kept');
     await tapKey(tester, 'run-finish');
+    await waitFor(tester, find.text('Start run'), what: 'Today offering a new run once this one is finished');
     await waitFor(tester, find.textContaining(' km'), what: 'the finished run with its measured distance on Today');
     expect(find.textContaining('distance not recorded'), findsNothing);
     await binding.takeScreenshot('52-today-run-with-distance');

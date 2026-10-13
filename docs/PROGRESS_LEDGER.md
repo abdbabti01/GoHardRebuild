@@ -427,7 +427,7 @@ The pre-deploy command was also verified in the API's own container image agains
 catalog empty, and a failed step exits non-zero. Passing the whole command as one argument starts the web server
 instead of running either step.
 
-## 12 October 2026 — Today refined (branch `feature/today-refine`, not committed)
+## 12 October 2026 — Today refined (branch `feature/today-refine`)
 
 Today now holds the day's training action, a short nutrition summary and what was recorded; the week calendar is
 in Train › Plan only and Body measurements in Me only. The layout is described in `docs/DESIGN.md` ("Today: what it
@@ -466,4 +466,57 @@ so the script reported failure and the captures from 39 onward in that journey a
 
 Not checked: any physical phone (safe areas with a notch or home indicator, the phone's own largest text setting,
 real connectivity changes), and iPhone at all.
+
+## 13 October 2026 — run button, natural food units, shared sync wording, journey screenshots
+
+Second part of `feature/today-refine`. App and scripts only: the API, the contract and both database schemas are
+unchanged (the server stores a food as given, so the two new optional fields on a serving need nothing from it).
+
+| Change | Where |
+|---|---|
+| Today's run action is an outlined button with the running icon under the training card: "Start run" / "Continue your run". It shows on every kind of day, reads any open run from the saved records (so also after a restart or past midnight), and is the only way into a run on Today: a run still going is no longer also a row under "Recorded today" | `features/today/today_screen.dart` |
+| Counting units ("2 eggs", "½ slice", "2 cups, cooked", "1 serving (15 g)"), exact conversion when the unit changes, the amount spelled out with its weight before logging and in the journal, and portions the user defines themselves | `features/nutrition/food_item.dart` (`FoodScaling`), `food_form.dart`, `food_repository.dart`, `log_food_screen.dart`; rules in `docs/FOOD_DATA.md` |
+| "Can't sync right now" in Today and Me from one constant; Me no longer says "Offline right now", nor "Everything is saved to your account" while the account cannot be asked | `app/providers.dart`, `features/me/me_screen.dart`, `features/today/today_screen.dart` |
+| Journey screenshots are written to a fresh folder per run and copied into the evidence folder only after the journey passed, each copy read back; a file that stays locked fails the run by name | `app/test_driver/integration_test.dart`, `scripts/test-android.ps1` |
+
+Findings behind those changes:
+
+- **"Offline".** The app has no way to know it. `SyncEngine.pull()` returns false for a refused connection, a
+  timeout and any non-success answer alike, and nothing in the app watches the phone's connectivity. So no screen
+  claims it now. The connection logic itself was left alone: it reports what it knows (the last attempt failed),
+  and no defect was found in that. The food search screen still says "You are offline" when a lookup cannot reach
+  the server; that wording was outside this change and has the same weakness.
+- **1 serving becoming 1 g.** Reproduced as described on 12 October: the number stayed when the unit changed. The
+  unit list now converts, and because every unit offered is defined against the food's one basis there is no
+  pair of units without a conversion. A serving with no stated weight never offered grams and still does not.
+- **The screenshot lock.** Reproduced outside the journeys: rewriting the tracked PNGs while `git status` runs
+  fails a few times in every ten thousand writes with the same Windows error (1224, a file with a mapped section
+  open). Git maps a changed file into memory to hash it, and the editor's source-control view runs `git status`
+  whenever a file in the repository changes, which is exactly when a journey is writing its captures.
+- **Restart in a journey** means running the app's `main()` again in the same process, as `journey_food_test`
+  already did. The run, its clock and its measured distance are read back from the phone's database; an actual
+  process kill by the system is not exercised.
+
+Checked on the final code:
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` (the required final suite) | API build with warnings as errors, 83 of 83 API tests on disposable PostgreSQL, release publish, `flutter analyze` with no issues, 147 of 147 Flutter tests |
+| New Flutter tests | `food_test`: counting units and fractions; unit changes both ways with equal values; unknown conversions not offered; user-defined portions; a portion kept offline, across restart, to the account and on the favourite, with the earlier meal byte-for-byte unchanged. `food_ui_test`: unit change in the form; defining a portion; a food met again offers it; a draft survives a theme change. `widget_test`: the run button on a day without a plan and on a rest day with an open run; Today and Me wording |
+| Existing guideline tests (contrast, 48 px / 44 pt targets, labels) on the food form in six themes, and no overflow at twice the text size on 320 px | pass, now including the amount line and "Add your own portion" |
+| Design renders | regenerated and looked at: Today and the food form in six themes and at large text |
+| Android emulator, local API with recorded food responses | all seven journeys pass and exit 0, every capture fresh: secondary 13, main 26, food 13, offline 5, more 10, upgrade 3, device 4 |
+
+The device journey leaves an open run, sees "Continue your run", restarts, continues the same run with its
+distance kept, and finishes it (`screenshots/51b-today-continue-run.png`). The food journey changes one cup to
+158 g and back and defines "1 spoon = 20 g" (`93a-…`, `98b-…`). The offline journey reads the same words on Today
+and Me (`71-…`, `71b-…`).
+
+Twice during these runs the Flutter tool could not attach to the app on the emulator ("Service has disappeared",
+"taking an unusually long time to connect") before any step ran; no crash was recorded on the device. Restarting
+the emulator cleared it, and the affected journeys then passed.
+
+Still not checked, and not claimed: anything on a physical phone (notch and home-indicator safe areas, the phone's
+own largest text size, TalkBack or VoiceOver by ear, the on-screen keyboard over the portion dialog on a small
+phone, a real walk with GPS, real loss of signal) and anything on an iPhone beyond the unsigned build compiling.
 

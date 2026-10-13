@@ -113,10 +113,10 @@ size (390 × 844). With large text the page simply grows.
 | Part | What it shows | Where the rest lives |
 |---|---|---|
 | Workout card (`_Feature` in `features/today/today_screen.dart`) | State label, the workout's real name, exercise and set counts, up to three movement names, recorded-set progress while in progress, and one button (Start or Resume). The title row with its chevron opens the workout's sheet. | The week's calendar and its progress rail: Train › Plan. The full prescription: the sheet behind the title. |
-| Quiet actions under the card | "Start a manual workout" where a plan does not own the day, and "Start a run" ("Continue your run" while one is open). | Train › Workouts has both as buttons. |
+| Running, directly under the card | One outlined button with the running icon on every kind of day: "Start run", or "Continue your run" while any run is open (read from the saved records, so also after a restart or past midnight). It is Today's only way into a run; a run still going is not listed under "Recorded today". "Start a manual workout" sits beside it as a text link where a plan does not own the day. | Train › Workouts has both as buttons. |
 | Nutrition (`NutritionSummary` in `features/nutrition/nutrition_surface.dart`) | Calories and protein from the same coverage Eat reads, a goal rail only for a goal that was set, one line when values are missing, Log food. | Carbs, fat, the per-food list and the longer explanation: Eat (the missing-values line opens it). |
 | Recorded today | Workouts finished today and runs, in their own words ("Manual workout · Recorded · 1 set"). Absent when nothing was recorded. | Histories: Train and Me. Body measurements: Me. |
-| Account not reached | One line, with the number of changes still only on this phone; a tap opens the explanation and "Try again". | Changes that need a decision keep their notice above the navigation bar. |
+| Account not reached | One line, "Can't sync right now", with the number of changes still only on this phone; a tap opens the explanation and "Try again". Me's sync row uses the same words (`cantSyncLabel` in `app/providers.dart`). Neither says "Offline": the app knows an attempt failed, not whether the phone or the server was the cause. | Changes that need a decision keep their notice above the navigation bar. |
 
 The minutes on a due workout are the session length chosen in plan setup (`setup.minutesPerSession`), so they read
 "45 min planned", never "about 45 min": nothing is estimated from the exercises. The photograph is kept as a band

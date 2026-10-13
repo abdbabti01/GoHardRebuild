@@ -43,6 +43,20 @@ data can be wrong or out of date; the form says where each value came from and l
 - Values are for one basis: per 100 g, per 100 ml, or per serving. Only units that make sense are offered:
   grams for a per-100 g food, millilitres for a per-100 ml food, a named serving only when its weight (or volume) is
   stated. A gram is never treated as a millilitre, and a serving without a stated weight can only be counted.
+- **Units are counted the way the source names them** (`FoodScaling` in `features/nutrition/food_item.dart`). A
+  portion stated as one of something ("1 egg", "1 slice", "1 cup, cooked") is a counting unit: "2 eggs",
+  "½ slice", "2 cups, cooked". A size word stays as it is ("2 large"). A serving the source only weighed is
+  "1 serving (15 g)". A portion of several things ("2 biscuits (25 g)") is counted as that portion. Fractions are
+  allowed. A new entry starts at one of the first countable unit, otherwise 100 g or 100 ml.
+- **Changing the unit keeps the amount.** Every unit of a food is defined against the food's one basis, so any
+  two convert exactly (to the two decimals an amount has): one 30 g serving becomes 30 g, 45 g becomes 1.5
+  servings. A unit with no such definition is not offered at all, so "1 serving" can never turn into "1 g".
+- **No weight is ever taken from a food's name.** Where the source gives no usable portion, the user can add
+  their own ("1 slice = 30 g", or on a per-serving food "1 slice = 0.125 × 1 pizza") with **Add your own
+  portion**. It is stored on the food as a serving marked `definedBy: user`, used for that food only, and no
+  amount is pre-filled.
+- The form shows the amount in full, with its weight where known ("2 eggs (88 g)"), under the fields and in the
+  heading of the values. That text is what the journal keeps as the meal's amount.
 - Values stated on a different basis than the rest of the product are left unknown instead of being mixed in.
 - Energy given only in kilojoules is converted at 4.184 kJ per kcal.
 - Barcodes are text. Leading zeros are kept, and codes follow Open Food Facts' documented normalization (8 digits
@@ -54,6 +68,12 @@ The journal entry keeps its own copy of the food as it was, the amount and unit,
 per nutrient whether the value is the source's (`imported`), the user's (`entered`) or `unknown`. A later change at
 the provider, a refreshed cache or an edit to a saved food never changes a meal already logged. Editing a logged
 meal is the user's own action and goes through the normal revision check.
+
+A portion the user defines travels inside every copy of the food: the meal's own snapshot, the favourite or My
+food kept for it (updated when the portion is defined), and, through those, the same food found again by search or
+barcode. It syncs as part of those records; the server stores the food as given and needed no change. A meal
+logged earlier keeps its own snapshot, quantity, unit and wording: units are read from each snapshot, and the two
+added fields (`definedBy`, `ofServing`) are optional, so records from before them read exactly as they did.
 
 A value the user corrects stays theirs when the amount changes. "Save to My foods" keeps a corrected food as the
 user's own copy, with a note of what it was based on; the provider's record is not changed for anyone.

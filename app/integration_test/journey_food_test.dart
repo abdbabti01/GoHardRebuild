@@ -49,6 +49,15 @@ void main() {
     await j.tapKey('result-usda:2708402');
     await j.waitFor(find.byKey(const Key('food-source')), what: 'the food preview');
     expect((field('food-quantity'), field('food-calories')), ('1', '203.82'));
+    // One cup said in grams is that cup's 158 g, with the same values; and back again.
+    await j.waitFor(find.text('1 cup, cooked (158 g)'), what: 'the amount spelled out with its weight');
+    await j.tapKey('food-unit');
+    await j.tap(find.byKey(const Key('food-unit-g')).last);
+    expect((field('food-quantity'), field('food-calories')), ('158', '203.82'), reason: 'changing the unit keeps the amount');
+    await j.shot('93a-food-preview-cup-in-grams');
+    await j.tapKey('food-unit');
+    await j.tap(find.byKey(const Key('food-unit-serving:0')).last);
+    expect((field('food-quantity'), field('food-calories')), ('1', '203.82'));
     await j.type('food-quantity', '2');
     expect((field('food-calories'), field('food-protein')), ('407.64', '8.44'));
     await j.shot('93-food-preview-two-cups');
@@ -94,6 +103,14 @@ void main() {
     expect(find.textContaining('Open Food Facts'), findsWidgets);
     expect((field('food-quantity'), field('food-calories')), ('1', '80.85'));
     await j.shot('98-barcode-product');
+    // A portion in the user's own words: "1 spoon = 20 g". The 15 g already entered becomes three quarters of a spoon.
+    await j.tapKey('food-add-portion');
+    await j.type('portion-name', 'spoon');
+    await j.type('portion-amount', '20');
+    await j.tapKey('portion-add');
+    await j.waitFor(find.text('¾ spoon (15 g)'), what: 'the same amount in the new portion');
+    expect((field('food-quantity'), field('food-calories')), ('0.75', '80.85'));
+    await j.shot('98b-barcode-own-portion');
     await j.tapKey('food-save');
     await j.waitFor(find.textContaining('896.1 of 2,200 kcal'), what: 'the product in the total');
 

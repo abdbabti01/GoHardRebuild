@@ -68,10 +68,32 @@ try {
                 }
             }
         }
+        # Captures land in a new folder of their own (git-ignored, under build\). Nothing else has those files open,
+        # so writing them cannot collide with a git status that is hashing the tracked evidence folder.
+        $shots = Join-Path $AppDir "build\journey-shots\$journey-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        New-Item -ItemType Directory -Force $shots | Out-Null
+        $env:GOHARD_SHOT_DIR = $shots
         try {
             Step "Native journey '$journey' on $device against $ApiBase"
             flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase
             if ($LASTEXITCODE -ne 0) { Fail "The native journey '$journey' failed." }
+            # Only a journey that passed publishes evidence. Each capture is copied over the tracked one and read
+            # back; a file another program holds for a moment is retried, and one that stays locked fails the run
+            # by name rather than leaving an older picture in its place.
+            $captured = @(Get-ChildItem $shots -Filter *.png)
+            if ($captured.Count -eq 0) { Fail "The native journey '$journey' passed but saved no screenshots." }
+            foreach ($shot in $captured) {
+                $target = Join-Path $Root "docs\evidence\screenshots\$($shot.Name)"
+                $copied = $false
+                for ($try = 1; $try -le 40 -and -not $copied; $try++) {
+                    try {
+                        Copy-Item $shot.FullName $target -Force -ErrorAction Stop
+                        $copied = (Get-FileHash $target).Hash -eq (Get-FileHash $shot.FullName).Hash
+                    } catch { Start-Sleep -Milliseconds 500 }
+                }
+                if (-not $copied) { Fail "The screenshot $($shot.Name) could not be written to docs\evidence\screenshots (still locked after 20 seconds). The fresh capture is in $shots." }
+            }
+            Write-Host "    $($captured.Count) fresh screenshots from '$journey' copied to docs\evidence\screenshots" -ForegroundColor DarkGray
         } finally {
             if ($feeder) {
                 Stop-Job $feeder; Remove-Job $feeder

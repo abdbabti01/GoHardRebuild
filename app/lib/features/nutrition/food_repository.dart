@@ -24,7 +24,7 @@ class FoodDraft {
   factory FoodDraft.of(FoodItem item, {required String dayKey, required String meal}) {
     final (quantity, unit) = FoodScaling.initial(item);
     final scaled = FoodScaling.scale(item, quantity, unit);
-    return FoodDraft(dayKey: dayKey, meal: meal, name: item.name, amount: FoodScaling.amountText(quantity, unit),
+    return FoodDraft(dayKey: dayKey, meal: meal, name: item.name, amount: FoodScaling.describe(item, quantity, unit),
         calories: scaled['calories'], protein: scaled['protein'], carbs: scaled['carbs'], fat: scaled['fat'], item: item, quantity: quantity, unitId: unit.id);
   }
 
@@ -154,6 +154,10 @@ class SavedFoodRepository {
     }
     return _put(key, FoodItem(item), isFavourite);
   }
+
+  /// Gives a kept food the portions of `from`, another copy of the same food on which the user just defined one.
+  /// Only the list of portions changes: the kept food's name, values and favourite mark stay as they were.
+  Future<Receipt> keepPortions(SavedFood food, FoodItem from) => _put(food.id, FoodItem({...copyJson(food.item.j), 'servings': from.j['servings']}), food.isFavourite);
 
   /// Marks a food as a favourite. A provider food is kept as a copy of how it was when it was marked.
   Future<Receipt> favourite(FoodItem item, {SavedFood? existing}) => _put(existing?.id ?? SyncEngine.newId(), existing?.item ?? item, true);

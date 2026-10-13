@@ -178,7 +178,7 @@ not in the profile: add the device, regenerate the profile, update the secret an
 - [ ] **Saving data:** Me shows "Everything is saved to your account". Sign out, sign in again: everything is still there.
 - [ ] **Restart:** start a workout, record a set, swipe the app away, reopen: Today offers "Resume workout" with the set.
 - [ ] **Offline:** airplane mode, record a set, turn it off again: Me returns to "Everything is saved".
-- [ ] **Running:** Today → Start a run → allow location → walk outside for a minute: distance rises; finish; the run
+- [ ] **Running:** Today → Start run → allow location → walk outside for a minute: distance rises; finish; the run
       shows time and distance. There is **no map**. Distance is measured only while the run screen is open.
 - [ ] **Reminders:** Me → Workout reminders → allow notifications → set a time a few minutes ahead on a day with a
       planned workout: a notification arrives. Pause the plan: no reminder.

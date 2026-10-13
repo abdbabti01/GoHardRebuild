@@ -32,8 +32,8 @@ void main() {
       expect(FoodScaling.scale(item, 30, units[0]), {'calories': 161.7, 'protein': 1.89, 'carbs': 17.25, 'fat': 9.27});
       expect(FoodScaling.scale(item, 2, units[1]), FoodScaling.scale(item, 30, units[0]), reason: 'two 15 g servings are 30 g');
       final (quantity, unit) = FoodScaling.initial(item);
-      expect((quantity, unit.label, FoodScaling.amountText(quantity, unit)), (1, '15 g', '15 g'));
-      expect(FoodScaling.amountText(2, unit), '2 × 15 g');
+      expect((quantity, unit.label, FoodScaling.amountText(quantity, unit)), (1, '15 g', '1 serving (15 g)'));
+      expect(FoodScaling.amountText(2, unit), '2 servings (15 g each)');
       expect(FoodScaling.amountText(150, units[0]), '150 g');
     });
 
@@ -65,6 +65,81 @@ void main() {
       final bar = food(FoodItem.perServing, servings: [{'label': '1 bar', 'grams': 40, 'milliliters': null}]);
       expect([for (final u in FoodScaling.units(bar)) u.id], ['serving:0', 'g']);
       expect(FoodScaling.scale(bar, 20, FoodScaling.unit(bar, 'g'))['calories'], 50);
+    });
+
+    test('counting units read the way people count: eggs, slices, cups, halves', () {
+      Json serving(String label, [num? grams]) => {'label': label, 'grams': grams, 'milliliters': null};
+      final egg = food(FoodItem.per100g, nutrients: {'calories': 143, 'protein': 12.6, 'carbs': 0.7, 'fat': null},
+          servings: [serving('1 large', 50), serving('1 egg', 44), serving('1 cup, cooked', 158), serving('2 biscuits (25 g)', 25), serving('1 slice', 30), serving('1 loaf', 400), serving('1 berry', 5), serving('1 packet')]);
+      final units = {for (final u in FoodScaling.units(egg)) u.label: u};
+      expect(units.keys, isNot(contains('1 packet')), reason: 'a packet nobody weighed cannot be a unit of a food measured by weight');
+      String said(double q, String label) => FoodScaling.amountText(q, units[label]!);
+
+      expect([said(1, '1 egg'), said(2, '1 egg'), said(0.5, '1 egg'), said(1.5, '1 egg'), said(2.2, '1 egg')], ['1 egg', '2 eggs', '½ egg', '1½ eggs', '2.2 eggs']);
+      expect([said(2, '1 slice'), said(0.25, '1 slice'), said(2, '1 loaf'), said(3, '1 berry')], ['2 slices', '¼ slice', '2 loaves', '3 berries']);
+      expect(said(2, '1 large'), '2 large', reason: 'a size is not turned into a noun');
+      expect(said(2, '1 cup, cooked'), '2 cups, cooked');
+      expect([said(1, '2 biscuits (25 g)'), said(3, '2 biscuits (25 g)')], ['2 biscuits (25 g)', '3 × 2 biscuits (25 g)'], reason: 'a portion of several things is counted as that portion');
+      expect(FoodScaling.amountText(2, FoodScaling.unit(food(FoodItem.per100ml, servings: [{'label': '1 can (330 ml)', 'grams': null, 'milliliters': 330}]), 'serving:0')), '2 cans (330 ml each)');
+
+      // The list of units says what one of them weighs; the first countable one is where a new entry starts.
+      expect((units['1 egg']!.menuLabel, units['1 cup, cooked']!.menuLabel, units['g']!.menuLabel), ('egg · 44 g each', 'cup, cooked · 158 g each', 'g'));
+      final (quantity, unit) = FoodScaling.initial(egg);
+      expect((quantity, unit.label), (1, '1 large'));
+
+      // Two eggs are 88 g of this food, and get exactly the values of 88 g.
+      expect(FoodScaling.measured(egg, 2, units['1 egg']!), '88 g');
+      expect(FoodScaling.scale(egg, 2, units['1 egg']!), FoodScaling.scale(egg, 88, units['g']!));
+      expect(FoodScaling.scale(egg, 0.5, units['1 egg']!), {'calories': 31.46, 'protein': 2.77, 'carbs': 0.15, 'fat': null}, reason: 'half an egg; unknown fat stays unknown');
+    });
+
+    test('changing the unit keeps the amount: a 30 g serving becomes 30 g, never 1 g, and back again', () {
+      final cereal = food(FoodItem.per100g, servings: [{'label': '1 serving', 'grams': 30, 'milliliters': null}, {'label': '1 scoop', 'grams': 12.5, 'milliliters': null}]);
+      final g = FoodScaling.unit(cereal, 'g'), serving = FoodScaling.unit(cereal, 'serving:0'), scoop = FoodScaling.unit(cereal, 'serving:1');
+      expect(FoodScaling.convert(1, serving, g), 30);
+      expect(FoodScaling.convert(45, g, serving), 1.5);
+      expect(FoodScaling.convert(2, scoop, g), 25);
+      expect(FoodScaling.convert(2, serving, scoop), 4.8, reason: 'between two counted units, through the weight they share');
+      expect(FoodScaling.convert(FoodScaling.convert(2.5, serving, g), g, serving), 2.5);
+      expect(FoodScaling.scale(cereal, FoodScaling.convert(1, serving, g), g), FoodScaling.scale(cereal, 1, serving), reason: 'the same food, so the same values');
+
+      final juice = food(FoodItem.per100ml, servings: [{'label': '1 glass', 'grams': null, 'milliliters': 200}]);
+      expect(FoodScaling.convert(1.5, FoodScaling.unit(juice, 'serving:0'), FoodScaling.unit(juice, 'ml')), 300);
+
+      // A food measured per serving converts only when that serving has a stated weight.
+      final bar = food(FoodItem.perServing, servings: [{'label': '1 bar', 'grams': 40, 'milliliters': null}]);
+      expect(FoodScaling.convert(1, FoodScaling.unit(bar, 'serving:0'), FoodScaling.unit(bar, 'g')), 40);
+      expect(FoodScaling.convert(20, FoodScaling.unit(bar, 'g'), FoodScaling.unit(bar, 'serving:0')), 0.5);
+      final jar = food(FoodItem.perServing, servings: [{'label': '1 jar', 'grams': null, 'milliliters': null}], source: 'user');
+      expect([for (final u in FoodScaling.units(jar)) u.id], ['serving:0'], reason: 'no weight is known, so grams are not offered and nothing can be reinterpreted');
+      expect(FoodScaling.unit(jar, 'g').id, 'serving:0', reason: 'asking for a unit the food does not have falls back to its own, never to a bare number of grams');
+      expect(FoodScaling.measured(jar, 2, FoodScaling.unit(jar, 'serving:0')), isNull);
+    });
+
+    test('a portion the user defines is theirs, explicit, and travels with the food', () {
+      final bread = food(FoodItem.per100g, servings: [{'label': '1 packet', 'grams': null, 'milliliters': null}], id: 'bread');
+      expect([for (final u in FoodScaling.units(bread)) u.id], ['g']);
+      final sliced = FoodScaling.withPortion(bread, ' slice ', 32.5);
+      expect(bread.servings.length, 1, reason: 'the original food is not changed');
+      final slice = FoodScaling.unit(sliced, 'serving:1');
+      expect((slice.label, slice.menuLabel, sliced.servings.last.isUserDefined, sliced.servings.first.isUserDefined), ('1 slice', 'slice · 32.5 g each', true, false));
+      expect((FoodScaling.amountText(2, slice), FoodScaling.convert(2, slice, FoodScaling.unit(sliced, 'g')), FoodScaling.scale(sliced, 2, slice)['calories']), ('2 slices', 65, 65));
+
+      // On a food measured per serving, a portion is a share of that serving.
+      final pizza = food(FoodItem.perServing, nutrients: {'calories': 800, 'protein': null, 'carbs': 96, 'fat': 0}, servings: [{'label': '1 pizza', 'grams': null, 'milliliters': null}], source: 'user', id: 'pizza');
+      final cut = FoodScaling.withPortion(pizza, 'slice', 0.125);
+      expect(FoodScaling.portionMeasure(pizza), '× 1 pizza');
+      expect(FoodScaling.scale(cut, 3, FoodScaling.unit(cut, 'serving:1')), {'calories': 300, 'protein': null, 'carbs': 36, 'fat': 0});
+      expect(FoodScaling.convert(4, FoodScaling.unit(cut, 'serving:1'), FoodScaling.unit(cut, 'serving:0')), 0.5);
+
+      // Met again from a search: only the user's portions of the same food are added, once.
+      final fresh = FoodScaling.withKnownPortions(bread, [sliced, sliced, FoodScaling.withPortion(food(FoodItem.per100g, id: 'other'), 'wedge', 50), pizza]);
+      expect([for (final s in fresh.servings) s.label], ['1 packet', '1 slice']);
+      expect(identical(FoodScaling.withKnownPortions(bread, [bread]).j, bread.j), true, reason: 'nothing to add leaves the food as it was');
+
+      // A food from before portions could be defined reads exactly as it did.
+      final old = FoodItem({'source': 'usda', 'sourceId': '7', 'name': 'Rice', 'basis': '100g', 'nutrients': {'calories': 129}, 'servings': [{'label': '1 cup, cooked', 'grams': 158, 'milliliters': null}]});
+      expect((old.servings.single.isUserDefined, old.servings.single.ofServing, FoodScaling.scale(old, 2, FoodScaling.unit(old, 'serving:0'))['calories']), (false, null, 407.64));
     });
 
     test('barcodes stay text and follow the documented normalization', () {
@@ -153,6 +228,54 @@ void main() {
       // Opening it again to edit starts from what was logged, corrections included.
       final again = FoodDraft.edit(entry);
       expect((again.quantity, again.unitId, again.protein, again.item!.name), (30, 'g', 2, 'Nutella'));
+    });
+
+    test('a defined portion is kept offline and across restart, reaches the account, joins the saved food, and rewrites no earlier meal', () async {
+      final journal = FoodRepository(h.sync, owner);
+      final saved = SavedFoodRepository(h.sync, owner);
+      // Last week, before any portion existed: two 15 g servings, in the words that version wrote.
+      await journal.save(FoodDraft.of(nutella(), dayKey: '2026-10-02', meal: 'Breakfast')
+        ..quantity = 2
+        ..amount = '2 × 15 g'
+        ..calories = 161.7);
+      await saved.favourite(nutella());
+      await h.sync.flush();
+      final before = jsonEncode((await h.bodies(owner, Kinds.food)).single);
+
+      // Today, with no connection: "1 spoon = 20 g" is defined, kept on the favourite, and one and a half are logged.
+      h.server.offline = true;
+      final spooned = FoodScaling.withPortion(nutella(), 'spoon', 20);
+      await saved.keepPortions(SavedFood((await h.bodies(owner, Kinds.savedFood)).single), spooned);
+      final spoon = FoodScaling.unit(spooned, 'serving:1');
+      final values = FoodScaling.scale(spooned, 1.5, spoon);
+      await journal.save(FoodDraft(dayKey: '2026-10-09', meal: 'Snack', name: 'Nutella', amount: FoodScaling.amountText(1.5, spoon),
+          calories: values['calories'], protein: values['protein'], carbs: values['carbs'], fat: values['fat'], item: spooned, quantity: 1.5, unitId: spoon.id));
+      await h.restart();
+
+      final entries = [for (final j in await h.bodies(owner, Kinds.food)) FoodEntry(j)];
+      final today = entries.singleWhere((e) => e.dayKey == '2026-10-09'), lastWeek = entries.singleWhere((e) => e.dayKey == '2026-10-02');
+      expect((today.amountDescription, today.calories, today.source!['quantity'], today.source!['unit']), ('1½ spoons', 161.7, 1.5, 'serving:1'));
+      expect(today.j['provenance'], {'calories': 'imported', 'protein': 'imported', 'carbs': 'imported', 'fat': 'imported'}, reason: 'the values are the source\'s for 30 g');
+      final kept = FoodItem(today.source!['item'] as Json).servings.last;
+      expect((kept.label, kept.grams, kept.isUserDefined), ('1 spoon', 20, true));
+      expect(jsonEncode(lastWeek.j), before, reason: 'the earlier meal keeps its own quantity, unit, words and values');
+      expect((FoodDraft.edit(lastWeek).quantity, FoodDraft.edit(lastWeek).unitId, FoodItem(lastWeek.source!['item'] as Json).servings.length), (2, 'serving:0', 1));
+
+      final favourite = SavedFood((await h.bodies(owner, Kinds.savedFood)).single);
+      expect((favourite.isFavourite, favourite.item.source), (true, 'off'));
+      expect([for (final s in favourite.item.servings) s.label], ['15 g', '1 spoon']);
+
+      // Back online: the definition is in what the account receives, for the meal and for the favourite.
+      h.server.offline = false;
+      await h.sync.flush();
+      expect(await h.sync.commands(owner), isEmpty);
+      final sentServing = (((sent('/food-entries', 1)['source'] as Json)['item'] as Json)['servings'] as List).last as Json;
+      expect(sentServing, {'label': '1 spoon', 'grams': 20, 'milliliters': null, 'definedBy': 'user'});
+      expect(((h.server.savedFoods[favourite.id]!['item'] as Json)['servings'] as List).length, 2);
+
+      // The food found again by search carries the portion; someone else's copy of it does not.
+      final again = FoodScaling.withKnownPortions(nutella(), [favourite.item, for (final e in entries) if (e.source != null) FoodItem(e.source!['item'] as Json)]);
+      expect([for (final u in FoodScaling.units(again)) u.menuLabel], ['g', 'serving (15 g)', 'spoon · 20 g each']);
     });
 
     test('an entry typed by hand is sent exactly as an app from before food lookup sent it', () async {

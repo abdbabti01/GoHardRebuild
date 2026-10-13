@@ -67,7 +67,7 @@ void main() {
     final scroll = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(find.text('Log food'), 200, scrollable: scroll);
     expect(find.text('Some nutrition values are missing'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Start a run'), -200, scrollable: scroll);
+    await tester.scrollUntilVisible(find.text('Start run'), -200, scrollable: scroll);
     for (final tab in ['train', 'eat', 'me']) {
       await tester.tap(find.byKey(Key('nav-$tab')));
       await tester.pumpAndSettle();
@@ -153,12 +153,43 @@ void main() {
       expect(find.byKey(const Key('today-connection')), findsNothing, reason: 'nothing is claimed before an attempt has failed');
       container.read(connectionProvider.notifier).report(false);
       await tester.pumpAndSettle();
-      expect(find.text('Can\'t reach your account'), findsOneWidget);
+      expect(find.text('Can\'t sync right now'), findsOneWidget);
+      expect(find.textContaining('Offline'), findsNothing, reason: 'a failed attempt does not prove the phone is offline');
       expect(find.text('Try again'), findsNothing);
       await tester.tap(find.byKey(const Key('today-connection')));
       await tester.pumpAndSettle();
       expect(find.textContaining('saved on this phone'), findsOneWidget);
       expect(find.text('Try again'), findsOneWidget);
+
+      // Me says the same thing in the same words, and does not claim the account has everything while it cannot be asked.
+      await tester.tap(find.byKey(const Key('nav-me')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.byKey(const Key('me-sync')), 300, scrollable: find.byType(Scrollable).last);
+      expect(find.text('Can\'t sync right now · tap to try again'), findsOneWidget);
+      expect(find.text('Everything is saved to your account'), findsNothing);
+      expect(find.textContaining('Offline'), findsNothing);
+    });
+
+    testWidgets('running has one clear button on every kind of day, and an open run is continued', (tester) async {
+      Json run(String id, String startedDay, {bool open = true}) => {
+            'id': id, 'dayKey': startedDay, 'startedAtUtc': '${startedDay}T07:00:00Z', 'finishedAtUtc': open ? null : '${startedDay}T07:30:00Z',
+            'activeDurationSeconds': open ? null : 1800, 'distanceMeters': open ? null : 5000, 'isDeleted': false,
+          };
+      // No plan at all.
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day)) ?? []);
+      expect(find.widgetWithText(OutlinedButton, 'Start run'), findsOneWidget);
+      expect(tester.getSize(find.byKey(const Key('today-run'))).height, greaterThanOrEqualTo(48));
+      expect(tester.getTopLeft(find.byKey(const Key('today-run'))).dy, lessThan(tester.getTopLeft(find.text('Nutrition')).dy), reason: 'between the training card and nutrition');
+
+      // A rest day of a plan, with a run begun yesterday and still open (as after closing and reopening the app).
+      final plan = blockPlan(start: '2026-09-22', recorded: 8);
+      await pumpApp(tester, await tester.runAsync(() => overridesFor(day: day, plans: [plan], primaryPlanId: 'p1', runs: [run('r1', '2026-10-10'), run('r0', day, open: false)])) ?? []);
+      expect(find.text('Rest today'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Continue your run'), findsOneWidget);
+      expect(find.text('Start run'), findsNothing, reason: 'an open run is never started twice');
+      expect(find.text('Run in progress'), findsNothing, reason: 'one way into the open run, not two');
+      expect(find.text('Run'), findsOneWidget, reason: 'the finished run is listed as recorded');
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('unknown stays a dash and a goal never gets a remainder from a partial sum', (tester) async {

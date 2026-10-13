@@ -64,6 +64,14 @@ class RecordingSavedFoods implements SavedFoodRepository {
     return _receipt;
   }
 
+  final portioned = <({SavedFood food, FoodItem from})>[];
+
+  @override
+  Future<Receipt> keepPortions(SavedFood food, FoodItem from) async {
+    portioned.add((food: food, from: from));
+    return _receipt;
+  }
+
   @override
   Future<Receipt> remove(SavedFood food) async => _receipt;
 }

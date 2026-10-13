@@ -16,6 +16,7 @@ import 'package:gohard_rebuild/features/me/me_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/barcode_scan_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/food_discovery.dart';
 import 'package:gohard_rebuild/features/nutrition/food_form.dart';
+import 'package:gohard_rebuild/features/nutrition/food_item.dart';
 import 'package:gohard_rebuild/features/nutrition/food_repository.dart';
 import 'package:gohard_rebuild/features/nutrition/log_food_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/nutrient_coverage.dart';
@@ -128,7 +129,7 @@ void main() {
       fakes.journal.hold!.complete();
       await tester.pumpAndSettle();
       expect(fakes.journal.saved.length, 1);
-      expect((fakes.journal.saved.single.meal, fakes.journal.saved.single.amount), ('Snack', '15 g'));
+      expect((fakes.journal.saved.single.meal, fakes.journal.saved.single.amount), ('Snack', '1 serving (15 g)'));
     });
 
     testWidgets('camera refused: typing the barcode works; an unknown product says so and leads to manual entry', (tester) async {
@@ -225,6 +226,87 @@ void main() {
       await _tap(tester, 'food-save');
       expect(find.textContaining('a number above zero'), findsOneWidget);
       expect(fakes.journal.saved, isEmpty);
+    });
+
+    testWidgets('changing the unit says the same amount in the new unit, both ways, and the values do not move', (tester) async {
+      final cereal = FoodItem({'source': 'usda', 'sourceId': 'c1', 'name': 'Bran flakes', 'basis': '100g', 'nutrients': {'calories': 360, 'protein': 10, 'carbs': 70, 'fat': null},
+        'servings': [{'label': '1 serving', 'grams': 30, 'milliliters': null}]});
+      final fakes = FoodFakes();
+      await pumpApp(tester, await _overrides(tester, fakes), home: FoodFormScreen(draft: FoodDraft.of(cereal, dayKey: _day, meal: 'Breakfast')), size: const Size(390, 1500));
+      Future<void> choose(String unitId) async {
+        await _tap(tester, 'food-unit');
+        await tester.tap(find.byKey(Key('food-unit-$unitId')).last);
+        await tester.pumpAndSettle();
+      }
+
+      expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('1', '108'));
+      expect(find.text('1 serving (30 g)'), findsOneWidget, reason: 'the amount is spelled out with what it weighs');
+      expect(find.text('Nutrition for 1 serving (30 g) · optional'), findsOneWidget);
+
+      await choose('g');
+      expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories'), _field(tester, 'food-fat')), ('30', '108', ''), reason: 'one 30 g serving is 30 g, not 1 g; unknown fat stays blank');
+      expect(find.text('Nutrition for 30 g · optional'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('food-quantity')), '45');
+      await tester.pumpAndSettle();
+      await choose('serving:0');
+      expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('1.5', '162'));
+      expect(find.text('1½ servings (45 g)'), findsOneWidget);
+
+      await _tap(tester, 'food-save');
+      final logged = fakes.journal.saved.single;
+      expect((logged.amount, logged.quantity, logged.unitId, logged.calories, logged.fat), ('1½ servings (45 g)', 1.5, 'serving:0', 162, null));
+    });
+
+    testWidgets('a portion is defined in the user\'s own words, becomes the unit with the amount kept, and joins the kept copy of the food', (tester) async {
+      final fakes = FoodFakes();
+      await pumpApp(tester, await _overrides(tester, fakes, savedFoods: [savedFood('s-nut', hazelnutSpread(), favourite: true)]),
+          home: FoodFormScreen(draft: FoodDraft.of(hazelnutSpread(), dayKey: _day, meal: 'Snack')), size: const Size(390, 1500));
+      await tester.enterText(find.byKey(const Key('food-quantity')), '4');   // four 15 g servings
+      await tester.pumpAndSettle();
+
+      await _tap(tester, 'food-add-portion');
+      expect(_field(tester, 'portion-amount'), '', reason: 'no weight is suggested from the name of the food or the portion');
+      await tester.enterText(find.byKey(const Key('portion-name')), 'spoon');
+      await _tap(tester, 'portion-add');
+      expect(find.textContaining('how much one spoon is'), findsOneWidget, reason: 'a portion without an amount is not accepted');
+      await tester.enterText(find.byKey(const Key('portion-amount')), '20');
+      await _tap(tester, 'portion-add');
+
+      expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('3', '323.4'), reason: '60 g is three 20 g spoons, with the values of 60 g');
+      expect(find.text('3 spoons (60 g)'), findsOneWidget);
+      expect(fakes.journal.saved, isEmpty, reason: 'defining a portion logs nothing');
+      expect((fakes.savedFoods.portioned.single.food.id, fakes.savedFoods.portioned.single.from.servings.last.label), ('s-nut', '1 spoon'));
+
+      await tester.enterText(find.byKey(const Key('food-quantity')), '0.5');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'food-save');
+      final logged = fakes.journal.saved.single;
+      expect((logged.amount, logged.quantity, logged.unitId, logged.calories, logged.item!.servings.last.isUserDefined), ('½ spoon (10 g)', 0.5, 'serving:1', 53.9, true));
+    });
+
+    testWidgets('a food met again offers the portion defined on its kept copy; a draft survives a change of theme', (tester) async {
+      final spooned = FoodScaling.withPortion(hazelnutSpread(), 'spoon', 20);
+      final fakes = FoodFakes(discovery: ScriptedDiscovery(products: {'3017620422003': hazelnutSpread()}), cameraRefused: true);
+      final container = await pumpApp(tester, await _overrides(tester, fakes, savedFoods: [savedFood('s-mine', FoodItem({...spooned.j, 'source': 'user', 'sourceId': 's-mine'})), savedFood('s-nut', spooned, favourite: true)]),
+          home: const LogFoodScreen(dayKey: _day, meal: 'Snack'), size: const Size(390, 1600));
+      await _tap(tester, 'food-scan');
+      await tester.enterText(find.byKey(const Key('barcode-typed')), '3017620422003');
+      await _tap(tester, 'barcode-typed-submit');
+      expect(find.byKey(const Key('food-source')), findsOneWidget);
+      await _tap(tester, 'food-unit');
+      expect(find.text('spoon · 20 g each'), findsWidgets, reason: 'the provider\'s fresh copy has the user\'s portion again');
+      await tester.tap(find.byKey(const Key('food-unit-serving:1')).last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('food-quantity')), '2.5');
+      await tester.pumpAndSettle();
+
+      container.read(appearanceProvider.notifier).setMode(ThemeMode.dark);
+      container.read(appearanceProvider.notifier).setAccent(Accent.pink);
+      await tester.pumpAndSettle();
+      expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('2.5', '269.5'), reason: 'changing the look leaves the open draft alone');
+      expect(find.text('2½ spoons (50 g)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('search that is not set up on the server says so before anything is asked', (tester) async {
