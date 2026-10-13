@@ -346,9 +346,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                 return Padding(
                   padding: const EdgeInsets.only(top: 14),
                   child: p.planned == null
-                      ? Text('${p.recorded} ${p.recorded == 1 ? 'set' : 'sets'} recorded', style: context.caption)
+                      ? Text('${p.recorded} ${p.recorded == 1 ? 'set' : 'sets'} recorded', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400))
                       : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('${p.counted} of ${p.planned} planned sets recorded', style: context.caption),
+                          Text('${p.counted} of ${p.planned} planned sets recorded', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
                           const SizedBox(height: 6),
                           ProgressRail(p.fraction, label: 'Planned sets recorded', height: 6),
                         ]),
@@ -359,15 +359,15 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                 EmptyState('No movements yet', 'Add a movement to start recording sets.',
                     action: SecondaryButton('Add a movement', icon: Icons.add, onPressed: () => _menu('add', workout, null)))
               else ...[
-                SectionLabel('Movement ${exercises.indexOf(selected) + 1} of ${exercises.length}${selected.isPrescribed ? '' : ' · extra'}'),
+                Overline('Movement ${exercises.indexOf(selected) + 1} of ${exercises.length}${selected.isPrescribed ? '' : ' · extra'}'),
                 const SizedBox(height: 6),
                 Heading(selected.name, size: 28),
                 if (selected.substitutedForKey != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text('Recorded as ${selected.name}, in place of the planned movement.', style: context.caption)),
                 const SizedBox(height: 8),
-                Text('Target · ${selected.target}', style: context.sansStyle(15, color: context.c.secondary)),
+                Text('Target · ${selected.target}', style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400)),
                 Text(
                   previous == null ? 'No previous record for this movement.' : 'Last time (${shortDate(previous.dayKey)}) · ${previous.sets.map((s) => setText(s, unit)).join(', ')}',
-                  style: context.sansStyle(15, color: context.c.secondary),
+                  style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400),
                 ),
                 const SizedBox(height: 16),
                 if (rest != null)
@@ -375,7 +375,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Panel(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        SectionLabel(rest == 0 ? 'Rest ended' : 'Rest${runtime.restExerciseId != selected.id ? ' · from the previous movement' : ''}'),
+                        Overline(rest == 0 ? 'Rest ended' : 'Rest${runtime.restExerciseId != selected.id ? ' · from the previous movement' : ''}'),
                         Semantics(
                           label: rest == 0 ? 'Rest ended' : 'Rest, ${durationText(rest)} left',
                           child: ExcludeSemantics(child: Text(clockText(rest), key: const Key('rest-clock'), style: context.sansStyle(context.display(70), weight: FontWeight.w300).copyWith(height: 1.05, fontFeatures: const [FontFeature.tabularFigures()]))),
@@ -387,7 +387,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                       ]),
                     ),
                   ),
-                SectionLabel('Set ${mine.length + 1}'),
+                Overline('Set ${mine.length + 1}'),
                 const SizedBox(height: 8),
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(
@@ -414,30 +414,39 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                   }),
                 ],
                 const SizedBox(height: 22),
-                const SectionLabel('Recorded sets'),
-                if (mine.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('None yet. Targets and suggestions are not recorded sets.', style: context.caption)),
-                for (final (i, r) in mine.indexed)
-                  ListRow(
-                    key: Key('set-row-$i'),
-                    title: '${i + 1}.  ${setText(r.value, unit)}',
-                    subtitle: r.needsReview ? 'Needs review' : r.isPending ? 'Saved on this phone · sync pending' : null,
-                    trailing: Icon(Icons.edit_outlined, size: 20, color: context.c.secondary),
-                    onTap: () => _editSet(r.value, selected),
-                  ),
+                const Overline('Recorded sets'),
+                const SizedBox(height: 8),
+                if (mine.isEmpty)
+                  Text('None yet. Targets and suggestions are not recorded sets.', style: context.caption)
+                else
+                  GroupCard(children: [
+                    for (final (i, r) in mine.indexed)
+                      GroupRow(
+                        key: Key('set-row-$i'),
+                        title: '${i + 1}.  ${setText(r.value, unit)}',
+                        subtitle: r.needsReview ? 'Needs review' : r.isPending ? 'Saved on this phone · sync pending' : null,
+                        trailing: Icon(Icons.edit_outlined, size: 20, color: context.c.secondary),
+                        onTap: () => _editSet(r.value, selected),
+                      ),
+                  ]),
               ],
               const SizedBox(height: 26),
-              const SectionLabel('All movements'),
-              for (final e in exercises)
-                ListRow(
-                  key: Key('exercise-row-${e.ordinal}'),
-                  title: e.name,
-                  subtitle: '${setsOf(e.id).length}${e.targetSets == null ? '' : ' of ${e.targetSets}'} sets recorded${e.id == selected?.id ? ' · current' : ''}',
-                  trailing: e.id == selected?.id ? Icon(Icons.radio_button_checked, size: 20, color: context.c.accent) : null,
-                  onTap: e.id == selected?.id ? null : () {
-                    _flushDraft();
-                    _save(_runtime!.selecting(e.id));
-                  },
-                ),
+              const Overline('All movements'),
+              const SizedBox(height: 8),
+              if (exercises.isNotEmpty)
+                GroupCard(children: [
+                  for (final e in exercises)
+                    GroupRow(
+                      key: Key('exercise-row-${e.ordinal}'),
+                      title: e.name,
+                      subtitle: '${setsOf(e.id).length}${e.targetSets == null ? '' : ' of ${e.targetSets}'} sets recorded${e.id == selected?.id ? ' · current' : ''}',
+                      trailing: e.id == selected?.id ? Icon(Icons.radio_button_checked, size: 20, color: context.c.accent) : null,
+                      onTap: e.id == selected?.id ? null : () {
+                        _flushDraft();
+                        _save(_runtime!.selecting(e.id));
+                      },
+                    ),
+                ]),
               const SizedBox(height: 22),
               SecondaryButton('Finish workout', key: const Key('finish-workout'), icon: Icons.flag_outlined, onPressed: () => _finish(workout)),
               Center(child: TextButton(onPressed: () => _menu('park', workout, selected), child: const Text('Save for later'))),

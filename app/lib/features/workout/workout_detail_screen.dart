@@ -58,23 +58,27 @@ class WorkoutDetailScreen extends ConsumerWidget {
         if (row.isPending) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.phone_iphone, 'Saved on this phone · sync pending')),
         if (row.needsReview) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, 'Saved on this phone; needs your review before it can sync.', tone: Tone.warning)),
         const SizedBox(height: 16),
-        Row(children: [
-          _Fact('Time', w.activeDurationSeconds == null ? '—' : durationText(w.activeDurationSeconds!)),
-          _Fact('Sets', '${sets.length}'),
-          _Fact('Movements', '${sets.map((s) => s.exerciseId).toSet().length}'),
-        ]),
+        Panel(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          // Three facts side by side; they wrap onto their own lines with large text.
+          child: Wrap(spacing: 28, runSpacing: 10, children: [
+            _Fact('Time', w.activeDurationSeconds == null ? '—' : durationText(w.activeDurationSeconds!)),
+            _Fact('Sets', '${sets.length}'),
+            _Fact('Movements', '${sets.map((s) => s.exerciseId).toSet().length}'),
+          ]),
+        ),
         const SizedBox(height: 20),
         if (w.isOpen) PrimaryButton('Resume workout', onPressed: () => resumeWorkout(context, ref, w)),
         for (final e in w.exercises) ...[
           const SizedBox(height: 14),
           Text(e.name, style: context.sansStyle(16, weight: FontWeight.w600)),
-          if (e.isPrescribed) Text('Planned · ${e.target}', style: context.caption),
+          if (e.isPrescribed) Text('Planned · ${e.target}', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
           if (sets.where((s) => s.exerciseId == e.id).isEmpty)
             Padding(padding: const EdgeInsets.only(top: 4), child: Text(e.isPrescribed ? 'Not recorded.' : 'No sets recorded.', style: context.sansStyle(14, color: context.c.secondary)))
           else
             for (final (i, s) in sets.where((s) => s.exerciseId == e.id).indexed)
-              Padding(padding: const EdgeInsets.only(top: 4), child: Text('${i + 1}.  ${setText(s, unit)}', style: context.sansStyle(15).copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
-          const SizedBox(height: 10),
+              Padding(padding: const EdgeInsets.only(top: 4), child: Text('${i + 1}.  ${setText(s, unit)}', style: context.numStyle(15, weight: FontWeight.w400))),
+          const SizedBox(height: 12),
           const Rule(),
         ],
         if (w.exercises.isEmpty) const EmptyState('Nothing recorded', 'This workout has no movements.'),
@@ -87,12 +91,10 @@ class _Fact extends StatelessWidget {
   const _Fact(this.label, this.value);
   final String label, value;
   @override
-  Widget build(BuildContext context) => Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: context.caption),
-          Text(value, style: context.titleStyle(23)),
-        ]),
-      );
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Overline(label),
+        Text(value, style: context.titleStyle(23)),
+      ]);
 }
 
 /// All retained workouts, newest first. Unfinished ones read "In progress", never as completed.
@@ -108,14 +110,19 @@ class WorkoutHistoryScreen extends ConsumerWidget {
   }
 }
 
+/// One workout in a list. [grouped] is the row of a short [GroupCard]; a long history uses flat rows, which are
+/// laid out lazily.
 class WorkoutRow extends StatelessWidget {
-  const WorkoutRow(this.workout, {super.key});
+  const WorkoutRow(this.workout, {super.key, this.grouped = false});
   final Workout workout;
+  final bool grouped;
   @override
-  Widget build(BuildContext context) => ListRow(
-        title: workout.title,
-        subtitle: '${shortDate(workout.dayKey)} · ${WorkoutResultRules.label(workout.outcome)}'
-            '${workout.isOpen ? '' : ' · ${workout.performedSets} set${workout.performedSets == 1 ? '' : 's'}'}${workout.isManual ? ' · manual' : ''}',
-        onTap: () => push(context, WorkoutDetailScreen(workoutId: workout.id)),
-      );
+  Widget build(BuildContext context) {
+    final subtitle = '${shortDate(workout.dayKey)} · ${WorkoutResultRules.label(workout.outcome)}'
+        '${workout.isOpen ? '' : ' · ${workout.performedSets} set${workout.performedSets == 1 ? '' : 's'}'}${workout.isManual ? ' · manual' : ''}';
+    void open() => push(context, WorkoutDetailScreen(workoutId: workout.id));
+    return grouped
+        ? GroupRow(icon: Icons.fitness_center, tone: Tone.neutral, title: workout.title, subtitle: subtitle, onTap: open)
+        : ListRow(icon: Icons.fitness_center, title: workout.title, subtitle: subtitle, onTap: open);
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/clock.dart';
+import '../../core/device_prefs.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -30,6 +31,35 @@ class OccasionPill extends StatelessWidget {
   }
 }
 
+/// What a week tile says. It is read from the week's workouts, never from the calendar alone: a week whose dates
+/// have passed is Done only when every expected workout has a recorded result.
+enum WeekState { done, current, partial, missed, paused, skipped, upcoming, empty }
+
+WeekState weekStateOf(PlanWeek week, Plan plan, String today, Iterable<Workout> workouts) {
+  final done = week.completion;
+  if (week.occasions.isEmpty) return WeekState.empty;
+  if (done.eligible == 0) return WeekState.skipped;
+  if (done.isDone) return WeekState.done;
+  if (week.isCurrent) return WeekState.current;
+  final open = {for (final o in week.occasions) statusOf(o, plan, today, workouts)};
+  if (open.contains(OccasionStatus.inProgress) || done.completed > 0) return WeekState.partial;
+  if (open.contains(OccasionStatus.missed)) return WeekState.missed;
+  if (open.contains(OccasionStatus.paused)) return WeekState.paused;
+  return WeekState.upcoming;
+}
+
+/// The words, icon and tone of a week's state. A partly recorded week says how much ("2 of 3").
+(String, IconData, Tone) weekLook(WeekState state, Completion done) => switch (state) {
+      WeekState.done => ('Done', Icons.check_circle, Tone.success),
+      WeekState.current => ('Current', Icons.circle, Tone.accent),
+      WeekState.partial => ('${done.completed} of ${done.eligible}', Icons.incomplete_circle, Tone.neutral),
+      WeekState.missed => ('Missed', Icons.error_outline, Tone.warning),
+      WeekState.paused => ('Paused', Icons.pause_circle_outline, Tone.neutral),
+      WeekState.skipped => ('Skipped', Icons.remove_circle_outline, Tone.neutral),
+      WeekState.upcoming => ('Upcoming', Icons.radio_button_unchecked, Tone.neutral),
+      WeekState.empty => ('No workouts', Icons.remove, Tone.neutral),
+    };
+
 /// The seven days of one plan week with what each day holds. A day without a workout is a rest day.
 class WeekDayStrip extends StatelessWidget {
   const WeekDayStrip({super.key, required this.week, required this.plan, required this.today, required this.workouts});
@@ -56,21 +86,21 @@ class WeekDayStrip extends StatelessWidget {
               final done = status == OccasionStatus.finished || status == OccasionStatus.partial;
               final Widget mark = switch (status) {
                 null => Container(width: 12, height: 3, decoration: BoxDecoration(color: c.outline, borderRadius: BorderRadius.circular(2))),
-                _ when done => Icon(Icons.check_circle, size: 26, color: c.success),
-                OccasionStatus.inProgress => Icon(Icons.timelapse, size: 26, color: c.accent),
-                OccasionStatus.missed => Icon(Icons.error_outline, size: 26, color: c.warning),
-                OccasionStatus.skipped => Icon(Icons.remove_circle_outline, size: 26, color: c.outline),
-                OccasionStatus.paused => Icon(Icons.pause_circle_outline, size: 26, color: c.outline),
-                _ => Icon(Icons.radio_button_unchecked, size: 26, color: c.accent),
+                _ when done => Icon(Icons.check_circle, size: 24, color: c.success),
+                OccasionStatus.inProgress => Icon(Icons.timelapse, size: 24, color: c.accent),
+                OccasionStatus.missed => Icon(Icons.error_outline, size: 24, color: c.warning),
+                OccasionStatus.skipped => Icon(Icons.remove_circle_outline, size: 24, color: c.outline),
+                OccasionStatus.paused => Icon(Icons.pause_circle_outline, size: 24, color: c.outline),
+                _ => Icon(Icons.radio_button_unchecked, size: 24, color: c.accent),
               };
               return Semantics(
                 label: '${longDate(day)}${isToday ? ', today' : ''}, ${occasion == null ? 'rest day' : '${occasion.title}, ${status!.label}'}',
                 child: ExcludeSemantics(
                   child: Column(children: [
-                    SizedBox(height: 28, child: Center(child: mark)),
+                    SizedBox(height: 26, child: Center(child: mark)),
                     const SizedBox(height: 4),
                     Text(weekdayShort(parseDayKey(day).weekday), style: context.sansStyle(13, weight: isToday ? FontWeight.w700 : FontWeight.w500, color: isToday ? c.accent : c.text)),
-                    Text('${parseDayKey(day).day}', style: context.sansStyle(13, weight: isToday ? FontWeight.w700 : FontWeight.w400, color: isToday ? c.accent : c.secondary)),
+                    Text('${parseDayKey(day).day}', style: context.numStyle(13, weight: isToday ? FontWeight.w700 : FontWeight.w400, color: isToday ? c.accent : c.secondary)),
                     // Today is also marked by a bar, so it does not depend on the accent colour.
                     Container(margin: const EdgeInsets.only(top: 3), width: 18, height: 3, decoration: BoxDecoration(color: isToday ? c.accent : Colors.transparent, borderRadius: BorderRadius.circular(2))),
                   ]),
@@ -83,105 +113,86 @@ class WeekDayStrip extends StatelessWidget {
   }
 }
 
-/// The block's weeks as tiles: number, date range and state on every tile, including the selected one.
-/// Three or four across, fewer with large text; a long block starts with the weeks around the chosen one.
-class WeekGrid extends StatefulWidget {
-  const WeekGrid({super.key, required this.weeks, required this.selected, required this.onSelect});
+/// Every week of the block as a tile: number, date range and state, whatever the block's length. Three across
+/// on a phone, two when it is narrow, and one full-width row per week with large text, so no label is cut.
+class WeekGrid extends StatelessWidget {
+  const WeekGrid({super.key, required this.weeks, required this.selected, required this.onSelect, required this.stateOf});
   final List<PlanWeek> weeks;
   final int selected;
   final ValueChanged<int> onSelect;
-
-  /// More weeks than this start collapsed behind "All weeks".
-  static const collapseAbove = 12, window = 8;
-
-  @override
-  State<WeekGrid> createState() => _WeekGridState();
-}
-
-class _WeekGridState extends State<WeekGrid> {
-  bool _all = false;
+  final WeekState Function(PlanWeek) stateOf;
 
   @override
   Widget build(BuildContext context) {
-    final weeks = widget.weeks;
-    final collapsible = weeks.length > WeekGrid.collapseAbove;
-    var shown = weeks;
-    if (collapsible && !_all) {
-      final from = ((widget.selected - 1) ~/ WeekGrid.window) * WeekGrid.window;
-      shown = weeks.sublist(from, (from + WeekGrid.window).clamp(0, weeks.length));
-    }
     final scale = MediaQuery.textScalerOf(context).scale(10) / 10;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      LayoutBuilder(builder: (context, box) {
-        // Wide enough for "Sep 28 – Oct 4" on one line at the current text size; tiles in a row share a height.
-        final columns = (box.maxWidth / (106 * scale)).floor().clamp(1, 4);
-        const gap = 8.0;
-        return Column(children: [
-          for (var i = 0; i < shown.length; i += columns)
-            Padding(
-              padding: EdgeInsets.only(top: i == 0 ? 0 : gap),
-              child: IntrinsicHeight(
-                child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  for (var j = i; j < i + columns; j++) ...[
-                    if (j > i) const SizedBox(width: gap),
-                    Expanded(child: j >= shown.length ? const SizedBox() : _WeekTile(week: shown[j], selected: shown[j].number == widget.selected, onTap: () => widget.onSelect(shown[j].number))),
-                  ],
-                ]),
-              ),
+    return LayoutBuilder(builder: (context, box) {
+      final columns = (box.maxWidth / (104 * scale)).floor().clamp(1, 3);
+      const gap = 8.0;
+      return Column(children: [
+        for (var i = 0; i < weeks.length; i += columns)
+          Padding(
+            padding: EdgeInsets.only(top: i == 0 ? 0 : gap),
+            // Tiles in a row share the height of the tallest, so a wrapped date range never leaves a ragged row.
+            child: IntrinsicHeight(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                for (var j = i; j < i + columns; j++) ...[
+                  if (j > i) const SizedBox(width: gap),
+                  Expanded(
+                      child: j >= weeks.length
+                          ? const SizedBox()
+                          : _WeekTile(week: weeks[j], state: stateOf(weeks[j]), selected: weeks[j].number == selected, wide: columns == 1, onTap: () => onSelect(weeks[j].number))),
+                ],
+              ]),
             ),
-        ]);
-      }),
-      if (collapsible)
-        TextButton(
-          key: const Key('weeks-all'),
-          onPressed: () => setState(() => _all = !_all),
-          child: Text(_all ? 'Show fewer weeks' : 'All ${weeks.length} weeks'),
-        ),
-    ]);
+          ),
+      ]);
+    });
   }
 }
 
 class _WeekTile extends StatelessWidget {
-  const _WeekTile({required this.week, required this.selected, required this.onTap});
+  const _WeekTile({required this.week, required this.state, required this.selected, required this.wide, required this.onTap});
   final PlanWeek week;
-  final bool selected;
+  final WeekState state;
+  final bool selected, wide;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final done = week.completion;
-    final (String state, IconData? icon, Color color) = done.eligible == 0
-        ? ('No workouts', null, c.secondary)
-        : done.isDone
-            ? ('Done', Icons.check_circle, c.success)
-            : week.isCurrent || week.isPast || done.completed > 0
-                ? ('${done.completed} of ${done.eligible}', week.isCurrent ? Icons.timelapse : null, week.isCurrent ? c.accent : c.text)
-                : ('Planned', null, c.secondary);
+    final (label, icon, tone) = weekLook(state, done);
+    final color = switch (tone) { Tone.success => c.success, Tone.accent => c.accent, Tone.warning => c.warning, _ => c.secondary };
     return Semantics(
       button: true, selected: selected,
+      // "this week" is the calendar; "selected" is the choice; the value is the state. Three separate facts.
       label: 'Week ${week.number}, ${week.range}${week.isCurrent ? ', this week' : ''}, '
           '${done.eligible == 0 ? 'no workouts' : '${done.completed} of ${done.eligible} workouts completed'}',
+      value: label,
       child: Material(
+        // Selection is the border and the tint. The current week is said in words, so the two never look alike.
         color: selected ? c.accentSoft : c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile), side: BorderSide(color: selected ? c.accent : c.divider, width: selected ? 2 : 1)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: Key('week-${week.number}'),
-          onTap: onTap,
+          onTap: () {
+            if (!selected) Haptics.selection();
+            onTap();
+          },
           child: ExcludeSemantics(
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 84),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('Week ${week.number}', style: context.sansStyle(14.5, weight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(week.range, textAlign: TextAlign.center, style: context.sansStyle(13, color: c.secondary)),
+                padding: EdgeInsets.symmetric(horizontal: wide ? 14 : 8, vertical: 12),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Week ${week.number}', style: context.numStyle(15, weight: FontWeight.w700)),
+                  const SizedBox(height: 1),
+                  Text(week.range, style: context.numStyle(12.5, color: c.secondary, weight: FontWeight.w400)),
                   const SizedBox(height: 6),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
-                    if (icon != null) Padding(padding: const EdgeInsets.only(right: 4), child: Icon(icon, size: 16, color: color)),
-                    Flexible(child: Text(state, textAlign: TextAlign.center, style: context.sansStyle(13, weight: FontWeight.w600, color: color))),
+                  Row(children: [
+                    Padding(padding: const EdgeInsets.only(right: 5), child: Icon(icon, size: 16, color: color)),
+                    Flexible(child: Text(label, style: context.numStyle(13, color: tone == Tone.neutral ? c.secondary : color))),
                   ]),
                 ]),
               ),

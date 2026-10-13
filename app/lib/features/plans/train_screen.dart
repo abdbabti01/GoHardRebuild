@@ -19,29 +19,50 @@ import 'plan_progress.dart';
 import 'plan_screens.dart';
 import 'week_widgets.dart';
 
-/// Train: Workouts / Plan / Progress. The chosen section is kept while you visit other tabs.
+/// Train: Workouts / Plan / Progress. The chosen section lives in [shellProvider], so it is kept while you visit
+/// other tabs, open a page or change the look.
 class TrainScreen extends ConsumerWidget {
   const TrainScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(shellProvider.select((s) => s.trainView));
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 12), child: const Heading('Train')),
-      Padding(
-        padding: EdgeInsets.symmetric(horizontal: context.inset),
-        child: Segmented<TrainView>(
+    return ListView(
+      padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
+      children: [
+        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider))),
+        const SizedBox(height: 16),
+        Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',
           label: (v) => '${v.name[0].toUpperCase()}${v.name.substring(1)}',
           onChanged: (v) => ref.read(shellProvider.notifier).selectTrainView(v),
         ),
-      ),
-      Expanded(child: switch (view) { TrainView.workouts => const _WorkoutsView(), TrainView.plan => const _PlanView(), TrainView.progress => const _ProgressView() }),
-    ]);
+        const SizedBox(height: 20),
+        // The section that was chosen fades in; the one left is simply gone, so nothing is shown twice.
+        AnimatedSwitcher(
+          duration: context.motion(Motion.quick), reverseDuration: Duration.zero, switchInCurve: Motion.curve,
+          layoutBuilder: (current, _) => current ?? const SizedBox.shrink(),
+          child: switch (view) { TrainView.workouts => const _WorkoutsView(), TrainView.plan => const _PlanView(), TrainView.progress => const _ProgressView() },
+        ),
+      ],
+    );
   }
 }
 
-ListView _list(BuildContext context, List<Widget> children) => ListView(padding: EdgeInsets.fromLTRB(context.inset, 18, context.inset, 28), children: children);
+Column _section(List<Widget> children) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+
+const _gap = SizedBox(height: 10), _between = SizedBox(height: 28);
+
+/// The two histories. Workout history is always here, whatever has or has not been recorded.
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard({this.runs = false});
+  final bool runs;
+  @override
+  Widget build(BuildContext context) => GroupCard(children: [
+        GroupRow(key: Key(runs ? 'train-history' : 'progress-history'), icon: Icons.history, title: 'Workout history', subtitle: 'Every workout you recorded', onTap: () => push(context, const WorkoutHistoryScreen())),
+        if (runs) GroupRow(key: const Key('train-run-history'), icon: Icons.directions_run, title: 'Run history', subtitle: 'Every run you recorded', onTap: () => push(context, const RunHistoryScreen())),
+      ]);
+}
 
 class _WorkoutsView extends ConsumerWidget {
   const _WorkoutsView();
@@ -50,28 +71,41 @@ class _WorkoutsView extends ConsumerWidget {
     final all = [for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted) w]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
     final open = all.where((w) => w.isOpen).toList(), done = all.where((w) => !w.isOpen).toList();
     final parked = ref.watch(parkedIdsProvider);
-    return _list(context, [
+    final roomy = MediaQuery.textScalerOf(context).scale(10) <= 13;
+    return _section([
       if (open.isNotEmpty) ...[
         const SectionHeader('Open workouts'),
-        for (final w in open)
-          ListRow(
-            title: w.title,
-            subtitle: '${parked.contains(w.id) ? 'Saved for later' : 'In progress'} · started ${shortDate(w.dayKey)}',
-            trailing: TextButton(onPressed: () => resumeWorkout(context, ref, w), child: const Text('Resume')),
-            onTap: () => resumeWorkout(context, ref, w),
-          ),
-        const SizedBox(height: 18),
+        _gap,
+        GroupCard(children: [
+          for (final w in open) ...[
+            GroupRow(
+              icon: parked.contains(w.id) ? Icons.bookmark_outline : Icons.timelapse,
+              title: w.title,
+              subtitle: '${parked.contains(w.id) ? 'Saved for later' : 'In progress'} · started ${shortDate(w.dayKey)}',
+              trailing: roomy ? TextButton(onPressed: () => resumeWorkout(context, ref, w), child: const Text('Resume')) : null,
+              onTap: () => resumeWorkout(context, ref, w),
+            ),
+            // With large text the button takes its own line instead of squeezing the workout's name.
+            if (!roomy) Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => resumeWorkout(context, ref, w), child: const Text('Resume'))),
+          ],
+        ]),
+        const SizedBox(height: 20),
       ],
       PrimaryButton('Start a manual workout', key: const Key('start-manual'), icon: Icons.add, onPressed: () => startManualWorkout(context, ref)),
-      const SizedBox(height: 10),
+      _gap,
       SecondaryButton('Start a run', icon: Icons.directions_run, onPressed: () => startRunFlow(context, ref)),
-      const SizedBox(height: 28),
+      _between,
       const SectionHeader('Recent'),
-      if (done.isEmpty) const EmptyState('No workouts recorded yet', 'When you finish a workout, what you actually did shows up here.'),
-      for (final w in done.take(5)) WorkoutRow(w),
-      if (done.length > 5) Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => push(context, const WorkoutHistoryScreen()), child: const Text('All workout history'))),
-      const SizedBox(height: 18),
-      ListRow(icon: Icons.directions_run, title: 'Run history', onTap: () => push(context, const RunHistoryScreen())),
+      if (done.isEmpty)
+        const EmptyState('No workouts recorded yet', 'When you finish a workout, what you actually did shows up here.')
+      else ...[
+        _gap,
+        GroupCard(children: [for (final w in done.take(5)) WorkoutRow(w, grouped: true)]),
+      ],
+      _between,
+      const SectionHeader('History'),
+      _gap,
+      const _HistoryCard(runs: true),
     ]);
   }
 }
@@ -96,33 +130,36 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final others = plans.where((p) => p.id != primary?.id).toList();
     final proposals = [for (final r in ref.watch(proposalsProvider).value ?? const <Stored<Proposal>>[]) if (r.value.planId == primary?.id && (r.value.state == 'open' || r.value.state == 'needs_review')) r.value];
 
-    return _list(context, [
+    return _section([
       if (ctxRow?.needsReview ?? false)
         const Padding(padding: EdgeInsets.only(bottom: 14), child: StatusLine(Icons.rule, 'A plan change saved on this phone differs from your account. Review it from the notice at the bottom of the screen.', tone: Tone.warning)),
-      if (primary == null) ...[
+      if (primary == null)
         EmptyState(
           others.any((p) => p.isDraft && !p.isArchived) ? 'Your plan is ready to review' : 'No plan yet',
           others.any((p) => p.isDraft && !p.isArchived) ? 'A saved draft does not schedule anything until you start it.' : 'Answer a few questions and review a plan before you commit to it. Manual training is always available.',
           action: PrimaryButton('Create my plan', key: const Key('create-plan'), onPressed: () => push(context, const PlanSetupScreen())),
-        ),
-      ] else
+        )
+      else
         ..._primary(context, primary, today, workouts, proposals),
       if (others.isNotEmpty) ...[
-        const SizedBox(height: 28),
+        _between,
         const SectionHeader('Saved and past plans'),
-        for (final p in others.where((p) => !p.isArchived))
-          ListRow(
-            title: p.title,
-            subtitle: switch (p.lifecycle) {
-              'draft' => 'Draft · not started · would start ${shortDate(p.startDate)}',
-              'paused' => 'Paused · not your primary plan',
-              'closed' => p.closureIntent == 'stopped_early' ? 'Stopped early' : 'Finished for now',
-              _ => p.lifecycle,
-            },
-            onTap: () => push(context, p.isDraft ? PlanReviewScreen(planId: p.id) : PlanDetailScreen(planId: p.id)),
-          ),
-        if (others.any((p) => p.isArchived))
-          ListRow(icon: Icons.inventory_2_outlined, title: 'Archived plans (${others.where((p) => p.isArchived).length})', onTap: () => push(context, const ArchivedPlansScreen())),
+        _gap,
+        GroupCard(children: [
+          for (final p in others.where((p) => !p.isArchived))
+            GroupRow(
+              title: p.title,
+              subtitle: switch (p.lifecycle) {
+                'draft' => 'Draft · not started · would start ${shortDate(p.startDate)}',
+                'paused' => 'Paused · not your primary plan',
+                'closed' => p.closureIntent == 'stopped_early' ? 'Stopped early' : 'Finished for now',
+                _ => p.lifecycle,
+              },
+              onTap: () => push(context, p.isDraft ? PlanReviewScreen(planId: p.id) : PlanDetailScreen(planId: p.id)),
+            ),
+          if (others.any((p) => p.isArchived))
+            GroupRow(icon: Icons.inventory_2_outlined, tone: Tone.neutral, title: 'Archived plans (${others.where((p) => p.isArchived).length})', onTap: () => push(context, const ArchivedPlansScreen())),
+        ]),
       ],
     ]);
   }
@@ -132,64 +169,133 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final block = Completion.of(plan.occasions, workouts);
     final week = weeks.where((w) => w.number == _picked).firstOrNull ?? focusWeek(weeks);
     final position = planWeek(plan, today);
+    final note = [if (position == 0) 'Not started', if (plan.isPaused) 'Paused', if (plan.endDate != null) 'Ends ${shortDate(plan.endDate!)}'].join(' · ');
     return [
-      PassCard(
+      _TrainPass(
         title: plan.title,
         // Calendar position and completion are two different facts, shown separately.
         week: position == 0 ? 'Starts ${dayMonth(plan.startDate)}' : 'Week $position of ${plan.blockWeeks}',
-        count: '${block.completed} / ${block.eligible}', caption: 'Workouts completed', progress: block.fraction,
+        completion: block, photo: plan.isActive && position > 0,
       ),
-      const SizedBox(height: 10),
-      Text(
-        [if (position == 0) 'Not started', if (plan.isPaused) 'Paused', if (plan.endDate != null) 'Ends ${shortDate(plan.endDate!)}'].join(' · '),
-        style: context.caption,
-      ),
+      if (note.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(note, style: context.caption)),
       if (plan.isPaused) ...[
         const SizedBox(height: 14),
         const StatusLine(Icons.pause_circle_outline, 'Plan paused. No new workouts are expected, and nothing counts as missed while it is paused.'),
         const SizedBox(height: 12),
         PrimaryButton('Resume plan', key: const Key('plan-resume'), onPressed: () => push(context, ResumeReviewScreen(planId: plan.id))),
       ],
-      for (final p in proposals)
-        ListRow(icon: Icons.tips_and_updates_outlined, title: 'Suggested change to review', subtitle: p.explanation, onTap: () => push(context, ProposalReviewScreen(proposalId: p.id))),
+      if (proposals.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        GroupCard(children: [
+          for (final p in proposals)
+            GroupRow(icon: Icons.tips_and_updates_outlined, tone: Tone.warning, title: 'Suggested change to review', subtitle: p.explanation, onTap: () => push(context, ProposalReviewScreen(proposalId: p.id))),
+        ]),
+      ],
       if (week != null) ...[
-        const SizedBox(height: 26),
-        const SectionHeader('Your weeks'),
-        const SizedBox(height: 10),
-        WeekGrid(weeks: weeks, selected: week.number, onSelect: (n) => setState(() => _picked = n)),
-        const SizedBox(height: 26),
+        _between,
+        const SectionHeader('Choose a week'),
+        _gap,
+        WeekGrid(weeks: weeks, selected: week.number, stateOf: (w) => weekStateOf(w, plan, today, workouts), onSelect: (n) => setState(() => _picked = n)),
+        _between,
         SectionHeader(week.isCurrent ? 'This week' : 'Week ${week.number}', detail: week.range,
-            trailing: week.completion.eligible == 0 ? null : Text('${week.completion.completed} of ${week.completion.eligible} completed', style: context.sansStyle(14.5, weight: FontWeight.w600))),
+            trailing: week.completion.eligible == 0 ? null : Text('${week.completion.completed} of ${week.completion.eligible} completed', style: context.numStyle(14.5))),
         if (week.completion.eligible > 0) ...[
-          const SizedBox(height: 10),
+          _gap,
           Row(children: [
             Expanded(child: ProgressRail(week.completion.fraction, label: 'Workouts completed in this week')),
             const SizedBox(width: 12),
-            ExcludeSemantics(child: Text('${(week.completion.fraction * 100).round()}%', style: context.sansStyle(14.5, color: context.c.secondary, weight: FontWeight.w600))),
+            ExcludeSemantics(child: Text('${(week.completion.fraction * 100).round()}%', style: context.numStyle(14.5, color: context.c.secondary))),
           ]),
         ],
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         WeekDayStrip(week: week, plan: plan, today: today, workouts: workouts),
-        const SizedBox(height: 8),
-        if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Text('No workouts are planned in this week.', style: context.caption)),
+        const SizedBox(height: 10),
+        const Rule(),
+        if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Text('No workouts are planned in this week.', style: context.caption)),
         for (final o in week.occasions) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts)),
-        Builder(builder: (context) {
-          final busy = {for (final o in week.occasions) o.scheduledDate};
-          final rest = [for (var i = 0; i < 7; i++) if (!busy.contains(addDays(week.start, i))) weekdayShort(weekdayOf(addDays(week.start, i)))];
-          return rest.isEmpty ? const SizedBox.shrink() : Padding(padding: const EdgeInsets.only(top: 10), child: Text('Rest: ${rest.join(', ')}', style: context.caption));
-        }),
       ],
-      const SizedBox(height: 28),
+      _between,
       const SectionHeader('Manage this plan'),
-      if (plan.isActive) ListRow(icon: Icons.pause, title: 'Pause plan', onTap: () => pausePlanFlow(context, ref, plan)),
-      ListRow(icon: Icons.swap_horiz, title: 'Replace a movement in remaining workouts', onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
-      ListRow(icon: Icons.flag_outlined, title: 'Review or finish this block', onTap: () => push(context, BlockReviewScreen(planId: plan.id))),
-      ListRow(icon: Icons.add, title: 'Create a different plan', subtitle: 'Starting it will ask before replacing this one.', onTap: () => push(context, const PlanSetupScreen())),
+      _gap,
+      GroupCard(children: [
+        if (plan.isActive) GroupRow(icon: Icons.pause, tone: Tone.neutral, title: 'Pause plan', onTap: () => pausePlanFlow(context, ref, plan)),
+        GroupRow(icon: Icons.swap_horiz, tone: Tone.neutral, title: 'Replace a movement in remaining workouts', onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
+        GroupRow(icon: Icons.flag_outlined, tone: Tone.neutral, title: 'Review or finish this block', onTap: () => push(context, BlockReviewScreen(planId: plan.id))),
+        GroupRow(icon: Icons.add, tone: Tone.neutral, title: 'Create a different plan', subtitle: 'Starting it will ask before replacing this one.', onTap: () => push(context, const PlanSetupScreen())),
+      ]),
     ];
   }
 }
 
-/// One dated workout of the selected week with its named state.
+/// The training pass: the plan's real name, where the calendar is, and workouts with a recorded result out of
+/// the ones still expected. A small category photograph sits at the trailing edge while there is room for it.
+/// (Built here rather than with the shared PassCard, which has no place for the photograph.)
+class _TrainPass extends StatelessWidget {
+  const _TrainPass({required this.title, required this.week, required this.completion, required this.photo});
+  final String title, week;
+  final Completion completion;
+  final bool photo;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final media = MediaQuery.of(context);
+    final showPhoto = photo && media.size.width >= 360 && media.textScaler.scale(10) <= 13;
+    final measured = completion.eligible > 0;
+    final percent = '${(completion.fraction * 100).round()}%';
+    const photoWidth = 108.0;
+    return Semantics(
+      container: true,
+      label: '$title. $week. ${completion.completed} / ${completion.eligible} workouts completed${measured ? ', $percent' : ''}.',
+      child: ExcludeSemantics(
+        child: Material(
+          color: c.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: c.divider)),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(18, 18, 18 + (showPhoto ? photoWidth : 0), 18),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Overline('Training plan'),
+                const SizedBox(height: 4),
+                Text(title, style: context.titleStyle(24)),
+                Padding(padding: const EdgeInsets.only(top: 2), child: Text(week, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500))),
+                const SizedBox(height: 14),
+                Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
+                  Text.rich(TextSpan(text: '${completion.completed}', children: [TextSpan(text: ' / ${completion.eligible}', style: TextStyle(color: c.secondary))]), style: context.titleStyle(34)),
+                  Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('Workouts completed', style: context.sansStyle(15, color: c.secondary))),
+                ]),
+                if (measured) ...[
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(child: ProgressRail(completion.fraction, label: 'Workouts completed')),
+                    const SizedBox(width: 12),
+                    Text(percent, style: context.numStyle(15)),
+                  ]),
+                ],
+              ]),
+            ),
+            if (showPhoto)
+              Positioned(
+                top: 0, bottom: 0, right: 0, width: photoWidth,
+                // Decoded at the phone's width, the same size Today asks for, so the two share one decoded image.
+                child: Image.asset('assets/images/workout-hero.webp', fit: BoxFit.cover,
+                    cacheWidth: (media.size.width * media.devicePixelRatio).round().clamp(320, 1536), errorBuilder: (context, _, _) => ColoredBox(color: c.sunken)),
+              ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// "5 exercises · 18 planned sets"; the sets are left out when no movement has a target.
+String _plannedSummary(List<Prescription> prescription) {
+  final sets = prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
+  return '${prescription.length} ${prescription.length == 1 ? 'exercise' : 'exercises'}${sets == 0 ? '' : ' · $sets planned ${sets == 1 ? 'set' : 'sets'}'}';
+}
+
+/// One dated workout of the selected week: its day, name, what is planned and its named state.
 class _OccasionRow extends ConsumerWidget {
   const _OccasionRow({required this.plan, required this.occasion, required this.status});
   final Plan plan;
@@ -198,29 +304,45 @@ class _OccasionRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final o = occasion;
+    final o = occasion, c = context.c;
     final pill = OccasionPill(status);
+    final day = parseDayKey(o.scheduledDate);
+    final summary = _plannedSummary(o.prescription);
+    final moved = o.wasMoved ? 'Moved · originally ${shortDate(o.originalDate)}' : null;
     // With large text the state sits under the title instead of squeezing it.
     final below = MediaQuery.textScalerOf(context).scale(10) > 13;
+    final active = status == OccasionStatus.inProgress || status == OccasionStatus.due;
     return Column(children: [
-      InkWell(
+      Pressable(
         key: Key('occasion-${o.weekNumber}-${o.ordinal}'),
+        borderRadius: BorderRadius.circular(Radii.field),
+        semanticLabel: '${o.title}, ${longDate(o.scheduledDate)}, $summary${moved == null ? '' : ', $moved'}, ${status.label}',
         onTap: () => showOccasionSheet(context, ref, plan, o),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: Targets.navigation),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+        child: LayoutBuilder(
+          builder: (context, box) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 36),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(weekdayShort(day.weekday), style: context.sansStyle(13, color: c.secondary)),
+                  Text('${day.day}', style: context.numStyle(18)),
+                ]),
+              ),
+              const SizedBox(width: 10),
+              if (!below && box.maxWidth >= 380) ...[IconTile(Icons.fitness_center, tone: active ? Tone.accent : Tone.neutral), const SizedBox(width: 12)],
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(o.title, style: context.sansStyle(16, weight: FontWeight.w600)),
-                  Text('${shortDate(o.scheduledDate)}${o.wasMoved ? ' · originally ${shortDate(o.originalDate)}' : ''}', style: context.sansStyle(14.5, color: context.c.secondary)),
-                  Text(prescriptionSummary(o.prescription), style: context.caption),
+                  Row(children: [
+                    Expanded(child: Text(o.title, style: context.sansStyle(16, weight: FontWeight.w600))),
+                    if (!below) Padding(padding: const EdgeInsets.only(left: 8), child: pill),
+                  ]),
+                  Padding(padding: const EdgeInsets.only(top: 2), child: Text(summary, style: context.numStyle(13.5, color: c.secondary, weight: FontWeight.w400))),
+                  if (moved != null) Text(moved, style: context.caption),
                   if (below) Padding(padding: const EdgeInsets.only(top: 6), child: pill),
                 ]),
               ),
-              if (!below) Padding(padding: const EdgeInsets.only(left: 10), child: pill),
-              Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
+              Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.chevron_right, size: 22, color: c.secondary)),
             ]),
           ),
         ),
@@ -237,64 +359,75 @@ class _ProgressView extends ConsumerWidget {
     final p = ref.watch(progressProvider);
     final unit = ref.watch(loadUnitProvider);
     final primary = ref.watch(primaryPlanProvider);
+    // History is offered in every state, including an account with nothing recorded yet.
     if (!p.hasEvidence && p.dueOccasions == 0) {
-      return _list(context, [
+      return _section([
         EmptyState('No training recorded yet', 'Progress is built only from workouts you actually record. There is nothing to chart until then.',
             action: SecondaryButton('Start a manual workout', onPressed: () => startManualWorkout(context, ref))),
+        _gap,
+        const _HistoryCard(),
       ]);
     }
     final most = p.weeks.fold<int>(1, (m, w) => w.$2 > m ? w.$2 : m);
-    return _list(context, [
+    return _section([
       const SectionHeader('Am I following my plan?'),
-      const SizedBox(height: 8),
-      if (primary == null)
-        Text('You have no primary plan right now. Manual training still counts as training below.', style: context.caption)
-      else if (p.dueOccasions == 0)
-        Text('No planned workout has come due yet.', style: context.caption)
-      else ...[
-        Text('${p.recorded} of ${p.dueOccasions} due workouts recorded', style: context.sansStyle(17, weight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        ProgressRail(p.recorded / p.dueOccasions, label: 'Due workouts recorded'),
-        const SizedBox(height: 8),
-        Text('${p.full} completed · ${p.partial} partial · ${p.skipped} skipped · ${p.missed} missed', style: context.caption),
-      ],
-      const SizedBox(height: 28),
-      const SectionHeader('Am I consistent?'),
-      const SizedBox(height: 6),
-      Text('Days with recorded training in each of the last 8 weeks. ${p.sessions} session${p.sessions == 1 ? '' : 's'} in total.', style: context.caption),
-      const SizedBox(height: 12),
-      Semantics(
-        label: 'Training days per week, oldest first: ${p.weeks.map((w) => w.$2).join(', ')}',
-        child: ExcludeSemantics(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            for (final w in p.weeks)
-              Expanded(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text('${w.$2}', style: context.sansStyle(13, weight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Container(height: 6 + 58 * w.$2 / most, margin: const EdgeInsets.symmetric(horizontal: 5), decoration: BoxDecoration(color: w.$2 == 0 ? context.c.outline : context.c.accent, borderRadius: BorderRadius.circular(4))),
-                  const SizedBox(height: 6),
-                  FittedBox(fit: BoxFit.scaleDown, child: Text('${parseDayKey(w.$1).month}/${parseDayKey(w.$1).day}', style: context.sansStyle(12.5, color: context.c.secondary))),
-                ]),
-              ),
-          ]),
-        ),
+      _gap,
+      Panel(
+        child: primary == null
+            ? Text('You have no primary plan right now. Manual training still counts as training below.', style: context.caption)
+            : p.dueOccasions == 0
+                ? Text('No planned workout has come due yet.', style: context.caption)
+                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('${p.recorded} of ${p.dueOccasions} due workouts recorded', style: context.numStyle(17)),
+                    const SizedBox(height: 10),
+                    ProgressRail(p.recorded / p.dueOccasions, label: 'Due workouts recorded'),
+                    const SizedBox(height: 10),
+                    Text('${p.full} completed · ${p.partial} partial · ${p.skipped} skipped · ${p.missed} missed', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
+                  ]),
       ),
-      const SizedBox(height: 28),
-      const SectionHeader('Am I getting stronger?'),
-      const SizedBox(height: 6),
-      if (p.insights.isEmpty)
-        Text('Not enough comparable records yet. This needs the same movement recorded in at least two sessions.', style: context.caption)
-      else
-        for (final i in p.insights)
-          ListRow(
-            title: i.name,
-            subtitle: '${shortDate(i.firstDay)}: ${setText(i.first, unit)}  →  ${shortDate(i.latestDay)}: ${setText(i.latest, unit)} · ${i.sessions} sessions',
+      _between,
+      const SectionHeader('Am I consistent?'),
+      _gap,
+      Panel(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Days with recorded training in each of the last 8 weeks. ${p.sessions} session${p.sessions == 1 ? '' : 's'} in total.', style: context.caption),
+          const SizedBox(height: 14),
+          Semantics(
+            label: 'Training days per week, oldest first: ${p.weeks.map((w) => w.$2).join(', ')}',
+            child: ExcludeSemantics(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                for (final w in p.weeks)
+                  Expanded(
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text('${w.$2}', style: context.numStyle(13)),
+                      const SizedBox(height: 2),
+                      Container(height: 6 + 58 * w.$2 / most, margin: const EdgeInsets.symmetric(horizontal: 5), decoration: BoxDecoration(color: w.$2 == 0 ? context.c.outline : context.c.accent, borderRadius: BorderRadius.circular(4))),
+                      const SizedBox(height: 6),
+                      FittedBox(fit: BoxFit.scaleDown, child: Text('${parseDayKey(w.$1).month}/${parseDayKey(w.$1).day}', style: context.numStyle(12.5, color: context.c.secondary, weight: FontWeight.w400))),
+                    ]),
+                  ),
+              ]),
+            ),
           ),
-      const SizedBox(height: 10),
+        ]),
+      ),
+      _between,
+      const SectionHeader('Am I getting stronger?'),
+      _gap,
+      if (p.insights.isEmpty)
+        Panel(child: Text('Not enough comparable records yet. This needs the same movement recorded in at least two sessions.', style: context.caption))
+      else
+        GroupCard(children: [
+          for (final i in p.insights)
+            GroupRow(
+              title: i.name,
+              subtitle: '${shortDate(i.firstDay)}: ${setText(i.first, unit)}  →  ${shortDate(i.latestDay)}: ${setText(i.latest, unit)} · ${i.sessions} sessions',
+            ),
+        ]),
+      _gap,
       Text('Best recorded set of the first and the latest session. Loads are stored in kilograms and shown in ${unit == LoadUnit.kg ? 'kilograms' : 'pounds'}.', style: context.caption),
-      const SizedBox(height: 18),
-      ListRow(icon: Icons.history, title: 'Workout history', onTap: () => push(context, const WorkoutHistoryScreen())),
+      _between,
+      const _HistoryCard(),
     ]);
   }
 }

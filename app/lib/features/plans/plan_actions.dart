@@ -13,6 +13,7 @@ import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import 'plan_repository.dart';
 import 'schedule_rules.dart';
+import 'week_widgets.dart';
 
 /// Native date picker returning a calendar day key.
 Future<String?> pickDay(BuildContext context, {required String initial, String? first, String? help}) async {
@@ -50,9 +51,10 @@ Future<void> pausePlanFlow(BuildContext context, WidgetRef ref, Plan plan) async
 }
 
 /// One planned occasion: its prescription and the actions that are honestly available for its state.
-Future<void> showOccasionSheet(BuildContext context, WidgetRef ref, Plan plan, Occasion occasion) => showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
+/// Starting, resuming and opening a record close the sheet and then continue from [host], the page underneath,
+/// which is still there once the sheet has gone (at once, under Reduce Motion).
+Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, Occasion occasion) => showGoSheet<void>(
+      host,
       builder: (sheet) => Consumer(builder: (context, ref, _) {
         // Re-read so the sheet reflects changes made from it.
         final current = ref.watch(planListProvider).where((p) => p.id == plan.id).firstOrNull ?? plan;
@@ -64,7 +66,8 @@ Future<void> showOccasionSheet(BuildContext context, WidgetRef ref, Plan plan, O
         final eligible = schedule.firstWhere((s) => s.id == o.id).isEligible;
         final open = openWorkoutFor(o, workouts);
         final recorded = workouts.where((w) => !w.isDeleted && w.occasionId == o.id && !w.isOpen && w.qualifiedOccasion).firstOrNull;
-        final repo = ref.read(planRepositoryProvider);
+        // Read when an action needs it: showing a workout must not depend on the store being ready.
+        PlanRepository repo() => ref.read(planRepositoryProvider);
 
         Future<void> move() async {
           final to = await pickDay(context, initial: o.scheduledDate, first: today, help: 'Move ${o.title} to');
@@ -76,7 +79,7 @@ Future<void> showOccasionSheet(BuildContext context, WidgetRef ref, Plan plan, O
               body: 'Workout: ${o.title} (week ${o.weekNumber})\nCurrent date: ${longDate(o.scheduledDate)}\nProposed date: ${longDate(to)}\nOriginally planned: ${longDate(o.originalDate)}\n'
                   'Block ends: ${longDate(v.blockEnd!)}\n\nIt stays the same workout in the same training week. No other workout changes.',
               action: 'Move workout', cancel: 'Keep current dates');
-          if (ok && context.mounted) await runPlanDecision(context, () => repo.move(current, schedule, o.id, to), saved: 'Moved to ${shortDate(to)}.');
+          if (ok && context.mounted) await runPlanDecision(context, () => repo().move(current, schedule, o.id, to), saved: 'Moved to ${shortDate(to)}.');
         }
 
         Future<void> skip() async {
@@ -84,46 +87,51 @@ Future<void> showOccasionSheet(BuildContext context, WidgetRef ref, Plan plan, O
               title: 'Skip ${o.title}?',
               body: 'The workout planned for ${longDate(o.scheduledDate)} will be marked Skipped. No workout, sets or completion credit are created, and it will not count as training.',
               action: 'Skip this workout', cancel: 'Keep it');
-          if (ok && context.mounted) await runPlanDecision(context, () => repo.skip(current, schedule, o.id), saved: 'Marked as skipped.');
+          if (ok && context.mounted) await runPlanDecision(context, () => repo().skip(current, schedule, o.id), saved: 'Marked as skipped.');
         }
 
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 20),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              SectionLabel('Week ${o.weekNumber} · ${status.label}'),
-              const SizedBox(height: 6),
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Overline('Week ${o.weekNumber}'), OccasionPill(status)]),
+              const SizedBox(height: 8),
               Heading(o.title, size: 26),
+              const SizedBox(height: 2),
               Text('${longDate(o.scheduledDate)}${o.wasMoved ? ' · originally ${shortDate(o.originalDate)}' : ''}', style: context.caption),
               const SizedBox(height: 14),
+              const Rule(),
               for (final (i, e) in o.prescription.indexed)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(children: [
-                    SizedBox(width: 24, child: Text('${i + 1}', style: context.caption)),
-                    Expanded(child: Text(e.name, style: context.sansStyle(16))),
-                    Text(targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds), style: context.caption),
+                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    SizedBox(width: 26, child: Text('${i + 1}', style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400))),
+                    // The target shares the name's line while both fit, and drops under it when they do not.
+                    Expanded(
+                      child: Wrap(alignment: WrapAlignment.spaceBetween, spacing: 10, children: [
+                        Text(e.name, style: context.sansStyle(16)),
+                        Text(targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds), style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w500)),
+                      ]),
+                    ),
                   ]),
                 ),
+              const Rule(),
               const SizedBox(height: 16),
               if (open != null)
                 PrimaryButton('Resume workout', onPressed: () {
                   Navigator.pop(sheet);
-                  resumeWorkout(context, ref, open);
+                  resumeWorkout(host, hostRef, open);
                 })
               else if (recorded != null || o.resultWorkoutId != null)
                 SecondaryButton('View what was recorded', onPressed: () {
                   Navigator.pop(sheet);
-                  push(context, WorkoutDetailScreen(workoutId: recorded?.id ?? o.resultWorkoutId!));
+                  push(host, WorkoutDetailScreen(workoutId: recorded?.id ?? o.resultWorkoutId!));
                 })
               else if (o.isSkipped)
-                SecondaryButton('Undo skip', onPressed: () => runPlanDecision(context, () => repo.unskip(current, o.id), saved: 'No longer skipped.'))
+                SecondaryButton('Undo skip', onPressed: () => runPlanDecision(context, () => repo().unskip(current, o.id), saved: 'No longer skipped.'))
               else if (current.isPaused)
                 const StatusLine(Icons.pause_circle_outline, 'The plan is paused. Resume the plan to start or reschedule its workouts.')
               else if (eligible && current.isActive) ...[
                 PrimaryButton(status == OccasionStatus.upcoming ? 'Start this workout early' : 'Start workout', key: const Key('occasion-start'), onPressed: () {
                   Navigator.pop(sheet);
-                  startPlannedWorkout(context, ref, current, o);
+                  startPlannedWorkout(host, hostRef, current, o);
                 }),
                 const SizedBox(height: 4),
                 Wrap(children: [
@@ -131,8 +139,6 @@ Future<void> showOccasionSheet(BuildContext context, WidgetRef ref, Plan plan, O
                   TextButton(key: const Key('occasion-skip'), onPressed: skip, child: const Text('Skip this workout')),
                 ]),
               ],
-            ]),
-          ),
-        );
+            ]);
       }),
     );
