@@ -1,8 +1,10 @@
 # Design system — Calm Momentum
 
-The app's look since 12 October 2026: clean sans type (Inter), pearl surfaces in light, graphite layers in dark, one
-chosen accent, a photographic workout feature on Today and a training pass on Train. It replaces the earlier
-"Evening Club" serif look. The brief and the two approved references are in `gohard-design-brief/`.
+The app's look: clean sans type (Inter), pearl surfaces in light, charcoal layers in dark and one chosen accent.
+Introduced on 12 October 2026 and refined across all four tabs, forms and sheets on 13 October 2026 from the brief
+and five references in `C:\dev\GoHard_UI_Food_Search` (one design family: Today, Train, Eat, Me, Add food). The
+references are concepts with sample data; where they and real data, accessibility or truthfulness disagree, the
+app follows the latter, and the differences are listed at the end.
 
 ## Where things live
 
@@ -16,8 +18,7 @@ chosen accent, a photographic workout feature on Today and a training pass on Tr
 | Completion, plan weeks, recorded-set progress (pure logic) | `app/lib/features/plans/plan_progress.dart` |
 | Appearance page | `AppearanceScreen` in `app/lib/features/me/me_screen.dart` |
 
-Screens read colours only through `context.c` (`GoColors`). No screen carries its own colour values, except white
-text on the workout photograph, which sits on a fixed dark scrim.
+Screens read colours only through `context.c` (`GoColors`). No screen carries its own colour values, and no text sits on a photograph.
 
 ## Appearance
 
@@ -92,8 +93,7 @@ increased-contrast variants:
 - text, secondary text and the three status colours on page, surface, recessed fill and selection tint: 4.5:1;
 - accent-coloured text on page, surface and selection tint; labels on filled accent controls; text on the pass: 4.5:1;
 - control boundaries, selected segments against their track, progress fills against their tracks: 3:1;
-- white text over the photograph assuming the brightest possible pixel behind it (the overlay is at least 82% black
-  under all text): 4.5:1.
+- white text over a photograph (a helper check kept from the earlier design; no screen puts text on a photograph now).
 
 The same file runs Flutter's rendered-pixel text-contrast check, the 48 px (Android) and 44 pt (iOS) tap-target
 checks and the labelled-control check on Today, Train › Plan, Eat and Me in all six themes.
@@ -111,73 +111,69 @@ pages, large text at 320 px, 12- and 16-week plans, a new account. They use the 
 not captures from a phone. Captures from the Android emulator, made by the native journeys with a real account on the
 local API, are in `docs/evidence/screenshots/`.
 
-## Food: search, scanner, preview and goals
-
-Added on 12 October 2026 with the existing components only (`AppPage`, `ListRow`, `Panel`, `StatusLine`,
-`SecondaryButton`, `ProgressRail`, the themed text fields and dropdowns). No new colour, radius or type size.
+## Add food, scanner, the food form and goals
 
 | Screen | File | Notes |
 |---|---|---|
-| Log food (search, scan, saved, recent, manual) | `features/nutrition/log_food_screen.dart` | Local matches as you type; online search is a separate button, because the food database is shared and counted per request. One list style for every origin. |
-| Scan a barcode | `features/nutrition/barcode_scan_screen.dart` | The camera sits in a rounded panel inside the normal page, with a plain white frame and a torch button only where the phone has one; the typed-barcode field is always below it. It never takes over the screen like a scanner SDK page. |
-| The food form | `features/nutrition/food_form.dart` | The same form for every entry path. A source card (name, brand, values per basis, credit) sits above the fields. Amount and unit side by side, stacked at large text or under 350 px. A corrected value is marked "Your value". |
+| Add food | `features/nutrition/log_food_screen.dart` | Back, "Add food", a labelled Scan action; an editable meal with the date; the search field; quiet Search / Recent / Favourites / My foods scopes; All and category chips in Search; plain rows with thin separators (name, preparation or brand, the stated basis with calories, protein, a plus labelled "Choose <food>"); "Search more foods" and "Can't find it? Create your own food". Choosing a row opens the form; nothing on this screen logs. Behaviour and data: `docs/FOOD_DATA.md`. |
+| Scan a barcode | `features/nutrition/barcode_scan_screen.dart` | The camera sits in a rounded panel inside the normal page; the typed-barcode field is always below it. |
+| The food form | `features/nutrition/food_form.dart` | The same form for every entry path. A source card (the provider's full title, values per basis, credit) sits above the fields. Amount and unit side by side, stacked at large text or under 350 px. |
 | Nutrition goals | `features/me/me_screen.dart` | Two optional fields that start empty. |
 | Update notice | `app/app.dart` | Drawn over the open screen, so nothing underneath is lost. |
 
-Checked by `test/food_ui_test.dart`: contrast, tap-target size and labels on search, results, a preview with unknown
-values, and the scanner's fallback, in all six themes; no overflow on search, preview, scanner and goals at twice
-the text size on a 320 px phone. Renders of each in all six themes are in `docs/evidence/design/`
-(`six-themes-log-food`, `-food-results`, `-food-preview`, `-scan`, `-goals`). In those renders the camera is a flat
-grey panel, because a widget render has no camera; the emulator capture `screenshots/97-scanner.png` shows the real
-camera view with its frame.
+Checked by `test/food_ui_test.dart` and `test/food_search_test.dart`: contrast, tap-target size and labels in all six
+themes; no overflow at twice the text size on a 320 px phone with the keyboard up; the query, scope, category, meal
+and scroll position kept through the keyboard, a theme change and a round trip to the form.
 
-Found and fixed while checking these: the Meal dropdown overflowed by 59 px at twice the text size on a 320 px phone
-(it now uses the full width), and a long text-and-icon button did not wrap (it is now plain text).
+## Today
 
-## Today: what it holds and what it leaves to the other tabs
+Three modules of one shape (`_Module` in `features/today/today_screen.dart`): an icon tile, a small-caps label with
+the state as an icon and a word, the content, a small photograph crop at the trailing edge, then one button and one
+quiet link. Above them: the local date, "Today", the mark, and a greeting from the phone's local time and the first
+word of the profile's own name (no name, no name shown).
 
-Redesigned on 13 October 2026 from the brief in `gohard-today-photo-design/` (three references and three
-photographs). Today is three cards of one family: the same 20 px radius, border, surface, title weight, 36 px icon
-tile and 52 px button. The workout card is full width and holds the page's only filled button; Run and Nutrition
-are companion cards with outlined buttons.
-
-| Part | What it shows | Where the rest lives |
+| Module | What it shows | Where the rest lives |
 |---|---|---|
-| Workout card (`_WorkoutCard` in `features/today/today_screen.dart`) | A photograph about 124 px high carrying "WORKOUT", the workout's real name and a filled state label (Due today, In progress, Done for today). Below it, on the card's own surface: one summary line (exercise count, planned sets when known, the plan's session length as "50 min planned"), up to three movements in workout order with their prescription on the right when the plan has one ("4 × 6–8"), per-movement recorded counts while in progress, "X of Y sets recorded" with a rail, and one Start or Resume button. | "See all N exercises" (or "Workout details" with three or fewer) opens the existing workout sheet or record. The week's calendar: Train › Plan. |
-| Rest day, paused plan, plan not started, block to review, draft, no plan (`_PlainCard`) | The same card with no photograph, so a picture of training never sits above "Rest today". "Start a manual workout" stays as a text link under it. | Train › Plan. |
-| Run card (`_RunCard`) | Photograph, "Run", one line of real state ("No run today", "Today: 31 min · 5.20 km", "In progress", "In progress · 0.42 km so far" once a distance has been measured) and one button: "Start run", or "Continue run" for the saved open run, whatever day it began. It is Today's only way into a run. | "Run history" is a quiet link in the side-by-side layout. Train › Workouts has the same start. |
-| Nutrition card (`_NutritionCard`, values by `NutritionSummary`) | Photograph, "Nutrition", "No food logged today" or the number of foods, then calories and protein from the same coverage Eat reads, a goal rail only for a goal that was set, one line when values are missing, a quiet "Food journal" link and one "Log food" button. | Carbs, fat, the per-food list and the longer explanation: Eat. |
-| Recorded today | Workouts finished today in their own words ("Manual workout · Recorded · 1 set"). A single finished run is said on the Run card; runs are listed here only when there are several. Absent when there is nothing to list. | Histories: Train and Me. Body measurements: Me. |
-| Account not reached | One line, "Can't sync right now", with the number of changes still only on this phone; a tap opens the explanation and "Try again". Me's sync row uses the same words (`cantSyncLabel` in `app/providers.dart`). Neither says "Offline": the app knows an attempt failed, not whether the phone or the server was the cause. | Changes that need a decision keep their notice above the navigation bar. |
+| Workout | The workout's real name and state, "5 exercises · 18 planned sets". In progress on a plan: "6 of 18 sets recorded", a percentage and a rail (recorded, not completed). A manual workout: "N sets recorded", no percentage. One filled Start or Resume, and Details. | Details opens the existing sheet or record. Exercise order and prescriptions: that sheet, the recording screen and Train. The week: Train › Plan. |
+| Rest, paused, done, starts later, block review, draft, no plan | The same module, text first, with no photograph. "Start a manual workout" and workouts saved for later stay below it. | Train › Plan. |
+| Run | "Start run", or "Continue run" for the saved open run whatever day it began. Distance and Time appear only from saved values. No target, percentage or route. | History opens run history. An open run is never also listed under Recorded today. |
+| Nutrition | Calories and protein from the same coverage Eat reads; a rail only for a goal that was set; unknown is a dash, a partial sum is marked "known"; one line when values are missing, which opens Eat. One Log food. | Carbs, fat, what is left, and the foods: Eat. |
+| Recorded today | Finished workouts, and runs when there are several. Absent when there is nothing to list. | Histories: Train. Body measurements: Me. |
+| Account not reached | One line, "Can't sync right now", with the number of changes waiting; a tap gives the explanation and "Try again". | Changes needing a decision keep their notice above the navigation bar. |
 
-**Layout.** Run and Nutrition sit side by side while both are short: nothing logged today, text size up to 115%,
-and a screen at least 350 px wide. Their buttons then share a baseline. Logged food brings values and goal rails
-that need the full width, so the two cards stack, and the Run card becomes one row (title and state on the left,
-button on the right). Large text or a narrow phone also stacks them. Nothing is truncated or shrunk to keep a
-layout: heights follow content and the page scrolls.
+Heights at 390 px and normal text, measured in `test/today_ui_test.dart` with the real font: workout 197, run 150,
+nutrition 176 in the fullest state (178 / 144 / 144 with a due workout and nothing logged). They are results, not
+fixed heights: content and text size can grow them and the page scrolls. The photographs
+(`assets/images/workout-hero.webp`, `run-cover.webp`, `nutrition-cover.webp`, generated illustrations supplied with
+the earlier Today brief) are decoration: excluded from screen readers, decoded at the size of the crop (88 px
+square times the pixel ratio), 64 px under 350 px width, and left out above 130% text.
 
-**What the rows do and do not claim.** A movement row is plain text, not a button: there is no page for a single
-movement, so nothing pretends to be tappable. No row is highlighted for being first, and none is marked complete;
-"2 of 4 sets recorded" is a count. With no planned total (a manual workout) the card says "3 sets recorded" with
-no percentage and no "of".
+## Train
 
-**Photographs.** `assets/images/workout-hero.webp`, `run-cover.webp` and `nutrition-cover.webp` (1536 × 1024,
-about 0.69 MB together) are the files supplied with the brief, unchanged. Per its `ASSETS.md` they are generated
-editorial illustrations made for this design on 13 October 2026: not stock photographs, not the user's workout,
-route or meal. They replace `evening-gym-hero.jpg`, which is removed. They are bundled, so they load with no
-network, and are excluded from screen-reader output. Each is cropped with `BoxFit.cover` and a focal alignment that
-keeps the dumbbells, the near shoe and the bowl in view; a file that fails to load leaves a plain recessed panel.
-Each is decoded once at the phone's width (`cacheWidth`), the same size in every layout, so scrolling, stacking and
-theme changes reuse the decoded image.
+Workouts / Plan / Progress under one header; the chosen section is kept in `shellProvider` through tab, theme and
+accent changes.
 
-**Contrast.** Only the workout photograph carries text. A left-to-right scrim keeps at least 82% black under the
-62% of the width the words may use (the same floor `theme_test.dart` checks), and lets the photograph show on the
-right. With large text the words take the full width and the scrim covers the whole header. The state label is a
-filled accent pill, so Blue, Green and Pink each keep their own colour; nothing on the card is hard-coded blue.
+- **Plan.** A flat pass (`_TrainPass`): the plan's real name, "Week X of Y" (calendar position), completed over
+  eligible workouts with a rail (completion). "Choose a week" lists every week of any plan length, three across,
+  two at 320 px, one per row at large text. A week's label comes from `weekStateOf` in
+  `features/plans/week_widgets.dart`, first match wins: No workouts; Skipped; **Done only when every eligible
+  workout has a recorded result**; Current; "X of Y" when something is recorded; Missed; Paused; Upcoming. A week
+  whose dates have passed is never Done for that reason. Selection is the accent border and tint; "Current" is a
+  word. The selected week lists weekday and date, name, "5 exercises · 18 planned sets" and a state pill with an
+  icon and a word (Planned, Due, In progress, Completed, Partial, Skipped, Missed, Paused).
+- **Workouts.** Open workouts, start a manual workout, start a run, the five most recent, and a History card
+  (Workout history, Run history) that is always there.
+- **Progress.** The same three questions and real counts as before; Workout history also in the empty state.
+- The occasion sheet uses `showGoSheet`; recording, detail, plan setup and review screens use the shared cards,
+  rows and tabular figures. Their actions, keys, timers and rules are unchanged.
 
-The minutes on a due workout are the session length chosen in plan setup (`setup.minutesPerSession`), so they read
-"50 min planned", never "about 50 min": nothing is estimated from the exercises.
+## Eat
 
+The local date with previous and next day; one card with the calorie total, one rail and the goal when set,
+then Protein, Carbs and Fat with the protein rail when that goal is set. What is left or over is said only for a
+complete total with a goal; a partial sum is "known". One "Log food" button. Each meal is a group: name, its
+calorie subtotal, a plus that opens Add food for that meal, and one row per logged food with its own name, the
+portion as it was stored, its known values and any sync mark. No photograph.
 
 ## Me
 
@@ -207,5 +203,10 @@ goals shows the goals that were set, and "None set" otherwise; no number ever st
 | "Account & privacy" row on Me | "Delete account" directly in the Account group | it is the only account action there is; a page holding one row would be a detour |
 | "Metric" for Units, "Device settings" for Motion & haptics | "Kilograms" / "Pounds"; "Device", or what was changed | the app's real choices, short enough to stay on the row's line |
 | "YOUR PROFILE" in capitals, the mark above the title | "Your profile" in the same quiet line every tab uses, the mark at the top trailing edge | one header for all four tabs |
+| A state pill beside WORKOUT / RUN on Today | the state as an icon and a word on the label's line | a pill beside the label wraps at 360–390 px next to the photograph |
+| Separate colours for the calorie and protein bars | both use the chosen accent | one accent per look; no extra colours to keep accessible in six themes |
+| A calorie ring on Eat, and a meal photograph | one bar; no photograph | one progress graphic per value; the photograph crowded the totals |
+| One line per meal ("Eggs and toast") on Eat | one row per logged food | entries are never merged into an invented meal name |
+| "View schedule" link on Train | none | the schedule is already on the page |
 | A deep-coloured gradient pass | the pass is a plain card | no glossy gradients or heavy shadows |
 | Green check marks for completed days | teal check marks | completion must not depend on, or be confused with, the accent |
