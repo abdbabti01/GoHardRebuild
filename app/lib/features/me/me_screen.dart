@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
 // Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
+import '../nutrition/nutrition_surface.dart';
 import '../weather/weather.dart';
 import 'account_repository.dart';
 import 'reminders.dart';
@@ -119,7 +120,7 @@ class MeScreen extends ConsumerWidget {
               subtitle: profile.calorieGoal == null && profile.proteinGoal == null ? 'None set' : 'Daily goals you set',
               value: profile.calorieGoal == null && profile.proteinGoal == null
                   ? null
-                  : [if (profile.calorieGoal != null) '${profile.calorieGoal} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
+                  : [if (profile.calorieGoal != null) '${formatKcal(profile.calorieGoal!)} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
               onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
             ),
         ]),

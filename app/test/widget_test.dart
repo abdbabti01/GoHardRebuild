@@ -92,7 +92,7 @@ void main() {
 
     final big = [FoodEntry(foodEntry('c', _day, 'Dinner', 'Feast', '1', calories: 12400.5))];
     await pumpApp(tester, const [], home: Scaffold(body: SingleChildScrollView(child: NutritionSurface(entries: big, coverage: NutrientCoverage.calculate(big)))));
-    expect(find.text('12,400.5'), findsOneWidget, reason: 'large totals are grouped for reading');
+    expect(find.text('12,401'), findsOneWidget, reason: 'large totals are grouped and shown in whole kilocalories');
   });
 
   // Test fonts draw solid glyphs, so the contrast measured is that of the colours, not of anti-aliased edges.

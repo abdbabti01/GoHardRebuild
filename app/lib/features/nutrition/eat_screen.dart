@@ -46,7 +46,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// A meal's calories from its own entries: a sum of what is known, labelled when some are unknown.
   static String _mealCalories(List<FoodEntry> entries) {
     final t = NutrientCoverage.calculate(entries)[Nutrient.calories]!;
-    return !t.hasAnyKnown ? 'Calories unknown' : '${formatNumber(t.knownTotal)} kcal${t.isComplete ? '' : ' known'}';
+    return !t.hasAnyKnown ? 'Calories unknown' : '${formatKcal(t.knownTotal)} kcal${t.isComplete ? '' : ' known'}';
   }
 
   @override
@@ -160,7 +160,7 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = r.value;
     final name = Text(e.name, style: context.sansStyle(15.5, weight: FontWeight.w500));
-    final kcal = Text('${e.calories == null ? '—' : formatNumber(e.calories!)} kcal', style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
+    final kcal = Text('${e.calories == null ? '—' : formatKcal(e.calories!)} kcal', style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
     return Semantics(
       button: true,
       child: InkWell(

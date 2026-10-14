@@ -22,7 +22,7 @@ void main() {
     await j.type('goal-calories', '2200');
     await j.type('goal-protein', '140');
     await j.tapKey('goal-save');
-    await j.waitFor(find.text('2200 kcal · 140 g protein'));
+    await j.waitFor(find.text('2,200 kcal · 140 g protein'));
 
     // --- A plan with a workout due today, then two recorded sets, left open.
     await j.tapKey('nav-today');

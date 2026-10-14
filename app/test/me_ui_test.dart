@@ -97,7 +97,7 @@ void main() {
     expect(_in('me-goals', find.textContaining(RegExp(r'\d'))), findsNothing, reason: 'no number stands in for a goal');
 
     await _openMe(tester, (await tester.runAsync(() => overridesFor(day: _day, calorieGoal: 2200, proteinGoal: 140)))!);
-    expect(_in('me-goals', find.text('2200 kcal · 140 g protein')), findsOneWidget);
+    expect(_in('me-goals', find.text('2,200 kcal · 140 g protein')), findsOneWidget);
     expect(find.text('None set'), findsNothing);
 
     await _openMe(tester, (await tester.runAsync(() => overridesFor(day: _day, proteinGoal: 120)))!);
