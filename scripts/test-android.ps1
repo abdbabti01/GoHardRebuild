@@ -8,6 +8,9 @@
   journey_device_test     OS reminders follow the plan; GPS measures a run (emulator only: positions are simulated)
   journey_upgrade_test    an install from before appearance became a device setting keeps its Light or Dark
   journey_coldstart_test  two runs on one install: an open workout, a food and an open run survive the process ending
+  journey_plan_test       plan builder in two runs on one install: a template plan customised and activated offline
+                          with a set recorded, a new process recovers them; rescheduling, a future edit, a resumed
+                          own-plan draft as a rotation replacing the first plan, skip
   journey_food_test       goals, search, amount, log, reuse, barcode, manual fallback, restart. Needs the API started
                           with start-api.ps1 -FoodFixtures (recorded provider responses, not the live providers)
 .PARAMETER Only
@@ -20,7 +23,7 @@ Assert-Tool flutter 'Install Flutter: https://docs.flutter.dev/get-started/insta
 Assert-LocalApi $ApiBase
 $device = Start-AndroidDevice $Avd
 $appId = 'com.gohard.rebuild.debug'
-$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_more_test', 'journey_offline_test', 'journey_device_test', 'journey_upgrade_test', 'journey_food_test', 'journey_coldstart_test' }
+$journeys = if ($Only) { @($Only) } else { 'journey_test', 'journey_secondary_test', 'journey_more_test', 'journey_offline_test', 'journey_device_test', 'journey_upgrade_test', 'journey_food_test', 'journey_coldstart_test', 'journey_plan_test' }
 & $Adb -s $device shell input keyevent KEYCODE_HOME   # start from the home screen, whatever app was in front
 
 Push-Location $AppDir
@@ -54,7 +57,7 @@ try {
                 }
             }
         }
-        if ($journey -eq 'journey_offline_test') {
+        if ($journey -in 'journey_offline_test', 'journey_plan_test') {
             # The journey prints GOHARD_NET:off / GOHARD_NET:on; this switches the device's Wi-Fi and mobile data to match,
             # so the middle of the journey is genuinely offline. The connection is always restored afterwards.
             & $Adb -s $device logcat -c
@@ -79,7 +82,7 @@ try {
             # The cold-start journey runs twice on one install. The Flutter tool uninstalls the app when a run ends,
             # which would wipe what the first run saved, so the first run leaves the app in place and its process is
             # killed here instead. The second run is then a new process that can only show what was saved on the device.
-            $phases = if ($journey -eq 'journey_coldstart_test') { '1', '2' } else { @('') }
+            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test') { '1', '2' } else { @('') }
             foreach ($phase in $phases) {
                 if ($phase) { Step "  phase $phase of 2$(if ($phase -eq '2') { ' (new process, same install)' })" }
                 $keep = if ($phase -eq '1') { '--keep-app-running' } else { '--no-keep-app-running' }
@@ -115,7 +118,7 @@ try {
             if ($feeder) {
                 Stop-Job $feeder; Remove-Job $feeder
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
-                if ($journey -eq 'journey_offline_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
+                if ($journey -in 'journey_offline_test', 'journey_plan_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

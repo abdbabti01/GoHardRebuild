@@ -28,7 +28,8 @@ List<Occasion> planOccasions(Plan plan, String today, Iterable<Workout> workouts
   final end = plan.endDate;
 
   // Every known index, plus room for gaps (a start that was later deleted on this phone).
-  final known = materialized.length + linked.length + 1;
+  final highest = plan.occasions.fold<int>(-1, (m, o) => (o.sequenceIndex ?? -1) > m ? o.sequenceIndex! : m);
+  final known = [materialized.length, highest + 1].reduce((a, b) => a > b ? a : b) + linked.length + 1;
   final out = <Occasion>[];
   final virtualIndexes = <int>[];
   for (var k = 0; k < known; k++) {
