@@ -211,6 +211,9 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     if (picked != null) setState(() => _dayKey = dayKeyOf(picked));
   }
 
+  /// The source in full (provider title, values per basis, brand, credit, barcode), on demand.
+  void _details(FoodItem item) => showGoSheet<void>(context, title: 'Food details', builder: (_) => FoodSourceCard(item));
+
   @override
   Widget build(BuildContext context) {
     final editing = widget.existing != null;
@@ -221,17 +224,47 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     if (item != null && (_amountEaten ?? 0) > 0) {
       amountLine = FoodScaling.describe(item, _amountEaten!, FoodScaling.unit(item, _unitId));
     }
+    final unit = item == null ? null : FoodScaling.unit(item, _unitId);
+    // "1 egg = 50 g": what one of the chosen unit is, said only when its source (or the user) states it.
+    final definition = unit == null || unit.size == null || unit.label.contains(unit.size!) ? null : '${unit.label} = ${unit.size}';
+    final title = editing ? 'Edit food' : item == null ? 'New food' : (widget.draft.name.trim().isEmpty ? item.name : widget.draft.name);
+    final qualifier = editing ? widget.draft.name : item == null ? null : ref.watch(commonFoodsProvider).value?.of(item)?.qualifier ?? item.brand;
+    final missing = [if (item != null) for (final k in FoodItem.nutrientKeys) if (item.nutrient(k) == null) _nutrientLabels[k]!.toLowerCase()];
     // Side by side, or one under the other when the text is large or the phone narrow.
     final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
-    Widget macro(String key, String label, String suffix) => TextField(
-          key: Key('food-$key'), controller: _macros[key], keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (_) => setState(() => _corrected.add(key)),
-          decoration: InputDecoration(labelText: label, suffixText: suffix, hintText: 'Unknown', helperText: item != null && _corrected.contains(key) ? 'Your value' : null),
-        );
-    Widget pair(Widget a, Widget b) => stacked ? Column(children: [a, const SizedBox(height: 12), b]) : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: a), const SizedBox(width: 10), Expanded(child: b)]);
+
+    // One line of the read-out: the value is its own field, so tapping it corrects it. Blank reads as a dash.
+    Widget macro(String key, String label, String suffix) {
+      // The visible label is read as the field's own label.
+      final field = Semantics(label: label, child: TextField(
+        key: Key('food-$key'), controller: _macros[key], keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textAlign: stacked ? TextAlign.start : TextAlign.end, style: context.numStyle(17),
+        onChanged: (_) => setState(() => _corrected.add(key)),
+        decoration: InputDecoration(
+          filled: false, hintText: '—', suffixText: suffix, contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          border: InputBorder.none, enabledBorder: InputBorder.none,
+          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: context.c.accent, width: 2)),
+        ),
+      ));
+      final name = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        ExcludeSemantics(child: Text(label, style: context.sansStyle(16, color: context.c.secondary))),
+        if (item != null && _corrected.contains(key)) Text('Your value', style: context.sansStyle(13, color: context.c.accent, weight: FontWeight.w600)),
+      ]);
+      return Padding(
+          padding: EdgeInsets.fromLTRB(16, stacked ? 10 : 0, 16, 0),
+          child: stacked
+              ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [name, field])
+              : Row(children: [Expanded(child: name), SizedBox(width: 140, child: field)]),
+      );
+    }
+
+    Widget pair(Widget a, Widget b) => stacked ? Column(children: [a, const SizedBox(height: 12), b]) : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 2, child: a), const SizedBox(width: 10), Expanded(flex: 3, child: b)]);
+    final nameField = TextField(key: const Key('food-name'), controller: _name, textCapitalization: TextCapitalization.sentences, textInputAction: TextInputAction.next,
+        decoration: InputDecoration(labelText: item == null ? 'What did you eat?' : 'Name in your journal'));
 
     return AppPage(
-      title: editing ? 'Edit food' : 'Log food',
+      title: title,
+      subtitle: qualifier,
       actions: [
         if (item != null && !editing)
           IconButton(
@@ -245,27 +278,31 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
         TextButton(key: const Key('food-cancel'), onPressed: () => Navigator.pop(context), child: Text(editing ? 'Cancel and keep the recorded version' : 'Cancel')),
       ]),
       children: [
+        if (item == null) ...[nameField, const SizedBox(height: 14)],
+        DropdownButtonFormField<String>(
+          key: const Key('food-meal'), initialValue: _meal, isExpanded: true, dropdownColor: context.c.surface,
+          decoration: const InputDecoration(labelText: 'Meal', prefixIcon: Padding(padding: EdgeInsets.all(7), child: IconTile(Icons.restaurant, circle: true, size: 34))),
+          items: [for (final m in meals) DropdownMenuItem(value: m, child: Text(m))],
+          onChanged: (m) => setState(() => _meal = m ?? _meal),
+        ),
         InkWell(
           onTap: _pickDate,
-          child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: StatusLine(Icons.event, 'For ${longDate(_dayKey)}. Tap to change the date.')),
+          child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: StatusLine(Icons.event, 'For ${longDate(_dayKey)}. Tap to change the date.')),
         ),
-        const SizedBox(height: 8),
-        if (item != null) ...[FoodSourceCard(item), const SizedBox(height: 16)],
-        TextField(key: const Key('food-name'), controller: _name, textCapitalization: TextCapitalization.sentences, textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: item == null ? 'What did you eat?' : 'Name in your journal')),
-        const SizedBox(height: 12),
-        if (item == null)
-          TextField(key: const Key('food-amount'), controller: _amount, textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'How much?', helperText: 'In your own words, for example "200 g" or "2 slices"'))
-        else ...[
+        if (item != null) ...[
+          const Rule(),
+          _DetailsRow(item, showName: item.name != title, onTap: () => _details(item)),
+          const Rule(),
+          const SizedBox(height: 18),
           pair(
             TextField(
-              key: const Key('food-quantity'), controller: _quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.next,
+              key: const Key('food-quantity'), controller: _quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.done,
+              style: context.numStyle(18),
               onChanged: (v) => setState(() {
                 _exact = parseNonNegative(v);
                 _rescale();
               }),
-              decoration: const InputDecoration(labelText: 'How much?'),
+              decoration: const InputDecoration(labelText: 'Amount'),
             ),
             KeyedSubtree(
               key: const Key('food-unit'),
@@ -278,33 +315,38 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
               ),
             ),
           ),
+          if (definition != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(definition, key: const Key('food-unit-definition'), style: context.caption)),
           // The amount in full, with its weight when the food states one, so the number and unit are read together.
-          if (amountLine != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(amountLine, key: const Key('food-amount-line'), style: context.sansStyle(15, weight: FontWeight.w600))),
+          if (amountLine != null) Padding(padding: const EdgeInsets.only(top: 14), child: Text(amountLine, key: const Key('food-amount-line'), style: context.titleStyle(24))),
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton(key: const Key('food-add-portion'), onPressed: _busy ? null : _definePortion, child: const Text('Add your own portion')),
+            child: TextButton.icon(
+              key: const Key('food-add-portion'), onPressed: _busy ? null : _definePortion, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)),
+              iconAlignment: IconAlignment.end, icon: const Icon(Icons.chevron_right, size: 20), label: const Text('Add your own portion'),
+            ),
           ),
+          const SizedBox(height: 4),
+          const Rule(),
+        ] else ...[
+          TextField(key: const Key('food-amount'), controller: _amount, textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(labelText: 'How much?', helperText: 'In your own words, for example "200 g" or "2 slices"')),
         ],
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          key: const Key('food-meal'), initialValue: _meal, isExpanded: true, decoration: const InputDecoration(labelText: 'Meal'),
-          dropdownColor: context.c.surface,
-          items: [for (final m in meals) DropdownMenuItem(value: m, child: Text(m))],
-          onChanged: (m) => setState(() => _meal = m ?? _meal),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         // The amount is spelled out with its unit: "1 g" and "1 cup" look the same in the number field alone.
-        SectionLabel(amountLine == null ? 'Nutrition for this amount · optional' : 'Nutrition for $amountLine · optional', key: const Key('food-amount-echo')),
-        const SizedBox(height: 6),
+        Semantics(header: true, child: Text(amountLine == null ? 'Nutrition' : 'Nutrition for $amountLine', key: const Key('food-amount-echo'), style: context.titleStyle(20))),
+        const SizedBox(height: 4),
         Text(
             item == null
-                ? 'Leave a field blank if you do not know it. Blank stays unknown; it is never counted as zero.'
-                : 'Worked out from the food above for the amount you entered. Change a value to correct it; a blank stays unknown and is never counted as zero.',
+                ? 'Optional. Tap a value to enter it; a blank stays unknown and is never counted as zero.'
+                : 'From the source, for this amount. Tap a value to correct it; a blank stays unknown and is never counted as zero.',
             style: context.caption),
         const SizedBox(height: 12),
-        pair(macro('calories', 'Calories', 'kcal'), macro('protein', 'Protein', 'g')),
-        const SizedBox(height: 12),
-        pair(macro('carbs', 'Carbs', 'g'), macro('fat', 'Fat', 'g')),
+        GroupCard(children: [macro('calories', 'Calories', 'kcal'), macro('protein', 'Protein', 'g'), macro('carbs', 'Carbs', 'g'), macro('fat', 'Fat', 'g')]),
+        if (missing.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: StatusLine(Icons.help_outline, 'This source gives no value for ${missing.join(', ')}. ${missing.length == 1 ? 'It stays' : 'They stay'} unknown unless you enter ${missing.length == 1 ? 'it' : 'them'}.'),
+          ),
         if (item != null && _corrected.isNotEmpty)
           Align(
             alignment: Alignment.centerLeft,
@@ -317,7 +359,8 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
               child: const Text('Use the source\'s values again'),
             ),
           ),
-        const SizedBox(height: 14),
+        if (item != null) ...[const SizedBox(height: 18), nameField],
+        const SizedBox(height: 10),
         if (!editing)
           Align(
             alignment: Alignment.centerLeft,
@@ -327,6 +370,46 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
         if (editing)
           Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('food-remove'), onPressed: _remove, icon: const Icon(Icons.delete_outline, size: 18), label: const Text('Remove this food'))),
       ],
+    );
+  }
+}
+
+const _nutrientLabels = {'calories': 'Calories', 'protein': 'Protein', 'carbs': 'Carbs', 'fat': 'Fat'};
+
+/// The way into the source card: who the values come from, in one line, and the rest on a tap.
+class _DetailsRow extends StatelessWidget {
+  const _DetailsRow(this.item, {required this.showName, required this.onTap});
+  final FoodItem item;
+  final bool showName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final credit = sourceCredit(item.source);
+    return Semantics(
+      button: true,
+      child: InkWell(
+        key: const Key('food-source'), onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 64),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(children: [
+              // At very large text the decorative tile gives its width to the words.
+              if (MediaQuery.textScalerOf(context).scale(10) <= 15) ...[const IconTile(Icons.description_outlined, circle: true, size: 44), const SizedBox(width: 14)],
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                  Text('Food details', style: context.sansStyle(16, weight: FontWeight.w600)),
+                  // The provider's own title, when the page is headed by the everyday name.
+                  if (showName) Text(item.name, style: context.caption),
+                  Text([if (credit != null) 'Source: $credit' else 'Your own food', if (item.barcode != null) 'Barcode ${item.barcode}'].join(' · '), style: context.caption),
+                ]),
+              ),
+              Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -386,22 +469,17 @@ class _PortionDialogState extends State<_PortionDialog> {
   }
 }
 
-/// What the food is and where its values come from, shown before anything is logged.
+/// What the food is and where its values come from: the provider's full title, brand, values on their stated
+/// basis, credit and barcode. Shown in the Food details sheet of the form.
 class FoodSourceCard extends StatelessWidget {
   const FoodSourceCard(this.item, {super.key});
   final FoodItem item;
 
-  static const _labels = {'calories': 'Calories', 'protein': 'Protein', 'carbs': 'Carbs', 'fat': 'Fat'};
-
   @override
   Widget build(BuildContext context) {
     final credit = sourceCredit(item.source);
-    final missing = [for (final k in FoodItem.nutrientKeys) if (item.nutrient(k) == null) _labels[k]!.toLowerCase()];
     final about = [if (item.brand != null) item.brand!, if (item.description != null) item.description!].join(' · ');
-    return Panel(
-      key: const Key('food-source'),
-      padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (item.imageUrl != null)
             Padding(
@@ -423,18 +501,14 @@ class FoodSourceCard extends StatelessWidget {
         Text('Nutrition ${FoodScaling.basisText(item)}', style: context.label),
         const SizedBox(height: 4),
         Semantics(
-          label: [for (final k in FoodItem.nutrientKeys) '${_labels[k]} ${item.nutrient(k) == null ? 'unknown' : '${formatNumber2(item.nutrient(k)!)} ${k == 'calories' ? 'kilocalories' : 'grams'}'}'].join(', '),
+          label: [for (final k in FoodItem.nutrientKeys) '${_nutrientLabels[k]} ${item.nutrient(k) == null ? 'unknown' : '${formatNumber2(item.nutrient(k)!)} ${k == 'calories' ? 'kilocalories' : 'grams'}'}'].join(', '),
           child: ExcludeSemantics(
             child: Wrap(spacing: 14, runSpacing: 4, children: [
               for (final k in FoodItem.nutrientKeys)
-                Text('${_labels[k]} ${item.nutrient(k) == null ? '—' : '${formatNumber2(item.nutrient(k)!)}${k == 'calories' ? ' kcal' : ' g'}'}', style: context.sansStyle(15)),
+                Text('${_nutrientLabels[k]} ${item.nutrient(k) == null ? '—' : '${formatNumber2(item.nutrient(k)!)}${k == 'calories' ? ' kcal' : ' g'}'}', style: context.sansStyle(15)),
             ]),
           ),
         ),
-        if (missing.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          StatusLine(Icons.help_outline, 'This source gives no value for ${missing.join(', ')}. ${missing.length == 1 ? 'It stays' : 'They stay'} unknown unless you enter ${missing.length == 1 ? 'it' : 'them'}.'),
-        ],
         const SizedBox(height: 10),
         Text(
             [
@@ -443,7 +517,6 @@ class FoodSourceCard extends StatelessWidget {
               if (item.imageUrl != null && item.imageAttribution != null) item.imageAttribution!,
             ].join(' · '),
             style: context.caption),
-      ]),
-    );
+      ]);
   }
 }
