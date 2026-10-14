@@ -88,7 +88,9 @@ public class WeatherProviderTests
         var stub = new StubProvider(respond ?? (r => Task.FromResult(StubProvider.Json(StubProvider.Recorded(
             r.RequestUri!.AbsolutePath.EndsWith("/search") ? "openmeteo_places_paris.json" : "openmeteo_current_overcast_night.json")))));
         var http = new HttpClient(stub);
-        return (new WeatherService(new OpenMeteoProvider(http, options), new MetNorwayProvider(http, options), options, NullLogger<WeatherService>.Instance), stub);
+        // MET Norway reads the hour from a clock fixed in the hour its recording covers (14:30 UTC, 14 October 2026).
+        var metClock = new FixedTime(new DateTimeOffset(2026, 10, 14, 14, 30, 0, TimeSpan.Zero));
+        return (new WeatherService(new OpenMeteoProvider(http, options), new MetNorwayProvider(http, options, metClock), options, NullLogger<WeatherService>.Instance), stub);
     }
 
     // The diagnosed cause of "wrong weather" on the phone: from the hosted server Open-Meteo answered 429 for every
@@ -275,4 +277,10 @@ public class WeatherEndpointTests(PostgresFixture pg)
         Assert.Equal("PROVIDER_NOT_CONFIGURED", (await Get(b.Http, "/weather/places?q=Paris")).Item2.GetProperty("code").GetString());
         Assert.Equal(HttpStatusCode.OK, (await disabled.CreateClient().GetAsync("/health/ready")).StatusCode);
     }
+}
+
+/// A clock that always says the same instant.
+file sealed class FixedTime(DateTimeOffset at) : TimeProvider
+{
+    public override DateTimeOffset GetUtcNow() => at;
 }

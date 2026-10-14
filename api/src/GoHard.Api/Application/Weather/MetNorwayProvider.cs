@@ -11,7 +11,7 @@ namespace GoHard.Api.Application.Weather;
 /// Data: CC BY 4.0 / NLOD, credited "Weather data from MET Norway". Its symbol for the current hour is mapped onto
 /// the same WMO codes and families Open-Meteo uses, so the app needs nothing new.
 /// </summary>
-public sealed class MetNorwayProvider(HttpClient http, WeatherOptions options)
+public sealed class MetNorwayProvider(HttpClient http, WeatherOptions options, TimeProvider? time = null)
 {
     public const string Source = "met.no";
 
@@ -22,11 +22,11 @@ public sealed class MetNorwayProvider(HttpClient http, WeatherOptions options)
         if (response.StatusCode == HttpStatusCode.TooManyRequests) return Lookup<WeatherNow>.Fail(LookupStatus.RateLimited);
         if (!response.IsSuccessStatusCode) return Lookup<WeatherNow>.Fail(LookupStatus.Unavailable);
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
-        return ParseCurrent(doc.RootElement, lat, lon, DateTime.UtcNow) is { } now ? Lookup<WeatherNow>.Ok(now) : Lookup<WeatherNow>.Fail(LookupStatus.Unavailable);
+        return ParseCurrent(doc.RootElement, lat, lon, (time ?? TimeProvider.System).GetUtcNow().UtcDateTime) is { } now ? Lookup<WeatherNow>.Ok(now) : Lookup<WeatherNow>.Fail(LookupStatus.Unavailable);
     }
 
     /// <summary>
-    /// The latest hourly entry at or before <paramref name="fetchedAtUtc"/> (MET times are UTC instants) and its
+    /// The latest hourly entry starting at or before <paramref name="fetchedAtUtc"/> (MET times are UTC instants) and its
     /// next-hour symbol. Day or night: the symbol's _day/_night suffix when it has one, otherwise the sun's elevation
     /// at that place and instant. Null when there is no usable entry.
     /// </summary>
@@ -38,7 +38,7 @@ public sealed class MetNorwayProvider(HttpClient http, WeatherOptions options)
         foreach (var e in series.EnumerateArray())
         {
             if (!e.TryGetProperty("time", out var t) || !DateTime.TryParse(t.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at)) continue;
-            if (at > fetchedAtUtc + OpenMeteoProvider.FutureTolerance) break;
+            if (at > fetchedAtUtc) break;   // hourly entries: the one now in progress, never the next hour's
             (pick, validAt) = (e, DateTime.SpecifyKind(at, DateTimeKind.Utc));
         }
         if (pick is not { } entry || !entry.TryGetProperty("data", out var data)) return null;
