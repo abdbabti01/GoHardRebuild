@@ -20,7 +20,8 @@ public sealed class WeatherOptions
     public string MetNorwayBaseUrl { get; set; } = "https://api.met.no/weatherapi/";
     public string? ApiKey { get; set; }
     /// <summary>MET Norway requires an identifying User-Agent with a contact; Open-Meteo is sent the same.</summary>
-    public string UserAgent { get; set; } = "GoHardRebuild/0.1 (https://github.com/abdbabti01/GoHardRebuild)";
+    /// Override with GOHARD_Weather__UserAgent to add an email address.
+    public string UserAgent { get; set; } = "GoHardRebuild/0.1 (+https://github.com/abdbabti01)";
     public int TimeoutSeconds { get; set; } = 5;
     public int CacheMinutes { get; set; } = 10; // current conditions are 15-minute model data; with the phone's 15-minute refresh a scene is at most ~25 minutes behind
     public int CacheEntries { get; set; } = 2000;
@@ -158,10 +159,15 @@ public static class WeatherRegistration
             c.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds + 2);   // backstop behind the service's own bound
             c.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) });
+        // MET Norway requires gzip support; its provider is a singleton so its Expires/Last-Modified memory lasts.
         services.AddHttpClient<MetNorwayProvider>(c =>
         {
             c.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds + 2);
             c.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
         });
         services.AddSingleton<WeatherService>();
         return services;

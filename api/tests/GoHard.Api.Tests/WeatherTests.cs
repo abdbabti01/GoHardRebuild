@@ -115,6 +115,42 @@ public class WeatherProviderTests
         Assert.Equal(["api.open-meteo.com", "api.met.no", "api.met.no"], stub.Requests.Select(r => r.RequestUri!.Host));
     }
 
+    // MET Norway's terms: no repeat request before Expires, then a conditional request (If-Modified-Since = the
+    // last Last-Modified); a 304 reuses the kept answer.
+    [Fact]
+    public async Task MET_Norway_is_not_asked_again_before_Expires_and_then_only_conditionally()
+    {
+        var clock = new MovingTime(new DateTimeOffset(2026, 10, 14, 14, 30, 0, TimeSpan.Zero));
+        var lastModified = new DateTimeOffset(2026, 10, 14, 14, 30, 12, TimeSpan.Zero);
+        var sent = new List<(string Host, DateTimeOffset? Since)>();
+        var stub = new StubProvider(r =>
+        {
+            sent.Add((r.RequestUri!.Query, r.Headers.IfModifiedSince));
+            if (r.Headers.IfModifiedSince is not null) return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotModified) { Content = new ByteArrayContent([]) });
+            var ok = StubProvider.Json(StubProvider.Recorded("metno_quebec_cloudy.json"));
+            ok.Content.Headers.Expires = clock.GetUtcNow() + TimeSpan.FromMinutes(31);
+            ok.Content.Headers.LastModified = lastModified;
+            return Task.FromResult(ok);
+        });
+        var met = new MetNorwayProvider(new HttpClient(stub), new WeatherOptions(), clock);
+
+        Assert.Equal(3, (await met.CurrentAsync(46.8, -71.2, default)).Value!.Code);   // 14:00 hour: cloudy
+        clock.Advance(TimeSpan.FromMinutes(20));
+        Assert.Equal(LookupStatus.Ok, (await met.CurrentAsync(46.8, -71.2, default)).Status);
+        Assert.Single(sent);                                                          // before Expires: nothing sent
+
+        clock.Advance(TimeSpan.FromMinutes(15));                                     // 15:05, past Expires
+        var again = await met.CurrentAsync(46.8, -71.2, default);
+        Assert.Equal(2, sent.Count);
+        Assert.Equal(lastModified, sent[1].Since);                                   // conditional, with the last Last-Modified
+        Assert.Equal((LookupStatus.Ok, 61, new DateTime(2026, 10, 14, 15, 0, 0, DateTimeKind.Utc)),
+            (again.Status, again.Value!.Code, again.Value.ValidAtUtc));               // 304: the kept answer, read at the new hour
+
+        await met.CurrentAsync(48.9, 2.3, default);                                  // another place is its own, plain request
+        Assert.Equal(3, sent.Count);
+        Assert.Null(sent[2].Since);
+    }
+
     [Fact]
     public async Task MET_Norway_is_only_asked_when_Open_Meteo_fails_and_a_double_failure_says_what_Open_Meteo_said()
     {
@@ -283,4 +319,12 @@ public class WeatherEndpointTests(PostgresFixture pg)
 file sealed class FixedTime(DateTimeOffset at) : TimeProvider
 {
     public override DateTimeOffset GetUtcNow() => at;
+}
+
+/// A clock a test moves forward.
+file sealed class MovingTime(DateTimeOffset start) : TimeProvider
+{
+    private DateTimeOffset _now = start;
+    public override DateTimeOffset GetUtcNow() => _now;
+    public void Advance(TimeSpan by) => _now += by;
 }

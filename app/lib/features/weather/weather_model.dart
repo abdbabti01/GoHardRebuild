@@ -99,7 +99,10 @@ class WeatherConditions {
   final String? source;
 
   /// The credit the answering provider asks for.
-  String get credit => source == 'met.no' ? 'Weather data from MET Norway (CC BY 4.0).' : 'Weather data by Open-Meteo.com (CC BY 4.0).';
+  /// MET Norway's terms: credit, a link to the licence, and whether the data was changed (symbols are mapped to codes).
+  String get credit => source == 'met.no'
+      ? 'Data from MET Norway (api.met.no), CC BY 4.0: creativecommons.org/licenses/by/4.0. Its weather symbols are converted to WMO codes here.'
+      : 'Weather data by Open-Meteo.com, CC BY 4.0: creativecommons.org/licenses/by/4.0.';
 
   /// Null when the answer is not usable at all. An unrecognised family is kept as unknown, never guessed.
   static WeatherConditions? fromJson(Object? raw) {

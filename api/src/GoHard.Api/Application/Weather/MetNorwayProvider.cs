@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
@@ -7,7 +8,9 @@ namespace GoHard.Api.Application.Weather;
 
 /// <summary>
 /// MET Norway Locationforecast 2.0 (api.met.no), the fallback when Open-Meteo refuses. Free, including commercial
-/// use, no key; it asks every caller to identify itself in the User-Agent (with a contact) and to respect Expires.
+/// use, no key. Its terms (api.met.no/doc/TermsOfService, checked 14 October 2026), all followed here: an identifying
+/// User-Agent with contact details; no repeat request before the answer's Expires time, then a conditional request
+/// with If-Modified-Since = the last Last-Modified (304 reuses the kept answer); gzip; at most 4 decimals; HTTPS.
 /// Data: CC BY 4.0 / NLOD, credited "Weather data from MET Norway". Its symbol for the current hour is mapped onto
 /// the same WMO codes and families Open-Meteo uses, so the app needs nothing new.
 /// </summary>
@@ -15,14 +18,49 @@ public sealed class MetNorwayProvider(HttpClient http, WeatherOptions options, T
 {
     public const string Source = "met.no";
 
+    /// <summary>The last answer per coarse place, with its Expires and Last-Modified, so the place is not asked again
+    /// before Expires and is then asked conditionally. Bounded; the oldest are dropped.</summary>
+    private readonly ConcurrentDictionary<string, Kept> _kept = new();
+    private sealed record Kept(string Body, DateTimeOffset Expires, DateTimeOffset? LastModified);
+    private const int MaxKept = 2000;
+
     public async Task<Lookup<WeatherNow>> CurrentAsync(double lat, double lon, CancellationToken ct)
     {
-        var url = new Uri(new Uri(options.MetNorwayBaseUrl), FormattableString.Invariant($"locationforecast/2.0/compact?lat={lat}&lon={lon}"));
-        using var response = await http.GetAsync(url, ct);
-        if (response.StatusCode == HttpStatusCode.TooManyRequests) return Lookup<WeatherNow>.Fail(LookupStatus.RateLimited);
-        if (!response.IsSuccessStatusCode) return Lookup<WeatherNow>.Fail(LookupStatus.Unavailable);
-        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
-        return ParseCurrent(doc.RootElement, lat, lon, (time ?? TimeProvider.System).GetUtcNow().UtcDateTime) is { } now ? Lookup<WeatherNow>.Ok(now) : Lookup<WeatherNow>.Fail(LookupStatus.Unavailable);
+        var now = (time ?? TimeProvider.System).GetUtcNow();
+        var key = FormattableString.Invariant($"{lat}:{lon}");
+        _kept.TryGetValue(key, out var kept);
+        string body;
+        if (kept is not null && now < kept.Expires)
+        {
+            body = kept.Body;                                                    // not before Expires: the kept answer
+        }
+        else
+        {
+            var url = new Uri(new Uri(options.MetNorwayBaseUrl), FormattableString.Invariant($"locationforecast/2.0/compact?lat={lat}&lon={lon}"));
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            if (kept?.LastModified is { } since) request.Headers.IfModifiedSince = since;
+            using var response = await http.SendAsync(request, ct);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests) return Lookup<WeatherNow>.Fail(LookupStatus.RateLimited);
+            if (response.StatusCode == HttpStatusCode.NotModified && kept is not null)
+            {
+                body = kept.Body;
+            }
+            else if (response.IsSuccessStatusCode)
+            {
+                body = await response.Content.ReadAsStringAsync(ct);
+            }
+            else
+            {
+                return Lookup<WeatherNow>.Fail(LookupStatus.Unavailable);
+            }
+            // Without an Expires header, wait at least the polling interval MET asks for (10 minutes).
+            var expires = response.Content.Headers.Expires ?? now + TimeSpan.FromMinutes(10);
+            var lastModified = response.Content.Headers.LastModified ?? kept?.LastModified;
+            if (_kept.Count >= MaxKept) _kept.Clear();                           // ponytail: crude bound; an LRU if many places
+            _kept[key] = new Kept(body, expires, lastModified);
+        }
+        using var doc = JsonDocument.Parse(body);
+        return ParseCurrent(doc.RootElement, lat, lon, now.UtcDateTime) is { } result ? Lookup<WeatherNow>.Ok(result) : Lookup<WeatherNow>.Fail(LookupStatus.Unavailable);
     }
 
     /// <summary>
