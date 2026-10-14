@@ -14,7 +14,6 @@ import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import '../workout/workout_screen.dart';
-import '../weather/weather.dart';
 import 'plan_actions.dart';
 import 'plan_progress.dart';
 import 'plan_screens.dart';
@@ -28,16 +27,11 @@ class TrainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(shellProvider.select((s) => s.trainView));
-    final top = TabHeader.topOnBackdrop(context);
     return ListView(
-      padding: EdgeInsets.fromLTRB(context.inset, top, context.inset, 28),
+      // On the calm wash the shell lays behind Train; room for the floating bar at the end.
+      padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 28 + MediaQuery.paddingOf(context).bottom),
       children: [
-        // A bounded scenic header: the scene sits behind the date, title and section control only, scrolls away with
-        // them, and fades into the page before the body, which stays on stable surfaces.
-        Stack(clipBehavior: Clip.none, children: [
-          Positioned(top: -top, left: -context.inset, right: -context.inset, height: top + _belowTop, child: const ScenicBackdrop()),
-          TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), onBackdrop: true),
-        ]),
+        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider))),
         const SizedBox(height: 16),
         Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',
@@ -55,10 +49,6 @@ class TrainScreen extends ConsumerWidget {
     );
   }
 }
-
-/// Height of the scenic header region below the header's top (the scene also fills the status bar and the open
-/// band above the date).
-const _belowTop = 216.0;
 
 Column _section(List<Widget> children) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
 

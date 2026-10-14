@@ -44,12 +44,15 @@ class HomeShell extends ConsumerWidget {
     final shell = ref.watch(shellProvider);
     final issues = ref.watch(issuesProvider).value ?? const [];
     return Scaffold(
+      // The tabs run under the floating bar too (Today's scene shows around it); each list ends with
+      // `MediaQuery.paddingOf(context).bottom`, the bar's height, so its last control is never covered.
+      extendBody: true,
       // Every destination stays built, so its state, scroll position and unfinished input wait while you are elsewhere.
-      // The tabs reach the top edge: Today, Train and Eat lay their scene behind the status bar and inset their own
-      // text by `MediaQuery.paddingOf(context).top`; Me insets its whole list. The veil keeps the status bar legible
-      // over a scene and over anything scrolled under it.
+      // The tabs reach the top edge: Today lays its scene behind the status bar and every tab insets its own text by
+      // `MediaQuery.paddingOf(context).top`. The veil keeps the status bar legible over the scene and over anything
+      // scrolled under it. Only Today has a scene; Train and Eat sit on a calm wash, Me on the plain page.
       body: Stack(children: [
-        _FadeStack(index: shell.tab, children: const [TodayScreen(), TrainScreen(), EatScreen(), MeScreen()]),
+        _FadeStack(index: shell.tab, children: const [TodayScreen(), QuietBackground(child: TrainScreen()), QuietBackground(child: EatScreen()), MeScreen()]),
         Positioned(top: 0, left: 0, right: 0, child: _SkyAwareVeil(onToday: shell.tab == 0)),
       ]),
       bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [

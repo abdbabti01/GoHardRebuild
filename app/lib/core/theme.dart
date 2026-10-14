@@ -73,6 +73,15 @@ class GoColors extends ThemeExtension<GoColors> {
   /// How much of the page a [scrim] lets through; 0.66 holds 4.5:1 for [text] over a black or a white pixel.
   static const scrimOpacity = 0.66;
 
+  /// Today's sections sit on [surface] at this opacity over the scene, with a soft blur: soft white in Light, charcoal
+  /// in Dark, whatever the weather. `weather_contrast_test` measures text, secondary and accent text on it over every
+  /// pixel of every scene, without counting the blur.
+  static const panelOpacity = 0.92;
+
+  /// The top of the calm background behind Train and Eat, fading into [page]: halfway between page and recessed fill,
+  /// so everything that reads on both reads on it.
+  Color get wash => Color.lerp(page, sunken, 0.5)!;
+
   @override
   GoColors copyWith() => this;
 
@@ -195,12 +204,12 @@ ThemeData goTheme(Accent accent, Brightness brightness, {bool highContrast = fal
     filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
             backgroundColor: c.accent, foregroundColor: c.onAccent, disabledBackgroundColor: c.sunken, disabledForegroundColor: c.secondary,
-            minimumSize: const Size(64, Targets.primary), padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: button,
+            minimumSize: const Size(64, Targets.primary), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), shape: button,
             textStyle: const TextStyle(fontFamily: sans, fontSize: 16.5, fontWeight: FontWeight.w600))),
     outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
             foregroundColor: c.text, backgroundColor: c.surface, side: BorderSide(color: c.outline), minimumSize: const Size(64, Targets.primary),
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: button,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), shape: button,
             textStyle: const TextStyle(fontFamily: sans, fontSize: 16.5, fontWeight: FontWeight.w600))),
     textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(

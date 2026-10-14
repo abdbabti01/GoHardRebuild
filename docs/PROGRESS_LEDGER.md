@@ -740,3 +740,46 @@ Checked on the final code (`70ee36b` for the app and API; later commits are docs
 
 Not checked: the iPhone itself (the user's location permission and mode, the scenes on its screen, motion smoothness
 and battery, ProMotion), and the hosted API with the fix until it is deployed from `main`.
+
+## 15 October 2026 — full-screen weather on Today (branch `feature/full-screen-weather`, from `main` at `2ae6660`)
+
+The approved direction: weather fills the whole of Today with readable content; the other tabs share the visual
+system on calm backgrounds. Design notes: `docs/DESIGN.md` › Today, Train, Eat.
+
+| Change | Where | Regression test |
+|---|---|---|
+| Today's scene fills the tab: top edge, behind the status bar, sections and floating bar; fixed while the page scrolls; no fade into a solid body | `today_screen.dart` (`Stack` + const `TodayBackdrop`), `backdrop.dart` (even veil, no fade), shell `extendBody` | `today_ui_test: Today's scene fills the whole screen … stays put while the page scrolls` |
+| One translucent surface for Workout, Run, Nutrition and Recorded today: app-mode surface at 92% over one 18 px blur | `_Surface` in `today_screen.dart`, `GoColors.panelOpacity` | `weather_contrast_test: Today's surface keeps its text readable …` (all six looks × 22 scenes, worst pixel, blur not counted): text ≥ 11:1, secondary ≥ 5.8:1, accent ≥ 4.6:1 |
+| Sections keep the app's look whatever the sky; header follows the sky | `_Header` | `today_ui_test: weather light/dark: every scene changes the backdrop only …` |
+| Only Today has a scene: `ScenicBackdrop` removed; Train and Eat on a calm wash, Me on the plain page; one title position on all tabs (`TabHeader.topInset`) | `widgets.dart` (`QuietBackground`), `theme.dart` (`GoColors.wash`), `train_screen.dart`, `eat_screen.dart`, `me_screen.dart` | `today_ui_test: only Today has a scene …`, `theme_test` (text, secondary, status and accent on the wash), `eat_ui_test` |
+| Every list ends above the floating bar | the four tabs | `today_ui_test` (Today's surface and Me's Sign out clear the bar) |
+| Buttons 18 px side padding (was 22), so "Resume workout" stays on one line on the surface; Today's photos 84 px (was 92) | `theme.dart`, `_Module` | `today_ui_test` heights: workout 244, run 145, nutrition 213 |
+
+Unchanged: condition selection, provider fallback, location privacy, caching, freshness, day/night, motion gating
+(Reduce Motion, the app's Motion setting, hidden tab, covered route, background), food, portions, goals, history, sync,
+recovery, API and database.
+
+Evidence (`docs/evidence/`):
+
+- Before / after app captures from the Android emulator with a real account on the local API, Blue Light and Pink Dark:
+  `captures/full-screen-weather/before/` (made from `main` at `2ae6660` in a separate worktree) and `.../after/`:
+  Today, Train › Plan, Eat, Me, food search, the portion form, and Today scrolled to its end. **Simulated weather:**
+  the API ran with `-FoodFixtures`, so every place gets the recorded Open-Meteo answer (overcast, night).
+- `recordings/today-full-screen-scroll.mp4` (30 s, emulator, same recorded overcast night): Today held still, then
+  scrolled down and back while the clouds move. **Simulated weather.**
+- `design/state-today-weather-*-{light,dark}.png` (every family, day and night), `six-themes-*.png`,
+  `state-large-text-*-320.png`, `state-new-account-*.png`: widget renders with fixture data and fake weather.
+  **Simulated.**
+- No new live-provider evidence in this change; the earlier live captures (`screenshots/live-*.png`,
+  `recordings/today-weather-live.mp4`) show the provider path, which is unchanged.
+
+Not checked: scrolling smoothness, blur cost and battery on a physical iPhone (ProMotion, Impeller) — the emulator
+reported long frames ("Davey!") during the journeys, which it does on `main` too and says nothing about a phone.
+
+Checked on the final code of this branch:
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` | API: release build, 128/128 tests on disposable PostgreSQL, publish. App: analyze clean, 303/303 Flutter tests |
+| Android emulator, recorded provider answers | all eight journeys pass. In the serial run `journey_offline_test` timed out once waiting for the conflict review notice (the save had not yet come back as a conflict) and passed when run again alone; the script stops at a failure, so device, upgrade, food and cold start were then run one by one, all passing. `journey_captures_test` passes (before and after captures, recording) |
+| Renders | `render_test` with `GOHARD_RENDER=true`: 98 renders, six looks, every weather family day and night, large text at 320 px, new account |

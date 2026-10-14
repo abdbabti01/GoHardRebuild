@@ -61,6 +61,23 @@ void main() {
     await j.tapKey('food-save');
     await j.waitFor(find.byKey(const Key('eat-add-lunch')));
 
+    // --- Today in Weather mode for a chosen city. With start-api.ps1 -FoodFixtures every place gets the recorded
+    // Open-Meteo answer (overcast, night): simulated weather, not live conditions.
+    await j.tapKey('nav-me');
+    await j.tapKey('me-appearance');
+    await j.tapKey('appearance-today-background');
+    await j.tapKey('today-background-weather');
+    await j.tapKey('weather-location-city');
+    await j.type('city-search-field', 'Paris');
+    await j.tapKey('city-search-go');
+    await j.waitFor(find.textContaining('France'), what: 'Paris in the results', seconds: 30);
+    await j.tap(find.textContaining('France').first);
+    await j.settle(4);
+    await tester.pageBack();
+    await j.settle(2);
+    await tester.pageBack();
+    await j.settle(2);
+
     Future<void> look(String accent, String mode) async {
       await j.tapKey('nav-me');
       await j.tapKey('me-appearance');
@@ -115,5 +132,30 @@ void main() {
     await every('light-blue');
     await look('pink', 'dark');
     await every('dark-pink');
+
+    // --- For the recording: Today scrolled slowly to its end and back while the sky moves, then a capture of the
+    // end of the page above the navigation bar.
+    await j.tapKey('nav-today');
+    await j.settle(4);
+    await top();
+    // Real time passes here (on a device pump() does not wait), so the recording sees the sky move.
+    Future<void> watch(int ms) async {
+      for (var t = 0; t < ms; t += 100) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await tester.pump();
+      }
+    }
+
+    debugPrint('GOHARD_REC:start');
+    await watch(4000);
+    final list = find.byType(Scrollable).hitTestable().first;
+    for (final dy in [for (var i = 0; i < 10; i++) i < 5 ? -160.0 : 160.0]) {
+      await tester.drag(list, Offset(0, dy));
+      await watch(1500);
+    }
+    debugPrint('GOHARD_REC:stop');
+    await tester.drag(list, const Offset(0, -2000));
+    await j.settle(3);
+    await j.shot('cap-dark-pink-7-today-end');
   });
 }

@@ -54,14 +54,14 @@ void main() {
             void atLeast(double min, Color fg, Color bg, String what) =>
                 expect(contrast(fg, bg), greaterThanOrEqualTo(min), reason: '$what is ${contrast(fg, bg).toStringAsFixed(2)}:1');
             // Text: 4.5:1 on every surface it is drawn on.
-            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('sunken', c.sunken), ('selection tint', c.accentSoft), ('raised bar', c.raised)]) {
+            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('sunken', c.sunken), ('selection tint', c.accentSoft), ('raised bar', c.raised), ('Train and Eat wash', c.wash)]) {
               atLeast(4.5, c.text, bg, 'text on $name');
               atLeast(4.5, c.secondary, bg, 'secondary text on $name');
               atLeast(4.5, c.success, bg, 'success on $name');
               atLeast(4.5, c.warning, bg, 'warning on $name');
               atLeast(4.5, c.error, bg, 'error on $name');
             }
-            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('selection tint', c.accentSoft), ('raised bar', c.raised)]) {
+            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('selection tint', c.accentSoft), ('raised bar', c.raised), ('Train and Eat wash', c.wash)]) {
               atLeast(4.5, c.accent, bg, 'accent text on $name');
             }
             // The header scrim over a scene: primary text holds 4.5:1 whatever the picture is, from black to white.

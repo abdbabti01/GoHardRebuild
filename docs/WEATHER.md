@@ -1,8 +1,9 @@
 # Weather-aware Today background
 
 An optional, device-only presentation setting: Me > Appearance > Today background = **Scenic** (default),
-**Weather** or **Plain**. Only the Today header uses weather. Train and Eat headers use the static `ScenicBackdrop`
-(dusk, or the page colour under Plain). Weather never affects the account, sync, readiness or the compatibility gate.
+**Weather** or **Plain**. Only Today shows a scene, and since 15 October 2026 it fills the whole of Today (behind the
+status bar, the sections and the floating bar; see `docs/DESIGN.md` › Today). Train and Eat sit on a calm page wash, Me
+on the plain page; none of them is weather-driven. Weather never affects the account, sync, readiness or the compatibility gate.
 
 ## Diagnosis of "wrong weather" on the iPhone (14 October 2026)
 
@@ -140,9 +141,9 @@ weather (contract, rounding, age) and a city lookup when the server declares `we
   isWeather, label, family, isDay}`. Day/night comes only from the provider's `is_day` for that place (a distant
   city's night stays night whatever the phone's clock); missing -> the family's neutral treatment. Unknown family,
   stale, ahead of time, other source/region or missing artwork -> `dusk` with no label.
-- **Backdrops.** `TodayBackdrop` (refresh-if-stale triggers + scene), `ScenicBackdrop` (static), `SceneBackdrop(spec)`
-  (paints one spec; used by the settings preview). Decoded at the size shown (`cacheWidth`), a light page-coloured veil
-  (16–34%, per scene) and a fade into `context.c.page`, crossfade (`Motion.progress`) only when the key changes, instant under reduced motion,
+- **Backdrops.** `TodayBackdrop` (refresh-if-stale triggers + scene, full screen), `SceneBackdrop(spec)` (paints one
+  spec; used by the settings preview). Decoded at the size shown (`cacheWidth`, at most the photograph's 1536 px), one
+  even veil (dusk: page colour at 22% Dark / 40% Light; weather: none, or black at 8% for a bright sky in Dark), no fade, crossfade (`Motion.progress`) only when the key changes, instant under reduced motion,
   undecodable photo -> page colour, excluded from semantics. No particles, lightning or looping animation.
 - **Contrast.** The header text is drawn in the theme's text colour on TabHeader's own scrim (page colour at 66%,
   behind its lines only). `test/weather_contrast_test.dart` renders the real photograph under every treatment in

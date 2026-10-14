@@ -2,8 +2,8 @@
 
 The app's look since 14 October 2026: a quiet editorial design with a serif for main page titles (DM Serif Display)
 and Inter for everything else, warm light surfaces and layered charcoal-plum dark ones, one chosen accent, a
-continuous daily rhythm on Today, a rounded floating navigation bar, and an optional weather-aware scene at the top
-of Today. Built from the brief and seven references in `C:\dev\GoHard_Daily_Rhythm_Weather` (one design family:
+continuous daily rhythm on Today, a rounded floating navigation bar, and an optional weather-aware scene behind the whole
+of Today (15 October 2026: full-screen weather; the other tabs sit on calm page colours). Built from the brief and seven references in `C:\dev\GoHard_Daily_Rhythm_Weather` (one design family:
 Today, Train › Plan, Eat, Me, Add food, the portion form, Appearance; shown in Pink + Dark). It follows "Calm
 Momentum" (12–13 October 2026), whose structure it keeps. The references are concepts with sample data; where they
 and real data, accessibility or truthfulness disagree, the app follows the latter, and the differences are listed at
@@ -56,6 +56,8 @@ in light, layered charcoal-plum in dark. Accent is for interactive selection and
 | Text on a filled accent | `#FFFFFF` | page |
 | Success / warning / error | `#0C6B63` / `#7D5200` / `#B3261E` | `#5FD4C4` / `#F2C36B` / `#FFB4AB` |
 | Header scrim over a scene (`scrim`) | page at 66% | page at 66% |
+| Today's surface over the scene | surface at 92% (`panelOpacity`) over an 18 px blur | the same |
+| Calm wash at the top of Train and Eat (`wash`) | halfway between page and recessed fill, fading into the page | the same |
 
 The scrim holds 4.5:1 for primary text over any pixel, black to white, so a header over a scene never depends on the
 picture (`TabHeader(onBackdrop: true)`).
@@ -85,8 +87,8 @@ Changes from the brief's starting values, each made because the measured contras
 4.5:1); success is teal so that "completed" never looks like the green accent. Status is always an icon and a word.
 
 With the phone's Increased Contrast setting, secondary text, separators and control boundaries move toward the
-primary text colour (`highContrastTheme`). Nothing in the app uses blur or translucent panels, so Reduce Transparency
-has nothing to change. With Reduce Motion, pages appear without a slide and rails and segments change without easing.
+primary text colour (`highContrastTheme`). The one translucent panel is Today's surface; its contrast is measured without
+the blur, at 92% opacity, so it does not depend on Reduce Transparency. With Reduce Motion, pages appear without a slide and rails and segments change without easing.
 
 ## Motion and haptics
 
@@ -147,19 +149,30 @@ local API, are in `docs/evidence/screenshots/`.
 
 ## Today
 
-**Placement (14 October 2026).** The shell no longer insets the tabs for the status bar: each tab handles its own top
-inset. Today, Train and Eat draw their scene from the top edge of the screen and start their text below the inset
-(`TabHeader.topOnBackdrop`); a fixed `StatusBarVeil` in `features/shell/home_shell.dart` keeps the status-bar icons
-readable. Me has no scene and starts below the inset. Calories are shown in whole kilocalories everywhere
-(`formatKcal`), display only.
+**Full-screen weather (15 October 2026).** The scene from `TodayBackdrop` (the weather, dusk, or the plain page, as
+chosen in Me › Appearance › Today background) fills the whole of Today: from the top edge, behind the status bar, down
+behind the floating navigation bar (the shell's `extendBody`). It is fixed to the screen while the page scrolls over
+it, covers the screen as a crop of the one landscape (never stretched or repeated: on a portrait phone the middle of
+the photograph, ridge a little above the centre, lake below) and carries one even veil, no fade into a solid body.
+Every tab starts its title at `TabHeader.topInset`; a fixed `StatusBarVeil` in `features/shell/home_shell.dart`
+keeps the status-bar icons readable and follows the sky on Today. Every list ends with the bar's height
+(`MediaQuery.paddingOf(context).bottom`) plus 28, so the bar never covers the last control. Calories are shown in whole
+kilocalories everywhere (`formatKcal`), display only.
 
-A bounded header (`_Header` in `features/today/today_screen.dart`): the scene from `TodayBackdrop` (dusk, the
-weather scene, or the plain page, as chosen in Me › Appearance › Today background) behind the local date, the serif
-"Today" and a greeting from the phone's local time with the first word of the profile's name. The header text sits
-on TabHeader's own scrim; `test/weather_contrast_test.dart` measures it at 7:1 or more against the worst pixel of
-every scene in all six looks. Weather changes only that scene: never the modules, states, accent or navigation.
+The header (`_Header` in `features/today/today_screen.dart`): the local date, the serif "Today", a greeting from the
+phone's local time with the first word of the profile's name, and the sky line. It sits on TabHeader's own scrim in
+the sky's look (light lines over a dark sky, dark over a light one); `test/weather_contrast_test.dart` measures it at
+6:1 or more against the worst pixel of every scene in all six looks. Weather changes only the scene and the header's
+light or dark lines: never the sections, states, accent, appearance preference or navigation.
 
-Below it, on the page (never over photography), `RhythmTimeline` joins three sections of comparable weight:
+Below it, all sections sit on one surface (`_Surface`): the app's own surface colour (soft white in Light, charcoal
+in Dark, whatever the sky) at 92% over one 18 px blur of the scene, a thin edge, inset 12 px like the floating bar.
+The scene stays visible around it and faintly through it. `weather_contrast_test` measures text, secondary and accent
+text on the surface laid over every pixel of every full-screen scene, without counting the blur: 4.6:1 or more (accent
+in Light), 5.8:1 secondary, 11:1 text. One blur for the whole column; the sky's motion repaints only its own layer and
+the backdrop is const in Today's tree, so no animation tick rebuilds a widget.
+
+On the surface, `RhythmTimeline` joins three sections of comparable weight:
 
 | Section | What it shows |
 |---|---|
@@ -169,11 +182,13 @@ Below it, on the page (never over photography), `RhythmTimeline` joins three sec
 
 "Start a manual workout", workouts saved for later, Recorded today (only activity not already shown, by identity)
 and the connection notice are kept. Heights at 390 × 844 with the real font: workout 238, run 164, nutrition 215 in
-the fullest state (194 / 164 / 164 quiet); nutrition starts on the first screen.
+the fullest state (194 / 164 / 164 quiet) before the surface; 244 / 145 / 213 on it. Nutrition starts on the first
+screen; nothing is shrunk to fit more. The photographs are 84 px wide on the surface (72 on narrow phones).
 
 ## Train
 
-A bounded header with the static `ScenicBackdrop` (never weather) behind the date and serif "Train". Workouts /
+The calm wash (`QuietBackground`, `GoColors.wash` fading into the page) behind the date and serif "Train"; no
+scene, no weather. Workouts /
 Plan / Progress kept in `shellProvider`.
 
 - **Plan.** The pass: the plan's name in the serif, "Week X of Y" (calendar position), completed over eligible
@@ -190,7 +205,7 @@ Plan / Progress kept in `shellProvider`.
 
 ## Eat
 
-A bounded `ScenicBackdrop` header with the date, the serif "Eat" and previous / next day. One card: the calorie
+The calm wash behind the date, the serif "Eat" and previous / next day; no scene, no weather. One card: the calorie
 total, one ring with the real goal when set (full when over, the centre giving the true percentage), what is left or
 over only for a complete total with a goal, Protein with its bar when that goal is set, Carbs and Fat as known
 totals. One "Log food". "Today's meals" in the serif: one grouped card, each meal with its icon, subtotal and a plus
@@ -217,7 +232,7 @@ goals shows the goals that were set, and "None set" otherwise; no number ever st
 | Reference | App | Why |
 |---|---|---|
 | Sample name, date and figures (Babti, 13 October, 1,480 kcal, a 78 kcal egg) | the profile's own name, the phone's date, the account's records, the source record's values (a USDA egg is 72 kcal) | references are concepts with sample data |
-| The scene running up behind the status bar | the same: on Today, Train and Eat the scene starts at the top edge; a page-coloured veil (66%) over the status-bar inset keeps its icons readable (≥ 11:1 measured over every scene) and dims that strip slightly | the status bar must stay legible over bright and dark scenes alike |
+| The scene running up behind the status bar | the same on Today, the only tab with a scene; a page-coloured veil (66%) over the status-bar inset keeps its icons readable (≥ 11:1 measured over every scene) and dims that strip slightly | the status bar must stay legible over bright and dark scenes alike |
 | A vivid scene behind the header text | the scene shows clearly above and around the text and softly behind it | the date, title and greeting keep ≥ 9:1 over every scene in all six looks (measured with the header scrim) |
 | Separate photographs for each weather | painted skies behind the one supplied photograph's silhouettes: same lake, hills and trees, six weathers × day/night, static | no art pack exists; see `docs/WEATHER.md` |
 | Food photo in the Eat overview | none | the total, the ring and a photo do not fit at 390 px; the photo is decoration only |

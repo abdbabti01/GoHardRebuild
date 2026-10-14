@@ -124,7 +124,7 @@ void main() {
     final (c, _) = await open(tester,
         prefs: const WeatherPrefs(background: TodayBackground.weather, mode: WeatherLocationMode.city, city: quebec),
         fakes: w,
-        home: header(const Column(children: [Expanded(child: TodayBackdrop()), Expanded(child: ScenicBackdrop())])));
+        home: header(const Column(children: [Expanded(child: TodayBackdrop()), Expanded(child: SceneBackdrop(spec: SceneSpec.dusk))])));
     await tester.pumpAndSettle();
     expect(w.currentCalls, ['46.8,-71.2']);
     expect(c.read(todaySceneProvider).key, 'snow-day');
@@ -148,7 +148,7 @@ void main() {
     final real = sceneArt['dusk']!;
     sceneArt['dusk'] = const SceneArt(asset: 'assets/scenes/missing.webp');
     addTearDown(() => sceneArt['dusk'] = real);
-    await open(tester, home: header(const ScenicBackdrop()));
+    await open(tester, home: header(const SceneBackdrop(spec: SceneSpec.dusk)));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('scene-failed')), findsOneWidget);

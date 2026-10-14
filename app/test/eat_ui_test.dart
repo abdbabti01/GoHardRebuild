@@ -12,7 +12,6 @@ import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/nutrition/eat_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/food_form.dart';
 import 'package:gohard_rebuild/features/nutrition/log_food_screen.dart';
-import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart';
 import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'food_fakes.dart';
@@ -72,10 +71,9 @@ void main() {
     expect(find.text('Yesterday\'s soup'), findsNothing, reason: 'another day\'s food is not in today\'s journal');
     expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget, reason: 'one general Log food action');
     expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
-    // The quiet header scene and the GH mark; no food photograph stands in for a meal.
-    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(2));
-    expect(find.descendant(of: find.byType(SceneBackdrop), matching: find.byType(Image)), findsOneWidget);
-    expect(tester.getRect(find.byType(SceneBackdrop)).bottom, lessThanOrEqualTo(tester.getRect(find.byType(NutritionSurface)).top), reason: 'the scene stays in the header region');
+    // Only the GH mark: no scene (only Today has one) and no food photograph standing in for a meal.
+    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsOneWidget);
+    expect(find.byType(SceneBackdrop), findsNothing);
     expect(find.text("Today's meals"), findsOneWidget);
     expect(find.byType(GroupCard), findsOneWidget, reason: 'the four meals in one group');
 

@@ -10,26 +10,17 @@ import 'sky_painter.dart';
 import 'weather_model.dart';
 import 'weather_service.dart';
 
-/// Fills its parent (a bounded header region). Paints the scene for the Today background preference and fresh
-/// weather, fading at the bottom into the page colour. Asks for a refresh-if-stale when it first appears, when the
-/// app resumes and when the Today tab is selected again; never blocks, never shows an error, never repeats on a
-/// rebuild. Excluded from semantics. Its weather sky moves only while Today is the tab on screen.
+/// Fills its parent: all of Today, fixed to the screen while the page scrolls over it. Paints the scene for the
+/// Today background preference and fresh weather. Asks for a refresh-if-stale when it first appears, when the app
+/// resumes and when the Today tab is selected again; never blocks, never shows an error, never repeats on a rebuild.
+/// Excluded from semantics. Its weather sky moves only while Today is the tab on screen. The only scene in the app:
+/// the other tabs sit on calm page colours.
 class TodayBackdrop extends ConsumerWidget {
   const TodayBackdrop({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => _Refresher(
       child: SceneBackdrop(spec: ref.watch(todaySceneProvider), animate: ref.watch(shellProvider.select((s) => s.tab == 0))));
-}
-
-/// The same frame and fade, static: the decorative dusk scene, or the plain page colour when the preference is
-/// Plain. For the Train and Eat headers. Never weather-driven, never requests anything.
-class ScenicBackdrop extends ConsumerWidget {
-  const ScenicBackdrop({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => SceneBackdrop(
-      spec: ref.watch(weatherPrefsProvider.select((p) => p.background)) == TodayBackground.plain ? SceneSpec.plain : SceneSpec.dusk);
 }
 
 class _Refresher extends ConsumerStatefulWidget {
@@ -71,8 +62,10 @@ class _RefresherState extends ConsumerState<_Refresher> with WidgetsBindingObser
   }
 }
 
-/// Paints one [SceneSpec]: the (graded) photograph decoded at the size it is shown, a stable scrim the header text
-/// sits on, and a fade into the page colour at the bottom. Crossfades only when [SceneSpec.key] changes, and
+/// Paints one [SceneSpec] over the whole of its box: the (graded) photograph covering it (cropped, never stretched or
+/// repeated; on a portrait phone the middle of the landscape, the ridge a little above the centre, the lake below)
+/// and decoded at the size it is shown, under an even veil (see [veil]). Text never sits on it directly: the header
+/// has its own scrim and Today's sections their own surface. Crossfades only when [SceneSpec.key] changes, and
 /// switches instantly under reduced motion. A photograph that cannot be decoded leaves the plain page colour.
 ///
 /// A weather scene's clouds, stars, fog, rain and snow move gently (one clock for the whole sky, repainting only its
@@ -84,15 +77,15 @@ class SceneBackdrop extends StatelessWidget {
   final SceneSpec spec;
   final bool animate;
 
-  /// The veil over the top of the scene, as (colour, opacity); it rises to the full page colour at the bottom. The
-  /// header text is protected by TabHeader's own scrim behind its lines, not by this veil.
+  /// The even veil over the whole scene, as (colour, opacity). The header text is protected by TabHeader's own scrim
+  /// behind its lines and the sections by their surface, not by this veil.
   ///
   /// Dusk keeps a light veil of page colour. A weather sky carries its own light, like Apple Weather's: no page veil,
   /// so a night stays night in Light mode and a bright day stays bright (the header draws light text over a
   /// [SceneSpec.dark] scene and dark text over the others). Dark mode only takes the edge off a bright sky with a
   /// faint black veil, keeping it light enough for dark text.
   static (Color, double) veil(SceneSpec spec, bool darkMode, Color page) {
-    if (!spec.isWeather) return (page, darkMode ? 0.18 : 0.34);
+    if (!spec.isWeather) return (page, darkMode ? 0.22 : 0.4);
     return (Colors.black, darkMode && !spec.dark ? 0.08 : 0.0);
   }
 
@@ -101,6 +94,7 @@ class SceneBackdrop extends StatelessWidget {
     final page = context.c.page;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final art = sceneArt[spec.key] ?? sceneArt['dusk']!;
+    final (veilColor, veilOpacity) = veil(spec, dark, page);
     return ExcludeSemantics(
       child: LayoutBuilder(builder: (context, box) {
         final size = MediaQuery.sizeOf(context);
@@ -121,19 +115,7 @@ class SceneBackdrop extends StatelessWidget {
                   : Stack(fit: StackFit.expand, children: [
                       // Painted once: the scene is static, and repaints only when its key changes.
                       _Photo(art: art, cacheWidth: cacheWidth, animate: animate),
-                      // The veil (see [veil]) and the fade into the page colour, so an undecodable photograph leaves
-                      // exactly the page colour and the scene ends softly above the modules below. A weather sky keeps
-                      // its own colour down to where the fade begins.
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: switch (veil(spec, dark, page)) {
-                            (final color, final a) when spec.isWeather => LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                                stops: const [0, 0.74, 0.9, 1], colors: [color.withValues(alpha: a), color.withValues(alpha: a), Color.lerp(color.withValues(alpha: a), page, 0.5)!, page]),
-                            (final color, final a) => LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0, 0.55, 1],
-                                colors: [color.withValues(alpha: a), color.withValues(alpha: a + 0.15), page]),
-                          },
-                        ),
-                      ),
+                      if (veilOpacity > 0) ColoredBox(color: veilColor.withValues(alpha: veilOpacity)),
                     ]),
             ),
           ),

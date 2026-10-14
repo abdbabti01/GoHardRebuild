@@ -90,7 +90,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the three sections are near their target heights at 390 × 844 with a notch and all start on the first screen', (tester) async {
+  testWidgets('the three sections are near their target heights at 390 × 844 with a notch, and nutrition starts on the first screen', (tester) async {
     final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
     await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food.take(1).toList(), calorieGoal: 2200, proteinGoal: 140,
         runs: [run('r1', day)], runtime: {'r1': pausedRun}), insets: phoneInsets);
@@ -103,13 +103,14 @@ void main() {
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
     debugPrint('header region $header');
-    expect(header, inInclusiveRange(160, 280), reason: 'a bounded header region');
+    expect(header, inInclusiveRange(160, 280), reason: 'the date, title, greeting and sky line, then the surface');
     final navTop = tester.getTopLeft(find.byKey(const Key('nav-today'))).dy;
     // The nutrition label and its calorie figure are on the first screen, above the navigation bar.
     final nutritionTop = tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy;
     final calories = tester.getBottomLeft(find.descendant(of: find.byKey(const Key('today-module-nutrition')), matching: find.textContaining('2,200 kcal'))).dy;
     debugPrint('full state: nutrition starts at $nutritionTop, its calorie figure ends at $calories, the navigation bar starts at $navTop');
-    expect(calories, lessThan(navTop), reason: 'the nutrition label and its calorie figure are on the first screen');
+    // The brief: nothing is squeezed to fit the first screen. The nutrition section starts on it, its label visible.
+    expect(nutritionTop + 36, lessThan(navTop), reason: 'the nutrition section and its label start on the first screen');
     expect(tester.getBottomLeft(find.byKey(const Key('today-run'))).dy, lessThan(navTop));
 
     // The quietest day: a due workout, no run, nothing logged.
@@ -123,29 +124,55 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Today, Train and Eat draw their scene from the top edge, behind the status bar, with their lines below it; Me starts below it', (tester) async {
-    await pumpApp(tester, await fixture(tester, plans: [plan]), insets: phoneInsets);
+  testWidgets('Today\'s scene fills the whole screen, behind the status bar and the floating bar, and stays put while the page scrolls over it', (tester) async {
+    await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [manualDone()], food: food), insets: phoneInsets);
     final top = phoneInsets.top;
+    final screen = const Offset(0, 0) & tester.view.physicalSize / tester.view.devicePixelRatio;
     // One veil behind the status bar, over every tab.
     expect(tester.getRect(find.byType(StatusBarVeil)), const Rect.fromLTWH(0, 0, 390, 47));
-    expect(tester.getTopLeft(find.byKey(const Key('today-header'))).dy, 0, reason: 'Today: the scene reaches the top edge');
-    expect(tester.getTopLeft(find.byType(TodayBackdrop)).dy, 0);
-    // weather_contrast_test measures a 200 px header with its text band at 71–197 px; this keeps the two in step.
+    expect(tester.getRect(find.byType(TodayBackdrop)), screen, reason: 'top edge to bottom edge, under the navigation bar too');
+    // weather_contrast_test measures the header's text band at 71–197 px; this keeps the two in step.
     final lines = tester.getRect(find.byType(TabHeader));
     expect(lines.top, top + 24);
     expect(lines.bottom, lessThanOrEqualTo(197));
-    expect(tester.getSize(find.byKey(const Key('today-header'))).height, lessThanOrEqualTo(200));
-    expect(tester.getTopLeft(find.byType(TabHeader)).dy, greaterThanOrEqualTo(top + 16), reason: 'Today: the date starts below the status bar, under a band of open scene');
-    for (final tab in ['train', 'eat']) {
+
+    // Every section sits on the one surface, below the header; nothing of the day is drawn on the scene itself.
+    final surface = find.byKey(const Key('today-surface'));
+    expect(surface, findsOneWidget);
+    for (final k in ['today-module-workout', 'today-module-run', 'today-module-nutrition']) {
+      expect(find.descendant(of: surface, matching: find.byKey(Key(k))), findsOneWidget, reason: '$k on the surface');
+    }
+    expect(find.descendant(of: surface, matching: find.text('Quick pull-ups')), findsOneWidget, reason: 'recorded today, on the surface too');
+    expect(tester.getTopLeft(surface).dy, greaterThan(lines.bottom), reason: 'the surface starts below the header');
+    expect(find.descendant(of: surface, matching: find.byType(BackdropFilter)), findsOneWidget, reason: 'one blur for the whole surface');
+
+    // Scrolled to the end: the scene has not moved, and the last control clears the floating bar.
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byType(TodayBackdrop)), screen, reason: 'the scene is fixed to the screen, not to the page');
+    final navTop = tester.getTopLeft(find.byKey(const Key('nav-today'))).dy;
+    expect(tester.getBottomLeft(surface).dy, lessThan(navTop), reason: 'the end of the page clears the navigation bar');
+    expect(tester.getBottomLeft(find.text('Quick pull-ups')).dy, lessThan(navTop));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('only Today has a scene: Train and Eat sit on the calm wash and Me on the plain page, each title where Today has it', (tester) async {
+    await pumpApp(tester, await fixture(tester, plans: [plan]), insets: phoneInsets);
+    final top = phoneInsets.top;
+    expect(find.byType(SceneBackdrop, skipOffstage: false), findsOneWidget, reason: 'one scene in the whole shell, Today\'s');
+    for (final (tab, title, wash) in [('train', 'Train', true), ('eat', 'Eat', true), ('me', 'Me', false)]) {
       await tester.tap(find.byKey(Key('nav-$tab')));
       await tester.pumpAndSettle();
-      expect(tester.getTopLeft(find.byType(ScenicBackdrop)).dy, 0, reason: '$tab: the scene reaches the top edge');
-      expect(tester.getTopLeft(find.byType(TabHeader)).dy, greaterThanOrEqualTo(top + 16), reason: '$tab: the date starts below the status bar');
+      final header = find.byWidgetPredicate((w) => w is TabHeader && w.title == title);
+      expect(tester.getTopLeft(header).dy, top + 24, reason: '$tab: the title where every tab has it');
+      expect(tester.widget<TabHeader>(header).onBackdrop, isFalse, reason: '$tab: no scrim, there is no scene');
+      expect(find.ancestor(of: header, matching: find.byType(QuietBackground)), wash ? findsOneWidget : findsNothing, reason: '$tab background');
+      expect(find.ancestor(of: header, matching: find.byType(SceneBackdrop)), findsNothing);
     }
-    await tester.tap(find.byKey(const Key('nav-me')));
+    // The end of a long page clears the floating bar on every tab, not only Today.
+    await tester.drag(find.byType(Scrollable).hitTestable().first, const Offset(0, -3000));
     await tester.pumpAndSettle();
-    expect(find.byType(ScenicBackdrop), findsNothing, reason: 'Me stays quiet, without a scene');
-    expect(tester.getTopLeft(find.byType(TabHeader)).dy, greaterThanOrEqualTo(top), reason: 'Me: its content starts below the status bar');
+    expect(tester.getBottomLeft(find.byKey(const Key('me-sign-out'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('nav-me'))).dy));
     expect(tester.takeException(), isNull);
   });
 
@@ -429,7 +456,7 @@ void main() {
     await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food));
     for (final module in ['workout', 'run', 'nutrition']) {
       final box = tester.getSize(photo(module));
-      expect(box.width, 92, reason: 'a supporting crop, not a header');
+      expect(box.width, 84, reason: 'a supporting crop, not a header');
       final image = tester.widget<Image>(find.descendant(of: photo(module), matching: find.byType(Image)));
       expect(image.fit, BoxFit.cover);
       final decoded = (image.image as ResizeImage).width!;
@@ -512,9 +539,12 @@ void main() {
             expect(words(), said, reason: '$where: the same states and values');
             expect(colors().accent, look, reason: '$where: the chosen accent stays');
             expect(c.read(shellProvider).tab, 0);
-            // The scene stays in the header region, above the rhythm; the header's lines sit on its page-coloured
-            // scrim in the theme's text colour (weather_contrast_test measures that over every scene and theme).
-            expect(tester.getRect(find.byType(SceneBackdrop)).bottom, lessThanOrEqualTo(before['today-module-workout']!.top));
+            // The scene fills the tab behind everything. The sections keep the app's own look on their surface whatever
+            // the sky; the header's lines sit on its page-coloured scrim in the sky's text colour (weather_contrast_test
+            // measures both over every scene and theme).
+            expect(tester.getRect(find.byType(SceneBackdrop)), Offset.zero & tester.getSize(find.byType(TodayScreen)));
+            expect(Theme.of(tester.element(find.byKey(const Key('today-module-workout')))).brightness, mode == ThemeMode.dark ? Brightness.dark : Brightness.light,
+                reason: '$where: the sections keep the app\'s look');
             expect(tester.widget<TabHeader>(find.descendant(of: find.byType(TodayScreen), matching: find.byType(TabHeader))).onBackdrop, isTrue);
             // The header's lines follow the sky, not the app's mode: light over a dark sky, dark over a light one.
             final sky = goTheme(Accent.pink, c.read(todaySceneProvider).dark ? Brightness.dark : Brightness.light).extension<GoColors>()!;

@@ -174,14 +174,14 @@ class Overline extends StatelessWidget {
 /// is an optional line under the title (Today's greeting). It has no padding of its own: put it first in the tab's
 /// list, inside the page inset.
 ///
-/// [onBackdrop]: the header sits over a scene (`TodayBackdrop`, `ScenicBackdrop`) that the screen places behind it.
+/// [onBackdrop]: the header sits over a scene (Today's `TodayBackdrop`) that the screen places behind it.
 /// The header then lays a stable page-coloured [GoColors.scrim] behind its own lines (full width, feathered at the top
 /// and bottom) and draws the overline in the primary text colour, so every line keeps 4.5:1 over any picture in
 /// every theme; nothing is measured per image. Draw [below] in `context.c.text` too. Over a plain page it is invisible.
 ///
 ///     TabHeader(title: 'Today', overline: longDate(today), below: Text('Good evening, Alex'))
 ///     Stack(children: [
-///       const Positioned(top: 0, left: 0, right: 0, height: 240, child: TodayBackdrop()),
+///       const Positioned.fill(child: TodayBackdrop()),
 ///       ListView(children: [TabHeader(title: 'Today', onBackdrop: true, ...), ...]),
 ///     ])
 class TabHeader extends StatelessWidget {
@@ -194,9 +194,9 @@ class TabHeader extends StatelessWidget {
   /// How far the scrim fades out beyond the header's top and bottom.
   static const _feather = 20.0;
 
-  /// Where a header over a scene starts, from the top edge of the screen: below the status bar (the main tabs
-  /// draw their scene behind it), with a band of open scene above the date.
-  static double topOnBackdrop(BuildContext context) => MediaQuery.paddingOf(context).top + 24;
+  /// Where the header of a main tab starts, from the top edge of the screen (the tabs run behind the status bar):
+  /// below the status bar, with a band of open scene or page above the date. The same on all four tabs.
+  static double topInset(BuildContext context) => MediaQuery.paddingOf(context).top + 24;
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +245,20 @@ class _ScrimPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ScrimPainter old) => old.color != color;
+}
+
+/// The calm background of Train and Eat: [GoColors.wash] at the top fading into the page a third of the way down,
+/// fixed to the screen. Never a picture or weather; only Today has a scene.
+class QuietBackground extends StatelessWidget {
+  const QuietBackground({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topCenter, end: const Alignment(0, -0.3), colors: [context.c.wash, context.c.page])),
+        child: child,
+      );
 }
 
 /// The small rounded tinted square that holds an icon: beside a row title, at the head of a card. [tone] picks the

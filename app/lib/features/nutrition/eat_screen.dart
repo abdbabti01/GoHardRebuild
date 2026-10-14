@@ -8,7 +8,6 @@ import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
-import '../weather/weather.dart';
 import 'food_form.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
@@ -67,28 +66,25 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       edgeOffset: MediaQuery.paddingOf(context).top,
       onRefresh: () => refreshFromAccount(ref),
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 28),
+        // On the calm wash the shell lays behind Eat, with room for the floating bar at the end.
+        padding: EdgeInsets.only(bottom: 28 + MediaQuery.paddingOf(context).bottom),
         children: [
-          // The quiet dusk scene behind the date and the title only; everything below sits on the page.
-          Stack(children: [
-            const Positioned.fill(child: ScenicBackdrop()),
-            Padding(
-              padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topOnBackdrop(context), context.inset, 18),
-              child: TabHeader(
-                title: 'Eat', overline: longDate(day), onBackdrop: true,
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                  IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
-                  IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
-                ]),
-                below: day == today
-                    ? null
-                    : Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
-                      ),
-              ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 18),
+            child: TabHeader(
+              title: 'Eat', overline: longDate(day),
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
+                IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
+              ]),
+              below: day == today
+                  ? null
+                  : Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
+                    ),
             ),
-          ]),
+          ),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: context.inset),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

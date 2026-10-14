@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,46 +47,84 @@ class TodayScreen extends ConsumerWidget {
     final foodError = ref.watch(foodProvider(day)).hasError;
     final finishedRuns = [for (final r in snapshot?.runs ?? const <Run>[]) if (!r.isOpen) r];
 
-    return RefreshIndicator(
-      edgeOffset: MediaQuery.paddingOf(context).top,
-      onRefresh: () => refreshFromAccount(ref),
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 28),
-        children: [
-          _Header(day: day),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.inset),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              if (reachable == false) const Padding(padding: EdgeInsets.only(bottom: 4), child: _ConnectionStatus()),
-              // The day's rhythm: workout, run and food, one thread, on the page and never over the photograph.
-              RhythmTimeline(sections: [
-                // A nutrition problem never hides training, and the reverse.
-                (
-                  Icons.fitness_center,
-                  localError
-                      ? const StatusLine(Icons.error_outline, 'Your training could not be read from this phone. Pull down to try again.', tone: Tone.error)
-                      : snapshot == null
-                          ? const StatusLine(Icons.hourglass_empty, 'Loading your training…')
-                          : _TrainingSection(snapshot),
-                ),
-                (Icons.directions_run, _RunCard(today: day, finishedToday: finishedRuns)),
-                (Icons.restaurant, _NutritionCard(day: day, snapshot: snapshot, failed: foodError)),
-              ]),
+    // The scene fills the whole tab, behind the status bar and the floating bar, and stays put while the page
+    // scrolls over it. It is const here, so nothing Today watches rebuilds it; only its own sky layer repaints.
+    return Stack(children: [
+      const Positioned.fill(child: RepaintBoundary(child: TodayBackdrop())),
+      RefreshIndicator(
+        edgeOffset: MediaQuery.paddingOf(context).top,
+        onRefresh: () => refreshFromAccount(ref),
+        child: ListView(
+          padding: EdgeInsets.only(bottom: 28 + MediaQuery.paddingOf(context).bottom),
+          children: [
+            _Header(day: day),
+            Padding(
+              // Edge to edge with the floating bar below it.
+              padding: const EdgeInsets.symmetric(horizontal: GoNavigationBar.margin),
+              child: _Surface(children: [
+                if (reachable == false) const Padding(padding: EdgeInsets.only(top: 12), child: _ConnectionStatus()),
+                // The day's rhythm: workout, run and food, one thread, on the surface and never over the photograph.
+                RhythmTimeline(sections: [
+                  // A nutrition problem never hides training, and the reverse.
+                  (
+                    Icons.fitness_center,
+                    localError
+                        ? const StatusLine(Icons.error_outline, 'Your training could not be read from this phone. Pull down to try again.', tone: Tone.error)
+                        : snapshot == null
+                            ? const StatusLine(Icons.hourglass_empty, 'Loading your training…')
+                            : _TrainingSection(snapshot),
+                  ),
+                  (Icons.directions_run, _RunCard(today: day, finishedToday: finishedRuns)),
+                  (Icons.restaurant, _NutritionCard(day: day, snapshot: snapshot, failed: foodError)),
+                ]),
 
-              // --- What was actually recorded today. Absent when there is nothing to show.
-              if (snapshot != null && (snapshot.recordedToday.isNotEmpty || finishedRuns.length > 1)) Padding(padding: const EdgeInsets.only(top: 12), child: _ActivitySection(snapshot, finishedRuns)),
-            ]),
+                // --- What was actually recorded today. Absent when there is nothing to show.
+                if (snapshot != null && (snapshot.recordedToday.isNotEmpty || finishedRuns.length > 1)) ...[
+                  Divider(color: context.c.divider, height: 1),
+                  Padding(padding: const EdgeInsets.symmetric(vertical: 18), child: _ActivitySection(snapshot, finishedRuns)),
+                ],
+              ]),
+            ),
+          ],
+        ),
+      ),
+    ]);
+  }
+}
+
+/// The one surface Today's sections sit on over the scene: [GoColors.surface] at [GoColors.panelOpacity] (soft white
+/// in Light, charcoal in Dark, whatever the sky) over a soft blur of the scene, with a thin edge. The scene stays
+/// visible around it and faintly through it; every line on it reads as on a card. One blur for the whole column,
+/// clipped to the surface.
+class _Surface extends StatelessWidget {
+  const _Surface({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final radius = BorderRadius.circular(Radii.panel);
+    return ClipRRect(
+      key: const Key('today-surface'),
+      borderRadius: radius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: c.surface.withValues(alpha: GoColors.panelOpacity), borderRadius: radius, border: Border.all(color: c.divider.withValues(alpha: 0.7))),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: MediaQuery.sizeOf(context).width < 350 ? 8 : 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// The top of Today: the weather-aware scene (or the dusk scene, or the plain page, as chosen in Appearance) behind
-/// the date, the title and the greeting, in a bounded region that fades into the page. Only the scene reads the
-/// weather; it repaints alone, so a new scene never rebuilds, moves or resets anything below it. The header's own
-/// scrim keeps its lines readable over every scene.
+/// The top of Today: the date, the title and the greeting over the scene (the weather, the dusk scene or the plain
+/// page, as chosen in Appearance) that fills the tab behind it. Only the scene reads the weather; it repaints alone,
+/// so a new scene never rebuilds, moves or resets anything here. The header's own scrim keeps its lines readable over
+/// every scene.
 class _Header extends ConsumerWidget {
   const _Header({required this.day});
   final String day;
@@ -98,22 +137,20 @@ class _Header extends ConsumerWidget {
     // and dark lines over a daylight one, as in Apple Weather. Same accent; increased contrast respected.
     // Scenic and Plain are not weather: they keep the app's own mode.
     final sky = !scene.isWeather ? Theme.of(context).brightness : scene.dark ? Brightness.dark : Brightness.light;
-    return Stack(key: const Key('today-header'), children: [
-      const Positioned.fill(child: RepaintBoundary(child: TodayBackdrop())),
-      Theme(
-        data: goTheme(appearance.accent, sky, highContrast: MediaQuery.highContrastOf(context)),
-        child: Builder(
-          builder: (context) => Padding(
-            // The scene runs to the top edge, behind the status bar; the lines start below it.
-            padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topOnBackdrop(context), context.inset, 4),
-            child: TabHeader(
-              title: 'Today', overline: longDate(day), onBackdrop: true,
-              below: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_Greeting(), _SkyLine()]),
-            ),
+    return Theme(
+      key: const Key('today-header'),
+      data: goTheme(appearance.accent, sky, highContrast: MediaQuery.highContrastOf(context)),
+      child: Builder(
+        builder: (context) => Padding(
+          // The scene runs to the top edge, behind the status bar; the lines start below it.
+          padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 8),
+          child: TabHeader(
+            title: 'Today', overline: longDate(day), onBackdrop: true,
+            below: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_Greeting(), _SkyLine()]),
           ),
         ),
       ),
-    ]);
+    );
   }
 }
 
@@ -283,7 +320,7 @@ class _Module extends StatelessWidget {
   Widget build(BuildContext context) {
     final scale = MediaQuery.textScalerOf(context).scale(10) / 10;
     final large = scale > 1.3, narrow = MediaQuery.sizeOf(context).width < 350;
-    final photoWidth = photo == null || large ? 0.0 : narrow ? 72.0 : 92.0;
+    final photoWidth = photo == null || large ? 0.0 : narrow ? 72.0 : 84.0;
     final s = status;
     // The label and its state, a word with an icon (never a colour alone).
     final labelRow = ConstrainedBox(
