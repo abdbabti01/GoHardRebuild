@@ -182,7 +182,11 @@ void main() {
     // The common foods are part of the app, so they are found again straight after a restart.
     await j.tapKey('log-food');
     await j.type('food-search', 'egg');
-    await j.waitFor(find.byKey(const Key('common-eggs')), what: 'the common food after a restart');
+    // Egg whites were never logged: a pure catalog row. Eggs were logged above, so they are listed once, as one of
+    // this account's own foods (same USDA record, same key), and not again under Common foods.
+    await j.waitFor(find.byKey(const Key('common-egg-whites')), what: 'a common food after a restart');
+    expect(find.byKey(const Key('local-usda:2707152')), findsOneWidget, reason: 'the eggs logged earlier, found on the phone');
+    expect(find.byKey(const Key('common-eggs')), findsNothing, reason: 'one record is listed once');
     await j.shot('101-common-food-after-restart');
   });
 }
