@@ -143,8 +143,8 @@ public class WeatherProviderTests
         var again = await met.CurrentAsync(46.8, -71.2, default);
         Assert.Equal(2, sent.Count);
         Assert.Equal(lastModified, sent[1].Since);                                   // conditional, with the last Last-Modified
-        Assert.Equal((LookupStatus.Ok, 61, new DateTime(2026, 10, 14, 15, 0, 0, DateTimeKind.Utc)),
-            (again.Status, again.Value!.Code, again.Value.ValidAtUtc));               // 304: the kept answer, read at the new hour
+        Assert.Equal((LookupStatus.Ok, 61, new DateTime(2026, 10, 14, 15, 5, 0, DateTimeKind.Utc)),
+            (again.Status, again.Value!.Code, again.Value.ValidAtUtc));               // 304: the kept answer, read in the 15:00 hour, valid now
 
         await met.CurrentAsync(48.9, 2.3, default);                                  // another place is its own, plain request
         Assert.Equal(3, sent.Count);
@@ -182,8 +182,11 @@ public class WeatherProviderTests
     public void MET_Norway_current_hour_maps_to_the_same_codes_with_day_or_night_from_the_symbol_or_the_sun()
     {
         var now = MetNorwayProvider.ParseCurrent(Recorded("metno_quebec_cloudy.json"), 46.8, -71.2, new DateTime(2026, 10, 14, 14, 30, 0, DateTimeKind.Utc))!;
-        Assert.Equal((new DateTime(2026, 10, 14, 14, 0, 0, DateTimeKind.Utc), 3, "Cloudy", "cloudy", true, 5.8m),
-            (now.ValidAtUtc, now.Code, now.Description, now.Family, now.IsDay, now.TemperatureC));   // "cloudy" has no suffix: 10:00 at the place, the sun is up
+        Assert.Equal((new DateTime(2026, 10, 14, 14, 30, 0, DateTimeKind.Utc), 3, "Cloudy", "cloudy", true, 5.8m),
+            (now.ValidAtUtc, now.Code, now.Description, now.Family, now.IsDay, now.TemperatureC));   // the 14:00 hour's symbol, valid at 14:30 when read; "cloudy" has no suffix: 10:00 at the place, the sun is up
+        // Read at 14:59 the same hour is still current, never 59 minutes old: the app's 60-minute rule cannot drop it.
+        var late = MetNorwayProvider.ParseCurrent(Recorded("metno_quebec_cloudy.json"), 46.8, -71.2, new DateTime(2026, 10, 14, 14, 59, 0, DateTimeKind.Utc))!;
+        Assert.Equal((new DateTime(2026, 10, 14, 14, 59, 0, DateTimeKind.Utc), 3), (late.ValidAtUtc, late.Code));
         Assert.Equal((2, "Partly cloudy"), MetNorwayProvider.Map("partlycloudy_day"));
         Assert.Equal((0, "Clear sky"), MetNorwayProvider.Map("clearsky_night"));
         Assert.Equal((80, "Light rain showers"), MetNorwayProvider.Map("lightrainshowers_day"));
