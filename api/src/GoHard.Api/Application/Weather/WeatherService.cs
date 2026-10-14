@@ -67,10 +67,17 @@ public sealed class WeatherService : IDisposable
         return (Math.Round(lat, 1, MidpointRounding.AwayFromZero) + 0.0, Math.Round(lon, 1, MidpointRounding.AwayFromZero) + 0.0);  // + 0.0: no "-0"
     }
 
-    public Task<Lookup<WeatherNow>> CurrentAsync(double? lat, double? lon, CancellationToken ct)
+    /// <param name="viaFallback">Ask MET Norway directly (verification of the fallback); otherwise Open-Meteo first.</param>
+    public Task<Lookup<WeatherNow>> CurrentAsync(double? lat, double? lon, CancellationToken ct, bool viaFallback = false)
     {
         if (lat is null || lon is null || Round(lat.Value, lon.Value) is not { } at) return Task.FromResult(Lookup<WeatherNow>.Fail(LookupStatus.Invalid));
         if (!_options.Enabled) return Task.FromResult(Lookup<WeatherNow>.Fail(LookupStatus.NotConfigured));
+        if (viaFallback)
+        {
+            if (string.IsNullOrWhiteSpace(_options.MetNorwayBaseUrl)) return Task.FromResult(Lookup<WeatherNow>.Fail(LookupStatus.NotConfigured));
+            return RememberAsync(FormattableString.Invariant($"met:{at.Lat}:{at.Lon}"), TimeSpan.FromMinutes(Math.Max(1, _options.CacheMinutes)),
+                () => CallAsync(token => _met.CurrentAsync(at.Lat, at.Lon, token), "MET Norway", () => _metQuietUntil, t => _metQuietUntil = t, _metBudget), ct);
+        }
         return RememberAsync(FormattableString.Invariant($"now:{at.Lat}:{at.Lon}"), TimeSpan.FromMinutes(Math.Max(1, _options.CacheMinutes)), async () =>
         {
             var primary = await CallAsync(token => _provider.CurrentAsync(at.Lat, at.Lon, token));

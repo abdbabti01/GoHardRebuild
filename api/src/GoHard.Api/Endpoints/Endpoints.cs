@@ -157,7 +157,10 @@ public static class GoHardEndpoints
 
         // Optional weather for the Today background. Coarse places only; a failure here touches nothing else.
         var weather = me.MapGroup("/weather").RequireRateLimiting("food-data");
-        weather.MapGet("/current", async (double? lat, double? lon, WeatherService s, CancellationToken ct) => Lookup(await s.CurrentAsync(lat, lon, ct), w => w));
+        // provider=met.no asks the fallback directly: how a deployment proves MET Norway answers from its own network
+        // while Open-Meteo is fine. Same rounding, cache (its own key), budget and Expires rules. The app never sends it.
+        weather.MapGet("/current", async (double? lat, double? lon, string? provider, WeatherService s, CancellationToken ct) =>
+            Lookup(await s.CurrentAsync(lat, lon, ct, viaFallback: provider == MetNorwayProvider.Source), w => w));
         weather.MapGet("/places", async (string? q, WeatherService s, CancellationToken ct) => Lookup(await s.PlacesAsync(q, ct), r => new { results = r }));
 
         // Supporting activities
