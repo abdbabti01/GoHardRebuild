@@ -42,7 +42,7 @@ jobs:
 
       - name: Build (no code signing)
         working-directory: app
-        run: flutter build ios --release --no-codesign --dart-define=GOHARD_API_BASE="${API_BASE%/}" --build-number="${{ github.run_number }}"
+        run: flutter build ios --release --no-codesign --dart-define=GOHARD_API_BASE="${API_BASE%/}" --build-number="${{ github.run_number }}" --dart-define=GOHARD_COMMIT="${GITHUB_SHA::7}" --dart-define=GOHARD_BUILD="${{ github.run_number }}"
 
       - name: Package the IPA
         working-directory: app

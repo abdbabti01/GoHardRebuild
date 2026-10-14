@@ -64,7 +64,7 @@ void main() {
     await tester.tap(find.byKey(const Key('weather-location-automatic')));
     await tester.pumpAndSettle();
     expect(find.text('Use your approximate location?'), findsNothing); // only Settings can change it now
-    expect(c.read(todaySceneProvider), SceneSpec.dusk);
+    expect((c.read(todaySceneProvider).key, c.read(todaySceneProvider).isWeather), ('dusk', false));
   });
 
   testWidgets('city search shows namesakes apart, and the chosen one is kept with its own coordinates', (tester) async {
@@ -136,7 +136,7 @@ void main() {
     }
     expect(w.currentCalls, hasLength(1));
 
-    w.clock.advance(const Duration(minutes: 31));
+    w.clock.advance(const Duration(minutes: 16));
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();

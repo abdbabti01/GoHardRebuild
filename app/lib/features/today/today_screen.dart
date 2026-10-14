@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/appearance.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -85,19 +86,85 @@ class TodayScreen extends ConsumerWidget {
 /// the date, the title and the greeting, in a bounded region that fades into the page. Only the scene reads the
 /// weather; it repaints alone, so a new scene never rebuilds, moves or resets anything below it. The header's own
 /// scrim keeps its lines readable over every scene.
-class _Header extends StatelessWidget {
+class _Header extends ConsumerWidget {
   const _Header({required this.day});
   final String day;
 
   @override
-  Widget build(BuildContext context) => Stack(key: const Key('today-header'), children: [
-        const Positioned.fill(child: RepaintBoundary(child: TodayBackdrop())),
-        Padding(
-          // The scene runs to the top edge, behind the status bar; the lines start below it.
-          padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topOnBackdrop(context), context.inset, 4),
-          child: TabHeader(title: 'Today', overline: longDate(day), below: const _Greeting(), onBackdrop: true),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scene = ref.watch(todaySceneProvider);
+    final appearance = ref.watch(appearanceProvider);
+    // The header's text and scrim follow the sky, not the app's mode: light lines over a night, rain or storm sky
+    // and dark lines over a daylight one, as in Apple Weather. Same accent; increased contrast respected.
+    final sky = scene.key == 'plain' ? Theme.of(context).brightness : scene.dark ? Brightness.dark : Brightness.light;
+    return Stack(key: const Key('today-header'), children: [
+      const Positioned.fill(child: RepaintBoundary(child: TodayBackdrop())),
+      Theme(
+        data: goTheme(appearance.accent, sky, highContrast: MediaQuery.highContrastOf(context)),
+        child: Builder(
+          builder: (context) => Padding(
+            // The scene runs to the top edge, behind the status bar; the lines start below it.
+            padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topOnBackdrop(context), context.inset, 4),
+            child: TabHeader(
+              title: 'Today', overline: longDate(day), onBackdrop: true,
+              below: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_Greeting(), _SkyLine()]),
+            ),
+          ),
         ),
-      ]);
+      ),
+    ]);
+  }
+}
+
+/// One quiet line under the greeting saying what the scene is: the weather it shows ("Partly cloudy"), or, when
+/// Weather is chosen but there is no usable answer, that this is the scenic view and why. Nothing for Scenic or
+/// Plain. A tap opens the Today background setting, where the details are.
+class _SkyLine extends ConsumerWidget {
+  const _SkyLine();
+
+  static String _issue(WeatherIssue i) => switch (i) {
+        WeatherIssue.needsPermission => 'Location not allowed yet',
+        WeatherIssue.denied || WeatherIssue.deniedForever => 'Location not allowed',
+        WeatherIssue.servicesOff => 'Location is off',
+        WeatherIssue.timeout => 'No location in time',
+        WeatherIssue.offline => 'Weather could not be reached',
+        WeatherIssue.unavailable => 'Weather unavailable',
+        WeatherIssue.noCity => 'Choose a city',
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scene = ref.watch(todaySceneProvider);
+    final issue = ref.watch(weatherProvider.select((w) => w.issue));
+    final String text;
+    final IconData icon;
+    if (scene.isWeather) {
+      text = scene.label!;
+      icon = Icons.cloud_outlined;
+    } else if (scene.fallback != null) {
+      text = 'Scenic view · ${issue == null ? scene.fallback!.words : _issue(issue)}';
+      icon = Icons.landscape_outlined;
+    } else {
+      return const SizedBox.shrink();
+    }
+    return Semantics(
+      button: true, hint: 'Opens the Today background setting',
+      child: InkWell(
+        key: const Key('today-sky-line'),
+        borderRadius: BorderRadius.circular(Radii.field),
+        onTap: () => push(context, const TodayBackgroundScreen()),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: Targets.minimum),
+          child: Row(children: [
+            const SizedBox(width: 10),
+            ExcludeSemantics(child: Icon(icon, size: 18, color: context.c.text)),
+            const SizedBox(width: 24),
+            Flexible(child: Text(text, style: context.sansStyle(15, color: context.c.text, weight: FontWeight.w500))),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
 /// "Good evening, Alex": the phone's local time and the first word of the name on the profile. Without a name it

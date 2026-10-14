@@ -150,6 +150,7 @@ List<double> _grade(String family, bool? isDay) {
   return switch (family) {
     'clear' => grade(saturation: light(1.05, 0.5), brightness: light(0.1, -0.12),
         gain: isDay == false ? const [0.5, 0.64, 1.0] : const [0.92, 1.02, 1.06]),
+    'partly' => grade(saturation: light(0.9, 0.5), brightness: light(0.08, -0.12), gain: isDay == false ? const [0.5, 0.64, 1.0] : const [0.94, 1.0, 1.04]),
     'cloudy' => grade(saturation: 0.3, contrast: 0.85, brightness: light(0.02, -0.06), gain: const [0.98, 0.98, 1.0]),
     'rain' => grade(saturation: 0.25, contrast: 0.85, brightness: light(-0.04, -0.15), gain: const [0.86, 0.96, 1.0]),
     'snow' => grade(saturation: 0.15, contrast: 1.0, brightness: light(0.14, -0.02), gain: const [0.94, 1.0, 1.1]),
@@ -160,7 +161,8 @@ List<double> _grade(String family, bool? isDay) {
 }
 
 SceneArt _art(String family, bool? isDay) {
-  final (day, night) = _skies[family]!;
+  // ponytail: partly borrows the clear sky until its own painted sky lands; replace with _skies['partly'].
+  final (day, night) = _skies[family] ?? _skies['clear']!;
   // Neutral (the provider did not say day or night): a muted light between the two.
   final sky = switch (isDay) { true => day, false => night, null => day.toward(night, 0.45) };
   return SceneArt(matrix: silhouette(_grade(family, isDay)), sky: sky);

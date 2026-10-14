@@ -494,7 +494,11 @@ void main() {
         final (c, w) = await today(tester, mode: mode);
         const keys = ['today-header', 'today-greeting', 'today-module-workout', 'today-module-run', 'today-module-nutrition', 'today-resume', 'today-details', 'today-run', 'log-food', 'nav-today'];
         Map<String, Rect> layout() => {for (final k in keys) k: tester.getRect(find.byKey(Key(k)))};
-        List<String?> words() => [for (final e in find.descendant(of: find.byType(TodayScreen), matching: find.byType(Text)).evaluate()) (e.widget as Text).data];
+        // Everything but the line naming the weather, which is meant to change with it.
+        List<String?> words() => [
+              for (final e in find.descendant(of: find.byType(TodayScreen), matching: find.byType(Text)).evaluate())
+                if (find.descendant(of: find.byKey(const Key('today-sky-line')), matching: find.byWidget(e.widget)).evaluate().isEmpty) (e.widget as Text).data
+            ];
         GoColors colors() => Theme.of(tester.element(find.byType(TodayScreen))).extension<GoColors>()!;
         final (before, said, look) = (layout(), words(), colors().accent);
         expect(said, containsAll(['In progress', 'Paused', '33%', 'Resume workout', 'Continue run', '/ 2,200 kcal']));
@@ -510,13 +514,45 @@ void main() {
             // scrim in the theme's text colour (weather_contrast_test measures that over every scene and theme).
             expect(tester.getRect(find.byType(SceneBackdrop)).bottom, lessThanOrEqualTo(before['today-module-workout']!.top));
             expect(tester.widget<TabHeader>(find.descendant(of: find.byType(TodayScreen), matching: find.byType(TabHeader))).onBackdrop, isTrue);
-            expect(tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color, colors().text);
+            // The header's lines follow the sky, not the app's mode: light over a dark sky, dark over a light one.
+            final sky = goTheme(Accent.pink, c.read(todaySceneProvider).dark ? Brightness.dark : Brightness.light).extension<GoColors>()!;
+            expect(tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color, sky.text, reason: '$where: header text follows the sky');
+            expect(find.descendant(of: find.byKey(const Key('today-sky-line')), matching: find.text(c.read(todaySceneProvider).label!)), findsOneWidget);
             expect(tester.takeException(), isNull);
           }
         }
         expect(tester.binding.hasScheduledFrame, isFalse, reason: 'no scene keeps animating');
       });
     }
+
+    testWidgets('a clear night stays a night with light text in Light mode, and a clear day keeps dark text in Dark mode', (tester) async {
+      Color greeting() => tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color!;
+      final light = goTheme(Accent.pink, Brightness.light).extension<GoColors>()!, dark = goTheme(Accent.pink, Brightness.dark).extension<GoColors>()!;
+      final (c, w) = await today(tester, mode: ThemeMode.light);
+      await weather(tester, c, w, 'clear', false);
+      expect(greeting(), dark.text, reason: 'night at the place: light lines, although the app is in Light mode');
+      await weather(tester, c, w, 'clear', true);
+      expect(greeting(), light.text);
+    });
+
+    testWidgets('the sky line names real weather, or says it is the scenic view and why; nothing for Scenic', (tester) async {
+      final (c, w) = await today(tester);
+      w.answer = (_, _) => w.conditions('cloudy', code: 2, description: 'Partly cloudy');
+      await c.read(weatherProvider.notifier).refresh(force: true);
+      await tester.pumpAndSettle();
+      expect(c.read(todaySceneProvider).key, 'partly-day', reason: 'WMO 2 is partly cloudy, not overcast');
+      expect(find.descendant(of: find.byKey(const Key('today-sky-line')), matching: find.text('Partly cloudy')), findsOneWidget);
+
+      w.clock.advance(const Duration(minutes: 70)); // the kept answer is now too old, and the next attempt fails
+      w.failWith = offline;
+      await c.read(weatherProvider.notifier).refresh(force: true);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: find.byKey(const Key('today-sky-line')), matching: find.text('Scenic view · Weather could not be reached')), findsOneWidget);
+
+      c.read(weatherPrefsProvider.notifier).setBackground(TodayBackground.scenic);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('today-sky-line')), findsNothing);
+    });
 
     testWidgets('a new scene keeps the scroll position and what is open', (tester) async {
       final (c, w) = await today(tester);

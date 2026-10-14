@@ -70,7 +70,18 @@ class WeatherPrefs {
   int get hashCode => Object.hash(background, mode, city);
 }
 
-const weatherFamilies = ['clear', 'cloudy', 'fog', 'rain', 'snow', 'storm'];
+/// Scene families. The server's contract has six (clear, cloudy, fog, rain, snow, storm); the phone splits "cloudy"
+/// by the WMO code it carries: 1–2 (mainly clear, partly cloudy) are [partly], 3 (overcast) stays cloudy. Before this
+/// split a sunny, partly cloudy afternoon was painted as an overcast sky.
+const weatherFamilies = ['clear', 'partly', 'cloudy', 'fog', 'rain', 'snow', 'storm'];
+
+/// The scene family for conditions: from the WMO code where it decides more finely than the server's family.
+String sceneFamily(WeatherConditions c) => switch (c.code) {
+      0 => 'clear',
+      1 || 2 => 'partly',
+      3 => 'cloudy',
+      _ => c.family,
+    };
 
 /// Current conditions as the API normalized them (the server's small contract).
 @immutable
@@ -123,7 +134,7 @@ class WeatherEntry {
 /// The product policy, in one place.
 abstract final class WeatherPolicy {
   /// Ask again when Today opens or resumes and the last fetch for this source is older than this.
-  static const refreshAfter = Duration(minutes: 30);
+  static const refreshAfter = Duration(minutes: 15);
 
   /// Conditions are shown only while their valid time is within this age.
   static const maxAge = Duration(minutes: 60);
@@ -143,9 +154,12 @@ abstract final class WeatherPolicy {
 /// What the backdrop paints. [key] names the treatment; the crossfade runs only when it changes.
 @immutable
 class SceneSpec {
-  const SceneSpec({required this.key, this.isWeather = false, this.label, this.family, this.isDay});
+  const SceneSpec({required this.key, this.isWeather = false, this.label, this.family, this.isDay, this.fallback});
   final String key;
   final bool isWeather;
+
+  /// Why Weather mode is showing the decorative scene instead of weather; null for a weather scene, Scenic and Plain.
+  final WeatherFallback? fallback;
 
   /// The provider's own description, shown only for a real, fresh weather scene.
   final String? label;
@@ -155,12 +169,33 @@ class SceneSpec {
   static const dusk = SceneSpec(key: 'dusk');
   static const plain = SceneSpec(key: 'plain');
 
+  /// The header over this scene is dark, so its text is drawn light, as in Apple Weather, in Light and Dark mode
+  /// alike: night, storm and rain skies are dark whatever the app's mode, and a daylight sky is light.
+  bool get dark => switch (family) {
+        'storm' || 'rain' => true,
+        null => key == 'dusk', // the decorative dusk photograph is a dark scene too
+        _ => isDay == false || (isDay == null && (family == 'cloudy' || family == 'fog')),
+      };
+
   @override
-  bool operator ==(Object other) => other is SceneSpec && other.key == key && other.label == label;
+  bool operator ==(Object other) => other is SceneSpec && other.key == key && other.label == label && other.fallback == fallback;
   @override
-  int get hashCode => Object.hash(key, label);
+  int get hashCode => Object.hash(key, label, fallback);
   @override
-  String toString() => 'SceneSpec($key${label == null ? '' : ', $label'})';
+  String toString() => 'SceneSpec($key${label == null ? '' : ', $label'}${fallback == null ? '' : ', fallback: ${fallback!.name}'})';
+}
+
+/// Why Weather mode fell back to the decorative scene. Shown in words on Today and in the setting.
+enum WeatherFallback {
+  noAnswer('No weather yet'),
+  otherPlace('Weather is for another place'),
+  stale('Weather is out of date'),
+  ahead('Weather time is ahead'),
+  unknownCode('Unrecognised weather'),
+  noArt('No scene for this weather');
+
+  const WeatherFallback(this.words);
+  final String words;
 }
 
 /// Treatment keys that exist: every family in day, night and neutral (provider did not say) light.
@@ -179,14 +214,19 @@ SceneSpec resolveScene({required WeatherPrefs prefs, required WeatherEntry? entr
     case TodayBackground.scenic:
       return SceneSpec.dusk;
     case TodayBackground.weather:
+      SceneSpec fall(WeatherFallback why) => SceneSpec(key: 'dusk', fallback: why);
       final c = entry?.conditions;
-      if (entry == null || c == null || entry.source != prefs.source) return SceneSpec.dusk;
-      if (prefs.mode == WeatherLocationMode.city && entry.region != prefs.city?.region) return SceneSpec.dusk;
-      if (!WeatherPolicy.usable(c, nowUtc) || !weatherFamilies.contains(c.family)) return SceneSpec.dusk;
-      final key = '${c.family}-${switch (c.isDay) { true => 'day', false => 'night', null => 'neutral' }}';
-      if (!(available ?? sceneKeys).contains(key)) return SceneSpec.dusk;
-      return SceneSpec(key: key, isWeather: true, label: c.description ?? _familyLabel[c.family], family: c.family, isDay: c.isDay);
+      if (entry == null || c == null || entry.source != prefs.source) return fall(WeatherFallback.noAnswer);
+      if (prefs.mode == WeatherLocationMode.city && entry.region != prefs.city?.region) return fall(WeatherFallback.otherPlace);
+      final age = nowUtc.difference(c.validAtUtc);
+      if (age > WeatherPolicy.maxAge) return fall(WeatherFallback.stale);
+      if (age < -WeatherPolicy.futureTolerance) return fall(WeatherFallback.ahead);
+      final family = sceneFamily(c);
+      if (!weatherFamilies.contains(family)) return fall(WeatherFallback.unknownCode);
+      final key = '$family-${switch (c.isDay) { true => 'day', false => 'night', null => 'neutral' }}';
+      if (!(available ?? sceneKeys).contains(key)) return fall(WeatherFallback.noArt);
+      return SceneSpec(key: key, isWeather: true, label: c.description ?? _familyLabel[family], family: family, isDay: c.isDay);
   }
 }
 
-const _familyLabel = {'clear': 'Clear', 'cloudy': 'Cloudy', 'fog': 'Fog', 'rain': 'Rain', 'snow': 'Snow', 'storm': 'Thunderstorm'};
+const _familyLabel = {'clear': 'Clear', 'partly': 'Partly cloudy', 'cloudy': 'Overcast', 'fog': 'Fog', 'rain': 'Rain', 'snow': 'Snow', 'storm': 'Thunderstorm'};

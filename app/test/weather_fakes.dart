@@ -80,6 +80,11 @@ class WeatherFakes implements WeatherSource, WeatherLocator {
     return fix;
   }
 
+  /// What the phone last knew, for the "moved since the last answer" check. Null: nothing known.
+  CoarseFix? last;
+  @override
+  Future<CoarseFix?> lastKnown() async => last;
+
   @override
   Future<void> openAppSettings() async => settingsOpened++;
   @override

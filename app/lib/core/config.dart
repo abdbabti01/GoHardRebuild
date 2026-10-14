@@ -5,6 +5,10 @@ class AppConfig {
   static const apiBase = String.fromEnvironment('GOHARD_API_BASE');
   static const contractVersion = 1;
 
+  /// Which build this is, stamped by the iOS workflow (commit and workflow run number); 'dev' for a local build.
+  static const commit = String.fromEnvironment('GOHARD_COMMIT', defaultValue: 'dev');
+  static const build = String.fromEnvironment('GOHARD_BUILD');
+
   static String? get problem {
     if (apiBase.isEmpty) return 'GOHARD_API_BASE is not set. Launch with scripts\run-android.ps1.';
     final uri = Uri.tryParse(apiBase);

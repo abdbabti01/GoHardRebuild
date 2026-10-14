@@ -18,7 +18,7 @@ public sealed class WeatherOptions
     public string? ApiKey { get; set; }
     public string UserAgent { get; set; } = "GoHardRebuild/0.1 (https://github.com/abdbabti01/GoHardRebuild)";
     public int TimeoutSeconds { get; set; } = 5;
-    public int CacheMinutes { get; set; } = 20;
+    public int CacheMinutes { get; set; } = 10; // current conditions are 15-minute model data; with the phone's 15-minute refresh a scene is at most ~25 minutes behind
     public int CacheEntries { get; set; } = 2000;
     // Every user of this API shares one calling IP. 400 an hour stays under the free tier's 5,000 an hour and
     // 10,000 a day even if spent every hour.
