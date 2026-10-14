@@ -1,4 +1,5 @@
 import '../../core/clock.dart';
+import 'plan_rules.dart';
 
 /// Pure calendar-date rules, mirrored from the API's `ScheduleRules` and checked against the same fixture.
 class ScheduleOccasion {
@@ -89,6 +90,6 @@ abstract final class ScheduleRules {
         invalidWeekdayCount => 'Choose exactly as many days as workouts per week.',
         invalidDate => 'Enter a real calendar date.',
         duplicateOccasion || occasionNotFound => 'That workout is no longer part of this plan.',
-        _ => 'That change could not be applied ($code).',
+        _ => PlanRules.describe(code),
       };
 }

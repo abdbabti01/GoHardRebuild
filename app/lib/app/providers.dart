@@ -19,6 +19,7 @@ import '../features/nutrition/food_item.dart';
 import '../features/nutrition/food_repository.dart';
 import '../features/nutrition/food_search.dart';
 import '../features/nutrition/nutrient_coverage.dart';
+import '../features/plans/plan_draft.dart';
 import '../features/plans/plan_repository.dart';
 import '../features/today/daily.dart';
 import '../features/workout/progress.dart';
@@ -113,6 +114,19 @@ final metricsProvider = StreamProvider<List<Stored<BodyMetric>>>((ref) => _rows(
 final proposalsProvider = StreamProvider<List<Stored<Proposal>>>((ref) => _rows(ref, Kinds.proposal, Proposal.new));
 final catalogProvider = StreamProvider<List<CatalogExercise>>((ref) =>
     _rows(ref, Kinds.catalog, CatalogExercise.new).map((l) => [for (final r in l) r.value]..sort((a, b) => a.name.compareTo(b.name))));
+final customExercisesProvider = StreamProvider<List<CustomExercise>>((ref) =>
+    _rows(ref, Kinds.customExercise, CustomExercise.new).map((l) => [for (final r in l) r.value]..sort((a, b) => a.name.compareTo(b.name))));
+
+/// Everything an exercise can be chosen from: the shared catalog and the owner's own (not archived) exercises, as
+/// [CatalogExercise] values. A custom one has key `custom:<id>` and category/equipment as the owner gave them.
+final exerciseChoicesProvider = Provider<List<CatalogExercise>>((ref) => [
+      for (final c in ref.watch(customExercisesProvider).value ?? const <CustomExercise>[])
+        if (!c.isArchived) CatalogExercise({'key': c.key, 'name': c.name, 'category': c.category, 'equipment': c.equipment, 'isTimed': c.isTimed, 'isCustom': true}),
+      ...ref.watch(catalogProvider).value ?? const <CatalogExercise>[],
+    ]);
+
+/// The bundled starter templates (same for every account, no connection needed).
+final planTemplatesProvider = FutureProvider<PlanTemplates>((ref) async => PlanTemplates.parse(await rootBundle.loadString('assets/data/plan-templates.json')));
 
 /// Records that cannot converge without a decision. Ordinary pending upload is not an issue.
 final issuesProvider = StreamProvider<List<Rec>>((ref) {

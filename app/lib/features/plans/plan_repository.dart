@@ -4,6 +4,9 @@ import '../../core/clock.dart';
 import '../../data/db.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import 'plan_draft.dart';
+import 'plan_projection.dart';
+import 'plan_rules.dart';
 import 'schedule_rules.dart';
 
 /// The outcome of a plan request that needs the account (draft creation, proposals).
@@ -197,7 +200,9 @@ class PlanRepository {
   }
 
   /// Moves one eligible occasion. It stays the same occasion in the same training week; its original date is kept.
+  /// A rotation has no dates to move: its next workout waits, or is skipped.
   Future<Receipt> move(Plan plan, List<ScheduleOccasion> schedule, String occasionId, String to) {
+    if (plan.isRotating) throw const ScheduleRefused(['OCCASION_NOT_MOVABLE']);
     final from = schedule.firstWhere((o) => o.id == occasionId).scheduledDate;
     final v = ScheduleRules.validate(schedule, [ScheduleChange(occasionId, from, to)], plan.minRecoveryDays);
     if (!v.isValid) throw ScheduleRefused(v.errors);
@@ -210,8 +215,138 @@ class PlanRepository {
     return _schedule(plan, 'skip', occasionId, _withOccasion(plan, occasionId, (o) => o['isSkipped'] = true));
   }
 
-  Future<Receipt> unskip(Plan plan, String occasionId) =>
-      _schedule(plan, 'unskip', occasionId, _withOccasion(plan, occasionId, (o) => o['isSkipped'] = false));
+  /// In a rotation only the latest step can be un-skipped: the sequence has already moved past earlier ones.
+  Future<Receipt> unskip(Plan plan, String occasionId) {
+    final k = plan.occasions.where((o) => o.id == occasionId).firstOrNull?.sequenceIndex;
+    if (plan.isRotating && plan.occasions.any((o) => (o.sequenceIndex ?? -1) > (k ?? -1))) throw const ScheduleRefused([ScheduleRules.occasionNotEligible]);
+    return _schedule(plan, 'unskip', occasionId, _withOccasion(plan, occasionId, (o) => o['isSkipped'] = false));
+  }
+
+  /// Skip from the projection: a rotation's next workout that the account has not materialized yet is recorded as
+  /// skipped today (the account materializes the same occurrence ID); any other occurrence is an ordinary skip.
+  Future<Receipt> skipOccurrence(Plan plan, List<Workout> workouts, Occasion o, {required String today}) {
+    if (!o.isVirtual) return skip(plan, scheduleOf(plan, workouts), o.id);
+    final week = daysBetween(plan.startDate, today) < 0 ? 1 : daysBetween(plan.startDate, today) ~/ 7 + 1;
+    final body = copyJson(plan.j);
+    (body['occasions'] as List).add(copyJson(o.j)
+      ..remove('isVirtual')
+      ..addAll({'isSkipped': true, 'originalDate': today, 'scheduledDate': today, 'weekNumber': week}));
+    return _sync.submit(_owner,
+        kind: 'plan.schedule', path: '/plans/${plan.id}/schedule-changes', targetKind: Kinds.plan, targetId: plan.id, after: [_ctx], writes: [_write(body)],
+        payload: {'expectedPlanRevision': _planRev(plan.id), 'action': 'skip', 'occasionId': o.id, 'from': null, 'to': today, 'sequenceIndex': o.sequenceIndex});
+  }
+
+  // ------------------------------------------------------------------ the plan builder (docs/TRAINING_PLANS.md)
+
+  /// The plan being built ("new") or edited (its plan ID). Saved on the phone only; never creates anything.
+  Future<PlanDraft?> builderDraft(String draftId) async {
+    final rec = await _sync.get(_owner, Kinds.planBuilder, draftId);
+    return rec == null ? null : PlanDraft(jsonDecode(rec.body) as Json);
+  }
+
+  Future<void> saveBuilderDraft(PlanDraft draft) => _sync.putLocal(_owner, LocalWrite(Kinds.planBuilder, draft.draftId, draft.j));
+  Future<void> discardBuilderDraft(String draftId) => _sync.deleteLocal(_owner, Kinds.planBuilder, draftId);
+
+  /// Custom exercises the plan uses must reach the account before the plan that names them.
+  List<(String, String)> _customAfter(Json body) => [
+        for (final w in body['workouts'] as List)
+          for (final e in (w as Json)['exercises'] as List)
+            if (((e as Json)['catalogKey'] as String?)?.startsWith('custom:') ?? false) (Kinds.customExercise, (e['catalogKey'] as String).substring(7)),
+      ];
+
+  /// Activate plan: creates the user's own plan from the draft and makes it the primary plan. Both are saved on the
+  /// phone with their commands before any network use, so this works offline; the activation waits for the creation.
+  /// Replacing a current primary must be named, and pauses it (history kept), exactly like `activate`.
+  Future<Receipt> createAndActivate(PlanDraft draft, {required String today, String? replacePrimaryId}) async {
+    final errors = draft.errors;
+    if (errors.isNotEmpty) throw ScheduleRefused(errors);
+    if (!draft.isUsable) throw const ScheduleRefused([PlanRules.notUsable]);
+    final current = (await _contextBody())['primaryPlanId'] as String?;
+    if (current != null && current != replacePrimaryId) throw const ScheduleRefused(['PRIMARY_EXISTS']);
+    final body = draft.toPlanJson();
+    await _sync.submit(_owner, kind: 'plan.create', path: '/plans', targetKind: Kinds.plan, targetId: draft.planId,
+        after: [_ctx, ..._customAfter(body)], writes: [_write(body)], payload: draft.createPayload());
+    final receipt = await activate(Plan(body), today: today, replacePrimaryId: replacePrimaryId);
+    await discardBuilderDraft(draft.draftId);
+    return receipt;
+  }
+
+  /// Save changes to an existing plan from the draft's effective date on (a draft plan is rebuilt in full). Recorded,
+  /// skipped, in-progress and earlier occurrences, and occurrences edited on their own, keep their content and dates;
+  /// finished workouts are never touched. The local result is computed by the same rules the account applies.
+  Future<Receipt> revise(Plan plan, PlanDraft draft, {required List<Workout> workouts, required String today}) async {
+    final errors = draft.errors;
+    if (errors.isNotEmpty) throw ScheduleRefused(errors);
+    if (!plan.isDraft && !draft.isUsable) throw const ScheduleRefused([PlanRules.notUsable]);
+    if (plan.isClosed) throw const ScheduleRefused(['PLAN_NOT_ACTIVE']);
+    final mode = plan.schedule?.mode ?? 'fixed';
+    if (!plan.isDraft && mode != draft.schedule.mode) throw const ScheduleRefused(['MODE_LOCKED']);
+    if (!plan.isDraft && draft.startDate != plan.startDate) throw const ScheduleRefused(['START_LOCKED']);
+
+    final p = draft.planBody;
+    final schedule = p['schedule'] as Json;
+    final effective = plan.isDraft ? draft.startDate : (draft.effectiveDate ?? today);
+    if (schedule['mode'] == 'rotating') {
+      final before = plan.schedule;
+      final changed = before == null || before.cycle.join(',') != (schedule['cycle'] as List).join(',');
+      // A changed cycle starts from its first workout at the next step that has not been started or recorded.
+      schedule['cycleAnchor'] = !changed
+          ? before.cycleAnchor
+          : planOccasions(plan, today, workouts).where((o) => o.isVirtual).firstOrNull?.sequenceIndex ?? plan.occasions.length;
+    }
+    final weeks = p['durationWeeks'] as int?;
+    final workoutsJson = (p['workouts'] as List).cast<Json>();
+    final occasions = plan.isDraft
+        ? (schedule['mode'] == 'rotating' ? <Json>[] : PlanRules.generate(plan.id, draft.startDate, weeks!, schedule, workoutsJson))
+        : PlanRules.revise(planId: plan.id, start: plan.startDate, weeks: weeks, effective: effective,
+            occasions: [for (final o in plan.j['occasions'] as List? ?? const []) o as Json],
+            pending: {for (final s in scheduleOf(plan, workouts)) if (s.isEligible) s.id}, workouts: workoutsJson, schedule: schedule);
+    final body = copyJson(plan.j)
+      ..addAll({
+        'title': p['title'], 'startDate': draft.startDate, 'blockWeeks': weeks ?? 1, 'isOngoing': weeks == null, 'timeBudgetMinutes': p['timeBudgetMinutes'],
+        'workouts': workoutsJson, 'schedule': schedule, 'occasions': occasions, 'minRecoveryDays': plan.isBuilt ? plan.minRecoveryDays : 0,
+      });
+    final receipt = await _sync.submit(_owner, kind: 'plan.revise', method: 'PUT', path: '/plans/${plan.id}', targetKind: Kinds.plan, targetId: plan.id,
+        after: [_ctx, ..._customAfter(body)], writes: [_write(body)],
+        payload: {
+          'expectedPlanRevision': _planRev(plan.id), 'effectiveDate': effective, 'title': p['title'], 'startDate': draft.startDate,
+          'durationWeeks': weeks, 'timeBudgetMinutes': p['timeBudgetMinutes'], 'workouts': workoutsJson, 'schedule': schedule,
+        });
+    await discardBuilderDraft(draft.draftId);
+    return receipt;
+  }
+
+  /// This workout only: one pending occurrence of a fixed-weekday plan gets its own name and exercises. Later
+  /// plan-wide edits leave it as it is.
+  Future<Receipt> editOccasion(Plan plan, List<ScheduleOccasion> schedule, Occasion o, {required String title, required List<Json> prescription}) {
+    if (o.isVirtual || plan.isRotating) throw const ScheduleRefused(['OCCASION_NOT_MOVABLE']);
+    if (!(schedule.where((s) => s.id == o.id).firstOrNull?.isEligible ?? false)) throw const ScheduleRefused([ScheduleRules.occasionNotEligible]);
+    final check = PlanRules.validate({
+      'title': 'x', 'durationWeeks': 1, 'workouts': [{'id': 'x', 'name': title, 'notes': null, 'exercises': prescription}],
+      'schedule': {'mode': 'fixed', 'pattern': [{'weekday': 1, 'workoutId': 'x'}], 'cycle': [], 'trainingDays': [], 'cycleAnchor': 0},
+    });
+    if (check.isNotEmpty) throw ScheduleRefused(check);
+    final body = _withOccasion(plan, o.id, (x) => x.addAll({'title': title.trim(), 'prescription': prescription, 'isCustomised': true}));
+    return _sync.submit(_owner, kind: 'plan.occasion', method: 'PUT', path: '/plans/${plan.id}/occasions/${o.id}', targetKind: Kinds.plan, targetId: plan.id,
+        after: [_ctx], writes: [_write(body)], payload: {'expectedPlanRevision': _planRev(plan.id), 'title': title.trim(), 'prescription': prescription});
+  }
+
+  // ------------------------------------------------------------------ custom exercises (private to this owner)
+
+  /// Creates or changes one of the owner's own exercises. Renaming or archiving never changes recorded workouts,
+  /// which keep the name they were recorded with.
+  Future<CustomExercise> saveCustomExercise({String? id, required String name, required String category, required String equipment,
+      required bool isTimed, bool isArchived = false}) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed.length > 80) throw const ScheduleRefused(['EXERCISE_NAME_INVALID']);
+    final exId = id ?? SyncEngine.newId();
+    final body = {'id': exId, 'name': trimmed, 'category': category, 'equipment': equipment, 'isTimed': isTimed, 'isArchived': isArchived,
+      'revision': (await _sync.get(_owner, Kinds.customExercise, exId))?.revision ?? 0};
+    await _sync.submit(_owner, kind: 'customexercise.put', method: 'PUT', path: '/custom-exercises/$exId', targetKind: Kinds.customExercise, targetId: exId,
+        writes: [LocalWrite(Kinds.customExercise, exId, body)],
+        payload: {'expectedRevision': {r'$rev': [Kinds.customExercise, exId]}, 'name': trimmed, 'category': category, 'equipment': equipment, 'isTimed': isTimed, 'isArchived': isArchived});
+    return CustomExercise(body);
+  }
 
   /// Closes the block and frees the primary slot. Open workouts keep their links and can still be finished.
   Future<Receipt> close(Plan plan, {required String intent, required String today}) async {

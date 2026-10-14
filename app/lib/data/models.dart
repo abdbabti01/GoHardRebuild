@@ -3,6 +3,8 @@
 /// Units: *Kg kilograms, *Seconds seconds, dayKey/…Date calendar `YYYY-MM-DD`, *AtUtc ISO-8601 UTC instants.
 library;
 
+import '../core/clock.dart';
+
 typedef Json = Map<String, dynamic>;
 
 Json copyJson(Map j) => {
@@ -20,8 +22,10 @@ double? _d(Object? v) => (v as num?)?.toDouble();
 abstract final class Kinds {
   static const profile = 'profile', context = 'context', plan = 'plan', workout = 'workout', set = 'set', food = 'food';
   static const run = 'run', metric = 'metric', proposal = 'proposal', catalog = 'catalog', savedFood = 'saved_food';
-  // Local-only kinds: never dispatched.
-  static const runtime = 'runtime', setupDraft = 'setup_draft';
+  /// The owner's private exercises; referenced from prescriptions as `custom:<id>`.
+  static const customExercise = 'custom_exercise';
+  // Local-only kinds: never dispatched. `planBuilder` is the plan being built or edited ("new", or a plan's ID).
+  static const runtime = 'runtime', setupDraft = 'setup_draft', planBuilder = 'plan_builder';
   /// Provider foods this owner has looked at, kept so they can be found again without a connection.
   static const foodCache = 'food_cache';
 }
@@ -36,6 +40,49 @@ extension type Prescription(Json j) {
   int? get targetRepsMax => j['targetRepsMax'] as int?;
   int? get targetDurationSeconds => j['targetDurationSeconds'] as int?;
   int? get restSeconds => j['restSeconds'] as int?;
+
+  /// A target the user set. Never filled in by the app, and never the last recorded load.
+  double? get targetLoadKg => _d(j['targetLoadKg']);
+  String? get notes => j['notes'] as String?;
+}
+
+/// The user's own reusable workout ("Push", "Upper A") inside a plan. Occurrences copy it; they do not point into it.
+extension type WorkoutDefinition(Json j) {
+  String get id => j['id'] as String;
+  String get name => j['name'] as String;
+  String? get notes => j['notes'] as String?;
+  List<Prescription> get exercises => [for (final e in j['exercises'] as List? ?? const []) Prescription(e as Json)];
+}
+
+/// How a built plan's occurrences are laid out. See docs/TRAINING_PLANS.md.
+extension type PlanSchedule(Json j) {
+  String get mode => j['mode'] as String;
+  bool get isRotating => mode == 'rotating';
+
+  /// Fixed: one workout per chosen ISO weekday (1 = Monday). A workout may appear on several days.
+  List<({int weekday, String workoutId})> get pattern => [
+        for (final p in j['pattern'] as List? ?? const []) (weekday: (p as Json)['weekday'] as int, workoutId: p['workoutId'] as String),
+      ];
+
+  /// Rotating: the ordered workouts; the sequence continues across weeks.
+  List<String> get cycle => [for (final c in j['cycle'] as List? ?? const []) c as String];
+  List<int> get trainingDays => [for (final d in j['trainingDays'] as List? ?? const []) d as int];
+
+  /// The sequence index at which `cycle[0]` applies.
+  int get cycleAnchor => j['cycleAnchor'] as int? ?? 0;
+}
+
+extension type CustomExercise(Json j) {
+  String get id => j['id'] as String;
+  String get name => j['name'] as String;
+  String get category => j['category'] as String? ?? 'Other';
+  String get equipment => j['equipment'] as String? ?? '';
+  bool get isTimed => j['isTimed'] as bool? ?? false;
+  bool get isArchived => j['isArchived'] as bool? ?? false;
+  int get revision => j['revision'] as int? ?? 0;
+
+  /// How a prescription refers to it.
+  String get key => 'custom:$id';
 }
 
 /// "3 sets · 5–8 reps", "3 sets · 45 s", or an honest "No target" when the prescription has none.
@@ -60,6 +107,18 @@ extension type Occasion(Json j) {
   List<Prescription> get prescription => [for (final e in j['prescription'] as List? ?? const []) Prescription(e as Json)];
   bool get isRecorded => resultOutcome != null;
   bool get wasMoved => originalDate != scheduledDate;
+
+  /// The plan workout this occurrence was made from; null on plans from before the builder.
+  String? get workoutId => j['workoutId'] as String?;
+
+  /// Position in a rotating sequence (0-based); null in fixed-weekday plans.
+  int? get sequenceIndex => j['sequenceIndex'] as int?;
+
+  /// Edited on its own ("this workout only"); later plan-wide edits leave it alone.
+  bool get isCustomised => j['isCustomised'] as bool? ?? false;
+
+  /// A projected rotating occurrence that has not been started or skipped yet: its date is a plan, not a record.
+  bool get isVirtual => j['isVirtual'] as bool? ?? false;
 }
 
 extension type Plan(Json j) {
@@ -80,7 +139,22 @@ extension type Plan(Json j) {
   bool get isActive => lifecycle == 'active';
   bool get isPaused => lifecycle == 'paused';
   bool get isClosed => lifecycle == 'closed';
+
+  /// Built with the plan builder: it has workout definitions and a schedule. Older plans have neither.
+  bool get isBuilt => j['schedule'] is Map;
+  PlanSchedule? get schedule => isBuilt ? PlanSchedule(j['schedule'] as Json) : null;
+  bool get isRotating => schedule?.isRotating ?? false;
+  List<WorkoutDefinition> get workouts => [for (final w in j['workouts'] as List? ?? const []) WorkoutDefinition(w as Json)];
+
+  /// Repeats until stopped (rotating plans only). `blockWeeks` is then 1, for older builds.
+  bool get isOngoing => j['isOngoing'] as bool? ?? false;
+
+  /// Planned time the user chose. Not a calculated session length.
+  int? get timeBudgetMinutes => j['timeBudgetMinutes'] as int?;
+  String? get templateId => j['templateId'] as String?;
+
   String? get endDate {
+    if (isRotating) return isOngoing ? null : addDays(startDate, 7 * blockWeeks - 1);
     final o = occasions;
     return o.isEmpty ? null : o.map((x) => x.scheduledDate).reduce((a, b) => a.compareTo(b) > 0 ? a : b);
   }
@@ -105,6 +179,8 @@ extension type WorkoutExercise(Json j) {
   int? get targetDurationSeconds => j['targetDurationSeconds'] as int?;
   int? get restSeconds => j['restSeconds'] as int?;
   String? get substitutedForKey => j['substitutedForKey'] as String?;
+  double? get targetLoadKg => _d(j['targetLoadKg']);
+  String? get notes => j['notes'] as String?;
   bool get isDeleted => j['isDeleted'] as bool? ?? false;
   String get target => targetText(sets: targetSets, repsMin: targetRepsMin, repsMax: targetRepsMax, seconds: targetDurationSeconds);
 }
@@ -218,4 +294,7 @@ extension type CatalogExercise(Json j) {
   String get category => j['category'] as String;
   String get equipment => j['equipment'] as String;
   bool get isTimed => j['isTimed'] as bool? ?? false;
+
+  /// One of the owner's own exercises (key `custom:<id>`), not the shared catalog.
+  bool get isCustom => j['isCustom'] as bool? ?? false;
 }

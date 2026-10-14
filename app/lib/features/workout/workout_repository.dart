@@ -77,15 +77,18 @@ class WorkoutRepository {
   // ------------------------------------------------------------------ start
 
   Json _exercise(int ordinal, {required String name, String? catalogKey, String? occurrenceKey, bool isPrescribed = false, bool isTimed = false,
-          int? targetSets, int? repsMin, int? repsMax, int? targetSeconds, int? restSeconds, String? substitutedForKey}) =>
+          int? targetSets, int? repsMin, int? repsMax, int? targetSeconds, int? restSeconds, String? substitutedForKey, double? targetLoadKg, String? notes}) =>
       {
         'id': SyncEngine.newId(), 'ordinal': ordinal, 'name': name, 'catalogKey': catalogKey, 'occurrenceKey': occurrenceKey, 'isPrescribed': isPrescribed,
         'isTimed': isTimed, 'targetSets': targetSets, 'targetRepsMin': repsMin, 'targetRepsMax': repsMax, 'targetDurationSeconds': targetSeconds,
         'restSeconds': restSeconds, 'substitutedForKey': substitutedForKey, 'isDeleted': false,
+        // Omitted when absent, so a start recorded before these fields existed is the same command.
+        'targetLoadKg': ?targetLoadKg,
+        'notes': ?notes,
       };
 
   Future<Workout> _start({required String kind, required String title, required String dayKey, required List<Json> exercises,
-      String? planId, String? occasionId, List<(String, String)> after = const []}) async {
+      String? planId, String? occasionId, List<(String, String)> after = const [], Json extra = const {}}) async {
     final id = SyncEngine.newId();
     final startedAt = _now;
     final body = <String, dynamic>{
@@ -100,19 +103,23 @@ class WorkoutRepository {
         payload: {
           'workoutId': id, 'kind': kind, 'occasionId': occasionId, 'title': title, 'dayKey': dayKey, 'startedAtUtc': startedAt,
           'exercises': [for (final e in exercises) Map.of(e)..remove('isDeleted')],
+          ...extra,
         });
     return Workout(body);
   }
 
   /// Starts the planned occasion, freezing its prescription into the workout. The day key is the local
-  /// calendar day the user started on and never changes afterwards.
+  /// calendar day the user started on and never changes afterwards. A rotation's next workout that the account has
+  /// not materialized yet is named by its plan and sequence index; the account creates that same occurrence.
   Future<Workout> startPlanned(Plan plan, Occasion occasion, String dayKey) => _start(
         kind: 'planned', title: occasion.title, dayKey: dayKey, planId: plan.id, occasionId: occasion.id,
         after: [(Kinds.plan, plan.id), (Kinds.context, _owner)],
+        extra: occasion.isVirtual ? {'planId': plan.id, 'sequenceIndex': occasion.sequenceIndex} : const {},
         exercises: [
           for (final (i, p) in occasion.prescription.indexed)
             _exercise(i + 1, name: p.name, catalogKey: p.catalogKey, occurrenceKey: p.occurrenceKey, isPrescribed: true, isTimed: p.isTimed,
-                targetSets: p.targetSets, repsMin: p.targetRepsMin, repsMax: p.targetRepsMax, targetSeconds: p.targetDurationSeconds, restSeconds: p.restSeconds),
+                targetSets: p.targetSets, repsMin: p.targetRepsMin, repsMax: p.targetRepsMax, targetSeconds: p.targetDurationSeconds, restSeconds: p.restSeconds,
+                targetLoadKg: p.targetLoadKg, notes: p.notes),
         ],
       );
 

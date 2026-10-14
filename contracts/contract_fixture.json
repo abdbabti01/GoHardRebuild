@@ -250,5 +250,1327 @@
       "acknowledgedSets": [ { "id": "33333333-3333-4333-8333-333333333333", "revision": 2 } ],
       "activeDurationSeconds": 125, "finishedAtUtc": "2026-10-10T00:05:00Z"
     }
-  }
+  },
+  "planIds": [
+    {
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "name": "d:2026-10-12",
+      "expect": "8fa6d488-0aeb-58fa-862a-17ba836f9e80"
+    },
+    {
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "name": "d:2026-10-14",
+      "expect": "8466ecd6-c86d-5d34-a9bf-f48fe2968321"
+    },
+    {
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "name": "s:0",
+      "expect": "676f8e96-e466-5519-8f81-96b2864d57e8"
+    },
+    {
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "name": "s:1",
+      "expect": "e8699789-3d71-505e-bb00-820efbd3c40b"
+    },
+    {
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "name": "s:12",
+      "expect": "319566e8-5009-5acf-a1b8-55179e1fec3d"
+    }
+  ],
+  "planFixed": [
+    {
+      "name": "ppl_six_days_three_definitions_six_occurrences",
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "start": "2026-10-12",
+      "durationWeeks": 1,
+      "pattern": [
+        {
+          "weekday": 1,
+          "workoutId": "00000000-0000-4000-8000-0000000000b1"
+        },
+        {
+          "weekday": 2,
+          "workoutId": "00000000-0000-4000-8000-0000000000b2"
+        },
+        {
+          "weekday": 3,
+          "workoutId": "00000000-0000-4000-8000-0000000000b3"
+        },
+        {
+          "weekday": 4,
+          "workoutId": "00000000-0000-4000-8000-0000000000b1"
+        },
+        {
+          "weekday": 5,
+          "workoutId": "00000000-0000-4000-8000-0000000000b2"
+        },
+        {
+          "weekday": 6,
+          "workoutId": "00000000-0000-4000-8000-0000000000b3"
+        }
+      ],
+      "expect": [
+        {
+          "id": "8fa6d488-0aeb-58fa-862a-17ba836f9e80",
+          "date": "2026-10-12",
+          "weekNumber": 1,
+          "ordinal": 1,
+          "workoutId": "00000000-0000-4000-8000-0000000000b1"
+        },
+        {
+          "id": "66e0f701-c79a-5a70-9ada-9eaff4f7549b",
+          "date": "2026-10-13",
+          "weekNumber": 1,
+          "ordinal": 2,
+          "workoutId": "00000000-0000-4000-8000-0000000000b2"
+        },
+        {
+          "id": "8466ecd6-c86d-5d34-a9bf-f48fe2968321",
+          "date": "2026-10-14",
+          "weekNumber": 1,
+          "ordinal": 3,
+          "workoutId": "00000000-0000-4000-8000-0000000000b3"
+        },
+        {
+          "id": "54dbcb9e-29c1-5b21-9a61-9aab1855c60f",
+          "date": "2026-10-15",
+          "weekNumber": 1,
+          "ordinal": 4,
+          "workoutId": "00000000-0000-4000-8000-0000000000b1"
+        },
+        {
+          "id": "67f30ea6-0f65-5a70-8a5e-a255b049a338",
+          "date": "2026-10-16",
+          "weekNumber": 1,
+          "ordinal": 5,
+          "workoutId": "00000000-0000-4000-8000-0000000000b2"
+        },
+        {
+          "id": "4b640ab5-7a2f-514b-93d6-0d6909e65c0e",
+          "date": "2026-10-17",
+          "weekNumber": 1,
+          "ordinal": 6,
+          "workoutId": "00000000-0000-4000-8000-0000000000b3"
+        }
+      ]
+    },
+    {
+      "name": "wednesday_start_orders_by_day_offset_not_weekday",
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "start": "2026-10-14",
+      "durationWeeks": 2,
+      "pattern": [
+        {
+          "weekday": 1,
+          "workoutId": "00000000-0000-4000-8000-0000000000b1"
+        },
+        {
+          "weekday": 3,
+          "workoutId": "00000000-0000-4000-8000-0000000000b2"
+        },
+        {
+          "weekday": 5,
+          "workoutId": "00000000-0000-4000-8000-0000000000b3"
+        }
+      ],
+      "expect": [
+        {
+          "id": "8466ecd6-c86d-5d34-a9bf-f48fe2968321",
+          "date": "2026-10-14",
+          "weekNumber": 1,
+          "ordinal": 1,
+          "workoutId": "00000000-0000-4000-8000-0000000000b2"
+        },
+        {
+          "id": "67f30ea6-0f65-5a70-8a5e-a255b049a338",
+          "date": "2026-10-16",
+          "weekNumber": 1,
+          "ordinal": 2,
+          "workoutId": "00000000-0000-4000-8000-0000000000b3"
+        },
+        {
+          "id": "033e62a3-9629-5bef-aa26-d48f7a578397",
+          "date": "2026-10-19",
+          "weekNumber": 1,
+          "ordinal": 3,
+          "workoutId": "00000000-0000-4000-8000-0000000000b1"
+        },
+        {
+          "id": "fd212b70-c66b-5f25-bc4b-bf754b71fc60",
+          "date": "2026-10-21",
+          "weekNumber": 2,
+          "ordinal": 1,
+          "workoutId": "00000000-0000-4000-8000-0000000000b2"
+        },
+        {
+          "id": "7971bc36-9e28-5aa2-b8d4-565c46f1b6ea",
+          "date": "2026-10-23",
+          "weekNumber": 2,
+          "ordinal": 2,
+          "workoutId": "00000000-0000-4000-8000-0000000000b3"
+        },
+        {
+          "id": "12fca834-c30b-5c6e-baea-6a70ca37da7a",
+          "date": "2026-10-26",
+          "weekNumber": 2,
+          "ordinal": 3,
+          "workoutId": "00000000-0000-4000-8000-0000000000b1"
+        }
+      ]
+    }
+  ],
+  "planRotating": [
+    {
+      "name": "cycle_continues_across_weeks",
+      "cycle": [
+        "00000000-0000-4000-8000-0000000000b1",
+        "00000000-0000-4000-8000-0000000000b2",
+        "00000000-0000-4000-8000-0000000000b3"
+      ],
+      "cycleAnchor": 0,
+      "expect": [
+        [
+          0,
+          "00000000-0000-4000-8000-0000000000b1"
+        ],
+        [
+          1,
+          "00000000-0000-4000-8000-0000000000b2"
+        ],
+        [
+          2,
+          "00000000-0000-4000-8000-0000000000b3"
+        ],
+        [
+          3,
+          "00000000-0000-4000-8000-0000000000b1"
+        ],
+        [
+          4,
+          "00000000-0000-4000-8000-0000000000b2"
+        ],
+        [
+          7,
+          "00000000-0000-4000-8000-0000000000b2"
+        ]
+      ]
+    },
+    {
+      "name": "changed_cycle_starts_at_its_anchor",
+      "cycle": [
+        "00000000-0000-4000-8000-0000000000b2",
+        "00000000-0000-4000-8000-0000000000b1"
+      ],
+      "cycleAnchor": 4,
+      "expect": [
+        [
+          4,
+          "00000000-0000-4000-8000-0000000000b2"
+        ],
+        [
+          5,
+          "00000000-0000-4000-8000-0000000000b1"
+        ],
+        [
+          6,
+          "00000000-0000-4000-8000-0000000000b2"
+        ],
+        [
+          3,
+          "00000000-0000-4000-8000-0000000000b1"
+        ]
+      ]
+    }
+  ],
+  "planValidate": [
+    {
+      "name": "valid_fixed_plan",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "fixed",
+          "pattern": [
+            {
+              "weekday": 1,
+              "workoutId": "00000000-0000-4000-8000-0000000000b1"
+            },
+            {
+              "weekday": 3,
+              "workoutId": "00000000-0000-4000-8000-0000000000b2"
+            },
+            {
+              "weekday": 5,
+              "workoutId": "00000000-0000-4000-8000-0000000000b3"
+            }
+          ],
+          "cycle": [],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [],
+      "expectUsable": true
+    },
+    {
+      "name": "valid_ongoing_rotation",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": null,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "rotating",
+          "pattern": [],
+          "cycle": [
+            "00000000-0000-4000-8000-0000000000b1",
+            "00000000-0000-4000-8000-0000000000b2",
+            "00000000-0000-4000-8000-0000000000b3",
+            "00000000-0000-4000-8000-0000000000b1"
+          ],
+          "trainingDays": [
+            1,
+            3,
+            5
+          ],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [],
+      "expectUsable": true
+    },
+    {
+      "name": "fixed_plan_cannot_be_ongoing",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": null,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "fixed",
+          "pattern": [
+            {
+              "weekday": 1,
+              "workoutId": "00000000-0000-4000-8000-0000000000b1"
+            }
+          ],
+          "cycle": [],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [
+        "DURATION_INVALID"
+      ],
+      "expectUsable": true
+    },
+    {
+      "name": "blank_title_and_inverted_rep_range",
+      "plan": {
+        "title": "  ",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 12,
+                "targetRepsMax": 8,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "fixed",
+          "pattern": [
+            {
+              "weekday": 1,
+              "workoutId": "00000000-0000-4000-8000-0000000000b1"
+            }
+          ],
+          "cycle": [],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [
+        "TITLE_INVALID",
+        "WORKOUTS_INVALID"
+      ],
+      "expectUsable": true
+    },
+    {
+      "name": "schedule_names_an_unknown_workout",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "rotating",
+          "pattern": [],
+          "cycle": [
+            "00000000-0000-4000-8000-0000000000b1",
+            "00000000-0000-4000-8000-0000000000ff"
+          ],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [
+        "SCHEDULE_INVALID"
+      ],
+      "expectUsable": false
+    },
+    {
+      "name": "one_workout_per_weekday",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "fixed",
+          "pattern": [
+            {
+              "weekday": 2,
+              "workoutId": "00000000-0000-4000-8000-0000000000b1"
+            },
+            {
+              "weekday": 2,
+              "workoutId": "00000000-0000-4000-8000-0000000000b2"
+            }
+          ],
+          "cycle": [],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [
+        "SCHEDULE_INVALID"
+      ],
+      "expectUsable": true
+    },
+    {
+      "name": "time_budget_out_of_range",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 5,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "rotating",
+          "pattern": [],
+          "cycle": [
+            "00000000-0000-4000-8000-0000000000b1"
+          ],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [
+        "TIME_BUDGET_INVALID"
+      ],
+      "expectUsable": true
+    },
+    {
+      "name": "duplicate_exercise_keys_in_one_workout",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              },
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "dip",
+                "name": "Dip",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "rotating",
+          "pattern": [],
+          "cycle": [
+            "00000000-0000-4000-8000-0000000000b1"
+          ],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [
+        "WORKOUTS_INVALID"
+      ],
+      "expectUsable": true
+    },
+    {
+      "name": "empty_structure_is_valid_but_not_usable",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": []
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          }
+        ],
+        "schedule": {
+          "mode": "fixed",
+          "pattern": [
+            {
+              "weekday": 1,
+              "workoutId": "00000000-0000-4000-8000-0000000000b1"
+            },
+            {
+              "weekday": 4,
+              "workoutId": "00000000-0000-4000-8000-0000000000b2"
+            }
+          ],
+          "cycle": [],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [],
+      "expectUsable": false
+    },
+    {
+      "name": "unscheduled_empty_workout_does_not_block_use",
+      "plan": {
+        "title": "My split",
+        "durationWeeks": 8,
+        "timeBudgetMinutes": 45,
+        "workouts": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000b1",
+            "name": "Push",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "bench-press",
+                "name": "Bench press",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b2",
+            "name": "Pull",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "barbell-row",
+                "name": "Barbell row",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b3",
+            "name": "Legs",
+            "notes": null,
+            "exercises": [
+              {
+                "occurrenceKey": "e1",
+                "catalogKey": "back-squat",
+                "name": "Back squat",
+                "isTimed": false,
+                "targetSets": 3,
+                "targetRepsMin": 8,
+                "targetRepsMax": 12,
+                "targetDurationSeconds": null,
+                "restSeconds": 90
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-0000000000b4",
+            "name": "Spare",
+            "notes": null,
+            "exercises": []
+          }
+        ],
+        "schedule": {
+          "mode": "rotating",
+          "pattern": [],
+          "cycle": [
+            "00000000-0000-4000-8000-0000000000b1",
+            "00000000-0000-4000-8000-0000000000b2",
+            "00000000-0000-4000-8000-0000000000b3"
+          ],
+          "trainingDays": [],
+          "cycleAnchor": 0
+        }
+      },
+      "expectErrors": [],
+      "expectUsable": true
+    }
+  ],
+  "planRevise": [
+    {
+      "name": "pattern_change_from_effective_date_keeps_history_moves_and_one_off_edits",
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "start": "2026-10-12",
+      "durationWeeks": 2,
+      "effectiveDate": "2026-10-16",
+      "workouts": [
+        {
+          "id": "00000000-0000-4000-8000-0000000000b1",
+          "name": "Push",
+          "notes": null,
+          "exercises": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-0000000000b2",
+          "name": "Pull v2",
+          "notes": null,
+          "exercises": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "pull-up",
+              "name": "Pull-up",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-0000000000b3",
+          "name": "Legs",
+          "notes": null,
+          "exercises": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        }
+      ],
+      "schedule": {
+        "mode": "fixed",
+        "pattern": [
+          {
+            "weekday": 1,
+            "workoutId": "00000000-0000-4000-8000-0000000000b2"
+          },
+          {
+            "weekday": 4,
+            "workoutId": "00000000-0000-4000-8000-0000000000b3"
+          }
+        ],
+        "cycle": [],
+        "trainingDays": [],
+        "cycleAnchor": 0
+      },
+      "occasions": [
+        {
+          "id": "8fa6d488-0aeb-58fa-862a-17ba836f9e80",
+          "originalDate": "2026-10-12",
+          "scheduledDate": "2026-10-12",
+          "workoutId": "00000000-0000-4000-8000-0000000000b1",
+          "title": "Push",
+          "weekNumber": 1,
+          "ordinal": 1,
+          "pending": false,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "8466ecd6-c86d-5d34-a9bf-f48fe2968321",
+          "originalDate": "2026-10-14",
+          "scheduledDate": "2026-10-14",
+          "workoutId": "00000000-0000-4000-8000-0000000000b2",
+          "title": "Pull",
+          "weekNumber": 1,
+          "ordinal": 2,
+          "pending": false,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "67f30ea6-0f65-5a70-8a5e-a255b049a338",
+          "originalDate": "2026-10-16",
+          "scheduledDate": "2026-10-17",
+          "workoutId": "00000000-0000-4000-8000-0000000000b3",
+          "title": "Legs",
+          "weekNumber": 1,
+          "ordinal": 3,
+          "pending": true,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "033e62a3-9629-5bef-aa26-d48f7a578397",
+          "originalDate": "2026-10-19",
+          "scheduledDate": "2026-10-20",
+          "workoutId": "00000000-0000-4000-8000-0000000000b1",
+          "title": "Push",
+          "weekNumber": 2,
+          "ordinal": 1,
+          "pending": true,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "fd212b70-c66b-5f25-bc4b-bf754b71fc60",
+          "originalDate": "2026-10-21",
+          "scheduledDate": "2026-10-21",
+          "workoutId": "00000000-0000-4000-8000-0000000000b2",
+          "title": "Pull (light)",
+          "weekNumber": 2,
+          "ordinal": 2,
+          "pending": true,
+          "isCustomised": true,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "7971bc36-9e28-5aa2-b8d4-565c46f1b6ea",
+          "originalDate": "2026-10-23",
+          "scheduledDate": "2026-10-23",
+          "workoutId": "00000000-0000-4000-8000-0000000000b3",
+          "title": "Legs",
+          "weekNumber": 2,
+          "ordinal": 3,
+          "pending": true,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        }
+      ],
+      "expect": [
+        {
+          "id": "8fa6d488-0aeb-58fa-862a-17ba836f9e80",
+          "originalDate": "2026-10-12",
+          "scheduledDate": "2026-10-12",
+          "workoutId": "00000000-0000-4000-8000-0000000000b1",
+          "title": "Push",
+          "weekNumber": 1,
+          "ordinal": 1,
+          "firstExercise": "Old content"
+        },
+        {
+          "id": "8466ecd6-c86d-5d34-a9bf-f48fe2968321",
+          "originalDate": "2026-10-14",
+          "scheduledDate": "2026-10-14",
+          "workoutId": "00000000-0000-4000-8000-0000000000b2",
+          "title": "Pull",
+          "weekNumber": 1,
+          "ordinal": 2,
+          "firstExercise": "Old content"
+        },
+        {
+          "id": "033e62a3-9629-5bef-aa26-d48f7a578397",
+          "originalDate": "2026-10-19",
+          "scheduledDate": "2026-10-20",
+          "workoutId": "00000000-0000-4000-8000-0000000000b2",
+          "title": "Pull v2",
+          "weekNumber": 2,
+          "ordinal": 1,
+          "firstExercise": "Pull-up"
+        },
+        {
+          "id": "fd212b70-c66b-5f25-bc4b-bf754b71fc60",
+          "originalDate": "2026-10-21",
+          "scheduledDate": "2026-10-21",
+          "workoutId": "00000000-0000-4000-8000-0000000000b2",
+          "title": "Pull (light)",
+          "weekNumber": 2,
+          "ordinal": 2,
+          "firstExercise": "Old content"
+        },
+        {
+          "id": "3645d775-62ee-5837-9568-254b2435c10b",
+          "originalDate": "2026-10-22",
+          "scheduledDate": "2026-10-22",
+          "workoutId": "00000000-0000-4000-8000-0000000000b3",
+          "title": "Legs",
+          "weekNumber": 2,
+          "ordinal": 3,
+          "firstExercise": "Back squat"
+        }
+      ]
+    }
+  ]
 }

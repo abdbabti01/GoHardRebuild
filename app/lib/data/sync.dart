@@ -67,6 +67,7 @@ List<ServerRec> recordsFromAck(String kind, dynamic data, String owner) {
     'run' => [_simple(Kinds.run, j)],
     'metric' => [_simple(Kinds.metric, j)],
     'savedfood' => [_simple(Kinds.savedFood, j)],
+    'customexercise' => [_simple(Kinds.customExercise, j)],
     'profile' => [_simple(Kinds.profile, j, idField: 'userId')],
     'plan' => kind == 'plan.draft' ? (j['context'] is Map ? _context(j['context'] as Json, owner) : const []) : _context(j, owner),
     'proposal' => kind == 'proposal.create'
@@ -87,6 +88,8 @@ List<ServerRec> recordsFromSnapshot(Json s, String owner) => [
       for (final c in s['catalog'] as List) ServerRec(Kinds.catalog, (c as Json)['key'] as String, c, 1),
       // Absent on a server from before reusable foods.
       for (final f in s['savedFoods'] as List? ?? const []) _simple(Kinds.savedFood, f as Json),
+      // Absent on a server from before the plan builder.
+      for (final c in s['customExercises'] as List? ?? const []) _simple(Kinds.customExercise, c as Json),
     ];
 
 /// Local-first persistence and synchronization.
