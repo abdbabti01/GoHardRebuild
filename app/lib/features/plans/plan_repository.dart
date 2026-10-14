@@ -300,7 +300,12 @@ class PlanRepository {
         ? (schedule['mode'] == 'rotating' ? <Json>[] : PlanRules.generate(plan.id, draft.startDate, weeks!, schedule, workoutsJson))
         : PlanRules.revise(planId: plan.id, start: plan.startDate, weeks: weeks, effective: effective,
             occasions: [for (final o in plan.j['occasions'] as List? ?? const []) o as Json],
-            pending: {for (final s in scheduleOf(plan, workouts)) if (s.isEligible) s.id}, workouts: workoutsJson, schedule: schedule);
+            // An occurrence any workout points at is never removed or rewritten (same rule as the account).
+            pending: {
+              for (final s in scheduleOf(plan, workouts))
+                if (s.isEligible && !workouts.any((w) => !w.isDeleted && w.occasionId == s.id)) s.id,
+            },
+            workouts: workoutsJson, schedule: schedule);
     final body = copyJson(plan.j)
       ..addAll({
         'title': p['title'], 'startDate': draft.startDate, 'blockWeeks': weeks ?? 1, 'isOngoing': weeks == null, 'timeBudgetMinutes': p['timeBudgetMinutes'],

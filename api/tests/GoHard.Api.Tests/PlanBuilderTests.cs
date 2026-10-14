@@ -287,6 +287,25 @@ public class PlanBuilderTests(PostgresFixture pg)
     });
 
     [Fact]
+    public async Task Revise_never_removes_an_occurrence_a_no_data_attempt_points_at()
+    {
+        var a = await Account.RegisterAsync(pg.Api);
+        var (wa, wb) = (Def("A", Ex()), Def("B", Ex("barbell-row", "Barbell row")));
+        var plan = await ActivateAsync(a, await CreateAsync(a, Create([wa, wb], Fixed((1, wa), (3, wb)))));
+        var wednesday = plan.Occasions.Single(o => o.OriginalDate == Monday.AddDays(2));
+        var attempt = await a.StartPlannedAsync(wednesday);
+        Assert.Equal("no_data", (await a.FinishAsync(attempt, [])).Data.Outcome);    // finished, credits nothing: still pending
+
+        plan = await PlanAsync(a, plan.Id);
+        var revised = await a.PutAsync<PlanContextDto>($"/plans/{plan.Id}", Revise(plan, Monday.AddDays(1), [wa, wb], Fixed((1, wa)))); // no more Wednesdays
+        Assert.Equal("accepted", revised.Status);
+        var after = revised.Data.Plans.Single();
+        Assert.Contains(after.Occasions, o => o.Id == wednesday.Id);                 // kept: a recorded workout points at it
+        Assert.DoesNotContain(after.Occasions, o => o.OriginalDate == Monday.AddDays(9)); // the next Wednesday, with nothing attached, is gone
+        Assert.Equal(wednesday.Id, (await a.SnapshotAsync()).Workouts.Single(w => w.Id == attempt.Id).OccasionId);
+    }
+
+    [Fact]
     public async Task Revise_keeps_history_open_work_moves_and_one_off_edits()
     {
         var a = await Account.RegisterAsync(pg.Api);

@@ -123,7 +123,8 @@ definition (the occurrence's own snapshot, so later definition edits change only
 
 ### Revising (`PlanRules.Revise`, mirrored on the phone so offline edits show the same result)
 
-Input: existing occasions with eligibility (pending = not skipped, not credited, no open workout), the new definitions,
+Input: existing occasions with eligibility (pending = not skipped, not credited, and no workout of any kind points at
+it — so a finished no-data attempt keeps its occurrence and its link), the new definitions,
 schedule, start, duration and the effective date `E`. Fixed mode:
 
 1. `G` = generated occurrences (rule above) with `date ≥ E`, each with its deterministic ID.

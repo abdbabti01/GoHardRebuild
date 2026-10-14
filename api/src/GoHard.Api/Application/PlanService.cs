@@ -378,7 +378,11 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
 
     private async Task<List<RevisableOccasion>> RevisableAsync(Plan plan, CancellationToken ct)
     {
-        var pending = (await ScheduleAsync(plan, ct)).Where(s => s.IsEligible).Select(s => s.Id).ToHashSet();
+        // An occurrence any workout points at (a finished no-data attempt, say) is never removed or rewritten, so no
+        // recorded workout loses its link to the plan.
+        var linked = await db.Workouts.Where(w => w.PlanId == plan.Id && w.OccasionId != null && w.DeletedAtUtc == null)
+            .Select(w => w.OccasionId!.Value).ToListAsync(ct);
+        var pending = (await ScheduleAsync(plan, ct)).Where(s => s.IsEligible && !linked.Contains(s.Id)).Select(s => s.Id).ToHashSet();
         return plan.Occasions.Select(o => new RevisableOccasion(o.Id, o.OriginalDate, o.ScheduledDate, o.WeekNumber, o.Ordinal, o.WorkoutId,
             o.Title, Prescription(o), o.IsCustomised, pending.Contains(o.Id))).ToList();
     }
