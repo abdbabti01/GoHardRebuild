@@ -14,9 +14,11 @@ import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'food_fakes.dart';
 import 'ui_support.dart';
+import 'weather_fakes.dart';
 
 /// Renders the real screens with the app's real fonts and photograph into PNG files for design review:
 ///
@@ -278,6 +280,20 @@ void main() {
     'new-account-plan': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-plan', const Size(390, 844), 1),
     'new-account-eat': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'eat', const Size(390, 1000), 1),
   };
+  // Today over the weather scenes, with fixed fake conditions for a selected city: the scene changes, nothing else.
+  for (final (family, isDay) in [('clear', true), ('clear', false), ('rain', true), ('snow', true), ('storm', false), ('fog', true)]) {
+    for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+      final name = 'today-weather-$family-${isDay ? 'day' : 'night'}-${mode.name}';
+      states[name] = ((t) async {
+        final w = WeatherFakes(now: DateTime.utc(2026, 10, 11, isDay ? 15 : 23));
+        w.answer = (_, _) => w.conditions(family, isDay: isDay);
+        return [
+          ...await _fixture(t, mode == ThemeMode.light ? Accent.blue : Accent.pink, mode),
+          ...(await t.runAsync(() => w.overrides(prefs: const WeatherPrefs(background: TodayBackground.weather, mode: WeatherLocationMode.city, city: quebec))))!,
+        ];
+      }, 'today', const Size(390, 844), 1);
+    }
+  }
   for (final MapEntry(key: name, value: (fixture, screen, size, scale)) in states.entries) {
     testWidgets('state: $name', (tester) async {
       await pumpApp(tester, await fixture(tester), size: size, textScale: scale);

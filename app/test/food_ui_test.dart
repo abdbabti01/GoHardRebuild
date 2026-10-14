@@ -678,6 +678,7 @@ void main() {
 
       await surface(tester, [entry('a')], calorieGoal: 2200);
       expect(find.text('No calorie value entered yet · goal 2,200 kcal'), findsOneWidget);
+      expect(find.byType(ProgressRing), findsNothing, reason: 'an unknown total is not an empty ring');
       await surface(tester, const [], calorieGoal: 2200, proteinGoal: 140);
       expect(find.text('Your daily goal: 2,200 kcal · 140 g protein'), findsOneWidget);
       expect(find.byType(ProgressRail), findsNothing, reason: 'nothing logged is not zero eaten');
@@ -687,8 +688,10 @@ void main() {
       final handle = tester.ensureSemantics();
       await surface(tester, [entry('a', calories: 2500, protein: 150)], calorieGoal: 2200, proteinGoal: 140);
       expect(find.text('2,500 of 2,200 kcal · 300 kcal over'), findsOneWidget);
-      expect(tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(const Key('goal-calories-progress')), matching: find.byType(LinearProgressIndicator))).value, 1.0);
-      expect(find.bySemanticsLabel(RegExp('Calorie goal: 2,500 of 2,200 kcal · 300 kcal over')), findsOneWidget);
+      expect(find.text('114%'), findsOneWidget, reason: "the ring's centre gives the real share");
+      final ring = tester.getSemantics(find.byKey(const Key('goal-calories-progress')));
+      expect((ring.label, ring.value), ('Calorie goal: 2,500 of 2,200 kcal · 300 kcal over', '100 percent'), reason: 'the ring stops at full');
+      expect(tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(const Key('goal-protein-progress')), matching: find.byType(LinearProgressIndicator))).value, 1.0);
       handle.dispose();
     });
 

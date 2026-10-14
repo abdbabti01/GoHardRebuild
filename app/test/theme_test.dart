@@ -352,7 +352,7 @@ void main() {
         await _tap(tester, 'nav-$tab');
       }
       final all = [for (final t in tester.widgetList<Text>(find.byType(Text, skipOffstage: false))) if (family(t) == serif) t.data];
-      expect(all.toSet(), {'Today', 'Train', 'Eat', 'Me'}, reason: 'the four tab titles, and nothing else in the tabs');
+      expect(all.toSet(), {'Today', 'Train', 'Eat', 'Me', "Today's meals"}, reason: "the four tab titles and Eat's one section title, nothing else in the tabs");
     });
 
     testWidgets('Appearance: a Today background row, and a preview that cannot be pressed', (tester) async {

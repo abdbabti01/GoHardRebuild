@@ -12,6 +12,8 @@ import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/nutrition/eat_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/food_form.dart';
 import 'package:gohard_rebuild/features/nutrition/log_food_screen.dart';
+import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart';
+import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'food_fakes.dart';
 import 'ui_support.dart';
@@ -70,7 +72,12 @@ void main() {
     expect(find.text('Yesterday\'s soup'), findsNothing, reason: 'another day\'s food is not in today\'s journal');
     expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget, reason: 'one general Log food action');
     expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
-    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsOneWidget, reason: 'only the GH mark: no food photograph stands in for a meal');
+    // The quiet header scene and the GH mark; no food photograph stands in for a meal.
+    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(2));
+    expect(find.descendant(of: find.byType(SceneBackdrop), matching: find.byType(Image)), findsOneWidget);
+    expect(tester.getRect(find.byType(SceneBackdrop)).bottom, lessThanOrEqualTo(tester.getRect(find.byType(NutritionSurface)).top), reason: 'the scene stays in the header region');
+    expect(find.text("Today's meals"), findsOneWidget);
+    expect(find.byType(GroupCard), findsOneWidget, reason: 'the four meals in one group');
 
     // A row opens that entry for editing.
     await tester.tap(find.byKey(const Key('food-row-f2')));
@@ -119,17 +126,19 @@ void main() {
     expect(find.text('1,020 of 2,200 kcal · 1,180 kcal left'), findsOneWidget);
     expect(find.text('Protein 68 of 60 g · 8 g over'), findsOneWidget, reason: 'the words give the real total');
     expect(rail(tester, 'goal-protein-progress'), 1.0, reason: 'the bar stops at full');
-    expect(rail(tester, 'goal-calories-progress'), closeTo(1020 / 2200, 0.001));
-    expect(find.byType(CircularProgressIndicator), findsNothing, reason: 'one bar for calories, no ring beside it');
+    expect(tester.widget<ProgressRing>(find.byKey(const Key('goal-calories-progress'))).value, closeTo(1020 / 2200, 0.001));
+    expect(find.byType(ProgressRing), findsOneWidget, reason: 'one calorie ring, and no second measure for calories');
+    expect(find.text('46%'), findsOneWidget);
     expect(find.text('106 g'), findsOneWidget, reason: 'carbs: a known total, no goal invented for it');
     expect(find.text('32 g'), findsOneWidget, reason: 'fat likewise');
-    expect(find.byType(ProgressRail).hitTestable(), findsNWidgets(2), reason: 'bars for the two goals the app stores, none for carbs or fat');
+    expect(find.byType(ProgressRail).hitTestable(), findsOneWidget, reason: 'a bar for protein, none for carbs or fat');
 
     // Complete totals, no goal: nothing to be left of.
     await pumpApp(tester, await fixture(tester), size: const Size(390, 1500));
     await openEat(tester);
     expect(find.text('1,020'), findsOneWidget);
     expect(find.byType(ProgressRail).hitTestable(), findsNothing);
+    expect(find.byType(ProgressRing), findsNothing);
     expect(find.textContaining(' left'), findsNothing);
   });
 
