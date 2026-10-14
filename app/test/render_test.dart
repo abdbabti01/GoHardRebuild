@@ -25,7 +25,8 @@ import 'weather_fakes.dart';
 ///   flutter test test/render_test.dart --dart-define=GOHARD_RENDER=true
 ///
 /// Without that flag it does nothing, so the normal test run stays fast and writes no files. The data is the
-/// fixture in ui_support.dart (illustrative, like the design reference), never an account's records. These are
+/// fixture in ui_support.dart (illustrative, like the design reference), never an account's records. Every render
+/// has a notched phone's safe-area insets (47 px status bar, 34 px home indicator), so the placement shows. These are
 /// renders of the Flutter widgets, not captures from a phone: they show layout and colour, not device behaviour.
 const _enabled = bool.fromEnvironment('GOHARD_RENDER');
 const _out = '../docs/evidence/design';
@@ -153,6 +154,8 @@ Future<void> _open(WidgetTester tester, String screen) async {
       } else if (screen != 'log-food') {
         await tester.enterText(find.byKey(const Key('food-search')), 'rice');
         await tester.pumpAndSettle();
+        // Below the fold once the phone's insets take their share of the height.
+        await tester.scrollUntilVisible(find.byKey(const Key('food-search-online')), 200, scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last);
         await tap('food-search-online');
         // The fixture already logged this rice, so it is listed once, under Your foods, and not again as a wider result.
         if (screen == 'food-preview') await tap(find.byKey(const Key('local-usda:2708402')).evaluate().isEmpty ? 'result-usda:2708402' : 'local-usda:2708402');
@@ -196,7 +199,7 @@ void main() {
 
   for (final mode in [ThemeMode.light, ThemeMode.dark]) {
     testWidgets('state: confirmation dialog ${mode.name}', (tester) async {
-      await pumpApp(tester, await _fixture(tester, Accent.blue, mode));
+      await pumpApp(tester, await _fixture(tester, Accent.blue, mode), insets: phoneInsets);
       confirm(tester.element(find.byKey(const Key('nav-today'))),
           title: 'Move this workout?', body: 'Workout: Full body (week 1)\nCurrent date: Friday, October 16\nProposed date: Saturday, October 17\n\nNo other workout changes.',
           action: 'Move workout', cancel: 'Keep current dates').ignore();
@@ -209,7 +212,7 @@ void main() {
       final shots = <String, ui.Image>{};
       for (final mode in [ThemeMode.light, ThemeMode.dark]) {
         for (final accent in Accent.values) {
-          await pumpApp(tester, await _fixture(tester, accent, mode));
+          await pumpApp(tester, await _fixture(tester, accent, mode), insets: phoneInsets);
           await _open(tester, screen);
           final image = await _capture(tester);
           shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
@@ -297,7 +300,7 @@ void main() {
   }
   for (final MapEntry(key: name, value: (fixture, screen, size, scale)) in states.entries) {
     testWidgets('state: $name', (tester) async {
-      await pumpApp(tester, await fixture(tester), size: size, textScale: scale);
+      await pumpApp(tester, await fixture(tester), size: size, textScale: scale, insets: phoneInsets);
       await _open(tester, screen);
       await _save(tester, await _capture(tester), 'state-$name');
       expect(tester.takeException(), isNull);

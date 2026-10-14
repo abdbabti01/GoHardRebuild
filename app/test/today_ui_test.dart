@@ -89,15 +89,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the three sections are near their target heights at 390 px and all start on the first screen', (tester) async {
+  testWidgets('the three sections are near their target heights at 390 × 844 with a notch and all start on the first screen', (tester) async {
     final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
     await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food.take(1).toList(), calorieGoal: 2200, proteinGoal: 140,
-        runs: [run('r1', day)], runtime: {'r1': pausedRun}));
+        runs: [run('r1', day)], runtime: {'r1': pausedRun}), insets: phoneInsets);
     expect(find.text('5.20 km'), findsOneWidget, reason: 'the runtime override reached the Run module');
     final (w, r, n) = (height(tester, 'workout'), height(tester, 'run'), height(tester, 'nutrition'));
     debugPrint('module heights, full state: workout $w, run $r, nutrition $n');
     expect(w, inInclusiveRange(225, 255), reason: 'workout, in progress with a planned total and its ring');
-    expect(r, inInclusiveRange(150, 180), reason: 'run, open with a distance and a time');
+    expect(r, inInclusiveRange(130, 165), reason: 'run, open with a distance and a time: no taller than its photograph needs');
     expect(n, inInclusiveRange(195, 230), reason: 'nutrition, two goals');
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
@@ -105,17 +105,46 @@ void main() {
     expect(header, inInclusiveRange(160, 280), reason: 'a bounded header region');
     final navTop = tester.getTopLeft(find.byKey(const Key('nav-today'))).dy;
     // The nutrition label and its calorie figure are on the first screen, above the navigation bar.
-    expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 70, lessThan(navTop), reason: 'nutrition starts above the navigation bar');
+    final nutritionTop = tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy;
+    final calories = tester.getBottomLeft(find.descendant(of: find.byKey(const Key('today-module-nutrition')), matching: find.textContaining('2,200 kcal'))).dy;
+    debugPrint('full state: nutrition starts at $nutritionTop, its calorie figure ends at $calories, the navigation bar starts at $navTop');
+    expect(calories, lessThan(navTop), reason: 'the nutrition label and its calorie figure are on the first screen');
     expect(tester.getBottomLeft(find.byKey(const Key('today-run'))).dy, lessThan(navTop));
 
     // The quietest day: a due workout, no run, nothing logged.
-    await pumpApp(tester, await fixture(tester, plans: [plan]));
+    await pumpApp(tester, await fixture(tester, plans: [plan]), insets: phoneInsets);
     final quiet = (height(tester, 'workout'), height(tester, 'run'), height(tester, 'nutrition'));
     debugPrint('module heights, quiet state: workout ${quiet.$1}, run ${quiet.$2}, nutrition ${quiet.$3}');
     expect(quiet.$1, inInclusiveRange(160, 215));
-    expect(quiet.$2, inInclusiveRange(140, 175));
-    expect(quiet.$3, inInclusiveRange(130, 190));
-    expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 40, lessThan(navTop), reason: 'all three sections start on the first screen');
+    expect(quiet.$2, inInclusiveRange(120, 150), reason: 'no run: the label and one line beside the photograph');
+    expect(quiet.$3, inInclusiveRange(115, 190));
+    expect(tester.getBottomLeft(find.byKey(const Key('log-food'))).dy, lessThan(navTop), reason: 'all three sections, actions included, are on the first screen');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Today, Train and Eat draw their scene from the top edge, behind the status bar, with their lines below it; Me starts below it', (tester) async {
+    await pumpApp(tester, await fixture(tester, plans: [plan]), insets: phoneInsets);
+    final top = phoneInsets.top;
+    // One veil behind the status bar, over every tab.
+    expect(tester.getRect(find.byType(StatusBarVeil)), const Rect.fromLTWH(0, 0, 390, 47));
+    expect(tester.getTopLeft(find.byKey(const Key('today-header'))).dy, 0, reason: 'Today: the scene reaches the top edge');
+    expect(tester.getTopLeft(find.byType(TodayBackdrop)).dy, 0);
+    // weather_contrast_test measures a 200 px header with its text band at 71–197 px; this keeps the two in step.
+    final lines = tester.getRect(find.byType(TabHeader));
+    expect(lines.top, top + 24);
+    expect(lines.bottom, lessThanOrEqualTo(197));
+    expect(tester.getSize(find.byKey(const Key('today-header'))).height, lessThanOrEqualTo(200));
+    expect(tester.getTopLeft(find.byType(TabHeader)).dy, greaterThanOrEqualTo(top + 16), reason: 'Today: the date starts below the status bar, under a band of open scene');
+    for (final tab in ['train', 'eat']) {
+      await tester.tap(find.byKey(Key('nav-$tab')));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(find.byType(ScenicBackdrop)).dy, 0, reason: '$tab: the scene reaches the top edge');
+      expect(tester.getTopLeft(find.byType(TabHeader)).dy, greaterThanOrEqualTo(top + 16), reason: '$tab: the date starts below the status bar');
+    }
+    await tester.tap(find.byKey(const Key('nav-me')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ScenicBackdrop), findsNothing, reason: 'Me stays quiet, without a scene');
+    expect(tester.getTopLeft(find.byType(TabHeader)).dy, greaterThanOrEqualTo(top), reason: 'Me: its content starts below the status bar');
     expect(tester.takeException(), isNull);
   });
 

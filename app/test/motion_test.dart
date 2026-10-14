@@ -277,9 +277,7 @@ void main() {
     });
 
     testWidgets('the bar sits above the home indicator', (tester) async {
-      tester.view.padding = const FakeViewPadding(bottom: 34);
-      addTearDown(tester.view.resetPadding);
-      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day)))!);
+      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day)))!, insets: const EdgeInsets.only(bottom: 34));
       expect(tester.getBottomLeft(find.byKey(const Key('nav-today'))).dy, lessThanOrEqualTo(844 - 34));
     });
 
