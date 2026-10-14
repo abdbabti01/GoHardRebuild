@@ -54,10 +54,36 @@ void main() {
     await j.tapKey('accent-green');
     await j.tapKey('appearance-dark');
     await j.shot('62a-appearance-green-dark');
+    // The Today background follows the weather of a chosen city (recorded provider answers: an overcast night).
+    // "Paris" has several matches, so the list says which is which before one is chosen.
+    await j.tapKey('appearance-today-background');
+    await j.tapKey('today-background-weather');
+    await j.tapKey('weather-location-city');
+    await j.type('city-search-field', 'Paris');
+    await j.tapKey('city-search-go');
+    await j.waitFor(find.byKey(const Key('city-result-4717560')), what: 'Paris, Texas listed beside Paris, France');
+    await j.shot('62c-city-choice');
+    await j.tapKey('city-result-2988507');
+    await j.settle();
+    await tester.pageBack();
+    await j.settle();
     await tester.pageBack();
     await j.settle();
     await j.tapKey('nav-today');
+    await j.settle(8);
     await j.shot('62b-today-in-progress-green-dark');
+    // What Today's scene is based on, said where the setting is: the condition, its time and the place.
+    await j.tapKey('nav-me');
+    await j.tapKey('me-appearance');
+    await j.tapKey('appearance-today-background');
+    await j.waitFor(find.byKey(const Key('weather-condition')), what: 'the weather the scene follows');
+    expect(find.textContaining('Paris'), findsWidgets);
+    await j.shot('62d-today-background-weather');
+    await tester.pageBack();
+    await j.settle();
+    await tester.pageBack();
+    await j.settle();
+    await j.tapKey('nav-today');
     await j.tapKey('today-resume');
     await j.waitFor(find.byKey(const Key('complete-set')));
     String typed(String key) => tester.widget<EditableText>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(EditableText))).controller.text;
