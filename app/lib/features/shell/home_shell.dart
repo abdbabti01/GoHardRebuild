@@ -42,7 +42,13 @@ class HomeShell extends ConsumerWidget {
     final issues = ref.watch(issuesProvider).value ?? const [];
     return Scaffold(
       // Every destination stays built, so its state, scroll position and unfinished input wait while you are elsewhere.
-      body: SafeArea(bottom: false, child: _FadeStack(index: shell.tab, children: const [TodayScreen(), TrainScreen(), EatScreen(), MeScreen()])),
+      // The tabs reach the top edge: Today, Train and Eat lay their scene behind the status bar and inset their own
+      // text by `MediaQuery.paddingOf(context).top`; Me insets its whole list. The veil keeps the status bar legible
+      // over a scene and over anything scrolled under it.
+      body: Stack(children: [
+        _FadeStack(index: shell.tab, children: const [TodayScreen(), TrainScreen(), EatScreen(), MeScreen()]),
+        const Positioned(top: 0, left: 0, right: 0, child: StatusBarVeil()),
+      ]),
       bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
         // Attention appears only when saved data cannot converge without a decision. Ordinary pending upload stays quiet.
         if (issues.isNotEmpty)
@@ -66,6 +72,34 @@ class HomeShell extends ConsumerWidget {
           ref.read(shellProvider.notifier).switchTab(i);
         }),
       ]),
+    );
+  }
+}
+
+/// The page colour at [GoColors.scrim] strength behind the status bar: solid over the band where the system icons
+/// sit, fading out at the bottom of the inset. The theme's overlay style draws light icons in Dark and dark icons in
+/// Light, and the scrim holds them above 3:1 over any pixel of a scene. Zero height where there is no top inset.
+class StatusBarVeil extends StatelessWidget {
+  const StatusBarVeil({super.key});
+
+  /// The part of the inset that stays solid; the system icons sit inside it.
+  static const solid = 0.8;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    if (top <= 0) return const SizedBox.shrink();
+    final scrim = context.c.scrim;
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: SizedBox(
+          height: top,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [scrim, scrim, scrim.withValues(alpha: 0)], stops: const [0, solid, 1])),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -64,6 +64,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final indent = roomy ? 16.0 + _tile + 14 : 12.0;
 
     return RefreshIndicator(
+      edgeOffset: MediaQuery.paddingOf(context).top,
       onRefresh: () => refreshFromAccount(ref),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 28),
@@ -72,7 +73,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
           Stack(children: [
             const Positioned.fill(child: ScenicBackdrop()),
             Padding(
-              padding: EdgeInsets.fromLTRB(context.inset, 56, context.inset, 18),
+              padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topOnBackdrop(context), context.inset, 18),
               child: TabHeader(
                 title: 'Eat', overline: longDate(day), onBackdrop: true,
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [

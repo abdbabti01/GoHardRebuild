@@ -68,7 +68,8 @@ class MeScreen extends ConsumerWidget {
                 : (Icons.cloud_done_outlined, Tone.success, 'Saved', 'Everything is saved to your account');
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
+      // No scene on Me: the list simply starts below the status bar.
+      padding: EdgeInsets.fromLTRB(context.inset, MediaQuery.paddingOf(context).top + 14, context.inset, 28),
       children: [
         const TabHeader(title: 'Me'),
         const SizedBox(height: 22),
