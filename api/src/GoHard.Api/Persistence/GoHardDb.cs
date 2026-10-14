@@ -15,6 +15,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<WorkoutSet> WorkoutSets => Set<WorkoutSet>();
     public DbSet<FoodEntry> FoodEntries => Set<FoodEntry>();
     public DbSet<SavedFood> SavedFoods => Set<SavedFood>();
+    public DbSet<CustomExercise> CustomExercises => Set<CustomExercise>();
     public DbSet<CatalogExercise> CatalogExercises => Set<CatalogExercise>();
     public DbSet<Run> Runs => Set<Run>();
     public DbSet<BodyMetric> BodyMetrics => Set<BodyMetric>();
@@ -37,6 +38,16 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         Owned<Plan>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
         b.Entity<Plan>().HasMany(x => x.Occasions).WithOne().HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Cascade);
         Owned<Occasion>(b, x => x.UserId);
+        b.Entity<Plan>(e =>
+        {
+            e.Property(x => x.WorkoutsJson).HasColumnType("jsonb");
+            e.Property(x => x.ScheduleJson).HasColumnType("jsonb");
+            e.Property(x => x.TemplateId).HasMaxLength(64);
+        });
+        // One occurrence per sequence index: a retry, a second device or a lost response cannot create a second one.
+        // The existing PlanId index stays declared so the migration that added the next one is purely additive.
+        b.Entity<Occasion>().HasIndex(x => x.PlanId);
+        b.Entity<Occasion>().HasIndex(x => new { x.PlanId, x.SequenceIndex }).IsUnique().HasFilter("\"SequenceIndex\" IS NOT NULL");
 
         // Plan/occasion links never cascade into performed history.
         Owned<Workout>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
@@ -46,6 +57,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         Owned<WorkoutExercise>(b, x => x.UserId).HasMany(x => x.Sets).WithOne().HasForeignKey(x => x.ExerciseId).OnDelete(DeleteBehavior.Cascade);
         Owned<WorkoutSet>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
         b.Entity<WorkoutSet>().Property(x => x.LoadKg).HasPrecision(9, 3);
+        b.Entity<WorkoutExercise>().Property(x => x.TargetLoadKg).HasPrecision(9, 3);
         b.Entity<WorkoutSet>().HasIndex(x => x.WorkoutId);
 
         Owned<FoodEntry>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
@@ -61,6 +73,13 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         Owned<SavedFood>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
         b.Entity<SavedFood>().Property(x => x.ItemJson).HasColumnType("jsonb");
         b.Entity<CatalogExercise>().HasKey(x => x.Key);
+        Owned<CustomExercise>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
+        b.Entity<CustomExercise>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(80);
+            e.Property(x => x.Category).HasMaxLength(40);
+            e.Property(x => x.Equipment).HasMaxLength(40);
+        });
 
         Owned<Run>(b, x => x.UserId).Property(x => x.DistanceMeters).HasPrecision(10, 1);
         Owned<BodyMetric>(b, x => x.UserId).Property(x => x.WeightKg).HasPrecision(6, 2);

@@ -66,6 +66,15 @@ public class Plan
     public string? BaselineId { get; set; }
     public DateOnly? PausedOn { get; set; }
     public DateOnly? ClosedOn { get; set; }
+    // Built plans (docs/TRAINING_PLANS.md). All null/false on a plan from before the builder, which keeps SetupJson.
+    /// <summary>The user's workout definitions, JSON list of WorkoutDefinition.</summary>
+    public string? WorkoutsJson { get; set; }
+    /// <summary>PlanSchedule JSON. Non-null marks a built (new-style) plan.</summary>
+    public string? ScheduleJson { get; set; }
+    public bool IsOngoing { get; set; }
+    public int? TimeBudgetMinutes { get; set; }
+    /// <summary>Display only: the starter template it was copied from. Nothing points back at the template.</summary>
+    public string? TemplateId { get; set; }
     public int Revision { get; set; } = 1;
     public DateTime CreatedAtUtc { get; set; }
     public List<Occasion> Occasions { get; set; } = [];
@@ -91,6 +100,12 @@ public class Occasion
     public string? ResultOutcome { get; set; }
     public Guid? ResultWorkoutId { get; set; }
     public string PrescriptionJson { get; set; } = "[]";
+    /// <summary>The plan workout this occurrence was generated from (null on legacy occasions).</summary>
+    public Guid? WorkoutId { get; set; }
+    /// <summary>Rotating plans only: the position k in the sequence, unique within the plan.</summary>
+    public int? SequenceIndex { get; set; }
+    /// <summary>Edited on its own (plan.occasion); plan-wide revisions leave it as it is.</summary>
+    public bool IsCustomised { get; set; }
 }
 
 public class Workout
@@ -133,6 +148,9 @@ public class WorkoutExercise
     public int? TargetDurationSeconds { get; set; }
     public int? RestSeconds { get; set; }
     public string? SubstitutedForKey { get; set; }
+    /// <summary>A target the user set in the plan. Never filled in by the app.</summary>
+    public decimal? TargetLoadKg { get; set; }
+    public string? Notes { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public List<WorkoutSet> Sets { get; set; } = [];
 }
@@ -193,6 +211,21 @@ public class SavedFood
     public int Revision { get; set; } = 1;
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
+}
+
+/// <summary>An exercise the person defined. Private to its owner; prescriptions name it as "custom:&lt;id&gt;".</summary>
+public class CustomExercise
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string Name { get; set; } = "";
+    public string Category { get; set; } = "";
+    public string Equipment { get; set; } = "";
+    public bool IsTimed { get; set; }
+    /// <summary>Hidden from pickers; stays valid in existing plans and history.</summary>
+    public bool IsArchived { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
 }
 
 public class CatalogExercise

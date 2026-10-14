@@ -83,6 +83,50 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("CatalogExercises");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.CustomExercise", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Equipment")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTimed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CustomExercises");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.FoodEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -165,6 +209,9 @@ namespace GoHard.Api.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsCustomised")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsSkipped")
                         .HasColumnType("boolean");
 
@@ -190,6 +237,9 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<DateOnly>("ScheduledDate")
                         .HasColumnType("date");
 
+                    b.Property<int?>("SequenceIndex")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
@@ -200,11 +250,18 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<int>("WeekNumber")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("WorkoutId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PlanId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("PlanId", "SequenceIndex")
+                        .IsUnique()
+                        .HasFilter("\"SequenceIndex\" IS NOT NULL");
 
                     b.ToTable("Occasions");
                 });
@@ -264,6 +321,9 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsOngoing")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Lifecycle")
                         .IsRequired()
                         .HasColumnType("text");
@@ -278,6 +338,9 @@ namespace GoHard.Api.Persistence.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
 
+                    b.Property<string>("ScheduleJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("SetupJson")
                         .IsRequired()
                         .HasColumnType("text");
@@ -285,12 +348,22 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
+                    b.Property<string>("TemplateId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int?>("TimeBudgetMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("WorkoutsJson")
+                        .HasColumnType("jsonb");
 
                     b.HasKey("Id");
 
@@ -615,6 +688,9 @@ namespace GoHard.Api.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
                     b.Property<string>("OccurrenceKey")
                         .HasColumnType("text");
 
@@ -629,6 +705,10 @@ namespace GoHard.Api.Persistence.Migrations
 
                     b.Property<int?>("TargetDurationSeconds")
                         .HasColumnType("integer");
+
+                    b.Property<decimal?>("TargetLoadKg")
+                        .HasPrecision(9, 3)
+                        .HasColumnType("numeric(9,3)");
 
                     b.Property<int?>("TargetRepsMax")
                         .HasColumnType("integer");
@@ -701,6 +781,15 @@ namespace GoHard.Api.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.BodyMetric", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.CustomExercise", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()

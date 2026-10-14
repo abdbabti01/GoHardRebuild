@@ -60,6 +60,8 @@ public sealed class ProposalService(GoHardDb db, PlanService plans, IPlanAssista
         if (await LoadAsync(userId, r.PlanId, ct) is not (var plan, var schedule)) return Outcome.NotFound<ProposalDto>();
         if (r.ProposalId == Guid.Empty || plan.Lifecycle is not (PlanLifecycles.Active or PlanLifecycles.Paused)) return Outcome.Rejected<ProposalDto>(Ack.Invalid);
         if (await db.Proposals.AnyAsync(p => p.Id == r.ProposalId, ct)) return Outcome.Conflict<ProposalDto>("DUPLICATE_ID");
+        // A rotation has no dates to move (same rule as plan.schedule).
+        if (r.Kind == "schedule" && PlanService.Schedule(plan)?.Mode == PlanRules.Rotating) return Outcome.Rejected<ProposalDto>(PlanService.NotMovable);
 
         ProposalChange change; string explanation;
         if (r.Kind == "schedule" && r.Moves is { Count: > 0 } moves)

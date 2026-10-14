@@ -16,7 +16,7 @@ public static class GoHardEndpoints
     [
         "auth.password", "commands.idempotent", "plans.lifecycle", "plans.baseline-drafts", "plans.manual-drafts", "plans.proposals",
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
-        "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode",
+        "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -27,7 +27,7 @@ public static class GoHardEndpoints
         .AddFoodDiscovery(config)
         .AddWeather(config)
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>()
-        .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>();
+        .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>();
 
     /// <summary>Ownership always comes from the validated token, never from a client-supplied user ID.</summary>
     private static Guid UserId(this ClaimsPrincipal p) => Guid.Parse(p.FindFirstValue("sub")!);
@@ -76,7 +76,7 @@ public static class GoHardEndpoints
             await s.DeleteOwnAccountAsync(u.UserId(), r.Password, ct) ? Results.NoContent() : Results.Json(new AuthError("WRONG_PASSWORD"), statusCode: 400));
 
         me.MapGet("/sync/snapshot", async (ClaimsPrincipal u, GoHardDb db, PlanService plans, WorkoutService workouts, FoodService food,
-            ProposalService proposals, SavedFoodService saved, CancellationToken ct) =>
+            ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, CancellationToken ct) =>
         {
             var id = u.UserId();
             return Results.Ok(new SnapshotDto(
@@ -86,7 +86,7 @@ public static class GoHardEndpoints
                 (await db.BodyMetrics.AsNoTracking().Where(x => x.UserId == id).OrderBy(x => x.DayKey).ToListAsync(ct)).Select(ActivityService.ToDto).ToList(),
                 await proposals.ListAsync(id, ct),
                 await db.CatalogExercises.AsNoTracking().OrderBy(c => c.Name).Select(c => new CatalogExerciseDto(c.Key, c.Name, c.Category, c.Equipment, c.IsTimed)).ToListAsync(ct),
-                DateTime.UtcNow, await saved.ListAsync(id, ct)));
+                DateTime.UtcNow, await saved.ListAsync(id, ct), await custom.ListAsync(id, ct)));
         });
 
         // Plans
@@ -94,6 +94,15 @@ public static class GoHardEndpoints
             run.RunAsync(u.UserId(), r.OperationId, "plan.draft", r, () => s.CreateDraftAsync(u.UserId(), r, ct), ct));
         me.MapPut("/plan-drafts/{id:guid}", (Guid id, PlanDraftUpdateRequest r, ClaimsPrincipal u, CommandRunner run, PlanService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "plan.draft.update", new { id, r }, () => s.UpdateDraftAsync(u.UserId(), id, r, ct), ct));
+        // Built plans (docs/TRAINING_PLANS.md)
+        me.MapPost("/plans", (PlanCreateRequest r, ClaimsPrincipal u, CommandRunner run, PlanService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "plan.create", r, () => s.CreateAsync(u.UserId(), r, ct), ct));
+        me.MapPut("/plans/{id:guid}", (Guid id, PlanReviseRequest r, ClaimsPrincipal u, CommandRunner run, PlanService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "plan.revise", new { id, r }, () => s.ReviseAsync(u.UserId(), id, r, ct), ct));
+        me.MapPut("/plans/{id:guid}/occasions/{occasionId:guid}", (Guid id, Guid occasionId, OccasionEditRequest r, ClaimsPrincipal u, CommandRunner run, PlanService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "plan.occasion", new { id, occasionId, r }, () => s.EditOccasionAsync(u.UserId(), id, occasionId, r, ct), ct));
+        me.MapPut("/custom-exercises/{id:guid}", (Guid id, CustomExercisePutRequest r, ClaimsPrincipal u, CommandRunner run, CustomExerciseService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "customexercise.put", new { id, r }, () => s.PutAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/plans/{id:guid}/activate", (Guid id, ActivateRequest r, ClaimsPrincipal u, CommandRunner run, PlanService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "plan.activate", new { id, r }, () => s.ActivateAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/plans/{id:guid}/pause", (Guid id, PauseRequest r, ClaimsPrincipal u, CommandRunner run, PlanService s, CancellationToken ct) =>

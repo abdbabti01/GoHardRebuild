@@ -17,7 +17,7 @@ public sealed class WorkoutService(GoHardDb db)
         w.ActiveDurationSeconds, w.Outcome, w.PerformedSets, w.PerformedExercises, w.QualifiedOccasion, w.Revision, w.DeletedAtUtc != null,
         w.Exercises.OrderBy(e => e.Ordinal).Select(e => new ExerciseDto(e.Id, e.Ordinal, e.Name, e.CatalogKey, e.OccurrenceKey, e.IsPrescribed,
             e.IsTimed, e.TargetSets, e.TargetRepsMin, e.TargetRepsMax, e.TargetDurationSeconds, e.RestSeconds, e.SubstitutedForKey,
-            e.DeletedAtUtc != null, e.Sets.OrderBy(s => s.PerformedAtUtc).Select(ToDto).ToList())).ToList());
+            e.DeletedAtUtc != null, e.Sets.OrderBy(s => s.PerformedAtUtc).Select(ToDto).ToList(), e.TargetLoadKg, e.Notes)).ToList());
 
     /// <summary>Normalizes an instant to UTC at PostgreSQL's microsecond precision, so an acknowledgement equals what is stored.</summary>
     public static DateTime Utc(DateTime t)
@@ -31,14 +31,15 @@ public sealed class WorkoutService(GoHardDb db)
 
     private static bool ValidSpec(ExerciseSpec e) => e.Id != Guid.Empty && !string.IsNullOrWhiteSpace(e.Name) && e.Name.Length <= 120 &&
         e.TargetSets is null or >= 0 and <= 50 && e.RestSeconds is null or >= 0 and <= 3600 &&
-        e.TargetRepsMin is null or >= 0 && e.TargetRepsMax is null or >= 0 && e.TargetDurationSeconds is null or >= 0;
+        e.TargetRepsMin is null or >= 0 && e.TargetRepsMax is null or >= 0 && e.TargetDurationSeconds is null or >= 0 &&
+        e.TargetLoadKg is null or >= 0 and <= 2000 && (e.Notes is null || e.Notes.Length <= 500);
 
     private static WorkoutExercise ToEntity(ExerciseSpec e, Guid workoutId, Guid userId) => new()
     {
         Id = e.Id, WorkoutId = workoutId, UserId = userId, Ordinal = e.Ordinal, Name = e.Name.Trim(), CatalogKey = e.CatalogKey,
         OccurrenceKey = e.OccurrenceKey, IsPrescribed = e.IsPrescribed, IsTimed = e.IsTimed, TargetSets = e.TargetSets,
         TargetRepsMin = e.TargetRepsMin, TargetRepsMax = e.TargetRepsMax, TargetDurationSeconds = e.TargetDurationSeconds,
-        RestSeconds = e.RestSeconds, SubstitutedForKey = e.SubstitutedForKey,
+        RestSeconds = e.RestSeconds, SubstitutedForKey = e.SubstitutedForKey, TargetLoadKg = e.TargetLoadKg, Notes = e.Notes,
     };
 
     public async Task<Outcome<WorkoutDto>> StartAsync(Guid userId, StartWorkoutRequest r, CancellationToken ct)
@@ -52,6 +53,16 @@ public sealed class WorkoutService(GoHardDb db)
         if (r.Kind == "planned")
         {
             var occasion = await db.Occasions.FirstOrDefaultAsync(o => o.Id == r.OccasionId && o.UserId == userId, ct);
+            // The next workout of a rotation exists only once acted on: the start creates that same occurrence first.
+            if (occasion is null && r is { PlanId: { } rotationId, SequenceIndex: { } k, OccasionId: { } occasionId })
+            {
+                var plan = await db.Plans.Include(p => p.Occasions).FirstOrDefaultAsync(p => p.Id == rotationId && p.UserId == userId, ct);
+                if (plan is null) return Outcome.NotFound<WorkoutDto>();
+                var (code, created) = PlanService.Materialize(db, plan, occasionId, k, r.DayKey);
+                if (code == ScheduleRules.OccasionNotFound) return Outcome.NotFound<WorkoutDto>();
+                if (code is not null) return Outcome.Conflict<WorkoutDto>(code);
+                occasion = created;
+            }
             if (occasion is null) return Outcome.NotFound<WorkoutDto>();
             // Checked under the account lock, so a concurrent skip or second start cannot both win.
             var open = await db.Workouts.Include(w => w.Exercises).ThenInclude(e => e.Sets)

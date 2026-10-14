@@ -2,7 +2,9 @@
 .SYNOPSIS
   Verifies a running GoHard rebuild API end to end: readiness, client/backend contract compatibility,
   registration, sign-in, an idempotent write, reading it back, nutrition goals (set, kept by an older payload,
-  cleared), a reusable food, food lookup and weather/city lookup where the server declares them, and account deletion (so no test data is left).
+  cleared), a reusable food, food lookup and weather/city lookup where the server declares them, the plan builder (a custom
+  exercise, a rotating plan, its first step started, finished and credited, a revision) where declared, and account
+  deletion (so no test data is left).
   The food lookup checks go through whatever providers that server is configured with. Against a deployed server
   they are the live provider check; against a local API started with -FoodFixtures they only exercise recordings.
   Safe to run against the local API or the hosted TESTING API. It prints no tokens or passwords.
@@ -136,6 +138,54 @@ if ($capabilities -contains 'weather.current') {
     }
 } else { Write-Host '  NOT DECLARED  Weather - this server does not declare weather.current (Weather:Enabled=false)' -ForegroundColor Yellow }
 Check 'Exercise catalog is seeded' { $s = Api GET '/api/v1/sync/snapshot' $null $token; if ($s.catalog.Count -lt 1) { throw 'catalog is empty: run seed-catalog' }; "$($s.catalog.Count) movements" }
+function Uuid5([Guid]$ns, [string]$name) {   # RFC 4122 v5, namespace bytes in network order (docs/TRAINING_PLANS.md)
+    $n = $ns.ToByteArray(); [Array]::Reverse($n, 0, 4); [Array]::Reverse($n, 4, 2); [Array]::Reverse($n, 6, 2)
+    $b = [byte[]]([Security.Cryptography.SHA1]::Create().ComputeHash([byte[]]($n + [Text.Encoding]::UTF8.GetBytes($name)))[0..15])
+    $b[6] = [byte](($b[6] -band 0x0F) -bor 0x50); $b[8] = [byte](($b[8] -band 0x3F) -bor 0x80)
+    [Array]::Reverse($b, 0, 4); [Array]::Reverse($b, 4, 2); [Array]::Reverse($b, 6, 2)
+    New-Object Guid (,$b)
+}
+if ($capabilities -contains 'plans.builder') {
+    Check 'Plan builder: custom exercise, rotating plan, step 0 started from the plan, finished and credited, then revised' {
+        $customId = [Guid]::NewGuid()
+        $c = Api PUT "/api/v1/custom-exercises/$customId" @{ operationId = [Guid]::NewGuid(); expectedRevision = 0; name = 'Verification sled push'; category = 'Legs'; equipment = 'Machine'; isTimed = $false; isArchived = $false } $token
+        if ($c.status -ne 'accepted') { throw "custom exercise: $($c.code)" }
+        $planId = [Guid]::NewGuid(); $wa = "$([Guid]::NewGuid())"; $wb = "$([Guid]::NewGuid())"
+        $ex = { param($catalogKey, $name) @{ occurrenceKey = 'e1'; catalogKey = $catalogKey; name = $name; isTimed = $false; targetSets = 1; targetRepsMin = 5; targetRepsMax = 10; targetDurationSeconds = $null; restSeconds = 90 } }
+        $workouts = @(
+            @{ id = $wa; name = 'Verify A'; notes = $null; exercises = @((& $ex 'bench-press' 'Bench press')) },
+            @{ id = $wb; name = 'Verify B'; notes = $null; exercises = @((& $ex "custom:$customId" 'Verification sled push')) })
+        $schedule = @{ mode = 'rotating'; pattern = @(); cycle = @($wa, $wb); trainingDays = @(); cycleAnchor = 0 }
+        $created = Api POST '/api/v1/plans' @{ operationId = [Guid]::NewGuid(); planId = "$planId"; title = 'Verification rotation'; startDate = $today; durationWeeks = $null; timeBudgetMinutes = $null; templateId = $null; workouts = $workouts; schedule = $schedule } $token
+        if ($created.status -ne 'accepted') { throw "plan.create: $($created.code)" }
+        $draft = @($created.data.plans | Where-Object { $_.id -eq "$planId" })[0]
+        if ($draft.lifecycle -ne 'draft' -or $null -ne $created.data.primaryPlanId) { throw 'plan.create did more than create a draft' }
+        $act = Api POST "/api/v1/plans/$planId/activate" @{ operationId = [Guid]::NewGuid(); expectedContextRevision = $created.data.contextRevision; expectedPlanRevision = $draft.revision; startDate = $today; reviewedDates = @(); replacePrimaryId = $null; closePrimary = $false; effectiveDate = $today } $token
+        if ($act.status -ne 'accepted') { throw "activate: $($act.code)" }
+        $active = @($act.data.plans | Where-Object { $_.id -eq "$planId" })[0]
+
+        $stepId = Uuid5 $planId 's:0'; $exerciseId = [Guid]::NewGuid()
+        $start = Api POST '/api/v1/workouts' @{ operationId = [Guid]::NewGuid(); workoutId = [Guid]::NewGuid(); kind = 'planned'; occasionId = "$stepId"; title = 'Verify A'; dayKey = $today; startedAtUtc = [DateTime]::UtcNow.ToString('o'); planId = "$planId"; sequenceIndex = 0
+            exercises = @(@{ id = "$exerciseId"; ordinal = 1; name = 'Bench press'; catalogKey = 'bench-press'; occurrenceKey = 'e1'; isPrescribed = $true; isTimed = $false; targetSets = 1; targetRepsMin = 5; targetRepsMax = 10; targetDurationSeconds = $null; restSeconds = 90; substitutedForKey = $null }) } $token
+        if ($start.status -ne 'accepted') { throw "start of step 0: $($start.code)" }
+        $set = Api POST "/api/v1/exercises/$exerciseId/sets" @{ operationId = [Guid]::NewGuid(); setId = [Guid]::NewGuid(); reps = 5; loadKg = 40; durationSeconds = $null; performedAtUtc = [DateTime]::UtcNow.ToString('o') } $token
+        $finish = Api POST "/api/v1/workouts/$($start.data.id)/finish" @{ operationId = [Guid]::NewGuid(); expectedRevision = $start.data.revision; acknowledgedSets = @(@{ id = $set.data.id; revision = $set.data.revision }); activeDurationSeconds = 60; finishedAtUtc = [DateTime]::UtcNow.ToString('o') } $token
+        if ($finish.status -ne 'accepted' -or -not $finish.data.qualifiedOccasion) { throw 'the finish did not credit step 0' }
+
+        $s = Api GET '/api/v1/sync/snapshot' $null $token
+        $p = @($s.context.plans | Where-Object { $_.id -eq "$planId" })[0]
+        $steps = @($p.occasions)
+        if ($steps.Count -ne 1 -or $steps[0].id -ne "$stepId" -or $steps[0].sequenceIndex -ne 0 -or $steps[0].resultOutcome -ne 'full') { throw 'step 0 is not the one credited occurrence' }
+        if ($p.revision -ne $active.revision -or $p.title -ne $active.title -or @($p.workouts).Count -ne 2 -or $p.schedule.mode -ne 'rotating') { throw 'the plan itself changed' }
+        if (@($s.customExercises | Where-Object { $_.id -eq "$customId" }).Count -ne 1) { throw 'the custom exercise is missing from the snapshot' }
+
+        $workouts[1].name = 'Verify B (revised)'
+        $rev = Api PUT "/api/v1/plans/$planId" @{ operationId = [Guid]::NewGuid(); expectedPlanRevision = $p.revision; effectiveDate = $today; title = 'Verification rotation'; startDate = $today; durationWeeks = $null; timeBudgetMinutes = 30; workouts = $workouts; schedule = $schedule } $token
+        $after = @($rev.data.plans | Where-Object { $_.id -eq "$planId" })[0]
+        if ($rev.status -ne 'accepted' -or $after.revision -ne $p.revision + 1 -or @($after.occasions).Count -ne 1 -or $after.occasions[0].resultOutcome -ne 'full') { throw "revise: $($rev.code)" }
+        "step 0 credited, plan unchanged by it, revised to revision $($after.revision)"
+    }
+} else { Write-Host '  SKIP  Plan builder - this server does not declare plans.builder' -ForegroundColor Yellow }
 Check 'Cleanup: the verification account is deleted' {
     Api DELETE '/api/v1/account' @{ password = $password } $token | Out-Null
     try { Api GET '/api/v1/me' $null $token | Out-Null; throw 'token still works after deletion' } catch { if ($_.Exception.Response.StatusCode.value__ -ne 401) { throw }; 'no test data left behind' }
