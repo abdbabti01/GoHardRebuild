@@ -247,7 +247,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       else if (_asked != _question) ...[
         if (!hasLocal) _status(Icons.search, 'Nothing on this phone matches "$q".', key: const Key('food-search-local-empty')),
         if (_question.length >= 2)
-          ListRow(key: const Key('food-search-online'), icon: Icons.travel_explore, title: 'Search more foods', subtitle: 'Look up "$q" in USDA FoodData Central', onTap: _searchMore),
+          _LinkRow(key: const Key('food-search-online'), title: 'Search more foods', subtitle: 'Look up "$q" in USDA FoodData Central', accent: true, onTap: _searchMore),
       ] else if (_problem != null) ...[
         _status(Icons.cloud_off_outlined, _problemText(_problem!, hasLocal: hasLocal), key: const Key('food-search-problem'), tone: Tone.warning),
         if (_problem != LookupProblem.notConfigured) ListRow(key: const Key('food-search-retry'), icon: Icons.refresh, title: 'Try again', onTap: _searchMore),
@@ -308,14 +308,14 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             constraints: const BoxConstraints(minWidth: Targets.minimum, minHeight: Targets.minimum),
             icon: const Icon(Icons.arrow_back_ios_new, size: 22), onPressed: () => Navigator.maybePop(context),
           ),
-          const Expanded(child: Heading('Add food', size: 28)),
-          TextButton.icon(key: const Key('food-scan'), onPressed: _lookingUp != null ? null : _scan, icon: const Icon(Icons.qr_code_scanner, size: 22), label: const Text('Scan')),
+          const Expanded(child: Heading('Add food', size: 36, serif: true)),
+          TextButton.icon(key: const Key('food-scan'), onPressed: _lookingUp != null ? null : _scan, icon: const Icon(Icons.qr_code_scanner, size: 24), label: const Text('Scan')),
         ]),
         Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
           _MealSelector(meal: _meal, onChanged: (m) => setState(() => _meal = m)),
           Text('· ${longDate(widget.dayKey)}', style: context.caption),
         ]),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         TextField(
           key: const Key('food-search'), controller: _query, textInputAction: TextInputAction.search, autocorrect: false,
           onChanged: (_) => _changed(),
@@ -323,19 +323,23 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             FocusScope.of(context).unfocus();
             if (supported) _searchMore();
           },
+          style: context.sansStyle(17),
           decoration: InputDecoration(
-            hintText: 'Search foods', prefixIcon: const Icon(Icons.search),
+            hintText: 'Search foods', prefixIcon: const Icon(Icons.search, size: 26), contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(Radii.panel), borderSide: BorderSide(color: context.c.outline)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(Radii.panel), borderSide: BorderSide(color: context.c.accent, width: 2)),
             suffixIcon: q.isEmpty
                 ? null
                 : IconButton(
-                    key: const Key('food-search-clear'), tooltip: 'Clear search', icon: const Icon(Icons.close),
+                    key: const Key('food-search-clear'), tooltip: 'Clear search',
+                    icon: Container(width: 30, height: 30, decoration: BoxDecoration(color: context.c.sunken, shape: BoxShape.circle), child: Icon(Icons.close, size: 18, color: context.c.text)),
                     onPressed: () {
                       _query.clear();
                       _changed();
                     }),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 10),
         _Tabs<FoodScope>(
           values: FoodScope.values, selected: _scope, keyPrefix: 'food-scope',
           label: (s) => const {FoodScope.search: 'Search', FoodScope.recent: 'Recent', FoodScope.favourites: 'Favourites', FoodScope.mine: 'My foods'}[s]!,
@@ -359,12 +363,12 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       if (_lookingUp != null) _status(Icons.hourglass_empty, 'Looking up barcode $_lookingUp…'),
       if (_barcodeMessage != null) _status(Icons.info_outline, _barcodeMessage!, key: const Key('barcode-message'), tone: Tone.warning),
       ...(_scope == FoodScope.search ? _searchRows(catalog, saved, journal, seen, supported) : _ownRows(catalog, saved, journal)),
-      ListRow(
-        key: const Key('food-manual'), icon: Icons.edit_outlined, title: 'Can\'t find it? Create your own food',
+      _LinkRow(
+        key: const Key('food-manual'), title: 'Can\'t find it? Create your own food',
         onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
       ),
       Padding(
-        padding: const EdgeInsets.only(top: 16),
+        padding: const EdgeInsets.only(top: 28),
         child: Text('Choose a food to check the amount before logging.', key: const Key('food-footer'), style: context.caption),
       ),
       Padding(
@@ -414,7 +418,7 @@ class _MealSelector extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: Targets.minimum, minWidth: Targets.minimum),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Flexible(child: Text(meal, style: context.sansStyle(16, weight: FontWeight.w600))),
+            Flexible(child: Text(meal, style: context.sansStyle(18, weight: FontWeight.w500, color: context.c.secondary))),
             const SizedBox(width: 4),
             Icon(Icons.expand_more, size: 22, color: context.c.secondary),
           ]),
@@ -452,7 +456,7 @@ class _Tabs<T extends Enum> extends StatelessWidget {
                     // The underline, the weight and the colour all mark the choice, so it also reads in grayscale.
                     decoration: BoxDecoration(border: Border(bottom: BorderSide(color: v == selected ? context.c.accent : Colors.transparent, width: 2.5))),
                     // Shrink-wrapped: an Align with no factor would take all the height a sideways scroller offers.
-                    child: Center(widthFactor: 1, heightFactor: 1, child: Text(label(v), style: context.sansStyle(15.5, weight: v == selected ? FontWeight.w700 : FontWeight.w500, color: v == selected ? context.c.text : context.c.secondary))),
+                    child: Center(widthFactor: 1, heightFactor: 1, child: Text(label(v), style: context.sansStyle(15.5, weight: v == selected ? FontWeight.w700 : FontWeight.w500, color: v == selected ? context.c.accent : context.c.secondary))),
                   ),
                 ),
               ),
@@ -532,7 +536,7 @@ class _FoodRow extends StatelessWidget {
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text(facts.title, style: context.sansStyle(16, weight: FontWeight.w600)),
+                  Text(facts.title, style: context.sansStyle(17, weight: FontWeight.w600)),
                   if (facts.detail != null) Text(facts.detail!, style: context.caption),
                   Text(values, semanticsLabel: spoken(values), style: context.caption),
                 ]),
@@ -540,11 +544,7 @@ class _FoodRow extends StatelessWidget {
               if (!stacked) Padding(padding: const EdgeInsets.only(left: 10), child: Text(protein, semanticsLabel: spoken(protein), style: context.sansStyle(14.5, weight: FontWeight.w500))),
               IconButton(
                 tooltip: 'Choose ${facts.title}', onPressed: onTap,
-                icon: Container(
-                  width: 34, height: 34, alignment: Alignment.center,
-                  decoration: BoxDecoration(color: context.c.accentSoft, shape: BoxShape.circle),
-                  child: Icon(Icons.add, size: 22, color: context.c.accent),
-                ),
+                icon: const IconTile(Icons.add, circle: true, size: 38),
               ),
             ]),
           ),
@@ -553,4 +553,39 @@ class _FoodRow extends StatelessWidget {
       const Rule(),
     ]);
   }
+}
+
+/// A plain link row: an accented one for the next step ("Search more foods"), a quiet one for the way out.
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({super.key, required this.title, this.subtitle, this.accent = false, required this.onTap});
+  final String title;
+  final String? subtitle;
+  final bool accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        Semantics(
+          button: true,
+          child: InkWell(
+            onTap: onTap,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: Targets.navigation),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                      Text(title, style: context.sansStyle(16.5, weight: accent ? FontWeight.w600 : FontWeight.w500, color: accent ? context.c.accent : context.c.secondary)),
+                      if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(subtitle!, style: context.caption)),
+                    ]),
+                  ),
+                  Icon(Icons.chevron_right, size: 22, color: accent ? context.c.accent : context.c.secondary),
+                ]),
+              ),
+            ),
+          ),
+        ),
+        const Rule(),
+      ]);
 }

@@ -270,6 +270,7 @@ void main() {
     'food-common-egg-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-common', const Size(390, 844), 1),
     'food-common-egg-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-common', const Size(390, 844), 1),
     'food-common-preview-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'food-common-preview', const Size(390, 1500), 1),
+    'food-common-preview-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-common-preview', const Size(390, 844), 1),
     'large-text-food-common-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-common', const Size(320, 1500), 2),
     'large-text-log-food-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'log-food', const Size(320, 2400), 2),
     'large-text-food-preview-320': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-preview', const Size(320, 3200), 2),

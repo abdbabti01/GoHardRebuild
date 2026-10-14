@@ -537,11 +537,11 @@ void main() {
 
       expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('1', '108'));
       expect(find.text('1 serving (30 g)'), findsOneWidget, reason: 'the amount is spelled out with what it weighs');
-      expect(find.text('Nutrition for 1 serving (30 g) · optional'), findsOneWidget);
+      expect(find.text('Nutrition for 1 serving (30 g)'), findsOneWidget);
 
       await choose('g');
       expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories'), _field(tester, 'food-fat')), ('30', '108', ''), reason: 'one 30 g serving is 30 g, not 1 g; unknown fat stays blank');
-      expect(find.text('Nutrition for 30 g · optional'), findsOneWidget);
+      expect(find.text('Nutrition for 30 g'), findsOneWidget);
 
       await tester.enterText(find.byKey(const Key('food-quantity')), '45');
       await tester.pumpAndSettle();
@@ -649,6 +649,79 @@ void main() {
       await _tap(tester, 'food-save');
       final logged = fakes.journal.saved.single;
       expect((logged.quantity, logged.unitId, logged.amount, logged.calories, logged.protein, logged.carbs, logged.fat), (495, 'ml', '495 ml', 207.9, null, null, null));
+    });
+
+    testWidgets('Food details opens the source in full: provider title, basis values, credit and barcode; opening it logs nothing', (tester) async {
+      final fakes = FoodFakes();
+      await pumpApp(tester, await _overrides(tester, fakes), home: FoodFormScreen(draft: FoodDraft.of(hazelnutSpread(), dayKey: _day, meal: 'Snack', name: 'Chocolate spread')), size: const Size(390, 1500));
+      expect(find.descendant(of: find.byKey(const Key('food-source')), matching: find.text('Nutella')), findsOneWidget, reason: 'the provider title, under the everyday name');
+      expect(find.descendant(of: find.byKey(const Key('food-source')), matching: find.textContaining('Open Food Facts · Open Database License')), findsOneWidget);
+      await _tap(tester, 'food-source');
+      final sheet = find.byType(BottomSheet);
+      expect(find.descendant(of: sheet, matching: find.text('Food details')), findsOneWidget);
+      expect(find.descendant(of: sheet, matching: find.text('Nutella')), findsOneWidget);
+      expect(find.descendant(of: sheet, matching: find.textContaining('Nutrition per 100 g')), findsOneWidget);
+      expect(find.descendant(of: sheet, matching: find.textContaining('Source: Open Food Facts · Open Database License · Barcode 3017620422003')), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      expect((find.byType(BottomSheet).evaluate().length, fakes.journal.saved.length), (0, 0));
+    });
+
+    testWidgets('the read-out shows an unknown value as a dash and follows the amount and unit exactly; a corrected value is marked in it', (tester) async {
+      final fakes = FoodFakes();
+      await pumpApp(tester, await _overrides(tester, fakes), home: FoodFormScreen(draft: FoodDraft.of(sparseDrink(), dayKey: _day, meal: 'Snack')), size: const Size(390, 1500));
+      for (final key in ['food-protein', 'food-carbs', 'food-fat']) {
+        expect(find.descendant(of: find.byKey(Key(key)), matching: find.text('—')), findsOneWidget, reason: '$key is unknown, never zero');
+      }
+      expect(find.text('Nutrition for 1 can (330 ml)'), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('food-quantity')), '3');
+      await tester.pumpAndSettle();
+      expect((_field(tester, 'food-calories'), _field(tester, 'food-protein')), ('415.8', ''));
+      expect(find.text('Nutrition for 3 cans (330 ml each) (990 ml)'), findsOneWidget);
+      await _tap(tester, 'food-unit');
+      await tester.tap(find.byKey(const Key('food-unit-ml')).last);
+      await tester.pumpAndSettle();
+      expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('990', '415.8'));
+
+      await tester.tap(find.byKey(const Key('food-protein')));                   // tapping a value is how it is corrected
+      await tester.enterText(find.byKey(const Key('food-protein')), '1');
+      await tester.pumpAndSettle();
+      expect(find.text('Your value'), findsOneWidget);
+      await _tap(tester, 'food-save');
+      expect((fakes.journal.saved.single.protein, fakes.journal.saved.single.calories), (1, 415.8));
+    });
+
+    testWidgets('Cancel and back never log; Log food logs once', (tester) async {
+      final fakes = FoodFakes();
+      await pumpApp(tester, await _overrides(tester, fakes), home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'), size: const Size(390, 1600));
+      await tester.enterText(find.byKey(const Key('food-search')), 'eggs');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'common-eggs');
+      await _tap(tester, 'food-cancel');
+      await _tap(tester, 'common-eggs');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect((find.byType(FoodFormScreen).evaluate().length, fakes.journal.saved.length), (0, 0));
+      await _tap(tester, 'common-eggs');
+      await _tap(tester, 'food-save');
+      expect((fakes.journal.saved.length, fakes.journal.saved.single.name, fakes.journal.saved.single.meal), (1, 'Eggs', 'Lunch'));
+    });
+
+    testWidgets('with the keyboard up on a 320 px phone at 2x text, the amount and Log food stay reachable', (tester) async {
+      final fakes = FoodFakes();
+      await pumpApp(tester, await _overrides(tester, fakes), home: FoodFormScreen(draft: FoodDraft.of(hazelnutSpread(), dayKey: _day, meal: 'Snack')), size: const Size(320, 640), textScale: 2);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('food-quantity')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('food-quantity')).hitTestable(), findsOneWidget);
+      expect(find.byKey(const Key('food-save')).hitTestable(), findsOneWidget, reason: 'the pinned action rides above the keyboard');
+      await tester.enterText(find.byKey(const Key('food-quantity')), '2');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('food-save')));
+      await tester.pumpAndSettle();
+      expect((fakes.journal.saved.single.quantity, tester.takeException()), (2, null));
     });
 
   });
@@ -794,6 +867,10 @@ void main() {
 
           await _tap(tester, 'result-off:5449000000996');
           await guidelines(tester, 'preview of a food with unknown values');
+          await _tap(tester, 'food-source');
+          await guidelines(tester, 'the food details sheet');
+          await tester.tapAt(const Offset(10, 10));                              // the barrier closes the sheet
+          await tester.pumpAndSettle();
           await _tap(tester, 'food-cancel');
 
           await _tap(tester, 'food-scan');
