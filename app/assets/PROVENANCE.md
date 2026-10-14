@@ -6,6 +6,11 @@ Update, 12 October 2026: the Calm Momentum redesign sets all type in Inter, so t
 license file (`OFL.txt`) were removed from the app. Inter and `Inter-OFL.txt` remain. The gym photograph is now the
 workout feature on Today; the GH mark is used on the sign-in screen. The list below is the original record.
 
+Update, 13 October 2026 (Daily Rhythm): page titles are set in DM Serif Display Regular (SIL Open Font License 1.1),
+downloaded unchanged from the official Google Fonts repository,
+`https://github.com/google/fonts/raw/main/ofl/dmserifdisplay/DMSerifDisplay-Regular.ttf` (sha256 8cc3643535edf039aa5d95440a8542735e9197e4f4b8d9303e980fefbf5ab616), with its
+licence as `DMSerifDisplay-OFL.txt`. Everything else stays in Inter.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",

@@ -203,6 +203,126 @@ void main() {
     });
   });
 
+  group('Daily Rhythm components', () {
+    double ring(WidgetTester tester, [Finder? of]) =>
+        (tester.widget<CustomPaint>(find.descendant(of: of ?? find.byType(ProgressRing), matching: find.byType(CustomPaint)).first).painter! as dynamic).value as double;
+
+    testWidgets('a progress ring is announced once with its percentage, clamps, and never replays on a rebuild', (tester) async {
+      final handle = tester.ensureSemantics();
+      final value = ValueNotifier(6 / 18), rebuild = ValueNotifier(0);
+      final container = await pumpApp(tester, [devicePrefsStoreProvider.overrideWithValue(DevicePrefsStore(MemorySecretStore()))],
+          settle: false,
+          home: Scaffold(
+              body: ListenableBuilder(
+                  listenable: Listenable.merge([value, rebuild]),
+                  builder: (_, _) => Column(children: [
+                        ProgressRing(key: const Key('r'), value: value.value, label: 'Planned sets recorded', center: const Text('6 of 18')),
+                        const ProgressRing(key: Key('over'), value: 1.7, label: 'Calories'),
+                        const ProgressRing(key: Key('nan'), value: double.nan, label: 'Unknown'),
+                      ]))));
+      expect(ring(tester, find.byKey(const Key('r'))), moreOrLessEquals(1 / 3), reason: 'first frame: no run-up from zero');
+      expect(tester.getSemantics(find.byKey(const Key('r'))), isSemantics(label: 'Planned sets recorded', value: '33 percent'));
+      expect(find.bySemanticsLabel('6 of 18'), findsNothing, reason: 'the centre is not read a second time');
+      expect(ring(tester, find.byKey(const Key('over'))), 1, reason: 'over goal is a full ring');
+      expect(tester.getSemantics(find.byKey(const Key('over'))), isSemantics(label: 'Calories', value: '100 percent'));
+      expect(ring(tester, find.byKey(const Key('nan'))), 0);
+
+      rebuild.value++;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(ring(tester, find.byKey(const Key('r'))), moreOrLessEquals(1 / 3), reason: 'a rebuild with the same value moves nothing');
+      expect(tester.hasRunningAnimations, isFalse);
+
+      value.value = 0.5;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(ring(tester, find.byKey(const Key('r'))), inExclusiveRange(1 / 3, 0.5), reason: 'a real change eases from the old value');
+      await tester.pump(Motion.progress);
+      expect(ring(tester, find.byKey(const Key('r'))), 0.5);
+      expect(tester.hasRunningAnimations, isFalse, reason: 'nothing keeps moving');
+
+      container.read(devicePrefsProvider.notifier).setMotion(MotionPref.reduced);
+      await tester.pump();
+      value.value = 0.9;
+      await tester.pump();
+      await tester.pump();
+      expect(ring(tester, find.byKey(const Key('r'))), 0.9, reason: 'Reduced: the new value is shown at once');
+      handle.dispose();
+    });
+
+    testWidgets('the floating bar: four keyed 48 px destinations, the chosen one announced and in the accent', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day)))!);
+      final accent = GoColors.of(Accent.blue, Brightness.light).accent;
+      for (final (i, tab) in ['today', 'train', 'eat', 'me'].indexed) {
+        await _tap(tester, 'nav-$tab');
+        for (final (j, other) in ['today', 'train', 'eat', 'me'].indexed) {
+          final label = '${other[0].toUpperCase()}${other.substring(1)}';
+          expect(tester.getSemantics(find.byKey(Key('nav-$other'))), isSemantics(label: label, isButton: true, isSelected: i == j, hasSelectedState: true, hasTapAction: true, isFocusable: true, hasFocusAction: true),
+              reason: '$other while $tab is shown');
+          expect(tester.getSize(find.byKey(Key('nav-$other'))).height, greaterThanOrEqualTo(48));
+        }
+        final icon = tester.widget<Icon>(find.descendant(of: find.byKey(Key('nav-$tab')), matching: find.byType(Icon)));
+        expect(icon.color, accent);
+      }
+      // Inset and rounded: the bar does not touch the screen's sides.
+      expect(tester.getTopLeft(find.byKey(const Key('nav-today'))).dx, greaterThanOrEqualTo(GoNavigationBar.margin));
+      expect(tester.getTopRight(find.byKey(const Key('nav-me'))).dx, lessThanOrEqualTo(390 - GoNavigationBar.margin));
+      // A secondary page has back navigation and no second copy of the bar.
+      await tester.ensureVisible(find.byKey(const Key('me-motion')));
+      await _tap(tester, 'me-motion');
+      expect(find.byType(BackButton), findsOneWidget);
+      expect(find.byType(GoNavigationBar).hitTestable(), findsNothing);
+      handle.dispose();
+    });
+
+    testWidgets('the bar sits above the home indicator', (tester) async {
+      tester.view.padding = const FakeViewPadding(bottom: 34);
+      addTearDown(tester.view.resetPadding);
+      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day)))!);
+      expect(tester.getBottomLeft(find.byKey(const Key('nav-today'))).dy, lessThanOrEqualTo(844 - 34));
+    });
+
+    testWidgets('choice cards: radio-like semantics, a check badge on the chosen one, a tick only for a change', (tester) async {
+      final handle = tester.ensureSemantics();
+      final haptics = _recordHaptics(tester);
+      var chosen = 'Dark';
+      await pumpApp(tester, const [], home: Scaffold(
+          body: StatefulBuilder(
+              builder: (context, setState) => Row(children: [
+                    for (final m in ['Light', 'Dark'])
+                      Expanded(child: ChoiceCard(key: Key('c-$m'), label: m, leading: const Icon(Icons.circle), selected: chosen == m, onTap: () => setState(() => chosen = m))),
+                  ]))));
+      expect(tester.getSemantics(find.byKey(const Key('c-Dark'))), isSemantics(label: 'Dark', isButton: true, isSelected: true, hasSelectedState: true, isInMutuallyExclusiveGroup: true, hasTapAction: true, isFocusable: true, hasFocusAction: true));
+      expect(find.descendant(of: find.byKey(const Key('c-Dark')), matching: find.byIcon(Icons.check_rounded)), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('c-Light')), matching: find.byIcon(Icons.check_rounded)), findsNothing);
+      await _tap(tester, 'c-Dark');
+      expect(haptics, isEmpty, reason: 'already chosen');
+      await _tap(tester, 'c-Light');
+      expect(chosen, 'Light');
+      expect(haptics, hasLength(1));
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('the rhythm timeline and a header on a backdrop fit 320 px at twice the text size', (tester) async {
+      for (final scale in [1.0, 2.0]) {
+        await pumpApp(tester, const [], size: const Size(320, 1400), textScale: scale, home: Scaffold(
+            body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  const TabHeader(title: 'Today', overline: 'Tuesday, October 13, 2026', below: Text('Good evening, Alexandria'), onBackdrop: true),
+                  RhythmTimeline(sections: [
+                    for (final (icon, name) in const [(Icons.fitness_center, 'Workout'), (Icons.directions_run, 'Run'), (Icons.restaurant, 'Nutrition')])
+                      (icon, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Overline('Module'), Text('$name with a fairly long description that wraps')])),
+                  ]),
+                ]))));
+        expect(tester.takeException(), isNull, reason: 'text scale $scale');
+        expect(find.byType(IconTile), scale == 1 ? findsNWidgets(3) : findsNothing, reason: 'nodes at normal text; the content takes the width at large text');
+      }
+    });
+  });
+
   group('shared components', () {
     testWidgets('a progress rail appears at its value, moves only for a new value, and never replays on a rebuild', (tester) async {
       final value = ValueNotifier(0.5), rebuild = ValueNotifier(0);

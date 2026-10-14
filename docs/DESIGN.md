@@ -35,18 +35,40 @@ the phone for a moment before the saved profile is read. The account field is le
 
 ## Tokens
 
+Daily Rhythm (13 October 2026, from `C:devGoHard_Daily_Rhythm_Weather`): warm foregrounds, restrained warm surfaces
+in light, layered charcoal-plum in dark. Accent is for interactive selection and progress only.
+
 | Role | Light | Dark |
 |---|---|---|
-| Page | `#F3F3EF` | `#131417` |
-| Raised surface (cards, sheets, dialogs, fields) | `#FCFCFA` | `#1D2025` |
-| Recessed fill (tracks, unselected segments, neutral icon tiles) | `#E8E8E3` | `#2A2E35` |
-| Text / secondary text | `#14161A` / `#555B63` | `#F2F3F5` / `#ADB3BC` |
-| Separator and card border / control boundary | `#DCDCD6` / `#6E747D` | `#33373E` / `#8A919B` |
-| Blue accent / selection tint | `#0062CC` / `#E6EFFB` | `#77B6FF` / `#172C47` |
-| Green accent / selection tint | `#147644` / `#E1F1E8` | `#6BD39C` / `#143527` |
-| Pink accent / selection tint | `#B32E70` / `#FAE8F0` | `#F58CB9` / `#3F1E33` |
-| Text on a filled accent | `#FFFFFF` | `#131417` |
+| Page | `#F5F2EE` | `#16141A` |
+| Raised surface (cards, sheets, dialogs, fields) | `#FCFBF9` | `#1F1C24` |
+| Recessed fill (tracks, unselected segments, neutral icon tiles) | `#EAE5DF` | `#2C2832` |
+| Floating bar (`raised`) | `#FFFEFC` | `#262329` |
+| Text / secondary text | `#1C1A1F` / `#5B5560` | `#F6F1EC` / `#B9B0B9` |
+| Separator / control boundary | `#E0DAD3` / `#7A737C` | `#37323D` / `#8F8692` |
+| Increased contrast: secondary / separator / boundary | `#38333B` / `#746D76` / `#4E4851` | `#DDD6DC` / `#8F8692` / `#BDB4BE` |
+| Blue accent / selection tint | `#0062CC` / `#E6EEF9` | `#7DB8FF` / `#1C2A40` |
+| Green accent / selection tint | `#147644` / `#E2F0E7` | `#72D6A2` / `#17302A` |
+| Pink accent / selection tint | `#B0306E` / `#F9E7EF` | `#F58CB9` / `#3D2033` |
+| Text on a filled accent | `#FFFFFF` | page |
 | Success / warning / error | `#0C6B63` / `#7D5200` / `#B3261E` | `#5FD4C4` / `#F2C36B` / `#FFB4AB` |
+| Header scrim over a scene (`scrim`) | page at 66% | page at 66% |
+
+The scrim holds 4.5:1 for primary text over any pixel, black to white, so a header over a scene never depends on the
+picture (`TabHeader(onBackdrop: true)`).
+
+**Type.** Inter for everything, plus one serif, DM Serif Display (OFL, `assets/fonts/`), for page titles only:
+the four tabs, Add food, Appearance and secondary page titles, through `context.pageTitleStyle` /
+`Heading(serif: true)` / `TabHeader` / `AppPage`. Figures stay in Inter with tabular digits. Page titles grow with
+the text setting up to 1.3x so a word never breaks.
+
+**Shell.** The navigation bar floats inset (12 px from the sides, above the home indicator), rounded, on `raised`
+with a thin border and one soft low shadow. Secondary pages have back navigation and no bar.
+
+**New components** (`core/widgets.dart`): `ProgressRing`, `IconTile(circle: true)`, `RhythmTimeline`,
+`ChoiceCard`, `TabHeader(onBackdrop:)`, `Heading(serif:)`.
+
+### Calm Momentum (previous values, kept for history)
 
 Refined on 13 October 2026 for the four-tab redesign: the light page is pearl and the raised surface is an off-white
 one step above it, so a card reads as raised before its thin border is noticed and no page is pure white; the dark

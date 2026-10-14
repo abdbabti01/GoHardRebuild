@@ -12,6 +12,8 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
+// Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
+import '_weather_stub.dart';
 import 'account_repository.dart';
 import 'reminders.dart';
 import 'sync_review_screen.dart';
@@ -68,8 +70,8 @@ class MeScreen extends ConsumerWidget {
     return ListView(
       padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
       children: [
-        const TabHeader(title: 'Me', overline: 'Your profile'),
-        const SizedBox(height: 18),
+        const TabHeader(title: 'Me'),
+        const SizedBox(height: 22),
         GroupCard(children: [
           Semantics(
             button: profile != null,
@@ -82,19 +84,19 @@ class MeScreen extends ConsumerWidget {
                   // An initial, not a photograph: the account has no picture, so none is invented.
                   ExcludeSemantics(
                     child: Container(
-                      width: 52, height: 52, alignment: Alignment.center,
-                      decoration: BoxDecoration(color: context.c.accentSoft, shape: BoxShape.circle),
-                      child: Text(name.isEmpty ? '' : name[0].toUpperCase(), textScaler: TextScaler.noScaling, style: context.sansStyle(22, weight: FontWeight.w700, color: context.c.accent)),
+                      width: 56, height: 56, alignment: Alignment.center,
+                      decoration: BoxDecoration(color: context.c.accentSoft, shape: BoxShape.circle, border: Border.all(color: context.c.accent.withValues(alpha: 0.32))),
+                      child: Text(name.isEmpty ? '' : name[0].toUpperCase(), textScaler: TextScaler.noScaling, style: context.sansStyle(24, weight: FontWeight.w600, color: context.c.accent)),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, runSpacing: 4, children: [
-                      Text(name, key: const Key('me-name'), style: context.titleStyle(21)),
+                      Text(name, key: const Key('me-name'), style: context.sansStyle(20, weight: FontWeight.w600)),
                       if (profile != null)
                         Row(mainAxisSize: MainAxisSize.min, children: [
-                          Flexible(child: Text('Edit profile', style: context.sansStyle(15, weight: FontWeight.w600, color: context.c.accent))),
-                          Icon(Icons.chevron_right, size: 22, color: context.c.accent),
+                          Flexible(child: Text('Edit profile', style: context.sansStyle(15, weight: FontWeight.w500, color: context.c.secondary))),
+                          Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
                         ]),
                     ]),
                   ),
@@ -113,7 +115,7 @@ class MeScreen extends ConsumerWidget {
             GroupRow(
               key: const Key('me-goals'), icon: Icons.restaurant_outlined, title: 'Nutrition goals',
               // Only a goal the person set is shown; nothing is suggested in its place.
-              subtitle: profile.calorieGoal == null && profile.proteinGoal == null ? 'None set' : null,
+              subtitle: profile.calorieGoal == null && profile.proteinGoal == null ? 'None set' : 'Daily goals you set',
               value: profile.calorieGoal == null && profile.proteinGoal == null
                   ? null
                   : [if (profile.calorieGoal != null) '${profile.calorieGoal} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
@@ -268,72 +270,136 @@ class AppearanceScreen extends ConsumerWidget {
     final appearance = ref.watch(appearanceProvider);
     final set = ref.read(appearanceProvider.notifier);
     final brightness = Theme.of(context).brightness;
-    return AppPage(title: 'Appearance', subtitle: 'Make GoHard feel like you.', children: [
-      const SectionHeader('Theme'),
+    // Three cards across while their labels fit; one under another at large text.
+    final across = MediaQuery.textScalerOf(context).scale(10) <= 13;
+    Widget cards(List<Widget> children) => across
+        ? IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final (i, c) in children.indexed) ...[if (i > 0) const SizedBox(width: 10), Expanded(child: c)]]))
+        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final (i, c) in children.indexed) ...[if (i > 0) const SizedBox(height: 10), c]]);
+    return AppPage(title: 'Appearance', subtitle: 'Personalize the look and feel of GoHard.', children: [
+      const _AppearanceSection(Icons.palette_outlined, 'Accent', 'Choose the accent color used throughout the app.'),
+      cards([
+        for (final a in Accent.values)
+          ChoiceCard(
+            key: Key('accent-${a.name}'), label: a.label, semanticLabel: '${a.label} accent', selected: a == appearance.accent, onTap: () => set.setAccent(a),
+            // Each swatch is that accent as it looks in the current mode.
+            leading: Container(width: 36, height: 36, decoration: BoxDecoration(color: GoColors.of(a, brightness).accent, shape: BoxShape.circle)),
+          ),
+      ]),
+      const _Divided(),
+      const _AppearanceSection(Icons.light_mode_outlined, 'Mode', 'Choose how the app appears.'),
+      cards([
+        for (final (mode, icon) in const [(ThemeMode.light, Icons.light_mode_outlined), (ThemeMode.dark, Icons.dark_mode_outlined), (ThemeMode.system, Icons.devices_outlined)])
+          ChoiceCard(key: Key('appearance-${mode.name}'), label: modeLabel(mode), leading: Icon(icon), selected: mode == appearance.mode, onTap: () => set.setMode(mode)),
+      ]),
       const SizedBox(height: 10),
-      Segmented<ThemeMode>(values: const [ThemeMode.light, ThemeMode.dark, ThemeMode.system], selected: appearance.mode, keyPrefix: 'appearance', label: modeLabel, onChanged: set.setMode),
-      const SizedBox(height: 8),
-      Text(switch (appearance.mode) {
-        ThemeMode.system => 'Matches your phone, and follows it when it changes.',
-        ThemeMode.light => 'Always light, whatever your phone is set to.',
-        ThemeMode.dark => 'Always dark, whatever your phone is set to.',
-      }, style: context.caption),
-      const SizedBox(height: 26),
-      const SectionHeader('Accent color'),
-      const SizedBox(height: 12),
-      Panel(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          for (final a in Accent.values)
-            Expanded(child: _Swatch(accent: a, colors: GoColors.of(a, brightness), selected: a == appearance.accent, onTap: () => set.setAccent(a))),
-        ]),
-      ),
-      const SizedBox(height: 8),
-      Text('Selected controls, links and progress use it across Today, Train, Eat and Me.', style: context.caption),
-      const SizedBox(height: 26),
-      Text('Changes apply immediately and are remembered on this phone.', style: context.caption),
+      Text('System follows your phone\'s appearance.', style: context.caption),
+      const _Divided(),
+      const _AppearanceSection(Icons.landscape_outlined, 'Today', 'The scene behind the top of Today. It never changes your accent or mode.'),
+      GroupCard(children: [
+        GroupRow(
+          key: const Key('appearance-today-background'), icon: Icons.wb_twilight_outlined, title: 'Today background', value: ref.watch(todayBackgroundSummaryProvider),
+          onTap: () => push(context, const TodayBackgroundScreen()),
+        ),
+      ]),
+      const _Divided(),
+      const _AppearanceSection(Icons.visibility_outlined, 'Preview', 'A sample of the selected appearance and accent color.'),
+      const _Preview(),
+      const SizedBox(height: 18),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.info_outline, size: 20, color: context.c.secondary),
+        const SizedBox(width: 10),
+        Expanded(child: Text('Changes apply immediately and are remembered on this phone.', style: context.caption)),
+      ]),
     ]);
   }
 }
 
-/// One accent choice. Selected shows as a ring, a check mark and a heavier label, not only as a colour.
-class _Swatch extends StatelessWidget {
-  const _Swatch({required this.accent, required this.colors, required this.selected, required this.onTap});
-  final Accent accent;
-  final GoColors colors;
-  final bool selected;
-  final VoidCallback onTap;
-
+/// A quiet separator with room around it, between Appearance's sections.
+class _Divided extends StatelessWidget {
+  const _Divided();
   @override
-  Widget build(BuildContext context) => Semantics(
-        button: true, selected: selected, inMutuallyExclusiveGroup: true, label: '${accent.label} accent',
-        child: InkWell(
-          key: Key('accent-${accent.name}'),
-          borderRadius: BorderRadius.circular(Radii.tile),
-          onTap: () {
-            if (!selected) Haptics.selection();
-            onTap();
-          },
-          child: ExcludeSemantics(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(children: [
-                AnimatedContainer(
-                  duration: context.motion(Motion.quick),
-                  width: 56, height: 56, padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: selected ? colors.accent : Colors.transparent, width: 3)),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: colors.accent),
-                    child: selected ? Icon(Icons.check_rounded, size: 24, color: colors.onAccent) : null,
+  Widget build(BuildContext context) => const Padding(padding: EdgeInsets.symmetric(vertical: 22), child: Rule());
+}
+
+/// The head of an Appearance section: a round icon node, the section name in small capitals, and one line.
+class _AppearanceSection extends StatelessWidget {
+  const _AppearanceSection(this.icon, this.title, this.body);
+  final IconData icon;
+  final String title, body;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          IconTile(icon, circle: true, size: 40),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(padding: const EdgeInsets.only(top: 2), child: Semantics(header: true, child: Overline(title))),
+              const SizedBox(height: 3),
+              Text(body, style: context.caption),
+            ]),
+          ),
+        ]),
+      );
+}
+
+/// A still picture of a Today workout module in the chosen look. It is not a control: nothing in it can be tapped
+/// or focused, and it is announced as one "Preview" image. The pictured workout is sample text, not the account's.
+class _Preview extends StatelessWidget {
+  const _Preview();
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Semantics(
+      key: const Key('appearance-preview'), container: true, image: true, label: 'Preview of a workout card in this appearance',
+      child: ExcludeSemantics(
+        child: IgnorePointer(
+          child: Panel(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (MediaQuery.textScalerOf(context).scale(10) <= 15) ...[const IconTile(Icons.fitness_center, circle: true, size: 40), const SizedBox(width: 14)],
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: const [
+                    Overline('Workout'),
+                    StatusPill('In progress', icon: Icons.timelapse, tone: Tone.accent),
+                  ]),
+                  const SizedBox(height: 8),
+                  Text('Back', style: context.sansStyle(22, weight: FontWeight.w700)),
+                  Text('6 exercises · 18 planned sets', style: context.caption),
+                  const SizedBox(height: 14),
+                  Wrap(spacing: 16, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                    ProgressRing(
+                      value: 6 / 18, label: 'Sample sets recorded', size: 84,
+                      center: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text('6', style: context.titleStyle(24)),
+                        Text('of 18 sets', style: context.sansStyle(12, color: c.secondary)),
+                      ]),
+                    ),
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                      Text('33%', style: context.numStyle(20, color: c.accent, weight: FontWeight.w700)),
+                      Text('recorded', style: context.caption),
+                    ]),
+                  ]),
+                  const SizedBox(height: 14),
+                  // Drawn like the primary button, but it is a picture of one: it has no action at all.
+                  Container(
+                    constraints: const BoxConstraints(minHeight: Targets.primary), alignment: Alignment.center,
+                    decoration: BoxDecoration(color: c.accent, borderRadius: BorderRadius.circular(Radii.tile)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.play_arrow_rounded, size: 22, color: c.onAccent),
+                      const SizedBox(width: 8),
+                      Flexible(child: Text('Resume workout', style: context.sansStyle(16.5, weight: FontWeight.w600, color: c.onAccent))),
+                    ]),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(accent.label, textAlign: TextAlign.center, style: context.sansStyle(15, weight: selected ? FontWeight.w700 : FontWeight.w500)),
-              ]),
-            ),
+                ]),
+              ),
+            ]),
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 /// Edit profile: the display name, free text you see in the app. It is not your sign-in email, which is shown

@@ -165,9 +165,9 @@ class _Notice extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             const GhMark(),
             const SizedBox(height: 28),
-            IconTile(icon, tone: Tone.neutral, size: 44),
+            IconTile(icon, tone: Tone.neutral, size: 44, circle: true),
             const SizedBox(height: 16),
-            Heading(title, size: 28),
+            Heading(title, size: 34, serif: true),
             const SizedBox(height: 10),
             ...children,
           ]),

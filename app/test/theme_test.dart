@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
@@ -53,16 +54,22 @@ void main() {
             void atLeast(double min, Color fg, Color bg, String what) =>
                 expect(contrast(fg, bg), greaterThanOrEqualTo(min), reason: '$what is ${contrast(fg, bg).toStringAsFixed(2)}:1');
             // Text: 4.5:1 on every surface it is drawn on.
-            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('sunken', c.sunken), ('selection tint', c.accentSoft)]) {
+            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('sunken', c.sunken), ('selection tint', c.accentSoft), ('raised bar', c.raised)]) {
               atLeast(4.5, c.text, bg, 'text on $name');
               atLeast(4.5, c.secondary, bg, 'secondary text on $name');
               atLeast(4.5, c.success, bg, 'success on $name');
               atLeast(4.5, c.warning, bg, 'warning on $name');
               atLeast(4.5, c.error, bg, 'error on $name');
             }
-            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('selection tint', c.accentSoft)]) {
+            for (final (name, bg) in [('page', c.page), ('surface', c.surface), ('selection tint', c.accentSoft), ('raised bar', c.raised)]) {
               atLeast(4.5, c.accent, bg, 'accent text on $name');
             }
+            // The header scrim over a scene: primary text holds 4.5:1 whatever the picture is, from black to white.
+            for (final pixel in const [Color(0xFF000000), Color(0xFF808080), Color(0xFFFF7A59), Color(0xFF2A3A6B), Color(0xFFFFFFFF)]) {
+              atLeast(4.5, c.text, Color.alphaBlend(c.scrim, pixel), 'text on the header scrim over $pixel');
+            }
+            atLeast(3, c.outline, c.raised, 'control boundary on the raised bar');
+            expect(contrast(c.raised, c.page), greaterThan(1.04), reason: 'the floating bar is a visible step from the page');
             atLeast(4.5, c.onAccent, c.accent, 'label on a filled accent control');
             atLeast(4.5, c.page, c.error, 'label on a destructive action');
             // Controls and graphics: 3:1 against what they sit next to.
@@ -138,9 +145,10 @@ void main() {
       await _tap(tester, 'appearance-dark');
       expect(_colors(tester).accent, GoColors.of(Accent.green, Brightness.dark).accent);
       expect(Theme.of(tester.element(find.byType(Scaffold).first)).brightness, Brightness.dark);
-      // The selected segment uses the chosen accent, not a fixed blue.
-      final segment = tester.widget<AnimatedContainer>(find.descendant(of: find.byKey(const Key('appearance-dark')), matching: find.byType(AnimatedContainer)));
-      expect((segment.decoration! as BoxDecoration).color, GoColors.of(Accent.green, Brightness.dark).accent);
+      // The selected card uses the chosen accent, not a fixed blue.
+      final card = tester.widget<Material>(find.descendant(of: find.byKey(const Key('appearance-dark')), matching: find.byType(Material)).first);
+      expect((card.shape! as RoundedRectangleBorder).side.color, GoColors.of(Accent.green, Brightness.dark).accent);
+      expect(tester.getSemantics(find.byKey(const Key('appearance-dark'))), isSemantics(isSelected: true, isButton: true, isInMutuallyExclusiveGroup: true, label: 'Dark'));
       expect(tester.getSemantics(find.byKey(const Key('accent-green'))), isSemantics(isSelected: true, label: 'Green accent'));
       expect(tester.getSemantics(find.byKey(const Key('accent-blue'))), isSemantics(isSelected: false));
 
@@ -161,7 +169,7 @@ void main() {
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
       await tester.pumpAndSettle();
       expect(_colors(tester).accent, GoColors.of(Accent.pink, Brightness.light).accent);
-      expect(_colors(tester).page, const Color(0xFFF3F3EF));
+      expect(_colors(tester).page, const Color(0xFFF5F2EE));
     });
 
     test('upgrade: the look an existing install had (Light, Dark or following the phone) is kept exactly', () async {
@@ -326,6 +334,49 @@ void main() {
       expect((p.counted, p.recorded, p.planned), (6, 8, 18));
       final manual = Workout({...open.workout, 'exercises': [for (final e in open.workout['exercises'] as List) {...e as Json, 'isPrescribed': false}]});
       expect(SetProgress.of(manual, sets).planned, isNull, reason: 'a manual workout has no planned total to measure against');
+    });
+  });
+
+  group('Daily Rhythm type and Appearance', () {
+    testWidgets('the serif is used for page titles only; controls, rows and figures stay in Inter', (tester) async {
+      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, calorieGoal: 2200, proteinGoal: 140)))!, size: const Size(390, 1600));
+      await _openAppearance(tester);
+      Iterable<Text> texts() => tester.widgetList<Text>(find.byType(Text));
+      String? family(Text t) => t.style?.fontFamily;
+      final serifTexts = [for (final t in texts()) if (family(t) == serif) t.data];
+      expect(serifTexts, ['Appearance'], reason: 'only the page title on Appearance');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect([for (final t in texts()) if (family(t) == serif) t.data], ['Me'], reason: 'only the tab title on Me');
+      for (final tab in ['today', 'train', 'eat']) {
+        await _tap(tester, 'nav-$tab');
+      }
+      final all = [for (final t in tester.widgetList<Text>(find.byType(Text, skipOffstage: false))) if (family(t) == serif) t.data];
+      expect(all.toSet(), {'Today', 'Train', 'Eat', 'Me'}, reason: 'the four tab titles, and nothing else in the tabs');
+    });
+
+    testWidgets('Appearance: a Today background row, and a preview that cannot be pressed', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day)))!, size: const Size(390, 1800));
+      await _openAppearance(tester);
+      expect(find.byKey(const Key('appearance-today-background')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('appearance-today-background')), matching: find.text('Scenic')), findsOneWidget);
+
+      final preview = find.byKey(const Key('appearance-preview'));
+      expect(preview, findsOneWidget);
+      final node = tester.getSemantics(preview);
+      expect(node.label, contains('Preview'));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse, reason: 'a picture, not a control');
+      expect(find.descendant(of: preview, matching: find.byWidgetPredicate((w) => w is ButtonStyleButton || w is InkWell || w is GestureDetector)), findsNothing);
+      await tester.tap(find.text('Resume workout'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('appearance-preview')), findsOneWidget, reason: 'still on Appearance: nothing started');
+
+      await tester.ensureVisible(find.byKey(const Key('appearance-today-background')));
+      await _tap(tester, 'appearance-today-background');
+      expect(find.text('Today background'), findsWidgets);
+      expect(find.byType(BackButton), findsOneWidget);
+      handle.dispose();
     });
   });
 }

@@ -46,13 +46,18 @@ class HomeShell extends ConsumerWidget {
       bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
         // Attention appears only when saved data cannot converge without a decision. Ordinary pending upload stays quiet.
         if (issues.isNotEmpty)
-          Material(
-            color: context.c.sunken,
-            child: InkWell(
-              onTap: () => push(context, const SyncReviewScreen()),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.inset, vertical: 13),
-                child: StatusLine(Icons.rule, '${issues.length} saved ${issues.length == 1 ? 'change needs' : 'changes need'} your review. Nothing was lost. Tap to review.', tone: Tone.warning),
+          Padding(
+            padding: EdgeInsets.fromLTRB(GoNavigationBar.margin, 8, GoNavigationBar.margin, 0),
+            child: Material(
+              color: context.c.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile), side: BorderSide(color: context.c.divider)),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => push(context, const SyncReviewScreen()),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                  child: StatusLine(Icons.rule, '${issues.length} saved ${issues.length == 1 ? 'change needs' : 'changes need'} your review. Nothing was lost. Tap to review.', tone: Tone.warning),
+                ),
               ),
             ),
           ),
@@ -100,10 +105,17 @@ class _FadeStackState extends State<_FadeStack> with SingleTickerProviderStateMi
       ]);
 }
 
+/// The four destinations on a rounded bar that floats inset above the bottom edge (and above the home indicator).
+/// The chosen one is in the accent, with a filled icon and a heavier label, and is announced as selected; the others
+/// are outlined. Each item is at least 58 px high and keyed `nav-today|train|eat|me`. Shown only on the four main
+/// tabs; secondary pages have back navigation instead.
 class GoNavigationBar extends StatelessWidget {
   const GoNavigationBar({super.key, required this.currentIndex, required this.onTap});
   final int currentIndex;
   final ValueChanged<int> onTap;
+
+  /// Space between the bar and the screen's side edges.
+  static const margin = 12.0;
 
   // (label, unselected, selected): the selected destination is filled, heavier and in the accent.
   static const _items = [
@@ -114,10 +126,21 @@ class GoNavigationBar extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(color: context.c.surface, border: Border(top: BorderSide(color: context.c.divider))),
-        child: SafeArea(
-          top: false,
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final radius = BorderRadius.circular(26);
+    return Padding(
+      // Above the home indicator where there is one; a small lift off the edge where there is not.
+      padding: EdgeInsets.fromLTRB(margin, 8, margin, bottom > 0 ? bottom : 10),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.raised, borderRadius: radius, border: Border.all(color: c.divider),
+          // One soft, low shadow so the bar reads as floating; no glow.
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.28 : 0.06), blurRadius: 16, offset: const Offset(0, 4))],
+        ),
+        child: ClipRRect(
+          borderRadius: radius,
           child: Row(children: [
             for (final (i, item) in _items.indexed)
               Expanded(
@@ -127,15 +150,15 @@ class GoNavigationBar extends StatelessWidget {
                     key: Key('nav-${item.$1.toLowerCase()}'),
                     onTap: () => onTap(i),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: Targets.navigation),
+                      constraints: const BoxConstraints(minHeight: Targets.navigation + 6),
                       child: ExcludeSemantics(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 9),
                           child: Column(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
-                            Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? context.c.accent : context.c.secondary),
+                            Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? c.accent : c.secondary),
                             const SizedBox(height: 4),
                             Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                style: context.sansStyle(12.5, color: i == currentIndex ? context.c.accent : context.c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500)),
+                                style: context.sansStyle(12.5, color: i == currentIndex ? c.accent : c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500)),
                           ]),
                         ),
                       ),
@@ -145,5 +168,7 @@ class GoNavigationBar extends StatelessWidget {
               ),
           ]),
         ),
-      );
+      ),
+    );
+  }
 }

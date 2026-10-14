@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Calm Momentum design tokens: pearl surfaces in light, charcoal layers in dark, and one chosen accent.
-/// Every screen reads colours from here; nothing is patched per screen.
+/// Daily Rhythm design tokens: restrained warm surfaces in light, layered charcoal-plum in dark, warm foregrounds and
+/// one chosen accent for interactive selection. Every screen reads colours from here; nothing is patched per screen.
 enum Accent {
   blue('Blue'),
   green('Green'),
@@ -16,7 +16,8 @@ enum Accent {
 @immutable
 class GoColors extends ThemeExtension<GoColors> {
   const GoColors({required this.page, required this.surface, required this.sunken, required this.text, required this.secondary, required this.divider,
-      required this.outline, required this.accent, required this.onAccent, required this.accentSoft, required this.success, required this.warning, required this.error});
+      required this.outline, required this.accent, required this.onAccent, required this.accentSoft, required this.success, required this.warning, required this.error,
+      required this.raised, required this.scrim});
 
   /// Page behind everything; raised cards; recessed fills (tracks, unselected segments, neutral icon tiles).
   /// Page and surface differ by a small step, so a card reads as raised before its thin border is noticed.
@@ -33,32 +34,44 @@ class GoColors extends ThemeExtension<GoColors> {
   /// [error] is also the fill of a destructive action; its label is drawn in [page].
   final Color success, warning, error;
 
+  /// A surface that floats above the page and its cards: the bottom navigation bar.
+  final Color raised;
+
+  /// Laid over a scene (a header backdrop) behind text: the page colour, translucent. Text and secondary text in
+  /// [text] keep 4.5:1 on it over any pixel at all, black to white, so nothing has to be measured per image.
+  final Color scrim;
+
   factory GoColors.of(Accent accent, Brightness brightness, {bool highContrast = false}) {
     final dark = brightness == Brightness.dark;
     final (a, soft) = switch ((accent, dark)) {
-      (Accent.blue, false) => (0xFF0062CC, 0xFFE6EFFB),
-      (Accent.green, false) => (0xFF147644, 0xFFE1F1E8),
-      (Accent.pink, false) => (0xFFB32E70, 0xFFFAE8F0),
-      (Accent.blue, true) => (0xFF77B6FF, 0xFF172C47),
-      (Accent.green, true) => (0xFF6BD39C, 0xFF143527),
-      (Accent.pink, true) => (0xFFF58CB9, 0xFF3F1E33),
+      (Accent.blue, false) => (0xFF0062CC, 0xFFE6EEF9),
+      (Accent.green, false) => (0xFF147644, 0xFFE2F0E7),
+      (Accent.pink, false) => (0xFFB0306E, 0xFFF9E7EF),
+      (Accent.blue, true) => (0xFF7DB8FF, 0xFF1C2A40),
+      (Accent.green, true) => (0xFF72D6A2, 0xFF17302A),
+      (Accent.pink, true) => (0xFFF58CB9, 0xFF3D2033),
     };
-    final page = Color(dark ? 0xFF131417 : 0xFFF3F3EF);
+    final page = Color(dark ? 0xFF16141A : 0xFFF5F2EE);
     return GoColors(
       page: page,
-      surface: Color(dark ? 0xFF1D2025 : 0xFFFCFCFA),
-      sunken: Color(dark ? 0xFF2A2E35 : 0xFFE8E8E3),
-      text: Color(dark ? 0xFFF2F3F5 : 0xFF14161A),
+      surface: Color(dark ? 0xFF1F1C24 : 0xFFFCFBF9),
+      sunken: Color(dark ? 0xFF2C2832 : 0xFFEAE5DF),
+      raised: Color(dark ? 0xFF262329 : 0xFFFFFEFC),
+      text: Color(dark ? 0xFFF6F1EC : 0xFF1C1A1F),
       // Increased contrast: muted text and separators move toward the primary text and control boundary.
-      secondary: Color(highContrast ? (dark ? 0xFFD5D9DF : 0xFF33383F) : (dark ? 0xFFADB3BC : 0xFF555B63)),
-      divider: Color(highContrast ? (dark ? 0xFF8A919B : 0xFF6E747D) : (dark ? 0xFF33373E : 0xFFDCDCD6)),
-      outline: Color(highContrast ? (dark ? 0xFFB4BAC3 : 0xFF4A5059) : (dark ? 0xFF8A919B : 0xFF6E747D)),
+      secondary: Color(highContrast ? (dark ? 0xFFDDD6DC : 0xFF38333B) : (dark ? 0xFFB9B0B9 : 0xFF5B5560)),
+      divider: Color(highContrast ? (dark ? 0xFF8F8692 : 0xFF746D76) : (dark ? 0xFF37323D : 0xFFE0DAD3)),
+      outline: Color(highContrast ? (dark ? 0xFFBDB4BE : 0xFF4E4851) : (dark ? 0xFF8F8692 : 0xFF7A737C)),
       accent: Color(a), onAccent: dark ? page : const Color(0xFFFFFFFF), accentSoft: Color(soft),
       success: Color(dark ? 0xFF5FD4C4 : 0xFF0C6B63),
       warning: Color(dark ? 0xFFF2C36B : 0xFF7D5200),
       error: Color(dark ? 0xFFFFB4AB : 0xFFB3261E),
+      scrim: page.withValues(alpha: scrimOpacity),
     );
   }
+
+  /// How much of the page a [scrim] lets through; 0.66 holds 4.5:1 for [text] over a black or a white pixel.
+  static const scrimOpacity = 0.66;
 
   @override
   GoColors copyWith() => this;
@@ -71,11 +84,15 @@ class GoColors extends ThemeExtension<GoColors> {
         page: f(page, other.page), surface: f(surface, other.surface), sunken: f(sunken, other.sunken), text: f(text, other.text),
         secondary: f(secondary, other.secondary), divider: f(divider, other.divider), outline: f(outline, other.outline), accent: f(accent, other.accent),
         onAccent: f(onAccent, other.onAccent), accentSoft: f(accentSoft, other.accentSoft), success: f(success, other.success),
-        warning: f(warning, other.warning), error: f(error, other.error));
+        warning: f(warning, other.warning), error: f(error, other.error), raised: f(raised, other.raised), scrim: f(scrim, other.scrim));
   }
 }
 
 const sans = 'Inter';
+
+/// The one serif, for page titles only (the four tabs, Add food, Appearance and other page titles), always through
+/// [GoContext.pageTitleStyle]. Controls, body, labels and figures stay in [sans].
+const serif = 'DM Serif Display';
 
 /// Corner radii, smallest to largest: fields and choices, buttons and tiles, cards and dialogs, the top of a sheet.
 abstract final class Radii {
@@ -133,6 +150,12 @@ extension GoContext on BuildContext {
   /// updates. For large figures use [titleStyle], which is tabular too.
   TextStyle numStyle(double size, {Color? color, FontWeight weight = FontWeight.w600}) =>
       sansStyle(size, color: color, weight: weight).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+  /// A page title in the serif ("Today", "Me", "Appearance"): 30 to 44 px, display-scaled on narrow phones. Figures
+  /// never use it; a number stays in [titleStyle] or [numStyle].
+  TextStyle pageTitleStyle(double size, {Color? color}) => TextStyle(
+      fontFamily: serif, fontFamilyFallback: const ['Georgia', 'serif'], fontSize: display(size), height: 1.1, fontWeight: FontWeight.w400,
+      color: color ?? c.text, letterSpacing: size >= 34 ? -0.4 : -0.2);
+
   TextStyle get body => sansStyle(16);
   TextStyle get caption => sansStyle(13.5, color: c.secondary);
   TextStyle get label => sansStyle(13.5, color: c.secondary, weight: FontWeight.w600);

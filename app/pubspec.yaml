@@ -48,3 +48,7 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
+    # Page titles only (Today, Train, Eat, Me and secondary page titles), through context.pageTitleStyle.
+    - family: DM Serif Display
+      fonts:
+        - asset: assets/fonts/DMSerifDisplay-Regular.ttf

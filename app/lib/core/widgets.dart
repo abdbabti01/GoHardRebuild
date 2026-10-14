@@ -1,11 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'device_prefs.dart';
 import 'theme.dart';
 
-/// Shared Calm Momentum building blocks: one button, card, list, sheet and form system for every screen.
-/// Spacing and quiet separators come before containers; no card inside a card.
+/// Shared Daily Rhythm building blocks: one button, card, list, sheet and form system for every screen.
+/// Spacing and quiet separators come before containers; no card inside a card. The serif appears only in page titles
+/// ([TabHeader], [AppPage], `Heading(serif: true)`); everything else is Inter.
 
 /// Scales its child to [Motion.pressScale] while pressed. With Reduce Motion nothing scales; the tint still shows.
 class _PressScale extends StatelessWidget {
@@ -166,46 +169,95 @@ class Overline extends StatelessWidget {
       semanticsLabel: text, style: context.sansStyle(12.5, color: color ?? context.c.secondary, weight: FontWeight.w600, spacing: 1.1));
 }
 
-/// The top of each of the four tabs, the same everywhere: an optional quiet line (the date, "Your profile"), the
-/// large title, and the small GH mark at the top trailing edge. [trailing] is an optional control placed before
-/// the mark; [below] is an optional line under the title (Today's greeting). It has no padding of its own: put it
-/// first in the tab's list, inside the page inset.
+/// The top of each of the four tabs, the same everywhere: an optional quiet line (the date), the large serif title,
+/// and the small GH mark at the top trailing edge. [trailing] is an optional control placed before the mark; [below]
+/// is an optional line under the title (Today's greeting). It has no padding of its own: put it first in the tab's
+/// list, inside the page inset.
+///
+/// [onBackdrop]: the header sits over a scene (`TodayBackdrop`, `ScenicBackdrop`) that the screen places behind it.
+/// The header then lays a stable page-coloured [GoColors.scrim] behind its own lines (full width, feathered at the top
+/// and bottom) and draws the overline in the primary text colour, so every line keeps 4.5:1 over any picture in
+/// every theme; nothing is measured per image. Draw [below] in `context.c.text` too. Over a plain page it is invisible.
 ///
 ///     TabHeader(title: 'Today', overline: longDate(today), below: Text('Good evening, Alex'))
+///     Stack(children: [
+///       const Positioned(top: 0, left: 0, right: 0, height: 240, child: TodayBackdrop()),
+///       ListView(children: [TabHeader(title: 'Today', onBackdrop: true, ...), ...]),
+///     ])
 class TabHeader extends StatelessWidget {
-  const TabHeader({super.key, required this.title, this.overline, this.trailing, this.below});
+  const TabHeader({super.key, required this.title, this.overline, this.trailing, this.below, this.onBackdrop = false});
   final String title;
   final String? overline;
   final Widget? trailing, below;
+  final bool onBackdrop;
+
+  /// How far the scrim fades out beyond the header's top and bottom.
+  static const _feather = 20.0;
 
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (overline != null) Padding(padding: const EdgeInsets.only(bottom: 2), child: Text(overline!, style: context.sansStyle(15, color: context.c.secondary))),
-              Heading(title),
-            ]),
-          ),
-          if (trailing != null) Padding(padding: const EdgeInsets.only(left: 8), child: trailing),
-          const Padding(padding: EdgeInsets.only(left: 12, top: 6), child: GhMark()),
-        ]),
-        if (below != null) Padding(padding: const EdgeInsets.only(top: 10), child: below),
-      ]);
+  Widget build(BuildContext context) {
+    final header = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (overline != null)
+              Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(overline!, style: context.sansStyle(15, color: onBackdrop ? context.c.text : context.c.secondary, weight: FontWeight.w500))),
+            Heading(title, size: 44, serif: true),
+          ]),
+        ),
+        if (trailing != null) Padding(padding: const EdgeInsets.only(left: 8), child: trailing),
+        const Padding(padding: EdgeInsets.only(left: 12, top: 6), child: GhMark()),
+      ]),
+      if (below != null) Padding(padding: const EdgeInsets.only(top: 10), child: below),
+    ]);
+    if (!onBackdrop) return header;
+    return Stack(clipBehavior: Clip.none, children: [
+      Positioned(
+          left: -context.inset, right: -context.inset, top: -_feather, bottom: -_feather,
+          child: ExcludeSemantics(child: CustomPaint(painter: _ScrimPainter(context.c.scrim)))),
+      header,
+    ]);
+  }
+}
+
+/// The header scrim: solid behind the text, fading to nothing over [TabHeader._feather] beyond its top and bottom.
+class _ScrimPainter extends CustomPainter {
+  _ScrimPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.height <= 0) return;
+    final f = (TabHeader._feather / size.height).clamp(0.0, 0.5);
+    final clear = color.withValues(alpha: 0);
+    canvas.drawRect(
+        Offset.zero & size,
+        Paint()
+          ..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [clear, color, color, clear], stops: [0, f, 1 - f, 1])
+              .createShader(Offset.zero & size));
+  }
+
+  @override
+  bool shouldRepaint(_ScrimPainter old) => old.color != color;
 }
 
 /// The small rounded tinted square that holds an icon: beside a row title, at the head of a card. [tone] picks the
-/// tint (accent by default, neutral for quiet rows, a status tone for a status). It is decoration unless
-/// [semanticLabel] is given; a status must also be said in words next to it.
+/// tint (accent by default, neutral for quiet rows, a status tone for a status). [circle] makes it the round,
+/// thinly outlined node of Today's rhythm and the Appearance sections. It is decoration unless [semanticLabel] is
+/// given; a status must also be said in words next to it.
 ///
 ///     const IconTile(Icons.directions_run)                         // 40 px, accent tint
 ///     const IconTile(Icons.rule, tone: Tone.warning, size: 36)
+///     const IconTile(Icons.fitness_center, circle: true, size: 44)  // a rhythm node
 class IconTile extends StatelessWidget {
-  const IconTile(this.icon, {super.key, this.size = 40, this.tone = Tone.accent, this.semanticLabel});
+  const IconTile(this.icon, {super.key, this.size = 40, this.tone = Tone.accent, this.semanticLabel, this.circle = false});
   final IconData icon;
   final double size;
   final Tone tone;
   final String? semanticLabel;
+  final bool circle;
 
   @override
   Widget build(BuildContext context) {
@@ -217,8 +269,11 @@ class IconTile extends StatelessWidget {
     };
     final tile = Container(
       width: size, height: size,
-      decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(size * 0.3)),
-      child: Icon(icon, size: size * 0.55, color: ink, semanticLabel: semanticLabel),
+      decoration: circle
+          // A thin ring in the icon's own colour, faint enough to stay decoration.
+          ? BoxDecoration(color: fill, shape: BoxShape.circle, border: Border.all(color: ink.withValues(alpha: 0.32)))
+          : BoxDecoration(color: fill, borderRadius: BorderRadius.circular(size * 0.3)),
+      child: Icon(icon, size: size * (circle ? 0.5 : 0.55), color: ink, semanticLabel: semanticLabel),
     );
     return semanticLabel == null ? ExcludeSemantics(child: tile) : tile;
   }
@@ -233,14 +288,24 @@ class SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Text(text, style: context.label.copyWith(color: color));
 }
 
+/// A heading in Inter or, with [serif], a page title in the serif ([GoContext.pageTitleStyle]). Use [serif] only for
+/// the title of a page (a tab, Add food, Appearance, a secondary page); section titles and figures stay in Inter.
+///
+///     const Heading('Add food', size: 36, serif: true)
 class Heading extends StatelessWidget {
-  const Heading(this.text, {super.key, this.size = 34, this.color, this.header = true});
+  const Heading(this.text, {super.key, this.size = 34, this.color, this.header = true, this.serif = false});
   final String text;
   final double size;
   final Color? color;
-  final bool header;
+  final bool header, serif;
   @override
-  Widget build(BuildContext context) => Semantics(header: header, child: Text(text, style: context.titleStyle(size, color: color)));
+  Widget build(BuildContext context) =>
+      Semantics(
+          header: header,
+          child: serif
+              // A page title is already display size: it grows with the text setting up to 1.3x, so a word never breaks.
+              ? Text(text, style: context.pageTitleStyle(size, color: color), textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3))
+              : Text(text, style: context.titleStyle(size, color: color)));
 }
 
 /// A section title with an optional value or action at the trailing edge. They wrap rather than squeeze.
@@ -328,6 +393,162 @@ class ProgressRail extends StatelessWidget {
         child: TweenAnimationBuilder<double>(
           tween: Tween(end: v), duration: context.motion(Motion.progress), curve: Motion.curve,
           builder: (context, shown, _) => LinearProgressIndicator(value: shown, minHeight: height, color: color ?? context.c.accent, backgroundColor: track ?? context.c.sunken),
+        ),
+      ),
+    );
+  }
+}
+
+/// A restrained progress ring: [value] from 0 to 1 (clamped; not-a-number is 0) on a recessed track, filled in the
+/// accent with round ends. [center] is drawn inside it ("6 of 18 sets") and scales down rather than overflow. It is
+/// announced once, as [label] with its percentage, and [center] is not read again. Like [ProgressRail] it appears at
+/// its value and moves only when the value really changes (never for a rebuild or a tab coming back), and not at all
+/// under Reduce Motion. An over-goal value is a full ring; say the real figure in words.
+///
+///     ProgressRing(value: 6 / 18, label: 'Planned sets recorded', center: Text('6 of 18'))
+class ProgressRing extends StatelessWidget {
+  const ProgressRing({super.key, required this.value, required this.label, this.size = 88, this.stroke = 7, this.center, this.color});
+  final double value;
+  final String label;
+  final double size, stroke;
+  final Widget? center;
+
+  /// The fill; the accent unless given.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = value.isFinite ? value.clamp(0.0, 1.0) : 0.0;
+    return Semantics(
+      container: true, label: label, value: '${(v * 100).round()} percent',
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: size,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: v), duration: context.motion(Motion.progress), curve: Motion.curve,
+            builder: (context, shown, child) => CustomPaint(painter: _RingPainter(shown, stroke, color ?? context.c.accent, context.c.sunken), child: child),
+            child: center == null ? null : Padding(padding: EdgeInsets.all(stroke + 6), child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: center))),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter(this.value, this.stroke, this.fill, this.track);
+  final double value, stroke;
+  final Color fill, track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(stroke / 2);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke;
+    canvas.drawArc(rect, 0, 2 * math.pi, false, paint..color = track);
+    if (value > 0) canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * value, false, paint..color = fill..strokeCap = StrokeCap.round);
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.value != value || old.fill != fill || old.track != track || old.stroke != stroke;
+}
+
+/// Today's daily rhythm: one vertical thread with a round icon node at the head of each section (Workout, Run,
+/// Nutrition), thin separators between them, every section the same width. Thread and nodes are decoration; each
+/// section says what it is in words. With very large text the thread gives its width to the content.
+///
+///     RhythmTimeline(sections: [(Icons.fitness_center, workout), (Icons.directions_run, run), (Icons.restaurant, food)])
+class RhythmTimeline extends StatelessWidget {
+  const RhythmTimeline({super.key, required this.sections});
+
+  /// Each section's node icon and content, top to bottom.
+  final List<(IconData, Widget)> sections;
+
+  static const _node = 40.0, _gap = 14.0, _pad = 18.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final roomy = MediaQuery.textScalerOf(context).scale(10) <= 15;
+    final c = context.c;
+    final last = sections.length - 1;
+    Widget thread({double? top, double? bottom, double? height}) =>
+        Positioned(left: _node / 2 - 0.5, width: 1, top: top, bottom: bottom, height: height, child: ColoredBox(color: c.divider));
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (final (i, (icon, child)) in sections.indexed)
+        Stack(children: [
+          if (roomy && i > 0) thread(top: 0, height: _pad + 1),
+          if (roomy && i < last) thread(top: _pad + (i > 0 ? 1 : 0) + _node, bottom: 0),
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (i > 0) Divider(color: c.divider, height: 1, indent: roomy ? _node + _gap : 0),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: _pad),
+              child: roomy
+                  ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [IconTile(icon, size: _node, circle: true), const SizedBox(width: _gap), Expanded(child: child)])
+                  : child,
+            ),
+          ]),
+        ]),
+    ]);
+  }
+}
+
+/// One of a few side-by-side choices drawn as a card (Appearance's accents and modes): [leading] (a colour swatch or
+/// an icon) above [label]. The chosen card has the accent border, the selection tint, a heavier label and a check
+/// badge, so the choice never rests on colour alone; it is announced as a selected button in a mutually exclusive
+/// group. Choosing another card gives a selection tick. Lay several out in a Row of Expanded.
+///
+///     ChoiceCard(key: const Key('appearance-dark'), label: 'Dark', leading: const Icon(Icons.dark_mode_outlined), selected: dark, onTap: chooseDark)
+class ChoiceCard extends StatelessWidget {
+  const ChoiceCard({super.key, required this.label, required this.selected, required this.onTap, this.leading, this.semanticLabel});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Widget? leading;
+
+  /// Announced instead of [label] ("Pink accent").
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Semantics(
+      button: true, selected: selected, inMutuallyExclusiveGroup: true, label: semanticLabel ?? label,
+      child: Material(
+        color: selected ? c.accentSoft : c.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: selected ? c.accent : c.outline, width: selected ? 2 : 1)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            if (!selected) Haptics.selection();
+            onTap();
+          },
+          child: ExcludeSemantics(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 92, minWidth: Targets.minimum),
+              child: Stack(alignment: Alignment.center, children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 16, 6, 14),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    if (leading != null) ...[
+                      IconTheme.merge(data: IconThemeData(size: 30, color: selected ? c.accent : c.text), child: SizedBox(height: 36, child: Center(child: leading))),
+                      const SizedBox(height: 8),
+                    ],
+                    Text(label, textAlign: TextAlign.center, style: context.sansStyle(15.5, weight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? c.accent : c.text)),
+                  ]),
+                ),
+                if (selected)
+                  Positioned(
+                    top: 8, right: 8,
+                    child: Container(
+                      width: 22, height: 22,
+                      decoration: BoxDecoration(color: c.accent, shape: BoxShape.circle),
+                      child: Icon(Icons.check_rounded, size: 16, color: c.onAccent),
+                    ),
+                  ),
+              ]),
+            ),
+          ),
         ),
       ),
     );
@@ -610,7 +831,7 @@ class AppPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = EdgeInsets.fromLTRB(context.inset, 0, context.inset, 28);
     final content = [
-      Heading(title, size: 30),
+      Heading(title, size: 36, serif: true),
       if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(subtitle!, style: context.sansStyle(16, color: context.c.secondary))),
       const SizedBox(height: 18),
       ...children,

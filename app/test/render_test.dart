@@ -35,6 +35,7 @@ Future<void> _loadFonts() async {
     inter.addFont(File('assets/fonts/Inter-$w.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)));
   }
   await inter.load();
+  await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
   final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
   await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
 }
@@ -261,6 +262,7 @@ void main() {
     'new-account-progress': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-progress', const Size(390, 844), 1),
     'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 3900), 2),
     'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 4600), 2),
+    'full-appearance-pink-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'appearance', const Size(390, 1500), 1),
     'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 1900), 2),
     'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),
     'full-food-preview-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-preview', const Size(390, 1500), 1),
