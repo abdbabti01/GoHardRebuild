@@ -87,7 +87,11 @@ public sealed class MetNorwayProvider(HttpClient http, WeatherOptions options, T
         var family = code is { } c && WeatherFamily.Codes.TryGetValue(c, out var known) ? known.Family : WeatherFamily.Unknown;
         bool isDay = symbol?.EndsWith("_day", StringComparison.Ordinal) == true || (symbol?.EndsWith("_night", StringComparison.Ordinal) != true &&
             symbol?.EndsWith("_polartwilight", StringComparison.Ordinal) != true && Sun.IsDay(lat, lon, validAt));
-        return new WeatherNow(family, code, description, isDay, validAt, fetchedAtUtc, temp, null, lat, lon, Source);
+        // The symbol describes the whole hour in progress, and the moment it was read lies inside that hour: that
+        // moment is when these conditions are valid. Dating them at the hour's start made a current answer look up
+        // to an hour old, and the app drops conditions over 60 minutes, so just after each hour the fallback looked stale.
+        var readAt = fetchedAtUtc < validAt + TimeSpan.FromHours(1) ? (fetchedAtUtc > validAt ? fetchedAtUtc : validAt) : validAt;
+        return new WeatherNow(family, code, description, isDay, DateTime.SpecifyKind(readAt, DateTimeKind.Utc), fetchedAtUtc, temp, null, lat, lon, Source);
     }
 
     /// <summary>MET symbol (without its _day/_night suffix) -> the WMO code Open-Meteo would use, and MET's own words.</summary>
