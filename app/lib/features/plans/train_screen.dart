@@ -14,7 +14,7 @@ import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import '../workout/workout_screen.dart';
-import '_scenic_stub.dart';
+import '../weather/weather.dart';
 import 'plan_actions.dart';
 import 'plan_progress.dart';
 import 'plan_screens.dart';
