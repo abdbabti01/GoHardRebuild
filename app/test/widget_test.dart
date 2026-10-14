@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/features/nutrition/nutrient_coverage.dart';
 import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart';
@@ -91,6 +94,35 @@ void main() {
     await pumpApp(tester, const [], home: Scaffold(body: SingleChildScrollView(child: NutritionSurface(entries: big, coverage: NutrientCoverage.calculate(big)))));
     expect(find.text('12,400.5'), findsOneWidget, reason: 'large totals are grouped for reading');
   });
+
+  // Test fonts draw solid glyphs, so the contrast measured is that of the colours, not of anti-aliased edges.
+  for (final accent in Accent.values) {
+    for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+      testWidgets('${accent.name} ${mode.name}: Today with goals and an open run, and Eat with its ring and partial totals, meet contrast, target and label guidelines', (tester) async {
+        final handle = tester.ensureSemantics();
+        final store = AppearanceStore(MemorySecretStore())
+          ..accent = accent
+          ..mode = mode;
+        final food = [
+          foodEntry('f1', _day, 'Breakfast', 'Eggs, scrambled', '2 eggs', calories: 180, protein: 12, carbs: 2, fat: 14),
+          foodEntry('f2', _day, 'Lunch', 'Chicken and rice', '1 plate', calories: 650, protein: 48, carbs: 70, fat: 16),
+          foodEntry('f3', _day, 'Snack', 'Corner shop flapjack', '1 bar'),
+        ];
+        final run = {'id': 'r1', 'dayKey': _day, 'startedAtUtc': '${_day}T07:00:00Z', 'finishedAtUtc': null, 'isDeleted': false};
+        await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, workouts: [_openWorkout()], food: food, runs: [run], calorieGoal: 2200, proteinGoal: 60, appearance: store)))!,
+            size: const Size(390, 1800));
+        for (final tab in ['today', 'eat']) {
+          await tester.tap(find.byKey(Key('nav-$tab')));
+          await tester.pumpAndSettle();
+          await expectLater(tester, meetsGuideline(textContrastGuideline), reason: tab);
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline), reason: tab);
+          await expectLater(tester, meetsGuideline(iOSTapTargetGuideline), reason: tab);
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline), reason: tab);
+        }
+        handle.dispose();
+      });
+    }
+  }
 
   testWidgets('unfinished_history_is_not_completed', (tester) async {
     await pumpApp(tester, await tester.runAsync(() => overridesFor(day: _day, workouts: [_openWorkout()])) ?? [], home: const WorkoutHistoryScreen());

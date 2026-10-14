@@ -2,9 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
+import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/core/widgets.dart';
+import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/features/activity/activity_screens.dart';
 import 'package:gohard_rebuild/features/nutrition/nutrient_coverage.dart';
@@ -12,9 +17,12 @@ import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart';
 import 'package:gohard_rebuild/features/plans/week_widgets.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 import 'package:gohard_rebuild/features/today/daily.dart';
+import 'package:gohard_rebuild/features/today/today_screen.dart';
+import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'support.dart';
 import 'ui_support.dart';
+import 'weather_fakes.dart';
 
 const day = '2026-10-11'; // week 3 of the fixture block, with "Upper body A" due
 
@@ -81,28 +89,33 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the three modules are near their target heights at 390 px and all start on the first screen', (tester) async {
+  testWidgets('the three sections are near their target heights at 390 px and all start on the first screen', (tester) async {
     final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
     await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food.take(1).toList(), calorieGoal: 2200, proteinGoal: 140,
         runs: [run('r1', day)], runtime: {'r1': pausedRun}));
     expect(find.text('5.20 km'), findsOneWidget, reason: 'the runtime override reached the Run module');
     final (w, r, n) = (height(tester, 'workout'), height(tester, 'run'), height(tester, 'nutrition'));
     debugPrint('module heights, full state: workout $w, run $r, nutrition $n');
-    expect(w, inInclusiveRange(185, 215), reason: 'workout, in progress with a planned total');
-    expect(r, inInclusiveRange(130, 165), reason: 'run, open with a distance and a time');
-    expect(n, inInclusiveRange(150, 185), reason: 'nutrition, two goals');
+    expect(w, inInclusiveRange(225, 255), reason: 'workout, in progress with a planned total and its ring');
+    expect(r, inInclusiveRange(150, 180), reason: 'run, open with a distance and a time');
+    expect(n, inInclusiveRange(195, 230), reason: 'nutrition, two goals');
+    expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
+    final header = tester.getSize(find.byKey(const Key('today-header'))).height;
+    debugPrint('header region $header');
+    expect(header, inInclusiveRange(160, 280), reason: 'a bounded header region');
     final navTop = tester.getTopLeft(find.byKey(const Key('nav-today'))).dy;
-    expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy, lessThan(navTop), reason: 'nutrition starts above the navigation bar');
+    // The nutrition label and its calorie figure are on the first screen, above the navigation bar.
+    expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 70, lessThan(navTop), reason: 'nutrition starts above the navigation bar');
     expect(tester.getBottomLeft(find.byKey(const Key('today-run'))).dy, lessThan(navTop));
 
     // The quietest day: a due workout, no run, nothing logged.
     await pumpApp(tester, await fixture(tester, plans: [plan]));
     final quiet = (height(tester, 'workout'), height(tester, 'run'), height(tester, 'nutrition'));
     debugPrint('module heights, quiet state: workout ${quiet.$1}, run ${quiet.$2}, nutrition ${quiet.$3}');
-    expect(quiet.$1, inInclusiveRange(170, 215));
-    expect(quiet.$2, inInclusiveRange(130, 160));
-    expect(quiet.$3, inInclusiveRange(130, 185));
-    expect(tester.getBottomLeft(find.byKey(const Key('log-food')).hitTestable()).dy, lessThan(navTop), reason: 'all three modules fit the first screen');
+    expect(quiet.$1, inInclusiveRange(160, 215));
+    expect(quiet.$2, inInclusiveRange(140, 175));
+    expect(quiet.$3, inInclusiveRange(130, 190));
+    expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 40, lessThan(navTop), reason: 'all three sections start on the first screen');
     expect(tester.takeException(), isNull);
   });
 
@@ -131,15 +144,18 @@ void main() {
       expect(find.widgetWithText(TextButton, 'Details'), findsOneWidget);
     });
 
-    testWidgets('in progress with a plan: recorded sets against the planned total, a rail and one Resume', (tester) async {
+    testWidgets('in progress with a plan: recorded sets against the planned total, a ring and one Resume', (tester) async {
       final handle = tester.ensureSemantics();
       final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
       await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets));
       expect(find.text('In progress'), findsOneWidget);
       expect(find.text('5 exercises · 18 planned sets'), findsOneWidget);
-      expect(find.text('6 of 18 sets recorded'), findsOneWidget);
+      expect(find.text('6'), findsOneWidget);
+      expect(find.text('of 18 sets'), findsOneWidget);
       expect(find.text('33%'), findsOneWidget);
-      expect(find.bySemanticsLabel(RegExp('Planned sets recorded')), findsOneWidget);
+      expect(find.text('recorded'), findsOneWidget, reason: 'recorded, not completed');
+      expect(find.byType(ProgressRing), findsOneWidget, reason: 'one restrained ring');
+      expect(find.bySemanticsLabel(RegExp('6 of 18 planned sets recorded')), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsNothing, reason: 'recorded sets are not a completed workout');
       expect(find.textContaining('completed'), findsNothing);
       expect(find.text('Bench press'), findsNothing, reason: 'no exercise list on Today');
@@ -162,6 +178,7 @@ void main() {
       expect(find.textContaining('%'), findsNothing);
       expect(find.textContaining(' of '), findsNothing, reason: 'no planned total exists, so none is shown');
       expect(find.byType(LinearProgressIndicator), findsNothing, reason: 'nothing to measure against');
+      expect(find.byType(ProgressRing), findsNothing);
       expect(find.text('Resume workout'), findsOneWidget);
 
       await pumpApp(tester, await fixture(tester, workouts: [workout([exercise(1, 'Row'), exercise(2, 'Lat pulldown'), exercise(3, 'Cable row')])], sets: [set(1, 'e1'), set(2, 'e1'), set(3, 'e3')]));
@@ -356,6 +373,8 @@ void main() {
       final module = find.byKey(const Key('today-module-nutrition'));
       expect(find.descendant(of: module, matching: find.byType(LinearProgressIndicator)), findsNothing, reason: 'nothing logged is not zero eaten');
       expect(find.descendant(of: module, matching: find.text('0')), findsNothing);
+      await tester.ensureVisible(find.byKey(const Key('log-food')));
+      await tester.pumpAndSettle();
       expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget);
 
       final container = await pumpApp(tester, await fixture(tester, plans: [plan], food: food, calorieGoal: 2200));
@@ -365,6 +384,8 @@ void main() {
       expect(find.text('g protein · known'), findsOneWidget, reason: 'one food has no protein value');
       expect(find.byKey(const Key('today-goal-calories')), findsOneWidget);
       expect(find.byKey(const Key('today-goal-protein')), findsNothing, reason: 'no protein goal was set, so no bar');
+      await tester.ensureVisible(find.byKey(const Key('log-food')));
+      await tester.pumpAndSettle();
       expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget);
       await tester.tap(find.byKey(const Key('today-nutrition-missing')));
       await tester.pumpAndSettle();
@@ -378,7 +399,7 @@ void main() {
     await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food));
     for (final module in ['workout', 'run', 'nutrition']) {
       final box = tester.getSize(photo(module));
-      expect(box.width, 88, reason: 'a supporting crop, not a header');
+      expect(box.width, 92, reason: 'a supporting crop, not a header');
       final image = tester.widget<Image>(find.descendant(of: photo(module), matching: find.byType(Image)));
       expect(image.fit, BoxFit.cover);
       final decoded = (image.image as ResizeImage).width!;
@@ -397,7 +418,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(photo('workout'), findsNothing);
     expect(photo('run'), findsNothing);
-    for (final text in ['6 of 18 sets recorded', '5.20 km', '510', 'Some nutrition values are missing', 'Resume workout', 'Continue run', 'Log food']) {
+    for (final text in ['of 18 sets', '5.20 km', '510', 'Some nutrition values are missing', 'Resume workout', 'Continue run', 'Log food']) {
       expect(find.text(text), findsOneWidget, reason: '$text is still there, not hidden to save space');
     }
     for (final state in [
@@ -412,8 +433,79 @@ void main() {
     }
     // A narrow phone at normal text keeps a smaller crop.
     await pumpApp(tester, await fixture(tester, plans: [plan]), size: const Size(320, 800));
-    expect(tester.getSize(photo('workout')).width, 64);
+    expect(tester.getSize(photo('workout')).width, 72);
     expect(tester.takeException(), isNull);
+  });
+
+  group('weather', () {
+    /// Today in progress on every module, with Weather on for a selected city and fake conditions.
+    Future<(ProviderContainer, WeatherFakes)> today(WidgetTester tester, {ThemeMode mode = ThemeMode.light}) async {
+      final w = WeatherFakes(now: DateTime.utc(2026, 10, 11, 15));
+      final store = AppearanceStore(MemorySecretStore())
+        ..accent = Accent.pink
+        ..mode = mode;
+      final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
+      final c = await pumpApp(tester, [
+        ...await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food, calorieGoal: 2200, proteinGoal: 140, runs: [run('r1', day)], runtime: {'r1': pausedRun},
+            more: [appearanceStoreProvider.overrideWithValue(store)]),
+        ...(await tester.runAsync(() => w.overrides(prefs: const WeatherPrefs(background: TodayBackground.weather, mode: WeatherLocationMode.city, city: quebec))))!,
+      ]);
+      return (c, w);
+    }
+
+    Future<void> weather(WidgetTester tester, ProviderContainer c, WeatherFakes w, String family, bool isDay) async {
+      w.answer = (_, _) => w.conditions(family, isDay: isDay);
+      await c.read(weatherProvider.notifier).refresh(force: true);
+      await tester.pumpAndSettle();
+      expect(c.read(todaySceneProvider).key, '$family-${isDay ? 'day' : 'night'}');
+    }
+
+    for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+      testWidgets('${mode.name}: every scene changes the backdrop only; layout, states, accent and navigation stay, and the header keeps its scrim', (tester) async {
+        final (c, w) = await today(tester, mode: mode);
+        const keys = ['today-header', 'today-greeting', 'today-module-workout', 'today-module-run', 'today-module-nutrition', 'today-resume', 'today-details', 'today-run', 'log-food', 'nav-today'];
+        Map<String, Rect> layout() => {for (final k in keys) k: tester.getRect(find.byKey(Key(k)))};
+        List<String?> words() => [for (final e in find.descendant(of: find.byType(TodayScreen), matching: find.byType(Text)).evaluate()) (e.widget as Text).data];
+        GoColors colors() => Theme.of(tester.element(find.byType(TodayScreen))).extension<GoColors>()!;
+        final (before, said, look) = (layout(), words(), colors().accent);
+        expect(said, containsAll(['In progress', 'Paused', '33%', 'Resume workout', 'Continue run', '/ 2,200 kcal']));
+        for (final family in weatherFamilies) {
+          for (final isDay in [true, false]) {
+            await weather(tester, c, w, family, isDay);
+            final where = '$family ${isDay ? 'day' : 'night'}';
+            expect(layout(), before, reason: '$where: nothing moves');
+            expect(words(), said, reason: '$where: the same states and values');
+            expect(colors().accent, look, reason: '$where: the chosen accent stays');
+            expect(c.read(shellProvider).tab, 0);
+            // The scene stays in the header region, above the rhythm; the header's lines sit on its page-coloured
+            // scrim in the theme's text colour (weather_contrast_test measures that over every scene and theme).
+            expect(tester.getRect(find.byType(SceneBackdrop)).bottom, lessThanOrEqualTo(before['today-module-workout']!.top));
+            expect(tester.widget<TabHeader>(find.descendant(of: find.byType(TodayScreen), matching: find.byType(TabHeader))).onBackdrop, isTrue);
+            expect(tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color, colors().text);
+            expect(tester.takeException(), isNull);
+          }
+        }
+        expect(tester.binding.hasScheduledFrame, isFalse, reason: 'no scene keeps animating');
+      });
+    }
+
+    testWidgets('a new scene keeps the scroll position and what is open', (tester) async {
+      final (c, w) = await today(tester);
+      c.read(connectionProvider.notifier).report(false);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('today-connection')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('today-connection-retry')), findsOneWidget);
+      final list = find.byType(Scrollable).first;
+      await tester.drag(list, const Offset(0, -150));
+      await tester.pumpAndSettle();
+      final offset = tester.state<ScrollableState>(list).position.pixels;
+      expect(offset, greaterThan(0));
+      await weather(tester, c, w, 'rain', false);
+      await weather(tester, c, w, 'snow', true);
+      expect(tester.state<ScrollableState>(list).position.pixels, offset);
+      expect(find.byKey(const Key('today-connection-retry')), findsOneWidget, reason: 'the open details stay open');
+    });
   });
 
   testWidgets('the week calendar and its progress are in Train › Plan', (tester) async {

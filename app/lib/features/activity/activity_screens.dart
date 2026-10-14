@@ -128,7 +128,7 @@ class _RunScreenState extends ConsumerState<RunScreen> {
       Panel(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const IconTile(Icons.directions_run, size: 36),
+            const IconTile(Icons.directions_run, size: 40, circle: true),
             const SizedBox(width: 10),
             Expanded(child: Overline(run.isOpen && paused ? 'Time · paused' : 'Time')),
           ]),
