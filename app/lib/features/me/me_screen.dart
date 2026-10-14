@@ -203,7 +203,7 @@ class MeScreen extends ConsumerWidget {
           ),
         ]),
         const SizedBox(height: 16),
-        Text('GoHard 0.1.0 · contract ${AppConfig.contractVersion}\nServer: ${AppConfig.apiBase}', style: context.caption),
+        Text('GoHard 0.1.0${AppConfig.build.isEmpty ? '' : ' (build ${AppConfig.build})'} · commit ${AppConfig.commit} · contract ${AppConfig.contractVersion}\nServer: ${AppConfig.apiBase}', key: const Key('me-build'), style: context.caption),
       ],
     );
   }

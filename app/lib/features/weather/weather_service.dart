@@ -145,6 +145,9 @@ abstract interface class WeatherLocator {
 
   /// One reading, or null when none came in time.
   Future<CoarseFix?> locate();
+
+  /// The phone's last known position, already coarse, without a prompt or a new reading. Null when it has none.
+  Future<CoarseFix?> lastKnown();
   Future<void> openAppSettings();
   Future<void> openLocationSettings();
 }
@@ -178,6 +181,12 @@ class GeolocatorWeatherLocator implements WeatherLocator {
       return null;
     }
     return (lat: roundCoord(p.latitude), lon: roundCoord(p.longitude));
+  }
+
+  @override
+  Future<CoarseFix?> lastKnown() async {
+    final p = await Geolocator.getLastKnownPosition();
+    return p == null ? null : (lat: roundCoord(p.latitude), lon: roundCoord(p.longitude));
   }
 
   @override
@@ -226,18 +235,35 @@ class WeatherController extends Notifier<WeatherState> {
     return WeatherState(entry: ref.watch(weatherStoreProvider).entry);
   }
 
-  /// Asks for current conditions when Weather is on and the last answer for this source is old enough.
+  /// Asks for current conditions when Weather is on and the last answer for this source is old enough, or, with
+  /// Automatic location, when the phone's last known position is now in another area than that answer.
   /// Never prompts for permission. Joins a request already in flight for the same choice.
-  Future<void> refresh({bool force = false}) {
+  Future<void> refresh({bool force = false}) async {
     final prefs = ref.read(weatherPrefsProvider);
-    if (prefs.background != TodayBackground.weather) return Future.value();
+    if (prefs.background != TodayBackground.weather) return;
     final now = ref.read(clockProvider).utcNow();
-    if (!force && !WeatherPolicy.needsRefresh(state.entry, prefs.source, now)) return Future.value();
+    if (!force && !WeatherPolicy.needsRefresh(state.entry, prefs.source, now)) {
+      if (prefs.mode != WeatherLocationMode.automatic || !await _movedAway(state.entry)) return;
+      force = true; // a recent answer, but for where the phone was before
+    }
     if (!force && _attemptAt != null && now.difference(_attemptAt!) < retryAfter && _inFlight == null) return Future.value();
     return _inFlight ??= () {
       _attemptAt = now;
       return _run(prefs, _token).whenComplete(() => _inFlight = null);
     }();
+  }
+
+  /// Whether the phone's last known position (no prompt, no new reading) is outside the area [entry] is for.
+  Future<bool> _movedAway(WeatherEntry? entry) async {
+    if (entry == null || _inFlight != null) return false;
+    try {
+      final locator = ref.read(weatherLocatorProvider);
+      if (await locator.check() != LocatorPermission.granted) return false;
+      final last = await locator.lastKnown();
+      return last != null && regionKey(last.lat, last.lon) != entry.region;
+    } on Object {
+      return false;
+    }
   }
 
   /// The person chose Automatic and read why: ask the system once, then fetch.

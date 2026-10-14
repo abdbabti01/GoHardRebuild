@@ -10,9 +10,9 @@ void main() {
   const city = WeatherPrefs(background: TodayBackground.weather, mode: WeatherLocationMode.city, city: quebec);
   const auto = WeatherPrefs(background: TodayBackground.weather);
 
-  WeatherEntry entry(String family, {bool? isDay = true, Duration age = const Duration(minutes: 10), String source = 'city:6325494', String region = '46.8,-71.2'}) =>
+  WeatherEntry entry(String family, {bool? isDay = true, Duration age = const Duration(minutes: 10), String source = 'city:6325494', String region = '46.8,-71.2', int? code}) =>
       WeatherEntry(source: source, region: region, fetchedAtUtc: now,
-          conditions: WeatherConditions(family: family, isDay: isDay, validAtUtc: now.subtract(age), description: '$family words'));
+          conditions: WeatherConditions(family: family, code: code, isDay: isDay, validAtUtc: now.subtract(age), description: '$family words'));
 
   SceneSpec scene(WeatherEntry? e, {WeatherPrefs prefs = city, Set<String>? available}) => resolveScene(prefs: prefs, entry: e, nowUtc: now, available: available);
 
@@ -28,21 +28,43 @@ void main() {
     expect(sceneKeys.every(sceneArt.containsKey), isTrue);
   });
 
-  test('anything unknown, stale, ahead of time, for another place or without artwork is plain dusk with no label', () {
-    for (final e in [
-      null,
-      entry('unknown'),
-      entry('clear', age: const Duration(minutes: 61)), // beyond the maximum age
-      entry('clear', age: const Duration(minutes: -30)), // "valid" half an hour from now
-      entry('clear', region: '48.9,2.3'), // another region than the chosen city
-      entry('clear', source: 'auto'), // conditions for this phone's location, not the city
+  test('anything unknown, stale, ahead of time, for another place or without artwork is the dusk scene with no label, and says why', () {
+    for (final (e, why) in [
+      (null, WeatherFallback.noAnswer),
+      (entry('unknown'), WeatherFallback.unknownCode),
+      (entry('clear', age: const Duration(minutes: 61)), WeatherFallback.stale), // beyond the maximum age
+      (entry('clear', age: const Duration(minutes: -30)), WeatherFallback.ahead), // "valid" half an hour from now
+      (entry('clear', region: '48.9,2.3'), WeatherFallback.otherPlace), // another region than the chosen city
+      (entry('clear', source: 'auto'), WeatherFallback.noAnswer), // conditions for this phone's location, not the city
     ]) {
-      expect(scene(e), SceneSpec.dusk);
-      expect(scene(e).label, isNull);
+      final s = scene(e);
+      expect((s.key, s.isWeather, s.label, s.fallback), ('dusk', false, null, why));
     }
-    expect(scene(entry('rain'), available: {'dusk'}), SceneSpec.dusk);
+    expect(scene(entry('rain'), available: {'dusk'}).fallback, WeatherFallback.noArt);
     expect(scene(entry('clear', age: const Duration(minutes: 60))).key, 'clear-day'); // exactly at the limit is still fresh
     expect(scene(entry('snow', source: 'auto', region: '45.5,-73.6'), prefs: auto).key, 'snow-day');
+  });
+
+  // The diagnosed cause of "wrong weather": the server's family "cloudy" covers WMO 2 (partly cloudy) and 3
+  // (overcast), and the scene used to be chosen by family alone, so a sunny partly cloudy sky was painted overcast.
+  test('the scene follows the WMO code: mainly clear and partly cloudy are not overcast', () {
+    for (final (family, code, expected) in [
+      ('clear', 0, 'clear'), ('clear', 1, 'partly'), ('cloudy', 2, 'partly'), ('cloudy', 3, 'cloudy'),
+      ('fog', 45, 'fog'), ('rain', 61, 'rain'), ('rain', 80, 'rain'), ('snow', 73, 'snow'), ('storm', 95, 'storm'),
+      ('cloudy', null, 'cloudy'), // no code: the family decides
+    ]) {
+      final s = scene(entry(family, code: code));
+      expect((s.key, s.family, s.isWeather), ('$expected-day', expected, true), reason: '$family / WMO $code');
+    }
+  });
+
+  test('a dark sky follows the place\'s day and night and the weather, never the app\'s Light or Dark mode', () {
+    String key(SceneSpec s) => '${s.key}:${s.dark}';
+    expect([for (final f in weatherFamilies) key(scene(entry(f)))],
+        ['clear-day:false', 'partly-day:false', 'cloudy-day:false', 'fog-day:false', 'rain-day:true', 'snow-day:false', 'storm-day:true']);
+    expect([for (final f in weatherFamilies) scene(entry(f, isDay: false)).dark], everyElement(isTrue));
+    expect(SceneSpec.dusk.dark, isFalse, reason: 'Scenic follows the app\'s mode');
+    expect(SceneSpec.plain.dark, isFalse);
   });
 
   test('scenic and plain never depend on weather', () {
@@ -87,11 +109,12 @@ void main() {
     expect(parisTx.fullLabel, 'Paris, Texas, United States');
   });
 
-  test('freshness policy: ask again after 30 minutes, show for 60, and a new fetch never makes old conditions fresh', () {
+  test('freshness policy: ask again after 15 minutes, show for 60, and a new fetch never makes old conditions fresh', () {
     final e = entry('clear', age: const Duration(minutes: 70));
     expect(WeatherPolicy.needsRefresh(e, 'city:6325494', now), isFalse); // fetched just now
     expect(WeatherPolicy.usable(e.conditions, now), isFalse); // ...but the conditions themselves are old
-    expect(WeatherPolicy.needsRefresh(e, 'city:6325494', now.add(const Duration(minutes: 30))), isTrue);
+    expect(WeatherPolicy.needsRefresh(e, 'city:6325494', now.add(const Duration(minutes: 14))), isFalse);
+    expect(WeatherPolicy.needsRefresh(e, 'city:6325494', now.add(const Duration(minutes: 15))), isTrue);
     expect(WeatherPolicy.needsRefresh(e, 'auto', now), isTrue);
     expect(WeatherPolicy.needsRefresh(null, 'auto', now), isTrue);
   });

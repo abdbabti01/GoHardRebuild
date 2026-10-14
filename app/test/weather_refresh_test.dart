@@ -40,7 +40,7 @@ void main() {
     expect(w.currentCalls, isEmpty);
   });
 
-  test('a selected city is fetched once, kept across a restart and refreshed only after 30 minutes', () async {
+  test('a selected city is fetched once, kept across a restart and refreshed only after 15 minutes', () async {
     final (c, w) = await start(prefs: cityPrefs);
     w.answer = (_, _) => w.conditions('rain', isDay: false);
     await controller(c).refresh();
@@ -57,7 +57,7 @@ void main() {
     final (again, _) = await start(fakes: w);
     expect(again.read(todaySceneProvider).key, 'rain-night');
 
-    w.clock.advance(const Duration(minutes: 31));
+    w.clock.advance(const Duration(minutes: 16));
     await controller(again).refresh();
     expect(w.currentCalls, hasLength(2)); // stale enough to ask; the failure keeps the still-fresh scene
     expect(again.read(todaySceneProvider).key, 'rain-night');
@@ -66,10 +66,9 @@ void main() {
     await controller(again).refresh();
     expect(w.currentCalls, hasLength(2)); // no retry storm: the next attempt waits
 
-    w.clock.advance(const Duration(minutes: 30)); // the kept conditions are now more than 60 minutes old
+    w.clock.advance(const Duration(minutes: 45)); // the kept conditions are now more than 60 minutes old
     await controller(again).refresh();
-    expect(again.read(todaySceneProvider), SceneSpec.dusk);
-    expect(again.read(todaySceneProvider).label, isNull);
+    expect((again.read(todaySceneProvider).key, again.read(todaySceneProvider).label, again.read(todaySceneProvider).fallback), ('dusk', null, WeatherFallback.stale));
   });
 
   test('changing city drops the late answer for the old one', () async {
@@ -97,7 +96,7 @@ void main() {
     w.held.last.done.complete(w.conditions('storm'));
     await late;
     expect(c.read(weatherProvider).entry!.conditions.family, 'clear');
-    expect(c.read(todaySceneProvider), SceneSpec.dusk);
+    expect(c.read(todaySceneProvider), SceneSpec.dusk); // Scenic now: no weather, and nothing to explain
   });
 
   test('Automatic never prompts by itself, and every refusal leaves a usable Today', () async {
@@ -105,7 +104,7 @@ void main() {
     await controller(c).refresh();
     expect((w.requests, w.locates, w.currentCalls.length), (0, 0, 0));
     expect(c.read(weatherProvider).issue, WeatherIssue.needsPermission);
-    expect(c.read(todaySceneProvider), SceneSpec.dusk);
+    expect(c.read(todaySceneProvider).fallback, WeatherFallback.noAnswer);
 
     w.onRequest = LocatorPermission.denied;
     await controller(c).allowLocation(); // the person chose Automatic and read why
@@ -126,7 +125,7 @@ void main() {
     w.fix = null; // no reading in time
     await controller(c).refresh(force: true);
     expect(c.read(weatherProvider).issue, WeatherIssue.timeout);
-    expect(c.read(todaySceneProvider), SceneSpec.dusk);
+    expect(c.read(todaySceneProvider).fallback, WeatherFallback.noAnswer);
 
     w.fix = (lat: 45.5, lon: -73.6);
     w.answer = (_, _) => w.conditions('cloudy', isDay: null);
@@ -137,7 +136,32 @@ void main() {
 
     // The same conditions do not follow the person to a selected city.
     c.read(weatherPrefsProvider.notifier).selectCity(parisTx);
-    expect(c.read(todaySceneProvider), SceneSpec.dusk);
+    expect(c.read(todaySceneProvider).fallback, WeatherFallback.noAnswer);
+  });
+
+  test('Automatic asks again when the phone has moved to another area, before the answer is old, without a prompt', () async {
+    final w = WeatherFakes(now: now)..permission = LocatorPermission.granted;
+    final (c, _) = await start(prefs: const WeatherPrefs(background: TodayBackground.weather), fakes: w);
+    w.answer = (_, _) => w.conditions('clear');
+    await controller(c).refresh();
+    expect(w.currentCalls, ['46.8,-71.2']);
+
+    w.last = (lat: 46.8, lon: -71.2); // still here: a recent answer is kept
+    await controller(c).refresh();
+    expect(w.currentCalls, hasLength(1));
+
+    w.last = (lat: 45.5, lon: -73.6); // the phone now knows it is ~250 km away
+    w.fix = (lat: 45.5, lon: -73.6);
+    w.answer = (_, _) => w.conditions('rain', isDay: true);
+    await controller(c).refresh();
+    expect(w.currentCalls, ['46.8,-71.2', '45.5,-73.6']);
+    expect(c.read(todaySceneProvider).key, 'rain-day');
+    expect(w.requests, 0, reason: 'never a prompt for this check');
+
+    w.permission = LocatorPermission.denied; // without permission nothing is read at all
+    w.last = (lat: 48.9, lon: 2.3);
+    await controller(c).refresh();
+    expect(w.currentCalls, hasLength(2));
   });
 
   test('weather never reports into the connection state and never writes outside its own two device keys', () async {

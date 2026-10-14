@@ -83,12 +83,108 @@ public class WeatherProviderTests
 
     private static (WeatherService Service, StubProvider Stub) Service(Func<HttpRequestMessage, Task<HttpResponseMessage>>? respond = null, Action<WeatherOptions>? configure = null)
     {
-        var options = new WeatherOptions { TimeoutSeconds = 1 };
+        var options = new WeatherOptions { TimeoutSeconds = 1, MetNorwayBaseUrl = "" };   // no fallback unless a test asks for it
         configure?.Invoke(options);
         var stub = new StubProvider(respond ?? (r => Task.FromResult(StubProvider.Json(StubProvider.Recorded(
             r.RequestUri!.AbsolutePath.EndsWith("/search") ? "openmeteo_places_paris.json" : "openmeteo_current_overcast_night.json")))));
-        return (new WeatherService(new OpenMeteoProvider(new HttpClient(stub), options), options, NullLogger<WeatherService>.Instance), stub);
+        var http = new HttpClient(stub);
+        // MET Norway reads the hour from a clock fixed in the hour its recording covers (14:30 UTC, 14 October 2026).
+        var metClock = new FixedTime(new DateTimeOffset(2026, 10, 14, 14, 30, 0, TimeSpan.Zero));
+        return (new WeatherService(new OpenMeteoProvider(http, options), new MetNorwayProvider(http, options, metClock), options, NullLogger<WeatherService>.Instance), stub);
     }
+
+    // The diagnosed cause of "wrong weather" on the phone: from the hosted server Open-Meteo answered 429 for every
+    // place (its free tier limits per calling IP, and the cloud host's outbound IP is shared), so the app got no
+    // weather. MET Norway now answers the same question, and says it did.
+    [Fact]
+    public async Task When_Open_Meteo_refuses_MET_Norway_answers_and_says_so()
+    {
+        var (service, stub) = Service(r => Task.FromResult(r.RequestUri!.Host == "api.met.no"
+            ? StubProvider.Json(StubProvider.Recorded("metno_quebec_cloudy.json"))
+            : new HttpResponseMessage(HttpStatusCode.TooManyRequests)), o => o.MetNorwayBaseUrl = "https://api.met.no/weatherapi/");
+        var now = await service.CurrentAsync(46.81, -71.21, default);
+        Assert.Equal(LookupStatus.Ok, now.Status);
+        Assert.Equal(("met.no", "cloudy", 3), (now.Value!.Source, now.Value.Family, now.Value.Code));
+        var met = stub.Requests.Single(r => r.RequestUri!.Host == "api.met.no").RequestUri!;
+        Assert.Equal("?lat=46.8&lon=-71.2", met.Query);                                          // only the grid point travels
+        Assert.Equal(2, stub.Requests.Count);
+
+        await service.CurrentAsync(46.8, -71.2, default);                                         // remembered, whoever answered
+        Assert.Equal(2, stub.Requests.Count);
+        await service.CurrentAsync(48.85, 2.35, default);                                         // Open-Meteo is paused: straight to MET
+        Assert.Equal(["api.open-meteo.com", "api.met.no", "api.met.no"], stub.Requests.Select(r => r.RequestUri!.Host));
+    }
+
+    // MET Norway's terms: no repeat request before Expires, then a conditional request (If-Modified-Since = the
+    // last Last-Modified); a 304 reuses the kept answer.
+    [Fact]
+    public async Task MET_Norway_is_not_asked_again_before_Expires_and_then_only_conditionally()
+    {
+        var clock = new MovingTime(new DateTimeOffset(2026, 10, 14, 14, 30, 0, TimeSpan.Zero));
+        var lastModified = new DateTimeOffset(2026, 10, 14, 14, 30, 12, TimeSpan.Zero);
+        var sent = new List<(string Host, DateTimeOffset? Since)>();
+        var stub = new StubProvider(r =>
+        {
+            sent.Add((r.RequestUri!.Query, r.Headers.IfModifiedSince));
+            if (r.Headers.IfModifiedSince is not null) return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotModified) { Content = new ByteArrayContent([]) });
+            var ok = StubProvider.Json(StubProvider.Recorded("metno_quebec_cloudy.json"));
+            ok.Content.Headers.Expires = clock.GetUtcNow() + TimeSpan.FromMinutes(31);
+            ok.Content.Headers.LastModified = lastModified;
+            return Task.FromResult(ok);
+        });
+        var met = new MetNorwayProvider(new HttpClient(stub), new WeatherOptions(), clock);
+
+        Assert.Equal(3, (await met.CurrentAsync(46.8, -71.2, default)).Value!.Code);   // 14:00 hour: cloudy
+        clock.Advance(TimeSpan.FromMinutes(20));
+        Assert.Equal(LookupStatus.Ok, (await met.CurrentAsync(46.8, -71.2, default)).Status);
+        Assert.Single(sent);                                                          // before Expires: nothing sent
+
+        clock.Advance(TimeSpan.FromMinutes(15));                                     // 15:05, past Expires
+        var again = await met.CurrentAsync(46.8, -71.2, default);
+        Assert.Equal(2, sent.Count);
+        Assert.Equal(lastModified, sent[1].Since);                                   // conditional, with the last Last-Modified
+        Assert.Equal((LookupStatus.Ok, 61, new DateTime(2026, 10, 14, 15, 0, 0, DateTimeKind.Utc)),
+            (again.Status, again.Value!.Code, again.Value.ValidAtUtc));               // 304: the kept answer, read at the new hour
+
+        await met.CurrentAsync(48.9, 2.3, default);                                  // another place is its own, plain request
+        Assert.Equal(3, sent.Count);
+        Assert.Null(sent[2].Since);
+    }
+
+    [Fact]
+    public async Task MET_Norway_is_only_asked_when_Open_Meteo_fails_and_a_double_failure_says_what_Open_Meteo_said()
+    {
+        var (fine, f) = Service(configure: o => o.MetNorwayBaseUrl = "https://api.met.no/weatherapi/");
+        Assert.Equal("open-meteo", (await fine.CurrentAsync(46.8, -71.2, default)).Value!.Source);
+        Assert.DoesNotContain(f.Requests, r => r.RequestUri!.Host == "api.met.no");
+
+        var (both, _) = Service(r => Task.FromResult(new HttpResponseMessage(r.RequestUri!.Host == "api.met.no" ? HttpStatusCode.BadGateway : HttpStatusCode.TooManyRequests)),
+            o => o.MetNorwayBaseUrl = "https://api.met.no/weatherapi/");
+        Assert.Equal(LookupStatus.RateLimited, (await both.CurrentAsync(46.8, -71.2, default)).Status);
+    }
+
+    [Fact]
+    public void MET_Norway_current_hour_maps_to_the_same_codes_with_day_or_night_from_the_symbol_or_the_sun()
+    {
+        var now = MetNorwayProvider.ParseCurrent(Recorded("metno_quebec_cloudy.json"), 46.8, -71.2, new DateTime(2026, 10, 14, 14, 30, 0, DateTimeKind.Utc))!;
+        Assert.Equal((new DateTime(2026, 10, 14, 14, 0, 0, DateTimeKind.Utc), 3, "Cloudy", "cloudy", true, 5.8m),
+            (now.ValidAtUtc, now.Code, now.Description, now.Family, now.IsDay, now.TemperatureC));   // "cloudy" has no suffix: 10:00 at the place, the sun is up
+        Assert.Equal((2, "Partly cloudy"), MetNorwayProvider.Map("partlycloudy_day"));
+        Assert.Equal((0, "Clear sky"), MetNorwayProvider.Map("clearsky_night"));
+        Assert.Equal((80, "Light rain showers"), MetNorwayProvider.Map("lightrainshowers_day"));
+        Assert.Equal(95, MetNorwayProvider.Map("lightrainshowersandthunder_night").Code);
+        Assert.Equal((85, "Snow showers"), MetNorwayProvider.Map("snowshowers_polartwilight"));
+        Assert.Equal((null, null), MetNorwayProvider.Map("hailstorm"));
+    }
+
+    [Theory]
+    [InlineData(46.8, -71.2, 2026, 10, 14, 16, 0, true)]    // Quebec City at local noon
+    [InlineData(46.8, -71.2, 2026, 10, 14, 4, 0, false)]    // ...and at local midnight
+    [InlineData(-33.9, 151.2, 2026, 10, 14, 3, 20, true)]   // Sydney mid-afternoon, at an hour that is night in Paris
+    [InlineData(48.9, 2.3, 2026, 10, 14, 3, 20, false)]
+    [InlineData(78.2, 15.6, 2026, 12, 21, 12, 0, false)]    // Svalbard in polar night, even at noon
+    public void The_sun_says_day_or_night_for_the_place_not_the_server_clock(double lat, double lon, int y, int mo, int d, int h, int mi, bool day) =>
+        Assert.Equal(day, Sun.IsDay(lat, lon, new DateTime(y, mo, d, h, mi, 0, DateTimeKind.Utc)));
 
     [Fact]
     public async Task Nearby_requests_share_one_rounded_provider_call_and_the_answer_is_remembered()
@@ -217,4 +313,18 @@ public class WeatherEndpointTests(PostgresFixture pg)
         Assert.Equal("PROVIDER_NOT_CONFIGURED", (await Get(b.Http, "/weather/places?q=Paris")).Item2.GetProperty("code").GetString());
         Assert.Equal(HttpStatusCode.OK, (await disabled.CreateClient().GetAsync("/health/ready")).StatusCode);
     }
+}
+
+/// A clock that always says the same instant.
+file sealed class FixedTime(DateTimeOffset at) : TimeProvider
+{
+    public override DateTimeOffset GetUtcNow() => at;
+}
+
+/// A clock a test moves forward.
+file sealed class MovingTime(DateTimeOffset start) : TimeProvider
+{
+    private DateTimeOffset _now = start;
+    public override DateTimeOffset GetUtcNow() => _now;
+    public void Advance(TimeSpan by) => _now += by;
 }

@@ -13,12 +13,13 @@ import 'weather_service.dart';
 /// Fills its parent (a bounded header region). Paints the scene for the Today background preference and fresh
 /// weather, fading at the bottom into the page colour. Asks for a refresh-if-stale when it first appears, when the
 /// app resumes and when the Today tab is selected again; never blocks, never shows an error, never repeats on a
-/// rebuild. Excluded from semantics.
+/// rebuild. Excluded from semantics. Its weather sky moves only while Today is the tab on screen.
 class TodayBackdrop extends ConsumerWidget {
   const TodayBackdrop({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _Refresher(child: SceneBackdrop(spec: ref.watch(todaySceneProvider)));
+  Widget build(BuildContext context, WidgetRef ref) => _Refresher(
+      child: SceneBackdrop(spec: ref.watch(todaySceneProvider), animate: ref.watch(shellProvider.select((s) => s.tab == 0))));
 }
 
 /// The same frame and fade, static: the decorative dusk scene, or the plain page colour when the preference is
@@ -73,21 +74,26 @@ class _RefresherState extends ConsumerState<_Refresher> with WidgetsBindingObser
 /// Paints one [SceneSpec]: the (graded) photograph decoded at the size it is shown, a stable scrim the header text
 /// sits on, and a fade into the page colour at the bottom. Crossfades only when [SceneSpec.key] changes, and
 /// switches instantly under reduced motion. A photograph that cannot be decoded leaves the plain page colour.
+///
+/// A weather scene's clouds, stars, fog, rain and snow move gently (one clock for the whole sky, repainting only its
+/// own layer) while [animate] is true, motion is not reduced (the phone's setting or the app's), tickers are enabled
+/// here, the app is in the foreground and no route covers this one; otherwise it is one still frame and no clock
+/// runs. Dusk and Plain are always still.
 class SceneBackdrop extends StatelessWidget {
-  const SceneBackdrop({super.key, required this.spec});
+  const SceneBackdrop({super.key, required this.spec, this.animate = true});
   final SceneSpec spec;
+  final bool animate;
 
-  /// A light veil of page colour over the top of the scene, so the scene stays visible above and around the header.
-  /// It rises to the full page at the bottom. The header text is protected by TabHeader's own scrim behind its lines,
-  /// not by this veil: test/weather_contrast_test.dart measures the two together where the text sits.
-  static double scrim(SceneSpec spec, bool dark) {
-    final bright = spec.isDay == true || spec.family == 'snow' || spec.family == 'fog';
-    final dim = spec.isDay == false || spec.family == 'storm' || spec.family == 'rain';
-    // Dark mode dims bright scenes a little more, Light mode lifts dark ones; the scene stays what it is. The painted
-    // weather skies carry their own light, so Light mode lifts them less than the photograph's dusk (0.34), or night
-    // and storm would turn grey.
-    if (spec.key == 'dusk') return dark ? 0.18 : 0.34;
-    return dark ? (bright ? 0.32 : 0.18) : (dim ? 0.22 : 0.16);
+  /// The veil over the top of the scene, as (colour, opacity); it rises to the full page colour at the bottom. The
+  /// header text is protected by TabHeader's own scrim behind its lines, not by this veil.
+  ///
+  /// Dusk keeps a light veil of page colour. A weather sky carries its own light, like Apple Weather's: no page veil,
+  /// so a night stays night in Light mode and a bright day stays bright (the header draws light text over a
+  /// [SceneSpec.dark] scene and dark text over the others). Dark mode only takes the edge off a bright sky with a
+  /// faint black veil, keeping it light enough for dark text.
+  static (Color, double) veil(SceneSpec spec, bool darkMode, Color page) {
+    if (!spec.isWeather) return (page, darkMode ? 0.18 : 0.34);
+    return (Colors.black, darkMode && !spec.dark ? 0.08 : 0.0);
   }
 
   @override
@@ -114,17 +120,18 @@ class SceneBackdrop extends StatelessWidget {
                   ? const SizedBox.expand()
                   : Stack(fit: StackFit.expand, children: [
                       // Painted once: the scene is static, and repaints only when its key changes.
-                      RepaintBoundary(child: _Photo(art: art, cacheWidth: cacheWidth)),
-                      // Page-tinted, so the theme's own text colours stay readable over any scene, and an undecodable
-                      // photograph leaves exactly the page colour. Dark mode dims a bright (daylight, snow, fog) scene
-                      // further and Light mode a dark one; the scene itself stays what it is.
+                      _Photo(art: art, cacheWidth: cacheWidth, animate: animate),
+                      // The veil (see [veil]) and the fade into the page colour, so an undecodable photograph leaves
+                      // exactly the page colour and the scene ends softly above the modules below. A weather sky keeps
+                      // its own colour down to where the fade begins.
                       DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0, 0.55, 1], colors: [
-                            page.withValues(alpha: scrim(spec, dark)),
-                            page.withValues(alpha: scrim(spec, dark) + 0.15),
-                            page,
-                          ]),
+                          gradient: switch (veil(spec, dark, page)) {
+                            (final color, final a) when spec.isWeather => LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                                stops: const [0, 0.74, 0.9, 1], colors: [color.withValues(alpha: a), color.withValues(alpha: a), Color.lerp(color.withValues(alpha: a), page, 0.5)!, page]),
+                            (final color, final a) => LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0, 0.55, 1],
+                                colors: [color.withValues(alpha: a), color.withValues(alpha: a + 0.15), page]),
+                          },
                         ),
                       ),
                     ]),
@@ -137,9 +144,10 @@ class SceneBackdrop extends StatelessWidget {
 }
 
 class _Photo extends StatelessWidget {
-  const _Photo({required this.art, required this.cacheWidth});
+  const _Photo({required this.art, required this.cacheWidth, required this.animate});
   final SceneArt art;
   final int cacheWidth;
+  final bool animate;
 
   @override
   Widget build(BuildContext context) => Image.asset(
@@ -158,13 +166,86 @@ class _Photo extends StatelessWidget {
           if (frame == null && !sync) return const SizedBox.expand();
           final graded = art.matrix == null ? child : ColorFiltered(colorFilter: ColorFilter.matrix(art.matrix!), child: child);
           final sky = art.sky;
-          if (sky == null) return graded;
-          return CustomPaint(
-            painter: SkyPainter(sky, SkyLayer.back),
-            foregroundPainter: SkyPainter(sky, SkyLayer.front),
-            child: Stack(fit: StackFit.expand, children: [graded, CustomPaint(painter: SkyPainter(sky, SkyLayer.top))]),
-          );
+          // The photograph and the still layers are painted once, in their own boundary; only the motion layer above
+          // them repaints on each frame.
+          if (sky == null) return RepaintBoundary(child: graded);
+          return Stack(fit: StackFit.expand, children: [
+            RepaintBoundary(
+              child: CustomPaint(
+                painter: SkyPainter(sky, SkyLayer.back),
+                foregroundPainter: SkyPainter(sky, SkyLayer.front),
+                child: Stack(fit: StackFit.expand, children: [graded, CustomPaint(painter: SkyPainter(sky, SkyLayer.top))]),
+              ),
+            ),
+            SkyMotion(sky: sky, animate: animate),
+          ]);
         },
         errorBuilder: (context, _, _) => const SizedBox.expand(key: ValueKey('scene-failed')),
       );
+}
+
+/// The moving layer of a weather sky: one [AnimationController] repeating over [SkyMotionPainter.period] drives
+/// [SkyMotionPainter] through `repaint:`, inside its own [RepaintBoundary], so a frame never rebuilds a widget. The
+/// clock runs only while everything allows it (see [SceneBackdrop]); otherwise it is stopped where it is, one still
+/// frame. Nothing to move (a clear day) never starts it.
+class SkyMotion extends StatefulWidget {
+  const SkyMotion({super.key, required this.sky, this.animate = true});
+  final Sky sky;
+  final bool animate;
+
+  @override
+  State<SkyMotion> createState() => _SkyMotionState();
+}
+
+class _SkyMotionState extends State<SkyMotion> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late final _clock = AnimationController(vsync: this, duration: SkyMotionPainter.period);
+  late var _painter = SkyMotionPainter(widget.sky, _clock);
+  var _foreground = true, _allowed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = WidgetsBinding.instance.lifecycleState;
+    _foreground = state == null || state == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _allowed = !context.reduceMotion && TickerMode.valuesOf(context).enabled && (ModalRoute.isCurrentOf(context) ?? true);
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(SkyMotion old) {
+    super.didUpdateWidget(old);
+    if (old.sky != widget.sky) _painter = SkyMotionPainter(widget.sky, _clock);
+    _sync();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _sync();
+  }
+
+  void _sync() {
+    final run = widget.animate && _allowed && _foreground && _painter.moves;
+    if (run && !_clock.isAnimating) {
+      _clock.repeat();
+    } else if (!run && _clock.isAnimating) {
+      _clock.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _clock.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(child: CustomPaint(key: const ValueKey('sky-motion'), painter: _painter, size: Size.infinite));
 }

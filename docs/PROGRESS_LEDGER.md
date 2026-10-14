@@ -710,3 +710,33 @@ Checked on `a3091f1`:
 
 Not checked: the scenes on a physical phone (brightness comfort, real status-bar heights and notches, performance),
 anything on an iPhone. The scenes remain painted treatments of one photograph, not separate photographs.
+
+## 14 October 2026 — weather diagnosis and moving skies (branch `feature/weather-motion`, from `main` at `28a66c5`)
+
+The reported problem: on the iPhone (IPA build 11 = `main` at `28a66c5`, which includes the visual follow-up),
+Today's background showed the wrong weather and had none of Apple Weather's look or motion. Diagnosis and fixes are
+in `docs/WEATHER.md` ("Diagnosis"); in short:
+
+| Cause | Fix | Regression test |
+|---|---|---|
+| The hosted API answered `PROVIDER_RATE_LIMITED` for every place (Open-Meteo limits per calling IP; the cloud IP is shared) | MET Norway answers when Open-Meteo refuses or fails; day/night from its symbol or the sun at the place | `WeatherTests.When_Open_Meteo_refuses_MET_Norway_answers_and_says_so`, `…double_failure…`, `MET_Norway_current_hour_maps…`, `The_sun_says_day_or_night…` |
+| WMO 2 (partly cloudy) painted as overcast | scene chosen by WMO code; a partly cloudy sky of its own | `weather_scene_test: the scene follows the WMO code…`, `today_ui_test: the sky line names real weather…` |
+| A silent fallback that looked like weather | "Scenic view · <reason>" on Today; "What the scene is based on" in the setting | `weather_scene_test: … says why`, `today_ui_test: the sky line …` |
+| Night at the place looked like day in Light mode | header text, scrim and status bar follow the sky | `weather_scene_test: a dark sky follows …`, `today_ui_test: a clear night stays a night …`, `weather_contrast_test` |
+| Automatic kept an answer for where the phone was before | re-ask when the last known position is in another area; 15-minute refresh, 10-minute server cache | `weather_refresh_test: Automatic asks again when the phone has moved …` |
+
+Also: moving skies (drifting clouds, falling rain and snow, sliding fog, twinkling stars) that stop for Reduce Motion,
+a hidden tab, a page on top and the background (`weather_motion_test`); the iOS build stamps commit and run number,
+shown on Me.
+
+Checked on the final code (`70ee36b` for the app and API; later commits are docs, evidence and a capture journey):
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` | 126/126 API tests (8 new weather), analyze clean, 296/296 Flutter tests |
+| Android emulator, recorded provider answers | all eight journeys pass, one after another; journey_test and journey_device_test each needed one retry after the Flutter tool lost its connection (journey_test's app side had already reported "All tests passed!") |
+| Live, emulator against the local API with the real providers | Halifax fog (WMO 45), Quebec City overcast, Sydney partly cloudy at night: screenshots `docs/evidence/screenshots/live-*.png`; recording `docs/evidence/recordings/today-weather-live.mp4` (116 s, three cities, the moving skies) |
+| Hosted API before the fix | `PROVIDER_RATE_LIMITED` for three cities, while Open-Meteo answered directly |
+
+Not checked: the iPhone itself (the user's location permission and mode, the scenes on its screen, motion smoothness
+and battery, ProMotion), and the hosted API with the fix until it is deployed from `main`.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart' show clockProvider;
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../nutrition/food_discovery.dart' show LookupFailure;
@@ -124,9 +125,55 @@ class _Details extends ConsumerWidget {
       ] else
         Text(weather.busy ? 'Checking the weather…' : 'No current weather. Showing the decorative dusk scene.', key: const Key('weather-none'), style: context.caption),
       const SizedBox(height: 10),
-      Text('Weather data by Open-Meteo.com (CC BY 4.0). Conditions are model data.', style: context.caption),
+      const _Basis(),
+      const SizedBox(height: 10),
+      Text('${c?.credit ?? 'Weather data by Open-Meteo.com, or MET Norway when it is busy (CC BY 4.0).'} Conditions are model data.', style: context.caption),
       Text('Scenes are illustrative: not a forecast or a view of your location.', style: context.caption),
     ]);
+  }
+}
+
+/// "What the scene is based on": everything needed to see why Today shows what it shows, on the phone itself.
+/// No coordinates: the area is described, never located.
+class _Basis extends ConsumerWidget {
+  const _Basis();
+
+  static String _ago(Duration d) => d.inMinutes < 1 ? 'just now' : d.inMinutes < 120 ? '${d.inMinutes} min ago' : '${d.inHours} h ago';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(weatherPrefsProvider);
+    if (prefs.background != TodayBackground.weather) return const SizedBox.shrink();
+    final scene = ref.watch(todaySceneProvider);
+    final weather = ref.watch(weatherProvider);
+    final now = ref.watch(clockProvider).utcNow();
+    final e = weather.entry, c = e?.conditions;
+    final rows = <(String, String)>[
+      ('Location', prefs.mode == WeatherLocationMode.city ? (prefs.city?.fullLabel ?? 'No city chosen') : 'Automatic (this phone, about 10 km)'),
+      if (weather.issue != null) ('Last attempt', weather.issue!.name),
+      ('Scene', scene.isWeather ? '${scene.key} (weather)' : scene.fallback != null ? 'scenic view · ${scene.fallback!.words}' : scene.key),
+      if (c != null) ...[
+        ('Condition', '${c.description ?? c.family}${c.code == null ? '' : ' · WMO ${c.code}'}'),
+        ('Source', c.source == 'met.no' ? 'MET Norway' : 'Open-Meteo'),
+        ('Day or night there', switch (c.isDay) { true => 'day', false => 'night', null => 'not given' }),
+        ('Valid', '${TimeOfDay.fromDateTime(c.validAtUtc.toLocal()).format(context)} (${_ago(now.difference(c.validAtUtc))})'),
+        if (c.timezone != null) ('Time zone there', c.timezone!),
+        ('Fetched', _ago(now.difference(e!.fetchedAtUtc))),
+        ('Kept for', e.source == prefs.source ? (prefs.mode == WeatherLocationMode.city ? 'this city' : 'Automatic') : 'another location setting'),
+      ],
+    ];
+    return Semantics(
+      container: true, label: 'What the scene is based on',
+      child: Column(key: const Key('weather-basis'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('What the scene is based on', style: context.label),
+        const SizedBox(height: 4),
+        for (final (k, v) in rows)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text.rich(TextSpan(children: [TextSpan(text: '$k  ', style: context.caption), TextSpan(text: v, style: context.sansStyle(14))])),
+          ),
+      ]),
+    );
   }
 }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/appearance.dart';
 import '../../core/device_prefs.dart';
 import '../../core/theme.dart';
 import '../me/me_screen.dart';
@@ -9,6 +11,7 @@ import '../me/sync_review_screen.dart';
 import '../nutrition/eat_screen.dart';
 import '../today/today_screen.dart';
 import '../plans/train_screen.dart';
+import '../weather/weather.dart' show todaySceneProvider;
 import '../../core/widgets.dart';
 
 enum TrainView { workouts, plan, progress }
@@ -47,7 +50,7 @@ class HomeShell extends ConsumerWidget {
       // over a scene and over anything scrolled under it.
       body: Stack(children: [
         _FadeStack(index: shell.tab, children: const [TodayScreen(), TrainScreen(), EatScreen(), MeScreen()]),
-        const Positioned(top: 0, left: 0, right: 0, child: StatusBarVeil()),
+        Positioned(top: 0, left: 0, right: 0, child: _SkyAwareVeil(onToday: shell.tab == 0)),
       ]),
       bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
         // Attention appears only when saved data cannot converge without a decision. Ordinary pending upload stays quiet.
@@ -79,6 +82,22 @@ class HomeShell extends ConsumerWidget {
 /// The page colour at [GoColors.scrim] strength behind the status bar: solid over the band where the system icons
 /// sit, fading out at the bottom of the inset. The theme's overlay style draws light icons in Dark and dark icons in
 /// Light, and the scrim holds them above 3:1 over any pixel of a scene. Zero height where there is no top inset.
+/// While Today shows a weather sky the status bar follows that sky, like the header under it: the Dark look's veil
+/// and light icons over a night, rain or storm sky, the Light look's over a daylight one, whatever the app's mode.
+/// Everywhere else, and for Scenic and Plain, it follows the app.
+class _SkyAwareVeil extends ConsumerWidget {
+  const _SkyAwareVeil({required this.onToday});
+  final bool onToday;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scene = onToday ? ref.watch(todaySceneProvider) : null;
+    if (scene == null || !scene.isWeather) return const StatusBarVeil();
+    final look = goTheme(ref.watch(appearanceProvider).accent, scene.dark ? Brightness.dark : Brightness.light, highContrast: MediaQuery.highContrastOf(context));
+    return AnnotatedRegion<SystemUiOverlayStyle>(value: look.appBarTheme.systemOverlayStyle!, child: Theme(data: look, child: const StatusBarVeil()));
+  }
+}
+
 class StatusBarVeil extends StatelessWidget {
   const StatusBarVeil({super.key});
 

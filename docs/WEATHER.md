@@ -4,7 +4,57 @@ An optional, device-only presentation setting: Me > Appearance > Today backgroun
 **Weather** or **Plain**. Only the Today header uses weather. Train and Eat headers use the static `ScenicBackdrop`
 (dusk, or the page colour under Plain). Weather never affects the account, sync, readiness or the compatibility gate.
 
-## Provider: Open-Meteo, through the API
+## Diagnosis of "wrong weather" on the iPhone (14 October 2026)
+
+The phone build was `main` at `28a66c5` (IPA build 11). Traced location → hosted API → provider → cache → scene:
+
+1. **The hosted API got no weather.** `GET /api/v1/weather/current` on the hosted server answered
+   `PROVIDER_RATE_LIMITED` for Quebec City, Halifax and Sydney (14:25–14:30 UTC) while Open-Meteo answered the same
+   questions directly from another network. Its free tier limits requests per calling IP, and the cloud host's
+   outbound IP is shared with other tenants. The phone kept an old answer or fell back to the dusk scene.
+   **Fix:** the server now asks MET Norway when Open-Meteo refuses or fails (see Providers).
+2. **Partly cloudy was painted as overcast.** The server's family `cloudy` covers WMO 2 (partly cloudy) and 3
+   (overcast); the phone chose the scene by family. **Fix:** the phone chooses by code: 0 clear, 1–2 partly cloudy
+   (its own sky with broken clouds), 3 overcast. The contract is unchanged.
+3. **The fallback looked like weather.** With no permission yet (Automatic is the default), no fix, offline or an
+   old answer, Today showed the dusk photograph silently. **Fix:** Today says "Scenic view · <reason>" under the
+   greeting, or names the weather; a tap opens the setting, which lists what the scene is based on (location mode,
+   condition and WMO code, source, day or night at the place, valid time and its age, time zone, fetch age, fallback
+   reason). No coordinates are shown.
+4. **A night at the place looked like day in Light mode** (a page-coloured veil). **Fix:** over a weather scene the
+   header's text, scrim and the status bar follow the sky: light over night, rain and storm; dark over daylight.
+5. **Freshness.** Refresh after 15 minutes (was 30) and a 10-minute server cache (was 20), so a scene is at most
+   about 25 minutes behind the provider; Automatic also asks again when the phone's last known position (no prompt,
+   no new reading) is in another 0.1° area than the answer it has.
+
+Verified as correct and unchanged: current conditions (`current=weather_code,is_day`), never a daily forecast;
+the place's local time turned into a UTC instant with the provider's offset; day or night from the provider for the
+place, never the phone's clock; late answers for a previous city or choice dropped.
+
+## Providers
+
+| | Open-Meteo (first) | MET Norway (fallback) |
+|---|---|---|
+| Request | `/v1/forecast?current=weather_code,is_day,temperature_2m&timezone=auto` | `/weatherapi/locationforecast/2.0/compact` |
+| Terms | free tier non-commercial, per-IP limits, no uptime guarantee; CC BY 4.0 | free incl. commercial; identifying User-Agent with a contact; CC BY 4.0 / NLOD |
+| Current | the current 15-minute conditions | the hourly entry in progress and its next-hour symbol |
+| Day/night | `is_day` | the symbol's `_day`/`_night` suffix, else the sun's elevation at the place (`Sun.IsDay`, NOAA formula, −0.833°) |
+| Codes | WMO | symbols mapped onto the same WMO codes (`MetNorwayProvider.Map`) |
+
+The answer carries `source` and the app credits it ("Weather data by Open-Meteo.com" / "from MET Norway").
+Config: `Weather:MetNorwayBaseUrl` (empty disables the fallback). Each provider has its own budget and its own
+5-minute pause after a 429.
+
+## Motion
+
+Weather scenes move, gently, like a restrained Apple Weather: clouds drift, rain and snow fall, fog bands slide,
+stars twinkle. One repeating controller drives a painter in its own repaint boundary (`SkyMotion` in
+`backdrop.dart`, `SkyMotionPainter` in `sky_painter.dart`); the photograph and Today's widgets never rebuild for
+it. It stops for Reduce Motion (the phone's or Me › Motion & haptics), when Today is not the visible tab, when a page
+is pushed over Today and when the app is not in the foreground; a cloudless daylight sky has nothing to move.
+Scenic and Plain stay still. No lightning, no flashing. `test/weather_motion_test.dart` checks each of these.
+
+## Open-Meteo, through the API (details)
 
 Checked 2026-10-13/14 (open-meteo.com/en/docs, /en/docs/geocoding-api, /en/pricing, /en/terms):
 
