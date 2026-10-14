@@ -9,31 +9,12 @@ import '../../data/models.dart';
 import '../shell/home_shell.dart';
 import '../today/daily.dart';
 import '../workout/workout_flow.dart';
+import 'builder/plan_builder_screen.dart';
 import 'plan_actions.dart';
+import 'plan_progress.dart';
 import 'plan_repository.dart';
+import 'plan_rules.dart';
 import 'schedule_rules.dart';
-
-const _directions = {'strength': 'Get stronger', 'muscle': 'Build muscle', 'fat_loss': 'Lose fat', 'general': 'General fitness'};
-const _equipment = {'full_gym': 'Full gym', 'dumbbells': 'Dumbbells only', 'bodyweight': 'Bodyweight only'};
-const _experience = {'new': 'New to training', 'comfortable': 'Comfortable with the basics', 'experienced': 'Experienced'};
-
-const _feedback = {
-  'UNSUPPORTED_DIRECTION': 'The reviewed plan available right now is for getting stronger.',
-  'UNSUPPORTED_EQUIPMENT': 'The reviewed plan needs full-gym equipment.',
-  'UNSUPPORTED_SESSIONS_PER_WEEK': 'The reviewed plan is built for 3 workouts a week.',
-  'UNSUPPORTED_SESSION_LENGTH': 'The reviewed plan is built for sessions of about 45 minutes.',
-  'UNSUPPORTED_EXPERIENCE': 'The reviewed plan assumes you are comfortable with basic barbell movements.',
-  'UNREVIEWED_LIMITATION': 'A limitation was entered. No reviewed plan accounts for it, so none is offered as if it did.',
-  'UNSUPPORTED_BLOCK_LENGTH': 'The reviewed plan runs for 4, 8 or 12 weeks.',
-};
-
-Json defaultSetup(String today) => {
-      'direction': 'strength', 'sessionsPerWeek': 3, 'minutesPerSession': 45, 'equipment': 'full_gym', 'experience': 'comfortable',
-      'limitations': null, 'blockWeeks': 8, 'weekdays': [1, 3, 5], 'startDate': today,
-    };
-
-String setupSummary(Json s) =>
-    '${_directions[s['direction']] ?? s['direction']} · ${s['sessionsPerWeek']} a week · about ${s['minutesPerSession']} min · ${_equipment[s['equipment']] ?? s['equipment']}';
 
 class _WeekdayChecks extends StatelessWidget {
   const _WeekdayChecks({required this.selected, required this.onChanged});
@@ -51,229 +32,6 @@ class _WeekdayChecks extends StatelessWidget {
             ),
           ),
       ]);
-}
-
-/// Setup asks only what affects plan fit. Answers are saved as they change and are never asked for again.
-class PlanSetupScreen extends ConsumerStatefulWidget {
-  const PlanSetupScreen({super.key});
-  @override
-  ConsumerState<PlanSetupScreen> createState() => _PlanSetupScreenState();
-}
-
-class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
-  Json? _s;
-  final _limitations = TextEditingController();
-  bool _busy = false;
-  String? _error;
-  List<String> _fit = const [];
-
-  @override
-  void initState() {
-    super.initState();
-    ref.read(planRepositoryProvider).savedSetup().then((saved) {
-      if (!mounted) return;
-      final today = ref.read(todayKeyProvider);
-      final s = {...defaultSetup(today), ...?(saved?['setup'] as Json?)};
-      if ((s['startDate'] as String).compareTo(today) < 0) s['startDate'] = today;
-      _limitations.text = s['limitations'] as String? ?? '';
-      setState(() => _s = s);
-    });
-  }
-
-  @override
-  void dispose() {
-    _limitations.dispose();
-    super.dispose();
-  }
-
-  void _set(String key, Object? value) {
-    setState(() {
-      _s![key] = value;
-      _fit = const [];
-      _error = null;
-    });
-    ref.read(planRepositoryProvider).saveSetup(_s!);
-  }
-
-  Future<void> _submit({List<Json>? manualWorkouts, String? title}) async {
-    final s = _s!;
-    final check = ScheduleRules.generate(s['startDate'] as String, (s['weekdays'] as List).cast<int>(), s['sessionsPerWeek'] as int, s['blockWeeks'] as int, 1);
-    if (check.errors.isNotEmpty) return setState(() => _error = ScheduleRules.describe(check.errors.first));
-    setState(() {
-      _busy = true;
-      _error = null;
-      _fit = const [];
-    });
-    final answer = await ref.read(planRepositoryProvider).createDraft(s, manualWorkouts: manualWorkouts, title: title);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (answer.unreachable) {
-      setState(() => _error = 'Your account cannot be reached, so the plan could not be prepared. Your answers are saved on this phone; try again when you are online. Manual training works now.');
-    } else if (!answer.accepted) {
-      setState(() => _error = ScheduleRules.describe(answer.code ?? 'UNKNOWN'));
-    } else if (answer.data?['kind'] == 'fit_feedback') {
-      setState(() => _fit = (answer.data!['feedback'] as List).cast<String>());
-      _showFitFeedback();
-    } else {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => PlanReviewScreen(planId: answer.data!['planId'] as String)));
-    }
-  }
-
-  /// The feedback sits at the end of a long form, so the page is scrolled to it: the answer to "Preview my plan"
-  /// must never be off screen.
-  void _showFitFeedback() {
-    void toEnd() {
-      final c = PrimaryScrollController.maybeOf(context);
-      if (mounted && c != null && c.hasClients) c.jumpTo(c.position.maxScrollExtent);
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      toEnd();
-      WidgetsBinding.instance.addPostFrameCallback((_) => toEnd()); // the list's length is only known once its end is built
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = _s;
-    if (s == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    Widget dropdown(String key, String label, List<int> options, String Function(int) text) => DropdownButtonFormField<int>(
-        key: Key('setup-$key'), initialValue: s[key] as int, decoration: InputDecoration(labelText: label), dropdownColor: context.c.surface,
-        items: [for (final o in options) DropdownMenuItem(value: o, child: Text(text(o)))], onChanged: (v) => _set(key, v));
-    return AppPage(
-      title: 'Create my plan',
-      bottom: Column(mainAxisSize: MainAxisSize.min, children: [
-        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-        PrimaryButton('Preview my plan', key: const Key('setup-submit'), busy: _busy, onPressed: _submit),
-      ]),
-      children: [
-        Text('You will see the actual plan before anything starts. Nothing is scheduled until you choose Start.', style: context.caption),
-        const SizedBox(height: 18),
-        const SectionLabel('What matters most'),
-        const SizedBox(height: 8),
-        for (final e in _directions.entries) ChoiceTile(key: Key('direction-${e.key}'), value: e.key, groupValue: s['direction'] as String, title: e.value, onChanged: (v) => _set('direction', v)),
-        const SizedBox(height: 14),
-        Row(children: [
-          Expanded(child: dropdown('sessionsPerWeek', 'Workouts a week', const [2, 3, 4, 5, 6], (v) => '$v')),
-          const SizedBox(width: 10),
-          Expanded(child: dropdown('minutesPerSession', 'Time available', const [30, 45, 60, 75, 90], (v) => '$v min')),
-        ]),
-        const SizedBox(height: 18),
-        const SectionLabel('Equipment'),
-        const SizedBox(height: 8),
-        for (final e in _equipment.entries) ChoiceTile(key: Key('equipment-${e.key}'), value: e.key, groupValue: s['equipment'] as String, title: e.value, onChanged: (v) => _set('equipment', v)),
-        const SizedBox(height: 10),
-        const SectionLabel('Experience'),
-        const SizedBox(height: 8),
-        for (final e in _experience.entries) ChoiceTile(value: e.key, groupValue: s['experience'] as String, title: e.value, onChanged: (v) => _set('experience', v)),
-        const SizedBox(height: 10),
-        TextField(key: const Key('setup-limitations'), controller: _limitations, maxLines: 2, textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(labelText: 'Anything to work around? (optional)', helperText: 'An injury or movement to avoid. Leave blank if none.'),
-            onChanged: (v) => _set('limitations', v.trim().isEmpty ? null : v.trim())),
-        const SizedBox(height: 18),
-        const SectionLabel('Schedule'),
-        const SizedBox(height: 8),
-        dropdown('blockWeeks', 'Block length', const [4, 8, 12], (v) => '$v weeks'),
-        const SizedBox(height: 8),
-        Text('Training days (choose ${s['sessionsPerWeek']}, with a recovery day between them)', style: context.caption),
-        _WeekdayChecks(selected: (s['weekdays'] as List).cast<int>(), onChanged: (v) => _set('weekdays', v)),
-        const SizedBox(height: 6),
-        GroupCard(children: [
-          GroupRow(
-            key: const Key('setup-start'), icon: Icons.event, title: 'Start date', subtitle: longDate(s['startDate'] as String),
-            onTap: () async {
-              final d = await pickDay(context, initial: s['startDate'] as String, first: ref.read(todayKeyProvider), help: 'Start date');
-              if (d != null) _set('startDate', d);
-            },
-          ),
-        ]),
-        if (_fit.isNotEmpty) ...[
-          const SizedBox(height: 18),
-          Panel(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Heading('No reviewed plan fits these answers', size: 20),
-              const SizedBox(height: 8),
-              for (final code in _fit) Padding(padding: const EdgeInsets.only(bottom: 6), child: StatusLine(Icons.info_outline, _feedback[code] ?? code)),
-              const SizedBox(height: 6),
-              Text('Nothing was created. Adjust your answers above, build your own plan, or train manually. You will not be given an unsuitable plan presented as personalised.', style: context.caption),
-              const SizedBox(height: 12),
-              SecondaryButton('Build my own plan', key: const Key('setup-manual-plan'), onPressed: () async {
-                final built = await push<(String, List<Json>)>(context, ManualPlanBuilder(sessions: s['sessionsPerWeek'] as int));
-                if (built != null) await _submit(manualWorkouts: built.$2, title: built.$1);
-              }),
-              const SizedBox(height: 8),
-              SecondaryButton('Train manually now', onPressed: () => startManualWorkout(context, ref)),
-            ]),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Manual authoring: name the plan and choose the movements for each weekly workout.
-class ManualPlanBuilder extends StatefulWidget {
-  const ManualPlanBuilder({super.key, required this.sessions});
-  final int sessions;
-  @override
-  State<ManualPlanBuilder> createState() => _ManualPlanBuilderState();
-}
-
-class _ManualPlanBuilderState extends State<ManualPlanBuilder> {
-  final _title = TextEditingController(text: 'My plan');
-  late final _workouts = [for (var i = 0; i < widget.sessions; i++) <CatalogExercise>[]];
-  String? _error;
-
-  @override
-  void dispose() {
-    _title.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AppPage(
-        title: 'Build my own plan',
-        bottom: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-          PrimaryButton('Preview this plan', key: const Key('manual-plan-submit'), onPressed: () {
-            if (_workouts.any((w) => w.isEmpty)) return setState(() => _error = 'Add at least one movement to every workout.');
-            Navigator.pop(context, (
-              _title.text.trim().isEmpty ? 'My plan' : _title.text.trim(),
-              [
-                for (final (i, w) in _workouts.indexed)
-                  {
-                    'title': 'Workout ${String.fromCharCode(65 + i)}',
-                    'exercises': [
-                      for (final (j, e) in w.indexed)
-                        {'occurrenceKey': 'w${i + 1}e${j + 1}', 'catalogKey': e.key, 'name': e.name, 'isTimed': e.isTimed, 'targetSets': 3,
-                          'targetRepsMin': null, 'targetRepsMax': null, 'targetDurationSeconds': null, 'restSeconds': 90},
-                    ],
-                  },
-              ],
-            ));
-          }),
-        ]),
-        children: [
-          Text('Each weekly workout repeats through the block with a target of 3 sets per movement. Rep targets are left open.', style: context.caption),
-          const SizedBox(height: 12),
-          TextField(controller: _title, decoration: const InputDecoration(labelText: 'Plan name')),
-          for (final (i, w) in _workouts.indexed) ...[
-            const SizedBox(height: 18),
-            SectionLabel('Workout ${String.fromCharCode(65 + i)}'),
-            for (final (j, e) in w.indexed) ListRow(title: e.name, trailing: IconButton(tooltip: 'Remove ${e.name}', icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() => w.removeAt(j)))),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                key: Key('manual-plan-add-$i'), icon: const Icon(Icons.add, size: 18), label: const Text('Add a movement'),
-                onPressed: () async {
-                  final e = await push<CatalogExercise>(context, const ExercisePicker());
-                  if (e != null) setState(() => w.add(e));
-                },
-              ),
-            ),
-          ],
-        ],
-      );
 }
 
 /// The proposed plan itself: commitment, dates and real workout content. Start is the only commitment, and it
@@ -369,35 +127,58 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
     if (plan == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final primary = ref.watch(primaryPlanProvider);
     final current = primary?.id == plan.id ? null : primary;
-    final firstWeek = plan.occasions.where((o) => o.weekNumber == 1).toList();
-    final setup = plan.setup;
+    final today = ref.watch(todayKeyProvider);
+    final workouts = ref.watch(workoutListProvider);
+    final rotating = plan.isRotating;
+    // Fixed plans: their real dated first week. A rotation: its next sessions as the shared projection lays them out.
+    final rows = rotating ? planOccasions(plan, today, workouts).take(6).toList() : plan.occasions.where((o) => o.weekNumber == 1).toList();
+    final usable = !plan.isBuilt || PlanRules.usable(plan.j);
+    final minutes = plannedMinutes(plan);
+    final schedule = plan.schedule;
+    final names = {for (final w in plan.workouts) w.id: w.name};
     return AppPage(
       title: plan.title,
       bottom: !plan.isDraft
           ? null
           : Column(mainAxisSize: MainAxisSize.min, children: [
               if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-              PrimaryButton(current == null ? 'Start this plan' : widget.closePrimary ? 'Finish current block and start' : 'Replace my current plan', key: const Key('plan-start'), busy: _busy, onPressed: () => _start(plan, current)),
+              if (!usable) const Padding(padding: EdgeInsets.only(bottom: 10), child: StatusLine(Icons.info_outline, 'Draft — add exercises to use it. Every scheduled workout needs at least one exercise before the plan can start.')),
+              PrimaryButton(current == null ? 'Start this plan' : widget.closePrimary ? 'Finish current block and start' : 'Replace my current plan', key: const Key('plan-start'), busy: _busy,
+                  onPressed: usable ? () => _start(plan, current) : null),
               TextButton(key: const Key('plan-save-later'), onPressed: () => Navigator.pop(context), child: const Text('Save for later')),
             ]),
       children: [
         SectionLabel(plan.isDraft ? 'Draft · nothing is scheduled yet' : plan.lifecycle),
         const SizedBox(height: 10),
-        if (setup != null) Text(setupSummary(setup), style: context.body),
+        Text(plan.isBuilt ? '${splitOf(ref, plan)} · ${scheduleMode(plan)}' : planSplit(plan, (_) => null), style: context.body),
+        if (plan.isBuilt && minutes != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text('Planned time $minutes min', style: context.caption)),
         const SizedBox(height: 6),
-        Text('${plan.blockWeeks} weeks · ${plan.occasions.length} workouts · ${longDate(plan.startDate)} to ${plan.endDate == null ? '—' : longDate(plan.endDate!)}', style: context.caption),
+        Text(
+            rotating
+                ? '${plan.isOngoing ? 'Ongoing' : '${plan.blockWeeks} weeks'} · starts ${longDate(plan.startDate)}${plan.endDate == null ? '' : ' · ends ${longDate(plan.endDate!)}'}'
+                : '${plan.blockWeeks} weeks · ${plan.occasions.length} workouts · ${longDate(plan.startDate)} to ${plan.endDate == null ? '—' : longDate(plan.endDate!)}',
+            style: context.caption),
+        if (rotating && schedule != null) ...[
+          const SizedBox(height: 6),
+          Text('Cycle: ${schedule.cycle.map((id) => names[id] ?? 'Workout').join(' → ')}', style: context.caption),
+          Text(schedule.trainingDays.isEmpty ? 'Any day: the next workout is there whenever you train.' : 'Training days: ${(schedule.trainingDays.toList()..sort()).map(weekdayShort).join(', ')}', style: context.caption),
+        ],
         const SizedBox(height: 6),
-        Text('First workout: ${firstWeek.isEmpty ? '—' : '${firstWeek.first.title}, ${longDate(firstWeek.first.scheduledDate)}'}', style: context.caption),
-        if (plan.isDraft) Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('plan-edit-schedule'), onPressed: _busy ? null : () => _editSchedule(plan), icon: const Icon(Icons.edit_calendar_outlined, size: 18), label: const Text('Change dates, days or length'))),
+        Text('First workout: ${rows.isEmpty ? '—' : '${rows.first.title}, ${longDate(rows.first.scheduledDate)}'}', style: context.caption),
+        if (plan.isDraft && !plan.isBuilt)
+          Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('plan-edit-schedule'), onPressed: _busy ? null : () => _editSchedule(plan), icon: const Icon(Icons.edit_calendar_outlined, size: 18), label: const Text('Change dates, days or length'))),
+        if (plan.isDraft && plan.isBuilt)
+          Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('plan-edit'), onPressed: _busy ? null : () => openPlanEditor(context, ref, plan), icon: const Icon(Icons.edit_outlined, size: 18), label: const Text('Edit plan'))),
         if (current != null) ...[
           const SizedBox(height: 8),
           Panel(child: StatusLine(Icons.swap_horiz, 'You are following "${current.title}". Starting this plan will ${widget.closePrimary ? 'finish' : 'pause'} it. That needs your explicit confirmation; nothing is deleted.')),
         ],
         const SizedBox(height: 20),
-        const SectionLabel('First week'),
-        for (final o in firstWeek) ...[
+        SectionLabel(rotating ? 'Next sessions' : 'First week'),
+        if (rotating) Padding(padding: const EdgeInsets.only(top: 6), child: Text('A rotation has no fixed dates. These are the days the sequence would fall on from today; it waits for you if you miss one.', style: context.caption)),
+        for (final o in rows) ...[
           const SizedBox(height: 14),
-          Text('${weekdayName(weekdayOf(o.scheduledDate))} · ${o.title}', style: context.sansStyle(16, weight: FontWeight.w600)),
+          Text('${rotating ? shortDate(o.scheduledDate) : weekdayName(weekdayOf(o.scheduledDate))} · ${o.title}', style: context.sansStyle(16, weight: FontWeight.w600)),
           for (final (i, e) in o.prescription.indexed)
             Padding(
               padding: const EdgeInsets.only(top: 6),
@@ -406,16 +187,23 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
                 Expanded(
                   child: Wrap(alignment: WrapAlignment.spaceBetween, spacing: 10, children: [
                     Text(e.name, style: context.sansStyle(15)),
-                    Text(targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds), style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w500)),
+                    Text(prescriptionOf(e), style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w500)),
                   ]),
                 ),
               ]),
             ),
+          if (o.prescription.isEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text('No exercises yet.', style: context.caption)),
           const SizedBox(height: 12),
           const Rule(),
         ],
         const SizedBox(height: 12),
-        Text('The same workouts repeat each week with a recovery day between them. Targets are guidance; what you record is what counts.', style: context.caption),
+        Text(
+            !plan.isBuilt
+                ? 'The same workouts repeat each week with a recovery day between them. Targets are guidance; what you record is what counts.'
+                : rotating
+                    ? 'The sequence continues in order across weeks; it never restarts on Monday. It moves on only when you finish or skip a workout. Targets are guidance; what you record is what counts.'
+                    : 'These workouts repeat on the same weekdays each week. Targets are guidance; what you record is what counts.',
+            style: context.caption),
       ],
     );
   }
@@ -556,31 +344,45 @@ class PlanDetailScreen extends ConsumerWidget {
     final today = ref.watch(todayKeyProvider);
     final workouts = ref.watch(workoutListProvider);
     final isPrimary = ref.watch(primaryPlanProvider)?.id == plan.id;
-    final repo = ref.read(planRepositoryProvider);
     return AppPage(title: plan.title, children: [
       SectionLabel(plan.isClosed ? (plan.closureIntent == 'stopped_early' ? 'Stopped early' : 'Finished for now') : plan.lifecycle),
       const SizedBox(height: 8),
-      if (plan.setup != null) Text(setupSummary(plan.setup!), style: context.body),
-      Text('${longDate(plan.startDate)} to ${plan.endDate == null ? '—' : longDate(plan.endDate!)}', style: context.caption),
+      Text(plan.isBuilt ? '${splitOf(ref, plan)} · ${scheduleMode(plan)}' : planSplit(plan, (_) => null), style: context.body),
+      Text('${longDate(plan.startDate)} to ${plan.endDate == null ? (plan.isOngoing ? 'ongoing' : '—') : longDate(plan.endDate!)}', style: context.caption),
       const SizedBox(height: 14),
-      if (plan.isPaused && !isPrimary) PrimaryButton('Resume as my primary plan', onPressed: () => push(context, ResumeReviewScreen(planId: plan.id))),
+      if (plan.isPaused && !isPrimary) PrimaryButton('Resume as my primary plan', key: const Key('plan-resume'), onPressed: () => push(context, ResumeReviewScreen(planId: plan.id))),
       if (plan.isClosed) SecondaryButton('Review this block', onPressed: () => push(context, BlockReviewScreen(planId: plan.id))),
+      if (plan.isBuilt && !plan.isClosed)
+        Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('plan-edit'), icon: const Icon(Icons.edit_outlined, size: 18), label: const Text('Edit plan'), onPressed: () => openPlanEditor(context, ref, plan))),
+      if (plan.isBuilt)
+        Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('plan-duplicate'), icon: const Icon(Icons.copy_outlined, size: 18), label: const Text('Duplicate as a new plan'), onPressed: () => openPlanEditor(context, ref, plan, duplicate: true))),
       if (!isPrimary)
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
+            key: const Key('plan-archive'),
             icon: Icon(plan.isArchived ? Icons.unarchive_outlined : Icons.inventory_2_outlined, size: 18),
             label: Text(plan.isArchived ? 'Move out of the archive' : 'Archive (hide from this list)'),
             onPressed: () async {
-              if (await runPlanDecision(context, () => repo.archive(plan, !plan.isArchived), saved: plan.isArchived ? 'Restored to your plans.' : 'Archived. Its outcome and history are unchanged.') && context.mounted) Navigator.pop(context);
+              if (await runPlanDecision(context, () => ref.read(planRepositoryProvider).archive(plan, !plan.isArchived), saved: plan.isArchived ? 'Restored to your plans.' : 'Archived. Its outcome and history are unchanged.') && context.mounted) Navigator.pop(context);
             },
           ),
         ),
       const SizedBox(height: 10),
-      for (final o in plan.occasions)
-        ListRow(title: o.title, subtitle: '${shortDate(o.scheduledDate)} · week ${o.weekNumber} · ${plan.isClosed && statusOf(o, plan, today, workouts) == OccasionStatus.upcoming ? 'Not done' : statusOf(o, plan, today, workouts).label}'),
+      // A closed rotation has nothing ahead; an open one shows its projected next sessions too.
+      for (final o in plan.isClosed ? plan.occasions : planOccasions(plan, today, workouts, ahead: 3))
+        ListRow(
+            title: o.title,
+            subtitle: '${shortDate(o.scheduledDate)} · ${o.sequenceIndex == null ? 'week ${o.weekNumber}' : 'session ${o.sequenceIndex! + 1}'}'
+                '${o.isVirtual ? ' · projected' : ''} · ${plan.isClosed && statusOf(o, plan, today, workouts) == OccasionStatus.upcoming ? 'Not done' : statusOf(o, plan, today, workouts).label}'),
     ]);
   }
+}
+
+/// The plan's split in words, with the starter's real name once the templates are read.
+String splitOf(WidgetRef ref, Plan plan) {
+  final t = ref.watch(planTemplatesProvider).value;
+  return planSplit(plan, (id) => t?.templates.where((x) => x.id == id).firstOrNull?.name ?? 'Starter split');
 }
 
 class ArchivedPlansScreen extends ConsumerWidget {

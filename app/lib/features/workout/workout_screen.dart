@@ -365,10 +365,16 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                 if (selected.substitutedForKey != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text('Recorded as ${selected.name}, in place of the planned movement.', style: context.caption)),
                 const SizedBox(height: 8),
                 Text('Target · ${selected.target}', style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400)),
+                // The plan's weight target is the user's own aim. It is never put in the fields or counted as a set.
+                if (selected.targetLoadKg != null)
+                  Text('Target ${formatLoad(selected.targetLoadKg, unit)}', key: const Key('workout-target-load'), style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400)),
                 Text(
-                  previous == null ? 'No previous record for this movement.' : 'Last time (${shortDate(previous.dayKey)}) · ${previous.sets.map((s) => setText(s, unit)).join(', ')}',
+                  previous == null ? 'No previous record for this movement.' : 'Last time ${previous.sets.map((s) => setText(s, unit)).join(', ')} (${shortDate(previous.dayKey)})',
+                  key: const Key('workout-last-time'),
                   style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400),
                 ),
+                if ((selected.notes ?? '').trim().isNotEmpty)
+                  Padding(padding: const EdgeInsets.only(top: 6), child: StatusLine(Icons.sticky_note_2_outlined, selected.notes!.trim())),
                 const SizedBox(height: 16),
                 if (rest != null)
                   Padding(

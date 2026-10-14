@@ -14,8 +14,11 @@ import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import '../workout/workout_screen.dart';
+import 'builder/plan_builder_screen.dart';
 import 'plan_actions.dart';
 import 'plan_progress.dart';
+import 'plan_projection.dart';
+import 'plan_rules.dart';
 import 'plan_screens.dart';
 import 'week_widgets.dart';
 
@@ -130,15 +133,18 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final ctxRow = ref.watch(contextRowProvider).value;
     final others = plans.where((p) => p.id != primary?.id).toList();
     final proposals = [for (final r in ref.watch(proposalsProvider).value ?? const <Stored<Proposal>>[]) if (r.value.planId == primary?.id && (r.value.state == 'open' || r.value.state == 'needs_review')) r.value];
+    final hasDraft = others.any((p) => p.isDraft && !p.isArchived);
 
     return _section([
       if (ctxRow?.needsReview ?? false)
         const Padding(padding: EdgeInsets.only(bottom: 14), child: StatusLine(Icons.rule, 'A plan change saved on this phone differs from your account. Review it from the notice at the bottom of the screen.', tone: Tone.warning)),
       if (primary == null)
         EmptyState(
-          others.any((p) => p.isDraft && !p.isArchived) ? 'Your plan is ready to review' : 'No plan yet',
-          others.any((p) => p.isDraft && !p.isArchived) ? 'A saved draft does not schedule anything until you start it.' : 'Answer a few questions and review a plan before you commit to it. Manual training is always available.',
-          action: PrimaryButton('Create my plan', key: const Key('create-plan'), onPressed: () => push(context, const PlanSetupScreen())),
+          hasDraft ? 'Your plan is ready to review' : 'No plan yet',
+          hasDraft
+              ? 'A saved draft does not schedule anything until you start it.'
+              : 'Start from a familiar split or build your own, and review it before anything is scheduled. Manual training is always available.',
+          action: PrimaryButton('Create my plan', key: const Key('create-plan'), onPressed: () => push(context, const CreatePlanScreen())),
         )
       else
         ..._primary(context, primary, today, workouts, proposals),
@@ -149,11 +155,14 @@ class _PlanViewState extends ConsumerState<_PlanView> {
         GroupCard(children: [
           for (final p in others.where((p) => !p.isArchived))
             GroupRow(
+              key: Key('saved-plan-${p.id}'),
               title: p.title,
               subtitle: switch (p.lifecycle) {
+                'draft' when p.isBuilt => 'Draft · ${scheduleMode(p)} · ${PlanRules.usable(p.j) ? 'not started · would start ${shortDate(p.startDate)}' : 'add exercises to use it'}',
                 'draft' => 'Draft · not started · would start ${shortDate(p.startDate)}',
                 'paused' => 'Paused · not your primary plan',
                 'closed' => p.closureIntent == 'stopped_early' ? 'Stopped early' : 'Finished for now',
+                'active' => 'Active · not your primary plan',
                 _ => p.lifecycle,
               },
               onTap: () => push(context, p.isDraft ? PlanReviewScreen(planId: p.id) : PlanDetailScreen(planId: p.id)),
@@ -166,19 +175,28 @@ class _PlanViewState extends ConsumerState<_PlanView> {
   }
 
   List<Widget> _primary(BuildContext context, Plan plan, String today, List<Workout> workouts, List<Proposal> proposals) {
-    final weeks = planWeeks(plan, today, workouts);
-    final block = Completion.of(plan.occasions, workouts);
-    final week = weeks.where((w) => w.number == _picked).firstOrNull ?? focusWeek(weeks);
+    // The one projection Today and the occurrence sheet read too.
+    final occasions = planOccasions(plan, today, workouts);
+    final rotation = rotationOf(plan, occasions, workouts);
     final position = planWeek(plan, today);
-    final note = [if (position == 0) 'Not started', if (plan.isPaused) 'Paused', if (plan.endDate != null) 'Ends ${shortDate(plan.endDate!)}'].join(' · ');
+    final minutes = plan.isBuilt ? plannedMinutes(plan) : null;
+    final note = [
+      if (position == 0) 'Not started',
+      if (plan.isPaused) 'Paused',
+      if (plan.endDate != null) 'Ends ${shortDate(plan.endDate!)}' else if (plan.isOngoing) 'Ongoing, no end date',
+    ].join(' · ');
     return [
       _TrainPass(
         title: plan.title,
         // Calendar position and completion are two different facts, shown separately.
-        week: position == 0 ? 'Starts ${dayMonth(plan.startDate)}' : 'Week $position of ${plan.blockWeeks}',
-        completion: block, photo: plan.isActive && position > 0,
+        week: position == 0 ? 'Starts ${dayMonth(plan.startDate)}' : plan.isOngoing ? 'Week $position' : 'Week $position of ${plan.blockWeeks}',
+        completion: rotation == null ? Completion.of(plan.occasions, workouts) : null,
+        rotation: rotation, thisWeek: rotation == null ? 0 : creditedThisWeek(occasions, workouts, today),
+        photo: plan.isActive && position > 0,
       ),
-      if (note.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(note, style: context.caption)),
+      Padding(padding: const EdgeInsets.only(top: 8), child: Text('${splitOf(ref, plan)} · ${scheduleMode(plan)}', key: const Key('plan-split'), style: context.body)),
+      if (minutes != null) Text('Planned time $minutes min', key: const Key('plan-time'), style: context.caption),
+      if (note.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note, style: context.caption)),
       if (plan.isPaused) ...[
         const SizedBox(height: 14),
         const StatusLine(Icons.pause_circle_outline, 'Plan paused. No new workouts are expected, and nothing counts as missed while it is paused.'),
@@ -192,49 +210,146 @@ class _PlanViewState extends ConsumerState<_PlanView> {
             GroupRow(icon: Icons.tips_and_updates_outlined, tone: Tone.warning, title: 'Suggested change to review', subtitle: p.explanation, onTap: () => push(context, ProposalReviewScreen(proposalId: p.id))),
         ]),
       ],
-      if (week != null) ...[
-        _between,
-        const SectionHeader('Choose a week'),
-        _gap,
-        WeekGrid(weeks: weeks, selected: week.number, stateOf: (w) => weekStateOf(w, plan, today, workouts), onSelect: (n) => setState(() => _picked = n)),
-        _between,
-        SectionHeader(week.isCurrent ? 'This week' : 'Week ${week.number}', detail: week.range,
-            trailing: week.completion.eligible == 0 ? null : Text('${week.completion.completed} of ${week.completion.eligible} completed', style: context.numStyle(14.5))),
-        if (week.completion.eligible > 0) ...[
-          _gap,
-          Row(children: [
-            Expanded(child: ProgressRail(week.completion.fraction, label: 'Workouts completed in this week')),
-            const SizedBox(width: 12),
-            ExcludeSemantics(child: Text('${(week.completion.fraction * 100).round()}%', style: context.numStyle(14.5, color: context.c.secondary))),
-          ]),
-        ],
-        const SizedBox(height: 16),
-        WeekDayStrip(week: week, plan: plan, today: today, workouts: workouts),
-        const SizedBox(height: 10),
-        const Rule(),
-        if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Text('No workouts are planned in this week.', style: context.caption)),
-        for (final o in week.occasions) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts)),
-      ],
+      if (rotation != null) ..._rotation(context, plan, today, workouts, occasions, rotation) else ..._weeks(context, plan, today, workouts),
       _between,
       const SectionHeader('Manage this plan'),
       _gap,
       GroupCard(children: [
-        if (plan.isActive) GroupRow(icon: Icons.pause, tone: Tone.neutral, title: 'Pause plan', onTap: () => pausePlanFlow(context, ref, plan)),
-        GroupRow(icon: Icons.swap_horiz, tone: Tone.neutral, title: 'Replace a movement in remaining workouts', onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
+        if (plan.isBuilt)
+          GroupRow(key: const Key('plan-edit'), icon: Icons.edit_outlined, tone: Tone.neutral, title: 'Edit plan',
+              subtitle: 'Workouts, exercises and schedule from a date you choose. Recorded workouts never change.', onTap: () => openPlanEditor(context, ref, plan)),
+        if (plan.isActive) GroupRow(key: const Key('plan-pause'), icon: Icons.pause, tone: Tone.neutral, title: 'Pause plan', onTap: () => pausePlanFlow(context, ref, plan)),
+        if (plan.isBuilt)
+          GroupRow(key: const Key('plan-duplicate'), icon: Icons.copy_outlined, tone: Tone.neutral, title: 'Duplicate plan',
+              subtitle: 'A new draft with the same workouts and schedule. This plan stays as it is.', onTap: () => openPlanEditor(context, ref, plan, duplicate: true)),
+        // A built plan's movements are changed by editing it.
+        if (!plan.isBuilt)
+          GroupRow(icon: Icons.swap_horiz, tone: Tone.neutral, title: 'Replace a movement in remaining workouts', onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
         GroupRow(icon: Icons.flag_outlined, tone: Tone.neutral, title: 'Review or finish this block', onTap: () => push(context, BlockReviewScreen(planId: plan.id))),
-        GroupRow(icon: Icons.add, tone: Tone.neutral, title: 'Create a different plan', subtitle: 'Starting it will ask before replacing this one.', onTap: () => push(context, const PlanSetupScreen())),
+        GroupRow(icon: Icons.add, tone: Tone.neutral, title: 'Create a different plan', subtitle: 'Starting it will ask before replacing this one.', onTap: () => push(context, const CreatePlanScreen())),
       ]),
+      _gap,
+      Text('Your primary plan is paused, finished or replaced before it can be archived. Saved and past plans can be archived from their page.', style: context.caption),
+    ];
+  }
+
+  /// Fixed weekdays and older plans: the week grid, the chosen week's days and its dated workouts.
+  List<Widget> _weeks(BuildContext context, Plan plan, String today, List<Workout> workouts) {
+    final weeks = planWeeks(plan, today, workouts);
+    final week = weeks.where((w) => w.number == _picked).firstOrNull ?? focusWeek(weeks);
+    if (week == null) return const [];
+    return [
+      _between,
+      const SectionHeader('Choose a week'),
+      _gap,
+      WeekGrid(weeks: weeks, selected: week.number, stateOf: (w) => weekStateOf(w, plan, today, workouts), onSelect: (n) => setState(() => _picked = n)),
+      _between,
+      SectionHeader(week.isCurrent ? 'This week' : 'Week ${week.number}', detail: week.range,
+          trailing: week.completion.eligible == 0 ? null : Text('${week.completion.completed} of ${week.completion.eligible} completed', style: context.numStyle(14.5))),
+      if (week.completion.eligible > 0) ...[
+        _gap,
+        Row(children: [
+          Expanded(child: ProgressRail(week.completion.fraction, label: 'Workouts completed in this week')),
+          const SizedBox(width: 12),
+          ExcludeSemantics(child: Text('${(week.completion.fraction * 100).round()}%', style: context.numStyle(14.5, color: context.c.secondary))),
+        ]),
+      ],
+      const SizedBox(height: 16),
+      WeekDayStrip(week: week, plan: plan, today: today, workouts: workouts),
+      const SizedBox(height: 10),
+      const Rule(),
+      if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Text('No workouts are planned in this week.', style: context.caption)),
+      for (final o in week.occasions) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts)),
+    ];
+  }
+
+  /// A rotating sequence: the cycle and where you are in it, the next workout and the projected days ahead, and
+  /// what was recently done or skipped.
+  List<Widget> _rotation(BuildContext context, Plan plan, String today, List<Workout> workouts, List<Occasion> occasions, Rotation rotation) {
+    final days = plan.schedule!.trainingDays.toList()..sort();
+    bool resolved(Occasion o) => o.isSkipped || occasionOutcome(o, workouts) != null;
+    final ahead = [for (final o in occasions) if (!resolved(o)) o];
+    final recent = [for (final o in occasions) if (resolved(o)) o].reversed.take(5).toList();
+    final end = addDays(today, 6);
+    final days7 = PlanWeek(number: 0, start: today, end: end, occasions: [for (final o in ahead) if (o.scheduledDate.compareTo(end) <= 0) o],
+        completion: const Completion(0, 0), isCurrent: true, isPast: false);
+    String? noteOf(Occasion o) => o.id == rotation.next?.id ? 'Next in the cycle' : o.isVirtual ? 'Projected' : null;
+    return [
+      _between,
+      SectionHeader('Your cycle', detail: 'Cycle ${rotation.cyclesDone + 1}'),
+      _gap,
+      _CycleStrip(cycle: rotation.cycle, position: rotation.next == null ? null : rotation.position),
+      _gap,
+      Text(
+          'A rotation has no fixed dates. The next workout waits for you until you finish or skip it, and the cycle carries on across weeks. '
+          '${days.isEmpty ? 'Upcoming days assume you train every day.' : 'Upcoming days follow your training days (${days.map(weekdayShort).join(', ')}); the others are rest days.'}',
+          style: context.caption),
+      _between,
+      SectionHeader('Coming up', detail: dateRange(today, end)),
+      _gap,
+      WeekDayStrip(week: days7, plan: plan, today: today, workouts: workouts),
+      const SizedBox(height: 10),
+      const Rule(),
+      if (ahead.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Text('Nothing is left in this plan.', style: context.caption)),
+      for (final o in ahead) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}', note: noteOf(o)),
+      if (recent.isNotEmpty) ...[
+        _between,
+        const SectionHeader('Recent sessions'),
+        _gap,
+        const Rule(),
+        for (final o in recent) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}'),
+      ],
     ];
   }
 }
 
-/// The training pass: the plan's real name, where the calendar is, and workouts with a recorded result out of
-/// the ones still expected. A small category photograph sits at the trailing edge while there is room for it.
-/// (Built here rather than with the shared PassCard, which has no place for the photograph.)
+/// The cycle in order (Push → Pull → Legs), the next workout's step marked by a border, a tint and the word "Next".
+class _CycleStrip extends StatelessWidget {
+  const _CycleStrip({required this.cycle, required this.position});
+  final List<WorkoutDefinition> cycle;
+  final int? position;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Wrap(spacing: 6, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+      for (final (i, w) in cycle.indexed) ...[
+        if (i > 0) ExcludeSemantics(child: Icon(Icons.arrow_forward, size: 16, color: c.secondary)),
+        Semantics(
+          label: 'Step ${i + 1} of ${cycle.length}, ${w.name}${i == position ? ', next' : ''}',
+          child: ExcludeSemantics(
+            child: Container(
+              key: Key('cycle-step-$i'),
+              constraints: const BoxConstraints(minHeight: 44),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: i == position ? c.accentSoft : c.surface,
+                borderRadius: BorderRadius.circular(Radii.field),
+                border: Border.all(color: i == position ? c.accent : c.divider, width: i == position ? 2 : 1),
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(w.name, style: context.sansStyle(15, weight: FontWeight.w600)),
+                if (i == position) Text('Next', style: context.numStyle(12.5, color: c.accent)),
+              ]),
+            ),
+          ),
+        ),
+      ],
+    ]);
+  }
+}
+
+/// The training pass: the plan's real name and where the calendar is. A finite fixed plan adds workouts with a
+/// recorded result out of the ones still expected; a rotation has no meaningful total, so it shows this week's
+/// completed sessions and the position in the cycle instead, and no percentage. A small category photograph sits at
+/// the trailing edge while there is room for it. (Built here rather than with the shared PassCard, which has no
+/// place for the photograph.)
 class _TrainPass extends StatelessWidget {
-  const _TrainPass({required this.title, required this.week, required this.completion, required this.photo});
+  const _TrainPass({required this.title, required this.week, required this.completion, required this.photo, this.rotation, this.thisWeek = 0});
   final String title, week;
-  final Completion completion;
+  final Completion? completion;
+  final Rotation? rotation;
+  final int thisWeek;
   final bool photo;
 
   @override
@@ -242,13 +357,22 @@ class _TrainPass extends StatelessWidget {
     final c = context.c;
     final media = MediaQuery.of(context);
     final showPhoto = photo && media.size.width >= 360 && media.textScaler.scale(10) <= 13;
-    final measured = completion.eligible > 0;
-    final percent = '${(completion.fraction * 100).round()}%';
+    final done = completion ?? const Completion(0, 0);
+    final measured = done.eligible > 0;
+    final percent = '${(done.fraction * 100).round()}%';
+    final r = rotation;
+    final cycleLine = r == null
+        ? null
+        : r.next == null
+            ? 'Cycle ${r.cyclesDone + 1} · nothing left'
+            : 'Cycle ${r.cyclesDone + 1} · step ${r.position + 1} of ${r.cycle.length} · ${r.next!.title} next';
     // About a third of the card, inset with its own rounded corners, decoded at the size it is drawn.
     final photoWidth = ((media.size.width - 2 * context.inset) * 0.32).roundToDouble();
     return Semantics(
       container: true,
-      label: '$title. $week. ${completion.completed} / ${completion.eligible} workouts completed${measured ? ', $percent' : ''}.',
+      label: r == null
+          ? '$title. $week. ${done.completed} / ${done.eligible} workouts completed${measured ? ', $percent' : ''}.'
+          : '$title. $week. $thisWeek ${thisWeek == 1 ? 'session' : 'sessions'} completed this week. $cycleLine.',
       child: ExcludeSemantics(
         child: Material(
           color: c.surface,
@@ -264,17 +388,26 @@ class _TrainPass extends StatelessWidget {
                 Text(title, style: context.pageTitleStyle(30)),
                 Padding(padding: const EdgeInsets.only(top: 2), child: Text(week, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500))),
                 const SizedBox(height: 14),
-                Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
-                  Text.rich(TextSpan(text: '${completion.completed}', children: [TextSpan(text: ' / ${completion.eligible}', style: TextStyle(color: c.secondary))]), style: context.titleStyle(34)),
-                  Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('Workouts completed', style: context.sansStyle(15, color: c.secondary))),
-                ]),
-                if (measured) ...[
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(child: ProgressRail(completion.fraction, label: 'Workouts completed')),
-                    const SizedBox(width: 12),
-                    Text(percent, style: context.numStyle(15)),
+                if (r == null) ...[
+                  Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
+                    Text.rich(TextSpan(text: '${done.completed}', children: [TextSpan(text: ' / ${done.eligible}', style: TextStyle(color: c.secondary))]), style: context.titleStyle(34)),
+                    Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('Workouts completed', style: context.sansStyle(15, color: c.secondary))),
                   ]),
+                  if (measured) ...[
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Expanded(child: ProgressRail(done.fraction, label: 'Workouts completed')),
+                      const SizedBox(width: 12),
+                      Text(percent, style: context.numStyle(15)),
+                    ]),
+                  ],
+                ] else ...[
+                  Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
+                    Text('$thisWeek', style: context.titleStyle(34)),
+                    Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('${thisWeek == 1 ? 'Session' : 'Sessions'} completed this week', style: context.sansStyle(15, color: c.secondary))),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(cycleLine!, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500)),
                 ],
               ]),
             ),
@@ -303,12 +436,14 @@ String _plannedSummary(List<Prescription> prescription) {
   return '${prescription.length} ${prescription.length == 1 ? 'exercise' : 'exercises'}${sets == 0 ? '' : ' · $sets planned ${sets == 1 ? 'set' : 'sets'}'}';
 }
 
-/// One dated workout of the selected week: its day, name, what is planned and its named state.
+/// One workout of the plan: its day, name, what is planned and its named state. Fixed rows are keyed
+/// `occasion-<week>-<ordinal>`; a rotation's rows `rotation-<sequenceIndex>` ([rowKey]).
 class _OccasionRow extends ConsumerWidget {
-  const _OccasionRow({required this.plan, required this.occasion, required this.status});
+  const _OccasionRow({required this.plan, required this.occasion, required this.status, this.rowKey, this.note});
   final Plan plan;
   final Occasion occasion;
   final OccasionStatus status;
+  final String? rowKey, note;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -317,14 +452,15 @@ class _OccasionRow extends ConsumerWidget {
     final day = parseDayKey(o.scheduledDate);
     final summary = _plannedSummary(o.prescription);
     final moved = o.wasMoved ? 'Moved · originally ${shortDate(o.originalDate)}' : null;
+    final extra = [?moved, ?note].join(' · ');
     // With large text the state sits under the title instead of squeezing it.
     final below = MediaQuery.textScalerOf(context).scale(10) > 13;
     final active = status == OccasionStatus.inProgress || status == OccasionStatus.due;
     return Column(children: [
       Pressable(
-        key: Key('occasion-${o.weekNumber}-${o.ordinal}'),
+        key: Key(rowKey ?? 'occasion-${o.weekNumber}-${o.ordinal}'),
         borderRadius: BorderRadius.circular(Radii.field),
-        semanticLabel: '${o.title}, ${longDate(o.scheduledDate)}, $summary${moved == null ? '' : ', $moved'}, ${status.label}',
+        semanticLabel: '${o.title}, ${longDate(o.scheduledDate)}, $summary${extra.isEmpty ? '' : ', $extra'}, ${status.label}',
         onTap: () => showOccasionSheet(context, ref, plan, o),
         child: LayoutBuilder(
           builder: (context, box) => Padding(
@@ -347,7 +483,7 @@ class _OccasionRow extends ConsumerWidget {
                     if (!below) pill,
                   ]),
                   Padding(padding: const EdgeInsets.only(top: 2), child: Text(summary, style: context.numStyle(13.5, color: c.secondary, weight: FontWeight.w400))),
-                  if (moved != null) Text(moved, style: context.caption),
+                  if (extra.isNotEmpty) Text(extra, style: context.caption),
                   if (below) Padding(padding: const EdgeInsets.only(top: 6), child: Align(alignment: AlignmentDirectional.centerStart, child: pill)),
                 ]),
               ),
