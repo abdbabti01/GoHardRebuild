@@ -46,7 +46,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// A meal's calories from its own entries: a sum of what is known, labelled when some are unknown.
   static String _mealCalories(List<FoodEntry> entries) {
     final t = NutrientCoverage.calculate(entries)[Nutrient.calories]!;
-    return !t.hasAnyKnown ? 'Calories unknown' : '${formatNumber(t.knownTotal)} kcal${t.isComplete ? '' : ' known'}';
+    return !t.hasAnyKnown ? 'Calories unknown' : '${formatKcal(t.knownTotal)} kcal${t.isComplete ? '' : ' known'}';
   }
 
   @override
@@ -64,6 +64,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final indent = roomy ? 16.0 + _tile + 14 : 12.0;
 
     return RefreshIndicator(
+      edgeOffset: MediaQuery.paddingOf(context).top,
       onRefresh: () => refreshFromAccount(ref),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 28),
@@ -72,7 +73,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
           Stack(children: [
             const Positioned.fill(child: ScenicBackdrop()),
             Padding(
-              padding: EdgeInsets.fromLTRB(context.inset, 56, context.inset, 18),
+              padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topOnBackdrop(context), context.inset, 18),
               child: TabHeader(
                 title: 'Eat', overline: longDate(day), onBackdrop: true,
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -159,7 +160,7 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = r.value;
     final name = Text(e.name, style: context.sansStyle(15.5, weight: FontWeight.w500));
-    final kcal = Text('${e.calories == null ? '—' : formatNumber(e.calories!)} kcal', style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
+    final kcal = Text('${e.calories == null ? '—' : formatKcal(e.calories!)} kcal', style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
     return Semantics(
       button: true,
       child: InkWell(

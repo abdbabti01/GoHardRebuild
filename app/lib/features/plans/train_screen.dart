@@ -28,13 +28,14 @@ class TrainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(shellProvider.select((s) => s.trainView));
+    final top = TabHeader.topOnBackdrop(context);
     return ListView(
-      padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
+      padding: EdgeInsets.fromLTRB(context.inset, top, context.inset, 28),
       children: [
         // A bounded scenic header: the scene sits behind the date, title and section control only, scrolls away with
         // them, and fades into the page before the body, which stays on stable surfaces.
         Stack(clipBehavior: Clip.none, children: [
-          Positioned(top: -14, left: -context.inset, right: -context.inset, height: _headerHeight, child: const ScenicBackdrop()),
+          Positioned(top: -top, left: -context.inset, right: -context.inset, height: top + _belowTop, child: const ScenicBackdrop()),
           TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), onBackdrop: true),
         ]),
         const SizedBox(height: 16),
@@ -55,8 +56,9 @@ class TrainScreen extends ConsumerWidget {
   }
 }
 
-/// Height of the scenic header region, from the top of the tab.
-const _headerHeight = 230.0;
+/// Height of the scenic header region below the header's top (the scene also fills the status bar and the open
+/// band above the date).
+const _belowTop = 216.0;
 
 Column _section(List<Widget> children) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
 

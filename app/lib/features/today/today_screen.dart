@@ -46,6 +46,7 @@ class TodayScreen extends ConsumerWidget {
     final finishedRuns = [for (final r in snapshot?.runs ?? const <Run>[]) if (!r.isOpen) r];
 
     return RefreshIndicator(
+      edgeOffset: MediaQuery.paddingOf(context).top,
       onRefresh: () => refreshFromAccount(ref),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 28),
@@ -92,7 +93,8 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) => Stack(key: const Key('today-header'), children: [
         const Positioned.fill(child: RepaintBoundary(child: TodayBackdrop())),
         Padding(
-          padding: EdgeInsets.fromLTRB(context.inset, 60, context.inset, 10),
+          // The scene runs to the top edge, behind the status bar; the lines start below it.
+          padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topOnBackdrop(context), context.inset, 4),
           child: TabHeader(title: 'Today', overline: longDate(day), below: const _Greeting(), onBackdrop: true),
         ),
       ]);
@@ -190,11 +192,14 @@ typedef _Status = (String label, IconData icon, Tone tone);
 /// One section of Today's rhythm. All three are built from this: the label and its state, the content, a small
 /// photograph at the trailing side when one fits and does not mislead, and one row of actions (the main button
 /// and a quiet link). The round icon node and the separators belong to the [RhythmTimeline] around it. Heights
-/// follow the content. With large text the photograph gives its room to the words, and the two actions stack.
+/// follow the content: the photograph stands beside the label too (unless [labelBeside] is false, for a label and
+/// state too wide to share the line), so a short module is no taller than its picture. With large text the
+/// photograph gives its room to the words, and the two actions stack.
 class _Module extends StatelessWidget {
-  const _Module({super.key, required this.label, this.status, this.head = const [], this.body = const [], this.footer, this.photo, this.photoAlignment = Alignment.center, required this.action, this.quiet});
+  const _Module({super.key, required this.label, this.status, this.labelBeside = true, this.head = const [], this.body = const [], this.footer, this.photo, this.photoAlignment = Alignment.center, required this.action, this.quiet});
   final String label;
   final _Status? status;
+  final bool labelBeside;
 
   /// Under the label at the full width; [body] follows, left of the photograph.
   final List<Widget> head, body;
@@ -212,19 +217,21 @@ class _Module extends StatelessWidget {
     final large = scale > 1.3, narrow = MediaQuery.sizeOf(context).width < 350;
     final photoWidth = photo == null || large ? 0.0 : narrow ? 72.0 : 92.0;
     final s = status;
-    final top = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: body);
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-      // The label and its state, a word with an icon (never a colour alone).
-      ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 36),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Wrap(spacing: 10, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            Semantics(header: true, child: Overline(label)),
-            if (s != null) StatusPill(s.$1, icon: s.$2, tone: s.$3),
-          ]),
-        ),
+    // The label and its state, a word with an icon (never a colour alone).
+    final labelRow = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 36),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(spacing: 10, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          Semantics(header: true, child: Overline(label)),
+          if (s != null) StatusPill(s.$1, icon: s.$2, tone: s.$3),
+        ]),
       ),
+    );
+    final beside = labelBeside && head.isEmpty;
+    final top = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [if (beside) labelRow, ...body]);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+      if (!beside) labelRow,
       ...head,
       if (photoWidth == 0)
         top
@@ -232,12 +239,12 @@ class _Module extends StatelessWidget {
         Stack(children: [
           Padding(padding: EdgeInsets.only(right: photoWidth + 14), child: ConstrainedBox(constraints: const BoxConstraints(minHeight: 64), child: top)),
           Positioned(
-            top: 4, bottom: 0, right: 0, width: photoWidth,
+            top: beside ? 2 : 4, bottom: 0, right: 0, width: photoWidth,
             child: ClipRRect(borderRadius: BorderRadius.circular(Radii.tile), child: _Photo(photo!, key: Key('today-photo-$label'.toLowerCase()), alignment: photoAlignment)),
           ),
         ]),
       ?footer,
-      const SizedBox(height: 12),
+      const SizedBox(height: 10),
       if (quiet == null)
         action
       else if (large || narrow)
@@ -266,9 +273,11 @@ class _TrainingSection extends ConsumerWidget {
     Widget line(String text, {double top = 4}) => Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: context.sansStyle(14.5, color: c.secondary)));
     Widget details(VoidCallback onPressed) => TextButton(key: const Key('today-details'), onPressed: onPressed, child: const Text('Details', semanticsLabel: 'Workout details'));
 
-    /// A day with a workout to do: the only variant with the training photograph.
-    Widget workout({required _Status status, required String name, List<Widget> head = const [], required List<Widget> body, required Widget action, required VoidCallback onDetails}) => _Module(
-        key: const Key('today-module-workout'), label: 'Workout', status: status, head: [title(name), ...head], body: body,
+    /// A day with a workout to do: the only variant with the training photograph. The label and its state need
+    /// the full line. [titleBeside] puts the name beside the photograph too, with [footer] at the full width below.
+    Widget workout({required _Status status, required String name, bool titleBeside = false, List<Widget> head = const [], required List<Widget> body, Widget? footer, required Widget action, required VoidCallback onDetails}) => _Module(
+        key: const Key('today-module-workout'), label: 'Workout', status: status, labelBeside: false,
+        head: [if (!titleBeside) title(name), ...head], body: [if (titleBeside) title(name), ...body], footer: footer,
         // The dumbbells sit low and right in the picture.
         photo: _Photos.workout, photoAlignment: const Alignment(0.75, 0.8), action: action, quiet: details(onDetails));
 
@@ -295,7 +304,7 @@ class _TrainingSection extends ConsumerWidget {
                 // Recorded is a count of sets, never a claim that a movement or the workout is complete.
                 if (sets.planned != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.only(top: 6),
                     child: Row(children: [
                       ProgressRing(
                         value: sets.fraction, size: MediaQuery.textScalerOf(context).scale(10) > 13 ? 104 : 76, stroke: 7, label: '${sets.counted} of ${sets.planned} planned sets recorded',
@@ -333,11 +342,10 @@ class _TrainingSection extends ConsumerWidget {
           final minutes = plan.setup?['minutesPerSession'];
           return (
             workout(
-              status: ('Due today', Icons.today, Tone.accent), name: occasion.title,
-              body: [
-                line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}'),
-                line('Week ${occasion.weekNumber}${minutes == null ? '' : ' · $minutes min planned'}', top: 2),
-              ],
+              // The name and the week beside the photograph; the exercise and set counts on one full-width line.
+              status: ('Due today', Icons.today, Tone.accent), name: occasion.title, titleBeside: true,
+              body: [line('Week ${occasion.weekNumber}${minutes == null ? '' : ' · $minutes min planned'}')],
+              footer: line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}', top: 6),
               onDetails: () => showOccasionSheet(context, ref, plan, occasion),
               action: PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, onPressed: () => startPlannedWorkout(context, ref, plan, occasion)),
             ),

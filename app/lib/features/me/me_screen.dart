@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
 // Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
+import '../nutrition/nutrition_surface.dart';
 import '../weather/weather.dart';
 import 'account_repository.dart';
 import 'reminders.dart';
@@ -68,7 +69,8 @@ class MeScreen extends ConsumerWidget {
                 : (Icons.cloud_done_outlined, Tone.success, 'Saved', 'Everything is saved to your account');
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
+      // No scene on Me: the list simply starts below the status bar.
+      padding: EdgeInsets.fromLTRB(context.inset, MediaQuery.paddingOf(context).top + 14, context.inset, 28),
       children: [
         const TabHeader(title: 'Me'),
         const SizedBox(height: 22),
@@ -118,7 +120,7 @@ class MeScreen extends ConsumerWidget {
               subtitle: profile.calorieGoal == null && profile.proteinGoal == null ? 'None set' : 'Daily goals you set',
               value: profile.calorieGoal == null && profile.proteinGoal == null
                   ? null
-                  : [if (profile.calorieGoal != null) '${profile.calorieGoal} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
+                  : [if (profile.calorieGoal != null) '${formatKcal(profile.calorieGoal!)} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
               onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
             ),
         ]),

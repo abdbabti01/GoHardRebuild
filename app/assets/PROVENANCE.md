@@ -11,6 +11,10 @@ downloaded unchanged from the official Google Fonts repository,
 `https://github.com/google/fonts/raw/main/ofl/dmserifdisplay/DMSerifDisplay-Regular.ttf` (sha256 8cc3643535edf039aa5d95440a8542735e9197e4f4b8d9303e980fefbf5ab616), with its
 licence as `DMSerifDisplay-OFL.txt`. Everything else stays in Inter.
 
+Update, 14 October 2026 (weather scenes): no new asset files. The condition scenes (clear, cloudy, rain, snow, fog,
+storm; day and night) are original native painting (`app/lib/features/weather/sky_painter.dart`) composited with the
+existing `assets/scenes/scenic-dusk.webp`, which is unchanged. No third-party images were downloaded or used.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",

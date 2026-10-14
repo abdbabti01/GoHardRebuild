@@ -63,11 +63,16 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
   ];
 }
 
+/// The insets of a 390 × 844 phone with a notch: the status bar above, the home indicator below.
+const phoneInsets = EdgeInsets.only(top: 47, bottom: 34);
+
 /// Pumps `home` inside the app's real themes, driven by the appearance provider exactly as GoHardApp does.
+/// [insets] stands for the system's safe-area insets (none by default; [phoneInsets] for a notched phone).
 Future<ProviderContainer> pumpApp(WidgetTester tester, List<Override> overrides,
-    {Widget home = const HomeShell(), Size size = const Size(390, 844), double textScale = 1, bool settle = true}) async {
+    {Widget home = const HomeShell(), Size size = const Size(390, 844), double textScale = 1, bool settle = true, EdgeInsets insets = EdgeInsets.zero}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
+  tester.view.padding = tester.view.viewPadding = FakeViewPadding(left: insets.left, top: insets.top, right: insets.right, bottom: insets.bottom);
   addTearDown(tester.view.reset);
   final container = ProviderContainer(overrides: overrides, retry: (_, _) => null);
   addTearDown(container.dispose);

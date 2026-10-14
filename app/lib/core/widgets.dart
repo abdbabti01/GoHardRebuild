@@ -194,6 +194,10 @@ class TabHeader extends StatelessWidget {
   /// How far the scrim fades out beyond the header's top and bottom.
   static const _feather = 20.0;
 
+  /// Where a header over a scene starts, from the top edge of the screen: below the status bar (the main tabs
+  /// draw their scene behind it), with a band of open scene above the date.
+  static double topOnBackdrop(BuildContext context) => MediaQuery.paddingOf(context).top + 24;
+
   @override
   Widget build(BuildContext context) {
     final header = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

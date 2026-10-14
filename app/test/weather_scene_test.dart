@@ -102,5 +102,9 @@ void main() {
     }
     expect(grade(), [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]); // neutral grade is the identity
     expect(sceneArt['plain']!.asset, isNull);
+    expect(sceneArt['dusk']!.sky, isNull); // the photograph's own sky
+    for (final k in sceneKeys.where((k) => k != 'dusk' && k != 'plain')) {
+      expect(sceneArt[k]!.sky, isNotNull, reason: '$k paints its own sky');
+    }
   });
 }

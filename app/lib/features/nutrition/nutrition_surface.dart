@@ -9,6 +9,12 @@ import 'nutrient_coverage.dart';
 // Thousands are grouped for reading only ("1,400"); stored and editable values are never reformatted.
 String _grouped(num v) => formatNumber(v).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
+/// Calories as people read them: whole kilocalories, grouped ("1,481"). Display only: totals, goals, comparisons and
+/// what is stored keep their exact values; a remainder is worked out exactly and rounded when it is shown.
+String formatKcal(num v) => _grouped(v.round());
+
+String _amount(Nutrient n, num v) => n == Nutrient.calories ? formatKcal(v) : _grouped(v);
+
 /// The day's overview on Eat. Today's [NutritionSummary] is given the same coverage and goals, so the two screens
 /// can never disagree. Unknown nutrients show a dash, never a zero; partial sums are labelled.
 /// A goal is drawn only when the person set one; none is ever suggested. Calories and protein are the only goals
@@ -23,7 +29,7 @@ class NutritionSurface extends StatelessWidget {
   String _value(Nutrient n) {
     final t = coverage[n]!;
     if (!t.hasAnyKnown) return '—';
-    return n == Nutrient.calories ? _grouped(t.knownTotal) : '${formatNumber(t.knownTotal)} g';
+    return n == Nutrient.calories ? formatKcal(t.knownTotal) : '${formatNumber(t.knownTotal)} g';
   }
 
   String _semantic(Nutrient n, String label) {
@@ -38,11 +44,11 @@ class NutritionSurface extends StatelessWidget {
     final t = coverage[n]!;
     final eaten = t.knownTotal;
     // The protein line sits under three values, so its words say which one it is about.
-    final amount = '${n == Nutrient.protein ? 'Protein ' : ''}${_grouped(eaten)} of ${_grouped(goal)} $unit';
+    final amount = '${n == Nutrient.protein ? 'Protein ' : ''}${_amount(n, eaten)} of ${_grouped(goal)} $unit';
     if (!t.hasAnyKnown) return 'No $name value entered yet · goal ${_grouped(goal)} $unit';
     if (!t.isComplete) return '$amount · known so far';
-    if (eaten > goal) return '$amount · ${_grouped(eaten - goal)} $unit over';
-    return '$amount · ${_grouped(goal - eaten)} $unit left';
+    if (eaten > goal) return '$amount · ${_amount(n, eaten - goal)} $unit over';
+    return '$amount · ${_amount(n, goal - eaten)} $unit left';
   }
 
   @override
@@ -172,12 +178,12 @@ class NutritionSummary extends StatelessWidget {
     final known = t.hasAnyKnown, partial = known && !t.isComplete;
     final said = n == Nutrient.calories ? 'kilocalories' : 'grams';
     return Semantics(
-      label: '$label ${known ? '${_grouped(t.knownTotal)} $said' : 'unknown'}'
+      label: '$label ${known ? '${_amount(n, t.knownTotal)} $said' : 'unknown'}'
           '${partial ? ', known from ${t.knownEntries} of ${t.knownEntries + t.unknownEntries} foods' : ''}${goal == null ? '' : ', goal ${_grouped(goal)} $said'}',
       child: ExcludeSemantics(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 5, children: [
-            Text(known ? _grouped(t.knownTotal) : '—', style: context.titleStyle(size)),
+            Text(known ? _amount(n, t.knownTotal) : '—', style: context.titleStyle(size)),
             Padding(
               padding: const EdgeInsets.only(bottom: 1.5),
               child: Text('${goal == null ? '' : '/ ${_grouped(goal)} '}$unit${partial ? ' · known' : ''}', style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w400)),
