@@ -219,7 +219,10 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       ];
     }
 
-    final local = searchLocal(q, catalog: catalog, saved: saved, journal: journal, seen: seen, category: category);
+    // What the wider search just returned is also kept on the phone as "seen"; it stays listed under More foods,
+    // where it came from, instead of moving into Your foods the moment it arrives.
+    final fresh = _asked == _question ? {for (final i in _results ?? const <FoodItem>[]) i.key} : const <String>{};
+    final local = searchLocal(q, catalog: catalog, saved: saved, journal: journal, seen: [for (final i in seen) if (!fresh.contains(i.key)) i], category: category);
     final hasLocal = local.own.isNotEmpty || local.common.isNotEmpty;
     int best(List<Suggestion> l) => l.isEmpty ? 9 : matchScore(q, _fields(l.first)) ?? 9;
     final own = [if (local.own.isNotEmpty) const _GroupLabel('Your foods'), for (final s in local.own.take(12)) _row(s, 'local')];

@@ -66,7 +66,7 @@ class TodayScreen extends ConsumerWidget {
           _NutritionCard(day: day, snapshot: snapshot, failed: foodError),
 
           // --- What was actually recorded today. Absent when there is nothing to show.
-          if (snapshot != null && (snapshot.finishedToday.isNotEmpty || finishedRuns.length > 1)) Padding(padding: const EdgeInsets.only(top: 24), child: _ActivitySection(snapshot, finishedRuns)),
+          if (snapshot != null && (snapshot.recordedToday.isNotEmpty || finishedRuns.length > 1)) Padding(padding: const EdgeInsets.only(top: 24), child: _ActivitySection(snapshot, finishedRuns)),
         ],
       ),
     );
@@ -525,7 +525,7 @@ class _ActivitySection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(padding: const EdgeInsets.only(left: 4, bottom: 8), child: Semantics(header: true, child: const Overline('Recorded today'))),
         GroupCard(children: [
-          for (final w in snapshot.finishedToday)
+          for (final w in snapshot.recordedToday)
             GroupRow(
               icon: Icons.fitness_center, tone: Tone.neutral, title: w.title,
               subtitle: '${w.isManual ? 'Manual workout' : 'Planned workout'} · ${WorkoutResultRules.label(w.outcome)}${w.performedSets > 0 ? ' · ${w.performedSets} set${w.performedSets == 1 ? '' : 's'}' : ''}',

@@ -136,6 +136,19 @@ void main() {
       expect(fakes.journal.saved, isEmpty);
     });
 
+    testWidgets('a food the wider search just returned stays under More foods, although the phone keeps it as seen', (tester) async {
+      // On a phone the answer is also written to the seen-foods cache at once; here it is there from the start.
+      final fakes = FoodFakes(discovery: ScriptedDiscovery(results: [chickenRaw(), riceCooked()]));
+      await pumpApp(tester, await _overrides(tester, fakes, seenFoods: [riceCooked().j]), home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'), size: const Size(390, 3200));
+      await tester.enterText(find.byKey(const Key('food-search')), 'rice');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('local-usda:2708402')), findsOneWidget, reason: 'before asking, a food seen earlier is found on the phone');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('result-usda:2708402')), findsOneWidget, reason: 'what the database answered is listed where it came from');
+      expect(find.byKey(const Key('local-usda:2708402')), findsNothing, reason: 'and not twice, nor as one of your foods');
+    });
+
     testWidgets('a barcode seen many times is one lookup and one draft; a web link is ignored; a double tap logs once', (tester) async {
       final fakes = FoodFakes(
           discovery: ScriptedDiscovery(products: {'3017620422003': hazelnutSpread()}),

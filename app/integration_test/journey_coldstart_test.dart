@@ -42,7 +42,7 @@ void main() {
       await j.type('food-amount', '1 medium');
       await j.type('food-calories', '105');
       await j.tapKey('food-save');
-      await j.waitFor(find.text('1 food logged'), what: 'the food on Today');
+      await j.waitFor(find.text('105'), what: 'the food\'s calories on Today');
 
       await j.tapKey('today-run');
       await j.waitFor(find.byKey(const Key('run-finish')), what: 'the run screen');
@@ -62,7 +62,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('today-resume')), what: 'the open workout after a cold start');
     expect(find.text('Back'), findsOneWidget);
     await j.waitFor(find.text('1 set recorded'), what: 'the set recorded before the process ended');
-    await j.waitFor(find.text('1 food logged'), what: 'the logged food after a cold start');
+    await j.waitFor(find.text('105'), what: 'the logged food\'s calories after a cold start');
     expect(find.text('105'), findsOneWidget);
     await j.shot('111-coldstart-after-new-process');
 

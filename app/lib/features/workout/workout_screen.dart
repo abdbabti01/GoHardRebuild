@@ -148,7 +148,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 4), persist: false, // with an action it would otherwise stay and cover Finish and Save for later
           content: Text('Saved on this phone: ${setText(set, ref.read(loadUnitProvider))}'),
           action: SnackBarAction(label: 'Undo', onPressed: () => _repo.deleteSet(set)),
         ));

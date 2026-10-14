@@ -104,6 +104,21 @@ void main() {
       expect(resolveTraining(today: today, ctx: ctx, plans: [due, _plan([_occ('z', today)], lifecycle: 'draft', id: 'd')], workouts: []), isA<WorkoutDue>());
     });
 
+    test('the workout that is today\'s planned result is not listed again under Recorded today; other recorded work is', () {
+      final plan = _plan([_occ('a', today), _occ('b', '2026-10-12')]);
+      final credited = _workout('w', occasionId: 'a', outcome: 'partial', qualified: true);
+      final noData = _workout('w0', occasionId: 'a', outcome: 'no_data'); // an earlier attempt that earned nothing
+      final manual = _workout('m', kind: 'manual', outcome: 'manual_recorded');
+      DailySnapshot day(List<Workout> finished) => DailySnapshot(ownerId: 'o', dayKey: today,
+          training: resolveTraining(today: today, ctx: ctx, plans: [plan], workouts: finished), parked: const [], finishedToday: finished, food: const [], coverage: const {}, runs: const []);
+
+      final done = day([credited, noData, manual]);
+      expect(done.training, isA<DoneToday>());
+      expect(done.recordedToday.map((w) => w.id), ['w0', 'm'], reason: 'identity, not title: only the credited workout is left out');
+      // Before the module shows it as done (a manual workout alone), nothing is hidden.
+      expect(day([manual]).recordedToday.map((w) => w.id), ['m']);
+    });
+
     test('occasion statuses are honest text states', () {
       final plan = _plan([_occ('a', '2026-10-07'), _occ('b', '2026-10-09'), _occ('c', '2026-10-12'), _occ('d', '2026-10-05', outcome: 'full'), _occ('e', '2026-10-06', skipped: true)]);
       String status(String id, {Plan? p, List<Workout> w = const []}) => statusOf((p ?? plan).occasions.firstWhere((o) => o.id == id), p ?? plan, today, w).label;

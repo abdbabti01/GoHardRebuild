@@ -117,11 +117,14 @@ void main() {
     await j.tapKey('nav-train');
     await j.waitFor(find.textContaining('Week 1 of').hitTestable());
     await j.tapKey('occasion-1-3');
+    await j.waitFor(find.byKey(const Key('occasion-move')), what: 'the workout sheet with its Move action');
     await j.tapKey('occasion-move');
     await j.waitFor(find.text('OK'));
     final from = DateTime.now().add(const Duration(days: 4)), to = DateTime.now().add(const Duration(days: 5));
     if (to.month != from.month) await j.tap(find.byTooltip('Next month'));
-    await j.tap(find.text('${to.day}'));
+    // Inside the picker only: the Train page underneath also shows this day number, and tapping that one lands on
+    // the picker's barrier and closes it.
+    await j.tap(find.descendant(of: find.byType(DatePickerDialog), matching: find.text('${to.day}')));
     await j.tapText('OK');
     await j.waitFor(find.text('Move this workout?'));
     await j.shot('64-move-review');

@@ -52,13 +52,16 @@ void main() {
     await j.waitFor(find.textContaining('Can\'t sync right now'), what: 'the short notice that the account cannot be reached');
     expect(find.textContaining('waiting to sync'), findsOneWidget, reason: 'the notice counts what is still only on this phone');
     await j.tapKey('today-connection');
+    expect(find.descendant(of: find.byKey(const Key('today-connection')), matching: find.textContaining(RegExp('offline', caseSensitive: false))), findsNothing,
+        reason: 'Today\'s notice says the account was not reached; it cannot know the phone is offline');
     await j.waitFor(find.text('Try again'), what: 'the details behind the notice');
     await j.shot('71-today-offline');
     await j.tapKey('nav-me');
     await j.reveal(find.textContaining('waiting to sync'));
     await j.waitFor(find.textContaining('waiting to sync'), what: 'the pending count in Me');
-    expect(find.textContaining('Can\'t sync right now'), findsOneWidget, reason: 'Me uses the same words as Today');
-    expect(find.textContaining('Offline'), findsNothing);
+    final syncRow = find.byKey(const Key('me-sync'));
+    expect(find.descendant(of: syncRow, matching: find.textContaining('Can\'t sync right now')), findsOneWidget, reason: 'Me\'s sync row uses the same words as Today');
+    expect(find.descendant(of: syncRow, matching: find.textContaining(RegExp('offline', caseSensitive: false))), findsNothing, reason: 'the sync row never claims the phone is offline');
     await j.shot('71b-me-cant-sync');
 
     // --- Reconnect. Everything syncs once, without the user repeating anything.

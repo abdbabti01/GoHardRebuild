@@ -94,6 +94,9 @@ table, endpoint or contract change behind it.
   for anything not in the cache through one disposable account that it deletes afterwards (at most 20 lookups a
   minute), and refuses a portion the record does not state. `--candidates` lists what the API returned for an
   entry so a record can be chosen. Raise `VERSION` in the script when the foods change.
+- Every original name, its replacement record (FDC ID, preparation, starting portion) and the old and new values
+  side by side: `docs/COMMON_FOODS_COMPARISON.md`. 74 foods cover 75 of the 76 original names (string cheese is the
+  part-skim mozzarella record).
 - Left out on purpose: "Protein bar" (USDA has only specific branded bars, no generic one) and "String cheese"
   (it is the part-skim mozzarella record, which is found by that name too). Records without count portions
   (mostly SR Legacy) start at 100 g; none was given an invented portion.

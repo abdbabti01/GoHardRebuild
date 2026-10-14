@@ -144,4 +144,14 @@ class DailySnapshot {
   final List<FoodEntry> food;
   final Map<Nutrient, NutrientTotal> coverage;
   final List<Run> runs;
+
+  /// Finished workouts not already shown by the training module. Only the workout that IS the "done for today"
+  /// result is left out, by its identity: the account's result workout, or the local workout credited to that
+  /// occasion. A manual workout, or another attempt at the same occasion that earned nothing, is still listed.
+  List<Workout> get recordedToday {
+    final a = training;
+    if (a is! DoneToday) return finishedToday;
+    final o = a.occasion;
+    return [for (final w in finishedToday) if (w.id != o.resultWorkoutId && !(w.occasionId == o.id && w.qualifiedOccasion)) w];
+  }
 }
