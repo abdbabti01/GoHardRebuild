@@ -13,7 +13,7 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
 // Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
-import '_weather_stub.dart';
+import '../weather/weather.dart';
 import 'account_repository.dart';
 import 'reminders.dart';
 import 'sync_review_screen.dart';

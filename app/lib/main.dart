@@ -10,6 +10,7 @@ import 'core/compatibility.dart';
 import 'core/device_prefs.dart';
 import 'data/db.dart';
 import 'data/session.dart';
+import 'features/weather/weather.dart';
 
 class SecureSecretStore implements SecretStore {
   const SecureSecretStore();
@@ -35,11 +36,13 @@ Future<void> main() async {
   // A confirmed "this build is too old" survives a restart, including one with no connection.
   final compatibility = CompatibilityStore(const SecureSecretStore());
   await compatibility.restore();
+  // The Today background choice and the last weather answer, so Today opens with the scene it had.
+  final weatherPrefs = await restoreWeatherPrefs(const SecureSecretStore());
   runApp(ProviderScope(
     retry: (_, _) => null,
     overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance),
       devicePrefsStoreProvider.overrideWithValue(devicePrefs),
-      compatibilityStoreProvider.overrideWithValue(compatibility)],
+      compatibilityStoreProvider.overrideWithValue(compatibility), weatherPrefs],
     child: const GoHardApp(),
   ));
 }
