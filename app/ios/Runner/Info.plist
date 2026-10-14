@@ -5,7 +5,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>GoHard uses the camera to read the barcode on a food packet when you choose Scan barcode. The picture stays on your phone.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>GoHard uses your location to measure the distance of a run while the run screen is open.</string>
+	<string>GoHard uses your location to measure the distance of a run while the run screen is open and, if you turn on the Weather background for Today, to look up the weather near you (rounded to about 10 km).</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Serves the recorded Open Food Facts and USDA responses from the API test fixtures on http://localhost:5132, so
+  Serves the recorded Open Food Facts, USDA and Open-Meteo responses from the API test fixtures on http://localhost:5132, so
   the local API can be exercised end to end (and by the native journeys) without calling either provider.
   Started for you by:  scripts\start-api.ps1 -FoodFixtures
 
@@ -25,8 +25,19 @@ try {
             if (-not $file) { $file = 'off_not_found.json'; $status = 404 }
         } elseif ($path -eq '/usda/foods/search') {
             $file = if ($context.Request.QueryString['dataType'] -match 'Branded') { 'usda_search_branded.json' } else { 'usda_search_generic.json' }
+        } elseif ($path -eq '/openmeteo-geo/v1/search') {
+            $file = if ($context.Request.QueryString['name'] -match '^par') { 'openmeteo_places_paris.json' } else { 'openmeteo_places_empty.json' }
+        } elseif ($path -eq '/openmeteo/v1/forecast') {
+            $file = 'openmeteo_current_overcast_night.json'
         } else { $file = $null; $status = 404 }
         $bytes = if ($file) { [System.IO.File]::ReadAllBytes((Join-Path $fixtures $file)) } else { [Text.Encoding]::UTF8.GetBytes('{}') }
+        if ($file -eq 'openmeteo_current_overcast_night.json') {
+            # The recorded conditions (overcast, night, UTC-4), re-dated to the current quarter hour at that offset so the
+            # app treats them as fresh. Every place gets this same answer: it exercises the path, not real weather.
+            $local = [DateTime]::UtcNow.AddSeconds(-14400)
+            $stamp = $local.AddMinutes(-($local.Minute % 15)).ToString('yyyy-MM-ddTHH:mm')
+            $bytes = [Text.Encoding]::UTF8.GetBytes(([Text.Encoding]::UTF8.GetString($bytes) -replace '"current":\{"time":"[^"]+"', ('"current":{"time":"' + $stamp + '"')))
+        }
         $context.Response.StatusCode = $status
         $context.Response.ContentType = 'application/json'
         $context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
