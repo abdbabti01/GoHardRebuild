@@ -70,7 +70,7 @@ class WeatherPrefs {
   int get hashCode => Object.hash(background, mode, city);
 }
 
-const weatherFamilies = ['clear', 'cloudy', 'fog', 'rain', 'snow', 'storm'];
+const weatherFamilies = ['clear', 'partly', 'cloudy', 'fog', 'rain', 'snow', 'storm'];
 
 /// Current conditions as the API normalized them (the server's small contract).
 @immutable
@@ -152,6 +152,11 @@ class SceneSpec {
   final String? family;
   final bool? isDay;
 
+  /// A dark sky (night, storm, rain; with no day or night given, overcast, rain, storm and fog): the header text over
+  /// it is drawn light. Dusk and Plain are not weather and never dark.
+  bool get dark => isWeather &&
+      (isDay == false || const {'storm', 'rain'}.contains(family) || (isDay == null && const {'cloudy', 'fog'}.contains(family)));
+
   static const dusk = SceneSpec(key: 'dusk');
   static const plain = SceneSpec(key: 'plain');
 
@@ -189,4 +194,4 @@ SceneSpec resolveScene({required WeatherPrefs prefs, required WeatherEntry? entr
   }
 }
 
-const _familyLabel = {'clear': 'Clear', 'cloudy': 'Cloudy', 'fog': 'Fog', 'rain': 'Rain', 'snow': 'Snow', 'storm': 'Thunderstorm'};
+const _familyLabel = {'clear': 'Clear', 'partly': 'Partly cloudy', 'cloudy': 'Cloudy', 'fog': 'Fog', 'rain': 'Rain', 'snow': 'Snow', 'storm': 'Thunderstorm'};

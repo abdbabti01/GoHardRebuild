@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/session.dart';
@@ -467,7 +468,8 @@ void main() {
   });
 
   group('weather', () {
-    /// Today in progress on every module, with Weather on for a selected city and fake conditions.
+    /// Today in progress on every module, with Weather on for a selected city and fake conditions. Motion is Reduced so
+    /// the sky holds still and the screen settles (weather_motion_test covers the moving sky over Today).
     Future<(ProviderContainer, WeatherFakes)> today(WidgetTester tester, {ThemeMode mode = ThemeMode.light}) async {
       final w = WeatherFakes(now: DateTime.utc(2026, 10, 11, 15));
       final store = AppearanceStore(MemorySecretStore())
@@ -476,7 +478,7 @@ void main() {
       final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
       final c = await pumpApp(tester, [
         ...await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food, calorieGoal: 2200, proteinGoal: 140, runs: [run('r1', day)], runtime: {'r1': pausedRun},
-            more: [appearanceStoreProvider.overrideWithValue(store)]),
+            more: [appearanceStoreProvider.overrideWithValue(store), devicePrefsStoreProvider.overrideWithValue(DevicePrefsStore(MemorySecretStore())..motion = MotionPref.reduced)]),
         ...(await tester.runAsync(() => w.overrides(prefs: const WeatherPrefs(background: TodayBackground.weather, mode: WeatherLocationMode.city, city: quebec))))!,
       ]);
       return (c, w);
