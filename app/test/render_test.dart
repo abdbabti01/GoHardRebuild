@@ -204,6 +204,54 @@ void main() {
     });
   }
 
+  // Every weather scene at Today's header size, one row per family, day / night / neutral (the provider did not say),
+  // each with the header's own scrim and text where Today puts them. Then the decorative dusk for comparison.
+  for (final (mode, accent) in [(ThemeMode.light, Accent.blue), (ThemeMode.dark, Accent.pink)]) {
+    testWidgets('state: weather scenes ${mode.name}', (tester) async {
+      const cell = Size(390, 240), gap = 8.0;
+      final theme = goTheme(accent, mode == ThemeMode.light ? Brightness.light : Brightness.dark);
+      final c = theme.extension<GoColors>()!;
+      Widget scene(String key, String label) => SizedBox.fromSize(
+          size: cell,
+          child: Stack(children: [
+            Positioned.fill(child: SceneBackdrop(spec: key == 'dusk' ? SceneSpec.dusk
+                : SceneSpec(key: key, isWeather: true, family: key.split('-').first, isDay: key.endsWith('-day') ? true : key.endsWith('-night') ? false : null))),
+            Positioned(left: 16, top: 60, child: ColoredBox(color: c.scrim, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(label, style: TextStyle(fontFamily: serif, fontSize: 34, color: c.text))))),
+          ]));
+      // One scene at a time (each decodes and paints on its own), then laid out on one sheet.
+      tester.view.physicalSize = cell * 2;
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      final rows = [for (final f in weatherFamilies) [for (final l in ['day', 'night', 'neutral']) '$f-$l'], ['dusk']];
+      final shots = <String, ui.Image>{};
+      for (final key in rows.expand((r) => r)) {
+        await tester.pumpWidget(MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: theme,
+            home: Material(color: c.page, child: RepaintBoundary(key: const Key('shot'), child: scene(key, key.replaceAll('-', ' '))))));
+        await tester.runAsync(() async {
+          for (final e in find.byType(Image).evaluate()) {
+            await precacheImage((e.widget as Image).image, e);
+          }
+        });
+        shots[key] = await _capture(tester);
+        await tester.pumpWidget(const SizedBox());
+      }
+      final w = (cell.width * 2).toInt(), h = (cell.height * 2).toInt(), g = (gap * 2).toInt();
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder)..drawColor(c.page, BlendMode.src);
+      for (final (y, row) in rows.indexed) {
+        for (final (x, key) in row.indexed) {
+          canvas.drawImage(shots[key]!, Offset((g + x * (w + g)).toDouble(), (g + y * (h + g)).toDouble()), Paint());
+        }
+      }
+      final sheet = (await tester.runAsync(() => recorder.endRecording().toImage(g + 3 * (w + g), g + rows.length * (h + g))))!;
+      await _save(tester, sheet, 'state-weather-scenes-${mode.name}');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final screen in ['today', 'train-plan', 'eat', 'me', 'appearance', 'log-food', 'food-results', 'food-preview', 'scan', 'goals']) {
     testWidgets('six themes: $screen', (tester) async {
       final shots = <String, ui.Image>{};
@@ -282,8 +330,8 @@ void main() {
     'new-account-eat': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'eat', const Size(390, 1000), 1),
   };
   // Today over the weather scenes, with fixed fake conditions for a selected city: the scene changes, nothing else.
-  for (final (family, isDay) in [('clear', true), ('clear', false), ('rain', true), ('snow', true), ('storm', false), ('fog', true)]) {
-    for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+  for (final family in weatherFamilies) {
+    for (final (isDay, mode) in [for (final d in [true, false]) for (final m in [ThemeMode.light, ThemeMode.dark]) (d, m)]) {
       final name = 'today-weather-$family-${isDay ? 'day' : 'night'}-${mode.name}';
       states[name] = ((t) async {
         final w = WeatherFakes(now: DateTime.utc(2026, 10, 11, isDay ? 15 : 23));

@@ -92,7 +92,7 @@ weather (contract, rounding, age) and a city lookup when the server declares `we
   stale, ahead of time, other source/region or missing artwork -> `dusk` with no label.
 - **Backdrops.** `TodayBackdrop` (refresh-if-stale triggers + scene), `ScenicBackdrop` (static), `SceneBackdrop(spec)`
   (paints one spec; used by the settings preview). Decoded at the size shown (`cacheWidth`), a light page-coloured veil
-  (18–34%) and a fade into `context.c.page`, crossfade (`Motion.progress`) only when the key changes, instant under reduced motion,
+  (16–34%, per scene) and a fade into `context.c.page`, crossfade (`Motion.progress`) only when the key changes, instant under reduced motion,
   undecodable photo -> page colour, excluded from semantics. No particles, lightning or looping animation.
 - **Contrast.** The header text is drawn in the theme's text colour on TabHeader's own scrim (page colour at 66%,
   behind its lines only). `test/weather_contrast_test.dart` renders the real photograph under every treatment in
@@ -106,13 +106,48 @@ There is **one** photograph: `app/assets/scenes/scenic-dusk.webp`, the package's
 (1536 × 1024, copied unchanged; sha256 `8f2fcd85bce39c8004c9063c6d43e72c5f8f7b70d9e426c4b6c716a58c54f4be` matches the package manifest). It is decorative, generated
 (built-in image tool, 2026-10-13), shows no UI or text and does not depict the user's location.
 
-**The condition scenes are graded treatments of that same photograph, not separate photographs.** No image
-generation tool was available. `scene_art.dart` maps each key (`<family>-day|night|neutral`) to a colour-matrix
-grade (daylight lift and cooler sky; deep blue night; muted cloud; cool, dark, desaturated rain with a soft mist
-wash; bright cool snow haze; strong fog haze; dark slate storm) plus a restrained native gradient. They keep one
-camera and landscape, are honest about being illustrative, and avoid a wrong sunny scene. A proper art pack would
-replace entries in the same key -> asset table without touching the resolver or screens. **This is the remaining
-asset limitation.**
+**The condition scenes are original artwork built on that one photograph** (no image-generation tool, no third-party
+photos), so every scene keeps the same lake, hills, trees and camera; only the sky, light and weather change.
+`scene_art.dart` maps each key (`<family>-day|night|neutral`) to a landscape grade and a painted `Sky`;
+`sky_painter.dart` paints it in three static layers around the photograph (`backdrop.dart`):
+
+1. **Back:** the painted sky (zenith-to-horizon gradient, then the lake as its reflection), sun glow, moon and stars,
+   soft cloud masses (blurred ovals: lit tops over darker undersides).
+2. **The photograph**, graded by a colour matrix whose alpha follows luminance (`silhouette()`): dark hills and trees
+   stay opaque, the bright dusk sky and its reflection in the lake turn see-through, so the painted sky shows behind
+   the silhouettes. (The alpha's constant term scales with source alpha: a fixed offset would make the unbounded
+   colour-filter layer paint over the whole page; `weather_distinct_test` guards this.)
+3. **Top:** the same sky over the upper part of the photograph (where its dusk sky is too dark to let through), faded
+   out above the ridge. **Front:** mist bands at the horizon, layered fog banks, a pale snow lift over shore and lake,
+   fine diagonal rain streaks, small snow dots.
+
+| Family | Day | Night |
+|---|---|---|
+| clear | clean blue, soft sun glow high right | deep navy, ~90 faint stars, a waxing moon |
+| cloudy | layered light-grey masses over the whole sky | lit slate masses |
+| rain | low dark blue-grey cloud, streaks, misty horizon, desaturated | dark blue-green, streaks, mist |
+| snow | pale cool overcast, whitened shore/lake, small flakes | blue-grey, pale ground, flakes |
+| fog | warm grey banks hiding the far hills, very low contrast | dark warm grey banks |
+| storm | very dark slate, heavy cloud, heavier rain (no lightning) | near black, heavy cloud, rain |
+
+Neutral (the provider did not say day or night) is the day sky moved 45% toward night, without sun, moon or stars.
+Dusk and Plain are unchanged. Everything is static: fixed random seeds, painted once inside a RepaintBoundary,
+`shouldRepaint` only when the sky changes, no animation, particles or flashing; the existing crossfade on key change
+(instant under reduced motion) is the only motion. The photograph stays decoded at display size (`cacheWidth`).
+The veil is per scene: Light mode lifts the painted weather skies less than the dusk photograph (0.16 day, 0.22
+night/rain/storm, dusk keeps 0.34) so night does not turn grey; Dark mode is unchanged.
+
+**Measured, not asserted.** `test/weather_distinct_test.dart` renders every key at header size (390 x 280) in Light
+and Dark and compares each pair of families in the same light, day vs night of each family, and each scene vs dusk
+by mean per-pixel colour difference and an 8x8x8 colour histogram distance. Smallest values: per-pixel 0.034 (fog
+vs snow by day, Dark) and histogram 0.19 (same pair); thresholds 0.03 / 0.15. The lower header fades into the page,
+so per-pixel figures are diluted roughly by half. Contact sheets: `docs/evidence/design/state-weather-scenes-light.png`
+and `-dark.png`; Today over all 12 family/light scenes: `state-today-weather-*`.
+
+**Remaining limitation:** these are painted treatments of one dusk photograph, not separately photographed scenes.
+Fog vs snow by day, and the night skies of clear / cloudy / rain / storm, are the closest pairs (told apart by
+stars and moon, colour cast and streaks rather than by overall brightness). A proper art pack would replace
+entries in the same key -> art table without touching the resolver or screens.
 
 ## Not verified here
 

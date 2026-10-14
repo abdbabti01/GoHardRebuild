@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../shell/home_shell.dart' show shellProvider;
 import 'scene_art.dart';
+import 'sky_painter.dart';
 import 'weather_model.dart';
 import 'weather_service.dart';
 
@@ -81,13 +82,13 @@ class SceneBackdrop extends StatelessWidget {
   /// not by this veil: test/weather_contrast_test.dart measures the two together where the text sits.
   static double scrim(SceneSpec spec, bool dark) {
     final bright = spec.isDay == true || spec.family == 'snow' || spec.family == 'fog';
-    final dim = spec.isDay == false || spec.family == 'storm' || spec.family == 'rain' || spec.key == 'dusk';
-    // Dark mode dims bright scenes a little more, Light mode lifts dark ones; the scene stays what it is.
-    return dark ? (bright ? 0.32 : 0.18) : (dim ? 0.34 : 0.22);
+    final dim = spec.isDay == false || spec.family == 'storm' || spec.family == 'rain';
+    // Dark mode dims bright scenes a little more, Light mode lifts dark ones; the scene stays what it is. The painted
+    // weather skies carry their own light, so Light mode lifts them less than the photograph's dusk (0.34), or night
+    // and storm would turn grey.
+    if (spec.key == 'dusk') return dark ? 0.18 : 0.34;
+    return dark ? (bright ? 0.32 : 0.18) : (dim ? 0.22 : 0.16);
   }
-
-  /// The bundled photograph's aspect ratio (1536 x 1024).
-  static const _aspect = 1.5;
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +100,7 @@ class SceneBackdrop extends StatelessWidget {
         final size = MediaQuery.sizeOf(context);
         final w = box.maxWidth.isFinite ? box.maxWidth : size.width, h = box.maxHeight.isFinite ? box.maxHeight : size.height;
         // BoxFit.cover needs whichever is larger: the width, or the height at the photograph's aspect ratio.
-        final cacheWidth = math.min(1536, (math.max(w, h * _aspect) * MediaQuery.devicePixelRatioOf(context)).ceil()).clamp(1, 1536);
+        final cacheWidth = math.min(1536, (math.max(w, h * photoAspect) * MediaQuery.devicePixelRatioOf(context)).ceil()).clamp(1, 1536);
         return Stack(fit: StackFit.expand, children: [
           ColoredBox(color: page),
           AnimatedSwitcher(
@@ -112,7 +113,8 @@ class SceneBackdrop extends StatelessWidget {
               child: art.asset == null
                   ? const SizedBox.expand()
                   : Stack(fit: StackFit.expand, children: [
-                      _Photo(art: art, cacheWidth: cacheWidth),
+                      // Painted once: the scene is static, and repaints only when its key changes.
+                      RepaintBoundary(child: _Photo(art: art, cacheWidth: cacheWidth)),
                       // Page-tinted, so the theme's own text colours stay readable over any scene, and an undecodable
                       // photograph leaves exactly the page colour. Dark mode dims a bright (daylight, snow, fog) scene
                       // further and Light mode a dark one; the scene itself stays what it is.
@@ -149,14 +151,20 @@ class _Photo extends StatelessWidget {
         filterQuality: FilterQuality.medium,
         gaplessPlayback: true,
         excludeFromSemantics: true,
-        // The grade and wash belong to the photograph: without one (still decoding, or failed) there is only the page.
-        frameBuilder: (context, child, frame, sync) => frame == null && !sync
-            ? const SizedBox.expand()
-            : Stack(fit: StackFit.expand, children: [
-                if (art.matrix != null) ColorFiltered(colorFilter: ColorFilter.matrix(art.matrix!), child: child) else child,
-                if (art.wash.isNotEmpty)
-                  DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: art.wash))),
-              ]),
+        // The grade and the painted sky belong to the photograph: without it (still decoding, or failed) there is only
+        // the page. With a sky, the graded photograph's bright parts (its dusk sky and the lake's reflection of it) are
+        // see-through, so the painted sky shows behind the hills and trees, which keep their silhouette.
+        frameBuilder: (context, child, frame, sync) {
+          if (frame == null && !sync) return const SizedBox.expand();
+          final graded = art.matrix == null ? child : ColorFiltered(colorFilter: ColorFilter.matrix(art.matrix!), child: child);
+          final sky = art.sky;
+          if (sky == null) return graded;
+          return CustomPaint(
+            painter: SkyPainter(sky, SkyLayer.back),
+            foregroundPainter: SkyPainter(sky, SkyLayer.front),
+            child: Stack(fit: StackFit.expand, children: [graded, CustomPaint(painter: SkyPainter(sky, SkyLayer.top))]),
+          );
+        },
         errorBuilder: (context, _, _) => const SizedBox.expand(key: ValueKey('scene-failed')),
       );
 }
