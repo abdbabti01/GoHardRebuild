@@ -86,7 +86,7 @@ String sceneFamily(WeatherConditions c) => switch (c.code) {
 /// Current conditions as the API normalized them (the server's small contract).
 @immutable
 class WeatherConditions {
-  const WeatherConditions({required this.family, this.code, this.description, this.isDay, required this.validAtUtc, this.temperatureC, this.timezone});
+  const WeatherConditions({required this.family, this.code, this.description, this.isDay, required this.validAtUtc, this.temperatureC, this.timezone, this.source});
   final String family;
   final int? code;
   final String? description;
@@ -94,6 +94,12 @@ class WeatherConditions {
   final DateTime validAtUtc;
   final double? temperatureC;
   final String? timezone;
+
+  /// Which provider answered: "open-meteo", or "met.no" when the server fell back to MET Norway.
+  final String? source;
+
+  /// The credit the answering provider asks for.
+  String get credit => source == 'met.no' ? 'Weather data from MET Norway (CC BY 4.0).' : 'Weather data by Open-Meteo.com (CC BY 4.0).';
 
   /// Null when the answer is not usable at all. An unrecognised family is kept as unknown, never guessed.
   static WeatherConditions? fromJson(Object? raw) {
@@ -105,11 +111,11 @@ class WeatherConditions {
         family: weatherFamilies.contains(family) ? family as String : 'unknown',
         code: (raw['code'] as num?)?.toInt(), description: raw['description'] as String?,
         isDay: raw['isDay'] is bool ? raw['isDay'] as bool : null, validAtUtc: at,
-        temperatureC: (raw['temperatureC'] as num?)?.toDouble(), timezone: raw['timezone'] as String?);
+        temperatureC: (raw['temperatureC'] as num?)?.toDouble(), timezone: raw['timezone'] as String?, source: raw['source'] as String?);
   }
 
   Json toJson() => {'family': family, 'code': code, 'description': description, 'isDay': isDay, 'validAtUtc': validAtUtc.toIso8601String(),
-        'temperatureC': temperatureC, 'timezone': timezone};
+        'temperatureC': temperatureC, 'timezone': timezone, 'source': source};
 }
 
 /// What the phone keeps between launches: the last conditions, which source and region they were for, and when the

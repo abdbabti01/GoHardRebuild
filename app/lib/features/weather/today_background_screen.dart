@@ -127,7 +127,7 @@ class _Details extends ConsumerWidget {
       const SizedBox(height: 10),
       const _Basis(),
       const SizedBox(height: 10),
-      Text('Weather data by Open-Meteo.com (CC BY 4.0). Conditions are model data.', style: context.caption),
+      Text('${c?.credit ?? 'Weather data by Open-Meteo.com, or MET Norway when it is busy (CC BY 4.0).'} Conditions are model data.', style: context.caption),
       Text('Scenes are illustrative: not a forecast or a view of your location.', style: context.caption),
     ]);
   }
@@ -154,6 +154,7 @@ class _Basis extends ConsumerWidget {
       ('Scene', scene.isWeather ? '${scene.key} (weather)' : scene.fallback != null ? 'scenic view · ${scene.fallback!.words}' : scene.key),
       if (c != null) ...[
         ('Condition', '${c.description ?? c.family}${c.code == null ? '' : ' · WMO ${c.code}'}'),
+        ('Source', c.source == 'met.no' ? 'MET Norway' : 'Open-Meteo'),
         ('Day or night there', switch (c.isDay) { true => 'day', false => 'night', null => 'not given' }),
         ('Valid', '${TimeOfDay.fromDateTime(c.validAtUtc.toLocal()).format(context)} (${_ago(now.difference(c.validAtUtc))})'),
         if (c.timezone != null) ('Time zone there', c.timezone!),
