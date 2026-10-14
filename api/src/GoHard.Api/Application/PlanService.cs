@@ -40,11 +40,18 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
     private static readonly JsonSerializerOptions Json = CommandRunner.Json;
 
     public static OccasionDto ToDto(Occasion o) => new(o.Id, o.WeekNumber, o.Ordinal, o.Title, o.OriginalDate, o.ScheduledDate,
-        o.IsSkipped, o.ResultOutcome, o.ResultWorkoutId, JsonSerializer.Deserialize<List<PrescriptionExercise>>(o.PrescriptionJson, Json)!);
+        o.IsSkipped, o.ResultOutcome, o.ResultWorkoutId, Prescription(o), o.WorkoutId, o.SequenceIndex, o.IsCustomised);
 
     public static PlanDto ToDto(Plan p) => new(p.Id, p.Title, p.Lifecycle, p.ClosureIntent, p.IsArchived, p.StartDate, p.BlockWeeks,
         p.MinRecoveryDays, JsonSerializer.Deserialize<PlanSetup>(p.SetupJson, Json), p.BaselineId, p.PausedOn, p.ClosedOn, p.Revision,
-        p.Occasions.OrderBy(o => o.ScheduledDate).ThenBy(o => o.Ordinal).Select(ToDto).ToList());
+        p.Occasions.OrderBy(o => o.ScheduledDate).ThenBy(o => o.Ordinal).Select(ToDto).ToList(),
+        Workouts(p), Schedule(p), p.IsOngoing, p.TimeBudgetMinutes, p.TemplateId);
+
+    private static List<PrescriptionExercise> Prescription(Occasion o) => JsonSerializer.Deserialize<List<PrescriptionExercise>>(o.PrescriptionJson, Json)!;
+    public static List<WorkoutDefinition>? Workouts(Plan p) => p.WorkoutsJson is null ? null : JsonSerializer.Deserialize<List<WorkoutDefinition>>(p.WorkoutsJson, Json);
+    /// <summary>Non-null marks a built plan; a plan from before the builder has none.</summary>
+    public static PlanSchedule? Schedule(Plan p) => p.ScheduleJson is null ? null : JsonSerializer.Deserialize<PlanSchedule>(p.ScheduleJson, Json);
+    private static bool IsRotating(Plan p) => Schedule(p)?.Mode == PlanRules.Rotating;
 
     public async Task<PlanContextDto> ContextAsync(Guid userId, CancellationToken ct)
     {
@@ -142,6 +149,8 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
     {
         var plan = await PlanAsync(userId, planId, ct);
         if (plan is null) return Outcome.NotFound<PlanContextDto>();
+        // An older build would rebuild a built plan from its old setup and erase its workouts and schedule.
+        if (plan.ScheduleJson is not null) return Outcome.Rejected<PlanContextDto>(NeedsNewerApp);
         if (plan.Lifecycle != PlanLifecycles.Draft) return await ConflictAsync(userId, "PLAN_NOT_DRAFT", ct);
         if (plan.Revision != r.ExpectedPlanRevision) return await ConflictAsync(userId, Ack.RevisionConflict, ct);
         var old = JsonSerializer.Deserialize<PlanSetup>(plan.SetupJson, Json)!;
@@ -170,6 +179,7 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
         if (ctx.Revision != r.ExpectedContextRevision || plan.Revision != r.ExpectedPlanRevision)
             return await ConflictAsync(userId, Ack.RevisionConflict, ct);
         if (plan.Lifecycle != PlanLifecycles.Draft) return await ConflictAsync(userId, "PLAN_NOT_DRAFT", ct);
+        if (plan.ScheduleJson is not null && !PlanRules.Usable(Workouts(plan), Schedule(plan))) return Outcome.Rejected<PlanContextDto>(PlanRules.NotUsable);
         // Activation commits exactly what was reviewed: same start, same occasions, same dates.
         var reviewed = (r.ReviewedDates ?? []).ToDictionary(d => d.OccasionId, d => d.Date);
         if (r.StartDate != plan.StartDate || reviewed.Count != plan.Occasions.Count ||
@@ -232,6 +242,17 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
         if (plan is null) return Outcome.NotFound<PlanContextDto>();
         if (plan.Revision != r.ExpectedPlanRevision) return await ConflictAsync(userId, Ack.RevisionConflict, ct);
         if (plan.Lifecycle is not (PlanLifecycles.Active or PlanLifecycles.Paused)) return await ConflictAsync(userId, "PLAN_NOT_ACTIVE", ct);
+        var rotating = IsRotating(plan);
+        // A rotation has no dates to move: its next workout is simply the next one done or skipped.
+        if (rotating && r.Action == "move") return await ConflictAsync(userId, NotMovable, ct);
+        if (r.Action == "skip" && r.SequenceIndex is { } k && r.To is { } day && plan.Occasions.All(o => o.Id != r.OccasionId))
+        {
+            var (code, created) = Materialize(db, plan, r.OccasionId, k, day);
+            if (code is not null) return await ConflictAsync(userId, code, ct);
+            created!.IsSkipped = true;
+            plan.Revision++;
+            return await SavedAsync(userId, ct);
+        }
         var schedule = await ScheduleAsync(plan, ct);
         var target = schedule.FirstOrDefault(o => o.Id == r.OccasionId);
         var occasion = plan.Occasions.FirstOrDefault(o => o.Id == r.OccasionId);
@@ -249,7 +270,9 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
                 occasion.IsSkipped = true; // no sets, no workout, no completion credit
                 break;
             case "unskip":
-                if (!occasion.IsSkipped) return await ConflictAsync(userId, ScheduleRules.OccasionNotEligible, ct);
+                // In a rotation an unskip may not reach behind an index that is already started or resolved.
+                if (!occasion.IsSkipped || (rotating && plan.Occasions.Any(o => o.SequenceIndex > occasion.SequenceIndex)))
+                    return await ConflictAsync(userId, ScheduleRules.OccasionNotEligible, ct);
                 occasion.IsSkipped = false;
                 break;
             default: return Outcome.Rejected<PlanContextDto>(Ack.Invalid);
@@ -293,6 +316,20 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
         var source = await PlanAsync(userId, planId, ct);
         if (source is null) return Outcome.NotFound<PlanContextDto>();
         if (await db.Plans.AnyAsync(p => p.Id == r.NewPlanId, ct)) return await ConflictAsync(userId, "DUPLICATE_ID", ct);
+        if (source.ScheduleJson is not null)
+        {
+            // Same workouts and schedule from the new start; a rotation starts again from its first workout.
+            var (defs, sched, weeks) = (Workouts(source)!, Schedule(source)! with { CycleAnchor = 0 }, source.IsOngoing ? (int?)null : source.BlockWeeks);
+            var copy = new Plan
+            {
+                Id = r.NewPlanId, UserId = userId, Title = source.Title, StartDate = r.StartDate, SetupJson = "null",
+                TemplateId = source.TemplateId, CreatedAtUtc = DateTime.UtcNow,
+            };
+            Define(copy, weeks, source.TimeBudgetMinutes, defs, sched);
+            db.Plans.Add(copy);
+            Apply(copy, Generated(copy.Id, r.StartDate, weeks, defs, sched), []);
+            return await SavedAsync(userId, ct);
+        }
         var setup = JsonSerializer.Deserialize<PlanSetup>(source.SetupJson, Json)! with { StartDate = r.StartDate };
         var plan = new Plan
         {
@@ -306,6 +343,181 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
         if (error is not null) return Outcome.Rejected<PlanContextDto>(error);
         plan.Occasions = occasions;
         db.Plans.Add(plan);
+        return await SavedAsync(userId, ct);
+    }
+
+    // ------------------------------------------------------------------ built plans (docs/TRAINING_PLANS.md)
+
+    public const string NeedsNewerApp = "PLAN_NEEDS_NEWER_APP", UnknownExercise = "UNKNOWN_EXERCISE", NotMovable = "OCCASION_NOT_MOVABLE";
+
+    private static Occasion NewOccasion(Plan plan, Guid id, DateOnly date, int week, int ordinal, WorkoutDefinition w, int? k) => new()
+    {
+        Id = id, PlanId = plan.Id, UserId = plan.UserId, WeekNumber = week, Ordinal = ordinal, Title = w.Name, OriginalDate = date,
+        ScheduledDate = date, PrescriptionJson = JsonSerializer.Serialize(w.Exercises ?? [], Json), WorkoutId = w.Id, SequenceIndex = k,
+    };
+
+    private static void Define(Plan plan, int? weeks, int? budget, List<WorkoutDefinition> workouts, PlanSchedule schedule)
+    {
+        // Older builds clamp by BlockWeeks, so an ongoing plan reports 1. Built plans have no recovery spacing rule.
+        (plan.BlockWeeks, plan.IsOngoing, plan.TimeBudgetMinutes, plan.MinRecoveryDays) = (weeks ?? 1, weeks is null, budget, 0);
+        plan.WorkoutsJson = JsonSerializer.Serialize(workouts, Json);
+        plan.ScheduleJson = JsonSerializer.Serialize(schedule, Json);
+    }
+
+    /// <summary>Every occurrence of a fixed-weekday plan, each with its deterministic ID and its own copy of its workout.</summary>
+    private static List<RevisableOccasion> Generated(Guid planId, DateOnly start, int? weeks, List<WorkoutDefinition> workouts, PlanSchedule schedule)
+    {
+        if (schedule.Mode != PlanRules.Fixed || weeks is not { } w) return [];
+        var byId = workouts.ToDictionary(x => x.Id);
+        return PlanRules.FixedDates(planId, start, w, schedule.Pattern).Select(g =>
+        {
+            var d = byId[g.WorkoutId];
+            return new RevisableOccasion(g.Id, g.Date, g.Date, g.WeekNumber, g.Ordinal, d.Id, d.Name, d.Exercises ?? [], false, true);
+        }).ToList();
+    }
+
+    private async Task<List<RevisableOccasion>> RevisableAsync(Plan plan, CancellationToken ct)
+    {
+        var pending = (await ScheduleAsync(plan, ct)).Where(s => s.IsEligible).Select(s => s.Id).ToHashSet();
+        return plan.Occasions.Select(o => new RevisableOccasion(o.Id, o.OriginalDate, o.ScheduledDate, o.WeekNumber, o.Ordinal, o.WorkoutId,
+            o.Title, Prescription(o), o.IsCustomised, pending.Contains(o.Id))).ToList();
+    }
+
+    /// <summary>
+    /// Makes the plan's occasions exactly `desired`: the same ID is updated in place (so it keeps its identity and links),
+    /// a missing one is removed, a new one is added. A prescription is rewritten only when its content was replaced.
+    /// </summary>
+    private void Apply(Plan plan, List<RevisableOccasion> desired, IReadOnlyList<RevisableOccasion> before)
+    {
+        var current = plan.Occasions.ToDictionary(o => o.Id);
+        var original = before.ToDictionary(o => o.Id);
+        var keep = desired.Select(d => d.Id).ToHashSet();
+        foreach (var o in plan.Occasions.Where(o => !keep.Contains(o.Id)).ToList()) db.Occasions.Remove(o);
+        foreach (var d in desired)
+        {
+            if (!current.TryGetValue(d.Id, out var o)) db.Occasions.Add(o = new Occasion { Id = d.Id, PlanId = plan.Id, UserId = plan.UserId });
+            (o.OriginalDate, o.ScheduledDate, o.WeekNumber, o.Ordinal, o.WorkoutId, o.Title, o.IsCustomised) =
+                (d.OriginalDate, d.ScheduledDate, d.WeekNumber, d.Ordinal, d.WorkoutId, d.Title, d.IsCustomised);
+            if (!original.TryGetValue(d.Id, out var b) || !ReferenceEquals(b.Prescription, d.Prescription))
+                o.PrescriptionJson = JsonSerializer.Serialize(d.Prescription, Json);
+        }
+    }
+
+    /// <summary>Every catalogKey is null, a catalog exercise, or "custom:&lt;id&gt;" of the caller's own custom exercise (archived included).</summary>
+    private async Task<bool> KnownExercisesAsync(Guid userId, IEnumerable<PrescriptionExercise> exercises, CancellationToken ct)
+    {
+        const string prefix = "custom:";
+        var keys = exercises.Select(e => e.CatalogKey).OfType<string>().Distinct().ToList();
+        var custom = new HashSet<Guid>();
+        foreach (var k in keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)))
+            if (Guid.TryParse(k.AsSpan(prefix.Length), out var id)) custom.Add(id); else return false;
+        var catalog = keys.Where(k => !k.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+        return await db.CatalogExercises.CountAsync(c => catalog.Contains(c.Key), ct) == catalog.Count &&
+            await db.CustomExercises.CountAsync(c => c.UserId == userId && custom.Contains(c.Id), ct) == custom.Count;
+    }
+
+    private async Task<string?> CheckAsync(Guid userId, string? title, int? weeks, int? budget, List<WorkoutDefinition>? workouts,
+        PlanSchedule? schedule, CancellationToken ct)
+    {
+        var errors = PlanRules.Validate(title, weeks, budget, workouts, schedule);
+        if (errors.Count > 0) return errors[0];
+        return await KnownExercisesAsync(userId, workouts!.SelectMany(w => w.Exercises ?? []), ct) ? null : UnknownExercise;
+    }
+
+    /// <summary>
+    /// Creates rotating occurrence k when it is first acted on (a skip or a start). Its ID is the one both sides compute,
+    /// and k may be at most one past the highest materialized index, so the sequence never has a gap. The caller saves it.
+    /// </summary>
+    public static (string? Code, Occasion? Occasion) Materialize(GoHardDb db, Plan plan, Guid occasionId, int k, DateOnly date)
+    {
+        var schedule = Schedule(plan);
+        if (schedule?.Mode != PlanRules.Rotating || k < 0 || occasionId != PlanRules.SequenceId(plan.Id, k)) return (ScheduleRules.OccasionNotFound, null);
+        if (plan.Lifecycle != PlanLifecycles.Active) return ("PLAN_NOT_ACTIVE", null);
+        if (k > (plan.Occasions.Max(o => o.SequenceIndex) ?? -1) + 1) return (ScheduleRules.OccasionNotEligible, null);
+        var workoutId = PlanRules.WorkoutFor(schedule.Cycle, schedule.CycleAnchor, k);
+        var occasion = NewOccasion(plan, occasionId, date, Math.Max(1, (date.DayNumber - plan.StartDate.DayNumber) / 7 + 1), k + 1,
+            Workouts(plan)!.First(w => w.Id == workoutId), k);
+        db.Occasions.Add(occasion);
+        return (null, occasion);
+    }
+
+    /// <summary>A new built plan, always a draft. Fixed plans get every occurrence now; rotating ones when acted on.</summary>
+    public async Task<Outcome<PlanContextDto>> CreateAsync(Guid userId, PlanCreateRequest r, CancellationToken ct)
+    {
+        if (r.PlanId == Guid.Empty || r.TemplateId is { Length: > 64 }) return Outcome.Rejected<PlanContextDto>(Ack.Invalid);
+        var owner = await db.Plans.Where(p => p.Id == r.PlanId).Select(p => (Guid?)p.UserId).FirstOrDefaultAsync(ct);
+        if (owner is not null) return owner == userId ? await ConflictAsync(userId, "DUPLICATE_ID", ct) : Outcome.NotFound<PlanContextDto>();
+        if (await CheckAsync(userId, r.Title, r.DurationWeeks, r.TimeBudgetMinutes, r.Workouts, r.Schedule, ct) is { } error)
+            return Outcome.Rejected<PlanContextDto>(error);
+        var plan = new Plan
+        {
+            Id = r.PlanId, UserId = userId, Title = r.Title.Trim(), StartDate = r.StartDate, SetupJson = "null", TemplateId = r.TemplateId,
+            CreatedAtUtc = DateTime.UtcNow,
+        };
+        Define(plan, r.DurationWeeks, r.TimeBudgetMinutes, r.Workouts, r.Schedule);
+        db.Plans.Add(plan);
+        Apply(plan, Generated(plan.Id, r.StartDate, r.DurationWeeks, r.Workouts, r.Schedule), []);
+        return await SavedAsync(userId, ct);
+    }
+
+    /// <summary>Future edits to a plan. Recorded, skipped, open, earlier and one-off edited occurrences keep content and dates.</summary>
+    public async Task<Outcome<PlanContextDto>> ReviseAsync(Guid userId, Guid planId, PlanReviseRequest r, CancellationToken ct)
+    {
+        var plan = await PlanAsync(userId, planId, ct);
+        if (plan is null) return Outcome.NotFound<PlanContextDto>();
+        if (plan.Revision != r.ExpectedPlanRevision) return await ConflictAsync(userId, Ack.RevisionConflict, ct);
+        if (plan.Lifecycle == PlanLifecycles.Closed) return await ConflictAsync(userId, "PLAN_NOT_ACTIVE", ct);
+        if (await CheckAsync(userId, r.Title, r.DurationWeeks, r.TimeBudgetMinutes, r.Workouts, r.Schedule, ct) is { } error)
+            return Outcome.Rejected<PlanContextDto>(error);
+
+        if (plan.Lifecycle == PlanLifecycles.Draft)
+        {
+            // Nothing recorded to keep: rebuilt in full from the new start.
+            plan.StartDate = r.StartDate;
+            Apply(plan, Generated(plan.Id, r.StartDate, r.DurationWeeks, r.Workouts, r.Schedule), []);
+        }
+        else
+        {
+            if (!PlanRules.Usable(r.Workouts, r.Schedule)) return Outcome.Rejected<PlanContextDto>(PlanRules.NotUsable);
+            if ((Schedule(plan)?.Mode ?? PlanRules.Fixed) != r.Schedule.Mode) return Outcome.Rejected<PlanContextDto>("MODE_LOCKED");
+            if (r.StartDate != plan.StartDate) return Outcome.Rejected<PlanContextDto>("START_LOCKED");
+            if (r.Schedule.Mode == PlanRules.Rotating)
+            {
+                // Materialized occurrences stay as they are; a changed cycle starts at the next index at the latest.
+                if (r.Schedule.CycleAnchor > (plan.Occasions.Max(o => o.SequenceIndex) ?? -1) + 1)
+                    return Outcome.Rejected<PlanContextDto>(PlanRules.ScheduleInvalid);
+            }
+            else
+            {
+                var current = await RevisableAsync(plan, ct);
+                Apply(plan, PlanRules.Revise(plan.Id, plan.StartDate, r.DurationWeeks, r.EffectiveDate, current, r.Workouts, r.Schedule), current);
+            }
+        }
+        plan.Title = r.Title.Trim();
+        Define(plan, r.DurationWeeks, r.TimeBudgetMinutes, r.Workouts, r.Schedule);
+        plan.Revision++; // also turns open proposals built on the old plan into needs_review
+        return await SavedAsync(userId, ct);
+    }
+
+    /// <summary>This occurrence only: a pending occasion of a fixed-weekday plan gets its own title and exercises.</summary>
+    public async Task<Outcome<PlanContextDto>> EditOccasionAsync(Guid userId, Guid planId, Guid occasionId, OccasionEditRequest r, CancellationToken ct)
+    {
+        var plan = await PlanAsync(userId, planId, ct);
+        if (plan is null) return Outcome.NotFound<PlanContextDto>();
+        if (plan.Revision != r.ExpectedPlanRevision) return await ConflictAsync(userId, Ack.RevisionConflict, ct);
+        if (plan.Lifecycle == PlanLifecycles.Closed) return await ConflictAsync(userId, "PLAN_NOT_ACTIVE", ct);
+        if (IsRotating(plan)) return Outcome.Rejected<PlanContextDto>(NotMovable);
+        var target = (await ScheduleAsync(plan, ct)).FirstOrDefault(o => o.Id == occasionId);
+        if (target is null) return await ConflictAsync(userId, ScheduleRules.OccasionNotFound, ct);
+        if (!target.IsEligible) return await ConflictAsync(userId, ScheduleRules.OccasionNotEligible, ct);
+        var prescription = r.Prescription ?? [];
+        var probe = Guid.NewGuid(); // the same rules as a plan workout
+        var errors = PlanRules.Validate("x", 1, null, [new(probe, r.Title, null, prescription)], new(PlanRules.Fixed, [new(1, probe)], [], [], 0));
+        if (errors.Count > 0) return Outcome.Rejected<PlanContextDto>(errors[0]);
+        if (!await KnownExercisesAsync(userId, prescription, ct)) return Outcome.Rejected<PlanContextDto>(UnknownExercise);
+        var occasion = plan.Occasions.First(o => o.Id == occasionId);
+        (occasion.Title, occasion.PrescriptionJson, occasion.IsCustomised) = (r.Title.Trim(), JsonSerializer.Serialize(prescription, Json), true);
+        plan.Revision++;
         return await SavedAsync(userId, ct);
     }
 }

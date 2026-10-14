@@ -19,6 +19,7 @@
     <Using Include="Xunit" />
     <!-- One fixture file shared with the Flutter tests: byte equality by construction. -->
     <Content Include="..\..\..\contracts\contract_fixture.json" Link="contract_fixture.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\..\app\assets\data\plan-templates.json" Link="plan-templates.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="..\..\src\GoHard.Api\GoHard.Api.csproj" />
   </ItemGroup>

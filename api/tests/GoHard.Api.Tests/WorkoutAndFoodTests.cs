@@ -316,6 +316,8 @@ public class WorkoutAndFoodTests(PostgresFixture pg)
         var snapshot = await a.SnapshotAsync();
         Assert.Single(snapshot.Runs);
         Assert.Single(snapshot.BodyMetrics);
-        Assert.Equal(26, snapshot.Catalog.Count);
+        // Every seeded catalog entry, as many as the shipped catalog file holds (it grows with new builds).
+        var shipped = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data", "exercise-catalog.json")))!.AsArray();
+        Assert.Equal(shipped.Count, snapshot.Catalog.Count);
     }
 }
