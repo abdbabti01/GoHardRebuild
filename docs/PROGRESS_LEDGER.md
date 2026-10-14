@@ -641,3 +641,10 @@ Checked on the final code:
 Not checked, and not claimed: anything on a physical phone (brightness comfort, real haptics, the photographs on
 real screens, VoiceOver/TalkBack by ear, scrolling smoothness and image memory, the camera reading a real barcode),
 profile-mode frame timing, and anything on an iPhone beyond the unsigned build compiling.
+
+**Release (13 October 2026).** `feature/ui-food-search-refine` pushed; `ci` passed on `af0594d`
+(run 38503391974). `main` fast-forwarded from `76623f7` to `af0594d` and pushed; `ci` on `main` passed (run
+38504519886). Hosted testing API (`https://gohardrebuild-production.up.railway.app`, no API code changed):
+`verify-api.ps1` passed every check, including live USDA search ("chicken breast", 25 results) and a live Open Food
+Facts barcode, and deleted its account. Unsigned IPA built from `af0594d` by `ios-unsigned-ipa` (run 38504529395,
+artifact `GoHard-Dev-unsigned-ipa`): it compiles; it is not signed and was not installed on an iPhone.
