@@ -584,3 +584,60 @@ Not checked, and not claimed: anything on a physical phone (how the three photog
 notch and home-indicator safe areas, the phone's largest text size, TalkBack or VoiceOver by ear, memory while
 scrolling, a real run with GPS) and anything on an iPhone beyond the unsigned build compiling. The side-by-side
 layout was rendered at 390 px and on the emulator's 411 px; other widths between 350 and 430 px were not rendered.
+
+
+## 13 October 2026 — refined design on all four tabs, motion and haptics, common-food search (branch `feature/ui-food-search-refine`)
+
+From the brief in `C:\dev\GoHard_UI_Food_Search` (`CLAUDE_PROMPT.md`, `FOOD_SEARCH_DETAILS.md`, `RESEARCH.md`,
+`ASSETS.md`, five reference concepts). Started from `main` at `76623f7`; baseline `scripts\test.ps1` on that commit:
+83/83 API tests, analyze clean, 150/150 Flutter tests. Built by four agents in separate worktrees (visual system and
+Me; food discovery; Today and Eat; Train and workouts), each merged and checked by the lead. No API, contract,
+database or migration change: the hosted API needs no redeploy for this work.
+
+| Change | Where |
+|---|---|
+| Calmer tokens (pearl and charcoal surfaces), rounded-rectangle buttons, flat pass, one motion system (press 100 ms at 0.98, content 200 ms, sheets 280 ms, progress 360 ms only on a real change), shared `Pressable`, `TabHeader`, `IconTile`, `GroupCard`/`GroupRow`, `showGoSheet` | `core/theme.dart`, `core/widgets.dart` |
+| Me › Motion & haptics: Motion Device/Reduced, Haptics Device/Off, a device setting (not the profile); Reduced behaves like the OS setting everywhere | `core/device_prefs.dart`, `app/app.dart`, `main.dart` |
+| Me: identity, Personal, Preferences, Account with a truthful sync status; no training dashboard (moved to Train) | `features/me/me_screen.dart` |
+| Today: three balanced modules (workout, run, nutrition) with small photo crops; text-first states without photos; no exercise list | `features/today/today_screen.dart` |
+| Train: pass, every week of any plan length, Done only from recorded results, dated schedule with labelled states; Workout and Run history always in Workouts | `features/plans/*`, `features/workout/*` |
+| Eat: one overview card, one Log food, each meal a group with one row per logged food | `features/nutrition/eat_screen.dart`, `nutrition_surface.dart` |
+| Add food: meal selector, quiet scopes, category chips, plain rows, "Search more foods", truthful failure states, stale answers dropped | `features/nutrition/log_food_screen.dart`, `food_search.dart` |
+| 74 common foods, each a USDA FDC record taken from the hosted API's search, bundled for offline use; relevance with English and French aliases | `app/assets/data/common-foods.json`, `scripts/build-common-foods.mjs`, `docs/COMMON_FOODS_COMPARISON.md` |
+| The food form keeps the exact quantity when the unit changes (100 g → cup → 100 g, was 99.54) | `features/nutrition/food_form.dart`, `FoodScaling.exact` |
+
+**Catalog.** 74 foods cover 75 of the original 76 names; "Protein bar" has no generic USDA record and "String
+cheese" is the part-skim mozzarella record. Records were chosen by review (whole egg, cooked skinless breast, plain
+cooked rice), not by first hit. 120 searches through three disposable accounts on the hosted testing API, each
+deleted afterwards. Values that differ from the original seed (ground beef cooked vs raw, firm tofu, whey) follow
+the record. No gram-to-millilitre density or portion was invented; records without a count portion start at 100 g.
+
+**Found by the native journeys and fixed in the app** (each with a test that fails without the fix):
+- After recording a set, the Undo message never timed out (an action makes a SnackBar persist) and covered
+  "Save for later". It now times out after 4 s.
+- A food the wider search had just returned moved into "Your foods" as soon as it was cached as seen.
+  It now stays under "More foods".
+- A planned workout done today appeared in the Workout module and again under "Recorded today". The credited
+  workout is now left out of that list by its identity; manual work and other attempts stay listed.
+
+**Journey corrections** (the app was right):
+- The reschedule step tapped a day number that the Train page underneath also shows, which closed the date picker.
+  The tap is now scoped to the picker; the date-picker and move-review steps are unchanged.
+- The offline wording check now reads only Today's connection notice and Me's sync row, so the account name
+  "Offline Tester" cannot trip it.
+- Cold start checks the food's calories, since Today no longer counts foods.
+- After a restart the food journey checks a never-logged common food, and that the logged eggs appear once as the
+  account's own.
+
+Checked on the final code:
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` | API build, 83/83 API tests, release publish, analyze clean, 238/238 Flutter tests |
+| Renders (`docs/evidence/design/`), regenerated and looked at | every main screen in six themes, large text at 320 px, new account, 8/12/16-week plans, sheets, Add food with results and preview |
+| Android emulator, local API with recorded food responses | all eight pass on f72e258: main, secondary, more, offline, device, upgrade and food in one serial run; cold start (both phases, a real process restart) on its own straight after, because in the serial run the Flutter tool hung attaching to phase 2's new process before any step ran. Earlier attempts on the same code also hit the tool's attach failures ("Service has disappeared", a stale adb port forward left by the cold-start journey); clearing the forwards fixed them. No app step failed in the final runs |
+| Reduced motion | every animation's duration goes through `context.motion`; nothing repeats; the tab fade keeps the `IndexedStack` (source review plus `motion_test`) |
+
+Not checked, and not claimed: anything on a physical phone (brightness comfort, real haptics, the photographs on
+real screens, VoiceOver/TalkBack by ear, scrolling smoothness and image memory, the camera reading a real barcode),
+profile-mode frame timing, and anything on an iPhone beyond the unsigned build compiling.
