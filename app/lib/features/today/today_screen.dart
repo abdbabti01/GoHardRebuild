@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/appearance.dart';
+import '../../core/clock.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -15,8 +16,10 @@ import '../activity/activity_screens.dart';
 import '../activity/run_tracking.dart';
 import '../nutrition/food_form.dart';
 import '../nutrition/nutrition_surface.dart';
+import '../plans/builder/plan_builder_screen.dart';
 import '../plans/plan_actions.dart';
 import '../plans/plan_progress.dart';
+import '../plans/plan_projection.dart' show rotationOf;
 import '../plans/plan_screens.dart';
 import '../shell/home_shell.dart';
 import '../weather/weather.dart';
@@ -372,7 +375,11 @@ class _TrainingSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final a = snapshot.training;
     final c = context.c;
-    String nextText(Occasion? next) => next == null ? 'No further workout is scheduled in this block.' : 'Next: ${next.title} on ${longDate(next.scheduledDate)}.';
+    final today = snapshot.dayKey;
+    // "Next: Pull · Wednesday" within the coming week, with the full date further out.
+    String nextText(Occasion? next) => next == null
+        ? 'No further workout is scheduled in this block.'
+        : 'Next: ${next.title} · ${daysBetween(today, next.scheduledDate) < 7 ? weekdayName(weekdayOf(next.scheduledDate)) : longDate(next.scheduledDate)}.';
     void openPlan() => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
     Widget title(String text) => Padding(padding: const EdgeInsets.only(top: 2), child: Text(text, style: context.titleStyle(23)));
     Widget line(String text, {double top = 4}) => Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: context.sansStyle(14.5, color: c.secondary)));
@@ -398,7 +405,8 @@ class _TrainingSection extends ConsumerWidget {
           final n = w.exercises.length;
           // A planned workout opens its plan entry; a manual one opens its own record of what was done so far.
           final plan = ref.watch(planListProvider).where((p) => p.id == w.planId).firstOrNull;
-          final occasion = plan?.occasions.where((o) => o.id == w.occasionId).firstOrNull;
+          // Through the projection, so a rotation's step started on this phone still opens its plan entry.
+          final occasion = plan == null ? null : planOccasions(plan, today, ref.watch(workoutListProvider)).where((o) => o.id == w.occasionId).firstOrNull;
           return (
             workout(
               status: ('In progress', Icons.timelapse, Tone.accent), name: w.title,
@@ -444,12 +452,17 @@ class _TrainingSection extends ConsumerWidget {
           final sets = occasion.prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
           // The minutes are the session length chosen when the plan was set up. They are not worked out from
           // the exercises, so they are labelled as planned time and never as an estimate.
-          final minutes = plan.setup?['minutesPerSession'];
+          final minutes = plannedMinutes(plan);
+          // A rotation's next workout says where it is in the cycle; a fixed day says its plan week.
+          final rotation = plan.isRotating ? rotationOf(plan, planOccasions(plan, today, ref.watch(workoutListProvider)), ref.watch(workoutListProvider)) : null;
+          final where = rotation != null && rotation.next?.id == occasion.id
+              ? 'Step ${rotation.position + 1} of ${rotation.cycle.length}'
+              : occasion.sequenceIndex != null ? 'Session ${occasion.sequenceIndex! + 1}' : 'Week ${occasion.weekNumber}';
           return (
             workout(
               // The name and the week beside the photograph; the exercise and set counts on one full-width line.
               status: ('Due today', Icons.today, Tone.accent), name: occasion.title, titleBeside: true,
-              body: [line('Week ${occasion.weekNumber}${minutes == null ? '' : ' · $minutes min planned'}')],
+              body: [line('$where${minutes == null ? '' : ' · $minutes min planned'}')],
               footer: line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}', top: 6),
               onDetails: () => showOccasionSheet(context, ref, plan, occasion),
               action: PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, onPressed: () => startPlannedWorkout(context, ref, plan, occasion)),
@@ -494,8 +507,8 @@ class _TrainingSection extends ConsumerWidget {
           true
         ),
       CreatePlan() => (
-          plain(name: 'No plan yet', text: 'Answer a few questions and review a plan before you commit, or just train manually today.',
-              action: PrimaryButton('Create my plan', key: const Key('today-create-plan'), onPressed: () => push(context, const PlanSetupScreen()))),
+          plain(name: 'No plan yet', text: 'Start from a familiar split or build your own and review it before you commit, or just train manually today.',
+              action: PrimaryButton('Create my plan', key: const Key('today-create-plan'), onPressed: () => push(context, const CreatePlanScreen()))),
           true
         ),
     };

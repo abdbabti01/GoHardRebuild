@@ -167,7 +167,8 @@ void main() {
     expect(find.byKey(const Key('occasion-start')), findsOneWidget);
     expect(find.byKey(const Key('occasion-move')), findsOneWidget);
     expect(find.byKey(const Key('occasion-skip')), findsOneWidget);
-    expect(find.text('4 sets · 6–8 reps'), findsNWidgets(3));
+    expect(find.text('4 × 6–8 · 90 s rest'), findsNWidgets(3), reason: 'sets × reps and the rest, as the plan builder writes them');
+    expect(find.text('3 × 6–8 · 90 s rest'), findsNWidgets(2));
     expect(tester.takeException(), isNull);
     handle.dispose();
   });

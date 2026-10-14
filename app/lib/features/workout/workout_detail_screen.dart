@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
+import '../plans/plan_progress.dart';
 import 'result_rules.dart';
 import 'workout_flow.dart';
 import 'workout_screen.dart';
@@ -52,6 +53,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
       children: [
         if (justFinished) Text(w.title, style: context.sansStyle(16, weight: FontWeight.w600)),
         Text('${longDate(w.dayKey)}${w.isManual ? ' · manual' : ''}', style: context.caption),
+        // Which plan and session this came from, read from the plan as it is now (it may since have been edited,
+        // archived or closed); the recorded exercises below are this workout's own and never change with the plan.
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(provenanceOf(w, ref.watch(planListProvider), ref.watch(workoutListProvider)), key: const Key('workout-provenance'), style: context.caption),
+        ),
         const SizedBox(height: 12),
         StatusLine(w.isOpen ? Icons.timelapse : w.outcome == WorkoutResultRules.noData ? Icons.remove_circle_outline : Icons.check_circle_outline,
             '${WorkoutResultRules.label(w.outcome)}. ${outcomeExplanation(w)}'),
@@ -111,15 +118,16 @@ class WorkoutHistoryScreen extends ConsumerWidget {
 }
 
 /// One workout in a list. [grouped] is the row of a short [GroupCard]; a long history uses flat rows, which are
-/// laid out lazily.
-class WorkoutRow extends StatelessWidget {
+/// laid out lazily. A planned workout names its plan; a manual one says manual.
+class WorkoutRow extends ConsumerWidget {
   const WorkoutRow(this.workout, {super.key, this.grouped = false});
   final Workout workout;
   final bool grouped;
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plan = workout.planId == null ? null : ref.watch(planListProvider).where((p) => p.id == workout.planId).firstOrNull;
     final subtitle = '${shortDate(workout.dayKey)} · ${WorkoutResultRules.label(workout.outcome)}'
-        '${workout.isOpen ? '' : ' · ${workout.performedSets} set${workout.performedSets == 1 ? '' : 's'}'}${workout.isManual ? ' · manual' : ''}';
+        '${workout.isOpen ? '' : ' · ${workout.performedSets} set${workout.performedSets == 1 ? '' : 's'}'}${workout.isManual ? ' · manual' : plan == null ? '' : ' · ${plan.title}'}';
     void open() => push(context, WorkoutDetailScreen(workoutId: workout.id));
     return grouped
         ? GroupRow(icon: Icons.fitness_center, tone: Tone.neutral, title: workout.title, subtitle: subtitle, onTap: open)

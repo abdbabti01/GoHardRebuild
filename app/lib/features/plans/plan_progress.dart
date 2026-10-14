@@ -88,6 +88,70 @@ class SetProgress {
   }
 }
 
+const _directions = {'strength': 'Get stronger', 'muscle': 'Build muscle', 'fat_loss': 'Lose fat', 'general': 'General fitness'};
+const _equipment = {'full_gym': 'Full gym', 'dumbbells': 'Dumbbells only', 'bodyweight': 'Bodyweight only'};
+
+/// The wording of an older reviewed plan's setup answers.
+String setupSummary(Json s) =>
+    '${_directions[s['direction']] ?? s['direction']} · ${s['sessionsPerWeek']} a week · about ${s['minutesPerSession']} min · ${_equipment[s['equipment']] ?? s['equipment']}';
+
+/// The plan's split: the starter it was copied from, the user's own, or an older plan's setup.
+/// [templateName] looks a template's name up by ID (null while the templates are not loaded).
+String planSplit(Plan plan, String? Function(String id) templateName) {
+  if (!plan.isBuilt) return plan.setup == null ? 'Reviewed plan' : setupSummary(plan.setup!);
+  final id = plan.templateId;
+  return (id == null ? null : templateName(id)) ?? 'Your own split';
+}
+
+String scheduleMode(Plan plan) => plan.isRotating ? 'Rotating sequence' : 'Fixed weekdays';
+
+/// The time the user chose for a session. It is a plan, never a measured or estimated duration.
+int? plannedMinutes(Plan plan) => plan.timeBudgetMinutes ?? (plan.setup?['minutesPerSession'] as num?)?.toInt();
+
+/// "3 × 8–12 · 90 s rest", "3 × 45 s", "3 sets", "8 reps", or "No target".
+String prescriptionLine({int? sets, int? repsMin, int? repsMax, int? seconds, int? rest}) {
+  final reps = seconds != null
+      ? '$seconds s'
+      : repsMin != null && repsMax != null && repsMin != repsMax
+          ? '$repsMin–$repsMax'
+          : (repsMin ?? repsMax)?.toString();
+  final main = sets != null && reps != null
+      ? '$sets × $reps'
+      : sets != null
+          ? '$sets ${sets == 1 ? 'set' : 'sets'}'
+          : reps == null
+              ? null
+              : seconds != null ? reps : '$reps reps';
+  final restText = (rest ?? 0) <= 0 ? null : rest! >= 120 && rest % 60 == 0 ? '${rest ~/ 60} min rest' : '$rest s rest';
+  final parts = [?main, ?restText];
+  return parts.isEmpty ? 'No target' : parts.join(' · ');
+}
+
+String prescriptionOf(Prescription e) =>
+    prescriptionLine(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds, rest: e.restSeconds);
+
+/// Monday of the calendar week holding [day].
+String weekStart(String day) => addDays(day, 1 - parseDayKey(day).weekday);
+
+/// Sessions of a rotation credited in the calendar week (Monday to Sunday) holding [today]. A rotation has no
+/// meaningful total, so this and the position in the cycle are its progress; there is no overall percentage.
+int creditedThisWeek(List<Occasion> occasions, Iterable<Workout> workouts, String today) {
+  final from = weekStart(today), to = addDays(from, 6);
+  return occasions.where((o) => o.scheduledDate.compareTo(from) >= 0 && o.scheduledDate.compareTo(to) <= 0 && occasionOutcome(o, workouts) != null).length;
+}
+
+/// Where a recorded planned workout came from: plan, workout, its week or rotation step, and its date.
+/// The plan may have been edited, paused, archived or closed since; the record keeps what was planned then.
+String provenanceOf(Workout w, List<Plan> plans, List<Workout> workouts) {
+  if (w.isManual || w.planId == null) return 'Manual workout · not part of a plan';
+  final plan = plans.where((p) => p.id == w.planId).firstOrNull;
+  if (plan == null) return 'From a plan that is no longer on this phone · ${w.title}';
+  final o = (plan.isRotating ? planOccasions(plan, w.dayKey, workouts, ahead: 0) : plan.occasions).where((o) => o.id == w.occasionId).firstOrNull;
+  final state = plan.isArchived ? ' (archived)' : plan.isClosed ? ' (closed)' : plan.isPaused ? ' (paused)' : '';
+  final step = o == null ? null : o.sequenceIndex != null ? 'session ${o.sequenceIndex! + 1} of the rotation' : 'week ${o.weekNumber}';
+  return 'From ${plan.title}$state · ${w.title}${step == null ? '' : ' · $step'} · ${longDate(o?.scheduledDate ?? w.dayKey)}';
+}
+
 /// "5 exercises · 18 sets" from a prescription; set count is left out when no movement has a target.
 String prescriptionSummary(List<Prescription> prescription) {
   final sets = prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
