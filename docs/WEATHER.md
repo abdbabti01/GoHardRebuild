@@ -91,12 +91,14 @@ weather (contract, rounding, age) and a city lookup when the server declares `we
   city's night stays night whatever the phone's clock); missing -> the family's neutral treatment. Unknown family,
   stale, ahead of time, other source/region or missing artwork -> `dusk` with no label.
 - **Backdrops.** `TodayBackdrop` (refresh-if-stale triggers + scene), `ScenicBackdrop` (static), `SceneBackdrop(spec)`
-  (paints one spec; used by the settings preview). Decoded at the size shown (`cacheWidth`), page-tinted scrim and a
-  fade into `context.c.page`, crossfade (`Motion.progress`) only when the key changes, instant under reduced motion,
+  (paints one spec; used by the settings preview). Decoded at the size shown (`cacheWidth`), a light page-coloured veil
+  (18–34%) and a fade into `context.c.page`, crossfade (`Motion.progress`) only when the key changes, instant under reduced motion,
   undecodable photo -> page colour, excluded from semantics. No particles, lightning or looping animation.
-- **Contrast.** `test/weather_contrast_test.dart` renders the real photograph under every treatment in all six
-  looks and requires, against the worst pixel of the header's top 130 px, ≥ 7:1 for the theme text colour and
-  ≥ 4.5:1 for the secondary colour. To get there in Light mode the scrim is strong, so scenes read softly in Light.
+- **Contrast.** The header text is drawn in the theme's text colour on TabHeader's own scrim (page colour at 66%,
+  behind its lines only). `test/weather_contrast_test.dart` renders the real photograph under every treatment in
+  all six looks with that scrim over the band the date, title and greeting occupy, and requires ≥ 7:1 against the
+  worst pixel there. Above that band the scene shows with only the veil. (The first version put a 66–87% veil over
+  the whole scene and the header scrim on top of it, which hid the scenes; changed on 14 October 2026.)
 
 ## Artwork and its limitation
 
@@ -114,5 +116,11 @@ asset limitation.**
 
 ## Not verified here
 
-Physical-phone permission prompts, real GPS fixes, low-brightness comfort and device performance were not
-exercised (no emulator in this task). A scene appearing in tests or an emulator does not verify real local weather.
+On the Android emulator (`journey_more_test`, recorded provider answers): Weather chosen for a selected city in the
+middle of an open workout, "Paris" listed as France / Texas / Tennessee / Kentucky / Illinois, the chosen one
+stored, Today showing the overcast-night scene with the workout untouched, and the settings page saying "Overcast"
+with its time and place (`docs/evidence/screenshots/62b-…`, `62c-…`, `62d-…`).
+
+**Not verified:** the Automatic location path on a device (the OS permission prompt, denial, a real coarse fix);
+real local weather accuracy (a scene in tests or an emulator does not prove it); low-brightness comfort and device
+performance. These need a physical phone.

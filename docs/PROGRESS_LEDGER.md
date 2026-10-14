@@ -648,3 +648,39 @@ profile-mode frame timing, and anything on an iPhone beyond the unsigned build c
 `verify-api.ps1` passed every check, including live USDA search ("chicken breast", 25 results) and a live Open Food
 Facts barcode, and deleted its account. Unsigned IPA built from `af0594d` by `ios-unsigned-ipa` (run 38504529395,
 artifact `GoHard-Dev-unsigned-ipa`): it compiles; it is not signed and was not installed on an iPhone.
+
+## 14 October 2026 — Daily Rhythm design and weather-aware Today (branch `feature/daily-rhythm-weather`)
+
+From `C:\dev\GoHard_Daily_Rhythm_Weather` (brief, weather requirements, assets, food behaviour to keep, seven
+references). Started from released `main` at `af0594d`. Five agents in separate worktrees (visual system and Me;
+weather end to end; Train; food search and portion form; Today, Eat and run), each merged and checked by the lead.
+
+| Change | Where |
+|---|---|
+| Warm light and charcoal-plum dark tokens; DM Serif Display (SIL OFL 1.1, from the official Google Fonts repository, sha256 in `app/assets/PROVENANCE.md`) for page titles only; floating rounded navigation; `ProgressRing`, `RhythmTimeline`, `ChoiceCard`, round icon tiles | `core/*`, `features/shell/*`, `app/assets/fonts/` |
+| Me and Appearance per the references; Appearance has a static preview that starts nothing and a "Today background" row | `features/me/*` |
+| Today: scene header, a continuous rhythm of Workout (ring of recorded planned sets), Run and Nutrition | `features/today/today_screen.dart` |
+| Train and Eat: static scenic headers, serif titles, the pass, the calorie ring, grouped meals | `features/plans/*`, `features/nutrition/eat_screen.dart`, `nutrition_surface.dart` |
+| Add food and the portion form: the reference layout, with source details behind "Food details" and a nutrition read-out you can correct | `log_food_screen.dart`, `food_form.dart` |
+| Weather: Open-Meteo through the API (coordinates rounded to 0.1° before cache or provider, never logged; 20-minute region cache; 400 calls an hour; optional capability `weather.current`); device setting Scenic / Weather / Plain with Automatic or Selected city; 30-minute refresh, 60-minute freshness; graded scenes of the one dusk photograph | `api/.../Application/Weather/*`, `app/lib/features/weather/*`, `docs/WEATHER.md` |
+
+**Fixed during integration:** the first backdrop laid a 66–87% veil over the scene and the header's own scrim on top
+of it, so every weather scene looked the same. The veil is now 18–34% and the contrast test measures the scene with
+the header scrim where the text is, keeping 7:1 in all six looks.
+
+**Provider.** Open-Meteo's free API is for non-commercial use (this testing deployment), with daily limits and no
+uptime guarantee; data CC BY 4.0, credited in the setting. Live check 14 October 2026 03:22 UTC: Quebec City and
+Sydney at the same UTC instant, and "Paris" returning France, Texas, Tennessee and others; those answers are the
+recorded fixtures.
+
+Checked on the final code (`a6ab9d7`):
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` | API build, 118/118 API tests (35 weather), release publish, analyze clean, 283/283 Flutter tests |
+| Renders, looked at against the references | six themes for every tab, Appearance, Add food, the portion form; Today over clear day/night, rain, snow, fog and storm in light and dark; large text at 320 px; 8/12/16-week plans |
+| Android emulator, local API with recorded food and weather answers | all eight journeys pass: seven in one serial run (main, secondary, more, offline, device, upgrade, food); cold start (both phases, a real process restart) in a separate run, after the Flutter tool hung attaching to phase 2 and then lost phase 1's connection ("Service has disappeared") before any step. `journey_more_test` now chooses Weather for a city mid-workout |
+
+Not checked, and not claimed: the Automatic weather location on a device (permission prompt, denial, a real fix),
+real local weather accuracy, brightness comfort, real-device safe areas, haptics, screen readers by ear,
+performance and image memory, a real barcode with a camera, and anything on an iPhone beyond the unsigned build.
