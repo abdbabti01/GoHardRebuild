@@ -147,6 +147,12 @@ local API, are in `docs/evidence/screenshots/`.
 
 ## Today
 
+**Placement (14 October 2026).** The shell no longer insets the tabs for the status bar: each tab handles its own top
+inset. Today, Train and Eat draw their scene from the top edge of the screen and start their text below the inset
+(`TabHeader.topOnBackdrop`); a fixed `StatusBarVeil` in `features/shell/home_shell.dart` keeps the status-bar icons
+readable. Me has no scene and starts below the inset. Calories are shown in whole kilocalories everywhere
+(`formatKcal`), display only.
+
 A bounded header (`_Header` in `features/today/today_screen.dart`): the scene from `TodayBackdrop` (dusk, the
 weather scene, or the plain page, as chosen in Me › Appearance › Today background) behind the local date, the serif
 "Today" and a greeting from the phone's local time with the first word of the profile's name. The header text sits
@@ -211,9 +217,9 @@ goals shows the goals that were set, and "None set" otherwise; no number ever st
 | Reference | App | Why |
 |---|---|---|
 | Sample name, date and figures (Babti, 13 October, 1,480 kcal, a 78 kcal egg) | the profile's own name, the phone's date, the account's records, the source record's values (a USDA egg is 72 kcal) | references are concepts with sample data |
-| The scene running up behind the status bar | the scene starts below the status bar | the shell keeps a top safe area for all four tabs; changing it is a separate layout change |
-| A vivid scene behind the header text | the scene shows in the open band above the date and softly behind the text | the text keeps 7:1 over every weather scene in all six looks; Light mode shows scenes more softly than Dark |
-| Separate photographs for each weather | colour-graded, hazed treatments of the one supplied dusk photograph | no art pack was supplied and none could be produced here; see `docs/WEATHER.md` |
+| The scene running up behind the status bar | the same: on Today, Train and Eat the scene starts at the top edge; a page-coloured veil (66%) over the status-bar inset keeps its icons readable (≥ 11:1 measured over every scene) and dims that strip slightly | the status bar must stay legible over bright and dark scenes alike |
+| A vivid scene behind the header text | the scene shows clearly above and around the text and softly behind it | the date, title and greeting keep ≥ 9:1 over every scene in all six looks (measured with the header scrim) |
+| Separate photographs for each weather | painted skies behind the one supplied photograph's silhouettes: same lake, hills and trees, six weathers × day/night, static | no art pack exists; see `docs/WEATHER.md` |
 | Food photo in the Eat overview | none | the total, the ring and a photo do not fit at 390 px; the photo is decoration only |
 | "Account & privacy" row on Me | "Delete account" directly in the Account group | it is the only account action; a page holding one row would be a detour |
 | "Metric", "Device settings" | "Kilograms" / "Pounds"; "Device" | the app's real choices, short enough for the row |

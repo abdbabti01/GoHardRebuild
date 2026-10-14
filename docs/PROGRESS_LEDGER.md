@@ -684,3 +684,29 @@ Checked on the final code (`a6ab9d7`):
 Not checked, and not claimed: the Automatic weather location on a device (permission prompt, denial, a real fix),
 real local weather accuracy, brightness comfort, real-device safe areas, haptics, screen readers by ear,
 performance and image memory, a real barcode with a camera, and anything on an iPhone beyond the unsigned build.
+
+## 14 October 2026 — visual follow-up (branch `feature/rhythm-visual-followup`; `main` stays at `e6e43a8`)
+
+| Change | Where |
+|---|---|
+| Real-app capture journey: Today, Train › Plan, Eat, Me, food search and the portion form in Blue Light and Pink Dark, each from its top | `integration_test/journey_captures_test.dart`; captures in `docs/evidence/captures/release-e6e43a8/` (before) and `docs/evidence/captures/followup/` (after) |
+| Weather scenes: painted skies behind the one photograph's silhouettes, so clear (sun / stars and moon), cloudy, rain (static streaks), snow (static flakes, whitened shore), fog (haze bands) and storm each have a distinct day and night look; static, no animation | `features/weather/sky_painter.dart`, `scene_art.dart`, `backdrop.dart`; `test/weather_distinct_test.dart` measures every pair |
+| Scene behind the status bar on Today, Train and Eat, with a status-bar veil; Me starts below the inset | `features/shell/home_shell.dart` (`StatusBarVeil`), `TabHeader.topOnBackdrop`, the three headers, `me_screen.dart` |
+| Today's Run and Nutrition put their photo beside the label; the due summary no longer wraps | `features/today/today_screen.dart` |
+| Calories shown in whole kilocalories, grouped, everywhere (display only); Me's goal reads "2,200 kcal" like Eat | `formatKcal` in `nutrition_surface.dart`, `eat_screen.dart`, `me_screen.dart` |
+
+Measured: status-bar icons ≥ 11.2:1 and header text ≥ 9.0:1 against the worst pixel of every scene in all six looks;
+smallest scene-to-scene difference 0.034 per pixel / 0.19 histogram (threshold 0.03 / 0.15). Today at 390 × 844 with
+a 47 px status bar: workout 232, run 145, nutrition 213 in the fullest state; nutrition's calorie line ends above the
+navigation bar.
+
+Checked on `a3091f1`:
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` | 118/118 API tests, analyze clean, 287/287 Flutter tests |
+| Renders | regenerated; six themes, scene contact sheets (6 weathers × day/night/neutral, Light and Dark), large text at 320 px |
+| Android emulator | all eight journeys pass: main, secondary, more, offline and device in one serial run; upgrade, food and cold start (both phases) one by one straight after, because the Flutter tool hung connecting to the app before the upgrade journey's first step (as before: tool-side, no app step failed). Capture journey passes |
+
+Not checked: the scenes on a physical phone (brightness comfort, real status-bar heights and notches, performance),
+anything on an iPhone. The scenes remain painted treatments of one photograph, not separate photographs.
