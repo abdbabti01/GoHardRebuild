@@ -76,14 +76,14 @@ class SceneBackdrop extends StatelessWidget {
   const SceneBackdrop({super.key, required this.spec});
   final SceneSpec spec;
 
-  /// How much page colour lies over the scene behind the header text (top); it rises to the full page at the bottom.
-  /// Tuned (test/weather_contrast_test.dart) so that, against the WORST pixel of the top 130 px, the theme's text
-  /// colour keeps at least 7:1 and its secondary colour 4.5:1, in all six looks and every scene. The price is that
-  /// Light mode shows the scenes softly.
+  /// A light veil of page colour over the top of the scene, so the scene stays visible above and around the header.
+  /// It rises to the full page at the bottom. The header text is protected by TabHeader's own scrim behind its lines,
+  /// not by this veil: test/weather_contrast_test.dart measures the two together where the text sits.
   static double scrim(SceneSpec spec, bool dark) {
     final bright = spec.isDay == true || spec.family == 'snow' || spec.family == 'fog';
     final dim = spec.isDay == false || spec.family == 'storm' || spec.family == 'rain' || spec.key == 'dusk';
-    return dark ? (bright ? 0.74 : 0.66) : (dim ? 0.87 : 0.85);
+    // Dark mode dims bright scenes a little more, Light mode lifts dark ones; the scene stays what it is.
+    return dark ? (bright ? 0.32 : 0.18) : (dim ? 0.34 : 0.22);
   }
 
   /// The bundled photograph's aspect ratio (1536 x 1024).
@@ -118,9 +118,9 @@ class SceneBackdrop extends StatelessWidget {
                       // further and Light mode a dark one; the scene itself stays what it is.
                       DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0, 0.6, 1], colors: [
+                          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0, 0.55, 1], colors: [
                             page.withValues(alpha: scrim(spec, dark)),
-                            page.withValues(alpha: scrim(spec, dark) + 0.05),
+                            page.withValues(alpha: scrim(spec, dark) + 0.15),
                             page,
                           ]),
                         ),
