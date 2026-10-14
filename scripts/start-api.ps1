@@ -4,7 +4,8 @@
 .PARAMETER Lan
   Listen on all interfaces so a physical phone on the same network can reach the API.
 .PARAMETER FoodFixtures
-  Answer food search and barcode lookups from recorded provider responses instead of Open Food Facts and USDA.
+  Answer food search and barcode lookups, and weather and city lookups, from recorded provider responses instead of
+  Open Food Facts, USDA and Open-Meteo.
   For local development and the native journeys. Without it, barcode lookup calls Open Food Facts for real, and
   search works only when a USDA key is configured (FoodData:UsdaApiKey in appsettings.Local.json, or the
   GOHARD_FoodData__UsdaApiKey environment variable).
@@ -25,6 +26,8 @@ if ($FoodFixtures) {
     $env:GOHARD_FoodData__UsdaApiKey = 'recorded-responses'
     $env:GOHARD_FoodData__UsdaBaseUrl = 'http://localhost:5132/usda/'
     $env:GOHARD_FoodData__OpenFoodFactsBaseUrl = 'http://localhost:5132/off/'
+    $env:GOHARD_Weather__ForecastBaseUrl = 'http://localhost:5132/openmeteo/v1/'
+    $env:GOHARD_Weather__GeocodingBaseUrl = 'http://localhost:5132/openmeteo-geo/v1/'
 }
 try {
     dotnet run --project $ApiProject -- --urls $bind

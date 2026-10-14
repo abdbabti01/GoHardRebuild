@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GoHard.Api.Application;
 using GoHard.Api.Application.FoodDiscovery;
+using GoHard.Api.Application.Weather;
 using GoHard.Api.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,7 @@ public static class GoHardEndpoints
         .AddSingleton<BaselineCatalog>()
         .AddSingleton<IPlanAssistant, NoPlanAssistant>()
         .AddFoodDiscovery(config)
+        .AddWeather(config)
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>()
         .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>();
 
@@ -45,10 +47,11 @@ public static class GoHardEndpoints
     {
         var api = app.MapGroup("/api/v1");
         // minimumClientContract rises only for a change an older app cannot live with. Added optional fields are not one.
-        api.MapGet("/capabilities", (FoodDiscoveryService food) => Results.Ok(new
+        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather) => Results.Ok(new
         {
             contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 1),
-            capabilities = food.SearchConfigured ? [.. Capabilities, SearchCapability] : Capabilities,
+            capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
+                .Concat(weather.Enabled ? [WeatherRegistration.Capability] : []).ToArray(),
         }));
 
         var auth = api.MapGroup("/auth").RequireRateLimiting("auth");
@@ -151,6 +154,11 @@ public static class GoHardEndpoints
         var foods = me.MapGroup("/foods").RequireRateLimiting("food-data");
         foods.MapGet("/search", async (string? q, FoodDiscoveryService s, CancellationToken ct) => Lookup(await s.SearchAsync(q, ct), r => new { results = r.Results }));
         foods.MapGet("/barcode/{code}", async (string code, FoodDiscoveryService s, CancellationToken ct) => Lookup(await s.BarcodeAsync(code, ct), item => new { item }));
+
+        // Optional weather for the Today background. Coarse places only; a failure here touches nothing else.
+        var weather = me.MapGroup("/weather").RequireRateLimiting("food-data");
+        weather.MapGet("/current", async (double? lat, double? lon, WeatherService s, CancellationToken ct) => Lookup(await s.CurrentAsync(lat, lon, ct), w => w));
+        weather.MapGet("/places", async (string? q, WeatherService s, CancellationToken ct) => Lookup(await s.PlacesAsync(q, ct), r => new { results = r }));
 
         // Supporting activities
         me.MapPost("/runs", (RunStartRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>

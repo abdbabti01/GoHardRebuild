@@ -2,7 +2,7 @@
 .SYNOPSIS
   Verifies a running GoHard rebuild API end to end: readiness, client/backend contract compatibility,
   registration, sign-in, an idempotent write, reading it back, nutrition goals (set, kept by an older payload,
-  cleared), a reusable food, food lookup where the server declares it, and account deletion (so no test data is left).
+  cleared), a reusable food, food lookup and weather/city lookup where the server declares them, and account deletion (so no test data is left).
   The food lookup checks go through whatever providers that server is configured with. Against a deployed server
   they are the live provider check; against a local API started with -FoodFixtures they only exercise recordings.
   Safe to run against the local API or the hosted TESTING API. It prints no tokens or passwords.
@@ -108,6 +108,24 @@ if ($capabilities -contains 'food.search') {
         "$(@($r.data.results).Count) results, first: $($r.data.results[0].name)"
     }
 } else { Write-Host '  NOT CONFIGURED  Food search - the server has no USDA key (set GOHARD_FoodData__UsdaApiKey), so search is not declared and was not checked' -ForegroundColor Yellow }
+if ($capabilities -contains 'weather.current') {
+    Check 'Current weather through the server''s provider (a coarse point near Quebec City)' {
+        $r = Lookup '/api/v1/weather/current?lat=46.81&lon=-71.21'
+        if (-not $r.ok) { throw "weather failed: HTTP $($r.status) $($r.code)" }
+        $w = $r.data
+        if ($w.source -ne 'open-meteo' -or $w.family -notin 'clear','cloudy','fog','rain','snow','storm','unknown' -or $w.latitude -ne 46.8 -or $w.longitude -ne -71.2) { throw 'unexpected weather contract' }
+        $age = ([DateTime]::UtcNow - [DateTime]::Parse($w.validAtUtc).ToUniversalTime()).TotalMinutes
+        if ($age -lt -20 -or $age -gt 90) { throw "conditions are $([int]$age) minutes old" }
+        "$($w.family) ($($w.description)), isDay=$($w.isDay), valid $([int]$age) min ago, $($w.timezone)"
+    }
+    Check 'City lookup tells namesakes apart (Paris)' {
+        $r = Lookup '/api/v1/weather/places?q=Paris'
+        if (-not $r.ok) { throw "places failed: HTTP $($r.status) $($r.code)" }
+        $all = @($r.data.results)
+        if ($all.Count -lt 2 -or -not $all[0].id) { throw 'expected several identified places' }
+        ($all | Select-Object -First 3 | ForEach-Object { "$($_.name), $($_.admin1), $($_.country)" }) -join ' | '
+    }
+} else { Write-Host '  NOT DECLARED  Weather - this server does not declare weather.current (Weather:Enabled=false)' -ForegroundColor Yellow }
 Check 'Exercise catalog is seeded' { $s = Api GET '/api/v1/sync/snapshot' $null $token; if ($s.catalog.Count -lt 1) { throw 'catalog is empty: run seed-catalog' }; "$($s.catalog.Count) movements" }
 Check 'Cleanup: the verification account is deleted' {
     Api DELETE '/api/v1/account' @{ password = $password } $token | Out-Null
