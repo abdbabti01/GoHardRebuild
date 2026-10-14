@@ -187,11 +187,19 @@ class PlanDraft {
     _layOut([for (final w in _workouts) w['id'] as String], fixed: names.length == days.length);
   }
 
+  /// Days in the order they come from the start date, so the first workout of the sequence is the first one done.
+  List<int> _fromStart(Iterable<int> weekdays) {
+    final s = parseDayKey(startDate).weekday;
+    return [...weekdays]..sort((a, b) => ((a - s + 7) % 7).compareTo((b - s + 7) % 7));
+  }
+
   /// One session per chosen day in sequence order (fixed), or the sequence rotating across the days.
   void _layOut(List<String> sequence, {required bool fixed}) {
     if (sequence.isEmpty) return;
     if (fixed) {
-      j['schedule'] = _emptySchedule('fixed')..['pattern'] = [for (final (i, d) in days.indexed) {'weekday': d, 'workoutId': sequence[i % sequence.length]}];
+      j['schedule'] = _emptySchedule('fixed')
+        ..['pattern'] = ([for (final (i, d) in _fromStart(days).indexed) {'weekday': d, 'workoutId': sequence[i % sequence.length]}]
+          ..sort((a, b) => (a['weekday'] as int).compareTo(b['weekday'] as int)));
     } else {
       j['schedule'] = _emptySchedule('rotating')
         ..['cycle'] = sequence
@@ -199,10 +207,12 @@ class PlanDraft {
     }
   }
 
-  /// The sequence the schedule currently follows: fixed days in weekday order, or the cycle.
-  List<String> get sequence => schedule.isRotating
-      ? schedule.cycle
-      : [for (final p in [...schedule.pattern]..sort((a, b) => a.weekday.compareTo(b.weekday))) p.workoutId];
+  /// The sequence the schedule currently follows: fixed days in order from the start date, or the cycle.
+  List<String> get sequence {
+    if (schedule.isRotating) return schedule.cycle;
+    final byDay = {for (final p in schedule.pattern) p.weekday: p.workoutId};
+    return [for (final d in _fromStart(byDay.keys)) byDay[d]!];
+  }
 
   void _fitDays() {
     final seq = sequence;
