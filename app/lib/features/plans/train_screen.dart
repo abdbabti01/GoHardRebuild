@@ -14,6 +14,7 @@ import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import '../workout/workout_screen.dart';
+import '_scenic_stub.dart';
 import 'plan_actions.dart';
 import 'plan_progress.dart';
 import 'plan_screens.dart';
@@ -30,7 +31,12 @@ class TrainScreen extends ConsumerWidget {
     return ListView(
       padding: EdgeInsets.fromLTRB(context.inset, 14, context.inset, 28),
       children: [
-        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider))),
+        // A bounded scenic header: the scene sits behind the date, title and section control only, scrolls away with
+        // them, and fades into the page before the body, which stays on stable surfaces.
+        Stack(clipBehavior: Clip.none, children: [
+          Positioned(top: -14, left: -context.inset, right: -context.inset, height: _headerHeight, child: const ScenicBackdrop()),
+          TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), onBackdrop: true),
+        ]),
         const SizedBox(height: 16),
         Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',
@@ -48,6 +54,9 @@ class TrainScreen extends ConsumerWidget {
     );
   }
 }
+
+/// Height of the scenic header region, from the top of the tab.
+const _headerHeight = 230.0;
 
 Column _section(List<Widget> children) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
 
@@ -243,7 +252,8 @@ class _TrainPass extends StatelessWidget {
     final showPhoto = photo && media.size.width >= 360 && media.textScaler.scale(10) <= 13;
     final measured = completion.eligible > 0;
     final percent = '${(completion.fraction * 100).round()}%';
-    const photoWidth = 108.0;
+    // About a third of the card, inset with its own rounded corners, decoded at the size it is drawn.
+    final photoWidth = ((media.size.width - 2 * context.inset) * 0.32).roundToDouble();
     return Semantics(
       container: true,
       label: '$title. $week. ${completion.completed} / ${completion.eligible} workouts completed${measured ? ', $percent' : ''}.',
@@ -254,11 +264,12 @@ class _TrainPass extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Stack(children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(18, 18, 18 + (showPhoto ? photoWidth : 0), 18),
+              padding: EdgeInsets.fromLTRB(18, 18, 18 + (showPhoto ? photoWidth + 6 : 0), 18),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const Overline('Training plan'),
                 const SizedBox(height: 4),
-                Text(title, style: context.titleStyle(24)),
+                // The plan's name is the one serif line in the body, as in the reference pass.
+                Text(title, style: context.pageTitleStyle(30)),
                 Padding(padding: const EdgeInsets.only(top: 2), child: Text(week, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500))),
                 const SizedBox(height: 14),
                 Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
@@ -277,10 +288,15 @@ class _TrainPass extends StatelessWidget {
             ),
             if (showPhoto)
               Positioned(
-                top: 0, bottom: 0, right: 0, width: photoWidth,
-                // Decoded at the phone's width, the same size Today asks for, so the two share one decoded image.
-                child: Image.asset('assets/images/workout-hero.webp', fit: BoxFit.cover,
-                    cacheWidth: (media.size.width * media.devicePixelRatio).round().clamp(320, 1536), errorBuilder: (context, _, _) => ColoredBox(color: c.sunken)),
+                top: 6, bottom: 6, right: 6, width: photoWidth,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(Radii.panel - 6),
+                  // Decoded at the crop's height (the source is landscape, so its width follows and still covers).
+                  child: LayoutBuilder(
+                    builder: (context, box) => Image.asset('assets/images/workout-hero.webp', fit: BoxFit.cover,
+                        cacheHeight: (box.maxHeight * media.devicePixelRatio).round().clamp(64, 1536), errorBuilder: (context, _, _) => ColoredBox(color: c.sunken)),
+                  ),
+                ),
               ),
           ]),
         ),
@@ -330,16 +346,17 @@ class _OccasionRow extends ConsumerWidget {
                 ]),
               ),
               const SizedBox(width: 10),
-              if (!below && box.maxWidth >= 380) ...[IconTile(Icons.fitness_center, tone: active ? Tone.accent : Tone.neutral), const SizedBox(width: 12)],
+              if (!below && box.maxWidth >= 330) ...[IconTile(Icons.fitness_center, circle: true, tone: active ? Tone.accent : Tone.neutral), const SizedBox(width: 12)],
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Expanded(child: Text(o.title, style: context.sansStyle(16, weight: FontWeight.w600))),
-                    if (!below) Padding(padding: const EdgeInsets.only(left: 8), child: pill),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  // The state shares the name's line while both fit; otherwise it drops under it, never squeezing the name.
+                  Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 4, children: [
+                    Text(o.title, style: context.sansStyle(16, weight: FontWeight.w600)),
+                    if (!below) pill,
                   ]),
                   Padding(padding: const EdgeInsets.only(top: 2), child: Text(summary, style: context.numStyle(13.5, color: c.secondary, weight: FontWeight.w400))),
                   if (moved != null) Text(moved, style: context.caption),
-                  if (below) Padding(padding: const EdgeInsets.only(top: 6), child: pill),
+                  if (below) Padding(padding: const EdgeInsets.only(top: 6), child: Align(alignment: AlignmentDirectional.centerStart, child: pill)),
                 ]),
               ),
               Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.chevron_right, size: 22, color: c.secondary)),
