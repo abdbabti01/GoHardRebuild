@@ -152,6 +152,21 @@ public class WeatherProviderTests
     }
 
     [Fact]
+    public async Task Asking_for_the_fallback_reaches_MET_Norway_only_with_the_same_coarse_point()
+    {
+        var (service, stub) = Service(r => Task.FromResult(r.RequestUri!.Host == "api.met.no"
+            ? StubProvider.Json(StubProvider.Recorded("metno_quebec_cloudy.json"))
+            : StubProvider.Json(StubProvider.Recorded("openmeteo_current_overcast_night.json"))), o => o.MetNorwayBaseUrl = "https://api.met.no/weatherapi/");
+        var met = await service.CurrentAsync(46.81, -71.21, default, viaFallback: true);
+        Assert.Equal((LookupStatus.Ok, "met.no", 46.8, -71.2), (met.Status, met.Value!.Source, met.Value.Latitude, met.Value.Longitude));
+        Assert.Equal("api.met.no", Assert.Single(stub.Requests).RequestUri!.Host);
+        Assert.Equal("open-meteo", (await service.CurrentAsync(46.81, -71.21, default)).Value!.Source);   // the normal path is unchanged
+
+        var (off, _) = Service();                                                   // fallback not configured
+        Assert.Equal(LookupStatus.NotConfigured, (await off.CurrentAsync(46.8, -71.2, default, viaFallback: true)).Status);
+    }
+
+    [Fact]
     public async Task MET_Norway_is_only_asked_when_Open_Meteo_fails_and_a_double_failure_says_what_Open_Meteo_said()
     {
         var (fine, f) = Service(configure: o => o.MetNorwayBaseUrl = "https://api.met.no/weatherapi/");

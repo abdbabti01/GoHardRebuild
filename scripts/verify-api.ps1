@@ -113,10 +113,19 @@ if ($capabilities -contains 'weather.current') {
         $r = Lookup '/api/v1/weather/current?lat=46.81&lon=-71.21'
         if (-not $r.ok) { throw "weather failed: HTTP $($r.status) $($r.code)" }
         $w = $r.data
-        if ($w.source -ne 'open-meteo' -or $w.family -notin 'clear','cloudy','fog','rain','snow','storm','unknown' -or $w.latitude -ne 46.8 -or $w.longitude -ne -71.2) { throw 'unexpected weather contract' }
+        if ($w.source -notin 'open-meteo','met.no' -or $w.family -notin 'clear','cloudy','fog','rain','snow','storm','unknown' -or $w.latitude -ne 46.8 -or $w.longitude -ne -71.2) { throw 'unexpected weather contract' }
         $age = ([DateTime]::UtcNow - [DateTime]::Parse($w.validAtUtc).ToUniversalTime()).TotalMinutes
         if ($age -lt -20 -or $age -gt 90) { throw "conditions are $([int]$age) minutes old" }
-        "$($w.family) ($($w.description)), isDay=$($w.isDay), valid $([int]$age) min ago, $($w.timezone)"
+        "$($w.source): $($w.family) ($($w.description)), isDay=$($w.isDay), valid $([int]$age) min ago, $($w.timezone)"
+    }
+    Check 'The fallback provider answers from this server (MET Norway, same coarse point)' {
+        $r = Lookup '/api/v1/weather/current?lat=46.81&lon=-71.21&provider=met.no'
+        if (-not $r.ok) { throw "MET Norway failed: HTTP $($r.status) $($r.code)" }
+        $w = $r.data
+        if ($w.source -ne 'met.no' -or $w.latitude -ne 46.8 -or $w.longitude -ne -71.2 -or $null -eq $w.code) { throw 'unexpected fallback shape' }
+        $age = ([DateTime]::UtcNow - [DateTime]::Parse($w.validAtUtc).ToUniversalTime()).TotalMinutes
+        if ($age -lt 0 -or $age -gt 60) { throw "the hour in progress should be under an hour old, got $([int]$age) minutes" }
+        "$($w.source): $($w.family) ($($w.description), WMO $($w.code)), isDay=$($w.isDay), hour from $([DateTime]::Parse($w.validAtUtc).ToUniversalTime().ToString('HH:mm')) UTC"
     }
     Check 'City lookup tells namesakes apart (Paris)' {
         $r = Lookup '/api/v1/weather/places?q=Paris'
