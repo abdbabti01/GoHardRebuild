@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/data/models.dart';
-import 'package:gohard_rebuild/data/sync.dart';
 import 'package:gohard_rebuild/features/plans/plan_draft.dart';
 import 'package:gohard_rebuild/features/plans/plan_projection.dart';
 import 'package:gohard_rebuild/features/plans/plan_repository.dart';
@@ -135,6 +134,14 @@ void main() {
       final monday = plan.occasions.first, thursday = plan.occasions[3];
       final status = statusOf(thursday, plan, '2026-10-12', [_done(plan, monday)]);
       expect((statusOf(monday, plan, '2026-10-12', [_done(plan, monday)]), status), (OccasionStatus.finished, OccasionStatus.upcoming));
+    });
+
+    test('the first training day from the start date gets the first workout', () {
+      final d = PlanDraft.fresh(today: '2026-10-16', path: 'template')..setPreferences(days: [1, 3, 5]); // a Friday
+      d.applyTemplate(_templates, 'full-body');
+      expect(d.occurrences().take(3).map((o) => (o['scheduledDate'], o['title'])),
+          [('2026-10-16', 'Full body A'), ('2026-10-19', 'Full body B'), ('2026-10-21', 'Full body C')]);
+      expect(d.sequence.map((id) => d.workout(id)!.name), ['Full body A', 'Full body B', 'Full body C']);
     });
 
     test('a different number of days rotates the template instead of dropping a workout', () {
