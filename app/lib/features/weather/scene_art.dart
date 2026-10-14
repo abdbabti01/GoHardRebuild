@@ -21,8 +21,8 @@ class SceneArt {
   final Sky? sky;
 }
 
-/// A painted, static sky and weather layer. Colours are opaque; strengths are 0..1. Everything is drawn from fixed
-/// seeds, so a scene looks the same every time it is painted.
+/// A painted sky and weather layer. Colours are opaque; strengths are 0..1. Everything is drawn from fixed seeds; the
+/// clouds, stars, fog, rain and snow move gently (sky_painter.dart, SkyMotionPainter) unless motion is reduced.
 @immutable
 class Sky {
   const Sky({
@@ -36,6 +36,7 @@ class Sky {
     this.cloudShadow,
     this.clouds = 0,
     this.cloudLow = 0.38,
+    this.puffy = false,
     this.rain = 0,
     this.snow = 0,
     this.haze = 0,
@@ -59,7 +60,11 @@ class Sky {
   final int clouds;
   final double cloudLow;
 
-  /// Fine diagonal streaks, small dots of snow, a misty band at the horizon, and for fog many bands hiding the hills.
+  /// Separate fair-weather clouds (a few rounded puffs) instead of a deck of soft banks.
+  final bool puffy;
+
+  /// Fine diagonal streaks (1 = steady rain, more = heavier), flakes of snow, a misty band at the horizon, and for
+  /// fog many bands hiding the hills.
   final double rain, snow, haze;
   final Color hazeColor;
   final bool fog;
@@ -73,7 +78,7 @@ class Sky {
       zenith: Color.lerp(zenith, other.zenith, t)!, horizon: Color.lerp(horizon, other.horizon, t)!,
       water: [for (var i = 0; i < water.length; i++) Color.lerp(water[i], other.water[i], t)!],
       cloud: Color.lerp(cloud, other.cloud, t), cloudShadow: Color.lerp(cloudShadow, other.cloudShadow, t),
-      clouds: clouds, cloudLow: cloudLow, rain: rain, snow: snow, haze: haze, hazeColor: Color.lerp(hazeColor, other.hazeColor, t)!, fog: fog,
+      clouds: clouds, cloudLow: cloudLow, puffy: puffy, rain: rain, snow: snow, haze: haze, hazeColor: Color.lerp(hazeColor, other.hazeColor, t)!, fog: fog,
       ground: ground, groundColor: Color.lerp(groundColor, other.groundColor, t)!);
 }
 
@@ -103,44 +108,54 @@ List<double> silhouette(List<double> grade, {double lo = 0.2, double hi = 0.4}) 
   return [...grade.sublist(0, 15), -0.2126 * k, -0.7152 * k, -0.0722 * k, hi * k, 0];
 }
 
+// Skies for the scenes whose SceneSpec.dark is false (clear, partly, cloudy, fog and snow by day) stay light enough
+// for dark header text; night, rain and storm stay dark enough for light text, in either app mode
+// (test/weather_distinct_test.dart measures both).
 const _skies = <String, (Sky, Sky)>{
-  // Clean blue with a soft sun / deep navy with a moon and a sparse field of stars.
+  // Clean bright blue with a soft sun / deep navy with a moon and a twinkling field of stars.
   'clear': (
-    Sky(zenith: Color(0xFF2F72C8), horizon: Color(0xFFB8D8F2), water: [Color(0xFF9EC6E8), Color(0xFF2F6299)], sun: 1),
+    Sky(zenith: Color(0xFF5C9EE4), horizon: Color(0xFFD2E7F7), water: [Color(0xFFB4D5EF), Color(0xFF4A80B8)], sun: 1),
     Sky(zenith: Color(0xFF040A20), horizon: Color(0xFF1C3264), water: [Color(0xFF1B2D58), Color(0xFF040918)], moon: true, stars: 90),
   ),
-  // Neutral grey masses over the whole sky: lighter by day, a lit slate by night (town glow on the cloud base).
+  // Blue with a few bright, puffy clouds drifting across / navy with fewer stars between slow, moonlit clouds.
+  'partly': (
+    Sky(zenith: Color(0xFF6CA6DE), horizon: Color(0xFFD9E7F1), water: [Color(0xFFBCD6EA), Color(0xFF5585B4)], sun: 0.7,
+        cloud: Color(0xFFFFFFFF), cloudShadow: Color(0xFFAFC0D2), clouds: 9, cloudLow: 0.4, puffy: true),
+    Sky(zenith: Color(0xFF07102A), horizon: Color(0xFF22345E), water: [Color(0xFF1E2E55), Color(0xFF050A1A)], moon: true, stars: 50,
+        cloud: Color(0xFF6A7898), cloudShadow: Color(0xFF1A2236), clouds: 10, cloudLow: 0.4, puffy: true),
+  ),
+  // Soft light grey masses over the whole sky by day; a lit slate by night (town glow on the cloud base).
   'cloudy': (
-    Sky(zenith: Color(0xFF7D858F), horizon: Color(0xFFB9BEC4), water: [Color(0xFFA3AAB2), Color(0xFF5E6872)],
-        cloud: Color(0xFFDDE0E3), cloudShadow: Color(0xFF6C7580), clouds: 34),
-    Sky(zenith: Color(0xFF30353C), horizon: Color(0xFF59606A), water: [Color(0xFF4A515A), Color(0xFF181B20)],
-        cloud: Color(0xFF6A727C), cloudShadow: Color(0xFF22262C), clouds: 34),
+    Sky(zenith: Color(0xFFA9B0B8), horizon: Color(0xFFD5D9DD), water: [Color(0xFFC0C6CC), Color(0xFF79838D)],
+        cloud: Color(0xFFE9EBED), cloudShadow: Color(0xFF959DA6), clouds: 24),
+    Sky(zenith: Color(0xFF262A30), horizon: Color(0xFF474D56), water: [Color(0xFF3C424A), Color(0xFF131518)],
+        cloud: Color(0xFF575E68), cloudShadow: Color(0xFF1A1D22), clouds: 24),
   ),
   // Low dark cloud with a cold blue-green cast, fine streaks, a misty horizon.
   'rain': (
-    Sky(zenith: Color(0xFF3F4C56), horizon: Color(0xFF85929B), water: [Color(0xFF72808A), Color(0xFF323E47)],
-        cloud: Color(0xFF66737D), cloudShadow: Color(0xFF34404A), clouds: 30, cloudLow: 0.42, rain: 1, haze: 0.55, hazeColor: Color(0xFF94A2AB)),
-    Sky(zenith: Color(0xFF16262C), horizon: Color(0xFF3A525C), water: [Color(0xFF2E444E), Color(0xFF0A161A)],
-        cloud: Color(0xFF34505A), cloudShadow: Color(0xFF0E1C22), clouds: 30, cloudLow: 0.42, rain: 1, haze: 0.5, hazeColor: Color(0xFF46626C)),
+    Sky(zenith: Color(0xFF2E3A43), horizon: Color(0xFF5A6770), water: [Color(0xFF55636C), Color(0xFF26313A)],
+        cloud: Color(0xFF52606A), cloudShadow: Color(0xFF242E36), clouds: 22, cloudLow: 0.42, rain: 1, haze: 0.45, hazeColor: Color(0xFF6E7C86)),
+    Sky(zenith: Color(0xFF12202A), horizon: Color(0xFF2E4650), water: [Color(0xFF263C46), Color(0xFF081216)],
+        cloud: Color(0xFF2C4650), cloudShadow: Color(0xFF0A161C), clouds: 22, cloudLow: 0.42, rain: 1, haze: 0.45, hazeColor: Color(0xFF3C5862)),
   ),
-  // Pale cool overcast, a whitened shore and lake, small static flakes.
+  // Pale cool overcast, a whitened shore and lake, slowly falling flakes.
   'snow': (
-    Sky(zenith: Color(0xFFB2C0D2), horizon: Color(0xFFE6ECF4), water: [Color(0xFFEAF0F7), Color(0xFFC8D3E0)],
-        cloud: Color(0xFFF1F4F8), cloudShadow: Color(0xFFA2B0C2), clouds: 18, snow: 1, haze: 0.3, hazeColor: Color(0xFFE6ECF4), ground: 0.55),
-    Sky(zenith: Color(0xFF2A3654), horizon: Color(0xFF66769A), water: [Color(0xFF8494B4), Color(0xFF3C4864)],
-        cloud: Color(0xFF55658A), cloudShadow: Color(0xFF1E2840), clouds: 18, snow: 1, haze: 0.3, hazeColor: Color(0xFF7484A6), ground: 0.32, groundColor: Color(0xFFB0BED6)),
+    Sky(zenith: Color(0xFFBCC9DA), horizon: Color(0xFFE9EEF5), water: [Color(0xFFEAF0F7), Color(0xFFC8D3E0)],
+        cloud: Color(0xFFF3F6FA), cloudShadow: Color(0xFFAAB8CA), clouds: 14, snow: 1, haze: 0.3, hazeColor: Color(0xFFE6ECF4), ground: 0.55),
+    Sky(zenith: Color(0xFF1E2944), horizon: Color(0xFF4A5A7E), water: [Color(0xFF6A7A9C), Color(0xFF2E3A54)],
+        cloud: Color(0xFF45557A), cloudShadow: Color(0xFF161E34), clouds: 14, snow: 1, haze: 0.3, hazeColor: Color(0xFF5E6E92), ground: 0.28, groundColor: Color(0xFF9AA8C2)),
   ),
-  // Warm grey banks of haze hiding the far hills; low contrast.
+  // Warm grey banks of haze hiding the far hills, drifting slowly; low contrast.
   'fog': (
-    Sky(zenith: Color(0xFFBDB9B1), horizon: Color(0xFFD9D5CD), water: [Color(0xFFD3CFC7), Color(0xFFA29E96)], fog: true, hazeColor: Color(0xFFDCD8D0)),
-    Sky(zenith: Color(0xFF34322F), horizon: Color(0xFF5A5751), water: [Color(0xFF524F4A), Color(0xFF221F1C)], fog: true, hazeColor: Color(0xFF6A665F)),
+    Sky(zenith: Color(0xFFC9C5BD), horizon: Color(0xFFE0DCD4), water: [Color(0xFFD8D4CC), Color(0xFFA8A49C)], fog: true, hazeColor: Color(0xFFE2DED6)),
+    Sky(zenith: Color(0xFF282624), horizon: Color(0xFF45423D), water: [Color(0xFF423F3A), Color(0xFF1A1816)], fog: true, hazeColor: Color(0xFF4A4741)),
   ),
   // Very dark slate under heavy cloud and heavier rain; never lightning.
   'storm': (
-    Sky(zenith: Color(0xFF252B33), horizon: Color(0xFF5A6470), water: [Color(0xFF4A545F), Color(0xFF181C21)],
-        cloud: Color(0xFF4A535E), cloudShadow: Color(0xFF14171B), clouds: 44, cloudLow: 0.44, rain: 1, haze: 0.4, hazeColor: Color(0xFF58626D)),
+    Sky(zenith: Color(0xFF1E232A), horizon: Color(0xFF434C56), water: [Color(0xFF3C4550), Color(0xFF14181C)],
+        cloud: Color(0xFF3E4650), cloudShadow: Color(0xFF101317), clouds: 28, cloudLow: 0.44, rain: 1.4, haze: 0.4, hazeColor: Color(0xFF48525C)),
     Sky(zenith: Color(0xFF020304), horizon: Color(0xFF0E1013), water: [Color(0xFF0C0E11), Color(0xFF010101)],
-        cloud: Color(0xFF15181C), cloudShadow: Color(0xFF000000), clouds: 44, cloudLow: 0.44, rain: 0.9, haze: 0.3, hazeColor: Color(0xFF1A1D21)),
+        cloud: Color(0xFF181B20), cloudShadow: Color(0xFF000000), clouds: 28, cloudLow: 0.44, rain: 1.2, haze: 0.3, hazeColor: Color(0xFF1A1D21)),
   ),
 };
 
@@ -150,7 +165,8 @@ List<double> _grade(String family, bool? isDay) {
   return switch (family) {
     'clear' => grade(saturation: light(1.05, 0.5), brightness: light(0.1, -0.12),
         gain: isDay == false ? const [0.5, 0.64, 1.0] : const [0.92, 1.02, 1.06]),
-    'partly' => grade(saturation: light(0.9, 0.5), brightness: light(0.08, -0.12), gain: isDay == false ? const [0.5, 0.64, 1.0] : const [0.94, 1.0, 1.04]),
+    'partly' => grade(saturation: light(0.95, 0.5), brightness: light(0.1, -0.12),
+        gain: isDay == false ? const [0.5, 0.64, 1.0] : const [0.94, 1.0, 1.04]),
     'cloudy' => grade(saturation: 0.3, contrast: 0.85, brightness: light(0.02, -0.06), gain: const [0.98, 0.98, 1.0]),
     'rain' => grade(saturation: 0.25, contrast: 0.85, brightness: light(-0.04, -0.15), gain: const [0.86, 0.96, 1.0]),
     'snow' => grade(saturation: 0.15, contrast: 1.0, brightness: light(0.14, -0.02), gain: const [0.94, 1.0, 1.1]),
@@ -161,11 +177,12 @@ List<double> _grade(String family, bool? isDay) {
 }
 
 SceneArt _art(String family, bool? isDay) {
-  // ponytail: partly borrows the clear sky until its own painted sky lands; replace with _skies['partly'].
-  final (day, night) = _skies[family] ?? _skies['clear']!;
-  // Neutral (the provider did not say day or night): a muted light between the two.
-  final sky = switch (isDay) { true => day, false => night, null => day.toward(night, 0.45) };
-  return SceneArt(matrix: silhouette(_grade(family, isDay)), sky: sky);
+  final (day, night) = _skies[family]!;
+  // Neutral (the provider did not say day or night): a muted light, close to the side SceneSpec.dark puts it
+  // (overcast, rain, storm and fog read as dark; clear, partly and snow as light), without sun, moon or stars.
+  final darkNeutral = const {'cloudy', 'rain', 'storm', 'fog'}.contains(family);
+  final sky = switch (isDay) { true => day, false => night, null => day.toward(night, darkNeutral ? 0.92 : 0.12) };
+  return SceneArt(matrix: silhouette(_grade(family, isDay ?? !darkNeutral)), sky: sky);
 }
 
 /// Scene key -> how to paint it. Every key the resolver can return has an entry.

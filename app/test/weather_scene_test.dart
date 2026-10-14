@@ -63,7 +63,7 @@ void main() {
     expect([for (final f in weatherFamilies) key(scene(entry(f)))],
         ['clear-day:false', 'partly-day:false', 'cloudy-day:false', 'fog-day:false', 'rain-day:true', 'snow-day:false', 'storm-day:true']);
     expect([for (final f in weatherFamilies) scene(entry(f, isDay: false)).dark], everyElement(isTrue));
-    expect(SceneSpec.dusk.dark, isTrue);
+    expect(SceneSpec.dusk.dark, isFalse, reason: 'Scenic follows the app\'s mode');
     expect(SceneSpec.plain.dark, isFalse);
   });
 

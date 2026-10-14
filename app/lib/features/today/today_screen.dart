@@ -96,7 +96,8 @@ class _Header extends ConsumerWidget {
     final appearance = ref.watch(appearanceProvider);
     // The header's text and scrim follow the sky, not the app's mode: light lines over a night, rain or storm sky
     // and dark lines over a daylight one, as in Apple Weather. Same accent; increased contrast respected.
-    final sky = scene.key == 'plain' ? Theme.of(context).brightness : scene.dark ? Brightness.dark : Brightness.light;
+    // Scenic and Plain are not weather: they keep the app's own mode.
+    final sky = !scene.isWeather ? Theme.of(context).brightness : scene.dark ? Brightness.dark : Brightness.light;
     return Stack(key: const Key('today-header'), children: [
       const Positioned.fill(child: RepaintBoundary(child: TodayBackdrop())),
       Theme(

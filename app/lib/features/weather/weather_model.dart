@@ -172,16 +172,13 @@ class SceneSpec {
   final String? family;
   final bool? isDay;
 
+  /// A dark sky (night, storm, rain; with no day or night given, overcast, rain, storm and fog): the header text over
+  /// it is drawn light. Dusk and Plain are not weather and never dark.
+  bool get dark => isWeather &&
+      (isDay == false || const {'storm', 'rain'}.contains(family) || (isDay == null && const {'cloudy', 'fog'}.contains(family)));
+
   static const dusk = SceneSpec(key: 'dusk');
   static const plain = SceneSpec(key: 'plain');
-
-  /// The header over this scene is dark, so its text is drawn light, as in Apple Weather, in Light and Dark mode
-  /// alike: night, storm and rain skies are dark whatever the app's mode, and a daylight sky is light.
-  bool get dark => switch (family) {
-        'storm' || 'rain' => true,
-        null => key == 'dusk', // the decorative dusk photograph is a dark scene too
-        _ => isDay == false || (isDay == null && (family == 'cloudy' || family == 'fog')),
-      };
 
   @override
   bool operator ==(Object other) => other is SceneSpec && other.key == key && other.label == label && other.fallback == fallback;

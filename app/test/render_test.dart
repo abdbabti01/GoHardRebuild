@@ -46,9 +46,16 @@ Future<void> _loadFonts() async {
 Future<ui.Image> _capture(WidgetTester tester) async {
   // The photograph decodes on a real timer; give it one, then paint.
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 250)));
-  await tester.pumpAndSettle();
+  await _settle(tester);
   final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot')));
   return (await tester.runAsync(() => boundary.toImage(pixelRatio: 2)))!;
+}
+
+/// pumpAndSettle for screens with a moving weather sky, which never settles: stops after five seconds of frames.
+Future<void> _settle(WidgetTester tester) async {
+  for (var i = 0; i < 50 && tester.binding.hasScheduledFrame; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 Future<void> _save(WidgetTester tester, ui.Image image, String name) => tester.runAsync(() async {
@@ -217,10 +224,12 @@ void main() {
       Widget scene(String key, String label) => SizedBox.fromSize(
           size: cell,
           child: Stack(children: [
-            Positioned.fill(child: SceneBackdrop(spec: key == 'dusk' ? SceneSpec.dusk
-                : SceneSpec(key: key, isWeather: true, family: key.split('-').first, isDay: key.endsWith('-day') ? true : key.endsWith('-night') ? false : null))),
-            Positioned(left: 16, top: 60, child: ColoredBox(color: c.scrim, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(label, style: TextStyle(fontFamily: serif, fontSize: 34, color: c.text))))),
+            Positioned.fill(child: SceneBackdrop(spec: _spec(key), animate: false)),
+            // Light text on a dark scrim over a dark sky, dark on a light one, as Today draws its header.
+            Positioned(left: 16, top: 60, child: ColoredBox(
+                color: _spec(key).dark ? const Color(0xFF000000).withValues(alpha: 0.3) : c.scrim,
+                child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(label, style: TextStyle(fontFamily: serif, fontSize: 34, color: _spec(key).dark ? Colors.white : (mode == ThemeMode.dark ? const Color(0xFF15171A) : c.text)))))),
           ]));
       // One scene at a time (each decodes and paints on its own), then laid out on one sheet.
       tester.view.physicalSize = cell * 2;
@@ -254,6 +263,47 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  // The moving sky in stills: the same scene at 0, 0.5 and 1 second, one row per scene, so the drift of the clouds
+  // and the fall of rain and snow show side by side.
+  testWidgets('state: weather motion strip', (tester) async {
+    const cell = Size(390, 200), gap = 8.0;
+    tester.view.physicalSize = cell * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    const rows = ['rain-day', 'snow-night', 'cloudy-day', 'partly-day', 'fog-day', 'storm-night'];
+    final shots = <List<ui.Image>>[];
+    for (final key in rows) {
+      await tester.pumpWidget(MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: goTheme(Accent.blue, Brightness.light),
+          home: RepaintBoundary(key: const Key('shot'), child: SizedBox.fromSize(size: cell, child: SceneBackdrop(spec: _spec(key))))));
+      await tester.runAsync(() async {
+        for (final e in find.byType(Image).evaluate()) {
+          await precacheImage((e.widget as Image).image, e);
+        }
+      });
+      await tester.pump();
+      await tester.pump();
+      final row = <ui.Image>[];
+      for (var i = 0; i < 3; i++) {
+        if (i > 0) await tester.pump(const Duration(milliseconds: 500));
+        row.add((await tester.runAsync(() => tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot'))).toImage(pixelRatio: 2)))!);
+      }
+      shots.add(row);
+      await tester.pumpWidget(const SizedBox());
+    }
+    final w = (cell.width * 2).toInt(), h = (cell.height * 2).toInt(), g = (gap * 2).toInt();
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder)..drawColor(const Color(0xFFDADCE0), BlendMode.src);
+    for (final (y, row) in shots.indexed) {
+      for (final (x, image) in row.indexed) {
+        canvas.drawImage(image, Offset((g + x * (w + g)).toDouble(), (g + y * (h + g)).toDouble()), Paint());
+      }
+    }
+    await _save(tester, (await tester.runAsync(() => recorder.endRecording().toImage(g + 3 * (w + g), g + rows.length * (h + g))))!, 'state-weather-motion');
+    expect(tester.takeException(), isNull);
+  });
 
   for (final screen in ['today', 'train-plan', 'eat', 'me', 'appearance', 'log-food', 'food-results', 'food-preview', 'scan', 'goals']) {
     testWidgets('six themes: $screen', (tester) async {
@@ -348,7 +398,8 @@ void main() {
   }
   for (final MapEntry(key: name, value: (fixture, screen, size, scale)) in states.entries) {
     testWidgets('state: $name', (tester) async {
-      await pumpApp(tester, await fixture(tester), size: size, textScale: scale, insets: phoneInsets);
+      await pumpApp(tester, await fixture(tester), size: size, textScale: scale, insets: phoneInsets, settle: false);
+      await _settle(tester);
       await _open(tester, screen);
       await _save(tester, await _capture(tester), 'state-$name');
       expect(tester.takeException(), isNull);
@@ -356,3 +407,7 @@ void main() {
     });
   }
 }
+
+SceneSpec _spec(String key) => key == 'dusk'
+    ? SceneSpec.dusk
+    : SceneSpec(key: key, isWeather: true, family: key.split('-').first, isDay: key.endsWith('-day') ? true : key.endsWith('-night') ? false : null);
