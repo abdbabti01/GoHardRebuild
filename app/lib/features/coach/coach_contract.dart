@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 
+import '../../core/widgets.dart' show push;
 import '../plans/plan_draft.dart';
+import 'ask_screen.dart';
 
 /// What Ask GoHard is asked about (docs/COACH.md). Built by the screen that opens it.
 ///
@@ -23,6 +25,10 @@ enum CoachFocus { plan, split, workout, exercise }
 
 /// Opens Ask GoHard over [context]'s page. Closing it returns to exactly where the person was. Opening it sends
 /// nothing: a model request is made only when the person presses Send (or a suggested question).
-Future<void> openAskGoHard(BuildContext context, CoachContext coach) async {
-  // Contract stub: replaced by the Ask GoHard screen (features/coach/ask_screen.dart).
-}
+///
+/// Wiring from the builder (its draft is edited in place by `_change`):
+///
+///     openAskGoHard(context, CoachContext(label: 'Upper / Lower', focus: CoachFocus.split, templateId: draft.templateId,
+///         draft: () => draft.copy(),
+///         applyToDraft: (next) async => _change((d) => d.j..clear()..addAll(next.j), edits: true)));
+Future<void> openAskGoHard(BuildContext context, CoachContext coach) => push<void>(context, AskScreen(coach: coach));

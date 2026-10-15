@@ -30,6 +30,8 @@ abstract final class Kinds {
   static const foodCache = 'food_cache';
   /// A day the person chose to rest in a rotation (`{planId, dayKey}`). Local only; it skips and consumes nothing.
   static const restDay = 'rest_day';
+  /// This owner's Ask GoHard conversation and unsent question. Local only.
+  static const coachChat = 'coach_chat';
 }
 
 extension type Prescription(Json j) {
