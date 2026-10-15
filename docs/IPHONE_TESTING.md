@@ -58,7 +58,9 @@ In the Railway dashboard, in your existing account:
 powershell -ExecutionPolicy Bypass -File .\scripts\verify-api.ps1 -BaseUrl https://<your-domain>.up.railway.app
 ```
 
-Every line must say PASS, including "Uses HTTPS". The script creates and deletes its own account.
+Every line must say PASS, including "Uses HTTPS". The script creates and deletes its own account and ends with a
+separate `Cleanup: …` line; exit code 2 means an account was left (the script prints the delete command). Details,
+the git-ignored record file and the delete helper: `docs/RELEASE_AND_ROLLBACK.md` › API verification.
 
 **Cost:** a new project with one small service and one PostgreSQL uses your Railway plan's usage. Check the
 project's Usage page after creating it. Nothing in this repository creates Railway resources by itself.

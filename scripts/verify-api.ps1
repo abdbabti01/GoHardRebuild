@@ -3,23 +3,49 @@
   Verifies a running GoHard rebuild API end to end: readiness, client/backend contract compatibility,
   registration, sign-in, an idempotent write, reading it back, nutrition goals (set, kept by an older payload,
   cleared), a reusable food, food lookup and weather/city lookup where the server declares them, the plan builder (a custom
-  exercise, a rotating plan, its first step started, finished and credited, a revision) where declared, one small
-  Ask GoHard question where coach.ask is declared (a live model call; reported as not configured otherwise), and account
+  exercise, a rotating plan, its first step started, finished and credited, a revision) where declared, one contextual
+  Ask GoHard question where coach.ask is declared (five with -Coach; live model calls; reported as not configured otherwise), and account
   deletion (so no test data is left).
   The food lookup checks go through whatever providers that server is configured with. Against a deployed server
   they are the live provider check; against a local API started with -FoodFixtures they only exercise recordings.
   Safe to run against the local API or the hosted TESTING API. It prints no tokens or passwords.
+
+  Cleanup: the account's email is printed and appended to scripts\.verify-accounts.log (git-ignored) before
+  registration, its id right after. Deletion (DELETE /api/v1/account with the password, then /me and sign-in must
+  answer 401) runs in a finally block, so it also runs after a failing check, an exception or Ctrl+C. It cannot run
+  if the process is killed (Task Manager, closed window, power loss, a second Ctrl+C during cleanup): then the log
+  names the account and scripts\delete-verify-account.ps1 removes it.
+  Exit code: 0 all passed, 1 a check failed (account deleted), 2 cleanup failed (account left behind).
 .PARAMETER BaseUrl
   API origin, for example http://127.0.0.1:5131 or https://<your-service>.up.railway.app
+.PARAMETER Coach
+  Where coach.ask is declared: five live Ask GoHard checks instead of one (split question, follow-up with history,
+  exercise explanation, a proposal-inviting question, a workout that is not in the draft). COACH_BUSY / COACH_LIMIT
+  are reported as BUSY and stop further coach calls without failing. Where coach.ask is absent: one call that
+  checks the request shape is accepted (503 COACH_UNAVAILABLE), no model involved.
+.PARAMETER FailAfter
+  Debug: throw right after the check whose name starts with this text, to prove cleanup still runs.
 #>
-param([Parameter(Mandatory)][string]$BaseUrl)
+param([Parameter(Mandatory)][string]$BaseUrl, [switch]$Coach, [string]$FailAfter)
 $ErrorActionPreference = 'Stop'
 $BaseUrl = $BaseUrl.TrimEnd('/')
 $failed = $false
+# Fixed on purpose so delete-verify-account.ps1 can remove a left-over account. Acceptable only because each email
+# carries 64 random bits and the account is deleted at the end of the run; never reuse it anywhere else.
+$password = 'verify password 1'
+$log = Join-Path $PSScriptRoot '.verify-accounts.log'
+$accountId = $null
+function Redact([string]$text) {
+    if ($script:token) { $text = $text.Replace($script:token, '<token>') }
+    $text.Replace($password, '<password>') -replace 'Bearer\s+\S+', 'Bearer <redacted>'
+}
+function Record($outcome) { Add-Content -Path $log -Encoding UTF8 -Value "$([DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))  $BaseUrl  $email  id=$(if ($accountId) { $accountId } else { '?' })  $outcome" }
 function Check($name, [scriptblock]$test) {
     try { $detail = & $test; Write-Host "  PASS  $name$(if ($detail) { " - $detail" })" -ForegroundColor Green }
-    catch { $script:failed = $true; Write-Host "  FAIL  $name - $($_.Exception.Message)" -ForegroundColor Red }
+    catch { $script:failed = $true; Write-Host "  FAIL  $name - $(Redact $_.Exception.Message)" -ForegroundColor Red }
+    if ($FailAfter -and $name -like "$FailAfter*") { throw "simulated failure after '$name' (-FailAfter)" }
 }
+function Status($err) { try { [int]$err.Exception.Response.StatusCode } catch { 0 } }
 function Api($method, $path, $body, $token) {
     $headers = @{}; if ($token) { $headers.Authorization = "Bearer $token" }
     $args = @{ Method = $method; Uri = "$BaseUrl$path"; Headers = $headers; TimeoutSec = 30 }
@@ -29,8 +55,7 @@ function Api($method, $path, $body, $token) {
 
 Write-Host "Verifying $BaseUrl"
 $appContract = [int]((Select-String -Path (Join-Path $PSScriptRoot '..\app\lib\core\config.dart') -Pattern 'contractVersion = (\d+)').Matches[0].Groups[1].Value)
-$email = "verify-$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())@example.test"
-$password = [Guid]::NewGuid().ToString('N')   # random, used once, never printed
+$email = "verify-$([Guid]::NewGuid().ToString('N').Substring(0, 16))@example.test"
 $today = (Get-Date).ToString('yyyy-MM-dd')
 
 Check 'Uses HTTPS (required by the iOS release build)' {
@@ -43,7 +68,15 @@ Check 'Client/backend contract compatibility' {
     "contract $appContract, $($c.capabilities.Count) capabilities"
 }
 $token = $null
-Check 'Registration' { $r = Api POST '/api/v1/auth/register' @{ email = $email; password = $password; displayName = 'API Verify' }; $script:token = $r.accessToken; 'account created' }
+$registerAttempted = $false
+try {   # everything from registration on: the finally block at the end deletes the account whatever happens
+Write-Host "  Account: $email" -ForegroundColor Cyan
+$registerAttempted = $true; Record 'registering'
+Check 'Registration' {
+    $r = Api POST '/api/v1/auth/register' @{ email = $email; password = $password; displayName = 'API Verify' }
+    $script:token = $r.accessToken; $script:accountId = $r.profile.userId; Record 'registered'
+    "account created, id $accountId"
+}
 Check 'Sign-in with the same credentials' { $r = Api POST '/api/v1/auth/login' @{ email = $email; password = $password }; $script:token = $r.accessToken; 'token issued' }
 Check 'Wrong password is refused' {
     try { Api POST '/api/v1/auth/login' @{ email = $email; password = 'definitely-wrong' } | Out-Null; throw 'accepted a wrong password' }
@@ -187,19 +220,111 @@ if ($capabilities -contains 'plans.builder') {
         "step 0 credited, plan unchanged by it, revised to revision $($after.revision)"
     }
 } else { Write-Host '  SKIP  Plan builder - this server does not declare plans.builder' -ForegroundColor Yellow }
-if ($capabilities -contains 'coach.ask') {
-    # One tiny question through the server's model provider: a live call, counted against this throwaway account's daily cap.
-    Check 'Ask GoHard answers a small question through the server''s provider' {
-        try { $r = @{ ok = $true; data = (Api POST '/api/v1/coach/ask' @{ requestId = [Guid]::NewGuid(); question = 'In one sentence, what does 3 x 8-12 mean?'; history = @(); context = $null } $token) } }
-        catch { $r = @{ ok = $false; status = $_.Exception.Response.StatusCode.value__; code = $(try { ($_.ErrorDetails.Message | ConvertFrom-Json).code } catch { $null }) } }
-        if (-not $r.ok) { throw "coach failed: HTTP $($r.status) $($r.code)" }
-        if ($r.data.kind -ne 'ai' -or -not $r.data.answer -or $r.data.answer.Length -gt 1200 -or $null -ne $r.data.proposal) { throw 'unexpected coach contract' }
-        "$($r.data.answer.Length) characters, sources: $(@($r.data.sources) -join ', ')"
+# Ask GoHard (docs/COACH.md). A small Upper/Lower draft with real catalog keys; every answer is checked against the
+# contract, and any proposal may only name workouts and occurrence keys that were sent (the server drops the rest).
+$wu = "$([Guid]::NewGuid())"; $wl = "$([Guid]::NewGuid())"
+$cx = { param($key, $catalogKey, $name) @{ occurrenceKey = $key; catalogKey = $catalogKey; name = $name; isTimed = $false; targetSets = 3; targetRepsMin = 8; targetRepsMax = 12; targetDurationSeconds = $null; restSeconds = 90 } }
+$coachDraft = @{ title = 'Verify Upper / Lower'; durationWeeks = 8; timeBudgetMinutes = 45
+    schedule = @{ mode = 'rotating'; pattern = @(); cycle = @($wu, $wl); trainingDays = @(); cycleAnchor = 0 }
+    workouts = @(
+        @{ id = $wu; name = 'Upper A'; notes = $null; exercises = @((& $cx 'e1' 'bench-press' 'Bench press'), (& $cx 'e2' 'barbell-row' 'Barbell row')) },
+        @{ id = $wl; name = 'Lower A'; notes = $null; exercises = @((& $cx 'e1' 'back-squat' 'Back squat'), (& $cx 'e2' 'romanian-deadlift' 'Romanian deadlift')) }) }
+$splitContext = @{ label = 'Upper / Lower'; focus = 'split'; templateId = 'upper-lower'; workoutId = $null; occurrenceKey = $null; catalogKey = $null; draft = $coachDraft; draftRevision = 'verify-1' }
+function CoachAsk($question, $context, $history) {
+    try { @{ ok = $true; data = (Api POST '/api/v1/coach/ask' @{ requestId = [Guid]::NewGuid(); question = $question; history = @($history); context = $context } $token) } }
+    catch {
+        $err = $_; $text = $err.ErrorDetails.Message
+        if (-not $text) { try { $st = $err.Exception.Response.GetResponseStream(); $st.Position = 0; $text = (New-Object IO.StreamReader $st).ReadToEnd() } catch { } }   # PS 5.1 leaves ErrorDetails empty for chunked bodies
+        $e = $null; if ($text) { try { $e = $text | ConvertFrom-Json } catch { } }
+        @{ ok = $false; status = (Status $err); code = $e.code; retry = $e.retryAfterSeconds }
     }
-} else { Write-Host '  NOT CONFIGURED  coach: not configured (capability absent) - set GOHARD_Coach__AnthropicApiKey to enable Ask GoHard' -ForegroundColor Yellow }
-Check 'Cleanup: the verification account is deleted' {
-    Api DELETE '/api/v1/account' @{ password = $password } $token | Out-Null
-    try { Api GET '/api/v1/me' $null $token | Out-Null; throw 'token still works after deletion' } catch { if ($_.Exception.Response.StatusCode.value__ -ne 401) { throw }; 'no test data left behind' }
 }
-if ($failed) { Write-Host 'API verification FAILED.' -ForegroundColor Red; exit 1 }
+$coachHalt = $null
+function Ask($name, $question, $context, $history, [scriptblock]$more) {   # one live call; returns the answer or $null
+    if ($script:coachHalt) { Write-Host "  SKIP  [LIVE] $name - $script:coachHalt" -ForegroundColor Yellow; return }
+    $r = CoachAsk $question $context $history
+    if (-not $r.ok -and $r.code -in 'COACH_BUSY', 'COACH_LIMIT') {
+        $script:coachHalt = "not asked after $($r.code)"
+        Write-Host "  BUSY  [LIVE] $name - HTTP $($r.status) $($r.code)$(if ($r.retry) { ", retry after $($r.retry) s" }): the provider or our limit refused; not a contract failure, remaining coach checks skipped" -ForegroundColor Yellow
+        return
+    }
+    Check "[LIVE] $name" {
+        if (-not $r.ok) { throw "HTTP $($r.status) $($r.code)" }
+        $d = $r.data
+        if ($d.kind -ne 'ai' -or -not "$($d.answer)".Trim() -or $d.answer.Length -gt 1200) { throw "unexpected answer (kind=$($d.kind), $("$($d.answer)".Length) chars)" }
+        $unknown = @($d.sources | Where-Object { $_ -notin $guideSources })
+        if ($unknown) { throw "sources outside the guide: $($unknown -join ', ')" }
+        $p = if ($d.proposal) {
+            foreach ($op in @($d.proposal.operations)) {
+                $w = @($coachDraft.workouts | Where-Object { $_.id -eq $op.workoutId })
+                if (-not $w) { throw "proposal names workout $($op.workoutId), which was not sent" }
+                if ($op.occurrenceKey -and -not @($w[0].exercises | Where-Object { $_.occurrenceKey -eq $op.occurrenceKey })) { throw "proposal names $($op.occurrenceKey) in $($w[0].name), which was not sent" }
+            }
+            "proposal '$($d.proposal.summary)' ($(@($d.proposal.operations).Count) op(s), all on sent IDs)"
+        } else { 'no proposal' }
+        $extra = if ($more) { & $more $d }
+        "$($d.answer.Length) chars, sources [$(@($d.sources) -join ', ')], $p$(if ($extra) { "; $extra" })"
+    }
+    if ($r.ok) { $r.data }
+}
+if ($capabilities -contains 'coach.ask') {
+    # Live model calls, counted against this throwaway account's daily cap (40): 1 by default, 5 with -Coach.
+    $guideSources = @((Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot '..\api\src\GoHard.Api\Data\coach-guide.json') | ConvertFrom-Json).sources | ForEach-Object { $_.id })
+    Write-Host '  Ask GoHard: LIVE provider results (model output varies between runs)' -ForegroundColor Cyan
+    $q1 = 'Is this Upper/Lower split a good fit for 3 days a week, and what does it trade off?'
+    $a1 = Ask 'Contextual split question with an Upper/Lower draft' $q1 $splitContext @()
+    if ($Coach) {
+        if ($a1) { Ask 'Follow-up using history' 'Which of the two workouts should I do first this week, and why?' $splitContext @(@{ role = 'user'; text = $q1 }, @{ role = 'assistant'; text = $a1.answer }) | Out-Null }
+        else { Write-Host '  SKIP  [LIVE] Follow-up using history - the first question gave no answer' -ForegroundColor Yellow }
+        Ask 'Exercise explanation (focus=exercise, bench-press in Upper A)' 'How do I do this exercise well, and what does it train?' `
+            @{ label = 'Bench press'; focus = 'exercise'; templateId = 'upper-lower'; workoutId = $wu; occurrenceKey = 'e1'; catalogKey = 'bench-press'; draft = $coachDraft; draftRevision = 'verify-1' } @() | Out-Null
+        Ask 'Proposal-inviting question (replace bench press with a dumbbell exercise)' 'Can I replace bench press with a dumbbell exercise in Upper A?' $splitContext @() {
+            param($d) if (-not $d.proposal) { 'INFO: no proposal offered (the model may decline)' } } | Out-Null
+        Ask 'Change a workout that is not in the draft (server keeps proposals to sent IDs)' "Replace the squat in my 'Leg Day C' workout (id $([Guid]::NewGuid())) with leg press." $splitContext @() | Out-Null
+    } else { Write-Host '  INFO  [LIVE] 4 more coach checks (history, exercise, proposal, invalid ID) run with -Coach' -ForegroundColor Cyan }
+} else {
+    Write-Host '  NOT CONFIGURED  coach: not configured (capability absent) - set the provider key to enable Ask GoHard' -ForegroundColor Yellow
+    if ($Coach) {
+        Check 'Coach request shape is accepted (no model call: 503 COACH_UNAVAILABLE, not 400 COACH_INVALID)' {
+            $r = CoachAsk 'Is this Upper/Lower split a good fit?' $splitContext @()
+            if ($r.ok -or $r.status -ne 503 -or $r.code -ne 'COACH_UNAVAILABLE') { throw "expected 503 COACH_UNAVAILABLE, got $(if ($r.ok) { '200' } else { "$($r.status) $($r.code)" })" }
+            '503 COACH_UNAVAILABLE'
+        }
+    }
+}
+} catch {
+    $failed = $true; Write-Host "  ABORTED  $(Redact $_.Exception.Message)" -ForegroundColor Red
+} finally {
+    # Runs after success, a failing check, an exception or Ctrl+C. Reported apart from the feature checks.
+    $cleanup = 'deleted'
+    if (-not $registerAttempted) { $cleanup = 'nothing to clean (no registration attempted)' }
+    else {
+        try {
+            $t = $token
+            try { Api DELETE '/api/v1/account' @{ password = $password } $t | Out-Null }
+            catch {
+                if ((Status $_) -ne 401) { throw }
+                # No token (registration answer lost) or an expired one: sign in again with the stored credentials.
+                try { $t = (Api POST '/api/v1/auth/login' @{ email = $email; password = $password }).accessToken }
+                catch {
+                    if ((Status $_) -ne 401) { throw }
+                    if ($accountId) { throw 'cannot sign in to delete it (401)' }
+                    $t = $null; $cleanup = 'nothing to clean (registration did not create an account)'
+                }
+                if ($t) { Api DELETE '/api/v1/account' @{ password = $password } $t | Out-Null }
+            }
+            if ($t) {
+                try { Api GET '/api/v1/me' $null $t | Out-Null; throw 'its token still works after deletion' } catch { if ((Status $_) -ne 401) { throw } }
+                try { Api POST '/api/v1/auth/login' @{ email = $email; password = $password } | Out-Null; throw 'it can still sign in after deletion' } catch { if ((Status $_) -ne 401) { throw } }
+            }
+        } catch { $cleanup = "FAILED ($(Redact $_.Exception.Message))" }
+        Record "cleanup: $cleanup"
+    }
+    if ($cleanup -like 'FAILED*') {
+        Write-Host "Cleanup: $cleanup - $email was LEFT on $BaseUrl. Delete it with:" -ForegroundColor Red
+        Write-Host "  powershell -ExecutionPolicy Bypass -File .\scripts\delete-verify-account.ps1 -BaseUrl $BaseUrl -Email $email" -ForegroundColor Red
+    } else { Write-Host "Cleanup: $cleanup$(if ($cleanup -eq 'deleted') { " - $email (/me and sign-in now 401)" })" -ForegroundColor Green }
+}
+if ($cleanup -like 'FAILED*') { Write-Host "API verification: checks $(if ($failed) { 'FAILED' } else { 'passed' }), cleanup FAILED." -ForegroundColor Red; exit 2 }
+if ($failed) { Write-Host 'API verification FAILED (account cleaned up).' -ForegroundColor Red; exit 1 }
 Write-Host 'API verification passed.' -ForegroundColor Green
