@@ -92,7 +92,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('today-resume')), what: 'the open workout after the process ended', seconds: 40);
     // 1 of 16: the set recorded offline, against the customised prescription (4 sets on the first exercise + 4 × 3).
     await j.waitFor(find.text('of 16 sets'), what: 'the customised prescription after the process ended');
-    expect(find.text('1'), findsWidgets, reason: 'the set recorded before the process ended');
+    await j.waitFor(find.text('1'), what: 'the set recorded before the process ended (the count settles after a short animation)');
     await j.waitUntil(() async => await j.apiReachable(), what: 'the network to be back');
     await j.tapKey('today-resume');
     await j.waitFor(find.byKey(const Key('set-row-0')), what: 'the set recorded offline before the process ended');

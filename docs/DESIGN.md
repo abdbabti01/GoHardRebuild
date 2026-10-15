@@ -203,6 +203,26 @@ Plan / Progress kept in `shellProvider`.
 - Recording, detail, plan setup and review, pickers and the occasion sheet use the shared system; behaviour, keys,
   timers and rules are unchanged.
 
+### Plan builder and built plans (16 Oct 2026; rules and contract in `docs/TRAINING_PLANS.md`)
+
+- **Create plan** (`features/plans/builder/`): two `GroupRow` choices, "Start from a template" and "Build my own"; a
+  plan in progress offers Continue / Start over. Then four steps on `AppPage` with an overline "Step N of 4 · Name",
+  a thin `ProgressRail` and Back / Next in the bottom slot (never under the floating bar or the keyboard): Availability
+  (frequency chips, weekday chips, equipment, optional planned time, experience behind a disclosure), Structure
+  (templates as concise rows with the suggestion and its one-line reason, a readable preview of names and sequence;
+  name, Fixed weekdays / Rotating sequence with one sentence each, day assignment or cycle with Move up / Move down,
+  start and length), Workouts (each workout's exercises as "3 × 8–12 · 90 s rest", optional "Target 60 kg" on its own
+  line with a flag icon, notes; every reorder has buttons, no drag), Review (real dated rows with rest days, or the
+  cycle with projected dates; the plan it replaces, named; Activate plan / Save draft, or Save changes from an
+  effective date when editing). No photographs in the builder.
+- **Plan tab**: the pass shows the plan name; under it "split · mode" and "Planned time N min" (chosen, never
+  calculated). Fixed plans keep the week grid. Rotating plans show a cycle strip (the next step has a border and the
+  word "Next"), "Cycle N", a "Coming up" week strip and the next steps as rows; progress is "N sessions completed this
+  week" and "step p of L", never a percentage. Manage holds Edit plan, Pause, Duplicate, Review/finish and Create a
+  different plan; a saved plan's page holds Archive.
+- **Workout screen**: "Target 60 kg" (the plan's) and "Last time 57.5 kg × 8" (the record) are two separate lines;
+  the target never fills the entry.
+
 ## Eat
 
 The calm wash behind the date, the serif "Eat" and previous / next day; no scene, no weather. One card: the calorie

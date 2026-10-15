@@ -783,3 +783,56 @@ Checked on the final code of this branch:
 | `scripts\test.ps1` | API: release build, 128/128 tests on disposable PostgreSQL, publish. App: analyze clean, 303/303 Flutter tests |
 | Android emulator, recorded provider answers | all eight journeys pass. In the serial run `journey_offline_test` timed out once waiting for the conflict review notice (the save had not yet come back as a conflict) and passed when run again alone; the script stops at a failure, so device, upgrade, food and cold start were then run one by one, all passing. `journey_captures_test` passes (before and after captures, recording) |
 | Renders | `render_test` with `GOHARD_RENDER=true`: 98 renders, six looks, every weather family day and night, large text at 320 px, new account |
+
+## 16 October 2026 — plan builder: templates, own plans, fixed weekdays and rotating sequences (branch `feature/train-plan-builder`, from `main` at `0364df0`)
+
+Design, wire contract and rules: `docs/TRAINING_PLANS.md`. Task rows T1–T6 in `docs/TASK_MATRIX.md`. Work was split by
+file ownership: the lead wrote the contract, the shared fixture cases, the starter templates and the phone-side domain
+core (`plan_rules`, `plan_projection`, `plan_draft`, repository commands); one agent built the API side
+(`agent/plan-api`), one the builder screens (`agent/plan-builder`), one the Train/Today/workout integration
+(`agent/plan-train`); a fourth reviewed the integrated branch. Every branch was merged and re-checked as a whole.
+
+What changed for the user:
+
+- Train › Plan › Create plan: "Start from a template" (Full Body, Upper / Lower, Push / Pull / Legs, Push / Pull with
+  legs, Upper / Lower + PPL, Body-part split, Custom; suggested by available days, equipment variants) or "Build my
+  own"; four steps (Availability, Structure, Workouts, Review) saved on the phone after every change.
+- Workout definitions apart from occurrences: three definitions on six days are six independently completable
+  occurrences (UUIDv5 IDs computed identically on phone and server). Fixed weekdays (finite) or a rotating sequence
+  (finite or ongoing) that advances only on a credited finish or an explicit skip.
+- Workout editor: rename, duplicate, delete, reorder by buttons; add, replace, remove, reorder exercises; sets, rep
+  range or time, rest, optional weight target, notes; copy from another workout; private custom exercises.
+- Edits apply from an effective date (never before today) or to one occurrence; recorded, skipped, in-progress and
+  earlier occurrences and every recorded workout stay as they were. A reviewed swap also updates a fixed plan's
+  workouts. Edit drafts made before the plan changed elsewhere are not saved over it.
+- Today and Train read one projection; rotations show cycle position and this week, never an overall percentage.
+  The workout screen shows the plan's target apart from the last performance; history shows which plan and session.
+
+Decisions: additive migration `20261014220940_AddPlanBuilder` (new nullable columns, one table, unique
+`(PlanId, SequenceIndex)`); capabilities `plans.builder`, `exercises.custom`; contract version stays 1 (older builds
+keep working; `plan.draft.update` on a built plan → `PLAN_NEEDS_NEWER_APP`; older commands keep their semantic hash);
+25 catalog movements added by the idempotent `seed-catalog`; the old setup questionnaire is gone from the app (the
+server keeps it for older builds).
+
+Review findings fixed before merge (`8a691ca`, `6b1f8c5`): a saved-for-later step advanced the rotation in Train;
+a stale edit draft could overwrite newer plan content or use a past effective date; a swap kept the old exercise's
+weight target on occurrences; rotation undo-skip ignored later steps started offline; a step moved before the
+effective date could be dropped; a revise could remove an occurrence a no-data attempt pointed at.
+
+Checked on the final code:
+
+| Check | Result |
+|---|---|
+| `scripts\test.ps1` | API release build, 162/162 tests on disposable PostgreSQL (34 new), publish. App: analyze clean, 387/387 Flutter tests (60+ new) |
+| `verify-api.ps1` against the local API on the new schema | every check passes, including the new plan-builder check (custom exercise, rotating plan, step 0 started and credited, revise), account deleted |
+| Native `journey_plan_test` (new, two processes) | passed. Phase 1 offline: template preview, customisation (4 sets, 60 kg target, replaced exercise, own exercise), activation, a set recorded; force-stop; phase 2: plan and open set recovered, synced once, finished, move, edit from today, own rotating plan replacing the first after confirmation, skip advances one step, dark captures. Earlier attempts: one tooling hang before any step ("unusually long time to connect to the VM", stopped), two assertion fixes in the journey itself |
+| Native, the eight existing journeys (adapted to Create plan) | all pass, in separate runs: a serial run passed `journey_test`, `journey_secondary_test`; `journey_more_test` reported "All tests passed!" on the app side and then the driver lost the VM service ("Service has disappeared"), so it was re-run alone and passed; then `journey_offline_test`, `journey_device_test`, `journey_upgrade_test`, `journey_food_test`, `journey_coldstart_test` each passed alone |
+| Native `journey_plan_large_test` (captures only) | emulator at font scale 1.5 and 360 dp wide: builder steps, prescription sheet, Plan, Today; settings restored afterwards |
+
+Evidence (`docs/evidence/screenshots/`, all native Android emulator captures against the local API; weather answers are
+recorded responses, not live): `p01`–`p08` template path and recovery (light), `p09` edit scope, `p10`–`p14` own
+rotation and Today, `p15`–`p19` dark, `L1`–`L7` large text on a narrow phone. The green outline around a focused
+element in captures is the emulator's focus highlight from the test driver (present in earlier captures too). Fixture
+renders are separate (`docs/evidence/design/`) and were not regenerated for this change.
+
+Not checked: anything on a physical iPhone (VoiceOver, keyboard, safe areas, comfort, performance).
