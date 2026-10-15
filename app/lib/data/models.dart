@@ -28,6 +28,7 @@ abstract final class Kinds {
   static const runtime = 'runtime', setupDraft = 'setup_draft', planBuilder = 'plan_builder';
   /// Provider foods this owner has looked at, kept so they can be found again without a connection.
   static const foodCache = 'food_cache';
+  static const coachChat = 'coach_chat'; // local-only: this owner's Ask GoHard conversation and unsent question
 }
 
 extension type Prescription(Json j) {
