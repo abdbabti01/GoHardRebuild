@@ -9,17 +9,38 @@
   The food lookup checks go through whatever providers that server is configured with. Against a deployed server
   they are the live provider check; against a local API started with -FoodFixtures they only exercise recordings.
   Safe to run against the local API or the hosted TESTING API. It prints no tokens or passwords.
+
+  Cleanup: the account's email is printed and appended to scripts\.verify-accounts.log (git-ignored) before
+  registration, its id right after. Deletion (DELETE /api/v1/account with the password, then /me and sign-in must
+  answer 401) runs in a finally block, so it also runs after a failing check, an exception or Ctrl+C. It cannot run
+  if the process is killed (Task Manager, closed window, power loss, a second Ctrl+C during cleanup): then the log
+  names the account and scripts\delete-verify-account.ps1 removes it.
+  Exit code: 0 all passed, 1 a check failed (account deleted), 2 cleanup failed (account left behind).
 .PARAMETER BaseUrl
   API origin, for example http://127.0.0.1:5131 or https://<your-service>.up.railway.app
+.PARAMETER FailAfter
+  Debug: throw right after the check whose name starts with this text, to prove cleanup still runs.
 #>
-param([Parameter(Mandatory)][string]$BaseUrl)
+param([Parameter(Mandatory)][string]$BaseUrl, [string]$FailAfter)
 $ErrorActionPreference = 'Stop'
 $BaseUrl = $BaseUrl.TrimEnd('/')
 $failed = $false
+# Fixed on purpose so delete-verify-account.ps1 can remove a left-over account. Acceptable only because each email
+# carries 64 random bits and the account is deleted at the end of the run; never reuse it anywhere else.
+$password = 'verify password 1'
+$log = Join-Path $PSScriptRoot '.verify-accounts.log'
+$accountId = $null
+function Redact([string]$text) {
+    if ($script:token) { $text = $text.Replace($script:token, '<token>') }
+    $text.Replace($password, '<password>') -replace 'Bearer\s+\S+', 'Bearer <redacted>'
+}
+function Record($outcome) { Add-Content -Path $log -Encoding UTF8 -Value "$([DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))  $BaseUrl  $email  id=$(if ($accountId) { $accountId } else { '?' })  $outcome" }
 function Check($name, [scriptblock]$test) {
     try { $detail = & $test; Write-Host "  PASS  $name$(if ($detail) { " - $detail" })" -ForegroundColor Green }
-    catch { $script:failed = $true; Write-Host "  FAIL  $name - $($_.Exception.Message)" -ForegroundColor Red }
+    catch { $script:failed = $true; Write-Host "  FAIL  $name - $(Redact $_.Exception.Message)" -ForegroundColor Red }
+    if ($FailAfter -and $name -like "$FailAfter*") { throw "simulated failure after '$name' (-FailAfter)" }
 }
+function Status($err) { try { [int]$err.Exception.Response.StatusCode } catch { 0 } }
 function Api($method, $path, $body, $token) {
     $headers = @{}; if ($token) { $headers.Authorization = "Bearer $token" }
     $args = @{ Method = $method; Uri = "$BaseUrl$path"; Headers = $headers; TimeoutSec = 30 }
@@ -29,8 +50,7 @@ function Api($method, $path, $body, $token) {
 
 Write-Host "Verifying $BaseUrl"
 $appContract = [int]((Select-String -Path (Join-Path $PSScriptRoot '..\app\lib\core\config.dart') -Pattern 'contractVersion = (\d+)').Matches[0].Groups[1].Value)
-$email = "verify-$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())@example.test"
-$password = [Guid]::NewGuid().ToString('N')   # random, used once, never printed
+$email = "verify-$([Guid]::NewGuid().ToString('N').Substring(0, 16))@example.test"
 $today = (Get-Date).ToString('yyyy-MM-dd')
 
 Check 'Uses HTTPS (required by the iOS release build)' {
@@ -43,7 +63,15 @@ Check 'Client/backend contract compatibility' {
     "contract $appContract, $($c.capabilities.Count) capabilities"
 }
 $token = $null
-Check 'Registration' { $r = Api POST '/api/v1/auth/register' @{ email = $email; password = $password; displayName = 'API Verify' }; $script:token = $r.accessToken; 'account created' }
+$registerAttempted = $false
+try {   # everything from registration on: the finally block at the end deletes the account whatever happens
+Write-Host "  Account: $email" -ForegroundColor Cyan
+$registerAttempted = $true; Record 'registering'
+Check 'Registration' {
+    $r = Api POST '/api/v1/auth/register' @{ email = $email; password = $password; displayName = 'API Verify' }
+    $script:token = $r.accessToken; $script:accountId = $r.profile.userId; Record 'registered'
+    "account created, id $accountId"
+}
 Check 'Sign-in with the same credentials' { $r = Api POST '/api/v1/auth/login' @{ email = $email; password = $password }; $script:token = $r.accessToken; 'token issued' }
 Check 'Wrong password is refused' {
     try { Api POST '/api/v1/auth/login' @{ email = $email; password = 'definitely-wrong' } | Out-Null; throw 'accepted a wrong password' }
@@ -197,9 +225,39 @@ if ($capabilities -contains 'coach.ask') {
         "$($r.data.answer.Length) characters, sources: $(@($r.data.sources) -join ', ')"
     }
 } else { Write-Host '  NOT CONFIGURED  coach: not configured (capability absent) - set GOHARD_Coach__AnthropicApiKey to enable Ask GoHard' -ForegroundColor Yellow }
-Check 'Cleanup: the verification account is deleted' {
-    Api DELETE '/api/v1/account' @{ password = $password } $token | Out-Null
-    try { Api GET '/api/v1/me' $null $token | Out-Null; throw 'token still works after deletion' } catch { if ($_.Exception.Response.StatusCode.value__ -ne 401) { throw }; 'no test data left behind' }
+} catch {
+    $failed = $true; Write-Host "  ABORTED  $(Redact $_.Exception.Message)" -ForegroundColor Red
+} finally {
+    # Runs after success, a failing check, an exception or Ctrl+C. Reported apart from the feature checks.
+    $cleanup = 'deleted'
+    if (-not $registerAttempted) { $cleanup = 'nothing to clean (no registration attempted)' }
+    else {
+        try {
+            $t = $token
+            try { Api DELETE '/api/v1/account' @{ password = $password } $t | Out-Null }
+            catch {
+                if ((Status $_) -ne 401) { throw }
+                # No token (registration answer lost) or an expired one: sign in again with the stored credentials.
+                try { $t = (Api POST '/api/v1/auth/login' @{ email = $email; password = $password }).accessToken }
+                catch {
+                    if ((Status $_) -ne 401) { throw }
+                    if ($accountId) { throw 'cannot sign in to delete it (401)' }
+                    $t = $null; $cleanup = 'nothing to clean (registration did not create an account)'
+                }
+                if ($t) { Api DELETE '/api/v1/account' @{ password = $password } $t | Out-Null }
+            }
+            if ($t) {
+                try { Api GET '/api/v1/me' $null $t | Out-Null; throw 'its token still works after deletion' } catch { if ((Status $_) -ne 401) { throw } }
+                try { Api POST '/api/v1/auth/login' @{ email = $email; password = $password } | Out-Null; throw 'it can still sign in after deletion' } catch { if ((Status $_) -ne 401) { throw } }
+            }
+        } catch { $cleanup = "FAILED ($(Redact $_.Exception.Message))" }
+        Record "cleanup: $cleanup"
+    }
+    if ($cleanup -like 'FAILED*') {
+        Write-Host "Cleanup: $cleanup - $email was LEFT on $BaseUrl. Delete it with:" -ForegroundColor Red
+        Write-Host "  powershell -ExecutionPolicy Bypass -File .\scripts\delete-verify-account.ps1 -BaseUrl $BaseUrl -Email $email" -ForegroundColor Red
+    } else { Write-Host "Cleanup: $cleanup$(if ($cleanup -eq 'deleted') { " - $email (/me and sign-in now 401)" })" -ForegroundColor Green }
 }
-if ($failed) { Write-Host 'API verification FAILED.' -ForegroundColor Red; exit 1 }
+if ($cleanup -like 'FAILED*') { Write-Host "API verification: checks $(if ($failed) { 'FAILED' } else { 'passed' }), cleanup FAILED." -ForegroundColor Red; exit 2 }
+if ($failed) { Write-Host 'API verification FAILED (account cleaned up).' -ForegroundColor Red; exit 1 }
 Write-Host 'API verification passed.' -ForegroundColor Green

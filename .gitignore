@@ -11,3 +11,4 @@ infrastructure/.env.local
 app/.flutter-plugins-dependencies
 docs/evidence/tmp/
 publish/
+scripts/.verify-accounts.log
