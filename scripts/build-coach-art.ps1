@@ -4,8 +4,9 @@
 # head, ears and mane). Full body: both cropped to the same box (the union of their opaque areas, so the two keep the
 # scale they were drawn at), 420 px high. Alpha below 16 is cleared first: the sources carry a faint coloured fringe
 # and a hidden glow in fully transparent pixels, which bicubic sampling would otherwise drag onto the edges.
+# The full bodies get a faint light rim just outside their edge (see Rim) so the charcoal clothing reads on dark pages.
 # -Check writes light and dark composites of the outputs for a visual review (not committed).
-param([string]$Check)
+param([string]$Check, [double]$rimRadius = 2, [double]$rimOpacity = 0.25)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $src = Join-Path $root 'design\coach\assets'
@@ -36,7 +37,46 @@ public static class CoachArt {
       if (px[y * d.Stride + x * 4 + 3] != 0) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     return Rectangle.FromLTRB(x0, y0, x1 + 1, y1 + 1);
   }
-  public static void Resize(Bitmap b, Rectangle crop, int w, int h, string path) {
+  // A thin, soft, faint light rim just outside the alpha edge, composited behind the figure, so the charcoal clothing
+  // keeps its outline on dark pages. Inside the silhouette nothing changes (fur, face and clothing keep their colours);
+  // on light pages the rim is near-white on near-white and does not show.
+  public static void Rim(Bitmap o, double radius, double opacity) {
+    int w = o.Width, h = o.Height;
+    var d = o.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+    var px = new byte[d.Stride * h]; Marshal.Copy(d.Scan0, px, 0, px.Length);
+    var a = new double[w * h];
+    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) a[y * w + x] = px[y * d.Stride + x * 4 + 3] / 255.0;
+    // Dilate by a disk of [radius], then a 3 x 3 box blur so the rim fades out instead of ending in a hard line.
+    int r = (int)Math.Ceiling(radius);
+    var dil = new double[w * h];
+    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+      double m = 0;
+      for (int dy = -r; dy <= r; dy++) for (int dx = -r; dx <= r; dx++) {
+        int X = x + dx, Y = y + dy;
+        if (X < 0 || Y < 0 || X >= w || Y >= h || dx * dx + dy * dy > radius * radius) continue;
+        if (a[Y * w + X] > m) m = a[Y * w + X];
+      }
+      dil[y * w + x] = m;
+    }
+    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+      double s = 0; int n = 0;
+      for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+        int X = x + dx, Y = y + dy;
+        if (X < 0 || Y < 0 || X >= w || Y >= h) continue;
+        s += dil[Y * w + X]; n++;
+      }
+      double fa = a[y * w + x], ra = opacity * s / n, oa = fa + ra * (1 - fa);
+      if (oa <= 0) continue;
+      int i = y * d.Stride + x * 4;
+      // Warm off-white, the light page's family rather than pure white.
+      double[] rim = { 0xE6, 0xEE, 0xF4 }; // B, G, R
+      for (int k = 0; k < 3; k++) px[i + k] = (byte)Math.Round((px[i + k] * fa + rim[k] * ra * (1 - fa)) / oa);
+      px[i + 3] = (byte)Math.Round(oa * 255);
+    }
+    Marshal.Copy(px, 0, d.Scan0, px.Length); o.UnlockBits(d);
+  }
+  public static void Resize(Bitmap b, Rectangle crop, int w, int h, string path) { Resize(b, crop, w, h, path, 0, 0); }
+  public static void Resize(Bitmap b, Rectangle crop, int w, int h, string path, double rimRadius, double rimOpacity) {
     using (var o = new Bitmap(w, h, PixelFormat.Format32bppArgb))
     using (var g = Graphics.FromImage(o))
     using (var a = new ImageAttributes()) {
@@ -47,6 +87,7 @@ public static class CoachArt {
       g.SmoothingMode = SmoothingMode.HighQuality;
       a.SetWrapMode(WrapMode.TileFlipXY); // no dark seam sampled from outside the crop
       g.DrawImage(b, new Rectangle(0, 0, w, h), crop.X, crop.Y, crop.Width, crop.Height, GraphicsUnit.Pixel, a);
+      if (rimRadius > 0) Rim(o, rimRadius, rimOpacity);
       o.Save(path, ImageFormat.Png);
     }
   }
@@ -84,7 +125,7 @@ $box.Inflate(8, 8)
 $box = [Drawing.Rectangle]::Intersect($box, [Drawing.Rectangle]::new(0, 0, $full['leon'].Width, $full['leon'].Height))
 $h = 420; $w = [int][Math]::Round($box.Width * $h / $box.Height)
 foreach ($n in 'leon', 'leona') {
-  [CoachArt]::Resize($full[$n], $box, $w, $h, (Join-Path $out "$n-full.png"))
+  [CoachArt]::Resize($full[$n], $box, $w, $h, (Join-Path $out "$n-full.png"), $rimRadius, $rimOpacity)
   $full[$n].Dispose()
 }
 

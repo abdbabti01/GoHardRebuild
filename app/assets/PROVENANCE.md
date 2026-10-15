@@ -21,6 +21,8 @@ handoff's `ASSETS.md` and `manifest.json` (sha256 of each), are kept unbundled i
 derived by `scripts/build-coach-art.ps1` (alpha below 16 cleared, resized with high-quality bicubic, alpha kept):
 `leon-avatar.png` and `leona-avatar.png` 192 × 192, `leon-full.png` and `leona-full.png` 202 × 420 (both cropped to the
 same box). The concept boards themselves (their text, buttons and help strips) are reference only and are not shipped.
+The two full-body files also carry a faint warm-white rim just outside the alpha edge (2 px, 25% opacity, softened),
+added by the same script so the charcoal clothing keeps its outline on dark pages; the originals are unchanged.
 
 [
   {
