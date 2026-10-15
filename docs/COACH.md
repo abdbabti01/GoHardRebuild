@@ -146,3 +146,12 @@ haptics), never inferred from the profile, identical capabilities. Fur and cloth
 theme; the accent only colours controls and selected indicators. Coaching hints: on by default, each shown at most
 once per flow until "Show coaching hints again"; "Coaching hints" off removes unsolicited hints, never manual help.
 No hint while recording sets, running, reviewing conflicts or reviewing a destructive change.
+
+### Groq rate limits in practice (live, 15 Oct 2026)
+
+`openai/gpt-oss-120b` on this account's Groq plan allows 30 requests and 8K tokens a minute (console.groq.com/docs/
+rate-limits; the account's own figures are on its Limits page). A request is kept near 2K prompt tokens (only the
+asked-about exercise in full, named terms only, `max_completion_tokens` 1500; a test bounds the prompt) so several
+questions fit in a minute. Beyond that Groq answers 429 with `retry-after`; the server retries once only when the wait
+is ≤ 5 s, otherwise the app shows "Ask GoHard is busy right now" with the question kept and Retry. A higher Groq plan
+raises the limits; nothing in the app needs to change.

@@ -75,6 +75,8 @@ public partial class CoachTests
         var user = messages[1]!["content"]!.GetValue<string>();
         Assert.StartsWith(CoachService.Instructions + "\n\n<reviewed_references>", system);
         Assert.EndsWith("</reviewed_references>", system);
+        // Bounded context: about 4 characters a token, so a typical request stays near 2K tokens of Groq's 8K a minute.
+        Assert.True(system.Length + user.Length < 9000, $"prompt is {system.Length + user.Length} characters");
         Assert.DoesNotContain(question, system);
         Assert.DoesNotContain("Ignore all rules", system);
         Assert.StartsWith("<context>", user);

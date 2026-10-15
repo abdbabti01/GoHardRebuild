@@ -280,8 +280,12 @@ public sealed class CoachService
         foreach (var s in guide.Sources) refs.AppendLine($"- {s.Id}: {s.Title}. {s.Publisher}.");
         foreach (var s in guide.Splits.Where(s => s.TemplateId == c?.TemplateId))
             refs.AppendLine($"\nSplit {s.TemplateId} ({s.Name}): {s.Summary} {s.Organisation} Days: {s.Days}.\n  Benefits: {string.Join(" ", s.Benefits)}\n  Limitations: {string.Join(" ", s.Limitations)}\n  Sources: {string.Join(", ", s.Sources)}");
+        // In full only the exercise asked about; the rest one line each, so a request stays well inside Groq's
+        // per-minute token budget (8K for gpt-oss-120b) and a person can ask a few questions in a row.
         foreach (var e in exercises)
-            refs.AppendLine($"\nExercise {e.CatalogKey} ({e.Role}): muscles {string.Join(", ", e.Muscles)}; equipment {e.Equipment}.\n  Cues: {string.Join(" ", e.Cues)}\n  Benefits: {string.Join(" ", e.Benefits)}\n  Limitations: {string.Join(" ", e.Limitations)}\n  Alternatives: {string.Join(", ", e.Alternatives)}\n  Sources: {string.Join(", ", e.Sources)}");
+            refs.AppendLine(e.CatalogKey == focusKey
+                ? $"\nExercise {e.CatalogKey} ({e.Role}): muscles {string.Join(", ", e.Muscles)}; equipment {e.Equipment}.\n  Cues: {string.Join(" ", e.Cues)}\n  Benefits: {string.Join(" ", e.Benefits)}\n  Limitations: {string.Join(" ", e.Limitations)}\n  Alternatives: {string.Join(", ", e.Alternatives)}\n  Sources: {string.Join(", ", e.Sources)}"
+                : $"Exercise {e.CatalogKey} ({e.Role}): muscles {string.Join(", ", e.Muscles)}; equipment {e.Equipment}.");
         if (terms.Count > 0) refs.AppendLine("\nTerms:");
         foreach (var t in terms) refs.AppendLine($"- {t.Term}: {t.Text}");
         refs.AppendLine("\nExercise catalog (catalogKey: name):");
