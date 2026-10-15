@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "reviewNote": "Written for GoHard against the sources listed here (ACSM 2009 position stand; Ramos-Campo et al. 2024 meta-analysis). It awaits review by the owner and a qualified coach. General information about exercises and plan structure, not medical advice or a diagnosis.",
+  "reviewNote": "Source-checked by the developer on 15 Oct 2026 against the sources listed here. Not reviewed by a qualified coach or clinician: it awaits review. Recommendations come from these sources with their conditions; exercise cues and muscle lists are general, widely taught descriptions and were not checked against a source. General information, not individual advice, medical advice or a diagnosis.",
   "sources": [
     {
       "id": "acsm-2009",
       "title": "American College of Sports Medicine position stand. Progression models in resistance training for healthy adults",
-      "publisher": "Medicine & Science in Sports & Exercise, 2009 (American College of Sports Medicine)",
+      "publisher": "Medicine & Science in Sports & Exercise, 2009; 41(3):687–708 (American College of Sports Medicine)",
       "url": "https://pubmed.ncbi.nlm.nih.gov/19204579/"
     },
     {
@@ -13,6 +13,24 @@
       "title": "Efficacy of Split Versus Full-Body Resistance Training on Strength and Muscle Growth: A Systematic Review With Meta-Analysis",
       "publisher": "Journal of Strength and Conditioning Research, 2024; 38(7):1330–1340 (Ramos-Campo et al.)",
       "url": "https://pubmed.ncbi.nlm.nih.gov/38595233/"
+    },
+    {
+      "id": "acsm-2026",
+      "title": "American College of Sports Medicine Position Stand. Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults: An Overview of Reviews",
+      "publisher": "Medicine & Science in Sports & Exercise, 2026; 58(4):851–872 (American College of Sports Medicine; Currier et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41843416/"
+    },
+    {
+      "id": "schoenfeld-2016-rest",
+      "title": "Longer Interset Rest Periods Enhance Muscle Strength and Hypertrophy in Resistance-Trained Men",
+      "publisher": "Journal of Strength and Conditioning Research, 2016; 30(7):1805–1812 (Schoenfeld et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/26605807/"
+    },
+    {
+      "id": "schoenfeld-2019-frequency",
+      "title": "How many times per week should a muscle be trained to maximize muscle hypertrophy? A systematic review and meta-analysis of studies examining the effects of resistance training frequency",
+      "publisher": "Journal of Sports Sciences, 2019; 37(11):1286–1295 (Schoenfeld, Grgic, Krieger)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/30558493/"
     }
   ],
   "splits": [
