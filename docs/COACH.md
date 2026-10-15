@@ -34,7 +34,7 @@ Every `catalogKey` / `alternatives` key exists in `exercise-catalog.json`; every
 every source ID in `sources`. A custom exercise (`custom:<id>`) has no entry: the app says "Added by you" and claims
 no verified technique information.
 
-## `POST /api/coach/ask` (authenticated; reads only; not a command, never queued)
+## `POST /api/v1/coach/ask` (authenticated; reads only; not a command, never queued)
 
 ```jsonc
 // request
