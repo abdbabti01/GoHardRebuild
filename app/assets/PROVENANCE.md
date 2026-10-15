@@ -15,6 +15,13 @@ Update, 14 October 2026 (weather scenes): no new asset files. The condition scen
 storm; day and night) are original native painting (`app/lib/features/weather/sky_painter.dart`) composited with the
 existing `assets/scenes/scenic-dusk.webp`, which is unchanged. No third-party images were downloaded or used.
 
+Update, 15 October 2026 (coach avatars): `assets/coach/` holds Leon and Leona, static raster artwork generated for
+the GoHard Coach Handoff from the approved concept boards (no Rive/Lottie, rig or animation). The four originals, with the
+handoff's `ASSETS.md` and `manifest.json` (sha256 of each), are kept unbundled in `design/coach/`. The runtime files are
+derived by `scripts/build-coach-art.ps1` (alpha below 16 cleared, resized with high-quality bicubic, alpha kept):
+`leon-avatar.png` and `leona-avatar.png` 192 × 192, `leon-full.png` and `leona-full.png` 202 × 420 (both cropped to the
+same box). The concept boards themselves (their text, buttons and help strips) are reference only and are not shipped.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",

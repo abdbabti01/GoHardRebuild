@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
@@ -14,6 +15,7 @@ import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
 import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'food_fakes.dart';
@@ -214,6 +216,53 @@ void main() {
     });
   }
 
+  // Leon and Leona in all six themes: the help button with its hint open, both avatars and both full figures. The fur
+  // keeps its colours whatever the accent; only the button's hint and controls follow the theme.
+  testWidgets('six themes: coach', (tester) async {
+    tester.view.physicalSize = const Size(390, 640) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final shots = <String, ui.Image>{};
+    for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+      for (final accent in Accent.values) {
+        final theme = goTheme(accent, mode == ThemeMode.light ? Brightness.light : Brightness.dark);
+        // The boundary wraps the whole app: the hint is drawn in the navigator's overlay, above the page.
+        await tester.pumpWidget(RepaintBoundary(key: const Key('shot'), child: ProviderScope(
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: theme,
+            home: Scaffold(
+                backgroundColor: theme.extension<GoColors>()!.page,
+                body: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Expanded(child: Text('Upper / Lower', style: TextStyle(fontFamily: serif, fontSize: 30, color: theme.extension<GoColors>()!.text))),
+                      CoachHelpButton(semanticLabel: 'Ask GoHard about this split', onPressed: () {}, hintId: 'render', hintText: 'Not sure how many days to train? Ask GoHard about this split.'),
+                    ]),
+                    const SizedBox(height: 200),
+                    const Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      CoachAvatar(size: 40, guide: CoachGuide.leon), CoachAvatar(size: 40, guide: CoachGuide.leona),
+                      CoachFigure(height: 140), CoachFigure(height: 140, guide: CoachGuide.leona),
+                    ]),
+                  ]),
+                ),
+              ),
+          ),
+        )));
+        await tester.runAsync(() async {
+          for (final e in find.byType(Image).evaluate()) {
+            await precacheImage((e.widget as Image).image, e);
+          }
+        });
+        shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = await _capture(tester);
+        await tester.pumpWidget(const SizedBox());
+      }
+    }
+    await _save(tester, await _sheet(tester, shots), 'six-themes-coach');
+    expect(tester.takeException(), isNull);
+  });
+
   // Every weather scene at Today's header size, one row per family, day / night / neutral (the provider did not say),
   // each with the header's own scrim and text where Today puts them. Then the decorative dusk for comparison.
   for (final (mode, accent) in [(ThemeMode.light, Accent.blue), (ThemeMode.dark, Accent.pink)]) {
@@ -365,8 +414,8 @@ void main() {
     'new-account-progress': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-progress', const Size(390, 844), 1),
     'large-text-today-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'today', const Size(320, 3900), 2),
     'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 4600), 2),
-    'full-appearance-pink-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'appearance', const Size(390, 1500), 1),
-    'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 1900), 2),
+    'full-appearance-pink-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'appearance', const Size(390, 1900), 1),
+    'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 2500), 2),
     'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),
     'full-food-preview-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-preview', const Size(390, 1500), 1),
     'scan-camera-refused-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, cameraRefused: true), 'scan', const Size(390, 900), 1),

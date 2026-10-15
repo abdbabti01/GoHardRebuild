@@ -39,6 +39,7 @@ flutter:
     - assets/images/
     - assets/data/
     - assets/scenes/
+    - assets/coach/
   fonts:
     - family: Inter
       fonts:
