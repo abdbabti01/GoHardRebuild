@@ -1,0 +1,91 @@
+{
+  "package": "GoHard Coach Handoff",
+  "created_date": "2026-10-15",
+  "prompt": "CLAUDE_PROMPT.md",
+  "artwork": "Static PNG artwork generated from the approved Leon and Leona concept references. No articulated animation supplied.",
+  "files": [
+    {
+      "path": "ASSETS.md",
+      "bytes": 2592,
+      "sha256": "4ba7c99c38de8e3d4bc7a466d71651462bd50e484a108b28b7f911faf317da1a"
+    },
+    {
+      "path": "CLAUDE_PROMPT.md",
+      "bytes": 30919,
+      "sha256": "352bc8ede04ef6391f2004d891e76b00bc85dd2a7403f8df80dd82dd3393cdb5"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2183,
+      "sha256": "12767d6890448c1e25ed6ca95f1a2d2be83cf861ad4f8a076592033db28a5f71"
+    },
+    {
+      "path": "assets/leon-avatar.png",
+      "bytes": 2017775,
+      "sha256": "f4b89aa157028f7ca22987e8ff50d9e94da80b79e4abdb21c41f1c281e4a7e9c",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "fully_transparent_fraction": 0.4095
+    },
+    {
+      "path": "assets/leon-full.png",
+      "bytes": 1851867,
+      "sha256": "242793facacfb7d3fd86e10ad3db343dda89a08e5515845654948babbcdf7fd2",
+      "width": 1024,
+      "height": 1536,
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        254
+      ],
+      "fully_transparent_fraction": 0.6539
+    },
+    {
+      "path": "assets/leona-avatar.png",
+      "bytes": 1809256,
+      "sha256": "e07000c12d9d6c3fe17dbde3104ab3010ae30706d0bf7f47e31e7d8e6610da94",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "fully_transparent_fraction": 0.4728
+    },
+    {
+      "path": "assets/leona-full.png",
+      "bytes": 1844875,
+      "sha256": "67d6136a54a981abe548275deba7c6c15f3bf58a5b982fa4dc43bfcce6480ae4",
+      "width": 1024,
+      "height": 1536,
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        254
+      ],
+      "fully_transparent_fraction": 0.6757
+    },
+    {
+      "path": "references/leon-approved-concept.png",
+      "bytes": 1693658,
+      "sha256": "bfbd85e6890bdfa067fbda781631cefa029ed12143c489aa414a74bea92bfd97",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGB"
+    },
+    {
+      "path": "references/leona-approved-concept.png",
+      "bytes": 1643048,
+      "sha256": "8ad12173e1f9d087c580fa711a67f6ab8a48d9853a16a6165d4229e1b4dc129d",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGB"
+    }
+  ]
+}

@@ -12,6 +12,8 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
+import '../coach/coach_avatar.dart';
+import '../coach/coach_prefs.dart';
 // Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
 import '../nutrition/nutrition_surface.dart';
 import '../weather/weather.dart';
@@ -304,6 +306,8 @@ class AppearanceScreen extends ConsumerWidget {
         ),
       ]),
       const _Divided(),
+      const _CoachSection(),
+      const _Divided(),
       const _AppearanceSection(Icons.visibility_outlined, 'Preview', 'A sample of the selected appearance and accent color.'),
       const _Preview(),
       const SizedBox(height: 18),
@@ -311,6 +315,53 @@ class AppearanceScreen extends ConsumerWidget {
         Icon(Icons.info_outline, size: 20, color: context.c.secondary),
         const SizedBox(width: 10),
         Expanded(child: Text('Changes apply immediately and are remembered on this phone.', style: context.caption)),
+      ]),
+    ]);
+  }
+}
+
+/// Leon or Leona, and the coaching hints. Choosing applies at once and changes nothing else: not the accent or mode,
+/// not an open page, draft or conversation. Never inferred from the profile.
+class _CoachSection extends ConsumerWidget {
+  const _CoachSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final coach = ref.watch(coachPrefsProvider);
+    final set = ref.read(coachPrefsProvider.notifier);
+    final across = MediaQuery.textScalerOf(context).scale(10) <= 20;
+    final cards = [
+      for (final g in CoachGuide.values)
+        ChoiceCard(
+          key: Key('coach-${g.name}'), label: g.label, semanticLabel: '${g.label}, ${g.animal}', selected: g == coach.guide, onTap: () => set.setGuide(g),
+          leading: CoachAvatar(size: 36, guide: g),
+        ),
+    ];
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const _AppearanceSection(Icons.face_outlined, 'Coach avatar', 'Leon, a lion, or Leona, a lioness. The same coach either way: only the look changes.'),
+      if (across)
+        IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: cards[0]), const SizedBox(width: 10), Expanded(child: cards[1])]))
+      else
+        ...[cards[0], const SizedBox(height: 10), cards[1]],
+      const SizedBox(height: 14),
+      GroupCard(children: [
+        MergeSemantics(
+          child: GroupRow(
+            key: const Key('coach-hints'), icon: Icons.lightbulb_outline, title: 'Coaching hints',
+            subtitle: coach.hintsEnabled ? 'A short tip beside GoHard\'s help, once each.' : 'Off. Help is still there when you ask.',
+            trailing: Switch(value: coach.hintsEnabled, onChanged: (on) {
+              Haptics.selection();
+              set.setHints(on);
+            }),
+          ),
+        ),
+        GroupRow(
+          key: const Key('coach-hints-reset'), icon: Icons.replay_rounded, title: 'Show coaching hints again',
+          onTap: () {
+            set.resetHints();
+            toast(context, 'Coaching hints you have seen can show again.');
+          },
+        ),
       ]),
     ]);
   }
