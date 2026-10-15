@@ -34,8 +34,8 @@ for it or it is skipped. Until then the phone shows it as a projected ("virtual"
 same ID for *k*, so a retry, a second device or a lost response cannot create a second one, and the unique index
 `(PlanId, SequenceIndex)` enforces it.
 
-Projected dates (rotating, phone only): from `max(today, startDate)` — or the day after today when an occurrence of this
-plan was already started or resolved today — each next index takes the next training day (or the next day when
+Projected dates (rotating, phone only): from `max(today, startDate)` — or the day after the latest occurrence of this plan already started or
+completed today or later (a skip takes no day: skipping today's workout makes the next one today's) — each next index takes the next training day (or the next day when
 `trainingDays` is empty). A projected date is a plan, not a record; it is never "missed".
 
 ## Deterministic occurrence IDs
@@ -131,8 +131,8 @@ schedule, start, duration and the effective date `E`. Fixed mode:
 2. For each `g` in `G`: if an occasion with that ID exists and is pending and not customised → take `g`'s workout,
    title, prescription, week and ordinal, **keep its scheduledDate** (a move survives). Exists but not pending, or
    customised → unchanged. Otherwise → added.
-3. Pending, non-customised occasions with `originalDate ≥ E` whose ID is not in `G` → removed (the pattern no longer
-   has them). Legacy random-ID occasions fall in this group.
+3. Pending, non-customised occasions with `originalDate ≥ E` and `scheduledDate ≥ E` whose ID is not in `G` → removed
+   (the pattern no longer has them; one moved to before `E` is kept as it is). Legacy random-ID occasions fall in this group.
 4. Pending, non-customised occasions with `originalDate < E` but `scheduledDate ≥ E` (moved forward past `E`) → content
    from their definition when it still exists; otherwise unchanged.
 5. Everything else — recorded, skipped, open, before `E`, customised — keeps its content and dates. Completed

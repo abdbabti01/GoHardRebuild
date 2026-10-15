@@ -105,8 +105,7 @@ class Rotation {
   /// The plan's workouts in cycle order (repeats included).
   final List<WorkoutDefinition> cycle;
 
-  /// The next workout to do (a projected occurrence, or a materialized one still waiting with no open workout), or
-  /// null at the plan's end.
+  /// The next workout to do (projected, or materialized and still waiting, possibly in progress), or null at the plan's end.
   final Occasion? next;
 
   /// 0-based position of [next] in the cycle.
@@ -125,7 +124,8 @@ Rotation? rotationOf(Plan plan, List<Occasion> occasions, Iterable<Workout> work
   if (s == null || !s.isRotating || s.cycle.isEmpty) return null;
   final defs = {for (final w in plan.workouts) w.id: w};
   final pending = [for (final o in occasions) if (!o.isSkipped && occasionOutcome(o, workouts) == null) o];
-  final next = pending.where((o) => openWorkoutFor(o, workouts) == null).firstOrNull;
+  // The lowest step neither credited nor skipped, open or not: saving a workout for later never moves the cycle on.
+  final next = pending.firstOrNull;
   final k = next?.sequenceIndex ?? s.cycleAnchor;
   final since = k - s.cycleAnchor;
   return Rotation(

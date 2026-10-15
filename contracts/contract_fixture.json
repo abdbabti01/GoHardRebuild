@@ -1571,6 +1571,211 @@
           "firstExercise": "Back squat"
         }
       ]
+    },
+    {
+      "name": "occurrence_moved_before_the_effective_date_is_kept",
+      "planId": "00000000-0000-4000-8000-0000000000a1",
+      "start": "2026-10-12",
+      "durationWeeks": 2,
+      "effectiveDate": "2026-10-16",
+      "workouts": [
+        {
+          "id": "00000000-0000-4000-8000-0000000000b1",
+          "name": "Push",
+          "notes": null,
+          "exercises": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-0000000000b2",
+          "name": "Pull v2",
+          "notes": null,
+          "exercises": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "pull-up",
+              "name": "Pull-up",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-0000000000b3",
+          "name": "Legs",
+          "notes": null,
+          "exercises": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        }
+      ],
+      "schedule": {
+        "mode": "fixed",
+        "pattern": [
+          {
+            "weekday": 4,
+            "workoutId": "00000000-0000-4000-8000-0000000000b3"
+          }
+        ],
+        "cycle": [],
+        "trainingDays": [],
+        "cycleAnchor": 0
+      },
+      "occasions": [
+        {
+          "id": "8fa6d488-0aeb-58fa-862a-17ba836f9e80",
+          "originalDate": "2026-10-12",
+          "scheduledDate": "2026-10-12",
+          "workoutId": "00000000-0000-4000-8000-0000000000b1",
+          "title": "Push",
+          "weekNumber": 1,
+          "ordinal": 1,
+          "pending": false,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "67f30ea6-0f65-5a70-8a5e-a255b049a338",
+          "originalDate": "2026-10-16",
+          "scheduledDate": "2026-10-16",
+          "workoutId": "00000000-0000-4000-8000-0000000000b3",
+          "title": "Legs",
+          "weekNumber": 1,
+          "ordinal": 2,
+          "pending": true,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "033e62a3-9629-5bef-aa26-d48f7a578397",
+          "originalDate": "2026-10-19",
+          "scheduledDate": "2026-10-15",
+          "workoutId": "00000000-0000-4000-8000-0000000000b1",
+          "title": "Push",
+          "weekNumber": 2,
+          "ordinal": 1,
+          "pending": true,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "id": "fd212b70-c66b-5f25-bc4b-bf754b71fc60",
+          "originalDate": "2026-10-21",
+          "scheduledDate": "2026-10-21",
+          "workoutId": "00000000-0000-4000-8000-0000000000b2",
+          "title": "Pull",
+          "weekNumber": 2,
+          "ordinal": 2,
+          "pending": true,
+          "isCustomised": false,
+          "prescription": [
+            {
+              "occurrenceKey": "e1",
+              "catalogKey": "x",
+              "name": "Old content",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            }
+          ]
+        }
+      ],
+      "expect": [
+        {
+          "id": "8fa6d488-0aeb-58fa-862a-17ba836f9e80",
+          "originalDate": "2026-10-12",
+          "scheduledDate": "2026-10-12",
+          "workoutId": "00000000-0000-4000-8000-0000000000b1",
+          "title": "Push",
+          "weekNumber": 1,
+          "ordinal": 1,
+          "firstExercise": "Old content"
+        },
+        {
+          "id": "033e62a3-9629-5bef-aa26-d48f7a578397",
+          "originalDate": "2026-10-19",
+          "scheduledDate": "2026-10-15",
+          "workoutId": "00000000-0000-4000-8000-0000000000b1",
+          "title": "Push",
+          "weekNumber": 2,
+          "ordinal": 1,
+          "firstExercise": "Old content"
+        },
+        {
+          "id": "3645d775-62ee-5837-9568-254b2435c10b",
+          "originalDate": "2026-10-22",
+          "scheduledDate": "2026-10-22",
+          "workoutId": "00000000-0000-4000-8000-0000000000b3",
+          "title": "Legs",
+          "weekNumber": 2,
+          "ordinal": 2,
+          "firstExercise": "Back squat"
+        }
+      ]
     }
   ]
 }

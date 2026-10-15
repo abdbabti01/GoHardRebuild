@@ -140,7 +140,7 @@ public static class PlanRules
         {
             if (!Replaceable(o)) output.Add(o);
             else if (genIds.Contains(o.Id)) continue;                 // taken from the generated list below
-            else if (o.OriginalDate >= effective) continue;           // the new pattern no longer has it
+            else if (o.OriginalDate >= effective && o.ScheduledDate >= effective) continue; // the new pattern no longer has it (moved before E: kept)
             else if (o.ScheduledDate >= effective && o.WorkoutId is { } wid && byId.TryGetValue(wid, out var d)) output.Add(WithContent(o, d));
             else output.Add(o);
         }

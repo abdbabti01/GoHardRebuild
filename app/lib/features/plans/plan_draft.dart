@@ -130,6 +130,9 @@ class PlanDraft {
 
   /// Edit only: changes apply to occurrences on or after this day.
   String? get effectiveDate => j['effectiveDate'] as String?;
+
+  /// Edit only: the plan revision the edit started from.
+  int? get baseRevision => j['baseRevision'] as int?;
   set effectiveDate(String? v) => j['effectiveDate'] = v;
 
   List<WorkoutDefinition> get workouts => [for (final w in j['workouts'] as List) WorkoutDefinition(w as Json)];
@@ -418,6 +421,8 @@ class PlanDraft {
       'workouts': workouts, 'schedule': schedule, 'startDate': start, 'durationWeeks': plan.isOngoing ? null : plan.blockWeeks,
       'timeBudgetMinutes': plan.timeBudgetMinutes,
       'effectiveDate': duplicate || plan.isDraft ? null : (today.compareTo(plan.startDate) < 0 ? plan.startDate : today),
+      // The plan revision this edit started from: a plan changed since (another device, an accepted swap) is not overwritten.
+      'baseRevision': duplicate ? null : plan.revision,
     });
   }
 }

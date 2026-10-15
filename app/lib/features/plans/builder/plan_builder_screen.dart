@@ -97,7 +97,10 @@ Future<void> openPlanEditor(BuildContext context, WidgetRef ref, Plan plan, {boo
   final existing = await repo.builderDraft(duplicate ? 'new' : plan.id);
   if (!context.mounted) return;
   PlanDraft? draft;
-  if (existing != null && !duplicate) {
+  if (existing != null && !duplicate && existing.baseRevision != null && existing.baseRevision != plan.revision) {
+    // The plan changed since these unsaved edits began (another device, an accepted swap): they are not offered again.
+    toast(context, 'This plan changed since you last edited it, so you start from the plan as it is now.');
+  } else if (existing != null && !duplicate) {
     final resume = await confirm(context, title: 'Continue your changes?', action: 'Continue changes', cancel: 'Start from the saved plan',
         body: 'You were changing "${plan.title}" and did not save. Continue where you left off, or start again from the plan as it is now.');
     if (resume) draft = existing;
@@ -107,6 +110,7 @@ Future<void> openPlanEditor(BuildContext context, WidgetRef ref, Plan plan, {boo
     if (!replace) return;
   }
   draft ??= PlanDraft.fromPlan(plan, duplicate: duplicate, today: today);
+  if (draft.effectiveDate != null && draft.effectiveDate!.compareTo(today) < 0) draft.effectiveDate = today;
   await repo.saveBuilderDraft(draft);
   if (context.mounted) await push<void>(context, PlanBuilder(initial: draft, editing: duplicate ? null : plan));
 }

@@ -240,6 +240,26 @@ void main() {
       expect(resolveTraining(today: '2026-10-12', ctx: TrainingCtx({'primaryPlanId': plan.id}), plans: [plan], workouts: [manual]), isA<WorkoutDue>());
     });
 
+    test('a workout saved for later is still the next step: Train and Today agree and nothing after it is offered', () {
+      final plan = _rotating();
+      final head = planOccasions(plan, '2026-10-12', const []).first;
+      final parked = [_done(plan, head, open: true)];
+      final occ = planOccasions(plan, '2026-10-12', parked);
+      final r = rotationOf(plan, occ, parked)!;
+      expect((r.next!.title, r.position), ('Upper A', 0), reason: 'saving for later never moves the cycle on');
+      final today = resolveTraining(today: '2026-10-12', ctx: TrainingCtx({'primaryPlanId': plan.id}), plans: [plan], workouts: parked, parkedIds: {parked.single.id});
+      expect((today as WorkoutDue).occasion.id, r.next!.id);
+    });
+
+    test('undo skip in a rotation only on the latest step, counting steps started on this phone', () {
+      var plan = _rotating();
+      final occ = planOccasions(plan, '2026-10-12', const []);
+      plan = Plan(copyJson(plan.j)..['occasions'] = [copyJson(occ[0].j)..remove('isVirtual')..['isSkipped'] = true]);
+      expect(PlanRepository.canUnskip(plan, occ[0].id, const []), isTrue);
+      final laterStarted = [_done(plan, planOccasions(plan, '2026-10-12', const []).firstWhere((o) => o.isVirtual), open: true)];
+      expect(PlanRepository.canUnskip(plan, occ[0].id, laterStarted), isFalse);
+    });
+
     test('a waiting workout is due, never missed, and the next is projected onto training days', () {
       final plan = _rotating();
       final o = planOccasions(plan, '2026-10-13', const []).first; // Tuesday: not a training day
@@ -345,6 +365,21 @@ void main() {
       expect(jsonEncode(await h.bodies(owner, Kinds.set)), setsBefore);
       expect(jsonEncode(await h.bodies(owner, Kinds.workout)), workoutsBefore, reason: 'recorded workouts and their frozen exercises are never rewritten');
       expect((await h.sync.commands(owner)).last.kind, 'plan.revise');
+    });
+
+    test('a resumed edit of a plan that changed since is refused, and an old effective date is never used', () async {
+      final d = PlanDraft.fresh(today: '2026-10-12', path: 'template')..applyTemplate(_templates, 'full-body');
+      await repo.createAndActivate(d, today: '2026-10-12');
+      final plan = await stored(d.planId);
+      final edit = PlanDraft.fromPlan(plan, duplicate: false, today: '2026-10-12');
+      final newer = Plan(copyJson(plan.j)..['revision'] = plan.revision + 1);
+      await expectLater(repo.revise(newer, edit, workouts: const [], today: '2026-10-15'), throwsA(isA<ScheduleRefused>()));
+
+      edit.assignDay(weekdayIs('2026-10-14'), null); // no more Wednesdays, from an edit begun on Monday ...
+      await repo.revise(plan, edit, workouts: const [], today: '2026-10-15'); // ... saved on Thursday
+      final cmd = jsonDecode((await h.sync.commands(owner)).last.payload) as Json;
+      expect(cmd['effectiveDate'], '2026-10-15');
+      expect((await stored(d.planId)).occasions.any((o) => o.originalDate == '2026-10-14'), isTrue, reason: 'Wednesday, already missed, stays on its date');
     });
 
     test('moving one occurrence keeps its identity; changing the pattern regenerates only what is pending from the effective date', () async {

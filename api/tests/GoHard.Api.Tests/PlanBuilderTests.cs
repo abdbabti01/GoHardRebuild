@@ -290,7 +290,7 @@ public class PlanBuilderTests(PostgresFixture pg)
     public async Task Accepted_substitution_also_changes_a_built_plans_own_workouts_but_not_recorded_ones()
     {
         var a = await Account.RegisterAsync(pg.Api);
-        var (wa, wb) = (Def("A", Ex()), Def("B", Ex("barbell-row", "Barbell row")));
+        var (wa, wb) = (Def("A", Ex() with { TargetLoadKg = 100m }), Def("B", Ex("barbell-row", "Barbell row")));
         var plan = await ActivateAsync(a, await CreateAsync(a, Create([wa, wb], Fixed((1, wa), (3, wb)))));
         var monday = plan.Occasions.First();
         var done = await a.StartPlannedAsync(monday);
@@ -303,7 +303,9 @@ public class PlanBuilderTests(PostgresFixture pg)
         var after = accepted.Data.Context!.Plans.Single();
         Assert.Equal("dumbbell-bench-press", after.Workouts!.Single(w => w.Id == wa.Id).Exercises[0].CatalogKey);
         Assert.Equal("bench-press", after.Occasions.Single(o => o.Id == monday.Id).Prescription[0].CatalogKey); // recorded: its own copy
-        Assert.All(after.Occasions.Where(o => o.Id != monday.Id && o.WorkoutId == wa.Id), o => Assert.Equal("dumbbell-bench-press", o.Prescription[0].CatalogKey));
+        Assert.All(after.Occasions.Where(o => o.Id != monday.Id && o.WorkoutId == wa.Id), o => Assert.Equal(("dumbbell-bench-press", (decimal?)null), (o.Prescription[0].CatalogKey, o.Prescription[0].TargetLoadKg)));
+        Assert.Null(after.Workouts!.Single(w => w.Id == wa.Id).Exercises[0].TargetLoadKg); // the old exercise's target is not the new one's
+        Assert.Equal(100m, after.Occasions.Single(o => o.Id == monday.Id).Prescription[0].TargetLoadKg);
     }
 
     [Fact]

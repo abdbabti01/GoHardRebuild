@@ -142,8 +142,8 @@ abstract final class PlanRules {
         out.add(copyJson(o));
       } else if (genIds.contains(id)) {
         continue; // taken from the generated list below
-      } else if ((o['originalDate'] as String).compareTo(effective) >= 0) {
-        continue; // the new pattern no longer has it
+      } else if ((o['originalDate'] as String).compareTo(effective) >= 0 && (o['scheduledDate'] as String).compareTo(effective) >= 0) {
+        continue; // the new pattern no longer has it (one moved to before the effective date is kept as it is)
       } else if ((o['scheduledDate'] as String).compareTo(effective) >= 0 && byId[o['workoutId']] != null) {
         out.add(withContent(o, byId[o['workoutId']]!)); // moved past the effective date: it follows its workout's new content
       } else {
@@ -184,6 +184,7 @@ abstract final class PlanRules {
         'MODE_LOCKED' => 'An active plan keeps its schedule type. Duplicate it to switch between weekdays and a rotation.',
         'OCCASION_NOT_MOVABLE' => 'A rotating plan has no fixed dates. Skip the workout, or do it next time you train.',
         'EXERCISE_NAME_INVALID' => 'Give the exercise a name of up to 80 characters.',
+        'PLAN_CHANGED_SINCE_EDIT' => 'This plan changed after you started editing it. Start again from the plan as it is now.',
         'PLAN_NOT_ACTIVE' => 'This plan is closed. Duplicate it to train with it again.',
         _ => 'That change could not be applied ($code).',
       };

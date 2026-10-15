@@ -156,7 +156,9 @@ Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, 
                   push(host, WorkoutDetailScreen(workoutId: recorded?.id ?? o.resultWorkoutId!));
                 })
               else if (o.isSkipped)
-                SecondaryButton('Undo skip', key: const Key('occasion-unskip'), onPressed: () => runPlanDecision(context, () => repo().unskip(current, o.id), saved: 'No longer skipped.'))
+                (PlanRepository.canUnskip(current, o.id, workouts)
+                    ? SecondaryButton('Undo skip', key: const Key('occasion-unskip'), onPressed: () => runPlanDecision(context, () => repo().unskip(current, o.id, workouts: workouts), saved: 'No longer skipped.'))
+                    : const StatusLine(Icons.info_outline, 'Skipped. The rotation has moved on past it, so it stays skipped.'))
               else if (current.isPaused)
                 const StatusLine(Icons.pause_circle_outline, 'The plan is paused. Resume the plan to start or reschedule its workouts.')
               else if (eligible && current.isActive && current.isRotating) ...[

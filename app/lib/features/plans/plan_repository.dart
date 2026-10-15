@@ -216,10 +216,21 @@ class PlanRepository {
   }
 
   /// In a rotation only the latest step can be un-skipped: the sequence has already moved past earlier ones.
-  Future<Receipt> unskip(Plan plan, String occasionId) {
-    final k = plan.occasions.where((o) => o.id == occasionId).firstOrNull?.sequenceIndex;
-    if (plan.isRotating && plan.occasions.any((o) => (o.sequenceIndex ?? -1) > (k ?? -1))) throw const ScheduleRefused([ScheduleRules.occasionNotEligible]);
+  Future<Receipt> unskip(Plan plan, String occasionId, {Iterable<Workout> workouts = const []}) {
+    if (plan.isRotating && !canUnskip(plan, occasionId, workouts)) throw const ScheduleRefused([ScheduleRules.occasionNotEligible]);
     return _schedule(plan, 'unskip', occasionId, _withOccasion(plan, occasionId, (o) => o['isSkipped'] = false));
+  }
+
+  /// Rotation: only the latest step can be un-skipped — none after it exists on the account or was started here.
+  static bool canUnskip(Plan plan, String occasionId, Iterable<Workout> workouts) {
+    final k = plan.occasions.where((o) => o.id == occasionId).firstOrNull?.sequenceIndex;
+    if (k == null) return !plan.isRotating;
+    if (plan.occasions.any((o) => (o.sequenceIndex ?? -1) > k)) return false;
+    final linked = {for (final w in workouts) if (!w.isDeleted && w.planId == plan.id && w.occasionId != null) w.occasionId};
+    for (var j = k + 1; j <= k + 1 + linked.length; j++) {
+      if (linked.contains(PlanRules.sequenceId(plan.id, j))) return false;
+    }
+    return true;
   }
 
   /// Skip from the projection: a rotation's next workout that the account has not materialized yet is recorded as
@@ -282,10 +293,13 @@ class PlanRepository {
     final mode = plan.schedule?.mode ?? 'fixed';
     if (!plan.isDraft && mode != draft.schedule.mode) throw const ScheduleRefused(['MODE_LOCKED']);
     if (!plan.isDraft && draft.startDate != plan.startDate) throw const ScheduleRefused(['START_LOCKED']);
+    if (draft.baseRevision != null && draft.baseRevision != plan.revision) throw const ScheduleRefused(['PLAN_CHANGED_SINCE_EDIT']);
 
     final p = draft.planBody;
     final schedule = p['schedule'] as Json;
-    final effective = plan.isDraft ? draft.startDate : (draft.effectiveDate ?? today);
+    // Never earlier than today: a missed workout stays on its date, whatever an older draft says.
+    final chosen = draft.effectiveDate ?? today;
+    final effective = plan.isDraft ? draft.startDate : (chosen.compareTo(today) < 0 ? today : chosen);
     if (schedule['mode'] == 'rotating') {
       final before = plan.schedule;
       final changed = before == null || before.cycle.join(',') != (schedule['cycle'] as List).join(',');
