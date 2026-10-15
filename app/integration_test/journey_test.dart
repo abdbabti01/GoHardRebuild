@@ -161,7 +161,7 @@ void main() {
     await waitFor(tester, find.text('Finished partially'));
     await shot(tester, '11-result-partial');
     await tapKey(tester, 'result-done');
-    await waitFor(tester, find.text('Completed'));
+    await waitFor(tester, find.text('Partly completed'));
     expect(find.byKey(const Key('today-start')), findsNothing, reason: 'the recorded occasion is not offered again');
     await shot(tester, '12-today-done');
 
@@ -253,7 +253,7 @@ void main() {
     expect(tester.widget<TextField>(find.byKey(const Key('auth-email'))).controller!.text, email);
     await type(tester, 'auth-password', password);
     await tapKey(tester, 'auth-submit');
-    await waitFor(tester, find.text('Completed'), what: 'the same account\'s day after signing back in');
+    await waitFor(tester, find.text('Partly completed'), what: 'the same account\'s day after signing back in');
     await waitFor(tester, find.text('Some nutrition values are missing'));
     expect(find.text('110'), findsOneWidget);
     await shot(tester, '22-today-after-sign-in-again');
