@@ -25,7 +25,8 @@ void main() {
 
     test('has an honest review note and only the cited sources', () {
       expect(_guide.reviewNote, contains('awaits review'));
-      expect(_guide.sources.keys, unorderedEquals(['acsm-2009', 'ramos-campo-2024']));
+      expect(_guide.reviewNote, contains('Not reviewed by a qualified coach or clinician'));
+      expect(_guide.sources.keys, unorderedEquals(['acsm-2009', 'acsm-2026', 'ramos-campo-2024', 'schoenfeld-2016-rest', 'schoenfeld-2019-frequency']));
       for (final s in _guide.sources.values) {
         expect(s.url, startsWith('https://pubmed.ncbi.nlm.nih.gov/'));
       }
