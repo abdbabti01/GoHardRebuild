@@ -10,37 +10,68 @@ using GoHard.Api.Domain;
 namespace GoHard.Api.Tests;
 
 /// <summary>
-/// Ask GoHard (docs/COACH.md) on the real host, with the Anthropic Messages API replaced by recorded-style answers.
-/// No test reaches the network; the key below is not a real one.
+/// Ask GoHard (docs/COACH.md) on the real host, with the Anthropic Messages API and Groq Chat Completions replaced by
+/// recorded-style answers. No test reaches the network; the keys below are not real ones.
 /// </summary>
 [Collection("api")]
-public class CoachTests(PostgresFixture pg)
+public partial class CoachTests(PostgresFixture pg)
 {
-    private const string Key = "sk-ant-test-not-a-real-key";
+    private const string Key = "sk-ant-test-not-a-real-key", GroqKey = "gsk_test_not_a_real_key";
     private static readonly Dictionary<string, string> On = new() { ["Coach:AnthropicApiKey"] = Key };
+    private static readonly Dictionary<string, string> GroqOn = new() { ["Coach:Provider"] = "Groq", ["Coach:GroqApiKey"] = GroqKey };
+    private static Dictionary<string, string> Using(string provider) => new(provider == "Groq" ? GroqOn : On);
 
-    /// <summary>Stands in for api.anthropic.com; every other host gets the default food recording.</summary>
+    /// <summary>
+    /// Stands in for api.anthropic.com and api.groq.com; every other host gets the default food recording. Respond
+    /// builds Messages API responses; a call to Groq gets the same reply as a Chat Completion (end_turn → stop,
+    /// max_tokens → length), so one scenario runs through either provider.
+    /// </summary>
     private sealed class FakeAnthropic
     {
-        public readonly List<(string Path, string? ApiKey, string? Version, string Body)> Calls = [];
+        public readonly List<(string Host, string Path, string? ApiKey, string? Version, string Body)> Calls = [];
         public Func<int, Task<HttpResponseMessage>> Respond = _ => Task.FromResult(Message(Structured("Bench press trains chest, shoulders and triceps.", ["acsm-2009"])));
         public readonly TaskCompletionSource Arrived = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public StubProvider Handler() => new(async r =>
         {
-            if (r.RequestUri!.Host != "api.anthropic.com") return StubProvider.Json(StubProvider.Recorded("off_product_100g.json"));
+            var host = r.RequestUri!.Host;
+            if (host is not ("api.anthropic.com" or "api.groq.com")) return StubProvider.Json(StubProvider.Recorded("off_product_100g.json"));
             var body = await r.Content!.ReadAsStringAsync();
             int n;
             lock (Calls)
             {
-                Calls.Add((r.RequestUri.AbsolutePath, r.Headers.TryGetValues("x-api-key", out var k) ? k.Single() : null,
-                    r.Headers.TryGetValues("anthropic-version", out var v) ? v.Single() : null, body));
+                var key = r.Headers.TryGetValues("x-api-key", out var k) ? k.Single() : r.Headers.Authorization?.ToString();
+                Calls.Add((host, r.RequestUri.AbsolutePath, key, r.Headers.TryGetValues("anthropic-version", out var v) ? v.Single() : null, body));
                 n = Calls.Count;
             }
             Arrived.TrySetResult();
-            return await Respond(n);
+            var response = await Respond(n);
+            return host == "api.groq.com" ? await AsChatCompletion(response) : response;
         });
     }
+
+    /// <summary>A successful Messages API response re-shaped as Groq would send it; errors pass through unchanged.</summary>
+    private static async Task<HttpResponseMessage> AsChatCompletion(HttpResponseMessage m)
+    {
+        if (!m.IsSuccessStatusCode) return m;
+        var a = JsonNode.Parse(await m.Content.ReadAsStringAsync())!;
+        if (a["type"]?.GetValue<string>() != "message") return m;   // already a Chat Completion
+        var text = a["content"]!.AsArray().FirstOrDefault(b => b!["type"]!.GetValue<string>() == "text")?["text"]?.GetValue<string>();
+        var finish = a["stop_reason"]!.GetValue<string>() switch { "end_turn" => "stop", "max_tokens" => "length", var s => s };
+        return Completion(text, finish);
+    }
+
+    /// <summary>A Groq Chat Completions response shaped like a recorded one.</summary>
+    private static HttpResponseMessage Completion(string? content, string finish = "stop", string? refusal = null) => StubProvider.Json(new JsonObject
+    {
+        ["id"] = "chatcmpl-f51b2cd2-bef7-417e-964e-a08f0b513c22", ["object"] = "chat.completion", ["created"] = 1760500000, ["model"] = "openai/gpt-oss-120b",
+        ["choices"] = new JsonArray(new JsonObject
+        {
+            ["index"] = 0, ["message"] = new JsonObject { ["role"] = "assistant", ["content"] = content, ["refusal"] = refusal }, ["logprobs"] = null, ["finish_reason"] = finish,
+        }),
+        ["usage"] = new JsonObject { ["prompt_tokens"] = 1874, ["completion_tokens"] = 212, ["total_tokens"] = 2086 },
+        ["x_groq"] = new JsonObject { ["id"] = "req_01k7example" },
+    }.ToJsonString());
 
     /// <summary>The structured output the model is asked for.</summary>
     private static string Structured(string answer, string[] sources, object? proposal = null) =>
@@ -154,11 +185,11 @@ public class CoachTests(PostgresFixture pg)
         Assert.DoesNotContain(Key, body);
     }
 
-    [Fact]
-    public async Task Bad_proposals_are_dropped_and_the_answer_is_kept()
+    [Theory, InlineData("Anthropic"), InlineData("Groq")]
+    public async Task Bad_proposals_are_dropped_and_the_answer_is_kept(string provider)
     {
         var fake = new FakeAnthropic();
-        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = On, Provider = fake.Handler() };
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = Using(provider), Provider = fake.Handler() };
         var a = await Account.RegisterAsync(api);
         var b = await Account.RegisterAsync(api);
         var mine = Guid.NewGuid();
@@ -202,11 +233,11 @@ public class CoachTests(PostgresFixture pg)
         Assert.Equal(JsonValueKind.Null, (await Post(a, Ask() with { Context = null })).Body.GetProperty("proposal").ValueKind);
     }
 
-    [Fact]
-    public async Task A_long_answer_is_cut_and_an_unreadable_one_is_unavailable()
+    [Theory, InlineData("Anthropic"), InlineData("Groq")]
+    public async Task A_long_answer_is_cut_and_an_unreadable_one_is_unavailable(string provider)
     {
         var fake = new FakeAnthropic { Respond = _ => Task.FromResult(Message(Structured(new string('a', 3000), []))) };
-        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = On, Provider = fake.Handler() };
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = Using(provider), Provider = fake.Handler() };
         var a = await Account.RegisterAsync(api);
         Assert.Equal(CoachService.MaxAnswer, (await Post(a, Ask())).Body.GetProperty("answer").GetString()!.Length);
 
@@ -218,13 +249,13 @@ public class CoachTests(PostgresFixture pg)
         }
     }
 
-    [Fact]
-    public async Task The_same_request_id_gets_the_same_answer_from_one_provider_call()
+    [Theory, InlineData("Anthropic"), InlineData("Groq")]
+    public async Task The_same_request_id_gets_the_same_answer_from_one_provider_call(string provider)
     {
         var gate = new TaskCompletionSource();
         var fake = new FakeAnthropic();
         fake.Respond = async n => { await gate.Task; return Message(Structured($"Answer {n}", [])); };
-        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = On, Provider = fake.Handler() };
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = Using(provider), Provider = fake.Handler() };
         var a = await Account.RegisterAsync(api);
         var request = Ask();
         var first = Post(a, request);
@@ -238,13 +269,13 @@ public class CoachTests(PostgresFixture pg)
         Assert.Single(fake.Calls);
     }
 
-    [Fact]
-    public async Task One_question_at_a_time_and_a_daily_cap_per_account()
+    [Theory, InlineData("Anthropic"), InlineData("Groq")]
+    public async Task One_question_at_a_time_and_a_daily_cap_per_account(string provider)
     {
         var gate = new TaskCompletionSource();
         var fake = new FakeAnthropic();
         fake.Respond = async n => { if (n == 1) await gate.Task; return Message(Structured("Fine.", [])); };
-        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = new(On) { ["Coach:DailyLimit"] = "3" }, Provider = fake.Handler() };
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = new(Using(provider)) { ["Coach:DailyLimit"] = "3" }, Provider = fake.Handler() };
         var a = await Account.RegisterAsync(api);
         var b = await Account.RegisterAsync(api);
 
@@ -263,11 +294,11 @@ public class CoachTests(PostgresFixture pg)
         Assert.Equal(4, fake.Calls.Count);                                              // the refused ones never reached the provider
     }
 
-    [Fact]
-    public async Task Provider_trouble_is_unavailable_and_touches_nothing_else()
+    [Theory, InlineData("Anthropic"), InlineData("Groq")]
+    public async Task Provider_trouble_is_unavailable_and_touches_nothing_else(string provider)
     {
         var fake = new FakeAnthropic { Respond = async _ => { await Task.Delay(TimeSpan.FromSeconds(30)); return Message(Structured("late", [])); } };
-        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = new(On) { ["Coach:TimeoutSeconds"] = "1" }, Provider = fake.Handler() };
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = new(Using(provider)) { ["Coach:TimeoutSeconds"] = "1" }, Provider = fake.Handler() };
         var a = await Account.RegisterAsync(api);
         var (status, body) = await Post(a, Ask());
         Assert.Equal((HttpStatusCode.ServiceUnavailable, "COACH_UNAVAILABLE"), (status, Code(body)));

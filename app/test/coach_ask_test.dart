@@ -300,6 +300,21 @@ void main() {
     await _ask(tester, 'One more?');
     expect(find.textContaining('You\'ve asked a lot today'), findsOneWidget);
 
+    // The provider's own rate limit or overload: busy, not the person's daily limit; the question and Retry stay.
+    install.coach.replies.add((_) => const ApiResponse(503, {'code': 'COACH_BUSY', 'retryAfterSeconds': 30}));
+    await _key(tester, 'ask-retry');
+    expect(find.text('Ask GoHard is busy right now. Try again in a moment.'), findsOneWidget);
+    expect(find.textContaining('You\'ve asked a lot today'), findsNothing);
+    expect(find.textContaining('isn\'t available'), findsNothing);
+    expect(find.bySemanticsLabel('You asked: One more?'), findsOneWidget);
+    expect(find.byKey(const Key('ask-retry')), findsOneWidget);
+    expect(find.textContaining('ffline'), findsNothing);
+    await _key(tester, 'ask-retry');
+    expect(install.coach.asks.last['requestId'], install.coach.asks[install.coach.asks.length - 2]['requestId'], reason: 'Retry after busy is the same question');
+    expect(find.byKey(const Key('ask-problem')), findsNothing, reason: 'the retried question was answered');
+
+    install.coach.replies.add((_) => const ApiResponse(429, {'code': 'COACH_LIMIT'}));
+    await _ask(tester, 'Last one?');
     install.coach.offline = true;
     await _key(tester, 'ask-retry');
     expect(find.textContaining('couldn\'t be reached'), findsOneWidget);

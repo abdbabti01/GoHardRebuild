@@ -311,6 +311,7 @@ class _AskScreenState extends ConsumerState<AskScreen> {
 
   static String _problemText(AskProblem p) => switch (p) {
         AskProblem.limit => 'You\'ve asked a lot today. Ask GoHard will answer again later; the built-in Quick guide still works.',
+        AskProblem.busy => 'Ask GoHard is busy right now. Try again in a moment.',
         AskProblem.unreached => 'Ask GoHard couldn\'t be reached. That can be this phone\'s connection or the server. The built-in Quick guide still works.',
         AskProblem.invalid => 'That question couldn\'t be sent. Edit it and send it again (up to 600 characters).',
         AskProblem.interrupted => 'This question didn\'t get an answer before Ask GoHard closed. Retry to ask it again.',
