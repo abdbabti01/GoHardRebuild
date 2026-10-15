@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "acsm-2009",
+      "title": "American College of Sports Medicine position stand: Progression models in resistance training for healthy adults",
+      "publisher": "Medicine & Science in Sports & Exercise, 2009;41(3):687-708",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19204579/"
+    },
+    {
+      "id": "split-vs-full-body-2024",
+      "title": "Split versus full-body resistance training routines: systematic review and meta-analysis (2024)",
+      "publisher": "PubMed 38595233",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38595233/"
+    }
+  ],
+  "splits": [
+    {
+      "templateId": "upper-lower",
+      "name": "Upper / Lower",
+      "summary": "Alternates upper-body days with lower-body days.",
+      "organisation": "Upper days: chest, back, shoulders and arms. Lower days: thighs, hips, calves and core.",
+      "days": "4 days a week, or a rotation over 2–3",
+      "benefits": [
+        "Each muscle group is usually trained twice a week on four days.",
+        "Sessions stay shorter than full-body sessions with the same weekly volume."
+      ],
+      "limitations": [
+        "Fits less well when only two days are reliably available.",
+        "A missed day leaves half the body untrained until the next rotation."
+      ],
+      "sources": ["acsm-2009", "split-vs-full-body-2024"]
+    }
+  ],
+  "exercises": [
+    {
+      "catalogKey": "bench-press",
+      "muscles": ["Chest", "Front of shoulders", "Triceps"],
+      "equipment": "Barbell and bench",
+      "role": "main",
+      "cues": ["Feet planted, shoulder blades pulled back", "Lower the bar under control to the lower chest", "Press up and slightly back"],
+      "benefits": ["Lets load be added in small steps over time", "Trains chest, shoulders and triceps together"],
+      "limitations": ["Needs a rack and ideally a spotter or safety arms", "Fixed bar path; some people find dumbbells more comfortable for their shoulders"],
+      "alternatives": ["dumbbell-bench-press", "push-up"],
+      "sources": ["acsm-2009"]
+    },
+    {
+      "catalogKey": "back-squat",
+      "muscles": ["Thighs (front)", "Glutes", "Inner thighs", "Lower back"],
+      "equipment": "Barbell and rack",
+      "role": "main",
+      "cues": ["Bar on the upper back, brace before each rep", "Knees track over the toes", "Sit down between the hips to a depth you control"],
+      "benefits": ["Trains the whole lower body in one movement", "Lets load be added in small steps over time"],
+      "limitations": ["Needs a rack with safety arms", "Technique takes practice; a goblet squat is easier to learn"],
+      "alternatives": ["goblet-squat", "leg-press"],
+      "sources": ["acsm-2009"]
+    }
+  ],
+  "terms": [
+    {
+      "id": "sets-reps",
+      "term": "3 × 8–12",
+      "text": "Three sets, each of 8 to 12 repetitions. When every set reaches the top of the range with good form, a slightly harder version or load is the usual next step."
+    }
+  ]
+}

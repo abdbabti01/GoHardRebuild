@@ -1,8 +1,11 @@
 using System.Security.Claims;
+using System.Text.Json;
 using GoHard.Api.Application;
+using GoHard.Api.Application.Coach;
 using GoHard.Api.Application.FoodDiscovery;
 using GoHard.Api.Application.Weather;
 using GoHard.Api.Persistence;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +29,7 @@ public static class GoHardEndpoints
         .AddSingleton<IPlanAssistant, NoPlanAssistant>()
         .AddFoodDiscovery(config)
         .AddWeather(config)
+        .AddCoach(config)
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>()
         .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>();
 
@@ -47,11 +51,12 @@ public static class GoHardEndpoints
     {
         var api = app.MapGroup("/api/v1");
         // minimumClientContract rises only for a change an older app cannot live with. Added optional fields are not one.
-        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather) => Results.Ok(new
+        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach) => Results.Ok(new
         {
             contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 1),
             capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
-                .Concat(weather.Enabled ? [WeatherRegistration.Capability] : []).ToArray(),
+                .Concat(weather.Enabled ? [WeatherRegistration.Capability] : [])
+                .Concat(coach.Enabled ? [CoachService.Capability] : []).ToArray(),
         }));
 
         var auth = api.MapGroup("/auth").RequireRateLimiting("auth");
@@ -171,6 +176,25 @@ public static class GoHardEndpoints
         weather.MapGet("/current", async (double? lat, double? lon, string? provider, WeatherService s, CancellationToken ct) =>
             Lookup(await s.CurrentAsync(lat, lon, ct, viaFallback: provider == MetNorwayProvider.Source), w => w));
         weather.MapGet("/places", async (string? q, WeatherService s, CancellationToken ct) => Lookup(await s.PlacesAsync(q, ct), r => new { results = r }));
+
+        // Ask GoHard (docs/COACH.md). Reads only, never a command. The body is read here so a malformed or oversized
+        // one is COACH_INVALID, and so its size is bounded before anything is parsed.
+        me.MapPost("/coach/ask", async (HttpRequest req, ClaimsPrincipal u, CoachService coach, GoHardDb db, CancellationToken ct) =>
+        {
+            if (req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = CoachService.MaxBodyBytes;
+            CoachAskRequest? r = null;
+            if (req.ContentLength is null or <= CoachService.MaxBodyBytes)
+                try { r = await JsonSerializer.DeserializeAsync<CoachAskRequest>(req.Body, CommandRunner.Json, ct); }
+                catch (Exception ex) when (ex is JsonException or BadHttpRequestException) { }
+            var outcome = await coach.AskAsync(u.UserId(), r, db, ct);
+            return outcome.Status switch
+            {
+                CoachStatus.Ok => Results.Json(outcome.Answer, CommandRunner.Json),
+                CoachStatus.Invalid => Results.Json(new { code = "COACH_INVALID" }, statusCode: 400),
+                CoachStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
+                _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
+            };
+        });
 
         // Supporting activities
         me.MapPost("/runs", (RunStartRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>

@@ -3,7 +3,8 @@
   Verifies a running GoHard rebuild API end to end: readiness, client/backend contract compatibility,
   registration, sign-in, an idempotent write, reading it back, nutrition goals (set, kept by an older payload,
   cleared), a reusable food, food lookup and weather/city lookup where the server declares them, the plan builder (a custom
-  exercise, a rotating plan, its first step started, finished and credited, a revision) where declared, and account
+  exercise, a rotating plan, its first step started, finished and credited, a revision) where declared, one small
+  Ask GoHard question where coach.ask is declared (a live model call; reported as not configured otherwise), and account
   deletion (so no test data is left).
   The food lookup checks go through whatever providers that server is configured with. Against a deployed server
   they are the live provider check; against a local API started with -FoodFixtures they only exercise recordings.
@@ -186,6 +187,16 @@ if ($capabilities -contains 'plans.builder') {
         "step 0 credited, plan unchanged by it, revised to revision $($after.revision)"
     }
 } else { Write-Host '  SKIP  Plan builder - this server does not declare plans.builder' -ForegroundColor Yellow }
+if ($capabilities -contains 'coach.ask') {
+    # One tiny question through the server's model provider: a live call, counted against this throwaway account's daily cap.
+    Check 'Ask GoHard answers a small question through the server''s provider' {
+        try { $r = @{ ok = $true; data = (Api POST '/api/v1/coach/ask' @{ requestId = [Guid]::NewGuid(); question = 'In one sentence, what does 3 x 8-12 mean?'; history = @(); context = $null } $token) } }
+        catch { $r = @{ ok = $false; status = $_.Exception.Response.StatusCode.value__; code = $(try { ($_.ErrorDetails.Message | ConvertFrom-Json).code } catch { $null }) } }
+        if (-not $r.ok) { throw "coach failed: HTTP $($r.status) $($r.code)" }
+        if ($r.data.kind -ne 'ai' -or -not $r.data.answer -or $r.data.answer.Length -gt 1200 -or $null -ne $r.data.proposal) { throw 'unexpected coach contract' }
+        "$($r.data.answer.Length) characters, sources: $(@($r.data.sources) -join ', ')"
+    }
+} else { Write-Host '  NOT CONFIGURED  coach: not configured (capability absent) - set GOHARD_Coach__AnthropicApiKey to enable Ask GoHard' -ForegroundColor Yellow }
 Check 'Cleanup: the verification account is deleted' {
     Api DELETE '/api/v1/account' @{ password = $password } $token | Out-Null
     try { Api GET '/api/v1/me' $null $token | Out-Null; throw 'token still works after deletion' } catch { if ($_.Exception.Response.StatusCode.value__ -ne 401) { throw }; 'no test data left behind' }
