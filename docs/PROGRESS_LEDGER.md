@@ -836,3 +836,11 @@ element in captures is the emulator's focus highlight from the test driver (pres
 renders are separate (`docs/evidence/design/`) and were not regenerated for this change.
 
 Not checked: anything on a physical iPhone (VoiceOver, keyboard, safe areas, comfort, performance).
+
+Release (same day): CI `ci` passed on the branch (run 43) and on `main` (run 44) at `95331ca`; `main` fast-forwarded
+`0364df0..95331ca` and pushed. The hosted testing API (Railway, pre-deploy `migrate seed-catalog`) reported
+"4 migration(s) applied" and `plans.builder`; `verify-api.ps1 -BaseUrl https://gohardrebuild-production.up.railway.app`
+passed every check, including the plan-builder check and "Exercise catalog is seeded - 50 movements", and deleted its
+disposable account. Unsigned IPA: `ios-unsigned-ipa` run 38669092093 (run number 15) on `main` at `95331ca`, artifact
+`GoHard-Dev-unsigned-ipa` (`GoHard-Dev-unsigned-15.ipa`); Me shows "build 15 · commit 95331ca". Not signed: install
+with Sideloadly and your Apple ID. Physical-iPhone checks of the plan builder have not been performed.
