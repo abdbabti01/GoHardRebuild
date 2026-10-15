@@ -229,6 +229,21 @@ void main() {
       expect(_in('rotation-0', find.text('Paused')), findsOneWidget);
     });
 
+    testWidgets('a rotation without training days names its next workout without inventing a date', (tester) async {
+      final skippedPush = {
+        ...PlanRules.occurrence(id: _seq(0), date: '2026-10-12', weekNumber: 1, ordinal: 1, workout: _workouts[0], sequenceIndex: 0),
+        'isSkipped': true,
+      };
+      final undated = rotatingPpl(occasions: [skippedPush]);
+      (undated['schedule'] as Json)['trainingDays'] = <int>[];
+      await _pump(tester, '2026-10-12', undated);
+      expect(_today(find.text('Skipped today')), findsOneWidget);
+      expect(_today(find.textContaining('Next in your rotation: Pull.')), findsOneWidget, reason: 'no weekday: the plan has no training days to put it on');
+      expect(_today(find.textContaining('Tuesday')), findsNothing);
+      expect(_today(find.text('Due today')), findsNothing, reason: 'skipping never puts the next workout on today');
+      expect(find.byKey(const Key('today-train-now')), findsOneWidget, reason: 'training it now stays an explicit choice');
+    });
+
     testWidgets('the rotation continues across a week boundary instead of restarting on Monday', (tester) async {
       // Push and Pull done in week 1, Friday missed: the next Monday is Legs, still due, never missed.
       final ws = [done(_seq(0), 'Push', '2026-10-12'), done(_seq(1), 'Pull', '2026-10-14')];
