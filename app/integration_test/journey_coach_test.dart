@@ -17,6 +17,11 @@ void main() {
 
   testWidgets('coach: Leona, Guide me, quick guide, Ask GoHard unavailable, planned rest day with a manual workout', (tester) async {
     final j = Journey(tester, binding);
+    // The builder's back arrow sits where Journey.closeSheet taps; close a sheet by its own route instead.
+    Future<void> closeSheet(String key) async {
+      Navigator.of(tester.element(find.byKey(Key(key)))).pop();
+      await j.settle(6);
+    }
     await j.start('Coach Journey');
     await j.settle(12); // the first pull brings the exercise catalog
 
@@ -50,7 +55,7 @@ void main() {
     await j.tapKey('guide-compare');
     await j.waitFor(find.byKey(const Key('guide-compare-sheet')));
     await j.shot('c06-compare-splits');
-    await j.closeSheet();
+    await closeSheet('guide-compare-sheet');
     await j.tapKey('guide-why');
     await j.waitFor(find.byKey(const Key('guide-why-sheet')));
     await j.shot('c07-why-this-suggestion');
@@ -75,7 +80,7 @@ void main() {
     await j.tapKey('exercise-info-0-0');
     await j.waitFor(find.byKey(const Key('exercise-info-sheet')));
     await j.shot('c10-exercise-quick-help');
-    await j.closeSheet();
+    await closeSheet('exercise-info-sheet');
     await j.tapKey('builder-next');
     await j.waitFor(find.byKey(const Key('plan-activate')), what: 'the review');
     await j.tapKey('plan-activate');

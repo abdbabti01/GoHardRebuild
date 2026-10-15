@@ -844,3 +844,54 @@ passed every check, including the plan-builder check and "Exercise catalog is se
 disposable account. Unsigned IPA: `ios-unsigned-ipa` run 38669092093 (run number 15) on `main` at `95331ca`, artifact
 `GoHard-Dev-unsigned-ipa` (`GoHard-Dev-unsigned-15.ipa`); Me shows "build 15 · commit 95331ca". Not signed: install
 with Sideloadly and your Apple ID. Physical-iPhone checks of the plan builder have not been performed.
+
+## 15 October 2026 — truthful Today, Guide me, Ask GoHard, Leon and Leona (branch `feature/coach-today`, from `main` at `1e3991e`)
+
+Reported from an iPhone (build 15): users need help choosing splits and exercises; a manual workout made the planned
+workout disappear from Today; skipping today's workout put the next one in its place; rest days were not said.
+Semantics: `docs/TRAINING_PLANS.md` › Today; guide/AI split and contract: `docs/COACH.md`; design: `docs/DESIGN.md`.
+Task rows T7, C1–C3.
+
+**Diagnosis first** (reproduced through the real repository on real Drift with the fake account, state dumped
+before/after; the reproduction failed on the old code and is now `today_states_test`):
+
+| Report | Stored state before → after | Layer |
+|---|---|---|
+| Manual workout hides plan | plan JSON byte-identical; occurrence still Due; manual session has no occurrence link | Today selection: any open workout replaced the plan card |
+| Rotating skip | k=0 materialized Skipped, rotation advanced exactly once (correct); successor k=1 projected date moved 14 → 12 Oct | phone projection: "a skip takes no day" (Train affected too) |
+| Fixed skip | occurrence Skipped, later dates unchanged | Today selection: fell through to "Rest today" |
+
+No server, sync-replay or stale-cache cause. Fixed in `resolveTraining`/`planOccasions`, the shared code Today, Train
+and the occurrence sheet all read. Three older tests and two journeys asserted the reported behaviour and were changed.
+
+**Team**: the lead wrote the contracts (`docs/COACH.md`, `coach_contract.dart`, avatar stubs) and did the Today work;
+four agents in separate worktrees built the API (`agent/coach-api`), the avatars and hints (`agent/coach-avatar`),
+Ask GoHard (`agent/coach-ask`) and Guide me / Quick guide (`agent/coach-guide`). Integration found and fixed: Ask
+GoHard built its network client on open (now only at Send); the hint floated over the Structure step (now in the
+page flow); journeys had to choose "I know what I want" first; the guide's content replaced the API placeholder.
+
+**Checks** (actual results):
+
+- `scripts\test.ps1`: API build + 171/171 tests (9 new coach tests) on disposable PostgreSQL, release publish; Flutter
+  analyze clean; Flutter 451/451 after the integration fixes (first integrated run: 450/451, the failure above).
+- Native, Android emulator against the local API on this branch (`-FoodFixtures`, no AI key): all nine default journeys passed — `journey_test` in the full run (after changing its "Done for today" to the now-correct "Partly completed"); the full run then stopped when `journey_secondary_test` passed every step and the driver lost the VM service ("Service has disappeared"); the rest were run one at a time with `-Only`: secondary, more, offline, device, upgrade, food (second attempt; the first hung 27 min attaching), cold start (second attempt, both phases; the first hung in phase 2), plan (both phases: rotation skip keeps "Skipped today", "Next in your rotation: Pull day · Saturday", Train this now, Undo skip — `p14-today-after-skip`). New `journey_coach_test` (not default) passed on its third attempt (first: attach hang; second: the journey's own sheet-closing tap hit the builder's back arrow, fixed): Leona chosen, Create plan choices, guided suggestion with the in-page hint, Compare, Why, Ask GoHard unavailable with the question kept, exercise quick help, planned rest day with a manual workout open (captures `c01`–`c13`).
+- CI `ci` on `e983487`: success. CI_MAIN
+
+**AI**: not configured anywhere. Every AI answer in tests is a fixture; the native coach journey verified only the
+honest unavailable state. Live AI is **not verified**. To enable: `GOHARD_Coach__AnthropicApiKey` on the API (Railway
+service variable, or `Coach:AnthropicApiKey` in `appsettings.Local.json`); model `claude-haiku-5-5` by default
+(`Coach:Model`), 40 questions per account per day (`Coach:DailyLimit`). An `OPENAI_API_KEY` present on this machine
+was deliberately not used. During the API work Docker Desktop needed a restart (WSL update); other containers
+came back unchanged.
+
+**Artwork**: originals in `design/coach/` (sha256 match the handoff manifest); runtime PNGs (alpha kept) — Leon
+avatar 192² 63,005 B, Leona avatar 192² 56,359 B, Leon full 202 × 420 116,520 B, Leona full 202 × 420 108,286 B.
+Decoded at drawn size. Motion: only the hint's 200 ms fade/scale entrance (instant under reduced motion). Static
+art: nothing talks, blinks or walks. Known limits: charcoal clothing is low-contrast on dark surfaces for the full
+figure (the avatar has a backdrop); Appearance previews are 36 px.
+
+**Content**: `coach-guide.json` (7 splits, 50 exercises, 10 terms; sources ACSM 2009 PMID 19204579 and PMID 38595233)
+is written against those sources and awaits owner/coach review; the ACSM rest and load-progression figures in two
+terms were written from the position stand's abstract-level recommendations and should be confirmed.
+
+Not verified: a physical iPhone (any of this), live AI, VoiceOver/TalkBack by ear, real keyboard behaviour.
