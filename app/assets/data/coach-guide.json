@@ -1,0 +1,1549 @@
+{
+  "version": 1,
+  "reviewNote": "Written for GoHard against the sources listed here (ACSM 2009 position stand; Ramos-Campo et al. 2024 meta-analysis). It awaits review by the owner and a qualified coach. General information about exercises and plan structure, not medical advice or a diagnosis.",
+  "sources": [
+    {
+      "id": "acsm-2009",
+      "title": "American College of Sports Medicine position stand. Progression models in resistance training for healthy adults",
+      "publisher": "Medicine & Science in Sports & Exercise, 2009 (American College of Sports Medicine)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19204579/"
+    },
+    {
+      "id": "ramos-campo-2024",
+      "title": "Efficacy of Split Versus Full-Body Resistance Training on Strength and Muscle Growth: A Systematic Review With Meta-Analysis",
+      "publisher": "Journal of Strength and Conditioning Research, 2024; 38(7):1330–1340 (Ramos-Campo et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38595233/"
+    }
+  ],
+  "splits": [
+    {
+      "templateId": "full-body",
+      "name": "Full Body",
+      "summary": "Every session trains the whole body: a squat or hinge, a press, a pull and core work.",
+      "organisation": "Full body A, B and C use different exercises for the same movement patterns. Two days: A and B. Three days: A, B and C. Other day counts rotate A → B → C.",
+      "days": "2–3 days a week, or a rotation over more days",
+      "benefits": [
+        "Each muscle group is trained in every session, so the week stays balanced even if you miss a day.",
+        "Two or three sessions are enough to train everything more than once a week.",
+        "Every session has the same shape, so it is simple to follow."
+      ],
+      "limitations": [
+        "Each session covers every area, so there is less room for extra sets for any one muscle.",
+        "Heavy lower-body and upper-body lifts share a session.",
+        "Training on back-to-back days works the same muscles again."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "upper-lower",
+      "name": "Upper / Lower",
+      "summary": "Upper-body and lower-body days alternate.",
+      "organisation": "Upper A, Lower A, Upper B, Lower B. Four days: one each. Two days: Upper A and Lower A. Other day counts rotate the four across weeks.",
+      "days": "4 days a week, or a rotation over 2–3",
+      "benefits": [
+        "Each half of the body is trained twice in four sessions.",
+        "Each session covers half the body, so it has fewer exercises than a full-body session.",
+        "Upper and lower days can follow each other because they work different muscles."
+      ],
+      "limitations": [
+        "With three days the four workouts rotate, so a full round takes more than a week.",
+        "Lower days with squats and deadlifts are demanding.",
+        "Arm and shoulder accessories come at the end of the upper days, after the main presses and pulls."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "push-pull-legs",
+      "name": "Push / Pull / Legs",
+      "summary": "Pressing, pulling and legs each get their own day.",
+      "organisation": "Push (chest, shoulders, triceps), Pull (back, biceps, rear shoulders), Legs. Three days: once each. Six days: all three twice. Other day counts rotate Push → Pull → Legs.",
+      "days": "3 or 6 days a week; rotates over other counts",
+      "benefits": [
+        "Each session focuses on muscles that work together, so several exercises fit for them.",
+        "A clear rule for what each day trains.",
+        "On six days, each area is trained twice a week."
+      ],
+      "limitations": [
+        "On three days, each area is trained once a week.",
+        "A missed day leaves that area untrained until it comes round again.",
+        "Six sessions a week is a large time commitment."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "push-pull",
+      "name": "Push / Pull, legs included",
+      "summary": "Two kinds of day: push days carry the knee-dominant leg work, pull days the hip-dominant work.",
+      "organisation": "Push A, Pull A, Push B, Pull B. Squats, leg press and split squats sit on push days; Romanian deadlifts, deadlifts, hip thrusts and leg curls on pull days.",
+      "days": "4 days a week, or 2 (Push A and Pull A)",
+      "benefits": [
+        "Legs are trained on every day, split by movement, instead of one separate leg day.",
+        "On four days, each area is trained twice a week.",
+        "Upper-body and leg work are spread evenly across the week."
+      ],
+      "limitations": [
+        "Every session includes leg work, which some people find tiring on consecutive days.",
+        "Sessions are longer than an upper-body-only day.",
+        "The A and B days use different exercises, so there is more to learn."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "upper-lower-ppl",
+      "name": "Upper / Lower + Push / Pull / Legs",
+      "summary": "Five sessions: an upper and a lower day, then push, pull and legs.",
+      "organisation": "Upper, Lower, Push, Pull, Legs.",
+      "days": "5 days a week",
+      "benefits": [
+        "Each muscle group is trained about twice across the five sessions.",
+        "Combines whole upper and lower days with focused push, pull and leg days."
+      ],
+      "limitations": [
+        "Needs five sessions a week; a missed one leaves its areas trained once that week.",
+        "Five different workouts to learn."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "body-part",
+      "name": "Body-part split",
+      "summary": "One main area per session: chest, back, legs, shoulders and arms.",
+      "organisation": "Chest, Back, Legs, Shoulders, Arms.",
+      "days": "5 days a week",
+      "benefits": [
+        "Many sets for one area in a single session.",
+        "Each session has one clear focus.",
+        "An area trained on one day has the rest of the week before it is trained directly again."
+      ],
+      "limitations": [
+        "Each area is trained directly once a week.",
+        "A missed session means that area is not trained directly that week.",
+        "Needs five sessions a week."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "custom",
+      "name": "Custom",
+      "summary": "Your own workout names, exercises and order.",
+      "organisation": "As you build it: name each different workout once, then place them on weekdays or in a rotating cycle.",
+      "days": "Any number of days",
+      "benefits": [
+        "Fits any schedule or preference.",
+        "You choose every exercise."
+      ],
+      "limitations": [
+        "No starting exercises: you add every exercise yourself.",
+        "Balancing the muscle groups across the week is up to you."
+      ],
+      "sources": [
+        "acsm-2009"
+      ]
+    }
+  ],
+  "exercises": [
+    {
+      "catalogKey": "back-squat",
+      "muscles": [
+        "Thighs (quadriceps)",
+        "Glutes",
+        "Inner thighs",
+        "Lower back"
+      ],
+      "equipment": "Barbell and squat rack",
+      "role": "main",
+      "cues": [
+        "Bar on the upper back, feet about shoulder-width apart.",
+        "Brace your trunk before each rep.",
+        "Bend at the hips and knees together, knees following the line of your toes.",
+        "Go as deep as you can while your back stays in the same position, then stand up."
+      ],
+      "benefits": [
+        "Trains several large leg muscles at once.",
+        "Easy to load in small steps."
+      ],
+      "limitations": [
+        "Needs a rack, and safety arms or a spotter for heavy sets.",
+        "Takes practice to learn."
+      ],
+      "alternatives": [
+        "goblet-squat",
+        "leg-press",
+        "bulgarian-split-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bench-press",
+      "muscles": [
+        "Chest",
+        "Front of shoulders",
+        "Triceps"
+      ],
+      "equipment": "Barbell and bench",
+      "role": "main",
+      "cues": [
+        "Feet flat, shoulder blades pulled back and down.",
+        "Lower the bar to the middle of your chest under control.",
+        "Press up until your arms are straight."
+      ],
+      "benefits": [
+        "Trains the main pressing muscles together.",
+        "Easy to load in small steps."
+      ],
+      "limitations": [
+        "Needs safety arms or a spotter for heavy sets.",
+        "Needs a bench and rack."
+      ],
+      "alternatives": [
+        "dumbbell-bench-press",
+        "push-up",
+        "incline-dumbbell-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "barbell-row",
+      "muscles": [
+        "Upper back",
+        "Lats",
+        "Rear shoulders",
+        "Biceps"
+      ],
+      "equipment": "Barbell",
+      "role": "main",
+      "cues": [
+        "Hinge forward with a flat back, knees slightly bent.",
+        "Pull the bar towards your lower ribs.",
+        "Lower it under control without letting your back round."
+      ],
+      "benefits": [
+        "Trains the whole upper back with a load that is easy to increase."
+      ],
+      "limitations": [
+        "Holding the bent-over position also works the lower back, which can limit the weight."
+      ],
+      "alternatives": [
+        "dumbbell-row",
+        "seated-cable-row",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "deadlift",
+      "muscles": [
+        "Glutes",
+        "Hamstrings",
+        "Lower back",
+        "Thighs (quadriceps)",
+        "Upper back and grip"
+      ],
+      "equipment": "Barbell",
+      "role": "main",
+      "cues": [
+        "Bar over the middle of your feet, shins close to it.",
+        "Brace, flatten your back, then push the floor away.",
+        "Keep the bar close to your legs all the way up.",
+        "Lower it by pushing your hips back first."
+      ],
+      "benefits": [
+        "Trains most of the back of the body in one lift.",
+        "Easy to load in small steps."
+      ],
+      "limitations": [
+        "Demanding, so it usually gets the longest rest.",
+        "Takes practice to learn."
+      ],
+      "alternatives": [
+        "romanian-deadlift",
+        "dumbbell-romanian-deadlift",
+        "hip-thrust"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "overhead-press",
+      "muscles": [
+        "Shoulders",
+        "Triceps",
+        "Upper chest"
+      ],
+      "equipment": "Barbell",
+      "role": "main",
+      "cues": [
+        "Stand tall, squeeze your glutes and brace.",
+        "Press the bar straight up, moving your head back slightly to let it pass.",
+        "Finish with the bar over the middle of your feet."
+      ],
+      "benefits": [
+        "Trains the shoulders and triceps while standing."
+      ],
+      "limitations": [
+        "Heavy loads are harder to manage than in the bench press.",
+        "Needs comfortable overhead shoulder movement."
+      ],
+      "alternatives": [
+        "dumbbell-shoulder-press",
+        "pike-push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "lat-pulldown",
+      "muscles": [
+        "Lats",
+        "Upper back",
+        "Biceps"
+      ],
+      "equipment": "Cable machine",
+      "role": "main",
+      "cues": [
+        "Sit with your thighs under the pads.",
+        "Pull the bar to your upper chest, elbows down and back.",
+        "Let it rise under control until your arms are straight."
+      ],
+      "benefits": [
+        "The weight can be set below body weight, unlike a pull-up."
+      ],
+      "limitations": [
+        "Needs a cable machine."
+      ],
+      "alternatives": [
+        "pull-up",
+        "chin-up",
+        "dumbbell-pullover"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "romanian-deadlift",
+      "muscles": [
+        "Hamstrings",
+        "Glutes",
+        "Lower back"
+      ],
+      "equipment": "Barbell",
+      "role": "main",
+      "cues": [
+        "Start standing, knees slightly bent.",
+        "Push your hips back and slide the bar down your thighs with a flat back.",
+        "Stop when your hamstrings are stretched, then stand up by driving your hips forward."
+      ],
+      "benefits": [
+        "Trains the hamstrings and glutes through a long range."
+      ],
+      "limitations": [
+        "Range depends on hamstring flexibility; going lower by rounding the back defeats the purpose."
+      ],
+      "alternatives": [
+        "dumbbell-romanian-deadlift",
+        "deadlift",
+        "hip-thrust"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "leg-press",
+      "muscles": [
+        "Thighs (quadriceps)",
+        "Glutes"
+      ],
+      "equipment": "Leg press machine",
+      "role": "main",
+      "cues": [
+        "Feet flat on the platform about shoulder-width apart.",
+        "Lower until your knees are well bent without your lower back lifting off the pad.",
+        "Press back up without locking your knees hard."
+      ],
+      "benefits": [
+        "Trains the legs heavily with little balance or back demand."
+      ],
+      "limitations": [
+        "Needs a machine.",
+        "Does not train balance or trunk control."
+      ],
+      "alternatives": [
+        "back-squat",
+        "goblet-squat",
+        "bulgarian-split-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "incline-dumbbell-press",
+      "muscles": [
+        "Upper chest",
+        "Front of shoulders",
+        "Triceps"
+      ],
+      "equipment": "Dumbbells and an incline bench",
+      "role": "main",
+      "cues": [
+        "Bench at a low incline.",
+        "Lower the dumbbells to the sides of your upper chest.",
+        "Press up and slightly in."
+      ],
+      "benefits": [
+        "Each arm works on its own, so both sides do equal work."
+      ],
+      "limitations": [
+        "Getting heavy dumbbells into position takes practice."
+      ],
+      "alternatives": [
+        "dumbbell-bench-press",
+        "bench-press",
+        "feet-elevated-push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-bench-press",
+      "muscles": [
+        "Chest",
+        "Front of shoulders",
+        "Triceps"
+      ],
+      "equipment": "Dumbbells and a bench",
+      "role": "main",
+      "cues": [
+        "Shoulder blades back, feet flat.",
+        "Lower the dumbbells to chest level with elbows at a comfortable angle.",
+        "Press up until your arms are straight."
+      ],
+      "benefits": [
+        "Each arm works on its own.",
+        "No rack or spotter needed to fail safely: the dumbbells can be lowered to the sides."
+      ],
+      "limitations": [
+        "Heavy dumbbells are awkward to get into position."
+      ],
+      "alternatives": [
+        "bench-press",
+        "push-up",
+        "incline-dumbbell-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-row",
+      "muscles": [
+        "Lats",
+        "Upper back",
+        "Rear shoulders",
+        "Biceps"
+      ],
+      "equipment": "Dumbbell and a bench",
+      "role": "main",
+      "cues": [
+        "One hand and knee on a bench, back flat.",
+        "Pull the dumbbell towards your hip.",
+        "Lower it until your arm is straight."
+      ],
+      "benefits": [
+        "One side at a time, with the bench supporting your back."
+      ],
+      "limitations": [
+        "Each side is done separately, so it takes longer."
+      ],
+      "alternatives": [
+        "barbell-row",
+        "seated-cable-row",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "seated-cable-row",
+      "muscles": [
+        "Upper back",
+        "Lats",
+        "Rear shoulders",
+        "Biceps"
+      ],
+      "equipment": "Cable machine",
+      "role": "main",
+      "cues": [
+        "Sit tall with a slight bend in your knees.",
+        "Pull the handle to your lower ribs, squeezing your shoulder blades together.",
+        "Let your arms straighten under control."
+      ],
+      "benefits": [
+        "Steady resistance with your back supported by sitting upright."
+      ],
+      "limitations": [
+        "Needs a cable machine."
+      ],
+      "alternatives": [
+        "dumbbell-row",
+        "barbell-row",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "goblet-squat",
+      "muscles": [
+        "Thighs (quadriceps)",
+        "Glutes",
+        "Core"
+      ],
+      "equipment": "One dumbbell",
+      "role": "main",
+      "cues": [
+        "Hold one dumbbell upright against your chest.",
+        "Sit down between your heels with your chest up.",
+        "Stand up by pushing through your whole foot."
+      ],
+      "benefits": [
+        "A simple way to learn the squat with one dumbbell."
+      ],
+      "limitations": [
+        "The weight you can hold limits how heavy it can get."
+      ],
+      "alternatives": [
+        "back-squat",
+        "bodyweight-squat",
+        "leg-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "walking-lunge",
+      "muscles": [
+        "Thighs (quadriceps)",
+        "Glutes",
+        "Inner thighs"
+      ],
+      "equipment": "Dumbbells (optional)",
+      "role": "accessory",
+      "cues": [
+        "Take a long step forward and lower your back knee towards the floor.",
+        "Keep your front knee in line with your toes.",
+        "Push off the front foot into the next step."
+      ],
+      "benefits": [
+        "Trains one leg at a time and challenges balance."
+      ],
+      "limitations": [
+        "Needs space to walk.",
+        "Balance limits the load."
+      ],
+      "alternatives": [
+        "reverse-lunge",
+        "bulgarian-split-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "leg-curl",
+      "muscles": [
+        "Hamstrings"
+      ],
+      "equipment": "Leg curl machine",
+      "role": "accessory",
+      "cues": [
+        "Set the pad just above your heels.",
+        "Curl the pad towards you.",
+        "Return slowly until your legs are almost straight."
+      ],
+      "benefits": [
+        "Trains the hamstrings by bending the knee, which hip-hinge lifts such as the Romanian deadlift do little of."
+      ],
+      "limitations": [
+        "Needs a machine."
+      ],
+      "alternatives": [
+        "single-leg-glute-bridge",
+        "romanian-deadlift"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-shoulder-press",
+      "muscles": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "equipment": "Dumbbells",
+      "role": "main",
+      "cues": [
+        "Seated or standing, dumbbells at shoulder height.",
+        "Press up until your arms are straight.",
+        "Lower under control back to shoulder height."
+      ],
+      "benefits": [
+        "Each arm works on its own.",
+        "Seated, the back support makes it steadier."
+      ],
+      "limitations": [
+        "Needs comfortable overhead shoulder movement."
+      ],
+      "alternatives": [
+        "overhead-press",
+        "pike-push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "lateral-raise",
+      "muscles": [
+        "Side shoulders"
+      ],
+      "equipment": "Dumbbells",
+      "role": "accessory",
+      "cues": [
+        "Slight bend in your elbows.",
+        "Raise the dumbbells out to the sides to about shoulder height.",
+        "Lower slowly."
+      ],
+      "benefits": [
+        "Targets the side of the shoulder, which presses work less."
+      ],
+      "limitations": [
+        "Only light weights are practical."
+      ],
+      "alternatives": [
+        "dumbbell-shoulder-press",
+        "face-pull"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "biceps-curl",
+      "muscles": [
+        "Biceps",
+        "Forearms"
+      ],
+      "equipment": "Dumbbells",
+      "role": "accessory",
+      "cues": [
+        "Elbows by your sides.",
+        "Curl the dumbbells up without swinging your body.",
+        "Lower until your arms are straight."
+      ],
+      "benefits": [
+        "Direct work for the biceps."
+      ],
+      "limitations": [
+        "Trains a small muscle group only."
+      ],
+      "alternatives": [
+        "hammer-curl",
+        "barbell-curl",
+        "chin-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "triceps-pushdown",
+      "muscles": [
+        "Triceps"
+      ],
+      "equipment": "Cable machine",
+      "role": "accessory",
+      "cues": [
+        "Elbows tucked at your sides.",
+        "Push the handle down until your arms are straight.",
+        "Let it come back up until your forearms are about level."
+      ],
+      "benefits": [
+        "Direct work for the triceps with steady cable resistance."
+      ],
+      "limitations": [
+        "Needs a cable machine.",
+        "Trains a small muscle group only."
+      ],
+      "alternatives": [
+        "overhead-triceps-extension",
+        "bench-dip",
+        "dip"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "pull-up",
+      "muscles": [
+        "Lats",
+        "Upper back",
+        "Biceps"
+      ],
+      "equipment": "Pull-up bar",
+      "role": "main",
+      "cues": [
+        "Hang with your hands slightly wider than your shoulders, palms facing away.",
+        "Pull until your chin is over the bar.",
+        "Lower all the way under control."
+      ],
+      "benefits": [
+        "Trains the back with your own body weight and only a bar."
+      ],
+      "limitations": [
+        "Your body weight is the minimum load, which can be too much at first."
+      ],
+      "alternatives": [
+        "lat-pulldown",
+        "chin-up",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "push-up",
+      "muscles": [
+        "Chest",
+        "Front of shoulders",
+        "Triceps",
+        "Core"
+      ],
+      "equipment": "Body weight",
+      "role": "main",
+      "cues": [
+        "Hands a little wider than your shoulders, body in a straight line.",
+        "Lower your chest towards the floor.",
+        "Push back up without letting your hips sag."
+      ],
+      "benefits": [
+        "Needs no equipment.",
+        "Can be made easier with hands raised on a bench."
+      ],
+      "limitations": [
+        "Harder to make heavier than a press with weights."
+      ],
+      "alternatives": [
+        "feet-elevated-push-up",
+        "dumbbell-bench-press",
+        "bench-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dip",
+      "muscles": [
+        "Chest",
+        "Triceps",
+        "Front of shoulders"
+      ],
+      "equipment": "Parallel bars",
+      "role": "main",
+      "cues": [
+        "Start with your arms straight on the bars.",
+        "Lower until your upper arms are about level with the floor, or as far as is comfortable.",
+        "Push back up."
+      ],
+      "benefits": [
+        "Trains the chest and triceps with body weight."
+      ],
+      "limitations": [
+        "Body weight is the minimum load.",
+        "The bottom position can be uncomfortable for some shoulders."
+      ],
+      "alternatives": [
+        "bench-dip",
+        "push-up",
+        "triceps-pushdown"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "plank",
+      "muscles": [
+        "Core"
+      ],
+      "equipment": "Body weight",
+      "role": "accessory",
+      "cues": [
+        "Forearms under your shoulders, body in a straight line.",
+        "Squeeze your glutes and brace your stomach.",
+        "Breathe steadily and stop when your hips start to drop."
+      ],
+      "benefits": [
+        "Trains the trunk to hold still, with no equipment."
+      ],
+      "limitations": [
+        "Held for time, so it is harder to measure progress by weight."
+      ],
+      "alternatives": [
+        "side-plank",
+        "dead-bug"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "side-plank",
+      "muscles": [
+        "Side of the trunk (obliques)",
+        "Core",
+        "Hips"
+      ],
+      "equipment": "Body weight",
+      "role": "accessory",
+      "cues": [
+        "Elbow under your shoulder, body in a straight line.",
+        "Lift your hips and keep them up.",
+        "Do both sides."
+      ],
+      "benefits": [
+        "Trains the side of the trunk with no equipment."
+      ],
+      "limitations": [
+        "Each side is done separately."
+      ],
+      "alternatives": [
+        "plank",
+        "farmer-carry"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "hanging-leg-raise",
+      "muscles": [
+        "Lower abdominals",
+        "Hip flexors"
+      ],
+      "equipment": "Pull-up bar",
+      "role": "accessory",
+      "cues": [
+        "Hang from a bar without swinging.",
+        "Raise your legs, bending the knees to make it easier.",
+        "Lower slowly."
+      ],
+      "benefits": [
+        "Trains the abdominals and hip flexors together."
+      ],
+      "limitations": [
+        "Your grip has to hold your body weight."
+      ],
+      "alternatives": [
+        "dead-bug",
+        "plank"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "farmer-carry",
+      "muscles": [
+        "Grip and forearms",
+        "Upper back",
+        "Core"
+      ],
+      "equipment": "Dumbbells",
+      "role": "accessory",
+      "cues": [
+        "Hold a heavy dumbbell in each hand.",
+        "Stand tall and walk with short, steady steps.",
+        "Set the weights down under control."
+      ],
+      "benefits": [
+        "Trains grip and trunk while walking."
+      ],
+      "limitations": [
+        "Needs space to walk."
+      ],
+      "alternatives": [
+        "side-plank"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "calf-raise",
+      "muscles": [
+        "Calves"
+      ],
+      "equipment": "Calf raise machine",
+      "role": "accessory",
+      "cues": [
+        "Balls of your feet on the edge of the step.",
+        "Lower your heels for a stretch.",
+        "Rise as high as you can, then pause."
+      ],
+      "benefits": [
+        "Direct work for the calves."
+      ],
+      "limitations": [
+        "Needs a machine."
+      ],
+      "alternatives": [
+        "single-leg-calf-raise"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "single-leg-calf-raise",
+      "muscles": [
+        "Calves"
+      ],
+      "equipment": "Body weight and a step",
+      "role": "accessory",
+      "cues": [
+        "Stand on one foot on the edge of a step, holding on for balance.",
+        "Lower your heel, then rise as high as you can.",
+        "Do both sides."
+      ],
+      "benefits": [
+        "Needs only a step."
+      ],
+      "limitations": [
+        "Each side is done separately."
+      ],
+      "alternatives": [
+        "calf-raise"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "leg-extension",
+      "muscles": [
+        "Thighs (quadriceps)"
+      ],
+      "equipment": "Leg extension machine",
+      "role": "accessory",
+      "cues": [
+        "Pad on the front of your lower shins.",
+        "Straighten your knees.",
+        "Lower under control."
+      ],
+      "benefits": [
+        "Direct work for the front of the thighs."
+      ],
+      "limitations": [
+        "Needs a machine."
+      ],
+      "alternatives": [
+        "goblet-squat",
+        "bulgarian-split-squat",
+        "leg-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "hip-thrust",
+      "muscles": [
+        "Glutes",
+        "Hamstrings"
+      ],
+      "equipment": "Barbell and a bench",
+      "role": "main",
+      "cues": [
+        "Upper back on a bench, bar across your hips (a pad helps).",
+        "Drive your hips up until your body is level from shoulders to knees.",
+        "Lower under control."
+      ],
+      "benefits": [
+        "Loads the glutes heavily without loading the spine from above."
+      ],
+      "limitations": [
+        "Setting up the bar takes some time."
+      ],
+      "alternatives": [
+        "glute-bridge",
+        "single-leg-glute-bridge",
+        "romanian-deadlift"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "glute-bridge",
+      "muscles": [
+        "Glutes",
+        "Hamstrings"
+      ],
+      "equipment": "Body weight",
+      "role": "accessory",
+      "cues": [
+        "Lie on your back, knees bent, feet flat.",
+        "Push through your heels to lift your hips.",
+        "Pause at the top, then lower."
+      ],
+      "benefits": [
+        "Needs no equipment."
+      ],
+      "limitations": [
+        "Body weight alone is light for strong legs."
+      ],
+      "alternatives": [
+        "hip-thrust",
+        "single-leg-glute-bridge"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "single-leg-glute-bridge",
+      "muscles": [
+        "Glutes",
+        "Hamstrings"
+      ],
+      "equipment": "Body weight",
+      "role": "accessory",
+      "cues": [
+        "Lie on your back with one foot flat and the other leg raised.",
+        "Push through the heel on the floor to lift your hips.",
+        "Keep your hips level; do both sides."
+      ],
+      "benefits": [
+        "Harder than a two-leg bridge with no equipment."
+      ],
+      "limitations": [
+        "Each side is done separately."
+      ],
+      "alternatives": [
+        "glute-bridge",
+        "hip-thrust",
+        "leg-curl"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bulgarian-split-squat",
+      "muscles": [
+        "Thighs (quadriceps)",
+        "Glutes"
+      ],
+      "equipment": "Dumbbells and a bench",
+      "role": "main",
+      "cues": [
+        "Rear foot on a bench behind you.",
+        "Lower straight down until your front thigh is about level.",
+        "Push up through your front foot; do both sides."
+      ],
+      "benefits": [
+        "Trains one leg at a time with light weights."
+      ],
+      "limitations": [
+        "Balance takes practice.",
+        "Each side is done separately."
+      ],
+      "alternatives": [
+        "reverse-lunge",
+        "goblet-squat",
+        "walking-lunge"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bodyweight-squat",
+      "muscles": [
+        "Thighs (quadriceps)",
+        "Glutes"
+      ],
+      "equipment": "Body weight",
+      "role": "accessory",
+      "cues": [
+        "Feet about shoulder-width apart.",
+        "Sit down and back, knees following your toes.",
+        "Stand up by pushing through your whole foot."
+      ],
+      "benefits": [
+        "Needs no equipment."
+      ],
+      "limitations": [
+        "Body weight alone is light for strong legs; more reps or a slower pace make it harder."
+      ],
+      "alternatives": [
+        "goblet-squat",
+        "reverse-lunge"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "reverse-lunge",
+      "muscles": [
+        "Thighs (quadriceps)",
+        "Glutes"
+      ],
+      "equipment": "Body weight",
+      "role": "accessory",
+      "cues": [
+        "Step back and lower your back knee towards the floor.",
+        "Keep most of your weight on the front foot.",
+        "Push back to standing; do both sides."
+      ],
+      "benefits": [
+        "Needs no equipment and little space."
+      ],
+      "limitations": [
+        "Each side is done separately."
+      ],
+      "alternatives": [
+        "walking-lunge",
+        "bulgarian-split-squat",
+        "bodyweight-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-romanian-deadlift",
+      "muscles": [
+        "Hamstrings",
+        "Glutes",
+        "Lower back"
+      ],
+      "equipment": "Dumbbells",
+      "role": "main",
+      "cues": [
+        "Dumbbells in front of your thighs, knees slightly bent.",
+        "Push your hips back with a flat back.",
+        "Stop when your hamstrings are stretched, then stand up."
+      ],
+      "benefits": [
+        "The same movement as the barbell version with dumbbells."
+      ],
+      "limitations": [
+        "The dumbbells you can hold limit the load."
+      ],
+      "alternatives": [
+        "romanian-deadlift",
+        "single-leg-glute-bridge",
+        "hip-thrust"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "cable-fly",
+      "muscles": [
+        "Chest",
+        "Front of shoulders"
+      ],
+      "equipment": "Cable machine",
+      "role": "accessory",
+      "cues": [
+        "Slight bend in your elbows that stays the same.",
+        "Bring your hands together in front of your chest in a wide arc.",
+        "Open back out under control."
+      ],
+      "benefits": [
+        "Chest work with steady cable resistance."
+      ],
+      "limitations": [
+        "Needs a cable machine."
+      ],
+      "alternatives": [
+        "dumbbell-fly",
+        "push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-fly",
+      "muscles": [
+        "Chest",
+        "Front of shoulders"
+      ],
+      "equipment": "Dumbbells and a bench",
+      "role": "accessory",
+      "cues": [
+        "Lie on a bench, dumbbells above your chest, elbows slightly bent.",
+        "Open your arms in a wide arc until you feel a stretch.",
+        "Bring them back together."
+      ],
+      "benefits": [
+        "Chest work with dumbbells only."
+      ],
+      "limitations": [
+        "Light weights only: the long arm position makes heavy loads hard to control."
+      ],
+      "alternatives": [
+        "cable-fly",
+        "dumbbell-bench-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "feet-elevated-push-up",
+      "muscles": [
+        "Upper chest",
+        "Front of shoulders",
+        "Triceps"
+      ],
+      "equipment": "Body weight and a bench",
+      "role": "main",
+      "cues": [
+        "Feet on a bench, hands on the floor.",
+        "Body in a straight line.",
+        "Lower your chest, then push back up."
+      ],
+      "benefits": [
+        "A harder push-up with no weights."
+      ],
+      "limitations": [
+        "Harder to make heavier than a press with weights."
+      ],
+      "alternatives": [
+        "push-up",
+        "incline-dumbbell-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "chin-up",
+      "muscles": [
+        "Lats",
+        "Biceps",
+        "Upper back"
+      ],
+      "equipment": "Pull-up bar",
+      "role": "main",
+      "cues": [
+        "Hang with your palms facing you, hands shoulder-width apart.",
+        "Pull until your chin is over the bar.",
+        "Lower all the way under control."
+      ],
+      "benefits": [
+        "Trains the back and the biceps together with only a bar."
+      ],
+      "limitations": [
+        "Your body weight is the minimum load."
+      ],
+      "alternatives": [
+        "pull-up",
+        "lat-pulldown",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "inverted-row",
+      "muscles": [
+        "Upper back",
+        "Lats",
+        "Biceps"
+      ],
+      "equipment": "A bar at waist height or a sturdy table",
+      "role": "main",
+      "cues": [
+        "Hang under a bar with your body straight, heels on the floor.",
+        "Pull your chest to the bar.",
+        "Lower until your arms are straight."
+      ],
+      "benefits": [
+        "A rowing exercise with no weights; bending your knees makes it easier."
+      ],
+      "limitations": [
+        "Needs a sturdy bar or table edge."
+      ],
+      "alternatives": [
+        "dumbbell-row",
+        "seated-cable-row",
+        "pull-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-pullover",
+      "muscles": [
+        "Lats",
+        "Chest"
+      ],
+      "equipment": "One dumbbell and a bench",
+      "role": "accessory",
+      "cues": [
+        "Lie on a bench holding one dumbbell above your chest.",
+        "Lower it behind your head with slightly bent arms.",
+        "Bring it back over your chest."
+      ],
+      "benefits": [
+        "Works the lats with one dumbbell."
+      ],
+      "limitations": [
+        "Needs comfortable overhead shoulder movement."
+      ],
+      "alternatives": [
+        "lat-pulldown",
+        "pull-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "face-pull",
+      "muscles": [
+        "Rear shoulders",
+        "Upper back"
+      ],
+      "equipment": "Cable machine with a rope",
+      "role": "accessory",
+      "cues": [
+        "Rope at about face height.",
+        "Pull it towards your face, hands moving apart.",
+        "Return under control."
+      ],
+      "benefits": [
+        "Direct work for the rear shoulders and upper back."
+      ],
+      "limitations": [
+        "Needs a cable machine."
+      ],
+      "alternatives": [
+        "rear-delt-fly"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "rear-delt-fly",
+      "muscles": [
+        "Rear shoulders",
+        "Upper back"
+      ],
+      "equipment": "Dumbbells",
+      "role": "accessory",
+      "cues": [
+        "Hinge forward with a flat back.",
+        "Raise the dumbbells out to the sides with slightly bent elbows.",
+        "Lower slowly."
+      ],
+      "benefits": [
+        "Direct work for the rear shoulders with light dumbbells."
+      ],
+      "limitations": [
+        "Only light weights are practical."
+      ],
+      "alternatives": [
+        "face-pull"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "pike-push-up",
+      "muscles": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "equipment": "Body weight",
+      "role": "main",
+      "cues": [
+        "Hips high, body in an upside-down V.",
+        "Lower the top of your head towards the floor between your hands.",
+        "Push back up."
+      ],
+      "benefits": [
+        "An overhead-style press with no equipment."
+      ],
+      "limitations": [
+        "Harder to make heavier than a press with weights."
+      ],
+      "alternatives": [
+        "dumbbell-shoulder-press",
+        "overhead-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "barbell-curl",
+      "muscles": [
+        "Biceps",
+        "Forearms"
+      ],
+      "equipment": "Barbell",
+      "role": "accessory",
+      "cues": [
+        "Elbows by your sides.",
+        "Curl the bar up without swinging.",
+        "Lower until your arms are straight."
+      ],
+      "benefits": [
+        "Both arms together with a load that is easy to increase."
+      ],
+      "limitations": [
+        "Trains a small muscle group only."
+      ],
+      "alternatives": [
+        "biceps-curl",
+        "hammer-curl",
+        "chin-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "hammer-curl",
+      "muscles": [
+        "Biceps",
+        "Forearms"
+      ],
+      "equipment": "Dumbbells",
+      "role": "accessory",
+      "cues": [
+        "Palms facing each other.",
+        "Curl up without swinging.",
+        "Lower until your arms are straight."
+      ],
+      "benefits": [
+        "Works the forearms more than a regular curl."
+      ],
+      "limitations": [
+        "Trains a small muscle group only."
+      ],
+      "alternatives": [
+        "biceps-curl",
+        "barbell-curl"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "overhead-triceps-extension",
+      "muscles": [
+        "Triceps"
+      ],
+      "equipment": "One dumbbell",
+      "role": "accessory",
+      "cues": [
+        "Hold one dumbbell overhead with both hands.",
+        "Lower it behind your head by bending your elbows.",
+        "Straighten your arms."
+      ],
+      "benefits": [
+        "Trains the triceps in a stretched position with one dumbbell."
+      ],
+      "limitations": [
+        "Needs comfortable overhead shoulder movement."
+      ],
+      "alternatives": [
+        "triceps-pushdown",
+        "bench-dip"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bench-dip",
+      "muscles": [
+        "Triceps",
+        "Front of shoulders"
+      ],
+      "equipment": "Body weight and a bench",
+      "role": "accessory",
+      "cues": [
+        "Hands on the edge of a bench behind you.",
+        "Lower by bending your elbows, as far as is comfortable.",
+        "Push back up."
+      ],
+      "benefits": [
+        "Triceps work with only a bench."
+      ],
+      "limitations": [
+        "The bottom position can be uncomfortable for some shoulders."
+      ],
+      "alternatives": [
+        "dip",
+        "triceps-pushdown",
+        "overhead-triceps-extension"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dead-bug",
+      "muscles": [
+        "Core"
+      ],
+      "equipment": "Body weight",
+      "role": "accessory",
+      "cues": [
+        "Lie on your back, arms up, knees bent above your hips.",
+        "Press your lower back into the floor.",
+        "Lower the opposite arm and leg slowly, then switch."
+      ],
+      "benefits": [
+        "Trains the trunk to stay still while the limbs move, with no equipment."
+      ],
+      "limitations": [
+        "Easy to rush; it works only when done slowly."
+      ],
+      "alternatives": [
+        "plank",
+        "hanging-leg-raise"
+      ],
+      "sources": []
+    }
+  ],
+  "terms": [
+    {
+      "id": "sets-reps",
+      "term": "3 × 8–12",
+      "text": "Three sets of 8 to 12 repetitions. A repetition (rep) is one complete movement; a set is a group of reps done without stopping. Rest, then do the next set.",
+      "sources": [
+        "acsm-2009"
+      ]
+    },
+    {
+      "id": "timed-sets",
+      "term": "3 × 40 s",
+      "text": "Three sets of 40 seconds each, for exercises such as a plank where time is the target.",
+      "sources": []
+    },
+    {
+      "id": "rep-range",
+      "term": "Rep range",
+      "text": "The lowest and highest number of reps you aim for in a set, such as 8–12. Choose a weight you can lift for at least the lowest number with good form.",
+      "sources": [
+        "acsm-2009"
+      ]
+    },
+    {
+      "id": "rest",
+      "term": "Rest",
+      "text": "The time between sets. The ACSM position stand suggests at least 2–3 minutes for heavier multi-joint lifts and 1–2 minutes for lighter accessory exercises.",
+      "sources": [
+        "acsm-2009"
+      ]
+    },
+    {
+      "id": "split",
+      "term": "Split",
+      "text": "How training is divided across the week. A full-body plan trains everything each session; a split gives different days different areas, such as upper and lower body. A 2024 meta-analysis found no significant difference in strength or muscle gains between split and full-body routines when weekly volume was the same.",
+      "sources": [
+        "ramos-campo-2024"
+      ]
+    },
+    {
+      "id": "rotation",
+      "term": "Rotating sequence",
+      "text": "Workouts follow a fixed order and you always do the next one, whichever day you train. The order carries on across weeks instead of restarting on Monday.",
+      "sources": []
+    },
+    {
+      "id": "fixed-weekdays",
+      "term": "Fixed weekdays",
+      "text": "Each workout belongs to a weekday, such as Upper A on Monday. A missed workout stays on its day until you move or skip it.",
+      "sources": []
+    },
+    {
+      "id": "compound-accessory",
+      "term": "Compound and accessory",
+      "text": "A compound (multi-joint) exercise moves several joints and works several large muscles, such as a squat or a bench press. An accessory exercise usually moves one joint and works a smaller muscle, such as a curl. Compound lifts usually come first, while you are fresh.",
+      "sources": [
+        "acsm-2009"
+      ]
+    },
+    {
+      "id": "progression",
+      "term": "Progression",
+      "text": "Making training gradually harder so your body keeps adapting. The ACSM position stand suggests increasing the load by about 2–10% once you can do one or two reps more than your target in two sessions in a row.",
+      "sources": [
+        "acsm-2009"
+      ]
+    },
+    {
+      "id": "volume",
+      "term": "Weekly volume",
+      "text": "How many sets a muscle group gets in a week. Comparisons between routines are fairest when weekly volume is the same.",
+      "sources": [
+        "ramos-campo-2024"
+      ]
+    }
+  ]
+}
