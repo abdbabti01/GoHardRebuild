@@ -281,6 +281,12 @@ by a check, the accent border and a tint (never colour alone), never chosen from
 switch; and **Show coaching hints again**. All three are kept on this phone with Motion & haptics and change nothing
 else (no route, draft, conversation or other appearance setting).
 
+Refined 15 Oct 2026 (later): the two coach cards are their own compact cards with **64 px** pictures above "Leon /
+Lion" and "Leona / Lioness" (56 px beside the name, stacked, above 1.5× text), check badge + accent border + tint +
+bolder name when selected, read as one-of-two selected buttons. The full figures carry a soft warm off-white rim
+(2 px at the 420 px asset, 25 % opacity, behind the art) baked by `scripts/build-coach-art.ps1`, so the charcoal
+clothing separates from dark surfaces; invisible on light ones; fur, faces and clothing keep their exact colours.
+
 ## Deliberate differences from the references
 
 | Reference | App | Why |
