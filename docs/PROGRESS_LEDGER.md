@@ -895,3 +895,42 @@ is written against those sources and awaits owner/coach review; the ACSM rest an
 terms were written from the position stand's abstract-level recommendations and should be confirmed.
 
 Not verified: a physical iPhone (any of this), live AI, VoiceOver/TalkBack by ear, real keyboard behaviour.
+
+## 15 October 2026 (afternoon) — Groq for Ask GoHard, guide source audit, Leon/Leona refinements, verification cleanup (branch `feature/coach-groq`, from `main` at `e85993a`)
+
+Baseline checked first: `main` = `e85993a`, CI green, clean tree; Today regressions (116 tests) passed before any change.
+Four agents in separate worktrees (all four were interrupted once by a usage limit and resumed with their context;
+nothing was lost): `agent/groq` (API provider + client mapping), `agent/guide-audit` (content), `agent/avatar-ui`
+(Appearance + art), `agent/verify-tools` (verification scripts). The lead kept Today, shared docs, journeys, release.
+
+- **Groq** (`docs/COACH.md`): `ICoachProvider` with `AnthropicProvider` and `GroqProvider` (Chat Completions at
+  `https://api.groq.com/openai/v1`, Bearer key, `response_format` strict `json_schema`, no streaming/tools,
+  `max_completion_tokens`, `reasoning_effort: low`, `include_reasoning: false`; `finish_reason` ≠ `stop`, refusal,
+  malformed or off-schema replies are failures). Selection by `Coach:Provider`; no fallback to another provider or
+  model. Failures typed; provider 429/498/503/529 → `503 COACH_BUSY {retryAfterSeconds}` (app: "busy right now",
+  question kept, Retry); auth/model/other → `COACH_UNAVAILABLE`; at most one retry (≤ 5 s, within the 20 s budget);
+  the daily cap (40) counts only requests that reached the provider. Env vars verified to bind through the real host.
+- **Guide audit** (`docs/COACH_SOURCES.md`): sources now ACSM 2009 (full text read), ACSM 2026 position stand
+  (PMID 41843416, full text), Ramos-Campo 2024 (abstract), Schoenfeld 2016 rest (abstract), Schoenfeld 2019
+  frequency (abstract); PMIDs re-checked against PubMed by the lead. The two figures written from memory (rest 2–3 /
+  1–2 min; 2–10 % load increase) were right but lacked their goal/experience/trigger conditions — now stated, with
+  the 2026 stand's finding that rest length made no consistent strength difference. Ten exercise sentences softened
+  (one safety claim removed). Exercise cues remain general descriptions; no professional review has happened.
+- **Leon/Leona**: Appearance cards with 64 px previews (56 px stacked above 1.5× text); full figures get a 2 px
+  25 % warm rim baked by `build-coach-art.ps1` (leon-full 124,607 B, leona-full 117,166 B; avatars unchanged
+  63,005 / 56,359 B). New tests: a closed hint stays closed across route cover, guide switch and tab change; showing a
+  hint makes no network call; previews meet target/label guidelines in six themes at 320 px 2×.
+- **Verification**: `verify-api.ps1` records each throwaway account (git-ignored `scripts/.verify-accounts.log`),
+  always cleans up in `finally` (success, failed check, Ctrl+C; re-signs in if the token expired), reports cleanup
+  separately (exit 2 if it failed); `delete-verify-account.ps1` deletes one exact verify email. Fixed verification
+  password with a 16-hex email. Live coach checks behind `-Coach`. The earlier orphan (`verify-<8 hex>@example.test`,
+  'Verify', ~16:30–16:40 UTC, empty) cannot be identified without database access; the operator task is documented in
+  `docs/RELEASE_AND_ROLLBACK.md`. Hosted run by the tooling agent: all checks passed, its account deleted.
+
+**Checks**: `scripts\test.ps1` — API 184/184 (22 coach), release publish, Flutter analyze clean, Flutter 455/455.
+Native, emulator, local API (`-FoodFixtures`, no AI key), each journey alone with `-Only`: coach, journey_test,
+more, offline, device, upgrade, cold start (both phases) passed. food and plan (both phases) passed every app step,
+then the driver lost the VM service after the test ("Service has disappeared"). secondary: first two attempts lost the
+service before/at startup (no app step failed), passed on the third after an emulator reboot. plan needed three
+attempts (attach hang; then registration timed out right after the reboot while the emulator network came up).
+CI `ci`: success on `81f03f3`, `2ce933f`, `6874338`. Live Groq: see below.
