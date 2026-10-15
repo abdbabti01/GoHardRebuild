@@ -137,6 +137,13 @@ public sealed class ProposalService(GoHardDb db, PlanService plans, IPlanAssista
             foreach (var occasion in plan.Occasions.Where(o => change.AffectedOccasionIds.Contains(o.Id)))
                 occasion.PrescriptionJson = JsonSerializer.Serialize(PlanService.ToDto(occasion).Prescription
                     .Select(e => e.CatalogKey == change.FromCatalogKey ? e with { CatalogKey = change.ToCatalogKey, Name = change.ToName! } : e).ToList(), Json);
+            // A built plan's own workouts follow too, so a later edit of the plan does not bring the old movement back.
+            // Recorded, skipped and in-progress occurrences keep their copies, as above.
+            if (PlanService.Workouts(plan) is { } definitions)
+                plan.WorkoutsJson = JsonSerializer.Serialize(definitions.Select(w => w with
+                {
+                    Exercises = [.. (w.Exercises ?? []).Select(e => e.CatalogKey == change.FromCatalogKey ? e with { CatalogKey = change.ToCatalogKey, Name = change.ToName!, TargetLoadKg = null } : e)],
+                }).ToList(), Json);
         }
         plan.Revision++;
         proposal.State = "accepted"; proposal.Revision++;

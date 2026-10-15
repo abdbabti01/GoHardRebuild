@@ -125,16 +125,37 @@ class Journey {
     await waitFor(find.text('No plan yet'), what: 'Today for a new account');
   }
 
-  /// Fills the setup so a workout is due on whatever day this runs, with a recovery day between sessions.
-  Future<void> chooseTrainingDaysIncludingToday() async {
-    await waitFor(find.byKey(const Key('setup-submit')));
+  /// Three training days with a rest day between them, starting today, so a workout is due on whatever day this runs.
+  static Set<int> daysIncludingToday() {
     final weekday = DateTime.now().weekday;
-    final days = {weekday, (weekday + 1) % 7 + 1, (weekday + 3) % 7 + 1};
+    return {weekday, (weekday + 1) % 7 + 1, (weekday + 3) % 7 + 1};
+  }
+
+  /// Availability step: three days a week (the builder starts them on Mon/Wed/Fri), changed to [days].
+  Future<void> chooseDays(Set<int> days) async {
+    await tapKey('days-3');
     for (var d = 1; d <= 7; d++) {
-      await reveal(find.byKey(Key('weekday-$d')));
-      final checked = tester.widget<CheckboxListTile>(find.byKey(Key('weekday-$d'))).value ?? false;
-      if (checked != days.contains(d)) await tapKey('weekday-$d');
+      if (const {1, 3, 5}.contains(d) != days.contains(d)) await tapKey('weekday-$d');
     }
+  }
+
+  /// Create plan from the screen that is showing (Train or Today's "Create my plan" must already be tapped):
+  /// the template path with the suggestion for three days (Full Body A/B/C), starting today with workout A due,
+  /// activated without changes. Afterwards the app shows Train › Plan.
+  Future<void> createPlanFromTemplate({String? shotPrefix}) async {
+    await tapKey('plan-path-template');
+    await chooseDays(daysIncludingToday());
+    if (shotPrefix != null) await shot('$shotPrefix-builder-availability');
+    await tapKey('builder-next');
+    await waitFor(find.byKey(const Key('template-full-body')), what: 'the template list');
+    if (shotPrefix != null) await shot('$shotPrefix-builder-structure');
+    await tapKey('builder-next');
+    await waitFor(find.byKey(const Key('exercise-0-0')), what: 'the workout editor');
+    await tapKey('builder-next');
+    await waitFor(find.byKey(const Key('plan-activate')), what: 'the review');
+    if (shotPrefix != null) await shot('$shotPrefix-builder-review');
+    await tapKey('plan-activate');
+    await waitFor(find.byKey(const Key('train-plan')), what: 'Train after activating');
   }
 
   /// Signs in to the API directly, as a second device would, and returns the bearer token.

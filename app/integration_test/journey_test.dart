@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
+import 'support.dart';
+
 /// R5: the joined native journey on a real device/emulator against the real local API and PostgreSQL.
 /// A disposable account is registered for each run; nothing is mocked and no sample data is inserted.
 ///
@@ -95,22 +97,14 @@ void main() {
     expect(find.text('Resume workout'), findsNothing);
     await shot(tester, '02-today-new-account');
 
-    // --- Setup → reviewed draft → activation. Days are chosen so a workout is due on whatever day this runs.
+    // --- Create plan → review → activation. Days are chosen so a workout is due on whatever day this runs.
     await tapKey(tester, 'today-create-plan');
-    await waitFor(tester, find.byKey(const Key('setup-submit')));
-    final weekday = DateTime.now().weekday;
-    final days = {weekday, (weekday + 1) % 7 + 1, (weekday + 3) % 7 + 1};
-    for (var d = 1; d <= 7; d++) {
-      await reveal(tester, find.byKey(Key("weekday-$d")));
-      final checked = tester.widget<CheckboxListTile>(find.byKey(Key('weekday-$d'))).value ?? false;
-      if (checked != days.contains(d)) await tapKey(tester, 'weekday-$d');
-    }
-    await shot(tester, '03-plan-setup');
-    await tapKey(tester, 'setup-submit');
-    await waitFor(tester, find.byKey(const Key('plan-start')), what: 'the plan review');
-    expect(find.text('First week'), findsOneWidget);
-    await shot(tester, '04-plan-review');
-    await tapKey(tester, 'plan-start');
+
+    await Journey(tester, binding).createPlanFromTemplate(shotPrefix: '03');
+
+    expect(find.text('Full Body'), findsWidgets, reason: 'the plan is the user\'s own copy of the template');
+
+    await tapKey(tester, 'nav-today');
     await waitFor(tester, find.byKey(const Key('today-start')), what: 'today\'s due workout');
     await shot(tester, '05-today-workout-due');
     // The title opens the workout's details; the button underneath stays the one main action.
@@ -156,7 +150,7 @@ void main() {
     await waitFor(tester, find.byKey(const Key('set-row-3')));
     await shot(tester, '09-workout-target-reached-extra-set');
     await tapKey(tester, 'next-exercise'); // the deliberate transition
-    await waitFor(tester, find.text('Romanian deadlift'));
+    await waitFor(tester, find.text('Bench press'));
 
     // --- Partial finish: honest result, one credit.
     await tapKey(tester, 'finish-workout');

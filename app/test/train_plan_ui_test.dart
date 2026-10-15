@@ -249,6 +249,8 @@ void main() {
       expect(find.textContaining('%'), findsNothing);
       expect(find.byType(ProgressRail), findsNothing);
       expect(find.textContaining('Workouts completed'), findsNothing);
+      await tester.scrollUntilVisible(find.byKey(const Key('plan-edit')), 300, scrollable: find.byType(Scrollable).first);
+      expect(find.text('Replace a movement in remaining workouts'), findsNothing, reason: 'a rotation has no dated workouts to swap in; it is edited');
     });
 
     testWidgets('a manual workout does not advance the rotation', (tester) async {
@@ -306,7 +308,8 @@ void main() {
     for (final k in ['plan-edit', 'plan-pause', 'plan-duplicate']) {
       expect(tester.widget<GroupRow>(find.byKey(Key(k))).onTap, isNotNull, reason: k);
     }
-    expect(find.text('Replace a movement in remaining workouts'), findsNothing, reason: 'a built plan is edited instead');
+    // A fixed plan keeps the reviewed swap (its own workouts follow an accepted one); a rotation is edited instead.
+    expect(find.text('Replace a movement in remaining workouts'), findsOneWidget);
     expect(find.text('Create a different plan'), findsOneWidget);
     await _tap(tester, 'plan-pause');
     expect(find.text('Pause Six-day PPL?'), findsOneWidget);

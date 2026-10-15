@@ -27,10 +27,8 @@ void main() {
     // --- A plan with a workout due today, then two recorded sets, left open.
     await j.tapKey('nav-today');
     await j.tapKey('today-create-plan');
-    await j.chooseTrainingDaysIncludingToday();
-    await j.tapKey('setup-submit');
-    await j.waitFor(find.byKey(const Key('plan-start')), what: 'the plan review');
-    await j.tapKey('plan-start');
+    await j.createPlanFromTemplate();
+    await j.tapKey('nav-today');
     await j.waitFor(find.byKey(const Key('today-start')), what: 'today\'s due workout');
     await j.tapKey('today-start');
     await j.waitFor(find.byKey(const Key('complete-set')));

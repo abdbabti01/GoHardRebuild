@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
+import 'support.dart';
+
 /// R3/R5, third native journey: the two device capabilities.
 ///
 /// * Reminders: turning them on schedules real OS notifications for the accepted plan's pending workouts;
@@ -119,16 +121,12 @@ void main() {
     await tapKey(tester, 'nav-train');
     await tapKey(tester, 'train-plan');
     await tapKey(tester, 'create-plan');
-    await waitFor(tester, find.byKey(const Key('setup-submit')));
-    final weekday = DateTime.now().weekday;
-    final days = {weekday, (weekday + 1) % 7 + 1, (weekday + 3) % 7 + 1};
-    for (var d = 1; d <= 7; d++) {
-      await reveal(tester, find.byKey(Key('weekday-$d')));
-      final checked = tester.widget<CheckboxListTile>(find.byKey(Key('weekday-$d'))).value ?? false;
-      if (checked != days.contains(d)) await tapKey(tester, 'weekday-$d');
-    }
-    await tapKey(tester, 'setup-submit');
-    await tapKey(tester, 'plan-start');
+
+    // Create plan: the template path with the suggestion for three days, starting today, activated as it is.
+
+    await Journey(tester, binding).createPlanFromTemplate();
+
+    await tapKey(tester, 'nav-today');
     await waitFor(tester, find.byKey(const Key('today-start')));
     final withPlan = await scheduled(tester, (c) => c >= 23);
     expect(withPlan, anyOf(23, 24), reason: '24 planned workouts in 8 weeks; today\'s is left out once its time has passed');

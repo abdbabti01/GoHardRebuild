@@ -222,8 +222,9 @@ class _PlanViewState extends ConsumerState<_PlanView> {
         if (plan.isBuilt)
           GroupRow(key: const Key('plan-duplicate'), icon: Icons.copy_outlined, tone: Tone.neutral, title: 'Duplicate plan',
               subtitle: 'A new draft with the same workouts and schedule. This plan stays as it is.', onTap: () => openPlanEditor(context, ref, plan, duplicate: true)),
-        // A built plan's movements are changed by editing it.
-        if (!plan.isBuilt)
+        // A reviewed swap in the remaining workouts (a built plan's own workouts follow it). A rotation has no
+        // remaining dated workouts to swap in: edit it instead.
+        if (!plan.isRotating)
           GroupRow(icon: Icons.swap_horiz, tone: Tone.neutral, title: 'Replace a movement in remaining workouts', onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
         GroupRow(icon: Icons.flag_outlined, tone: Tone.neutral, title: 'Review or finish this block', onTap: () => push(context, BlockReviewScreen(planId: plan.id))),
         GroupRow(icon: Icons.add, tone: Tone.neutral, title: 'Create a different plan', subtitle: 'Starting it will ask before replacing this one.', onTap: () => push(context, const CreatePlanScreen())),

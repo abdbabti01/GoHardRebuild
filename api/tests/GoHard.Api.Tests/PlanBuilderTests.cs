@@ -287,6 +287,26 @@ public class PlanBuilderTests(PostgresFixture pg)
     });
 
     [Fact]
+    public async Task Accepted_substitution_also_changes_a_built_plans_own_workouts_but_not_recorded_ones()
+    {
+        var a = await Account.RegisterAsync(pg.Api);
+        var (wa, wb) = (Def("A", Ex()), Def("B", Ex("barbell-row", "Barbell row")));
+        var plan = await ActivateAsync(a, await CreateAsync(a, Create([wa, wb], Fixed((1, wa), (3, wb)))));
+        var monday = plan.Occasions.First();
+        var done = await a.StartPlannedAsync(monday);
+        await a.FinishAsync(done, [await a.AddSetAsync(done.Exercises[0].Id)]);
+
+        var proposal = await a.PostAsync<ProposalDto>("/proposals", new ProposalRequest(Guid.NewGuid(), Guid.NewGuid(), plan.Id, "substitution", null, "bench-press", "dumbbell-bench-press"));
+        plan = await PlanAsync(a, plan.Id);
+        var accepted = await a.PostAsync<ProposalResult>($"/proposals/{proposal.Data.Id}/accept", new ProposalDecision(Guid.NewGuid(), proposal.Data.Revision, plan.Revision));
+        Assert.Equal("accepted", accepted.Status);
+        var after = accepted.Data.Context!.Plans.Single();
+        Assert.Equal("dumbbell-bench-press", after.Workouts!.Single(w => w.Id == wa.Id).Exercises[0].CatalogKey);
+        Assert.Equal("bench-press", after.Occasions.Single(o => o.Id == monday.Id).Prescription[0].CatalogKey); // recorded: its own copy
+        Assert.All(after.Occasions.Where(o => o.Id != monday.Id && o.WorkoutId == wa.Id), o => Assert.Equal("dumbbell-bench-press", o.Prescription[0].CatalogKey));
+    }
+
+    [Fact]
     public async Task Revise_never_removes_an_occurrence_a_no_data_attempt_points_at()
     {
         var a = await Account.RegisterAsync(pg.Api);

@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
+import 'support.dart';
+
 /// R5, second native journey: the secondary flows. Manual workout with bodyweight sets, pause, save for later
 /// and resume; a no-data finish; plan pause, reviewed resume, skip and stopping the block early; name edit;
 /// and password-confirmed account deletion. Real API, real PostgreSQL, a disposable account.
@@ -139,16 +141,12 @@ void main() {
     // --- Plan lifecycle: start, pause, reviewed resume, skip, stop early.
     await tapKey(tester, 'train-plan');
     await tapKey(tester, 'create-plan');
-    await waitFor(tester, find.byKey(const Key('setup-submit')));
-    final weekday = DateTime.now().weekday;
-    final days = {weekday, (weekday + 1) % 7 + 1, (weekday + 3) % 7 + 1};
-    for (var d = 1; d <= 7; d++) {
-      await reveal(tester, find.byKey(Key('weekday-$d')));
-      final checked = tester.widget<CheckboxListTile>(find.byKey(Key('weekday-$d'))).value ?? false;
-      if (checked != days.contains(d)) await tapKey(tester, 'weekday-$d');
-    }
-    await tapKey(tester, 'setup-submit');
-    await tapKey(tester, 'plan-start');
+
+    // Create plan: the template path with the suggestion for three days, starting today, activated as it is.
+
+    await Journey(tester, binding).createPlanFromTemplate();
+
+    await tapKey(tester, 'nav-today');
     await waitFor(tester, find.byKey(const Key('today-start')));
     await tapKey(tester, 'nav-train');
     await waitFor(tester, find.textContaining('Week 1 of').hitTestable(), what: 'the Plan view actually on screen');

@@ -10,30 +10,30 @@ import 'support.dart';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('fit_feedback_manual_plan_set_edit_units_metrics_move_substitute_replace_archive', (tester) async {
+  testWidgets('own_plan_draft_set_edit_units_metrics_move_substitute_replace_archive', (tester) async {
     final j = Journey(tester, binding);
     await j.start('More Tester');
 
-    // --- Unsupported setup gives honest fit feedback and creates nothing; then build my own plan and save it.
+    // --- Build my own plan and save it as a draft: nothing is created, scheduled or activated.
     await j.tapKey('today-create-plan');
-    await j.chooseTrainingDaysIncludingToday();
+    await j.tapKey('plan-path-custom');
+    await j.chooseDays(Journey.daysIncludingToday());
     await j.tapKey('equipment-dumbbells');
-    await j.tapKey('setup-submit');
-    await j.waitFor(find.text('No reviewed plan fits these answers'));
-    expect(find.textContaining('needs full-gym equipment'), findsOneWidget);
-    await j.shot('60-fit-feedback');
-    await j.tapKey('setup-manual-plan');
+    await j.tapKey('builder-next');
+    await j.waitFor(find.byKey(const Key('custom-workout-name-0')), what: 'my workout names');
+    expect(find.text('My plan'), findsWidgets);
+    await j.shot('60-own-plan-structure');
+    await j.tapKey('builder-next');
     for (var i = 0; i < 3; i++) {
-      await j.tapKey('manual-plan-add-$i');
+      await j.tapKey('exercise-add-$i');
       await j.tapKey(i == 1 ? 'exercise-plank' : 'exercise-push-up');
     }
-    await j.shot('61-manual-plan-builder');
-    await j.tapKey('manual-plan-submit');
-    await j.waitFor(find.byKey(const Key('plan-start')), what: 'the review of my own plan');
-    expect(find.text('My plan'), findsWidgets);
-    await j.tapKey('plan-save-later');
+    await j.shot('61-own-plan-workouts');
+    await j.tapKey('builder-next');
+    await j.waitFor(find.byKey(const Key('plan-save-draft')), what: 'the review of my own plan');
+    await j.tapKey('plan-save-draft');
     await j.settle(6);
-    await j.waitFor(find.text('Your plan is ready to review'), what: 'Today offering the saved draft, not a started plan');
+    await j.waitFor(find.text('No plan yet'), what: 'Today: a saved draft schedules nothing');
 
     // --- Pounds at the boundary, undo and edit of a recorded set.
     await j.tapKey('nav-me');
@@ -131,15 +131,14 @@ void main() {
     await tester.pageBack();
     await j.settle();
 
-    // --- A supported plan, then move its last first-week workout one day later (keeps its recovery spacing).
+    // --- My saved draft, resumed and activated; then move its last first-week workout one day later.
     await j.tapKey('nav-train');
     await j.tapKey('train-plan');
     await j.tapKey('create-plan');
-    await j.chooseTrainingDaysIncludingToday();
-    await j.tapKey('equipment-full_gym');
-    await j.tapKey('setup-submit');
-    await j.tapKey('plan-start');
-    await j.waitFor(find.byKey(const Key('today-start')));
+    await j.tapKey('plan-draft-resume');
+    await j.waitFor(find.byKey(const Key('plan-activate')), what: 'my draft, back at its review');
+    await j.tapKey('plan-activate');
+    await j.waitFor(find.byKey(const Key('train-plan')), what: 'Train after activating');
     await j.tapKey('nav-train');
     await j.waitFor(find.textContaining('Week 1 of').hitTestable());
     await j.tapKey('occasion-1-3');
@@ -160,7 +159,7 @@ void main() {
 
     // --- Replace a movement through a reviewed proposal.
     await j.tapText('Replace a movement in remaining workouts');
-    await j.tapKey('substitute-from-bench-press');
+    await j.tapKey('substitute-from-push-up');
     await j.tapKey('substitute-to');
     await j.tapKey('exercise-dumbbell-bench-press');
     await j.tapKey('substitution-submit');
@@ -169,21 +168,26 @@ void main() {
     await j.shot('65-proposal-review');
     await j.tapKey('proposal-accept');
     await j.waitFor(find.text('Pause plan').hitTestable(), what: 'the plan after accepting');
-    await j.tapKey('occasion-1-2');
+    await j.tapKey('occasion-1-1');
     await j.waitFor(find.text('Dumbbell bench press'), what: 'the replaced movement in a remaining workout');
     await j.closeSheet();
 
-    // --- Replace the primary plan with my saved draft (explicit), then archive the displaced one.
-    await j.tapText('My plan');
-    await j.waitFor(find.text('Replace my current plan'));
+    // --- Replace the primary plan with a template plan (explicit), then archive the displaced one.
+    await j.tapText('Create a different plan');
+    await j.tapKey('plan-path-template');
+    await j.chooseDays(Journey.daysIncludingToday());
+    await j.tapKey('builder-next');
+    await j.tapKey('builder-next');
+    await j.tapKey('builder-next');
+    await j.waitFor(find.byKey(const Key('review-replaces')), what: 'the review naming the plan it replaces');
     await j.shot('66-replace-primary-review');
-    await j.tapKey('plan-start');
-    await j.confirmWith('Pause and start');
+    await j.tapKey('plan-activate');
+    await j.confirmWith('Pause and activate');
+    await j.tapKey('nav-today');
     await j.waitFor(find.text('Due today'), what: 'Today driven by the new primary plan');
     await j.tapKey('nav-train');
-    await j.tapText('Foundations of strength');
-    await j.waitFor(find.textContaining('Archive'));
-    await j.tap(find.textContaining('Archive (hide'));
+    await j.tapText('My plan');
+    await j.tapKey('plan-archive');
     await j.waitFor(find.textContaining('Archived plans (1)'), what: 'the archived plan hidden from the list');
     await j.shot('67-archived');
   });
