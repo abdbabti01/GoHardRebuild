@@ -120,7 +120,14 @@ class PlanRepository {
 
   // ------------------------------------------------------------------ reviewed lifecycle (local first)
 
-  LocalWrite _write(Json plan) => LocalWrite(Kinds.plan, plan['id'] as String, plan);
+  // The rest days laid over a plan for display are never stored in it.
+  LocalWrite _write(Json plan) => LocalWrite(Kinds.plan, plan['id'] as String, plan..remove('localRestDays'));
+
+  /// A rotation's rest day chosen for [day]: on this phone only. It skips nothing, credits nothing and does not move
+  /// the sequence; the next workout simply comes up on the next training day. Choosing it again changes nothing.
+  Future<void> setRestDay(Plan plan, String day, {required bool rest}) => rest
+      ? _sync.putLocal(_owner, LocalWrite(Kinds.restDay, '${plan.id}|$day', {'planId': plan.id, 'dayKey': day}))
+      : _sync.deleteLocal(_owner, Kinds.restDay, '${plan.id}|$day');
 
   /// Starts the reviewed draft as the primary plan. Replacing a different primary must be named explicitly;
   /// the displaced plan is paused (or closed when its block is being finished). Open workouts are untouched.

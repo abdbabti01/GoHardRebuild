@@ -191,7 +191,7 @@ void main() {
       expect(find.textContaining('sets recorded'), findsNothing, reason: 'nothing was recorded for a workout that has not started');
       expect(find.byType(FilledButton), findsOneWidget, reason: 'one filled button on Today');
       expect(find.byKey(const Key('today-start')).hitTestable(), findsOneWidget, reason: 'still due after an unrelated manual workout');
-      expect(find.text('Done for today'), findsNothing);
+      expect(find.text('Completed'), findsNothing);
       // The manual workout is its own record, in its own words.
       await tester.scrollUntilVisible(find.text('Manual workout · Recorded · 1 set'), 200, scrollable: find.byType(Scrollable).first);
       expect(find.text('RECORDED TODAY'), findsOneWidget);
@@ -248,9 +248,28 @@ void main() {
       expect(find.textContaining('recorded'), findsNothing);
     });
 
+    testWidgets('an open manual workout has its own Resume; the planned workout stays visible and due', (tester) async {
+      final manual = {'id': 'm1', 'kind': 'manual', 'title': 'Arms', 'dayKey': day, 'startedAtUtc': '${day}T07:00:00Z', 'finishedAtUtc': null, 'isDeleted': false, 'exercises': <Json>[]};
+      await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [manual]));
+      expect(find.byKey(const Key('today-open-m1')), findsOneWidget);
+      expect(find.text('Arms'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Resume workout'), findsOneWidget);
+      expect(find.text('Due today'), findsOneWidget);
+      expect(find.text('Upper body A'), findsOneWidget, reason: 'the planned workout keeps its real name and state');
+      expect(find.widgetWithText(OutlinedButton, 'Start workout'), findsOneWidget, reason: 'one filled button: the open workout');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a manual workout on a planned rest day: the rest day stays, and the workout is recorded', (tester) async {
+      await pumpApp(tester, await fixture(tester, plans: [blockPlan(start: '2026-09-22', recorded: 8)], workouts: [manualDone()]));
+      expect(find.text('Planned rest day'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('RECORDED TODAY'), 200, scrollable: find.byType(Scrollable).first);
+      expect(find.textContaining('Manual workout · Recorded'), findsOneWidget);
+    });
+
     testWidgets('done, rest, paused and no plan are said in words, with no training photograph', (tester) async {
       await pumpApp(tester, await fixture(tester, plans: [blockPlan(start: '2026-09-21', recorded: 9)]));
-      expect(find.text('Done for today'), findsOneWidget);
+      expect(find.text('Completed'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsOneWidget, reason: 'an icon and a word, not a colour alone');
       expect(find.textContaining('Finished: all planned sets recorded.'), findsOneWidget);
       expect(photo('workout'), findsNothing);
@@ -258,8 +277,8 @@ void main() {
       expect(find.byKey(const Key('today-resume')), findsNothing);
 
       await pumpApp(tester, await fixture(tester, plans: [blockPlan(start: '2026-09-22', recorded: 8)]));
-      expect(find.text('Rest today'), findsOneWidget);
-      expect(find.text('Recovery day'), findsOneWidget);
+      expect(find.text('Rest day'), findsOneWidget);
+      expect(find.text('Planned rest day'), findsOneWidget);
       expect(photo('workout'), findsNothing);
       expect(find.byKey(const Key('today-start')), findsNothing);
       expect(find.byKey(const Key('today-manual')), findsOneWidget, reason: 'a manual workout stays one tap away');
@@ -274,7 +293,7 @@ void main() {
       expect(find.byKey(const Key('today-manual')), findsOneWidget);
 
       await pumpApp(tester, await fixture(tester));
-      expect(find.text('No plan yet'), findsOneWidget);
+      expect(find.text('No active plan'), findsOneWidget);
       expect(photo('workout'), findsNothing);
       expect(find.byKey(const Key('today-create-plan')), findsOneWidget);
       expect(find.byKey(const Key('today-manual')), findsOneWidget);
@@ -284,22 +303,22 @@ void main() {
     testWidgets('a workout saved for later stays reachable without taking over the day', (tester) async {
       final open = openWorkout(plan, 'o3-3', day: day);
       await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], runtime: {'w-open': {'isPaused': true, 'isParked': true}}));
-      expect(find.byKey(const Key('today-resume')), findsNothing);
-      expect(find.text('Saved for later · started Sun, Oct 11'), findsOneWidget);
+      // Today's own planned workout, saved for later: its real state, with a quiet Resume that does not take over.
+      expect(find.text('Saved for later'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Resume workout'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Resume workout'), findsNothing);
     });
 
     test('a manual workout recorded today never completes the scheduled workout', () {
       final p = Plan(plan);
       TrainingAction resolve(List<Json> workouts) => resolveTraining(today: day, ctx: TrainingCtx({'contextRevision': 1, 'primaryPlanId': 'p1'}), plans: [p], workouts: [for (final w in workouts) Workout(w)]);
-      final due = resolve([manualDone()]);
-      expect(due, isA<WorkoutDue>());
-      expect((due as WorkoutDue).occasion.title, 'Upper body A');
+      OccasionStatus state(List<Json> workouts) => statusOf((resolve(workouts) as PlannedToday).occasions.single, p, day, [for (final w in workouts) Workout(w)]);
+      expect((resolve([manualDone()]) as PlannedToday).occasions.single.title, 'Upper body A');
+      expect(state([manualDone()]), OccasionStatus.due);
       // Not even a manual workout that happens to carry a full outcome: it is tied to no occasion.
-      expect(resolve([{...manualDone(), 'outcome': 'full', 'qualifiedOccasion': true}]), isA<WorkoutDue>());
+      expect(state([{...manualDone(), 'outcome': 'full', 'qualifiedOccasion': true}]), OccasionStatus.due);
       // Only a workout recorded for that occasion does.
-      final done = resolve([{...manualDone(), 'kind': 'planned', 'planId': 'p1', 'occasionId': 'o3-3', 'outcome': 'partial', 'qualifiedOccasion': true}]);
-      expect(done, isA<DoneToday>());
-      expect((done as DoneToday).outcome, 'partial');
+      expect(state([{...manualDone(), 'kind': 'planned', 'planId': 'p1', 'occasionId': 'o3-3', 'outcome': 'partial', 'qualifiedOccasion': true}]), OccasionStatus.partial);
     });
   });
 
@@ -340,7 +359,7 @@ void main() {
       // A rest day, with a run begun yesterday and still open (as after closing and reopening the app).
       final rest = blockPlan(start: '2026-09-22', recorded: 8);
       await pumpApp(tester, await fixture(tester, plans: [rest], runs: [run('r1', '2026-10-10'), run('r0', day, open: false)]));
-      expect(find.text('Rest today'), findsOneWidget);
+      expect(find.text('Rest day'), findsOneWidget);
       expect(find.widgetWithText(OutlinedButton, 'Continue run'), findsOneWidget);
       expect(find.text('In progress'), findsOneWidget);
       expect(find.text('Started Sat, Oct 10'), findsOneWidget);

@@ -44,11 +44,11 @@ void main() {
   testWidgets('a new account sees only truthful empty states on Today', (tester) async {
     await pumpApp(tester, await tester.runAsync(() => overridesFor(day: _day)) ?? []);
     expect(find.text('Friday, October 9'), findsOneWidget);
-    expect(find.text('No plan yet'), findsOneWidget);
+    expect(find.text('No active plan'), findsOneWidget);
     expect(find.text('Your week'), findsNothing, reason: 'no plan, so no invented week');
     await tester.scrollUntilVisible(find.text('No food logged today'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('No run today'), findsOneWidget);
-    expect(find.byKey(const Key('today-photo-workout')), findsNothing, reason: 'no workout, so no workout photograph beside "No plan yet"');
+    expect(find.byKey(const Key('today-photo-workout')), findsNothing, reason: 'no workout, so no workout photograph beside "No active plan"');
     expect(find.text('RECORDED TODAY'), findsNothing, reason: 'no activity, so no activity section');
     expect(find.textContaining('kcal'), findsNothing, reason: 'no invented nutrition');
     expect(find.text('Resume workout'), findsNothing, reason: 'no invented training');

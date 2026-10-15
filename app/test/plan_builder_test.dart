@@ -237,7 +237,7 @@ void main() {
       expect(nextTitle([noData]), 'Upper A');
       final manual = Workout({..._done(plan, head).j, 'kind': 'manual', 'planId': null, 'occasionId': null, 'qualifiedOccasion': false});
       expect(nextTitle([manual]), 'Upper A');
-      expect(resolveTraining(today: '2026-10-12', ctx: TrainingCtx({'primaryPlanId': plan.id}), plans: [plan], workouts: [manual]), isA<WorkoutDue>());
+      expect(statusOf((resolveTraining(today: '2026-10-12', ctx: TrainingCtx({'primaryPlanId': plan.id}), plans: [plan], workouts: [manual]) as PlannedToday).occasions.single, plan, '2026-10-12', [manual]), OccasionStatus.due);
     });
 
     test('a workout saved for later is still the next step: Train and Today agree and nothing after it is offered', () {
@@ -247,8 +247,9 @@ void main() {
       final occ = planOccasions(plan, '2026-10-12', parked);
       final r = rotationOf(plan, occ, parked)!;
       expect((r.next!.title, r.position), ('Upper A', 0), reason: 'saving for later never moves the cycle on');
-      final today = resolveTraining(today: '2026-10-12', ctx: TrainingCtx({'primaryPlanId': plan.id}), plans: [plan], workouts: parked, parkedIds: {parked.single.id});
-      expect((today as WorkoutDue).occasion.id, r.next!.id);
+      final today = resolveTraining(today: '2026-10-12', ctx: TrainingCtx({'primaryPlanId': plan.id}), plans: [plan], workouts: parked);
+      expect((today as PlannedToday).occasions.single.id, r.next!.id);
+      expect(openWorkouts(parked, {parked.single.id}, today).parked, isEmpty, reason: 'shown once, as the plan entry\'s own state');
     });
 
     test('undo skip in a rotation only on the latest step, counting steps started on this phone', () {
@@ -265,8 +266,8 @@ void main() {
       final o = planOccasions(plan, '2026-10-13', const []).first; // Tuesday: not a training day
       expect((o.title, o.scheduledDate), ('Upper A', '2026-10-14'));
       final a = resolveTraining(today: '2026-10-13', ctx: TrainingCtx({'primaryPlanId': plan.id}), plans: [plan], workouts: const []);
-      expect(a, isA<RecoveryDay>());
-      expect((a as RecoveryDay).next!.title, 'Upper A');
+      expect(a, isA<PlannedRest>());
+      expect((a as PlannedRest).next!.title, 'Upper A');
     });
 
     test('an ongoing rotation has no end and no review; a finite one ends', () {
@@ -465,16 +466,16 @@ void main() {
       TrainingAction today(String day, List<Workout> ws) => resolveTraining(today: day, ctx: ctx, plans: [plan], workouts: ws);
       final monday = planOccasions(plan, '2026-10-12', const []).first;
 
-      expect((today('2026-10-12', const []) as WorkoutDue).occasion.id, monday.id);
+      expect((today('2026-10-12', const []) as PlannedToday).occasions.single.id, monday.id);
       expect(statusOf(monday, plan, '2026-10-12', const []), OccasionStatus.due);
-      expect(today('2026-10-13', const []), isA<RecoveryDay>());
+      expect(today('2026-10-13', const []), isA<PlannedRest>());
       final done = [_done(plan, monday)];
-      expect((today('2026-10-12', done) as DoneToday).occasion.id, monday.id);
+      expect((today('2026-10-12', done) as PlannedToday).occasions.single.id, monday.id);
       expect(statusOf(monday, plan, '2026-10-12', done), OccasionStatus.finished);
 
       plan = Plan(copyJson(plan.j)..['occasions'] = [for (final o in plan.j['occasions'] as List) (o as Json)['id'] == monday.id ? (copyJson(o)..['isSkipped'] = true) : o]);
       expect(statusOf(plan.occasions.first, plan, '2026-10-12', const []), OccasionStatus.skipped);
-      expect(today('2026-10-12', const []), isA<RecoveryDay>(), reason: 'a skipped workout is not due and not done');
+      expect((today('2026-10-12', const []) as PlannedToday).occasions.single.isSkipped, isTrue, reason: 'a skipped workout is not due, not done and not a rest day');
 
       plan = Plan(copyJson(plan.j)..addAll({'lifecycle': 'paused', 'pausedOn': '2026-10-12'}));
       expect(today('2026-10-14', const []), isA<PlanPausedAction>());

@@ -34,9 +34,30 @@ for it or it is skipped. Until then the phone shows it as a projected ("virtual"
 same ID for *k*, so a retry, a second device or a lost response cannot create a second one, and the unique index
 `(PlanId, SequenceIndex)` enforces it.
 
-Projected dates (rotating, phone only): from `max(today, startDate)` — or the day after the latest occurrence of this plan already started or
-completed today or later (a skip takes no day: skipping today's workout makes the next one today's) — each next index takes the next training day (or the next day when
-`trainingDays` is empty). A projected date is a plan, not a record; it is never "missed".
+Projected dates (rotating, phone only): from `max(today, startDate)` — or the day after the latest occurrence of this
+plan already started, completed **or skipped** today or later — each next index takes the next training day (or the
+next day when `trainingDays` is empty), skipping days the person chose to rest. A projected date is a plan, not a
+record; it is never "missed". (Until 15 Oct 2026 a skip took no day, so skipping today's workout put the next one on
+today — reported from an iPhone as "the next workout appears in its place". A skip now keeps its day; the next workout
+can still be started now, explicitly.)
+
+## Today (15 Oct 2026)
+
+`resolveTraining` (`features/today/daily.dart`) says only what the primary plan says about today; open and recorded
+workouts sit beside it (`DailySnapshot.inProgress`, `parked`, `recordedToday`) and never change it.
+
+| Facts | Today |
+|---|---|
+| Occurrence(s) dated today | `PlannedToday`: each under its own name and real state — Due today, In progress, Saved for later, Skipped today, Completed, Partly completed. Several on one day are all kept; the first in progress/due leads, the rest are "Also today" rows |
+| Today's occurrence skipped | Skipped today, with Undo skip while safe (`PlanRepository.canUnskip`; the account re-checks the revision, a conflict goes to the existing review). Fixed: "Next: Pull · Tuesday" on its real date. Rotation: "Next in your rotation: Pull" (· its day only when the plan has training days) and **Train this now** |
+| Active plan, nothing dated today | `PlannedRest` "Planned rest day", next workout with its date; manual training, runs and food stay available; activity done that day is listed under Recorded today |
+| Rotation with nothing dated today | Never inferred as rest from nothing being recorded: rest comes only from training days or a chosen rest day |
+| Chosen rest (rotations, occurrence sheet "Rest today instead") | Local record kind `rest_day` (`{planId, dayKey}`), laid over the plan by `planListProvider` so Today, Train and the sheet agree. Skips, credits and advances nothing; survives sync and restart; "Train today" removes it. Not offered for fixed plans, which move or skip |
+| Paused / before start / after the end / no primary plan | Plan paused / Starts … / Block ready to review / No active plan — never a rest day |
+| A manual workout open | Its own compact "In progress" entry with Resume, above the plan's own state (the plan's Start becomes the quiet button). Finished: Recorded today. It never hides, completes, skips or advances anything |
+
+A workout counts for an occurrence only through its `occasionId`; nothing is inferred from names, exercises or the
+day. There is no reusable "manual workout definition" in the app: Manual workout starts a session directly.
 
 ## Deterministic occurrence IDs
 

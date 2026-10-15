@@ -48,17 +48,19 @@ List<Occasion> planOccasions(Plan plan, String today, Iterable<Workout> workouts
     virtualIndexes.add(k);
   }
 
-  // Projected dates start after anything of this plan already started or done today or later, on the next training
-  // day. A skip does not take a day: skipping today's workout makes the next one today's.
+  // Projected dates start after anything of this plan already started, done or skipped today or later, on the next
+  // training day that is not a rest day the person chose. A skip keeps its day: skipping today's workout never pulls
+  // the next one into today (it can still be started now, explicitly).
   var cursor = plan.startDate.compareTo(today) > 0 ? plan.startDate : today;
   for (final o in out) {
-    if (!o.isSkipped && o.scheduledDate.compareTo(cursor) >= 0) cursor = addDays(o.scheduledDate, 1);
+    if (o.scheduledDate.compareTo(cursor) >= 0) cursor = addDays(o.scheduledDate, 1);
   }
   final days = schedule.trainingDays.toSet();
+  final rest = plan.restDays;
   var added = 0;
   for (final k in virtualIndexes) {
     if (added >= ahead) break;
-    while (days.isNotEmpty && !days.contains(parseDayKey(cursor).weekday)) {
+    while ((days.isNotEmpty && !days.contains(parseDayKey(cursor).weekday)) || rest.contains(cursor)) {
       cursor = addDays(cursor, 1);
     }
     if (end != null && cursor.compareTo(end) > 0) break;

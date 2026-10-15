@@ -70,27 +70,32 @@ void main() {
     const today = '2026-10-09';
     final ctx = TrainingCtx({'contextRevision': 1, 'primaryPlanId': 'p'});
 
-    test('an open workout comes first, even when its plan is paused or replaced', () {
+    test('an open workout stays reachable, even when its plan is paused or replaced, without changing the plan\'s state', () {
       final plan = _plan([_occ('a', today)], lifecycle: 'paused', pausedOn: today);
-      final action = resolveTraining(today: today, ctx: ctx, plans: [plan], workouts: [_workout('w1', occasionId: 'a')]);
-      expect((action as ResumeWorkout).workout.id, 'w1');
-      // pause_still_offers_resume_workout; a parked workout stops driving Today but is still open.
-      expect(resolveTraining(today: today, ctx: ctx, plans: [plan], workouts: [_workout('w1', occasionId: 'a')], parkedIds: {'w1'}), isA<PlanPausedAction>());
+      final open = [_workout('w1', occasionId: 'a')];
+      final action = resolveTraining(today: today, ctx: ctx, plans: [plan], workouts: open);
+      expect(action, isA<PlanPausedAction>());
+      // pause_still_offers_resume_workout; a parked workout is listed as saved for later instead.
+      expect(openWorkouts(open, const {}, action).inProgress.single.id, 'w1');
+      expect(openWorkouts(open, {'w1'}, action).parked.single.id, 'w1');
     });
 
-    test('due, done, recovery, future start, review due, draft and no plan are distinct', () {
+    test('due, done, rest, future start, review due, draft and no plan are distinct', () {
       final due = _plan([_occ('a', today), _occ('b', '2026-10-12')]);
-      expect((resolveTraining(today: today, ctx: ctx, plans: [due], workouts: []) as WorkoutDue).occasion.id, 'a');
+      expect((resolveTraining(today: today, ctx: ctx, plans: [due], workouts: []) as PlannedToday).occasions.single.id, 'a');
 
       // A finish saved on the phone resolves the occasion immediately, before the account acknowledges it.
-      final done = resolveTraining(today: today, ctx: ctx, plans: [due], workouts: [_workout('w', occasionId: 'a', outcome: 'partial', qualified: true)]) as DoneToday;
-      expect((done.outcome, done.next!.id), ('partial', 'b'));
+      final partial = [_workout('w', occasionId: 'a', outcome: 'partial', qualified: true)];
+      final done = resolveTraining(today: today, ctx: ctx, plans: [due], workouts: partial) as PlannedToday;
+      expect((statusOf(done.occasions.single, due, today, partial), done.next!.id), (OccasionStatus.partial, 'b'));
       // A no-data finish gives no credit: the occasion is still due.
-      expect(resolveTraining(today: today, ctx: ctx, plans: [due], workouts: [_workout('w', occasionId: 'a', outcome: 'no_data')]), isA<WorkoutDue>());
+      final noData = [_workout('w', occasionId: 'a', outcome: 'no_data')];
+      expect(statusOf((resolveTraining(today: today, ctx: ctx, plans: [due], workouts: noData) as PlannedToday).occasions.single, due, today, noData), OccasionStatus.due);
       // Manual work never satisfies a planned occasion.
-      expect(resolveTraining(today: today, ctx: ctx, plans: [due], workouts: [_workout('m', kind: 'manual', outcome: 'manual_recorded')]), isA<WorkoutDue>());
+      final manual = [_workout('m', kind: 'manual', outcome: 'manual_recorded')];
+      expect(statusOf((resolveTraining(today: today, ctx: ctx, plans: [due], workouts: manual) as PlannedToday).occasions.single, due, today, manual), OccasionStatus.due);
 
-      final recovery = resolveTraining(today: today, ctx: ctx, plans: [_plan([_occ('missed', '2026-10-07'), _occ('skip', '2026-10-08', skipped: true), _occ('next', '2026-10-12')])], workouts: []) as RecoveryDay;
+      final recovery = resolveTraining(today: today, ctx: ctx, plans: [_plan([_occ('missed', '2026-10-07'), _occ('skip', '2026-10-08', skipped: true), _occ('next', '2026-10-12')])], workouts: []) as PlannedRest;
       expect((recovery.next!.id, recovery.missed.map((o) => o.id).join(",")), ("next", "missed"), reason: 'missed work stays on its date and never takes over Today');
 
       expect(resolveTraining(today: today, ctx: ctx, plans: [_plan([_occ('a', '2026-10-16')], start: '2026-10-16')], workouts: []), isA<StartsLater>());
@@ -101,7 +106,7 @@ void main() {
       expect(resolveTraining(today: today, ctx: none, plans: [_plan([_occ('a', today)], lifecycle: 'draft')], workouts: []), isA<ReviewDraft>());
       expect(resolveTraining(today: today, ctx: none, plans: [], workouts: []), isA<CreatePlan>());
       // A draft never displaces the primary plan's action.
-      expect(resolveTraining(today: today, ctx: ctx, plans: [due, _plan([_occ('z', today)], lifecycle: 'draft', id: 'd')], workouts: []), isA<WorkoutDue>());
+      expect(resolveTraining(today: today, ctx: ctx, plans: [due, _plan([_occ('z', today)], lifecycle: 'draft', id: 'd')], workouts: []), isA<PlannedToday>());
     });
 
     test('the workout that is today\'s planned result is not listed again under Recorded today; other recorded work is', () {
@@ -113,7 +118,7 @@ void main() {
           training: resolveTraining(today: today, ctx: ctx, plans: [plan], workouts: finished), parked: const [], finishedToday: finished, food: const [], coverage: const {}, runs: const []);
 
       final done = day([credited, noData, manual]);
-      expect(done.training, isA<DoneToday>());
+      expect(done.training, isA<PlannedToday>());
       expect(done.recordedToday.map((w) => w.id), ['w0', 'm'], reason: 'identity, not title: only the credited workout is left out');
       // Before the module shows it as done (a manual workout alone), nothing is hidden.
       expect(day([manual]).recordedToday.map((w) => w.id), ['m']);

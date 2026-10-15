@@ -122,7 +122,7 @@ class Journey {
     await type('auth-email', email);
     await type('auth-password', password);
     await tapKey('auth-submit');
-    await waitFor(find.text('No plan yet'), what: 'Today for a new account');
+    await waitFor(find.text('No active plan'), what: 'Today for a new account');
   }
 
   /// Three training days with a rest day between them, starting today, so a workout is due on whatever day this runs.

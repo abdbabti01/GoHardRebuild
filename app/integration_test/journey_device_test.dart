@@ -108,7 +108,7 @@ void main() {
     await type(tester, 'auth-email', 'device-${DateTime.now().millisecondsSinceEpoch}@example.test');
     await type(tester, 'auth-password', 'device password 1');
     await tapKey(tester, 'auth-submit');
-    await waitFor(tester, find.text('No plan yet'), what: 'Today for a new account');
+    await waitFor(tester, find.text('No active plan'), what: 'Today for a new account');
 
     // --- Reminders. With no plan, turning them on schedules nothing.
     await tapKey(tester, 'nav-me');

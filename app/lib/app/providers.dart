@@ -188,7 +188,17 @@ final activityRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => Activ
 
 List<T> _values<T>(AsyncValue<List<Stored<T>>> rows) => [for (final r in rows.value ?? const []) r.value];
 
-final planListProvider = Provider<List<Plan>>((ref) => _values(ref.watch(plansProvider)));
+final restDaysProvider = StreamProvider<List<Stored<Json>>>((ref) => _rows(ref, Kinds.restDay, (j) => j));
+
+/// The owner's plans, each with the rest days chosen for it on this phone, so every reader of the projection
+/// (Today, Train, the occurrence sheet) dates a rotation the same way.
+final planListProvider = Provider<List<Plan>>((ref) {
+  final rest = <String, List<String>>{};
+  for (final r in ref.watch(restDaysProvider).value ?? const <Stored<Json>>[]) {
+    (rest[r.value['planId'] as String] ??= []).add(r.value['dayKey'] as String);
+  }
+  return [for (final p in _values(ref.watch(plansProvider))) Plan({...p.j, 'localRestDays': rest[p.id] ?? const <String>[]})];
+});
 final workoutListProvider = Provider<List<Workout>>((ref) => _values(ref.watch(workoutsProvider)));
 final trainingCtxProvider = Provider<TrainingCtx?>((ref) => ref.watch(contextRowProvider).value?.value);
 final primaryPlanProvider = Provider<Plan?>((ref) {
@@ -217,13 +227,15 @@ final dailySnapshotProvider = Provider<DailySnapshot?>((ref) {
   // Food is deliberately not required: a journal that is loading or unreadable must never hide the training action.
   if (owner == null || !plans.hasValue || !workouts.hasValue || !ctx.hasValue) return null;
   final all = ref.watch(workoutListProvider);
-  final parked = ref.watch(parkedIdsProvider);
   final entries = [for (final r in food.value ?? const <Stored<FoodEntry>>[]) if (!r.value.isDeleted) r.value];
+  final training = resolveTraining(today: day, ctx: ref.watch(trainingCtxProvider), plans: ref.watch(planListProvider), workouts: all);
+  final open = openWorkouts(all, ref.watch(parkedIdsProvider), training);
   return DailySnapshot(
     ownerId: owner,
     dayKey: day,
-    training: resolveTraining(today: day, ctx: ref.watch(trainingCtxProvider), plans: ref.watch(planListProvider), workouts: all, parkedIds: parked),
-    parked: [for (final w in all) if (w.isOpen && parked.contains(w.id)) w],
+    training: training,
+    inProgress: open.inProgress,
+    parked: open.parked,
     finishedToday: [for (final w in all) if (!w.isOpen && !w.isDeleted && w.dayKey == day) w],
     food: entries,
     coverage: NutrientCoverage.calculate(entries),

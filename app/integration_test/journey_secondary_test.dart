@@ -91,7 +91,7 @@ void main() {
     await type(tester, 'auth-email', email);
     await type(tester, 'auth-password', password);
     await tapKey(tester, 'auth-submit');
-    await waitFor(tester, find.text('No plan yet'), what: 'Today for a new account');
+    await waitFor(tester, find.text('No active plan'), what: 'Today for a new account');
 
     // --- Manual workout: bodyweight set with no load typed, pause, save for later, resume, finish.
     await tapKey(tester, 'nav-train');
@@ -114,7 +114,7 @@ void main() {
     await waitFor(tester, find.textContaining('Saved for later'), what: 'the parked workout on Train');
     await shot(tester, '32-train-saved-for-later');
     await tapKey(tester, 'nav-today');
-    await waitFor(tester, find.text('No plan yet'));
+    await waitFor(tester, find.text('No active plan'));
     expect(find.text('Resume workout'), findsNothing, reason: 'a parked workout does not take over Today');
     expect(find.textContaining('Saved for later'), findsOneWidget, reason: 'but it stays recoverable from Today');
     await tapKey(tester, 'nav-train');

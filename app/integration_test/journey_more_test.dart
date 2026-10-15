@@ -33,7 +33,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('plan-save-draft')), what: 'the review of my own plan');
     await j.tapKey('plan-save-draft');
     await j.settle(6);
-    await j.waitFor(find.text('No plan yet'), what: 'Today: a saved draft schedules nothing');
+    await j.waitFor(find.text('No active plan'), what: 'Today: a saved draft schedules nothing');
 
     // --- Pounds at the boundary, undo and edit of a recorded set.
     await j.tapKey('nav-me');

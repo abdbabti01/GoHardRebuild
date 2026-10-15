@@ -97,7 +97,7 @@ Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, 
           final ok = await confirm(context,
               title: 'Skip ${o.title}?',
               body: current.isRotating
-                  ? '${o.title} will be marked Skipped today and the rotation moves on to the workout after it. No workout, sets or completion credit are created.'
+                  ? '${o.title} will be marked Skipped today and the rotation moves on to the workout after it. That next workout is not put on today: it comes up on your next training day, or you can start it now. No workout, sets or completion credit are created.'
                   : 'The workout planned for ${longDate(o.scheduledDate)} will be marked Skipped. No workout, sets or completion credit are created, and it will not count as training.',
               action: 'Skip this workout', cancel: 'Keep it');
           if (ok && context.mounted) await runPlanDecision(context, () => repo().skipOccurrence(current, workouts, o, today: today), saved: 'Marked as skipped.');
@@ -165,7 +165,16 @@ Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, 
                 if (isNext) ...[
                   PrimaryButton(status == OccasionStatus.upcoming ? 'Start this workout now' : 'Start workout', key: const Key('occasion-start'), onPressed: start),
                   const SizedBox(height: 4),
-                  Align(alignment: AlignmentDirectional.centerStart, child: TextButton(key: const Key('occasion-skip'), onPressed: skip, child: const Text('Skip this workout'))),
+                  Wrap(children: [
+                    TextButton(key: const Key('occasion-skip'), onPressed: skip, child: const Text('Skip this workout')),
+                    // A rest day the person chooses: nothing is skipped, credited or moved on; the workout waits.
+                    if (o.isVirtual && o.scheduledDate == today && status == OccasionStatus.due)
+                      TextButton(key: const Key('occasion-rest'), onPressed: () async {
+                        await repo().setRestDay(current, today, rest: true);
+                        if (sheet.mounted) Navigator.pop(sheet);
+                        if (host.mounted) toast(host, 'Rest day. Nothing was skipped: ${o.title} waits for your next training day.');
+                      }, child: const Text('Rest today instead')),
+                  ]),
                   Text('A rotation has no dates to move: this workout waits for you until you do it or skip it.', style: context.caption),
                 ] else
                   StatusLine(Icons.low_priority, 'Comes after ${rotation.next?.title ?? 'the workouts before it'}. A rotation runs in order: do or skip the next one first.'),

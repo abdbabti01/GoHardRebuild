@@ -103,7 +103,7 @@ void main() {
       final plan = fixedPpl();
       final monday = _fixedOccasion(plan, '2026-10-12');
       await _pump(tester, '2026-10-12', plan, workouts: [done(monday['id'] as String, 'Push', '2026-10-12')]);
-      expect(_today(find.text('Done for today')), findsOneWidget);
+      expect(_today(find.text('Completed')), findsOneWidget);
       expect(_today(find.textContaining('Next: Pull · Tuesday')), findsOneWidget);
 
       await _toPlan(tester);
@@ -131,19 +131,24 @@ void main() {
       final plan = fixedPpl();
       final week = [for (final o in (plan['occasions'] as List).cast<Json>()) if (o['weekNumber'] == 1) done(o['id'] as String, o['title'] as String, o['scheduledDate'] as String)];
       await _pump(tester, '2026-10-18', plan, workouts: week);
-      expect(_today(find.text('Rest today')), findsOneWidget);
+      expect(_today(find.text('Rest day')), findsOneWidget);
       expect(_today(find.textContaining('Next: Push · Monday')), findsOneWidget);
       await _toPlan(tester);
       for (var n = 1; n <= 6; n++) {
         expect(_in('occasion-1-$n', find.text('Completed')), findsOneWidget);
       }
 
-      // Skipped: Monday skipped. Today does not offer it; Train says Skipped.
+      // Skipped: Monday skipped. Today keeps it as Skipped today under its own name, not a rest day, and names
+      // Tuesday's workout on its real date without offering it as today's; Train says Skipped.
       final skipped = fixedPpl();
       _fixedOccasion(skipped, '2026-10-12')['isSkipped'] = true;
       await _pump(tester, '2026-10-12', skipped);
-      expect(_today(find.text('Rest today')), findsOneWidget);
+      expect(_today(find.text('Skipped today')), findsOneWidget);
+      expect(_today(find.text('Push')), findsOneWidget);
+      expect(_today(find.textContaining('Next: Pull · Tuesday')), findsOneWidget);
+      expect(_today(find.text('Rest day')), findsNothing);
       expect(find.byKey(const Key('today-start')), findsNothing);
+      expect(find.byKey(const Key('today-undo-skip')), findsOneWidget);
       await _toPlan(tester);
       expect(_in('occasion-1-1', find.text('Skipped')), findsOneWidget);
       expect(find.bySemanticsLabel('Six-day PPL. Week 1 of 4. 0 / 23 workouts completed, 0%.'), findsOneWidget, reason: 'a skipped workout is not expected');
@@ -183,33 +188,38 @@ void main() {
 
       // Tuesday is a rest day: the next workout waits for Wednesday.
       await _pump(tester, '2026-10-13', rotatingPpl());
-      expect(_today(find.text('Rest today')), findsOneWidget);
-      expect(_today(find.textContaining('Next: Push · Wednesday')), findsOneWidget);
+      expect(_today(find.text('Rest day')), findsOneWidget);
+      expect(_today(find.textContaining('Next in your rotation: Push · Wednesday')), findsOneWidget);
       await _toPlan(tester);
       expect(_in('rotation-0', find.text('Planned')), findsOneWidget);
       expect(_in('rotation-0', find.text('Wed')), findsOneWidget);
 
       // Monday's Push done: done for today, Pull next on Wednesday; Push is a recent session.
       await _pump(tester, '2026-10-12', rotatingPpl(), workouts: [done(_seq(0), 'Push', '2026-10-12')]);
-      expect(_today(find.text('Done for today')), findsOneWidget);
-      expect(_today(find.textContaining('Next: Pull · Wednesday')), findsOneWidget);
+      expect(_today(find.text('Completed')), findsOneWidget);
+      expect(_today(find.textContaining('Next in your rotation: Pull · Wednesday')), findsOneWidget);
       await _toPlan(tester);
       expect(_in('rotation-0', find.text('Completed')), findsOneWidget);
       expect(_in('rotation-1', find.text('Planned')), findsOneWidget);
       expect(_in('rotation-1', find.text('Pull')), findsOneWidget);
       expect(_in('cycle-step-1', find.text('Next')), findsOneWidget);
 
-      // Push skipped today: a skip takes no day, so Pull is due today.
+      // Push skipped today: the skip keeps its day. Today says Push was skipped and names Pull as next in the
+      // rotation, on its next training day, with "Train this now" as an explicit choice; Pull is not due today.
       final skippedPush = {
         ...PlanRules.occurrence(id: _seq(0), date: '2026-10-12', weekNumber: 1, ordinal: 1, workout: _workouts[0], sequenceIndex: 0),
         'isSkipped': true,
       };
       await _pump(tester, '2026-10-12', rotatingPpl(occasions: [skippedPush]));
-      expect(_today(find.text('Due today')), findsOneWidget);
-      expect(_today(find.text('Pull')), findsOneWidget);
+      expect(_today(find.text('Skipped today')), findsOneWidget);
+      expect(_today(find.text('Push')), findsOneWidget);
+      expect(_today(find.textContaining('Next in your rotation: Pull · Wednesday')), findsOneWidget);
+      expect(_today(find.text('Due today')), findsNothing);
+      expect(find.byKey(const Key('today-train-now')), findsOneWidget);
       await _toPlan(tester);
       expect(_in('rotation-0', find.text('Skipped')), findsOneWidget);
-      expect(_in('rotation-1', find.text('Due')), findsOneWidget);
+      expect(_in('rotation-1', find.text('Planned')), findsOneWidget);
+      expect(_in('rotation-1', find.text('Wed')), findsOneWidget);
 
       // Paused.
       await _pump(tester, '2026-10-12', rotatingPpl(lifecycle: 'paused', pausedOn: '2026-10-12'));

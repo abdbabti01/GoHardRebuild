@@ -28,6 +28,8 @@ abstract final class Kinds {
   static const runtime = 'runtime', setupDraft = 'setup_draft', planBuilder = 'plan_builder';
   /// Provider foods this owner has looked at, kept so they can be found again without a connection.
   static const foodCache = 'food_cache';
+  /// A day the person chose to rest in a rotation (`{planId, dayKey}`). Local only; it skips and consumes nothing.
+  static const restDay = 'rest_day';
 }
 
 extension type Prescription(Json j) {
@@ -145,6 +147,9 @@ extension type Plan(Json j) {
   PlanSchedule? get schedule => isBuilt ? PlanSchedule(j['schedule'] as Json) : null;
   bool get isRotating => schedule?.isRotating ?? false;
   List<WorkoutDefinition> get workouts => [for (final w in j['workouts'] as List? ?? const []) WorkoutDefinition(w as Json)];
+
+  /// Days the person chose to rest in this rotation ([Kinds.restDay], laid over the plan by `planListProvider`).
+  Set<String> get restDays => {...?(j['localRestDays'] as List?)?.cast<String>()};
 
   /// Repeats until stopped (rotating plans only). `blockWeeks` is then 1, for older builds.
   bool get isOngoing => j['isOngoing'] as bool? ?? false;

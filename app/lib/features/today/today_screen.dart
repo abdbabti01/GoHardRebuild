@@ -20,6 +20,7 @@ import '../plans/builder/plan_builder_screen.dart';
 import '../plans/plan_actions.dart';
 import '../plans/plan_progress.dart';
 import '../plans/plan_projection.dart' show rotationOf;
+import '../plans/plan_repository.dart';
 import '../plans/plan_screens.dart';
 import '../shell/home_shell.dart';
 import '../weather/weather.dart';
@@ -365,21 +366,41 @@ class _Module extends StatelessWidget {
 
 // ---------------------------------------------------------------------------- training
 
+/// Today's training, as three separate facts (docs/TRAINING_PLANS.md › Today): what the plan says about today, with
+/// each of today's occurrences in its real state; the next workout, on its real date or as the next in a rotation;
+/// and what is actually open, kept apart from the plan. A manual workout never hides or stands in for a planned one.
 class _TrainingSection extends ConsumerWidget {
   const _TrainingSection(this.snapshot);
   final DailySnapshot snapshot;
 
   static String _count(int n, String one) => '$n ${n == 1 ? one : '${one}s'}';
 
+  /// Today's state of a planned occurrence, in words with an icon (never colour alone).
+  static _Status _todayStatus(OccasionStatus s) => switch (s) {
+        OccasionStatus.inProgress => ('In progress', Icons.timelapse, Tone.accent),
+        OccasionStatus.finished => ('Completed', Icons.check_circle, Tone.success),
+        OccasionStatus.partial => ('Partly completed', Icons.check_circle_outline, Tone.neutral),
+        OccasionStatus.skipped => ('Skipped today', Icons.skip_next_outlined, Tone.neutral),
+        OccasionStatus.missed => ('Missed', Icons.error_outline, Tone.warning),
+        OccasionStatus.paused => ('Paused', Icons.pause_circle_outline, Tone.neutral),
+        OccasionStatus.due || OccasionStatus.upcoming => ('Due today', Icons.today, Tone.accent),
+      };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final a = snapshot.training;
     final c = context.c;
     final today = snapshot.dayKey;
-    // "Next: Pull · Wednesday" within the coming week, with the full date further out.
-    String nextText(Occasion? next) => next == null
+    final all = ref.watch(workoutListProvider);
+    // Within the coming week the weekday, further out the full date.
+    String when(Occasion o) => daysBetween(today, o.scheduledDate) < 7 ? weekdayName(weekdayOf(o.scheduledDate)) : longDate(o.scheduledDate);
+    // "Next: Pull · Wednesday" on its real date. A rotation names its next workout; it has a day only when the plan
+    // has training days to put it on.
+    String nextText(Plan plan, Occasion? next) => next == null
         ? 'No further workout is scheduled in this block.'
-        : 'Next: ${next.title} · ${daysBetween(today, next.scheduledDate) < 7 ? weekdayName(weekdayOf(next.scheduledDate)) : longDate(next.scheduledDate)}.';
+        : plan.isRotating
+            ? 'Next in your rotation: ${next.title}${(plan.schedule?.trainingDays ?? const []).isEmpty ? '' : ' · ${when(next)}'}.'
+            : 'Next: ${next.title} · ${when(next)}.';
     void openPlan() => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
     Widget title(String text) => Padding(padding: const EdgeInsets.only(top: 2), child: Text(text, style: context.titleStyle(23)));
     Widget line(String text, {double top = 4}) => Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: context.sansStyle(14.5, color: c.secondary)));
@@ -393,126 +414,193 @@ class _TrainingSection extends ConsumerWidget {
         // The dumbbells sit low and right in the picture.
         photo: _Photos.workout, photoAlignment: const Alignment(0.75, 0.8), action: action, quiet: details(onDetails));
 
-    /// Rest, paused, finished, not started, nothing planned: the same module in words only. A picture of training
-    /// must not sit beside "Rest today" or "No plan yet".
-    Widget plain({_Status? status, required String name, required String text, required Widget action, VoidCallback? onDetails}) => _Module(
+    /// Rest, skipped, completed, paused, not started, nothing planned: the same module in words only. A picture of
+    /// training must not sit beside "Rest day" or "No plan yet".
+    Widget plain({_Status? status, required String name, required String text, required Widget action, VoidCallback? onDetails, Widget? quiet}) => _Module(
         key: const Key('today-module-workout'), label: 'Workout', status: status, head: [title(name)], body: [line(text, top: 6)],
-        action: action, quiet: onDetails == null ? null : details(onDetails));
+        action: action, quiet: quiet ?? (onDetails == null ? null : details(onDetails)));
+
+    /// One of today's planned occurrences with its workout open: the sets recorded against its plan. Saved for later,
+    /// it says so and its Resume is quiet: it is still today's workout, but it does not take over the day.
+    Widget inProgress(Plan plan, Occasion occasion, Workout w) {
+      final sets = SetProgress.of(w, ref.watch(trustedSetsProvider));
+      final n = w.exercises.length;
+      final parked = ref.watch(parkedIdsProvider).contains(w.id);
+      void resume() => resumeWorkout(context, ref, w);
+      return workout(
+        status: parked ? ('Saved for later', Icons.bookmark_outline, Tone.neutral) : _todayStatus(OccasionStatus.inProgress), name: w.title,
+        // With a planned total the summary takes the full width and the ring sits beside the photograph.
+        head: [if (sets.planned != null) line('${_count(n, 'exercise')} · ${sets.planned} planned sets')],
+        body: [
+          if (sets.planned == null) line(n == 0 ? 'No exercise added yet' : _count(n, 'exercise')),
+          // Recorded is a count of sets, never a claim that a movement or the workout is complete.
+          if (sets.planned != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(children: [
+                ProgressRing(
+                  value: sets.fraction, size: MediaQuery.textScalerOf(context).scale(10) > 13 ? 104 : 76, stroke: 7, label: '${sets.counted} of ${sets.planned} planned sets recorded',
+                  center: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text('${sets.counted}', style: context.titleStyle(22)),
+                    Text('of ${sets.planned} sets', style: context.sansStyle(12.5, color: c.secondary)),
+                  ]),
+                ),
+                const SizedBox(width: 14),
+                // Said by the ring already; drawn for the eye.
+                Flexible(
+                  child: ExcludeSemantics(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${(sets.fraction * 100).round()}%', style: context.numStyle(21, color: c.accent, weight: FontWeight.w700)),
+                      Text('recorded', style: context.sansStyle(14, color: c.secondary)),
+                    ]),
+                  ),
+                ),
+              ]),
+            )
+          else if (sets.recorded > 0)
+            Padding(padding: const EdgeInsets.only(top: 8), child: Text('${_count(sets.recorded, 'set')} recorded', style: context.numStyle(16))),
+        ],
+        onDetails: () => showOccasionSheet(context, ref, plan, occasion),
+        action: parked
+            ? SecondaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, onPressed: resume)
+            : PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, onPressed: resume),
+      );
+    }
+
+    /// One of today's planned occurrences still to do. [quietStart] when another workout is open in front.
+    Widget due(Plan plan, Occasion occasion, {bool quietStart = false}) {
+      final sets = occasion.prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
+      // The minutes are the session length chosen when the plan was set up. They are not worked out from the
+      // exercises, so they are labelled as planned time and never as an estimate.
+      final minutes = plannedMinutes(plan);
+      // A rotation's next workout says where it is in the cycle; a fixed day says its plan week.
+      final rotation = plan.isRotating ? rotationOf(plan, planOccasions(plan, today, all), all) : null;
+      final where = rotation != null && rotation.next?.id == occasion.id
+          ? 'Step ${rotation.position + 1} of ${rotation.cycle.length}'
+          : occasion.sequenceIndex != null ? 'Session ${occasion.sequenceIndex! + 1}' : 'Week ${occasion.weekNumber}';
+      void start() => startPlannedWorkout(context, ref, plan, occasion);
+      return workout(
+        // The name and the week beside the photograph; the exercise and set counts on one full-width line.
+        status: _todayStatus(OccasionStatus.due), name: occasion.title, titleBeside: true,
+        body: [line('$where${minutes == null ? '' : ' · $minutes min planned'}')],
+        footer: line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}', top: 6),
+        onDetails: () => showOccasionSheet(context, ref, plan, occasion),
+        action: quietStart
+            ? SecondaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, onPressed: start)
+            : PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, onPressed: start),
+      );
+    }
+
+    /// One of today's planned occurrences already resolved: skipped, completed or partly completed. It stays
+    /// today's, under its own name; the next workout is named beside it, never in its place.
+    Widget resolved(Plan plan, Occasion o, OccasionStatus s, Occasion? next, bool blockDone) {
+      final what = switch (s) {
+        OccasionStatus.skipped => 'Skipped: nothing was recorded for it and it does not count as training.',
+        OccasionStatus.finished => 'Finished: all planned sets recorded.',
+        _ => 'Finished partially: some planned work was not recorded.',
+      };
+      final undo = s == OccasionStatus.skipped && !o.isVirtual && PlanRepository.canUnskip(plan, o.id, all);
+      return plain(
+        status: _todayStatus(s), name: o.title,
+        text: '$what ${blockDone ? 'That was the last workout of this block.' : nextText(plan, next)}',
+        onDetails: () => showOccasionSheet(context, ref, plan, o),
+        quiet: undo
+            ? TextButton(
+                key: const Key('today-undo-skip'),
+                onPressed: () => runPlanDecision(context, () => ref.read(planRepositoryProvider).unskip(plan, o.id, workouts: all), saved: 'No longer skipped.'),
+                child: const Text('Undo skip'))
+            : null,
+        action: blockDone
+            ? PrimaryButton('Review this block', key: const Key('today-block-review'), onPressed: () => push(context, BlockReviewScreen(planId: plan.id)))
+            // A rotation's next workout can be done now, as an explicit choice; skipping alone never puts it on today.
+            : plan.isRotating && next != null && plan.isActive
+                ? SecondaryButton('Train this now', key: const Key('today-train-now'), icon: Icons.play_arrow_rounded, onPressed: () => startPlannedWorkout(context, ref, plan, next))
+                : SecondaryButton('View plan', onPressed: openPlan),
+      );
+    }
 
     final (Widget card, bool offerManual) = switch (a) {
-      ResumeWorkout(workout: final w) => () {
-          final sets = SetProgress.of(w, ref.watch(trustedSetsProvider));
-          final n = w.exercises.length;
-          // A planned workout opens its plan entry; a manual one opens its own record of what was done so far.
-          final plan = ref.watch(planListProvider).where((p) => p.id == w.planId).firstOrNull;
-          // Through the projection, so a rotation's step started on this phone still opens its plan entry.
-          final occasion = plan == null ? null : planOccasions(plan, today, ref.watch(workoutListProvider)).where((o) => o.id == w.occasionId).firstOrNull;
+      PlannedToday(:final plan, :final occasions, :final next, :final missed, :final blockDone) => () {
+          final status = {for (final o in occasions) o.id: statusOf(o, plan, today, all)};
+          // In front: the one in progress, else the first still due, else the first of the day.
+          final lead = occasions.where((o) => status[o.id] == OccasionStatus.inProgress).firstOrNull ??
+              occasions.where((o) => status[o.id] == OccasionStatus.due).firstOrNull ??
+              occasions.first;
+          final open = openWorkoutFor(lead, all);
+          final s = status[lead.id]!;
+          final others = [for (final o in occasions) if (o.id != lead.id) o];
           return (
-            workout(
-              status: ('In progress', Icons.timelapse, Tone.accent), name: w.title,
-              // With a planned total the summary takes the full width and the ring sits beside the photograph.
-              head: [if (sets.planned != null) line('${_count(n, 'exercise')} · ${sets.planned} planned sets')],
-              body: [
-                if (sets.planned == null) line(n == 0 ? 'No exercise added yet' : _count(n, 'exercise')),
-                // Recorded is a count of sets, never a claim that a movement or the workout is complete.
-                if (sets.planned != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Row(children: [
-                      ProgressRing(
-                        value: sets.fraction, size: MediaQuery.textScalerOf(context).scale(10) > 13 ? 104 : 76, stroke: 7, label: '${sets.counted} of ${sets.planned} planned sets recorded',
-                        center: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Text('${sets.counted}', style: context.titleStyle(22)),
-                          Text('of ${sets.planned} sets', style: context.sansStyle(12.5, color: c.secondary)),
-                        ]),
-                      ),
-                      const SizedBox(width: 14),
-                      // Said by the ring already; drawn for the eye.
-                      Flexible(
-                        child: ExcludeSemantics(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text('${(sets.fraction * 100).round()}%', style: context.numStyle(21, color: c.accent, weight: FontWeight.w700)),
-                            Text('recorded', style: context.sansStyle(14, color: c.secondary)),
-                          ]),
-                        ),
-                      ),
-                    ]),
-                  )
-                else if (sets.recorded > 0)
-                  // No planned total exists for a manual workout, so there is a count and no percentage.
-                  Padding(padding: const EdgeInsets.only(top: 8), child: Text('${_count(sets.recorded, 'set')} recorded', style: context.numStyle(16))),
-              ],
-              onDetails: occasion != null ? () => showOccasionSheet(context, ref, plan!, occasion) : () => push(context, WorkoutDetailScreen(workoutId: w.id)),
-              action: PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, onPressed: () => resumeWorkout(context, ref, w)),
-            ),
-            false
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              if (open != null)
+                inProgress(plan, lead, open)
+              else if (s == OccasionStatus.due)
+                due(plan, lead, quietStart: snapshot.inProgress.isNotEmpty)
+              else
+                resolved(plan, lead, s, next, blockDone),
+              // Every other occurrence on today's date keeps its own row and state.
+              if (others.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: GroupCard(children: [
+                    for (final o in others)
+                      GroupRow(
+                          key: Key('today-also-${o.id}'), icon: Icons.fitness_center, tone: Tone.neutral, title: o.title,
+                          subtitle: 'Also today · ${_todayStatus(status[o.id]!).$1}', onTap: () => showOccasionSheet(context, ref, plan, o)),
+                  ]),
+                ),
+              if (missed.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(key: const Key('today-missed'), onPressed: openPlan,
+                      child: Text('${missed.length} earlier workout${missed.length == 1 ? ' is' : 's are'} unresolved')),
+                ),
+            ]),
+            open == null && s != OccasionStatus.due && snapshot.inProgress.isEmpty
           );
         }(),
-      WorkoutDue(:final plan, :final occasion) => () {
-          final sets = occasion.prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
-          // The minutes are the session length chosen when the plan was set up. They are not worked out from
-          // the exercises, so they are labelled as planned time and never as an estimate.
-          final minutes = plannedMinutes(plan);
-          // A rotation's next workout says where it is in the cycle; a fixed day says its plan week.
-          final rotation = plan.isRotating ? rotationOf(plan, planOccasions(plan, today, ref.watch(workoutListProvider)), ref.watch(workoutListProvider)) : null;
-          final where = rotation != null && rotation.next?.id == occasion.id
-              ? 'Step ${rotation.position + 1} of ${rotation.cycle.length}'
-              : occasion.sequenceIndex != null ? 'Session ${occasion.sequenceIndex! + 1}' : 'Week ${occasion.weekNumber}';
-          return (
-            workout(
-              // The name and the week beside the photograph; the exercise and set counts on one full-width line.
-              status: ('Due today', Icons.today, Tone.accent), name: occasion.title, titleBeside: true,
-              body: [line('$where${minutes == null ? '' : ' · $minutes min planned'}')],
-              footer: line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}', top: 6),
-              onDetails: () => showOccasionSheet(context, ref, plan, occasion),
-              action: PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, onPressed: () => startPlannedWorkout(context, ref, plan, occasion)),
-            ),
-            false
-          );
-        }(),
-      DoneToday(:final plan, :final occasion, :final outcome, :final next) => (
+      PlannedRest(:final plan, :final next, :final missed, :final chosen) => (
           plain(
-            status: ('Done for today', Icons.check_circle, Tone.success), name: occasion.title,
-            text: '${outcome == WorkoutResultRules.full ? 'Finished: all planned sets recorded.' : 'Finished partially: some planned work was not recorded.'} ${nextText(next)}',
-            onDetails: () => showOccasionSheet(context, ref, plan, occasion),
-            action: SecondaryButton('View plan', onPressed: openPlan),
+            status: ('Planned rest day', Icons.spa_outlined, Tone.neutral), name: 'Rest day',
+            text: '${chosen ? 'You chose to rest today. Nothing was skipped and your rotation waits for you. ' : ''}${nextText(plan, next)}'
+                '${missed.isEmpty ? '' : ' ${missed.length} earlier workout${missed.length == 1 ? ' is' : 's are'} unresolved; move or skip ${missed.length == 1 ? 'it' : 'them'} when you choose.'}',
+            action: missed.isEmpty ? SecondaryButton('View plan', onPressed: openPlan) : SecondaryButton('Resolve missed training', key: const Key('today-missed'), onPressed: openPlan),
+            quiet: chosen
+                ? TextButton(key: const Key('today-undo-rest'), onPressed: () => ref.read(planRepositoryProvider).setRestDay(plan, today, rest: false), child: const Text('Train today'))
+                : null,
           ),
-          false
+          snapshot.inProgress.isEmpty
         ),
       PlanPausedAction(:final plan) => (
           plain(status: ('Plan paused', Icons.pause_circle_outline, Tone.neutral), name: plan.title, text: 'No workouts are expected while the plan is paused, and nothing counts as missed.',
               action: PrimaryButton('Resume plan', onPressed: () => push(context, ResumeReviewScreen(planId: plan.id)))),
-          true
+          snapshot.inProgress.isEmpty
         ),
       StartsLater(:final plan, :final first) => (
-          plain(status: ('Starts ${shortDate(plan.startDate)}', Icons.event, Tone.neutral), name: first.title, text: 'Your first workout is on ${longDate(first.scheduledDate)}. Nothing is due before then.',
+          plain(status: ('Starts ${shortDate(plan.startDate)}', Icons.event, Tone.neutral), name: first.title, text: 'Your plan begins on ${longDate(first.scheduledDate)}. Nothing is due before then.',
               action: SecondaryButton('View plan', onPressed: openPlan)),
-          true
+          snapshot.inProgress.isEmpty
         ),
       BlockReviewDue(:final plan) => (
           plain(status: ('Block ready to review', Icons.flag_outlined, Tone.accent), name: plan.title,
               text: 'This block has reached its end or has nothing left to do. Review what was actually recorded and choose what comes next.',
               action: PrimaryButton('Review this block', key: const Key('today-block-review'), onPressed: () => push(context, BlockReviewScreen(planId: plan.id)))),
-          true
-        ),
-      RecoveryDay(:final next, :final missed) => (
-          plain(status: ('Recovery day', Icons.spa_outlined, Tone.neutral), name: 'Rest today',
-              text: '${nextText(next)}${missed.isEmpty ? '' : ' ${missed.length} earlier workout${missed.length == 1 ? ' is' : 's are'} unresolved; move or skip ${missed.length == 1 ? 'it' : 'them'} when you choose.'}',
-              action: missed.isEmpty ? SecondaryButton('View plan', onPressed: openPlan) : SecondaryButton('Resolve missed training', key: const Key('today-missed'), onPressed: openPlan)),
-          true
+          snapshot.inProgress.isEmpty
         ),
       ReviewDraft(:final draft) => (
           plain(status: ('Your plan is ready to review', Icons.fact_check_outlined, Tone.accent), name: draft.title, text: 'This draft has not started. Nothing is scheduled until you start it.',
               action: PrimaryButton('Review your plan', key: const Key('today-review-draft'), onPressed: () => push(context, PlanReviewScreen(planId: draft.id)))),
-          true
+          snapshot.inProgress.isEmpty
         ),
       CreatePlan() => (
-          plain(name: 'No plan yet', text: 'Start from a familiar split or build your own and review it before you commit, or just train manually today.',
+          plain(name: 'No active plan', text: 'Start from a familiar split or build your own and review it before you commit, or just train manually today.',
               action: PrimaryButton('Create my plan', key: const Key('today-create-plan'), onPressed: () => push(context, const CreatePlanScreen()))),
-          true
+          snapshot.inProgress.isEmpty
         ),
     };
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // An open workout outside today's plan (a manual one, or a planned one from another day) has its own entry
+      // in front, and the plan's own state stays below it, unchanged.
+      for (final w in snapshot.inProgress) _OpenWorkout(w),
       card,
       if (offerManual) TextButton(key: const Key('today-manual'), onPressed: () => startManualWorkout(context, ref), child: const Text('Start a manual workout')),
       // Workouts saved for later stay recoverable without taking over the day.
@@ -525,6 +613,39 @@ class _TrainingSection extends ConsumerWidget {
           ]),
         ),
     ]);
+  }
+}
+
+/// A workout open in front that is not one of today's planned occurrences: compact, with its own Resume. It is what
+/// was actually started, in its own words; it never says it is the plan's workout.
+class _OpenWorkout extends ConsumerWidget {
+  const _OpenWorkout(this.w);
+  final Workout w;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sets = SetProgress.of(w, ref.watch(trustedSetsProvider));
+    final n = w.exercises.length;
+    final what = w.isManual ? 'Manual workout' : 'Planned workout from ${shortDate(w.dayKey)}';
+    return Padding(
+      key: Key('today-open-${w.id}'),
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Wrap(spacing: 10, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          Semantics(header: true, child: Overline(what)),
+          const StatusPill('In progress', icon: Icons.timelapse, tone: Tone.accent),
+        ]),
+        Padding(padding: const EdgeInsets.only(top: 2), child: Text(w.title, style: context.titleStyle(20))),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(n == 0 ? 'No exercise added yet' : _TrainingSection._count(n, 'exercise'), style: context.sansStyle(14.5, color: context.c.secondary)),
+        ),
+        // No planned total exists for a manual workout, so there is a count and no percentage.
+        if (sets.recorded > 0) Padding(padding: const EdgeInsets.only(top: 4), child: Text('${_TrainingSection._count(sets.recorded, 'set')} recorded', style: context.numStyle(16))),
+        const SizedBox(height: 8),
+        PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, onPressed: () => resumeWorkout(context, ref, w)),
+      ]),
+    );
   }
 }
 
