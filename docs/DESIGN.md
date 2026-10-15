@@ -223,6 +223,35 @@ Plan / Progress kept in `shellProvider`.
 - **Workout screen**: "Target 60 kg" (the plan's) and "Last time 57.5 kg × 8" (the record) are two separate lines;
   the target never fills the entry.
 
+### Today's training states, guide and coach (15 Oct 2026; `docs/TRAINING_PLANS.md` › Today, `docs/COACH.md`)
+
+- **Today's Workout module** says what the plan says about today and nothing else: the occurrence's own name with
+  Due today / In progress / Saved for later / Skipped today / Completed / Partly completed as a word and an icon; a
+  "Next:" line on its real date, or "Next in your rotation:"; "Planned rest day" only when the plan has nothing dated
+  today. Only a due or in-progress workout has the training photograph. Other occurrences on the same day are compact
+  "Also today" rows. An open manual workout is its own compact entry above it (Manual workout · In progress · Resume
+  workout, the one filled button); the plan's Start then becomes the outlined button. Skipped today offers Undo skip
+  as the quiet link while it is safe, and a rotation offers "Train this now" (outlined) for its next workout.
+- **Create plan** offers two `ChoiceCard`s, Guide me and I know what I want, into the same four-step builder. Guide
+  me's Structure step shows one suggestion card (real split name, the week on the person's own days, a one-line reason
+  tied to their answers) with Use this starting plan, Compare splits and Why this suggestion?, and at most two
+  alternatives. Quick-guide sheets are labelled "Quick guide · built in" and never look like a chat answer.
+- **Exercise info** is an "About <name>" icon button on each exercise row, opening a sheet (muscles, equipment, role,
+  cues, benefits, limitations, alternatives, the prescription in `3 × 8–12` notation).
+- **Leon and Leona**: the compact avatar sits in a 48 px `CoachHelpButton` beside the builder's progress bar (Structure:
+  "Ask GoHard about this split", with the one-time "Need help choosing a split?" hint; Workouts: "…about this workout").
+  The full figure appears only in Ask GoHard's empty state, at 120 px, when the text is not enlarged and the screen is
+  at least 640 px tall. The art is never tinted: the accent colours only the controls and the selected ring around it.
+  The avatars appear nowhere on Today, workouts, runs or review screens, and there is no coach tab.
+- **Ask GoHard** is a pushed page: heading, a quiet "AI training assistant" label, the compact avatar, "About: <split,
+  workout or exercise>", suggested questions as wrapping chips, the conversation, and the composer with Send above
+  the keyboard. AI answers carry an "AI-generated" label; answers asked against an earlier draft say so. A suggested
+  change is a card with Preview change; the preview sheet lists every before → after, the scope pill "Draft only", and
+  Apply to draft / Keep current.
+- **Motion**: only the hint's 200 ms fade-and-scale entrance (`Motion.quick`, instant under Reduced motion or the
+  phone's Reduce Motion). The pictures are static PNGs: nothing blinks, talks, walks, waves or "thinks", and no
+  haptic fires for a hint.
+
 ## Eat
 
 The calm wash behind the date, the serif "Eat" and previous / next day; no scene, no weather. One card: the calorie
@@ -246,6 +275,11 @@ Sync status says one word and one sentence from the real state: "Needs review" w
 "Not synced" with "Can't sync right now" when the last attempt to reach the account failed (plus the number
 waiting), "Waiting" while changes are only on this phone, and "Saved" only when none of those is true. Nutrition
 goals shows the goals that were set, and "None set" otherwise; no number ever stands in for a goal.
+
+Appearance (15 Oct 2026) adds **Coach avatar**: two equal cards, "Leon, lion" (default) and "Leona, lioness", selected
+by a check, the accent border and a tint (never colour alone), never chosen from the profile; a **Coaching hints**
+switch; and **Show coaching hints again**. All three are kept on this phone with Motion & haptics and change nothing
+else (no route, draft, conversation or other appearance setting).
 
 ## Deliberate differences from the references
 

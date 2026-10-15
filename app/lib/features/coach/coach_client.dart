@@ -75,7 +75,8 @@ class AskConversation extends Notifier<AskState> {
   static const _id = 'current', _maxMessages = 60;
   late SyncEngine _sync;
   late SessionManager _sessions;
-  late CoachClient _client;
+  /// Made at the first Send: opening Ask GoHard touches no transport.
+  CoachClient get _client => CoachClient(ref.read(apiProvider));
   String? _owner;
   int _turn = 0;
   String _unsent = '';
@@ -90,7 +91,6 @@ class AskConversation extends Notifier<AskState> {
     _owner = ref.watch(ownerProvider);
     _sessions = ref.watch(sessionsProvider);
     _sync = ref.watch(syncProvider);
-    _client = CoachClient(ref.watch(apiProvider));
     ref.onDispose(_closed);
     if (_owner == null) return _last = const AskState(loaded: true);
     _load(_owner!, _turn);

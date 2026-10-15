@@ -643,6 +643,10 @@ void main() {
     expect(find.textContaining('Upper-body and lower-body days alternate.'), findsOneWidget);
     await _tap(tester, 'guide-why-ask'); // Ask GoHard opens over the page; opening it sends nothing
     expect(find.byKey(const Key('guide-why-sheet')), findsNothing);
+    expect(find.byKey(const Key('ask-context')), findsOneWidget);
+    expect(find.text('About: Upper / Lower'), findsOneWidget, reason: 'the real split name, never an ID');
+    await _tap(tester, 'ask-close'); // back to the same builder step
+    expect(find.byKey(const Key('ask-context')), findsNothing);
 
     await _tap(tester, 'guide-compare');
     for (final id in ['upper-lower', 'push-pull', 'full-body']) {
