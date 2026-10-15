@@ -143,6 +143,7 @@ class Journey {
   /// the template path with the suggestion for three days (Full Body A/B/C), starting today with workout A due,
   /// activated without changes. Afterwards the app shows Train › Plan.
   Future<void> createPlanFromTemplate({String? shotPrefix}) async {
+    await tapKey('plan-path-direct'); // I know what I want
     await tapKey('plan-path-template');
     await chooseDays(daysIncludingToday());
     if (shotPrefix != null) await shot('$shotPrefix-builder-availability');

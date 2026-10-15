@@ -42,8 +42,9 @@ class _Page extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               const Expanded(child: Text('Upper / Lower')),
-              CoachHelpButton(semanticLabel: 'Ask GoHard about this split', onPressed: onAsk ?? () {}, hintId: hintId, hintText: hintId == null ? null : _hint),
+              CoachHelpButton(semanticLabel: 'Ask GoHard about this split', onPressed: onAsk ?? () {}),
             ]),
+            if (hintId != null) CoachHint(hintId: hintId!, text: _hint, onAsk: onAsk ?? () {}),
             const CoachAvatar(key: Key('selected-avatar')),
             const TextField(key: Key('draft')),
             Builder(builder: (context) => TextButton(onPressed: () => push(context, const AppearanceScreen()), child: const Text('Appearance'))),

@@ -16,6 +16,7 @@ void main() {
 
     // --- Build my own plan and save it as a draft: nothing is created, scheduled or activated.
     await j.tapKey('today-create-plan');
+    await j.tapKey('plan-path-direct'); // I know what I want
     await j.tapKey('plan-path-custom');
     await j.chooseDays(Journey.daysIncludingToday());
     await j.tapKey('equipment-dumbbells');
@@ -174,6 +175,7 @@ void main() {
 
     // --- Replace the primary plan with a template plan (explicit), then archive the displaced one.
     await j.tapText('Create a different plan');
+    await j.tapKey('plan-path-direct'); // I know what I want
     await j.tapKey('plan-path-template');
     await j.chooseDays(Journey.daysIncludingToday());
     await j.tapKey('builder-next');

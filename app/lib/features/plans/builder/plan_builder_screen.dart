@@ -348,7 +348,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
             if (step == 1) ...[
               const SizedBox(width: 8),
               CoachHelpButton(
-                key: const Key('coach-help-structure'), semanticLabel: 'Ask GoHard about this split', hintId: 'builder.structure', hintText: 'Need help choosing a split?',
+                key: const Key('coach-help-structure'), semanticLabel: 'Ask GoHard about this split',
                 onPressed: () => _ask(_splitLabel, CoachFocus.split)),
             ],
             if (step == 2) ...[
@@ -358,6 +358,8 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
                 onPressed: () => _ask(draft.title.trim().isEmpty ? _splitLabel : draft.title.trim(), CoachFocus.workout)),
             ],
           ]),
+          // Once, in the page's flow under the progress: it moves the step down and covers nothing.
+          if (step == 1) CoachHint(hintId: 'builder.structure', text: 'Need help choosing a split?', onAsk: () => _ask(_splitLabel, CoachFocus.split)),
           const SizedBox(height: 18),
           switch (step) {
             0 => PreferencesStep(draft: draft, change: _change),

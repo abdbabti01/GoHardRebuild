@@ -21,6 +21,7 @@ void main() {
     print('GOHARD_CAPTURE text scale $scale, width $width dp');
 
     await j.tapKey('today-create-plan');
+    await j.tapKey('plan-path-direct'); // I know what I want
     await j.tapKey('plan-path-template');
     await j.chooseDays(Journey.daysIncludingToday());
     await j.shot('L1-availability-$tag');

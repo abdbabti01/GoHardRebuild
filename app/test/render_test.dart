@@ -238,9 +238,10 @@ void main() {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
                       Expanded(child: Text('Upper / Lower', style: TextStyle(fontFamily: serif, fontSize: 30, color: theme.extension<GoColors>()!.text))),
-                      CoachHelpButton(semanticLabel: 'Ask GoHard about this split', onPressed: () {}, hintId: 'render', hintText: 'Not sure how many days to train? Ask GoHard about this split.'),
+                      CoachHelpButton(semanticLabel: 'Ask GoHard about this split', onPressed: () {}),
                     ]),
-                    const SizedBox(height: 200),
+                    CoachHint(hintId: 'render', text: 'Need help choosing a split?', onAsk: () {}),
+                    const SizedBox(height: 100),
                     const Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.end, children: [
                       CoachAvatar(size: 40, guide: CoachGuide.leon), CoachAvatar(size: 40, guide: CoachGuide.leona),
                       CoachFigure(height: 140), CoachFigure(height: 140, guide: CoachGuide.leona),

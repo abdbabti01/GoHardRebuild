@@ -31,6 +31,7 @@ void main() {
 
       // --- Template path: availability, the suggestion, a preview that creates nothing.
       await j.tapKey('today-create-plan');
+      await j.tapKey('plan-path-direct'); // I know what I want
       await j.tapKey('plan-path-template');
       await j.chooseDays(Journey.daysIncludingToday());
       await j.shot('p01-builder-availability');
@@ -148,6 +149,7 @@ void main() {
 
     // --- Build my own rotating, ongoing plan; it replaces the first only after an explicit confirmation.
     await j.tapText('Create a different plan');
+    await j.tapKey('plan-path-direct'); // I know what I want
     await j.tapKey('plan-path-custom');
     await j.chooseDays(Journey.daysIncludingToday());
     await j.tapKey('builder-next');
@@ -202,6 +204,7 @@ void main() {
     await j.shot('p16-today-rotation-dark');
     await j.tapKey('nav-train');
     await j.tapText('Create a different plan');
+    await j.tapKey('plan-path-direct'); // I know what I want
     await j.tapKey('plan-path-template');
     await j.chooseDays(Journey.daysIncludingToday());
     await j.tapKey('builder-next');
