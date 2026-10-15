@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "reviewNote": "Written for GoHard against the sources listed here (ACSM 2009 position stand; Ramos-Campo et al. 2024 meta-analysis). It awaits review by the owner and a qualified coach. General information about exercises and plan structure, not medical advice or a diagnosis.",
+  "reviewNote": "Source-checked by the developer on 15 Oct 2026 against the sources listed here. Not reviewed by a qualified coach or clinician: it awaits review. Recommendations come from these sources with their conditions; exercise cues and muscle lists are general, widely taught descriptions and were not checked against a source. General information, not individual advice, medical advice or a diagnosis.",
   "sources": [
     {
       "id": "acsm-2009",
       "title": "American College of Sports Medicine position stand. Progression models in resistance training for healthy adults",
-      "publisher": "Medicine & Science in Sports & Exercise, 2009 (American College of Sports Medicine)",
+      "publisher": "Medicine & Science in Sports & Exercise, 2009; 41(3):687–708 (American College of Sports Medicine)",
       "url": "https://pubmed.ncbi.nlm.nih.gov/19204579/"
     },
     {
@@ -13,6 +13,24 @@
       "title": "Efficacy of Split Versus Full-Body Resistance Training on Strength and Muscle Growth: A Systematic Review With Meta-Analysis",
       "publisher": "Journal of Strength and Conditioning Research, 2024; 38(7):1330–1340 (Ramos-Campo et al.)",
       "url": "https://pubmed.ncbi.nlm.nih.gov/38595233/"
+    },
+    {
+      "id": "acsm-2026",
+      "title": "American College of Sports Medicine Position Stand. Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults: An Overview of Reviews",
+      "publisher": "Medicine & Science in Sports & Exercise, 2026; 58(4):851–872 (American College of Sports Medicine; Currier et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41843416/"
+    },
+    {
+      "id": "schoenfeld-2016-rest",
+      "title": "Longer Interset Rest Periods Enhance Muscle Strength and Hypertrophy in Resistance-Trained Men",
+      "publisher": "Journal of Strength and Conditioning Research, 2016; 30(7):1805–1812 (Schoenfeld et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/26605807/"
+    },
+    {
+      "id": "schoenfeld-2019-frequency",
+      "title": "How many times per week should a muscle be trained to maximize muscle hypertrophy? A systematic review and meta-analysis of studies examining the effects of resistance training frequency",
+      "publisher": "Journal of Sports Sciences, 2019; 37(11):1286–1295 (Schoenfeld, Grgic, Krieger)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/30558493/"
     }
   ],
   "splits": [
@@ -83,7 +101,7 @@
       "templateId": "push-pull",
       "name": "Push / Pull, legs included",
       "summary": "Two kinds of day: push days carry the knee-dominant leg work, pull days the hip-dominant work.",
-      "organisation": "Push A, Pull A, Push B, Pull B. Squats, leg press and split squats sit on push days; Romanian deadlifts, deadlifts, hip thrusts and leg curls on pull days.",
+      "organisation": "Push A, Pull A, Push B, Pull B. Squats, leg press, split squats and leg extensions sit on push days; Romanian deadlifts, deadlifts, hip thrusts and leg curls on pull days.",
       "days": "4 days a week, or 2 (Push A and Pull A)",
       "benefits": [
         "Legs are trained on every day, split by movement, instead of one separate leg day.",
@@ -152,10 +170,10 @@
       ],
       "limitations": [
         "No starting exercises: you add every exercise yourself.",
-        "Balancing the muscle groups across the week is up to you."
+        "Balancing the muscle groups across the week is up to you. ACSM's 2026 position stand recommends healthy adults train at least twice a week, working all major muscle groups."
       ],
       "sources": [
-        "acsm-2009"
+        "acsm-2026"
       ]
     }
   ],
@@ -270,7 +288,7 @@
         "Easy to load in small steps."
       ],
       "limitations": [
-        "Demanding, so it usually gets the longest rest.",
+        "Demanding; many people rest longer between sets of it.",
         "Takes practice to learn."
       ],
       "alternatives": [
@@ -298,7 +316,7 @@
         "Trains the shoulders and triceps while standing."
       ],
       "limitations": [
-        "Heavy loads are harder to manage than in the bench press.",
+        "Usually done with less weight than the bench press.",
         "Needs comfortable overhead shoulder movement."
       ],
       "alternatives": [
@@ -352,7 +370,7 @@
         "Trains the hamstrings and glutes through a long range."
       ],
       "limitations": [
-        "Range depends on hamstring flexibility; going lower by rounding the back defeats the purpose."
+        "How far you can lower depends on hamstring flexibility; the cue is to stop before your back rounds."
       ],
       "alternatives": [
         "dumbbell-romanian-deadlift",
@@ -375,7 +393,7 @@
         "Press back up without locking your knees hard."
       ],
       "benefits": [
-        "Trains the legs heavily with little balance or back demand."
+        "Trains the legs with heavy loads, little balance demand and your back supported."
       ],
       "limitations": [
         "Needs a machine.",
@@ -403,7 +421,7 @@
         "Press up and slightly in."
       ],
       "benefits": [
-        "Each arm works on its own, so both sides do equal work."
+        "Each arm moves its own dumbbell."
       ],
       "limitations": [
         "Getting heavy dumbbells into position takes practice."
@@ -430,8 +448,8 @@
         "Press up until your arms are straight."
       ],
       "benefits": [
-        "Each arm works on its own.",
-        "No rack or spotter needed to fail safely: the dumbbells can be lowered to the sides."
+        "Each arm moves its own dumbbell.",
+        "Needs no rack."
       ],
       "limitations": [
         "Heavy dumbbells are awkward to get into position."
@@ -514,7 +532,7 @@
         "Stand up by pushing through your whole foot."
       ],
       "benefits": [
-        "A simple way to learn the squat with one dumbbell."
+        "A common way to practise the squat with one dumbbell."
       ],
       "limitations": [
         "The weight you can hold limits how heavy it can get."
@@ -591,7 +609,7 @@
         "Lower under control back to shoulder height."
       ],
       "benefits": [
-        "Each arm works on its own.",
+        "Each arm moves its own dumbbell.",
         "Seated, the back support makes it steadier."
       ],
       "limitations": [
@@ -1025,7 +1043,7 @@
         "Push up through your front foot; do both sides."
       ],
       "benefits": [
-        "Trains one leg at a time with light weights."
+        "Trains one leg at a time, so it is demanding even with light weights."
       ],
       "limitations": [
         "Balance takes practice.",
@@ -1384,7 +1402,7 @@
         "Lower until your arms are straight."
       ],
       "benefits": [
-        "Works the forearms more than a regular curl."
+        "The palms-facing grip also works the forearm muscles."
       ],
       "limitations": [
         "Trains a small muscle group only."
@@ -1461,7 +1479,7 @@
         "Trains the trunk to stay still while the limbs move, with no equipment."
       ],
       "limitations": [
-        "Easy to rush; it works only when done slowly."
+        "Easy to rush; it is meant to be done slowly and with control."
       ],
       "alternatives": [
         "plank",
@@ -1474,9 +1492,10 @@
     {
       "id": "sets-reps",
       "term": "3 × 8–12",
-      "text": "Three sets of 8 to 12 repetitions. A repetition (rep) is one complete movement; a set is a group of reps done without stopping. Rest, then do the next set.",
+      "text": "Three sets of 8 to 12 repetitions. A repetition (rep) is one complete movement; a set is a group of reps done without stopping. Rest, then do the next set. For beginners, ACSM's 2009 position stand recommended loads you can lift 8–12 times for 1–3 sets per exercise; its 2026 update advises healthy adults to do at least two sets per exercise.",
       "sources": [
-        "acsm-2009"
+        "acsm-2009",
+        "acsm-2026"
       ]
     },
     {
@@ -1488,23 +1507,26 @@
     {
       "id": "rep-range",
       "term": "Rep range",
-      "text": "The lowest and highest number of reps you aim for in a set, such as 8–12. Choose a weight you can lift for at least the lowest number with good form.",
+      "text": "The lowest and highest number of reps you aim for in a set, such as 8–12. Choose a weight you can lift for at least the lowest number with good form. Sets do not have to go to failure: ACSM's 2026 update found training to failure did not add to strength or muscle gains, and notes that stopping about 2–3 reps short can be enough effort.",
       "sources": [
-        "acsm-2009"
+        "acsm-2009",
+        "acsm-2026"
       ]
     },
     {
       "id": "rest",
       "term": "Rest",
-      "text": "The time between sets. The ACSM position stand suggests at least 2–3 minutes for heavier multi-joint lifts and 1–2 minutes for lighter accessory exercises.",
+      "text": "The time between sets. ACSM's 2009 position stand suggested, for strength training, at least 2–3 minutes for heavier multi-joint lifts such as squats and 1–2 minutes for lighter accessory exercises; for muscle-size training at beginner and intermediate level, 1–2 minutes; and shorter rests (under 1–2 minutes) for muscular-endurance work. ACSM's 2026 update found rests under or over 1 minute made no consistent difference to strength gains across reviews, while one study in trained men found 3 minutes gave more strength and muscle than 1 minute. Rest long enough to repeat your target reps with good form.",
       "sources": [
-        "acsm-2009"
+        "acsm-2009",
+        "acsm-2026",
+        "schoenfeld-2016-rest"
       ]
     },
     {
       "id": "split",
       "term": "Split",
-      "text": "How training is divided across the week. A full-body plan trains everything each session; a split gives different days different areas, such as upper and lower body. A 2024 meta-analysis found no significant difference in strength or muscle gains between split and full-body routines when weekly volume was the same.",
+      "text": "How training is divided across the week. A full-body plan trains everything each session; a split gives different days different areas, such as upper and lower body. A 2024 meta-analysis (14 studies, 392 healthy adults) found no significant difference in strength or muscle gains between split and full-body routines when weekly training volume was the same, so neither is better in general; it concluded people can choose by preference.",
       "sources": [
         "ramos-campo-2024"
       ]
@@ -1524,24 +1546,28 @@
     {
       "id": "compound-accessory",
       "term": "Compound and accessory",
-      "text": "A compound (multi-joint) exercise moves several joints and works several large muscles, such as a squat or a bench press. An accessory exercise usually moves one joint and works a smaller muscle, such as a curl. Compound lifts usually come first, while you are fresh.",
+      "text": "A compound (multi-joint) exercise moves several joints and works several large muscles, such as a squat or a bench press. An accessory exercise usually moves one joint and works a smaller muscle, such as a curl. Compound lifts usually come first, while you are fresh: ACSM's 2009 position stand recommends multi-joint before single-joint exercises, and its 2026 update found exercises done early in a session gained more strength (exercise order did not affect muscle size).",
       "sources": [
-        "acsm-2009"
+        "acsm-2009",
+        "acsm-2026"
       ]
     },
     {
       "id": "progression",
       "term": "Progression",
-      "text": "Making training gradually harder so your body keeps adapting. The ACSM position stand suggests increasing the load by about 2–10% once you can do one or two reps more than your target in two sessions in a row.",
+      "text": "Making training gradually harder so you keep adapting, for example more weight, reps or sets. For training at a set rep target, ACSM's 2009 position stand suggested adding about 2–10% to the load (less for small-muscle exercises, more for large ones) once you can do 1–2 reps more than the target on two consecutive sessions. ACSM's 2026 update notes training helps even without progression; increasing the challenge matters mainly for continued longer-term gains.",
       "sources": [
-        "acsm-2009"
+        "acsm-2009",
+        "acsm-2026"
       ]
     },
     {
       "id": "volume",
       "term": "Weekly volume",
-      "text": "How many sets a muscle group gets in a week. Comparisons between routines are fairest when weekly volume is the same.",
+      "text": "How many sets a muscle group gets in a week. ACSM's 2026 update linked more weekly sets (10 or more per muscle group) with more muscle growth, with smaller returns at higher volumes. When weekly sets were the same, how many days they were spread over made no significant difference to muscle growth in a 2019 meta-analysis, and split versus full-body made no significant difference in a 2024 one.",
       "sources": [
+        "acsm-2026",
+        "schoenfeld-2019-frequency",
         "ramos-campo-2024"
       ]
     }
