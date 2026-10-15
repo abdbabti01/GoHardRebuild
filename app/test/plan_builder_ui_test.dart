@@ -14,6 +14,7 @@ import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
+import 'package:gohard_rebuild/features/coach/guide.dart';
 import 'package:gohard_rebuild/features/plans/builder/plan_builder_screen.dart';
 import 'package:gohard_rebuild/features/plans/plan_draft.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
@@ -28,6 +29,7 @@ const _day = '2026-10-14';
 const _owner = 'one';
 const _oldId = '0b9f3c6e-1d2a-4c5b-9e8f-7a6b5c4d3e2f';
 final _templates = PlanTemplates.parse(File('assets/data/plan-templates.json').readAsStringSync());
+final _guide = CoachGuideContent.parse(File('assets/data/coach-guide.json').readAsStringSync());
 final _catalog = [for (final c in jsonDecode(File('../api/src/GoHard.Api/Data/exercise-catalog.json').readAsStringSync()) as List) CatalogExercise(c as Json)]
   ..sort((a, b) => a.name.compareTo(b.name));
 
@@ -58,6 +60,7 @@ class _Install {
       profileProvider.overrideWith((ref) => Stream.value(Profile({...authFor(_owner)['profile'] as Json, 'loadUnit': unit}))),
       catalogProvider.overrideWith((ref) => Stream.value(catalog ?? _catalog)),
       planTemplatesProvider.overrideWith((ref) async => _templates),
+      coachGuideProvider.overrideWith((ref) async => _guide),
     ];
   }
 
@@ -111,6 +114,14 @@ Future<void> _tap(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
   await tester.tap(f);
   await tester.pumpAndSettle();
+}
+
+/// Create plan › I know what I want › a template or my own.
+Future<void> _path(WidgetTester tester, String path) async {
+  await _tap(tester, 'plan-path-direct');
+  // The two routes appear below the cards: on a small screen with large text, further down the page.
+  await tester.scrollUntilVisible(find.byKey(Key('plan-path-$path')), 200, scrollable: find.byType(Scrollable).first);
+  await _tap(tester, 'plan-path-$path');
 }
 
 Future<void> _tapText(WidgetTester tester, String text) async {
@@ -176,7 +187,7 @@ void main() {
     await _seedPrimary(tester, install, _activePlan());
     final c = await _launch(tester, install);
 
-    await _tap(tester, 'plan-path-template');
+    await _path(tester, 'template');
     expect(find.text('Step 1 of 4 · Availability'.toUpperCase()), findsOneWidget);
     expect(find.bySemanticsLabel('Step 1 of 4: Availability'), findsOneWidget);
     await _tap(tester, 'days-4');
@@ -233,7 +244,7 @@ void main() {
 
   testWidgets('custom path: name workouts, assign weekdays with a repeat, add exercises and activate', (tester) async {
     await _launch(tester, install);
-    await _tap(tester, 'plan-path-custom');
+    await _path(tester, 'custom');
     await _tap(tester, 'builder-next'); // Mon, Wed, Fri
 
     // Three workouts laid out from the start date: Wednesday gets the first.
@@ -276,7 +287,7 @@ void main() {
   testWidgets('the workout editor: rename, duplicate, delete, reorder by buttons, add, replace, remove and reorder exercises, and prescriptions with a target in lb stored as kg',
       (tester) async {
     final c = await _launch(tester, install, unit: 'lb');
-    await _tap(tester, 'plan-path-template');
+    await _path(tester, 'template');
     await _tap(tester, 'days-4');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'builder-next');
@@ -355,7 +366,7 @@ void main() {
   testWidgets('copy a workout from another of your plans and from this plan', (tester) async {
     await _seedPrimary(tester, install, _activePlan());
     final c = await _launch(tester, install);
-    await _tap(tester, 'plan-path-custom');
+    await _path(tester, 'custom');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'workout-copy');
@@ -374,7 +385,7 @@ void main() {
 
   testWidgets('picker: search ignores case and hyphens, filters by muscle and equipment, and a new exercise of your own is chosen and found again', (tester) async {
     final c = await _launch(tester, install);
-    await _tap(tester, 'plan-path-custom');
+    await _path(tester, 'custom');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'exercise-add-0');
@@ -434,7 +445,7 @@ void main() {
 
   testWidgets('the draft is saved on every change and survives a theme change, leaving the screen and a process restart', (tester) async {
     final c = await _launch(tester, install);
-    await _tap(tester, 'plan-path-template');
+    await _path(tester, 'template');
     await _tap(tester, 'days-5');
     await _tap(tester, 'builder-next');
     await _type(tester, 'plan-title', 'Five days');
@@ -475,13 +486,13 @@ void main() {
     await _tap(tester, 'open');
     await _tap(tester, 'plan-draft-discard');
     await _tapText(tester, 'Discard it');
-    expect(find.byKey(const Key('plan-path-template')), findsOneWidget);
+    expect(find.byKey(const Key('plan-path-guided')), findsOneWidget);
     expect(await tester.runAsync(() => install.records(Kinds.planBuilder)), isEmpty);
   });
 
   testWidgets('Save draft leaves without creating or activating a plan', (tester) async {
     final c = await _launch(tester, install);
-    await _tap(tester, 'plan-path-template');
+    await _path(tester, 'template');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'builder-next');
@@ -496,7 +507,7 @@ void main() {
 
   testWidgets('an empty structure is labelled Draft and cannot be activated', (tester) async {
     await _launch(tester, install);
-    await _tap(tester, 'plan-path-template');
+    await _path(tester, 'template');
     await _tap(tester, 'builder-next');
     await _tap(tester, 'template-with-exercises');
     expect(find.textContaining('The plan stays a draft until every scheduled workout has an exercise'), findsOneWidget);
@@ -510,7 +521,7 @@ void main() {
 
   testWidgets('a rotating plan reviews its cycle with projected dates that carry on across the week', (tester) async {
     await _launch(tester, install);
-    await _tap(tester, 'plan-path-template');
+    await _path(tester, 'template');
     await _tap(tester, 'days-2'); // Mon and Thu
     await _tap(tester, 'builder-next');
     await _tap(tester, 'template-push-pull-legs');
@@ -602,6 +613,179 @@ void main() {
     expect(await tester.runAsync(install.commands), isEmpty);
   });
 
+  testWidgets('Guide me: answers on Availability, then one suggestion and two alternatives on Structure; Why and Compare work offline; Use this starting plan makes a draft only',
+      (tester) async {
+    final c = await _launch(tester, install);
+    expect(find.text('Help me choose a starting plan.'), findsOneWidget);
+    expect(find.text('Choose a template or build my own.'), findsOneWidget);
+    await _tap(tester, 'plan-path-guided');
+    expect(find.bySemanticsLabel('Step 1 of 4: Availability'), findsOneWidget, reason: 'the same builder, the same progress');
+    expect(find.byKey(const Key('experience-new')), findsOneWidget, reason: 'experience is asked straight away');
+    await _tap(tester, 'days-4');
+    await _tap(tester, 'experience-new');
+    await _tap(tester, 'builder-next');
+
+    expect(find.bySemanticsLabel('Step 2 of 4: Structure'), findsOneWidget);
+    expect(find.byKey(const Key('coach-help-structure')), findsOneWidget);
+    expect(find.byTooltip('Ask GoHard about this split'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('guide-suggestion')), matching: find.text('Upper / Lower')), findsOneWidget);
+    expect(find.textContaining('Suggested because you selected four training days and gym equipment.'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('guide-suggestion')), matching: find.text('Mon Upper B · Tue Lower B · Thu Upper A · Fri Lower A')), findsOneWidget);
+    expect(find.byKey(const Key('guide-alt-push-pull')), findsOneWidget);
+    expect(find.byKey(const Key('guide-alt-full-body')), findsOneWidget);
+    expect(find.byKey(const Key('plan-title')), findsNothing, reason: 'nothing to edit until a starting plan is chosen');
+    expect(find.text('Choose a starting plan to continue.'), findsOneWidget);
+    expect((await _draft(tester, c))!.workouts, isEmpty);
+
+    await _tap(tester, 'guide-why');
+    expect(find.byKey(const Key('guide-why-sheet')), findsOneWidget);
+    expect(find.text('QUICK GUIDE · BUILT IN'), findsOneWidget);
+    expect(find.textContaining('Upper-body and lower-body days alternate.'), findsOneWidget);
+    await _tap(tester, 'guide-why-ask'); // Ask GoHard opens over the page; opening it sends nothing
+    expect(find.byKey(const Key('guide-why-sheet')), findsNothing);
+
+    await _tap(tester, 'guide-compare');
+    for (final id in ['upper-lower', 'push-pull', 'full-body']) {
+      expect(find.byKey(Key('guide-compare-$id')), findsOneWidget);
+    }
+    expect(find.text('Upper / Lower · Suggested'), findsOneWidget);
+    Navigator.of(tester.element(find.byKey(const Key('guide-compare-sheet')))).pop();
+    await tester.pumpAndSettle();
+
+    await _tap(tester, 'guide-use-upper-lower');
+    expect(find.byKey(const Key('plan-title')), findsOneWidget);
+    expect(find.textContaining('Using this starting plan'), findsOneWidget);
+    final d = (await _draft(tester, c))!;
+    expect((d.guided, d.templateId, d.experience), (true, 'upper-lower', 'new'));
+    expect([for (final w in d.workouts) w.name], ['Upper A', 'Lower A', 'Upper B', 'Lower B']);
+    expect(await tester.runAsync(() => install.records(Kinds.plan)), isEmpty, reason: 'a draft, nothing created');
+    expect(await tester.runAsync(install.commands), isEmpty, reason: 'nothing activated or sent');
+
+    await _tap(tester, 'builder-next');
+    expect(find.byTooltip('Ask GoHard about this workout'), findsOneWidget);
+    await _tap(tester, 'exercise-info-0-0');
+    expect(find.byKey(const Key('exercise-info-sheet')), findsOneWidget);
+    expect(find.text('Chest, Front of shoulders, Triceps'), findsOneWidget);
+    expect(find.textContaining('A main exercise in Upper A'), findsOneWidget);
+    expect(find.text('Dumbbell bench press, Push-up, Incline dumbbell press'), findsOneWidget);
+    expect(find.text('3 × 6–10 · 150 s rest'), findsWidgets);
+    expect(find.text("3 sets of 6 to 10 reps, with 150 seconds' rest between sets."), findsOneWidget);
+    await _tap(tester, 'exercise-info-replace');
+    await _type(tester, 'exercise-search', 'dumbbell bench');
+    await _tap(tester, 'exercise-dumbbell-bench-press');
+    expect(find.text('1. Dumbbell bench press'), findsOneWidget, reason: 'Replace… is the editor’s own replace');
+    expect(await tester.runAsync(install.commands), isEmpty);
+  });
+
+  testWidgets('Guide me: changing the answers after customising shows what would change and replaces nothing until applied', (tester) async {
+    final c = await _launch(tester, install);
+    await _tap(tester, 'plan-path-guided');
+    await _tap(tester, 'days-4');
+    await _tap(tester, 'builder-next');
+    await _tap(tester, 'guide-use-upper-lower');
+    await _tap(tester, 'builder-next');
+    await _tap(tester, 'workout-menu-0');
+    await _tap(tester, 'workout-rename-0');
+    await _type(tester, 'workout-name-field', 'Upper heavy');
+    await _tap(tester, 'workout-name-save');
+    await _tap(tester, 'builder-back');
+    await _tap(tester, 'builder-back');
+    await _tap(tester, 'days-3');
+    await _tap(tester, 'builder-next');
+
+    expect(find.byKey(const Key('guide-answers-changed')), findsOneWidget);
+    expect(find.textContaining('Your answers now suggest Full Body'), findsOneWidget);
+    expect([for (final w in (await _draft(tester, c))!.workouts) w.name], ['Upper heavy', 'Lower A', 'Upper B', 'Lower B']);
+    await _tap(tester, 'guide-use-full-body');
+    expect(find.text('Replace your workouts?'), findsOneWidget);
+    expect(find.textContaining('Now: Upper heavy, Lower A, Upper B, Lower B'), findsOneWidget);
+    expect(find.textContaining('After: Full body A, Full body B, Full body C'), findsOneWidget);
+    await _tapText(tester, 'Cancel');
+    expect([for (final w in (await _draft(tester, c))!.workouts) w.name], ['Upper heavy', 'Lower A', 'Upper B', 'Lower B']);
+    await _tap(tester, 'guide-use-full-body');
+    await _tapText(tester, 'Replace them');
+    expect([for (final w in (await _draft(tester, c))!.workouts) w.name], ['Full body A', 'Full body B', 'Full body C']);
+  });
+
+  testWidgets('I know what I want keeps the template and custom routes; a custom exercise says Added by you without technique claims', (tester) async {
+    await _launch(tester, install);
+    expect(find.byKey(const Key('plan-path-template')), findsNothing);
+    await _path(tester, 'custom');
+    expect(find.bySemanticsLabel('Step 1 of 4: Availability'), findsOneWidget);
+    await _tap(tester, 'builder-next');
+    expect(find.byKey(const Key('guide-suggestion')), findsNothing, reason: 'no guided panel on this route');
+    await _tap(tester, 'builder-next');
+    await _tap(tester, 'exercise-add-0');
+    await _type(tester, 'exercise-search', 'Landmine press');
+    await _tap(tester, 'exercise-create-custom');
+    await _tap(tester, 'custom-category-Shoulders');
+    await _tap(tester, 'custom-equipment-Barbell');
+    await _tap(tester, 'custom-save');
+    expect(find.byTooltip('About Landmine press'), findsOneWidget);
+    await _tap(tester, 'exercise-info-0-0');
+    expect(find.textContaining('Added by you'), findsOneWidget);
+    expect(find.text('Technique'), findsNothing);
+    expect(find.text('Shoulders · Barbell'), findsOneWidget);
+    expect(find.byKey(const Key('exercise-info-ask')), findsOneWidget);
+  });
+
+  testWidgets('Guide me, Compare, Why and exercise information fit 320 px at twice the text size', (tester) async {
+    await _launch(tester, install, size: const Size(320, 640), textScale: 2);
+    expect(tester.takeException(), isNull, reason: 'create plan');
+    await _tap(tester, 'plan-path-guided');
+    await _tap(tester, 'builder-next');
+    expect(tester.takeException(), isNull, reason: 'suggestion');
+    await _tap(tester, 'guide-compare');
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'compare');
+    Navigator.of(tester.element(find.byKey(const Key('guide-compare-sheet')))).pop();
+    await tester.pumpAndSettle();
+    await _tap(tester, 'guide-why');
+    expect(tester.takeException(), isNull, reason: 'why');
+    Navigator.of(tester.element(find.byKey(const Key('guide-why-sheet')))).pop();
+    await tester.pumpAndSettle();
+    await _tap(tester, 'guide-use-full-body');
+    expect(tester.takeException(), isNull, reason: 'structure');
+    await _tap(tester, 'builder-next');
+    expect(tester.takeException(), isNull, reason: 'workouts');
+    await _tap(tester, 'exercise-info-0-0');
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'exercise information');
+  });
+
+  for (final accent in Accent.values) {
+    for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+      testWidgets('${accent.name} ${mode.name}: Create plan, the guided suggestion and its sheets meet contrast, target and label guidelines', (tester) async {
+        final handle = tester.ensureSemantics();
+        install.appearance
+          ..accent = accent
+          ..mode = mode;
+        await _launch(tester, install, size: const Size(390, 3000));
+        Future<void> check(String where) async {
+          await expectLater(tester, meetsGuideline(textContrastGuideline), reason: where);
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline), reason: where);
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline), reason: where);
+        }
+
+        await check('create plan');
+        await _tap(tester, 'plan-path-guided');
+        await _tap(tester, 'builder-next');
+        await check('suggestion');
+        await _tap(tester, 'guide-why');
+        await check('why');
+        Navigator.of(tester.element(find.byKey(const Key('guide-why-sheet')))).pop();
+        await tester.pumpAndSettle();
+        await _tap(tester, 'guide-use-upper-lower');
+        await _tap(tester, 'builder-next');
+        await _tap(tester, 'exercise-info-0-0');
+        await check('exercise information');
+        handle.dispose();
+      });
+    }
+  }
+
   for (final accent in Accent.values) {
     for (final mode in [ThemeMode.light, ThemeMode.dark]) {
       testWidgets('${accent.name} ${mode.name}: every builder step meets contrast, target and label guidelines', (tester) async {
@@ -610,7 +794,7 @@ void main() {
           ..accent = accent
           ..mode = mode;
         await _launch(tester, install, size: const Size(390, 3000));
-        await _tap(tester, 'plan-path-template');
+        await _path(tester, 'template');
         for (var step = 1; step <= 4; step++) {
           await expectLater(tester, meetsGuideline(textContrastGuideline), reason: 'step $step');
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline), reason: 'step $step');
@@ -624,7 +808,7 @@ void main() {
 
   testWidgets('every step fits 320 px at twice the text size, and the keyboard never hides the field or the action', (tester) async {
     await _launch(tester, install, size: const Size(320, 640), textScale: 2);
-    await _tap(tester, 'plan-path-template');
+    await _path(tester, 'template');
     for (var step = 1; step <= 4; step++) {
       expect(tester.takeException(), isNull, reason: 'step $step');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -3000));

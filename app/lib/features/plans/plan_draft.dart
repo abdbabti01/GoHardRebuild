@@ -109,6 +109,9 @@ class PlanDraft {
 
   /// template | custom
   String get path => j['path'] as String;
+
+  /// Started from "Guide me": the answers lead to a suggested starting plan on Structure. Absent in older drafts.
+  bool get guided => j['guided'] == true;
   int get step => j['step'] as int? ?? 0;
   set step(int v) => j['step'] = v;
   Json get preferences => j['preferences'] as Json;
@@ -147,8 +150,8 @@ class PlanDraft {
 
   static Json _emptySchedule(String mode) => {'mode': mode, 'pattern': <Json>[], 'cycle': <String>[], 'trainingDays': <int>[], 'cycleAnchor': 0};
 
-  static PlanDraft fresh({required String today, required String path}) => PlanDraft({
-        'version': 1, 'mode': 'new', 'planId': SyncEngine.newId(), 'path': path, 'step': 0,
+  static PlanDraft fresh({required String today, required String path, bool guided = false}) => PlanDraft({
+        'version': 1, 'mode': 'new', 'planId': SyncEngine.newId(), 'path': path, 'step': 0, if (guided) 'guided': true,
         'preferences': {'days': [1, 3, 5], 'equipment': 'full_gym', 'timeBudgetMinutes': null, 'experience': null},
         'templateId': path == 'custom' ? 'custom' : null, 'title': path == 'custom' ? 'My plan' : '',
         'workouts': <Json>[], 'schedule': _emptySchedule('fixed'), 'startDate': today, 'durationWeeks': 8, 'timeBudgetMinutes': null, 'effectiveDate': null,

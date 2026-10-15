@@ -8,6 +8,8 @@ import '../../../core/units.dart';
 import '../../../core/widgets.dart';
 import '../../../data/models.dart';
 import '../../../data/sync.dart';
+import '../../coach/coach_contract.dart';
+import '../../coach/guide_sheets.dart';
 import '../../workout/workout_flow.dart';
 import '../plan_draft.dart';
 import '../plan_repository.dart';
@@ -15,6 +17,9 @@ import '../plan_repository.dart';
 /// Applies one edit to the draft being built, then saves it on the phone. [edits] marks a change to the workouts'
 /// contents, after which choosing another template asks before replacing them.
 typedef DraftChange = void Function(void Function(PlanDraft d) edit, {bool edits});
+
+/// Opens Ask GoHard about part of the plan being built; the builder supplies the draft and how to apply to it.
+typedef AskAbout = void Function(String label, CoachFocus focus, {String? templateId, String? workoutId, String? occurrenceKey, String? catalogKey});
 
 /// "3 × 8–12 · 90 s rest", "3 × 40 s · 60 s rest", or "No target".
 String rxText(Prescription e) {
@@ -174,11 +179,14 @@ class _RxFormState extends State<_RxForm> {
 /// One workout's exercises with their prescriptions: tap to edit sets, reps, rest and an optional target; move up or
 /// down with buttons (no dragging needed); replace or remove from the menu; add from the exercise picker.
 class ExerciseListEditor extends ConsumerWidget {
-  const ExerciseListEditor({super.key, required this.draft, required this.workoutId, required this.index, required this.change});
+  const ExerciseListEditor({super.key, required this.draft, required this.workoutId, required this.index, required this.change, this.ask});
   final PlanDraft draft;
   final String workoutId;
   final int index;
   final DraftChange change;
+
+  /// Ask GoHard from an exercise's information; without it Ask GoHard opens with no draft to change.
+  final AskAbout? ask;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -192,6 +200,17 @@ class ExerciseListEditor extends ConsumerWidget {
       change((d) => d.setPrescription(workoutId, e.occurrenceKey,
           sets: rx.sets, repsMin: rx.repsMin, repsMax: rx.repsMax, seconds: rx.seconds, restSeconds: rx.rest, targetLoadKg: rx.loadKg, notes: rx.notes), edits: true);
     }
+
+    Future<void> replace(Prescription e) async {
+      final picked = await push<CatalogExercise>(context, ExercisePicker(title: 'Replace ${e.name}'));
+      if (picked != null) change((d) => d.replaceExercise(workoutId, e.occurrenceKey, picked), edits: true);
+    }
+
+    void about(Prescription e) => showExerciseInfo(context, exercise: e, workoutName: w.name, onReplace: () => replace(e), onAsk: () {
+          final label = '${e.name} · ${w.name}';
+          if (ask != null) return ask!(label, CoachFocus.exercise, workoutId: workoutId, occurrenceKey: e.occurrenceKey, catalogKey: e.catalogKey);
+          openAskGoHard(context, CoachContext(label: label, focus: CoachFocus.exercise, workoutId: workoutId, occurrenceKey: e.occurrenceKey, catalogKey: e.catalogKey));
+        });
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (list.isEmpty)
@@ -226,6 +245,7 @@ class ExerciseListEditor extends ConsumerWidget {
                 ),
               ),
             ),
+            IconButton(key: Key('exercise-info-$wi-$ei'), tooltip: 'About ${e.name}', icon: const Icon(Icons.info_outline, size: 20), onPressed: () => about(e)),
             IconButton(key: Key('exercise-up-$wi-$ei'), tooltip: 'Move ${e.name} up', icon: const Icon(Icons.arrow_upward, size: 20),
                 onPressed: ei == 0 ? null : () => change((d) => d.moveExercise(workoutId, e.occurrenceKey, -1), edits: true)),
             IconButton(key: Key('exercise-down-$wi-$ei'), tooltip: 'Move ${e.name} down', icon: const Icon(Icons.arrow_downward, size: 20),
@@ -235,8 +255,7 @@ class ExerciseListEditor extends ConsumerWidget {
               onSelected: (v) async {
                 if (v == 'edit') return edit(e);
                 if (v == 'remove') return change((d) => d.removeExercise(workoutId, e.occurrenceKey), edits: true);
-                final picked = await push<CatalogExercise>(context, ExercisePicker(title: 'Replace ${e.name}'));
-                if (picked != null) change((d) => d.replaceExercise(workoutId, e.occurrenceKey, picked), edits: true);
+                return replace(e);
               },
               itemBuilder: (_) => [
                 PopupMenuItem(key: Key('exercise-edit-$wi-$ei'), value: 'edit', child: const Text('Edit sets, reps and rest')),
@@ -258,9 +277,10 @@ class ExerciseListEditor extends ConsumerWidget {
 // ------------------------------------------------------------------ step 3: workouts
 
 class WorkoutsStep extends ConsumerWidget {
-  const WorkoutsStep({super.key, required this.draft, required this.change});
+  const WorkoutsStep({super.key, required this.draft, required this.change, this.ask});
   final PlanDraft draft;
   final DraftChange change;
+  final AskAbout? ask;
 
   Future<void> _copyFrom(BuildContext context, WidgetRef ref) async {
     final others = [for (final p in ref.read(planListProvider)) if (p.id != draft.planId && p.workouts.isNotEmpty) p];
@@ -350,7 +370,7 @@ class WorkoutsStep extends ConsumerWidget {
               ),
             ]),
             const SizedBox(height: 4),
-            Padding(padding: const EdgeInsets.only(right: 10), child: ExerciseListEditor(draft: draft, workoutId: w.id, index: wi, change: change)),
+            Padding(padding: const EdgeInsets.only(right: 10), child: ExerciseListEditor(draft: draft, workoutId: w.id, index: wi, change: change, ask: ask)),
           ]),
         ),
       ],

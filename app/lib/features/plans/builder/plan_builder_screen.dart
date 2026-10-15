@@ -7,6 +7,8 @@ import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../data/models.dart';
 import '../../../data/sync.dart';
+import '../../coach/coach_avatar.dart';
+import '../../coach/coach_contract.dart';
 import '../../shell/home_shell.dart';
 import '../plan_actions.dart' show runPlanDecision;
 import '../plan_draft.dart';
@@ -18,8 +20,9 @@ import 'workout_editor.dart';
 
 const _stepNames = ['Availability', 'Structure', 'Workouts', 'Review'];
 
-/// Train › Plan › Create plan: choose "Start from a template" or "Build my own", then the four-step builder. A plan
-/// in progress (saved on the phone after every change) can be continued or discarded.
+/// Train › Plan › Create plan: "Guide me" (answers, then a suggested starting plan) or "I know what I want" (a
+/// template or my own), both into the same four-step builder. A plan in progress (saved on the phone after every
+/// change) can be continued or discarded.
 class CreatePlanScreen extends ConsumerStatefulWidget {
   const CreatePlanScreen({super.key});
   @override
@@ -27,7 +30,7 @@ class CreatePlanScreen extends ConsumerStatefulWidget {
 }
 
 class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
-  bool _loaded = false;
+  bool _loaded = false, _direct = false;
   PlanDraft? _saved, _open;
 
   @override
@@ -38,8 +41,8 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
     });
   }
 
-  Future<void> _begin(String path) async {
-    final d = PlanDraft.fresh(today: ref.read(todayKeyProvider), path: path);
+  Future<void> _begin(String path, {bool guided = false}) async {
+    final d = PlanDraft.fresh(today: ref.read(todayKeyProvider), path: path, guided: guided);
     await ref.read(planRepositoryProvider).saveBuilderDraft(d);
     if (mounted) setState(() => _open = d);
   }
@@ -75,6 +78,24 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
       ] else ...[
         Text('Both ways make a plan of your own that you can change at any time.', style: context.sansStyle(16, color: context.c.secondary)),
         const SizedBox(height: 16),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          for (final (i, (key, label, about, icon, selected, onTap)) in [
+            ('plan-path-guided', 'Guide me', 'Help me choose a starting plan.', Icons.explore_outlined, false, () => _begin('template', guided: true)),
+            ('plan-path-direct', 'I know what I want', 'Choose a template or build my own.', Icons.tune, _direct, () => setState(() => _direct = true)),
+          ].indexed) ...[
+            if (i > 0) const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                ChoiceCard(key: Key(key), label: label, semanticLabel: '$label. $about', leading: Icon(icon), selected: selected, onTap: onTap),
+                const SizedBox(height: 6),
+                ExcludeSemantics(child: Text(about, textAlign: TextAlign.center, style: context.caption)),
+              ]),
+            ),
+          ],
+        ]),
+      ],
+      if (saved == null && _direct) ...[
+        const SizedBox(height: 18),
         GroupCard(children: [
           GroupRow(
             key: const Key('plan-path-template'), icon: Icons.view_week_outlined, title: 'Start from a template',
@@ -139,6 +160,9 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
   bool _busy = false, _saveFailed = false;
   String? _error;
 
+  /// Bumped when Ask GoHard replaces the draft, so the step's fields rebuild from it.
+  int _applied = 0;
+
   /// Edit and duplicate start at Structure: the plan already says when and how you train.
   int get _first => draft.mode == 'new' ? 0 : 1;
   int get _step => draft.step.clamp(_first, 3);
@@ -158,22 +182,38 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     });
   }
 
-  /// Leaving Availability lays out the structure for the days chosen: the template (suggested, or the one picked),
-  /// or the user's first workout names. A template whose workouts were already edited is never re-copied.
+  /// Leaving Availability lays out the structure for the days chosen ([layOutStructure]).
   Future<void> _next() async {
     if (_step == 0) {
       final templates = await ref.read(planTemplatesProvider.future);
       if (!mounted) return;
-      _change((d) {
-        if (d.path == 'template' && d.templateId != 'custom' && d.j['edited'] != true) {
-          d.applyTemplate(templates, d.templateId ?? suggestTemplate(d.days.length, experience: d.experience).templateId, withExercises: withExercises(d));
-        } else if (d.workouts.isEmpty) {
-          d.setCustomStructure(defaultWorkoutNames(d.days.length));
-          if (d.title.trim().isEmpty) d.title = 'My plan';
-        }
-      });
+      _change((d) => layOutStructure(d, templates));
     }
     _change((d) => d.step = _step + 1);
+  }
+
+  /// An accepted Ask GoHard suggestion: an ordinary saved edit of this draft, never activated.
+  Future<void> _applyFromCoach(PlanDraft next) async {
+    final j = copyJson(next.j); // [next] may be this very draft
+    _change((d) => d.j
+      ..clear()
+      ..addAll(j), edits: true);
+    setState(() => _applied++);
+  }
+
+  void _ask(String label, CoachFocus focus, {String? templateId, String? workoutId, String? occurrenceKey, String? catalogKey}) => openAskGoHard(
+      context,
+      CoachContext(
+          label: label, focus: focus, templateId: templateId ?? draft.templateId, workoutId: workoutId, occurrenceKey: occurrenceKey, catalogKey: catalogKey,
+          draft: () => draft, applyToDraft: _applyFromCoach));
+
+  /// The split being chosen or used, by name, for Ask GoHard.
+  String get _splitLabel {
+    final t = ref.read(planTemplatesProvider).value;
+    final id = draft.templateId;
+    if (t != null && id != null && id != 'custom') return t.byId(id).name;
+    if (t != null && draft.guided && draft.workouts.isEmpty) return t.byId(suggestTemplate(draft.days.length).templateId).name;
+    return draft.title.trim().isEmpty ? 'My plan' : draft.title.trim();
   }
 
   void _back() => _step <= _first ? Navigator.maybePop(context) : _change((d) => d.step = _step - 1);
@@ -181,6 +221,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
   /// What stops the user leaving this step, in words.
   List<String> get _blocking {
     if (_step == 0) return draft.days.isEmpty ? const ['Choose at least one day.'] : const [];
+    if (_step == 1 && draft.guided && draft.workouts.isEmpty) return const ['Choose a starting plan to continue.'];
     return [for (final code in draft.errors) PlanRules.describe(code)];
   }
 
@@ -286,25 +327,42 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
         if (!didPop) _change((d) => d.step = _step - 1);
       },
       child: AppPage(
-        key: ValueKey('builder-step-$step'),
+        key: ValueKey('builder-step-$step-$_applied'),
         title: title,
         bottom: _bottom(),
         children: [
-          Semantics(
-            key: const Key('builder-progress'), label: progress, container: true,
-            child: ExcludeSemantics(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Overline('Step ${step + 1} of 4 · ${_stepNames[step]}'),
-                const SizedBox(height: 8),
-                ProgressRail((step + 1) / 4, label: progress, height: 6),
-              ]),
+          Row(children: [
+            Expanded(
+              child: Semantics(
+                key: const Key('builder-progress'), label: progress, container: true,
+                child: ExcludeSemantics(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Overline('Step ${step + 1} of 4 · ${_stepNames[step]}'),
+                    const SizedBox(height: 8),
+                    ProgressRail((step + 1) / 4, label: progress, height: 6),
+                  ]),
+                ),
+              ),
             ),
-          ),
+            // A reserved slot beside the progress: never over fields, actions or the keyboard.
+            if (step == 1) ...[
+              const SizedBox(width: 8),
+              CoachHelpButton(
+                key: const Key('coach-help-structure'), semanticLabel: 'Ask GoHard about this split', hintId: 'builder.structure', hintText: 'Need help choosing a split?',
+                onPressed: () => _ask(_splitLabel, CoachFocus.split)),
+            ],
+            if (step == 2) ...[
+              const SizedBox(width: 8),
+              CoachHelpButton(
+                key: const Key('coach-help-workouts'), semanticLabel: 'Ask GoHard about this workout',
+                onPressed: () => _ask(draft.title.trim().isEmpty ? _splitLabel : draft.title.trim(), CoachFocus.workout)),
+            ],
+          ]),
           const SizedBox(height: 18),
           switch (step) {
             0 => PreferencesStep(draft: draft, change: _change),
-            1 => StructureStep(draft: draft, change: _change, today: today, startLocked: widget.editing != null && !widget.editing!.isDraft),
-            2 => WorkoutsStep(draft: draft, change: _change),
+            1 => StructureStep(draft: draft, change: _change, today: today, startLocked: widget.editing != null && !widget.editing!.isDraft, ask: _ask),
+            2 => WorkoutsStep(draft: draft, change: _change, ask: _ask),
             _ => ReviewStep(draft: draft, change: _change, editing: widget.editing),
           },
         ],
