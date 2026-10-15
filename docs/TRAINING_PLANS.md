@@ -193,9 +193,13 @@ none materialized). Every accepted revise increments the plan revision, which al
 
 ## Starter templates
 
-Editable starting routines, not prescriptions. They contain no weights. Sets, rep ranges and rest follow the ACSM
-position stand on resistance-training progression (2009): 2–4 sets; 6–10 reps for the main compound lifts with
-about 2–3 minutes' rest; 8–15 reps for accessories with 60–90 seconds. A 2024 systematic review and meta-analysis
+Editable starting routines, not prescriptions. They contain no weights. Sets, rep ranges and rest were chosen from
+the ACSM position stand on resistance-training progression (2009): 2–4 sets; 6–10 reps for the main compound lifts
+with about 2–3 minutes' rest (the stand's suggestion for heavy multi-joint lifts when training for strength); 8–15
+reps for accessories with 60–90 seconds (its 1–2 minutes for assistance exercises and for muscle size in novice and
+intermediate lifters). The 2026 ACSM stand (PMID 41843416) found rest under or over a minute made no consistent
+difference to strength gains, so these are starting values to adjust, not rules. Sources and conditions:
+`docs/COACH_SOURCES.md`. A 2024 systematic review and meta-analysis
 (PubMed 38595233) found no significant difference between split and full-body training in strength or hypertrophy
 when weekly volume was matched, so the app suggests a structure by availability and never calls one split best.
 
