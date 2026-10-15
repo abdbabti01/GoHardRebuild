@@ -74,6 +74,63 @@ Before any real migration: back up the database, record `… -- readiness` outpu
   `NSCameraUsageDescription` text in `ios/Runner/Info.plist`; Android adds the `CAMERA` permission, with the camera
   marked not required so a phone without one can still install.
 
+## API verification and its throwaway accounts
+
+`powershell -ExecutionPolicy Bypass -File .\scripts\verify-api.ps1 -BaseUrl <api> [-Coach]` checks a local or
+hosted API end to end with an account it creates (`verify-<16 hex>@example.test`, display name `API Verify`) and
+deletes. Feature checks and cleanup are reported separately; the last line before the verdict is always `Cleanup: …`.
+
+- **Record.** Before registering, the email is printed and appended to `scripts\.verify-accounts.log` (git-ignored,
+  this PC only); the account id is added when registration answers, the cleanup outcome at the end. One line per
+  event: UTC time, base URL, email, id, outcome. No password, token or key is printed or written anywhere.
+- **Cleanup always runs** (a `finally` block): after success, after a failing check, after an exception, and after
+  Ctrl+C (PowerShell 5.1 runs `finally` on Ctrl+C). It deletes through `DELETE /api/v1/account` with the password,
+  then requires `/me` and sign-in to answer 401. If the token is missing (registration answer lost) or expired, it
+  signs in again with the stored credentials first. If registration never created an account, it reports "nothing to
+  clean". It cannot run if the process is killed (Task Manager, closed window, power loss, a second Ctrl+C during
+  cleanup): the log then names the account.
+- **Exit code:** 0 all passed; 1 a check failed but the account was deleted; 2 cleanup failed and the account was left.
+  On 2 the script prints the exact delete command.
+- **Delete helper:** `.\scripts\delete-verify-account.ps1 -BaseUrl <api> -Email verify-…@example.test` signs in with
+  the fixed verification password and deletes exactly that account (exact email only; patterns, wildcards and
+  non-`verify-<hex>@example.test` addresses are refused), then checks `/me` and sign-in answer 401. The fixed password
+  is acceptable only because each email carries 64 random bits and the account lives for one run.
+- **Debug:** `-FailAfter <start of a check name>` throws right after that check to prove cleanup still runs.
+- **Ask GoHard:** where `coach.ask` is declared, one contextual question with a small Upper/Lower draft (live model
+  call, marked `[LIVE]`); `-Coach` runs five (follow-up with history, exercise explanation, a proposal-inviting
+  question where "no proposal" is only INFO, and a workout that is not in the draft). Every answer must be `kind=ai`,
+  non-empty, ≤ 1200 chars, cite only `coach-guide.json` source IDs, and any proposal may only name workouts and
+  occurrence keys that were sent. `COACH_BUSY` (503) and `COACH_LIMIT` (429) are reported as `BUSY` and stop further
+  coach calls without failing; the daily cap is 40 per account. Where `coach.ask` is absent the run says
+  `NOT CONFIGURED` (not a failure) and `-Coach` only checks the request shape is accepted (503 `COACH_UNAVAILABLE`).
+
+### Open task: one orphan verification account on the hosted testing API
+
+A manual verification on 15 Oct 2026 left one **empty** account on `https://gohardrebuild-production.up.railway.app`.
+Its email was never printed, so it cannot be found from outside: there is no admin or user-listing endpoint, the
+only deletion route (`DELETE /api/v1/account`) needs that account's own sign-in, and this PC has no database or
+Railway access. Guessing emails or mass deletion must not be attempted.
+
+Known: email `verify-<8 hex>@example.test`, password `verify password 1`, display name `Verify` (the script uses
+`API Verify`), created 15 Oct 2026 between about 16:30 and 16:40 UTC, no data written.
+
+For an operator with database access (Railway → Postgres → Data/psql):
+
+```sql
+SELECT u."Id", u."Email", u."CreatedAtUtc"
+FROM "Users" u
+WHERE u."Email" ~ '^verify-[0-9a-f]{8}@example\.test$' AND u."DisplayName" = 'Verify'
+  AND u."CreatedAtUtc" BETWEEN '2026-10-15 16:25' AND '2026-10-15 16:45'
+  AND NOT EXISTS (SELECT 1 FROM "Operations" o WHERE o."UserId" = u."Id")
+  AND NOT EXISTS (SELECT 1 FROM "FoodEntries" f WHERE f."UserId" = u."Id")
+  AND NOT EXISTS (SELECT 1 FROM "Plans" p WHERE p."UserId" = u."Id")
+  AND NOT EXISTS (SELECT 1 FROM "Workouts" w WHERE w."UserId" = u."Id");
+```
+
+Only if this returns **exactly one** row: either run `.\scripts\delete-verify-account.ps1 -BaseUrl <api> -Email <that
+email>` (the normal deletion path; preferred), or in SQL `BEGIN; DELETE FROM "Users" WHERE "Id" = '<that id>';` —
+check it reports `DELETE 1`, then `COMMIT;` (owned rows cascade). Zero or several rows: stop and change nothing.
+
 ## Secrets
 
 `infrastructure/.env.local` (database password) and `api/src/GoHard.Api/appsettings.Local.json` (connection string,
