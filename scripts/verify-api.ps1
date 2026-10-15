@@ -49,7 +49,9 @@ function Status($err) { try { [int]$err.Exception.Response.StatusCode } catch { 
 function Api($method, $path, $body, $token) {
     $headers = @{}; if ($token) { $headers.Authorization = "Bearer $token" }
     $args = @{ Method = $method; Uri = "$BaseUrl$path"; Headers = $headers; TimeoutSec = 30 }
-    if ($null -ne $body) { $args.Body = ($body | ConvertTo-Json -Depth 8); $args.ContentType = 'application/json' }
+    # As UTF-8 bytes: PowerShell 5.1 would send a string body in the legacy codepage, so "–" or "…" (in model answers
+    # sent back as history) became invalid UTF-8 and the API rightly answered 400.
+    if ($null -ne $body) { $args.Body = [Text.Encoding]::UTF8.GetBytes(($body | ConvertTo-Json -Depth 8)); $args.ContentType = 'application/json; charset=utf-8' }
     Invoke-RestMethod @args
 }
 
@@ -264,7 +266,7 @@ function Ask($name, $question, $context, $history, [scriptblock]$more) {   # one
         } else { 'no proposal' }
         $extra = if ($more) { & $more $d }
         "$($d.answer.Length) chars, sources [$(@($d.sources) -join ', ')], $p$(if ($extra) { "; $extra" })"
-    }
+    } | Out-Null   # only the data is returned: a caller reads .answer from it
     if ($r.ok) { $r.data }
 }
 if ($capabilities -contains 'coach.ask') {
@@ -274,7 +276,7 @@ if ($capabilities -contains 'coach.ask') {
     $q1 = 'Is this Upper/Lower split a good fit for 3 days a week, and what does it trade off?'
     $a1 = Ask 'Contextual split question with an Upper/Lower draft' $q1 $splitContext @()
     if ($Coach) {
-        if ($a1) { Ask 'Follow-up using history' 'Which of the two workouts should I do first this week, and why?' $splitContext @(@{ role = 'user'; text = $q1 }, @{ role = 'assistant'; text = $a1.answer }) | Out-Null }
+        if ($a1) { Ask 'Follow-up using history' 'Which of the two workouts should I do first this week, and why?' $splitContext @(@{ role = 'user'; text = $q1 }, @{ role = 'assistant'; text = [string]$a1.answer }) | Out-Null }
         else { Write-Host '  SKIP  [LIVE] Follow-up using history - the first question gave no answer' -ForegroundColor Yellow }
         Ask 'Exercise explanation (focus=exercise, bench-press in Upper A)' 'How do I do this exercise well, and what does it train?' `
             @{ label = 'Bench press'; focus = 'exercise'; templateId = 'upper-lower'; workoutId = $wu; occurrenceKey = 'e1'; catalogKey = 'bench-press'; draft = $coachDraft; draftRevision = 'verify-1' } @() | Out-Null

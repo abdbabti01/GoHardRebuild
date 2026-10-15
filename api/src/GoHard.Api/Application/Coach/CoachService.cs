@@ -26,7 +26,8 @@ public sealed class CoachOptions
     public string Effort { get; set; } = "low";
     public string BaseUrl { get; set; } = "https://api.anthropic.com/";
     public string GroqBaseUrl { get; set; } = "https://api.groq.com/openai/v1";
-    public int MaxTokens { get; set; } = 4000;
+    /// <summary>Room for a short answer, a proposal and low-effort reasoning. Kept small: Groq's gpt-oss-120b allows 8K tokens a minute.</summary>
+    public int MaxTokens { get; set; } = 1500;
     public int TimeoutSeconds { get; set; } = 20;
     public int DailyLimit { get; set; } = 40;
     /// <summary>Empty: Data/coach-guide.json next to the app.</summary>
@@ -183,7 +184,14 @@ public sealed class CoachService
 
         var text = reply.Answer.Trim();
         if (text.Length == 0) return new(CoachStatus.Unavailable);
-        if (text.Length > MaxAnswer) text = text[..(MaxAnswer - 1)].TrimEnd() + "…";
+        if (text.Length > MaxAnswer)
+        {
+            // After the last full sentence that fits; else at a word boundary; a hard cut only for text with neither.
+            var cut = text[..(MaxAnswer - 1)];
+            var end = cut.LastIndexOfAny(['.', '!', '?']);
+            var space = cut.LastIndexOf(' ');
+            text = end > MaxAnswer / 2 ? cut[..(end + 1)] : (space > MaxAnswer / 2 ? cut[..space] : cut).TrimEnd() + "…";
+        }
 
         var known = guide.Sources.Select(s => s.Id).ToHashSet();
         var sources = reply.Sources.Where(known.Contains).Distinct().ToList();
@@ -228,7 +236,7 @@ public sealed class CoachService
         You are Ask GoHard, the AI training assistant in the GoHard workout app. You answer one question about the person's training plan draft.
 
         How to answer:
-        - Plain text, no Markdown headings, no links, at most 1200 characters. Usually 2 to 5 short sentences or a few short lines.
+        - Plain text, no Markdown headings, no links, at most 120 words. Usually 2 to 5 short sentences or a few short lines.
         - Keep three things distinct and say which is which when it matters: general exercise information, facts about this draft (only what the draft data shows), and optional suggestions.
         - Give practical benefits and limitations. Never call one split or exercise the best for everyone.
         - Base general statements on the reviewed references when they cover the topic; otherwise make clear it is general guidance.
@@ -262,12 +270,13 @@ public sealed class CoachService
         var focusKey = c?.CatalogKey;
         var alternatives = guide.Exercises.FirstOrDefault(e => e.CatalogKey == focusKey)?.Alternatives ?? [];
         var wanted = new[] { focusKey }.OfType<string>().Concat(inDraft).Concat(alternatives).Distinct().ToList();
-        var exercises = wanted.Select(k => guide.Exercises.FirstOrDefault(e => e.CatalogKey == k)).OfType<CoachExercise>().Take(8).ToList();
+        var exercises = wanted.Select(k => guide.Exercises.FirstOrDefault(e => e.CatalogKey == k)).OfType<CoachExercise>().Take(5).ToList();
         var question = r.Question!.Trim();
-        var terms = guide.Terms.OrderByDescending(t => question.Contains(t.Term, StringComparison.OrdinalIgnoreCase) ||
-            question.Contains(t.Id.Replace('-', ' '), StringComparison.OrdinalIgnoreCase)).Take(6).ToList();
+        // Only the terms the question names: the prompt stays small (Groq's per-minute token budget).
+        var terms = guide.Terms.Where(t => question.Contains(t.Term, StringComparison.OrdinalIgnoreCase) ||
+            question.Contains(t.Id.Replace('-', ' '), StringComparison.OrdinalIgnoreCase)).Take(3).ToList();
 
-        var refs = new StringBuilder("<reviewed_references>\nReviewed by the GoHard team. Trusted.\n\nSources (cite only these IDs):\n");
+        var refs = new StringBuilder("<reviewed_references>\nSource-checked reference text from the GoHard guide (docs/COACH_SOURCES.md). Trusted.\n\nSources (cite only these IDs):\n");
         foreach (var s in guide.Sources) refs.AppendLine($"- {s.Id}: {s.Title}. {s.Publisher}.");
         foreach (var s in guide.Splits.Where(s => s.TemplateId == c?.TemplateId))
             refs.AppendLine($"\nSplit {s.TemplateId} ({s.Name}): {s.Summary} {s.Organisation} Days: {s.Days}.\n  Benefits: {string.Join(" ", s.Benefits)}\n  Limitations: {string.Join(" ", s.Limitations)}\n  Sources: {string.Join(", ", s.Sources)}");

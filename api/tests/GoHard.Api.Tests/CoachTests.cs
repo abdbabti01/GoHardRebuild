@@ -236,10 +236,16 @@ public partial class CoachTests(PostgresFixture pg)
     [Theory, InlineData("Anthropic"), InlineData("Groq")]
     public async Task A_long_answer_is_cut_and_an_unreadable_one_is_unavailable(string provider)
     {
-        var fake = new FakeAnthropic { Respond = _ => Task.FromResult(Message(Structured(new string('a', 3000), []))) };
+        var answer = new string('a', 3000);
+        var fake = new FakeAnthropic { Respond = _ => Task.FromResult(Message(Structured(answer, []))) };
         await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = Using(provider), Provider = fake.Handler() };
         var a = await Account.RegisterAsync(api);
+        // No sentence or word to cut at: a hard cut, marked.
         Assert.Equal(CoachService.MaxAnswer, (await Post(a, Ask())).Body.GetProperty("answer").GetString()!.Length);
+        // Sentences: cut after the last whole sentence that fits, never mid-word.
+        answer = string.Concat(Enumerable.Repeat("Rest a little longer between heavy sets. ", 60));
+        var cut = (await Post(a, Ask())).Body.GetProperty("answer").GetString()!;
+        Assert.True(cut.Length <= CoachService.MaxAnswer && cut.EndsWith("sets."), cut[^20..]);
 
         foreach (var reply in new[] { Message("not json at all"), Message(Structured("Cut off", []), "max_tokens"), Message("{}", "refusal"), Message(Structured("   ", [])) })
         {

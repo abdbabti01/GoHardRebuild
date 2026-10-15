@@ -62,7 +62,7 @@ public partial class CoachTests
         Assert.Equal("openai/gpt-oss-120b", sent["model"]!.GetValue<string>());
         Assert.Equal(new[] { "include_reasoning", "max_completion_tokens", "messages", "model", "reasoning_effort", "response_format" }, sent.Select(p => p.Key).Order(StringComparer.Ordinal));
         foreach (var absent in new[] { "stream", "tools", "tool_choice", "max_tokens", "reasoning_format", "logprobs", "n" }) Assert.False(sent.ContainsKey(absent), absent);
-        Assert.Equal((4000, "low", false), (sent["max_completion_tokens"]!.GetValue<int>(), sent["reasoning_effort"]!.GetValue<string>(), sent["include_reasoning"]!.GetValue<bool>()));
+        Assert.Equal((1500, "low", false), (sent["max_completion_tokens"]!.GetValue<int>(), sent["reasoning_effort"]!.GetValue<string>(), sent["include_reasoning"]!.GetValue<bool>()));
 
         var format = sent["response_format"]!;
         Assert.Equal(("json_schema", "coach_reply", true), (format["type"]!.GetValue<string>(), format["json_schema"]!["name"]!.GetValue<string>(), format["json_schema"]!["strict"]!.GetValue<bool>()));
