@@ -3,6 +3,7 @@ import 'dart:ui' show SemanticsFlag;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/theme.dart';
@@ -51,6 +52,16 @@ class _Page extends StatelessWidget {
           ]),
         ),
       );
+}
+
+/// Records anything sent: a hint must never reach the network.
+class _RecordingTransport implements Transport {
+  final calls = <String>[];
+  @override
+  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) {
+    calls.add('$method $path');
+    throw const TransportFailure('no network in this test');
+  }
 }
 
 Finder get _bubble => find.byKey(const Key('coach-hint'));
@@ -194,6 +205,74 @@ void main() {
       expect(find.ancestor(of: find.byKey(Key('coach-avatar-${g.name}')), matching: find.byType(ExcludeSemantics)), findsWidgets, reason: 'the previews are named by their card, not the picture');
     }
     handle.dispose();
+  });
+
+  testWidgets('a closed hint stays closed when its page is rebuilt, covered and uncovered, or left and come back to', (tester) async {
+    final tab = ValueNotifier(0);
+    addTearDown(tab.dispose);
+    // Two "tabs": leaving the first disposes its page, so coming back builds a fresh hint state.
+    await _pump(tester, ValueListenableBuilder<int>(valueListenable: tab, builder: (_, i, _) => i == 0 ? const _Page() : const Scaffold(body: Text('Other tab'))));
+    expect(_bubble, findsOneWidget);
+    await tester.tap(find.byTooltip('Close hint'));
+    await tester.pumpAndSettle();
+    expect(_bubble, findsNothing);
+
+    await _openAppearance(tester); // covers the page, then rebuilds it as current again
+    await tester.tap(find.byKey(const Key('coach-leona'))); // a preference change rebuilds every listener
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(_bubble, findsNothing, reason: 'route current again and prefs changed');
+
+    tab.value = 1;
+    await tester.pumpAndSettle();
+    tab.value = 0;
+    await tester.pumpAndSettle();
+    expect(find.text('Upper / Lower'), findsOneWidget);
+    expect(_bubble, findsNothing, reason: 'switching away and back does not bring it back');
+  });
+
+  testWidgets('a hint, its help button and its close send nothing over the network', (tester) async {
+    final net = _RecordingTransport();
+    await pumpApp(tester, [coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())), transportProvider.overrideWithValue(net)], home: const _Page());
+    expect(_bubble, findsOneWidget);
+    await tester.tap(find.byTooltip('Ask GoHard about this split'));
+    await tester.tap(find.byTooltip('Close hint'));
+    await tester.pumpAndSettle();
+    expect(net.calls, isEmpty);
+  });
+
+  testWidgets('the Leon and Leona previews: large, labelled 48 px targets in six themes, at 390 px and at 320 px with twice the text', (tester) async {
+    for (final (size, scale, preview) in [(const Size(390, 900), 1.0, 64.0), (const Size(320, 900), 2.0, 56.0)]) {
+      for (final accent in Accent.values) {
+        for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+          final handle = tester.ensureSemantics();
+          final appearance = AppearanceStore(MemorySecretStore())
+            ..accent = accent
+            ..mode = mode;
+          await _pump(tester, const _Page(hintId: null), appearance: appearance, size: size, textScale: scale);
+          await _openAppearance(tester);
+          await tester.scrollUntilVisible(find.byKey(const Key('coach-leona')), 100, scrollable: find.byType(Scrollable).last);
+          await tester.pumpAndSettle();
+          final why = '${accent.name} ${mode.name} ${size.width} @$scale';
+          for (final g in CoachGuide.values) {
+            final card = tester.getRect(find.byKey(Key('coach-${g.name}')));
+            expect(card.width, greaterThanOrEqualTo(Targets.minimum), reason: why);
+            expect(card.height, greaterThanOrEqualTo(Targets.minimum), reason: why);
+            expect(card.left, greaterThanOrEqualTo(0), reason: why);
+            expect(card.right, lessThanOrEqualTo(size.width), reason: why);
+            final art = find.descendant(of: find.byKey(Key('coach-${g.name}')), matching: find.byType(CoachAvatar));
+            expect(tester.getSize(art), Size.square(preview), reason: why);
+            expect(tester.getSemantics(find.byKey(Key('coach-${g.name}'))), isSemantics(label: '${g.label}, ${g.animal}', isButton: true, isSelected: g == CoachGuide.leon, hasSelectedState: true, isInMutuallyExclusiveGroup: true, hasTapAction: true, isFocusable: true, hasFocusAction: true, hasEnabledState: false), reason: why);
+          }
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          expect(tester.takeException(), isNull, reason: why);
+          handle.dispose();
+          await tester.pumpWidget(const SizedBox());
+        }
+      }
+    }
   });
 
   testWidgets('six themes at 320 px and twice the text: Appearance and an open hint fit', (tester) async {
