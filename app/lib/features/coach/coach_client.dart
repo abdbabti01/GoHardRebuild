@@ -12,7 +12,8 @@ import 'coach_proposal.dart';
 
 /// Why a question got no answer. `unreached`: the request did not get through; the app cannot tell a phone without
 /// a connection from a server in trouble, so it never says "Offline". `interrupted`: the app closed while it waited.
-enum AskProblem { unavailable, limit, unreached, invalid, interrupted }
+/// `busy`: the AI provider is rate limited or overloaded (503 COACH_BUSY), not the person's own limit (429 COACH_LIMIT).
+enum AskProblem { unavailable, limit, unreached, invalid, interrupted, busy }
 
 class AskFailure implements Exception {
   const AskFailure(this.problem);
@@ -38,6 +39,7 @@ class CoachClient {
     if (r.status == 429) throw const AskFailure(AskProblem.limit);
     if (r.status == 400) throw const AskFailure(AskProblem.invalid);
     final d = r.data;
+    if (r.status == 503 && d is Map && d['code'] == 'COACH_BUSY') throw const AskFailure(AskProblem.busy);
     if (!r.ok || d is! Map || d['requestId'] != request['requestId'] || d['answer'] is! String || (d['answer'] as String).trim().isEmpty) {
       throw const AskFailure(AskProblem.unavailable);
     }
