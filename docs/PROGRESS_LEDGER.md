@@ -934,3 +934,29 @@ then the driver lost the VM service after the test ("Service has disappeared"). 
 service before/at startup (no app step failed), passed on the third after an emulator reboot. plan needed three
 attempts (attach hang; then registration timed out right after the reboot while the emulator network came up).
 CI `ci`: success on `81f03f3`, `2ce933f`, `6874338`. Live Groq: see below.
+
+**Live Groq (hosted testing API, `GOHARD_Coach__Provider=Groq`, model `openai/gpt-oss-120b`, key set by the owner in
+Railway; never seen here).** After `main` reached `1cdf1e0`, `/capabilities` declared `coach.ask`.
+
+- First `verify-api.ps1 -Coach`: split question PASS (but exactly 1200 chars: cut), follow-up 400 (the script sent the
+  model's "–"/"…" in PowerShell 5.1's legacy codepage — fixed by sending UTF-8 bytes), third question `COACH_BUSY`
+  (Groq 8K tokens/minute). Fixed in `95d5430`/`dc2cd79`: completion budget 1500, lean prompt (bounded by a test),
+  ≤ 120-word answers cut after a whole sentence, "source-checked" label. Final run: split question (872 chars,
+  sources ramos-campo-2024, acsm-2009), follow-up (736), exercise explanation (567) all PASS; a fourth question in the
+  same minute was `COACH_BUSY` (plan limit, handled); account deleted. Food search was 503 once from USDA in between
+  (intermittent upstream; passed on the next run).
+- Real app on the emulator against the hosted API (`journey_coach_live_test`, run with `flutter drive` directly because
+  `test-android.ps1` deliberately refuses non-local APIs; questions paced 25 s apart): passed on the fifth attempt —
+  earlier attempts were journey faults (driver needed GOHARD_SHOT_DIR; answer counting in a lazy list; reopened
+  conversation not scrolled). Real split answer and follow-up (`l01`, `l02`, answers keep general info / draft facts /
+  optional suggestion apart), exercise answer (`l03`), a real server-validated proposal "Replace Back squat with Goblet
+  squat in Full body A" previewed with before→after, 3 × 6–10 · 150 s, Draft only (`l04`), Keep current, a draft edit
+  (5 sets), the preview flagged "Your draft changed since this suggestion" (`l05`), rebuilt, applied to the draft
+  (`l06`, nothing activated), undone with the newer 5-set edit kept (`l07`). Each run's account was deleted (204).
+  Not confirmed: on the reopened Ask screen the journey's first two Send taps did not register (likely the keyboard
+  moving the composer in real time while the test pumps); to check by hand on the iPhone.
+- Invalid/unauthorised IDs against the live model: the model did not propose any in these runs; the server rule that
+  drops them is covered by fixture tests (17 bad-proposal cases), not by a live attempt.
+
+IPA: run 17 (`1cdf1e0`) failed on GitHub's runner (timed out downloading the Flutter SDK, before any build step);
+run 18 from `95d5430` succeeded — the final client code (later commits change API, scripts and docs only).

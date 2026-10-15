@@ -22,14 +22,44 @@ void main() {
     Finder prefix(String p) => find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith(p));
     // ignore: avoid_print
     void log(String s) => print('GOHARD_LIVE: $s');
-    Future<void> ask(String question, int answers) async {
-      await j.type('ask-input', question);
-      await j.tapKey('ask-send');
-      for (var i = 0; i < 240 && prefix('ask-answer-').evaluate().length < answers && find.byKey(const Key('ask-problem')).evaluate().isEmpty; i++) {
+    // Paced like a person (Groq allows this model 8K tokens a minute); a "busy" answer is retried once after its wait.
+    Future<void> realWait(int seconds) async {
+      await Future<void>.delayed(Duration(seconds: seconds));
+      await tester.pump();
+    }
+    // The conversation builds lazily, so earlier answers can be out of the tree: wait for an answer key not seen before.
+    final seen = <Key>{};
+    Iterable<Key> answerKeys() => prefix('ask-answer-').evaluate().map((e) => e.widget.key!);
+    bool fresh() => answerKeys().any((k) => !seen.contains(k));
+    Future<void> waitAnswer(int answers) async {
+      for (var i = 0; i < 240 && !fresh() && find.byKey(const Key('ask-problem')).evaluate().isEmpty; i++) {
         await tester.pump(const Duration(milliseconds: 250));
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+    }
+    Future<void> ask(String question, int answers) async {
+      if (answers > 1) await realWait(25);
+      seen.addAll(answerKeys());
+      await j.type('ask-input', question);
+      // Send is disabled for a moment while a reopened conversation loads from the phone; tap until it really went.
+      bool went() => find.byKey(const Key('ask-sending')).evaluate().isNotEmpty || fresh() || find.byKey(const Key('ask-problem')).evaluate().isNotEmpty;
+      for (var attempt = 0; attempt < 4 && !went(); attempt++) {
+        if (attempt > 0) log('send tap did not register (attempt $attempt; Ask screens open: ${find.byKey(const Key('ask-context')).evaluate().length})');
+        await j.settle(4);
+        await tester.tap(find.byKey(const Key('ask-send')).hitTestable().last, warnIfMissed: false);
+        await j.settle(2);
+      }
+      await waitAnswer(answers);
+      if (find.byKey(const Key('ask-problem')).evaluate().isNotEmpty && find.textContaining('busy').evaluate().isNotEmpty) {
+        log('busy once (Groq per-minute limit); retrying after 25 s');
+        await j.shot('l00-live-busy');
+        await realWait(25);
+        await j.tapKey('ask-retry');
+        await waitAnswer(answers);
       }
       if (find.byKey(const Key('ask-problem')).evaluate().isNotEmpty) fail('Ask GoHard answered with a problem state. On screen: ${j.onScreen}');
-      expect(prefix('ask-answer-').evaluate().length, answers, reason: 'a real answer arrived');
+      if (!fresh()) await j.shot('l99-live-no-answer');
+      expect(fresh(), isTrue, reason: 'a real answer arrived (answer $answers of this journey). On screen: ${j.onScreen}');
       await j.settle(4);
     }
 
@@ -81,7 +111,14 @@ void main() {
       await j.type('rx-sets', '5');
       await j.tapKey('rx-save');
       await j.tapKey('coach-help-workouts');
-      await j.tap(prefix('ask-preview-').first);
+      await j.settle(6);
+      // The reopened conversation builds lazily from the top: scroll it until the suggestion's card is built.
+      for (var i = 0; i < 20 && prefix('ask-preview-').hitTestable().evaluate().isEmpty; i++) {
+        await tester.drag(find.byType(Scrollable).hitTestable().first, const Offset(0, -350));
+        await j.settle(2);
+      }
+      await tester.tap(prefix('ask-preview-').hitTestable().first);
+      await j.settle(4);
       await j.waitFor(find.byKey(const Key('ask-draft-changed')), what: 'the stale-draft notice');
       await j.shot('l05-live-proposal-stale');
       await j.tapKey('ask-rebuild');
