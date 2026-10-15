@@ -171,7 +171,8 @@ void main() {
     await j.waitFor(find.byKey(const Key('cycle-step-0')), what: 'the cycle overview');
     await j.shot('p12-train-rotation');
 
-    // --- Today: the rotation's next workout; a skip moves on exactly one step, to the next workout today.
+    // --- Today: the rotation's next workout; a skip moves on exactly one step. Today keeps the skipped workout as
+    // Skipped today and names the next one as next in the rotation, never as due today.
     await j.tapKey('nav-today');
     await j.waitFor(find.text('Push day'), what: 'the rotation\'s first workout due today');
     await j.shot('p13-today-rotation-due');
@@ -179,8 +180,11 @@ void main() {
     await j.tapKey('occasion-skip');
     await j.confirmWith('Skip this workout');
     await j.closeSheet();
-    await j.waitFor(find.text('Pull day'), what: 'the next workout in the cycle after one skip');
-    expect(find.text('Push day'), findsNothing);
+    await j.waitFor(find.text('Skipped today'), what: 'the skipped workout kept on Today');
+    expect(find.text('Push day'), findsOneWidget);
+    expect(find.textContaining('Next in your rotation: Pull day'), findsOneWidget);
+    expect(find.text('Due today'), findsNothing);
+    expect(find.byKey(const Key('today-train-now')), findsOneWidget);
     await j.shot('p14-today-after-skip');
 
     // --- Dark captures of the same states.
@@ -194,7 +198,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('cycle-step-0')));
     await j.shot('p15-train-rotation-dark');
     await j.tapKey('nav-today');
-    await j.waitFor(find.text('Pull day'));
+    await j.waitFor(find.text('Skipped today'));
     await j.shot('p16-today-rotation-dark');
     await j.tapKey('nav-train');
     await j.tapText('Create a different plan');
