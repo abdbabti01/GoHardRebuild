@@ -329,14 +329,9 @@ class _CoachSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final coach = ref.watch(coachPrefsProvider);
     final set = ref.read(coachPrefsProvider.notifier);
-    final across = MediaQuery.textScalerOf(context).scale(10) <= 20;
-    final cards = [
-      for (final g in CoachGuide.values)
-        ChoiceCard(
-          key: Key('coach-${g.name}'), label: g.label, semanticLabel: '${g.label}, ${g.animal}', selected: g == coach.guide, onTap: () => set.setGuide(g),
-          leading: CoachAvatar(size: 36, guide: g),
-        ),
-    ];
+    // Side by side, picture above name, while the names fit; at large text one under another, picture beside name.
+    final across = MediaQuery.textScalerOf(context).scale(10) <= 15;
+    final cards = [for (final g in CoachGuide.values) _CoachChoice(g, selected: g == coach.guide, across: across, onTap: () => set.setGuide(g))];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       const _AppearanceSection(Icons.face_outlined, 'Coach avatar', 'Leon, a lion, or Leona, a lioness. The same coach either way: only the look changes.'),
       if (across)
@@ -364,6 +359,62 @@ class _CoachSection extends ConsumerWidget {
         ),
       ]),
     ]);
+  }
+}
+
+/// One guide's card: a 64 px preview (56 px beside the name at large text), the name and "Lion" / "Lioness". Selected:
+/// accent border, tint, heavier name and a check badge, so never colour alone; announced as "Leon, lion", a selected
+/// button in a mutually exclusive group. ChoiceCard's icon slot is 36 px, too small to tell the two faces apart.
+class _CoachChoice extends StatelessWidget {
+  const _CoachChoice(this.guide, {required this.selected, required this.across, required this.onTap});
+  final CoachGuide guide;
+  final bool selected, across;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final align = across ? TextAlign.center : TextAlign.start;
+    final names = Column(crossAxisAlignment: across ? CrossAxisAlignment.center : CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Text(guide.label, textAlign: align, style: context.sansStyle(15.5, weight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? c.accent : c.text)),
+      Text('${guide.animal[0].toUpperCase()}${guide.animal.substring(1)}', textAlign: align, style: context.caption),
+    ]);
+    return Semantics(
+      key: Key('coach-${guide.name}'), button: true, selected: selected, inMutuallyExclusiveGroup: true, label: '${guide.label}, ${guide.animal}',
+      child: Material(
+        color: selected ? c.accentSoft : c.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: selected ? c.accent : c.outline, width: selected ? 2 : 1)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            if (!selected) Haptics.selection();
+            onTap();
+          },
+          child: ExcludeSemantics(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: Targets.minimum, minWidth: Targets.minimum),
+              child: Stack(children: [
+                Padding(
+                  padding: across ? const EdgeInsets.fromLTRB(8, 14, 8, 12) : const EdgeInsetsDirectional.fromSTEB(12, 10, 40, 10),
+                  child: across
+                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [CoachAvatar(size: 64, guide: guide), const SizedBox(height: 8), names]))
+                      : Row(children: [CoachAvatar(size: 56, guide: guide), const SizedBox(width: 12), Expanded(child: names)]),
+                ),
+                if (selected)
+                  PositionedDirectional(
+                    top: 8, end: 8,
+                    child: Container(
+                      width: 22, height: 22,
+                      decoration: BoxDecoration(color: c.accent, shape: BoxShape.circle),
+                      child: Icon(Icons.check_rounded, size: 16, color: c.onAccent),
+                    ),
+                  ),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

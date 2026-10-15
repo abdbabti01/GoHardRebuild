@@ -417,6 +417,8 @@ void main() {
     'large-text-plan-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'train-plan', const Size(320, 4600), 2),
     'full-appearance-pink-dark': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'appearance', const Size(390, 1900), 1),
     'large-text-appearance-320': ((t) => _fixture(t, Accent.pink, ThemeMode.light), 'appearance', const Size(320, 2500), 2),
+    'full-appearance-green-light': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'appearance', const Size(390, 1900), 1),
+    'large-text-appearance-320-dark': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'appearance', const Size(320, 2500), 2),
     'food-preview-unknown-values-dark': ((t) => _fixture(t, Accent.green, ThemeMode.dark), 'food-preview-unknown', const Size(390, 1500), 1),
     'full-food-preview-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'food-preview', const Size(390, 1500), 1),
     'scan-camera-refused-light': ((t) => _fixture(t, Accent.blue, ThemeMode.light, cameraRefused: true), 'scan', const Size(390, 900), 1),
