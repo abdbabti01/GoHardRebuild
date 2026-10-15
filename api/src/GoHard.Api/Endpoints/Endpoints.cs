@@ -192,6 +192,8 @@ public static class GoHardEndpoints
                 CoachStatus.Ok => Results.Json(outcome.Answer, CommandRunner.Json),
                 CoachStatus.Invalid => Results.Json(new { code = "COACH_INVALID" }, statusCode: 400),
                 CoachStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
+                // The provider's rate limit or overload: not the person's own limit, so not COACH_LIMIT.
+                CoachStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
                 _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
             };
         });

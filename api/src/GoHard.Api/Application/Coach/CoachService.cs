@@ -8,26 +8,41 @@ using Microsoft.EntityFrameworkCore;
 namespace GoHard.Api.Application.Coach;
 
 /// <summary>
-/// Configuration section "Coach". Without a key Ask GoHard is off: coach.ask is not declared and the endpoint answers
-/// COACH_UNAVAILABLE. Set GOHARD_Coach__AnthropicApiKey (or Coach:AnthropicApiKey in appsettings.Local.json).
+/// Configuration section "Coach" (docs/COACH.md). Provider = Anthropic (default) | Groq, case-insensitive. Only the
+/// chosen provider's own key turns Ask GoHard on; without it coach.ask is not declared and the endpoint answers
+/// COACH_UNAVAILABLE. There is never a fallback to another provider or model.
+/// Groq: GOHARD_Coach__Provider=Groq, GOHARD_Coach__GroqApiKey, optional GOHARD_Coach__Model (default openai/gpt-oss-120b).
+/// Anthropic: GOHARD_Coach__AnthropicApiKey, optional GOHARD_Coach__Model (default claude-haiku-5-5).
 /// </summary>
 public sealed class CoachOptions
 {
+    public const string Anthropic = "Anthropic", Groq = "Groq";
+    public string? Provider { get; set; }
     public string? AnthropicApiKey { get; set; }
-    /// <summary>The cheapest current model; enough for short answers grounded in supplied text.</summary>
-    public string Model { get; set; } = "claude-haiku-5-5";
+    public string? GroqApiKey { get; set; }
+    /// <summary>Sent verbatim. Empty: the provider's default (<see cref="ModelId"/>).</summary>
+    public string? Model { get; set; }
+    /// <summary>Anthropic output_config.effort / Groq reasoning_effort; "low" is valid for both.</summary>
     public string Effort { get; set; } = "low";
     public string BaseUrl { get; set; } = "https://api.anthropic.com/";
+    public string GroqBaseUrl { get; set; } = "https://api.groq.com/openai/v1";
     public int MaxTokens { get; set; } = 4000;
     public int TimeoutSeconds { get; set; } = 20;
     public int DailyLimit { get; set; } = 40;
     /// <summary>Empty: Data/coach-guide.json next to the app.</summary>
     public string? GuidePath { get; set; }
-    public bool KeyConfigured => !string.IsNullOrWhiteSpace(AnthropicApiKey);
+
+    /// <summary>Anthropic, Groq, or null for an unknown value (then nothing is configured).</summary>
+    public string? ProviderName => string.IsNullOrWhiteSpace(Provider) || Provider.Trim().Equals(Anthropic, StringComparison.OrdinalIgnoreCase) ? Anthropic
+        : Provider.Trim().Equals(Groq, StringComparison.OrdinalIgnoreCase) ? Groq : null;
+    public string ModelId => !string.IsNullOrWhiteSpace(Model) ? Model.Trim() : ProviderName == Groq ? GroqProvider.DefaultModel : AnthropicProvider.DefaultModel;
+    /// <summary>The chosen provider's own key is present. Another provider's key never counts.</summary>
+    public bool KeyConfigured => !string.IsNullOrWhiteSpace(ProviderName switch { Anthropic => AnthropicApiKey, Groq => GroqApiKey, _ => null });
 }
 
-public enum CoachStatus { Ok, Invalid, Limit, Unavailable }
-public sealed record CoachOutcome(CoachStatus Status, CoachAnswer? Answer = null);
+public enum CoachStatus { Ok, Invalid, Limit, Unavailable, Busy }
+/// <param name="RetryAfterSeconds">Busy only: the provider's retry-after, when it gave one.</param>
+public sealed record CoachOutcome(CoachStatus Status, CoachAnswer? Answer = null, int? RetryAfterSeconds = null);
 
 /// <summary>
 /// Ask GoHard (docs/COACH.md). Builds one bounded model request from the reviewed guide, the sent draft and the
@@ -41,28 +56,29 @@ public sealed class CoachService
 {
     public const string Capability = "coach.ask";
     public const int MaxBodyBytes = 512 * 1024, MaxQuestion = 600, MaxHistory = 6, MaxTurn = 1500, MaxAnswer = 1200, MaxOperations = 8;
-    private static readonly TimeSpan Remember = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan Remember = TimeSpan.FromMinutes(2), MaxRetryWait = TimeSpan.FromSeconds(5);
     private const string CustomPrefix = "custom:";
 
-    private readonly AnthropicProvider _provider;
+    private readonly ICoachProvider _provider;
     private readonly CoachOptions _options;
     private readonly ILogger<CoachService> _log;
     private readonly TimeProvider _time;
     private readonly CoachGuide? _guide;
 
-    private sealed class Seen(Task<CoachAnswer?> answer) { public readonly Task<CoachAnswer?> Answer = answer; public DateTimeOffset? DoneAt; }
+    private sealed class Seen(Task<CoachOutcome> outcome) { public readonly Task<CoachOutcome> Outcome = outcome; public DateTimeOffset? DoneAt; }
     private readonly Lock _gate = new();
     private readonly Dictionary<(Guid User, Guid Request), Seen> _seen = [];
     private readonly HashSet<Guid> _busy = [];
     private readonly Dictionary<Guid, (DateOnly Day, int Count)> _daily = [];
 
-    public CoachService(AnthropicProvider provider, CoachOptions options, ILogger<CoachService> log, TimeProvider? time = null)
+    public CoachService(ICoachProvider provider, CoachOptions options, ILogger<CoachService> log, TimeProvider? time = null)
     {
         (_provider, _options, _log, _time) = (provider, options, log, time ?? TimeProvider.System);
+        if (options.ProviderName is null) log.LogError("Coach:Provider is not Anthropic or Groq; Ask GoHard is unavailable");
         _guide = CoachGuide.Load(string.IsNullOrWhiteSpace(options.GuidePath) ? Path.Combine(AppContext.BaseDirectory, "Data", "coach-guide.json") : options.GuidePath, log);
     }
 
-    /// <summary>A key is configured and the reviewed guide loaded. Only then is coach.ask declared.</summary>
+    /// <summary>The chosen provider's key is configured and the reviewed guide loaded. Only then is coach.ask declared.</summary>
     public bool Enabled => _options.KeyConfigured && _guide is not null;
 
     public async Task<CoachOutcome> AskAsync(Guid userId, CoachAskRequest? r, GoHardDb db, CancellationToken ct)
@@ -70,20 +86,18 @@ public sealed class CoachService
         if (r is null || !Valid(r)) return new(CoachStatus.Invalid);
         if (!Enabled) return new(CoachStatus.Unavailable);
 
-        Task<CoachAnswer?> shared;
-        TaskCompletionSource<CoachAnswer?>? mine = null;
+        Task<CoachOutcome> shared;
+        TaskCompletionSource<CoachOutcome>? mine = null;
         var key = (userId, r.RequestId);
         lock (_gate)
         {
             var now = _time.GetUtcNow();
             foreach (var old in _seen.Where(e => now - e.Value.DoneAt > Remember).Select(e => e.Key).ToList()) _seen.Remove(old);
-            if (_seen.TryGetValue(key, out var seen)) shared = seen.Answer;   // a retry: the same answer, no second call
+            if (_seen.TryGetValue(key, out var seen)) shared = seen.Outcome;   // a retry: the same answer, no second call
             else
             {
-                var day = DateOnly.FromDateTime(now.UtcDateTime);
-                var used = _daily.TryGetValue(userId, out var d) && d.Day == day ? d.Count : 0;
-                if (_busy.Contains(userId) || used >= _options.DailyLimit) return new(CoachStatus.Limit);
-                _daily[userId] = (day, used + 1);
+                // Checked here, counted once the provider is reached (Charge): one request per account at a time, so no race.
+                if (_busy.Contains(userId) || Used(userId, now) >= _options.DailyLimit) return new(CoachStatus.Limit);
                 _busy.Add(userId);
                 mine = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 _seen[key] = new Seen(shared = mine.Task);
@@ -92,8 +106,8 @@ public sealed class CoachService
 
         if (mine is not null)
         {
-            CoachAnswer? answer = null;
-            try { answer = await RunAsync(userId, r, db, ct); }
+            var outcome = new CoachOutcome(CoachStatus.Unavailable);
+            try { outcome = await RunAsync(userId, r, db, ct); }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { _log.LogInformation("Coach request abandoned by the client"); }
             catch (Exception ex) { _log.LogError(ex, "Coach request failed"); }
             finally
@@ -102,42 +116,81 @@ public sealed class CoachService
                 {
                     _busy.Remove(userId);
                     // Only an answer is remembered: after a failure the same requestId may try again.
-                    if (answer is null) _seen.Remove(key); else _seen[key].DoneAt = _time.GetUtcNow();
+                    if (outcome.Status != CoachStatus.Ok) _seen.Remove(key); else _seen[key].DoneAt = _time.GetUtcNow();
                 }
-                mine.SetResult(answer);
+                mine.SetResult(outcome);
             }
         }
-        var result = await shared.WaitAsync(ct);
-        return result is null ? new(CoachStatus.Unavailable) : new(CoachStatus.Ok, result);
+        return await shared.WaitAsync(ct);
     }
 
-    private async Task<CoachAnswer?> RunAsync(Guid userId, CoachAskRequest r, GoHardDb db, CancellationToken ct)
+    private int Used(Guid userId, DateTimeOffset now) =>
+        _daily.TryGetValue(userId, out var d) && d.Day == DateOnly.FromDateTime(now.UtcDateTime) ? d.Count : 0;
+
+    /// <summary>Counts one question against the daily cap.</summary>
+    private void Charge(Guid userId)
+    {
+        lock (_gate)
+        {
+            var now = _time.GetUtcNow();
+            _daily[userId] = (DateOnly.FromDateTime(now.UtcDateTime), Used(userId, now) + 1);
+        }
+    }
+
+    private async Task<CoachOutcome> RunAsync(Guid userId, CoachAskRequest r, GoHardDb db, CancellationToken ct)
     {
         var guide = _guide!;
         var catalog = await db.CatalogExercises.AsNoTracking().OrderBy(c => c.Key).Select(c => new { c.Key, c.Name }).ToListAsync(ct);
         var (system, user) = Prompt(guide, r, catalog.Select(c => (c.Key, c.Name)).ToList());
 
-        CoachModelReply? reply;
+        // Charged once the provider has been reached (any HTTP answer, or our timeout while it worked). Not charged:
+        // anything that failed before, a provider that could not be connected to, or a client that went away.
+        CoachProviderResult result;
+        var charged = false;
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
         {
-            timeout.CancelAfter(TimeSpan.FromSeconds(_options.TimeoutSeconds));
-            try { reply = await _provider.AskAsync(system, user, timeout.Token); }
-            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException && !ct.IsCancellationRequested)
+            var budget = TimeSpan.FromSeconds(_options.TimeoutSeconds);
+            var started = _time.GetTimestamp();
+            timeout.CancelAfter(budget);
+            try
             {
-                _log.LogWarning("Anthropic did not answer ({Reason})", ex.GetType().Name);
-                return null;
+                result = await _provider.AskAsync(system, user, timeout.Token);
+                Charge(userId);
+                charged = true;
+                // At most one retry, only for a rate limit, overload or 5xx whose wait is short and fits the time left.
+                // Auth, model and other 4xx failures are never retried.
+                if (result.RetryAfter is { } wait && wait <= MaxRetryWait && _time.GetElapsedTime(started) + wait < budget)
+                {
+                    _log.LogInformation("Coach provider {Failure}; one retry in {Wait} ms", result.Failure, (int)wait.TotalMilliseconds);
+                    await Task.Delay(wait, _time, timeout.Token);
+                    result = await _provider.AskAsync(system, user, timeout.Token);
+                }
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                if (!charged) Charge(userId);
+                _log.LogWarning("Coach provider timed out after {Seconds} s", _options.TimeoutSeconds);
+                return new(CoachStatus.Unavailable);
+            }
+            catch (HttpRequestException ex)
+            {
+                _log.LogWarning("Coach provider could not be reached ({Reason})", ex.HttpRequestError);
+                return new(CoachStatus.Unavailable);
             }
         }
-        var text = reply?.Answer.Trim() ?? "";
-        if (text.Length == 0) return null;
+        if (result.Reply is not { } reply)
+            return result.Busy ? new(CoachStatus.Busy, RetryAfterSeconds: result.RetryAfter is { } ra ? (int)Math.Ceiling(ra.TotalSeconds) : null) : new(CoachStatus.Unavailable);
+
+        var text = reply.Answer.Trim();
+        if (text.Length == 0) return new(CoachStatus.Unavailable);
         if (text.Length > MaxAnswer) text = text[..(MaxAnswer - 1)].TrimEnd() + "…";
 
         var known = guide.Sources.Select(s => s.Id).ToHashSet();
-        var sources = reply!.Sources.Where(known.Contains).Distinct().ToList();
+        var sources = reply.Sources.Where(known.Contains).Distinct().ToList();
         var catalogKeys = catalog.Select(c => c.Key).ToHashSet();
         var proposal = await ProposalAsync(reply.Proposal, r.Context?.Draft, catalogKeys, userId, db, ct);
         if (reply.Proposal is not null && proposal is null) _log.LogInformation("Coach proposal dropped: it did not validate against the sent draft");
-        return new CoachAnswer(r.RequestId, "ai", text, sources, proposal, r.Context?.DraftRevision);
+        return new(CoachStatus.Ok, new CoachAnswer(r.RequestId, "ai", text, sources, proposal, r.Context?.DraftRevision));
     }
 
     // ---------------------------------------------------------------- request bounds
@@ -343,11 +396,16 @@ public static class CoachRegistration
     {
         var options = config.GetSection("Coach").Get<CoachOptions>() ?? new();
         services.AddSingleton(options);
-        services.AddHttpClient<AnthropicProvider>(c =>
+        void Client<T>(string baseUrl) where T : class => services.AddHttpClient<T>(c =>
         {
-            c.BaseAddress = new Uri(options.BaseUrl);
+            c.BaseAddress = new Uri(baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/");   // relative paths append to it
             c.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds + 5);   // backstop behind the service's own bound
         }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) });
+        Client<AnthropicProvider>(options.BaseUrl);
+        Client<GroqProvider>(options.GroqBaseUrl);
+        // Exactly the configured provider; an unknown name or a missing key leaves the coach off, never another provider.
+        services.AddSingleton<ICoachProvider>(sp => options.ProviderName == CoachOptions.Groq
+            ? sp.GetRequiredService<GroqProvider>() : sp.GetRequiredService<AnthropicProvider>());
         services.AddSingleton<CoachService>();
         return services;
     }
