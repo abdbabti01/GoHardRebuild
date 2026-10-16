@@ -53,14 +53,14 @@ Future<void> _frames(WidgetTester tester, int ms) async {
 
 void main() {
   group('daily greeting eligibility', () {
-    test('once per local day per account on this phone; another account or day is new; hints off never greet', () {
+    test('once per local day per account on this phone; another account or day is new; Coaching hints do not govern Today', () {
       var p = const CoachPrefs();
       expect(p.mayGreet('one', '2026-10-11'), isTrue);
       p = p.copy(greeted: CoachPrefs.dayKey('one', '2026-10-11'));
       expect(p.mayGreet('one', '2026-10-11'), isFalse, reason: 'already greeted today');
       expect(p.mayGreet('two', '2026-10-11'), isTrue, reason: 'another account on the same phone');
       expect(p.mayGreet('one', '2026-10-12'), isTrue, reason: 'the next local day');
-      expect(p.copy(hintsEnabled: false).mayGreet('one', '2026-10-12'), isFalse, reason: 'coaching hints off: no proactive greeting');
+      expect(p.copy(hintsEnabled: false).mayGreet('one', '2026-10-12'), isTrue, reason: 'Show coach on Today governs the greeting; hints govern introductions elsewhere');
       p = p.copy(hidden: CoachPrefs.dayKey('one', '2026-10-11'));
       expect(p.hiddenOn('one', '2026-10-11'), isTrue);
       expect(p.hiddenOn('one', '2026-10-12'), isFalse, reason: 'hidden for that day only');
@@ -80,7 +80,7 @@ void main() {
   });
 
   group('Today', () {
-    testWidgets('opening Today greets once, asks the AI nothing, and says a grounded line under the greeting', (tester) async {
+    testWidgets('opening Today: the guide greets once and speaks through its bubble, with Ask me and no second Ask beside the title; no AI request', (tester) async {
       final recorder = _Recorder();
       final c = await _today(tester, recorder: recorder);
       await tester.pump();
@@ -89,8 +89,10 @@ void main() {
       expect(c.read(coachPrefsProvider).greeted, CoachPrefs.dayKey(c.read(ownerProvider)!, _day), reason: 'marked as soon as it starts');
       expect(_state(tester).pose.value.slide, lessThan(1), reason: 'peeking in, not snapped into place');
       await _frames(tester, 1800);
-      expect(find.text('Upper body A is planned today.'), findsOneWidget);
-      expect(find.byKey(const Key('today-ask')), findsOneWidget);
+      expect(find.textContaining(RegExp(r'^Good (morning|afternoon|evening), Alex!$')), findsOneWidget, reason: 'the title line of the bubble');
+      expect(find.textContaining('Upper body A is planned today.', findRichText: true), findsOneWidget);
+      expect(find.byKey(const Key('coach-say-ask')), findsOneWidget, reason: 'Ask me in the bubble');
+      expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no competing Ask beside the title while the guide speaks');
       expect(recorder.paths.where((p) => p.contains('coach')), isEmpty, reason: 'greeting and line are worked out on the phone');
     });
 
@@ -273,7 +275,7 @@ void main() {
       c.read(workoutSavedProvider.notifier).saved('w1', _day);
       await tester.pump();
       await tester.pump();
-      expect(find.text('Your workout is saved. Nice work.'), findsOneWidget);
+      expect(find.textContaining('Your workout is saved. Nice work.', findRichText: true), findsOneWidget);
       expect(c.read(workoutSavedProvider)!.played, isTrue);
       expect(_state(tester).ticking, isTrue, reason: 'the acknowledgement plays');
       await _frames(tester, 11000);
@@ -282,6 +284,26 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(_state(tester).ticking, isFalse, reason: 'no second celebration');
+    });
+
+    testWidgets('Train without a plan: introduced once when its view is really shown, not while built behind Today; it offers Ask me', (tester) async {
+      final c = await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: _day)))!,
+        coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())),
+        transportProvider.overrideWithValue(_Recorder()),
+      ], settle: false);
+      await _frames(tester, 3000);
+      final owner = c.read(ownerProvider)!;
+      expect(c.read(coachPrefsProvider).seen(owner, 'train.noPlan'), isFalse, reason: 'the Train tab is built behind Today, not seen');
+      await tester.tap(find.byKey(const Key('nav-train')));
+      await _frames(tester, 600);
+      if (find.byKey(const Key('train-plan')).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(const Key('train-plan')));
+        await _frames(tester, 2500);
+      }
+      expect(find.byKey(const Key('coach-spot-train.noPlan')), findsOneWidget);
+      expect(c.read(coachPrefsProvider).seen(owner, 'train.noPlan'), isTrue);
+      expect(find.byKey(const Key('coach-say-ask')), findsOneWidget, reason: 'Ask me; Create my plan above it is the way to the starting paths');
     });
 
     testWidgets('narrow phones and large text drop the portrait before any words', (tester) async {

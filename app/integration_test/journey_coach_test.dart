@@ -46,12 +46,12 @@ void main() {
     await j.shot('c04-guided-availability');
     await j.tapKey('builder-next');
 
-    // --- Structure: the hint once, in the page; the suggestion and its reason.
-    await j.waitFor(find.byKey(const Key('coach-hint')), what: 'the one-time split hint');
+    // --- Structure: the guide introduces it once, in the page; the suggestion and its reason.
+    await j.waitFor(find.byKey(const Key('coach-spot-builder.structure')), what: 'the one-time split introduction');
     await j.waitFor(find.byKey(const Key('guide-suggestion')), what: 'the suggested starting plan');
     await j.shot('c05-guided-suggestion-with-hint');
-    await j.tapKey('coach-hint-close');
-    expect(find.byKey(const Key('coach-hint')), findsNothing);
+    await j.tapKey('coach-say-close');
+    expect(find.byKey(const Key('coach-spot-builder.structure')), findsNothing);
     await j.tapKey('guide-compare');
     await j.waitFor(find.byKey(const Key('guide-compare-sheet')));
     await j.shot('c06-compare-splits');

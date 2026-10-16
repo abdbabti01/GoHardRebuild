@@ -12,6 +12,7 @@ import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/me/me_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/barcode_scan_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/food_discovery.dart';
@@ -29,10 +30,12 @@ import 'ui_support.dart';
 const _day = '2026-10-09';
 
 Future<List<Override>> _overrides(WidgetTester tester, FoodFakes fakes,
-        {List<Json> food = const [], List<Json> savedFoods = const [], List<Json> seenFoods = const [], int? calorieGoal, int? proteinGoal, AppearanceStore? appearance}) async =>
+        {List<Json> food = const [], List<Json> savedFoods = const [], List<Json> seenFoods = const [], int? calorieGoal, int? proteinGoal, AppearanceStore? appearance, bool hints = false}) async =>
     [
       ...(await tester.runAsync(() => overridesFor(day: _day, food: food, savedFoods: savedFoods, seenFoods: seenFoods, calorieGoal: calorieGoal, proteinGoal: proteinGoal, appearance: appearance)))!,
       ...fakes.overrides,
+      // These tests are about finding food; the coach's one-time introduction here is covered in coach_avatar_test.
+      coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())..value = CoachPrefs(hintsEnabled: hints)),
     ];
 
 String _field(WidgetTester tester, String key) => tester.widget<TextField>(find.byKey(Key(key))).controller!.text;
@@ -522,6 +525,33 @@ void main() {
       await _tap(tester, 'food-save');
       expect(find.textContaining('a number above zero'), findsOneWidget);
       expect(fakes.journal.saved, isEmpty);
+    });
+
+    testWidgets('the coach on food: search is introduced once and steps aside while typing; portions are explained once, on a food with portions; nothing is sent', (tester) async {
+      final fakes = FoodFakes();
+      final net = FakeServer();
+      await pumpApp(tester, [...await _overrides(tester, fakes, hints: true), transportProvider.overrideWithValue(net)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.search')), findsOneWidget, reason: 'the first time the page is in view');
+      expect(tester.getTopLeft(find.byKey(const Key('food-search'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('coach-spot-food.search'))).dy), reason: 'under the field: the field never moves');
+      await tester.enterText(find.byKey(const Key('food-search')), 'rice');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.search')), findsNothing, reason: 'typing puts it away');
+      await tester.enterText(find.byKey(const Key('food-search')), '');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.search')), findsNothing, reason: 'seen: it does not come back by itself');
+      await _tap(tester, 'coach-help-food.search');
+      expect(find.byKey(const Key('coach-spot-food.search')), findsOneWidget, reason: 'asked for');
+
+      final cereal = FoodItem({'source': 'usda', 'sourceId': 'c1', 'name': 'Bran flakes', 'basis': '100g', 'nutrients': {'calories': 360, 'protein': 10, 'carbs': 70, 'fat': null},
+        'servings': [{'label': '1 serving', 'grams': 30, 'milliliters': null}]});
+      await tester.pumpWidget(const SizedBox());
+      await pumpApp(tester, [...await _overrides(tester, fakes, hints: true), transportProvider.overrideWithValue(net)],
+          home: FoodFormScreen(draft: FoodDraft.of(cereal, dayKey: _day, meal: 'Breakfast')), size: const Size(390, 1500));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.portion')), findsOneWidget, reason: 'this food has portions to count');
+      expect(find.textContaining('You can count portions here', findRichText: true), findsOneWidget);
+      expect(net.calls.where((c) => c.path.contains('coach')), isEmpty, reason: 'no AI is asked');
     });
 
     testWidgets('changing the unit says the same amount in the new unit, both ways, and the values do not move', (tester) async {

@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
 import '../coach/coach_avatar.dart';
+import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 // Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
 import '../nutrition/nutrition_surface.dart';
@@ -279,7 +280,14 @@ class AppearanceScreen extends ConsumerWidget {
     Widget cards(List<Widget> children) => across
         ? IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final (i, c) in children.indexed) ...[if (i > 0) const SizedBox(width: 10), Expanded(child: c)]]))
         : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final (i, c) in children.indexed) ...[if (i > 0) const SizedBox(height: 10), c]]);
-    return AppPage(title: 'Appearance', subtitle: 'Personalize the look and feel of GoHard.', children: [
+    return AppPage(title: 'Appearance', subtitle: 'Personalize the look and feel of GoHard.', actions: const [
+      // Help only when asked for: Me stays about the account and its preferences.
+      CoachHelpEntry(id: 'me.appearance', label: 'Help with these settings'),
+    ], children: [
+      const CoachSpot(
+        id: 'me.appearance', padding: EdgeInsets.only(bottom: 18),
+        say: CoachSay('Pick your guide and when I show up. Motion & haptics sets how much I move.'),
+      ),
       const _AppearanceSection(Icons.palette_outlined, 'Accent', 'Choose the accent color used throughout the app.'),
       cards([
         for (final a in Accent.values)
@@ -364,7 +372,7 @@ class _CoachSection extends ConsumerWidget {
         GroupRow(
           key: const Key('coach-hints-reset'), icon: Icons.replay_rounded, title: 'Show coaching hints again',
           onTap: () {
-            set.resetHints();
+            set.resetHints(ref.read(ownerProvider) ?? '');
             toast(context, 'Coaching hints you have seen can show again.');
           },
         ),
@@ -607,12 +615,17 @@ class _NutritionGoalsScreenState extends ConsumerState<NutritionGoalsScreen> {
   Widget build(BuildContext context) => AppPage(
         title: 'Nutrition goals',
         subtitle: 'Optional. Today and Eat show your progress toward a goal once you set one.',
+        actions: const [CoachHelpEntry(id: 'me.goals', label: 'Help with nutrition goals')],
         bottom: Column(mainAxisSize: MainAxisSize.min, children: [
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
           PrimaryButton('Save goals', key: const Key('goal-save'), onPressed: _save),
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         ]),
         children: [
+          const CoachSpot(
+            id: 'me.goals', introduce: true, padding: EdgeInsets.only(bottom: 16),
+            say: CoachSay('These are your daily tracking targets. You can leave either one blank.'),
+          ),
           TextField(key: const Key('goal-calories'), controller: _calories, keyboardType: TextInputType.number, textInputAction: TextInputAction.next,
               decoration: const InputDecoration(labelText: 'Daily calories', suffixText: 'kcal', hintText: 'No goal', helperText: '500 to 10,000. Leave blank for no calorie goal.')),
           const SizedBox(height: 14),

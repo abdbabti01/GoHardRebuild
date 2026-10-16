@@ -7,7 +7,9 @@ import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../data/models.dart';
 import '../../../data/sync.dart';
-import '../../coach/coach_avatar.dart';
+import '../../coach/coach_bubble.dart';
+import '../../coach/guide.dart';
+import '../../coach/guide_sheets.dart';
 import '../../coach/coach_contract.dart';
 import '../../shell/home_shell.dart';
 import '../plan_actions.dart' show runPlanDecision;
@@ -216,6 +218,41 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     return draft.title.trim().isEmpty ? 'My plan' : draft.title.trim();
   }
 
+  /// What the coach says on each step (docs/COACH.md › Companion › Where it speaks), with Ask me about the draft and,
+  /// on the split step, the built-in Compare splits. Nothing on the review step: it is a summary to check, not a task.
+  ({String id, String label, CoachSay say})? _help(int step) {
+    CoachContext ask(String label, CoachFocus focus) =>
+        CoachContext(label: label, focus: focus, templateId: draft.templateId, draft: () => draft, applyToDraft: _applyFromCoach);
+    switch (step) {
+      case 0:
+        return (
+          id: 'builder.preferences', label: 'Help with your training week',
+          say: CoachSay('Pick the days you can train and your equipment. The next step suggests a starting point from these answers.',
+              ask: ask('Your training week', CoachFocus.plan)),
+        );
+      case 1:
+        final templates = ref.watch(planTemplatesProvider).value, guide = ref.watch(coachGuideProvider).value;
+        final s = guidedSuggestion(draft.days.length, draft.equipment, experience: draft.experience);
+        return (
+          id: 'builder.structure', label: 'Help with choosing a split',
+          say: CoachSay('Unsure which split fits your week? Let\'s compare your options.',
+              ask: ask('Choosing a split', CoachFocus.split),
+              guide: templates == null || guide == null || draft.path != 'template'
+                  ? null
+                  : (label: 'Compare splits', key: const Key('coach-compare'), onPressed: () => showCompareSplits(context,
+                      guide: guide, templates: templates, draft: draft, templateIds: [s.templateId, ...s.alternatives], suggestedId: s.templateId))),
+        );
+      case 2:
+        return (
+          id: 'builder.workouts', label: 'Help with these workouts',
+          say: CoachSay('Questions about sets, reps or a movement? The info button beside each exercise has the built-in guide.',
+              ask: ask(draft.title.trim().isEmpty ? _splitLabel : draft.title.trim(), CoachFocus.workout)),
+        );
+      default:
+        return null;
+    }
+  }
+
   void _back() => _step <= _first ? Navigator.maybePop(context) : _change((d) => d.step = _step - 1);
 
   /// What stops the user leaving this step, in words.
@@ -320,6 +357,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     ref.watch(primaryPlanProvider);
     ref.watch(workoutListProvider);
     final title = switch (draft.mode) { 'edit' => 'Edit plan', 'duplicate' => 'Duplicate plan', _ => 'Create plan' };
+    final help = _help(step);
     final progress = 'Step ${step + 1} of 4: ${_stepNames[step]}';
     return PopScope(
       canPop: step <= _first,
@@ -344,22 +382,15 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
                 ),
               ),
             ),
-            // A reserved slot beside the progress: never over fields, actions or the keyboard.
-            if (step == 1) ...[
+            // The coach's help entry, in a reserved slot beside the progress: never over fields, actions or the keyboard.
+            if (help != null) ...[
               const SizedBox(width: 8),
-              CoachHelpButton(
-                key: const Key('coach-help-structure'), semanticLabel: 'Ask GoHard about this split',
-                onPressed: () => _ask(_splitLabel, CoachFocus.split)),
-            ],
-            if (step == 2) ...[
-              const SizedBox(width: 8),
-              CoachHelpButton(
-                key: const Key('coach-help-workouts'), semanticLabel: 'Ask GoHard about this workout',
-                onPressed: () => _ask(draft.title.trim().isEmpty ? _splitLabel : draft.title.trim(), CoachFocus.workout)),
+              CoachHelpEntry(id: help.id, label: help.label),
             ],
           ]),
-          // Once, in the page's flow under the progress: it moves the step down and covers nothing.
-          if (step == 1) CoachHint(hintId: 'builder.structure', text: 'Need help choosing a split?', onAsk: () => _ask(_splitLabel, CoachFocus.split)),
+          // In the page's flow under the progress: it moves the step down and covers nothing. The split step
+          // introduces itself once, the first time it is in view; the others speak when asked.
+          if (help != null) CoachSpot(id: help.id, say: help.say, introduce: help.id == 'builder.structure'),
           const SizedBox(height: 18),
           switch (step) {
             0 => PreferencesStep(draft: draft, change: _change),

@@ -626,8 +626,8 @@ void main() {
     await _tap(tester, 'builder-next');
 
     expect(find.bySemanticsLabel('Step 2 of 4: Structure'), findsOneWidget);
-    expect(find.byKey(const Key('coach-help-structure')), findsOneWidget);
-    expect(find.byTooltip('Ask GoHard about this split'), findsOneWidget);
+    expect(find.byKey(const Key('coach-help-builder.structure')), findsOneWidget);
+    expect(find.byTooltip('Help with choosing a split'), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('guide-suggestion')), matching: find.text('Upper / Lower')), findsOneWidget);
     expect(find.textContaining('Suggested because you selected four training days and gym equipment.'), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('guide-suggestion')), matching: find.text('Mon Upper B · Tue Lower B · Thu Upper A · Fri Lower A')), findsOneWidget);
@@ -666,7 +666,7 @@ void main() {
     expect(await tester.runAsync(install.commands), isEmpty, reason: 'nothing activated or sent');
 
     await _tap(tester, 'builder-next');
-    expect(find.byTooltip('Ask GoHard about this workout'), findsOneWidget);
+    expect(find.byTooltip('Help with these workouts'), findsOneWidget);
     await _tap(tester, 'exercise-info-0-0');
     expect(find.byKey(const Key('exercise-info-sheet')), findsOneWidget);
     expect(find.text('Chest, Front of shoulders, Triceps'), findsOneWidget);
@@ -679,6 +679,40 @@ void main() {
     await _tap(tester, 'exercise-dumbbell-bench-press');
     expect(find.text('1. Dumbbell bench press'), findsOneWidget, reason: 'Replace… is the editor’s own replace');
     expect(await tester.runAsync(install.commands), isEmpty);
+  });
+
+  testWidgets('the coach on the builder: the split step introduces itself once with Compare splits; the exercise editor\'s help keeps what was typed and sends nothing', (tester) async {
+    await _launch(tester, install);
+    await _tap(tester, 'plan-path-guided');
+    await _tap(tester, 'days-4');
+    expect(find.byKey(const Key('coach-spot-builder.preferences')), findsNothing, reason: 'the other steps speak only when asked');
+    await _tap(tester, 'builder-next');
+    expect(find.byKey(const Key('coach-spot-builder.structure')), findsOneWidget, reason: 'once, the first time the split step is in view');
+    expect(find.byKey(const Key('coach-speaker')), findsOneWidget, reason: 'one bubble');
+    await _tap(tester, 'coach-compare');
+    expect(find.byKey(const Key('guide-compare-sheet')), findsOneWidget, reason: 'the built-in Compare splits');
+    Navigator.of(tester.element(find.byKey(const Key('guide-compare-sheet')))).pop();
+    await tester.pumpAndSettle();
+    await _tap(tester, 'coach-say-close');
+    await _tap(tester, 'guide-use-upper-lower');
+    await _tap(tester, 'builder-back');
+    await _tap(tester, 'builder-next');
+    expect(find.byKey(const Key('coach-spot-builder.structure')), findsNothing, reason: 'seen: not again when the step comes back');
+    await _tap(tester, 'coach-help-builder.structure');
+    expect(find.byKey(const Key('coach-spot-builder.structure')), findsOneWidget, reason: 'asked for: always available');
+    await _tap(tester, 'builder-next');
+
+    await _tap(tester, 'exercise-0-0');
+    await tester.enterText(find.byKey(const Key('rx-sets')), '5');
+    await tester.pump();
+    await _tap(tester, 'coach-help-exercise.prescription');
+    expect(find.byKey(const Key('coach-spot-exercise.prescription')), findsOneWidget);
+    await _tap(tester, 'coach-exercise-info');
+    expect(find.byKey(const Key('exercise-info-sheet')), findsOneWidget, reason: 'the exercise guide');
+    Navigator.of(tester.element(find.byKey(const Key('exercise-info-sheet')))).pop();
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byKey(const Key('rx-sets'))).controller!.text, '5', reason: 'opening help and the guide kept what was typed');
+    expect(await tester.runAsync(install.commands), isEmpty, reason: 'help sends nothing and changes nothing');
   });
 
   testWidgets('Guide me: changing the answers after customising shows what would change and replaces nothing until applied', (tester) async {

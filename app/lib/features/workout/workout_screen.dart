@@ -10,6 +10,9 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../coach/coach_avatar.dart' show CoachHelpButton;
+import '../coach/coach_bubble.dart';
+import '../coach/coach_contract.dart';
 import '../coach/coach_prefs.dart' show workoutSavedProvider;
 import '../plans/plan_progress.dart';
 import 'progress.dart';
@@ -313,6 +316,12 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
         appBar: AppBar(
           title: Text(workout.title, overflow: TextOverflow.ellipsis),
           actions: [
+            CoachHelpButton(
+              key: const Key('coach-help-workout'), semanticLabel: 'Help with recording this workout',
+              onPressed: () => showCoachHelpSheet(context, title: 'Recording sets', say: CoachSay(
+                  'Record each set as you finish it; the rest timer then starts on its own. Save for later keeps everything.',
+                  ask: selected == null ? null : CoachContext(label: selected.name, focus: CoachFocus.exercise, catalogKey: selected.catalogKey))),
+            ),
             PopupMenuButton<String>(
               key: const Key('workout-menu'),
               tooltip: 'Workout options',

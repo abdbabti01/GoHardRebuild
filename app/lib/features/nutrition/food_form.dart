@@ -6,6 +6,7 @@ import '../../core/clock.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
+import '../coach/coach_bubble.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
@@ -266,6 +267,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
       title: title,
       subtitle: qualifier,
       actions: [
+        if (item != null) const CoachHelpEntry(id: 'food.portion', label: 'Help with amounts and portions'),
         if (item != null && !editing)
           IconButton(
             key: const Key('food-favourite'), tooltip: favourite ? 'Remove from favourites' : 'Add to favourites',
@@ -324,6 +326,10 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
               key: const Key('food-add-portion'), onPressed: _busy ? null : _definePortion, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)),
               iconAlignment: IconAlignment.end, icon: const Icon(Icons.chevron_right, size: 20), label: const Text('Add your own portion'),
             ),
+          ),
+          CoachSpot(
+            id: 'food.portion', introduce: FoodScaling.units(item).length > 1, padding: const EdgeInsets.only(top: 4, bottom: 10),
+            say: const CoachSay('You can count portions here. The weight is shown when a reliable conversion is available.'),
           ),
           const SizedBox(height: 4),
           const Rule(),

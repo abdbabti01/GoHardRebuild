@@ -147,19 +147,51 @@ theme; the accent only colours controls and selected indicators. Coaching hints:
 once per flow until "Show coaching hints again"; "Coaching hints" off removes unsolicited hints, never manual help.
 No hint while recording sets, running, reviewing conflicts or reviewing a destructive change.
 
-### Companion (Today and Ask GoHard)
+### Companion: the coach who speaks through bubbles
 
-The selected guide peeks into Today from the right screen edge beside the greeting: head and upper shoulders, mirrored
-so the face looks in towards the page, leaning around the edge, faded out over the shoulders (no cut torso). Slot
-92 × 112 at ≥ 380 px (80 × 100 below), 90/84 high when there is no sky line; none below 340 px or above 1.3× text,
-where the time-of-day icon returns. It sits in the header's own `Stack`, in space the greeting and sky line leave free
-(`_HeaderState` in `today_screen.dart`), so it scrolls with the header and is never over a section, form, keyboard or
-the navigation bar. The greeting is native text: "Good morning, Bob" plus at most one factual line from Today's own
-projection (`today_greeting.dart`: "<workout> is planned today.", "Your workout is ready to resume.", "A planned rest
-day today.", "Today's workout is skipped/done/saved.", "Your plan is paused today.", or after a finish this session
-"Your workout is saved. Nice work."; otherwise nothing). Worked out on the phone; opening Today never calls the AI and
-everything works offline. The line is dropped at large text (the module says the same). Ask GoHard is always in
-Today's title row (named where it fits beside "Today", an icon with the same name otherwise).
+One recognisable guide (Leon or Leona) who speaks through an attached speech bubble of native text, greets the user on
+Today and offers relevant help at appropriate moments. Bubbles only: no voice, microphone or lip-sync.
+
+**Today.** The guide peeks in from the right screen edge (head and upper shoulders, mirrored to look in, faded over the
+shoulders; slot 86 × 106 at ≥ 380 px, 76 × 96 below; none below 340 px or above 1.3× text). On its left, its bubble —
+the tail pointing at the face — says "Good afternoon, Babti!" and one factual line from Today's own projection
+(`today_greeting.dart`: "<workout> is planned today.", "Your workout is ready to resume.", "A planned rest day today.",
+"Today's workout is skipped/done/saved.", "Your plan is paused today.", after a finish this session "Your workout is
+saved. Nice work."), or "Need a hand with today?" when there is nothing definite, ending in "Ask me ›" (the whole
+bubble is the button; Ask GoHard opens about "Your training"). The date and "Today" stay above, separate. While the
+bubble shows there is no Ask GoHard button beside the title; × in the bubble ("Hide coach for today") tucks the guide
+and its words away for the day and Ask GoHard returns to the title row. Without the guide (Show coach on Today off,
+hidden for the day, narrow or large text) the plain greeting with its time-of-day icon is shown. The portrait sits in
+the header's own `Stack`, its bottom level with the bubble's, rising into the free lower right of the title row, so
+it covers nothing and scrolls with the header. Worked out on the phone; opening Today never calls the AI; it works
+offline. Trade-off: the bubble makes the header about 30 px taller than the one-line greeting; the nutrition section
+and its label still start on the first screen at 390 × 844, its Log food action (quiet day) is a short scroll away.
+
+**Elsewhere** (`coach_bubble.dart`): `CoachSay` (one or two short sentences, "Ask me" and at most one existing guide
+action), `CoachBubble` (tail towards the face, raised surface, × in the corner, announced once, never takes focus),
+`CoachSpeaker` (a 52 px round portrait that peeks in and greets, its bubble arriving as it settles), `CoachSpot` (where
+a context speaks, in the page's own flow: it pushes content down, covers nothing, scrolls away) and `CoachHelpEntry`
+(the guide's avatar in a 48 px button: the one consistent way to ask for help). One bubble is open at a time
+(`coachHelpProvider`). Where it speaks:
+
+| Context id | Where | Appears by itself | Says | Actions |
+|---|---|---|---|---|
+| `train.noPlan` | Train › Plan with no plan or draft | once | Want a starting point? I can explain the splits or help you build your own. | Ask me, Guide me (Create plan) |
+| `builder.preferences` | builder step 1 (help entry by the progress) | no | Pick the days you can train and your equipment… | Ask me (draft) |
+| `builder.structure` | builder step 2 | once | Unsure which split fits your week? Let's compare your options. | Ask me (draft), Compare splits (template path) |
+| `builder.workouts` | builder step 3 | no | Questions about sets, reps or a movement? The info button… | Ask me (draft) |
+| `exercise.prescription` | the sets/reps/rest sheet | no | Questions about sets, reps or this movement? | Ask me, About this exercise |
+| `food.search` | Add food (under the field, at the top of the results; gone while typing) | once | Search for a food, scan a barcode or enter your own… | none (built-in) |
+| `food.portion` | the food form, under the amount and unit | once, only for a food with portions | You can count portions here. The weight is shown when a reliable conversion is available. | none |
+| `me.goals` | Nutrition goals | once | These are your daily tracking targets. You can leave either one blank. | none |
+| `me.appearance` | Me › Appearance (help entry in the app bar) | no | Choose Leon or Leona, whether I greet you on Today… | none |
+| recording sets | workout screen app bar → sheet | never | Record each set when you finish it… | Ask me about the selected movement |
+| a run | run screen app bar (open run) → sheet | never | Distance comes from your phone's GPS while this screen is open… | none |
+
+Food, goals, appearance and runs have no Ask me: the coach server contract covers plans, splits, workouts and
+exercises only, so nothing outside it is sent. During recording and a run, help is a sheet the user opens (the
+same speaker inside), so nothing appears over a set field, the rest timer, the run controls or the keyboard; the
+activity underneath keeps its input, timers and drafts, and Ask GoHard opens over the sheet and returns to it.
 
 **Rendering — why not Rive.** No Rive editor is available to author or maintain a `.riv` rig here, and the art is a
 painted raster, so a Rive file would be invented, not authored. Instead `coach_rig.dart` draws the approved bust
@@ -184,15 +216,25 @@ held without frames; released with a brief smile. Exit ≈ 250 ms, no overshoot 
 foreground and the header is on screen; under Reduce Motion (the phone's or Me › Motion) it is a still settled
 portrait with no blink and the tuck is skipped. No speech, audio, microphone or haptics.
 
-**Presence rules** (`coach_prefs.dart`). Greets at most once per local day per account on this phone (`greeted` =
-`owner|day`), marked when it starts, so tab switches, rebuilds, scrolling, syncs, returning from the background and
-restarts never replay it; no greeting while coaching hints are off or a workout or run is open (just the portrait).
-A tap plays one acknowledgement. "Hide coach for today" (bottom left of the portrait) tucks it away until the next
-day (`hidden`); Ask GoHard stays. Me › Appearance › Show coach on Today turns it off entirely without touching Ask
-GoHard, the Quick guide or the guide choice. A finished workout with training in it is acknowledged once:
-`workoutSavedProvider` is set only by the finish's own success path (memory only, cleared with a new sign-in), Today
-plays it when next in view and marks it played. Elsewhere help stays in the existing Guide me / help placements; there
-is no floating assistant.
+**When the coach appears** (`coach_prefs.dart`, `CoachSpot`). Three kinds:
+
+- *Daily greeting* (Today). At most once per local day per account on this phone (`greeted` = `owner|day`), marked
+  when it starts, so tab switches, rebuilds, scrolling, syncs, theme changes, returning from the background and
+  restarts never replay the entrance; afterwards the guide is simply there, settled, beside its bubble. No entrance
+  while a workout or run is open. Governed by Show coach on Today (not by Coaching hints). A tap plays one
+  acknowledgement.
+- *Contextual introduction* (the table above). Once per account (`dismissed` holds `owner|context`; another account
+  on the phone has its own), the first time the context is really in view: Coaching hints on, its route current and
+  its tab selected (the shell builds every tab), the app in the foreground, no keyboard up (the view's own inset — a
+  Scaffold strips it from the page) and the spot on screen (a spot built off screen or in a list's cache is not seen;
+  scrolling it into view counts). Never daily, never twice; "Show coaching hints again" resets only this account.
+  Typing pauses, scrolling and validation errors never open anything.
+- *User-requested help.* The help entry opens (and closes) its context's bubble whatever the Coaching hints setting.
+
+A finished workout with training in it is acknowledged once: `workoutSavedProvider` is set only by the finish's own
+success path (memory only, cleared with a new sign-in), Today plays it when next in view and marks it played. Reduce
+Motion (phone or app) shows the settled portrait and its bubble at once. There is no global overlay or floating
+assistant: every bubble is laid out in its own page.
 
 ### Groq rate limits in practice (live, 15 Oct 2026)
 

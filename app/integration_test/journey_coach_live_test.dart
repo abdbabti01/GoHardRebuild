@@ -75,10 +75,12 @@ void main() {
       await j.tapKey('plan-path-template');
       await j.chooseDays(Journey.daysIncludingToday());
       await j.tapKey('builder-next');
-      await j.waitFor(find.byKey(const Key('coach-help-structure')), what: 'the Structure step with its help button');
+      await j.waitFor(find.byKey(const Key('coach-help-builder.structure')), what: 'the Structure step with its help entry');
+      // The guide introduces the step once by itself; if it has already, the help entry opens it.
+      if (find.byKey(const Key('coach-spot-builder.structure')).evaluate().isEmpty) await j.tapKey('coach-help-builder.structure');
 
-      // 1–2. A contextual split question and a natural follow-up.
-      await j.tapKey('coach-help-structure');
+      // 1–2. A contextual split question and a natural follow-up: Ask me in the guide's bubble.
+      await j.tapKey('coach-say-ask');
       await j.waitFor(find.byKey(const Key('ask-context')));
       await ask('Why this split for my schedule?', 1);
       await j.shot('l01-live-split-answer');
@@ -110,7 +112,8 @@ void main() {
       await j.tapKey('exercise-0-1');
       await j.type('rx-sets', '5');
       await j.tapKey('rx-save');
-      await j.tapKey('coach-help-workouts');
+      await j.tapKey('coach-help-builder.workouts');
+      await j.tapKey('coach-say-ask');
       await j.settle(6);
       // The reopened conversation builds lazily from the top: scroll it until the suggestion's card is built.
       for (var i = 0; i < 20 && prefix('ask-preview-').hitTestable().evaluate().isEmpty; i++) {

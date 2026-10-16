@@ -16,6 +16,7 @@ import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
+import 'package:gohard_rebuild/features/coach/coach_bubble.dart';
 import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'food_fakes.dart';
@@ -216,8 +217,9 @@ void main() {
     });
   }
 
-  // Leon and Leona in all six themes: the help button with its hint open, both avatars and both full figures. The fur
-  // keeps its colours whatever the accent; only the button's hint and controls follow the theme.
+  // Leon and Leona in all six themes: the help entry with the guide speaking (its bubble, Ask me and one guide action),
+  // both avatars and both full figures. The fur keeps its colours whatever the accent; only the bubble's controls follow
+  // the theme.
   testWidgets('six themes: coach', (tester) async {
     tester.view.physicalSize = const Size(390, 640) * 2;
     tester.view.devicePixelRatio = 2;
@@ -238,9 +240,11 @@ void main() {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
                       Expanded(child: Text('Upper / Lower', style: TextStyle(fontFamily: serif, fontSize: 30, color: theme.extension<GoColors>()!.text))),
-                      CoachHelpButton(semanticLabel: 'Ask GoHard about this split', onPressed: () {}),
+                      CoachHelpButton(semanticLabel: 'Help with choosing a split', onPressed: () {}),
                     ]),
-                    CoachHint(hintId: 'render', text: 'Need help choosing a split?', onAsk: () {}),
+                    const SizedBox(height: 8),
+                    CoachSpeaker(onClose: () {}, say: CoachSay('Unsure which split fits your week? Let\'s compare your options.', onAsk: () {},
+                        guide: (label: 'Compare splits', key: const Key('render-compare'), onPressed: () {}))),
                     const SizedBox(height: 100),
                     const Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.end, children: [
                       CoachAvatar(size: 40, guide: CoachGuide.leon), CoachAvatar(size: 40, guide: CoachGuide.leona),

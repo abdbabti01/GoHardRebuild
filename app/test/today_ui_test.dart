@@ -79,14 +79,14 @@ void main() {
         pumpApp(tester, await fixture(tester, profile: profile, profileLoaded: loaded, more: [clockProvider.overrideWithValue(FakeClock(DateTime(2026, 10, 11, hour).toUtc()))]));
     await at(9);
     expect(find.text('Sunday, October 11'), findsOneWidget);
-    expect(find.text('Good morning, Alex'), findsOneWidget, reason: 'the fixture profile is "Alex Sample"');
+    expect(find.text('Good morning, Alex!'), findsOneWidget, reason: 'the fixture profile is "Alex Sample"; the guide says it in its bubble');
     expect(find.bySemanticsLabel('GoHard'), findsOneWidget, reason: 'the small mark');
     await at(14, profile: {'displayName': '  Sam  '});
-    expect(find.text('Good afternoon, Sam'), findsOneWidget);
+    expect(find.text('Good afternoon, Sam!'), findsOneWidget);
     await at(21, profile: {'displayName': ''});
-    expect(find.text('Good evening'), findsOneWidget, reason: 'no name is no name; none is invented');
+    expect(find.text('Good evening!'), findsOneWidget, reason: 'no name is no name; none is invented');
     await at(2, loaded: false);
-    expect(find.text('Good evening'), findsOneWidget, reason: 'the profile has not been read yet');
+    expect(find.text('Good evening!'), findsOneWidget, reason: 'the profile has not been read yet');
     expect(tester.takeException(), isNull);
   });
 
@@ -103,7 +103,7 @@ void main() {
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
     debugPrint('header region $header');
-    expect(header, inInclusiveRange(160, 280), reason: 'the date, title, greeting and sky line, then the surface');
+    expect(header, inInclusiveRange(160, 300), reason: 'the date, title, the guide speaking (bubble with Ask me) and the sky line, then the surface');
     final navTop = tester.getTopLeft(find.byKey(const Key('nav-today'))).dy;
     // The nutrition label and its calorie figure are on the first screen, above the navigation bar.
     final nutritionTop = tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy;
@@ -111,7 +111,9 @@ void main() {
     debugPrint('full state: nutrition starts at $nutritionTop, its calorie figure ends at $calories, the navigation bar starts at $navTop');
     // The brief: nothing is squeezed to fit the first screen. The nutrition section starts on it, its label visible.
     expect(nutritionTop + 36, lessThan(navTop), reason: 'the nutrition section and its label start on the first screen');
-    expect(tester.getBottomLeft(find.byKey(const Key('today-run'))).dy, lessThan(navTop));
+    // The guide's two-line bubble on Today (docs/COACH.md › Speech bubbles) costs about 30 px: in this, the tallest
+    // state, the Run module starts on the first screen and its button is a short scroll away.
+    expect(tester.getTopLeft(find.byKey(const Key('today-module-run'))).dy, lessThan(navTop));
 
     // The quietest day: a due workout, no run, nothing logged.
     await pumpApp(tester, await fixture(tester, plans: [plan]), insets: phoneInsets);
@@ -120,7 +122,9 @@ void main() {
     expect(quiet.$1, inInclusiveRange(160, 215));
     expect(quiet.$2, inInclusiveRange(120, 150), reason: 'no run: the label and one line beside the photograph');
     expect(quiet.$3, inInclusiveRange(115, 190));
-    expect(tester.getBottomLeft(find.byKey(const Key('log-food'))).dy, lessThan(navTop), reason: 'all three sections, actions included, are on the first screen');
+    // With the guide's bubble the three sections and the nutrition label start on the first screen; Log food is a
+    // short scroll away (it was on the first screen before the bubble: a deliberate trade-off, docs/COACH.md).
+    expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 36, lessThan(navTop), reason: 'all three sections start on the first screen');
     expect(tester.takeException(), isNull);
   });
 
@@ -131,10 +135,11 @@ void main() {
     // One veil behind the status bar, over every tab.
     expect(tester.getRect(find.byType(StatusBarVeil)), const Rect.fromLTWH(0, 0, 390, 47));
     expect(tester.getRect(find.byType(TodayBackdrop)), screen, reason: 'top edge to bottom edge, under the navigation bar too');
-    // weather_contrast_test measures the header's text band at 71–201 px; this keeps the two in step.
+    // weather_contrast_test measures the header's text band at 71–290 px; this keeps the two in step. The guide's
+    // bubble (greeting, one line, Ask me) made it taller: 201 before (docs/COACH.md › Speech bubbles).
     final lines = tester.getRect(find.byType(TabHeader));
     expect(lines.top, top + 24);
-    expect(lines.bottom, lessThanOrEqualTo(201)); // 197 before the greeting gained its one summary line
+    expect(lines.bottom, lessThanOrEqualTo(290));
 
     // Every section sits on the one surface, below the header; nothing of the day is drawn on the scene itself.
     final surface = find.byKey(const Key('today-surface'));
@@ -540,7 +545,7 @@ void main() {
     for (final mode in [ThemeMode.light, ThemeMode.dark]) {
       testWidgets('${mode.name}: every scene changes the backdrop only; layout, states, accent and navigation stay, and the header keeps its scrim', (tester) async {
         final (c, w) = await today(tester, mode: mode);
-        const keys = ['today-header', 'today-greeting', 'today-module-workout', 'today-module-run', 'today-module-nutrition', 'today-resume', 'today-details', 'today-run', 'log-food', 'nav-today'];
+        const keys = ['today-header', 'coach-say-title', 'today-module-workout', 'today-module-run', 'today-module-nutrition', 'today-resume', 'today-details', 'today-run', 'log-food', 'nav-today'];
         Map<String, Rect> layout() => {for (final k in keys) k: tester.getRect(find.byKey(Key(k)))};
         // Everything but the line naming the weather, which is meant to change with it.
         List<String?> words() => [
@@ -567,7 +572,7 @@ void main() {
             expect(tester.widget<TabHeader>(find.descendant(of: find.byType(TodayScreen), matching: find.byType(TabHeader))).onBackdrop, isTrue);
             // The header's lines follow the sky, not the app's mode: light over a dark sky, dark over a light one.
             final sky = goTheme(Accent.pink, c.read(todaySceneProvider).dark ? Brightness.dark : Brightness.light).extension<GoColors>()!;
-            expect(tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color, sky.text, reason: '$where: header text follows the sky');
+            expect(tester.widget<Text>(find.byKey(const Key('coach-say-title'))).style!.color, sky.text, reason: '$where: header text follows the sky');
             expect(find.descendant(of: find.byKey(const Key('today-sky-line')), matching: find.text(c.read(todaySceneProvider).label!)), findsOneWidget);
             expect(tester.takeException(), isNull);
           }
@@ -577,7 +582,7 @@ void main() {
     }
 
     testWidgets('a clear night stays a night with light text in Light mode, and a clear day keeps dark text in Dark mode', (tester) async {
-      Color greeting() => tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color!;
+      Color greeting() => tester.widget<Text>(find.byKey(const Key('coach-say-title'))).style!.color!;
       final light = goTheme(Accent.pink, Brightness.light).extension<GoColors>()!, dark = goTheme(Accent.pink, Brightness.dark).extension<GoColors>()!;
       final (c, w) = await today(tester, mode: ThemeMode.light);
       await weather(tester, c, w, 'clear', false);

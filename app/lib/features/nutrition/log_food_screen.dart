@@ -10,6 +10,7 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
+import '../coach/coach_bubble.dart';
 import '../../data/models.dart';
 import 'barcode_scan_screen.dart';
 import 'food_discovery.dart';
@@ -309,6 +310,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             icon: const Icon(Icons.arrow_back_ios_new, size: 22), onPressed: () => Navigator.maybePop(context),
           ),
           const Expanded(child: Heading('Add food', size: 36, serif: true)),
+          const CoachHelpEntry(id: 'food.search', label: 'Help with finding a food'),
           TextButton.icon(key: const Key('food-scan'), onPressed: _lookingUp != null ? null : _scan, icon: const Icon(Icons.qr_code_scanner, size: 24), label: const Text('Scan')),
         ]),
         Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
@@ -352,6 +354,12 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     );
 
     final rows = <Widget>[
+      // At the top of the results, so the search field never moves: once, the first time this page is in view with no
+      // keyboard up; afterwards from the help entry beside Scan. Typing a search puts it away: the results come first.
+      if (_query.text.trim().isEmpty) const CoachSpot(
+        id: 'food.search', introduce: true, padding: EdgeInsets.only(top: 4, bottom: 8),
+        say: CoachSay('Search for a food, scan a barcode or enter your own. Recent, Favourites and My foods are one tap away.'),
+      ),
       if (_scope == FoodScope.search && catalog.categories.isNotEmpty)
         _Chips(
           values: [null, ...catalog.categories], selected: _category,

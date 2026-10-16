@@ -17,7 +17,7 @@ import 'coach_rig.dart';
 /// foreground and its header on screen. After the greeting it settles and rests; at rest the only movement is an
 /// occasional blink, and nothing ticks between blinks.
 class CoachCompanion extends StatefulWidget {
-  const CoachCompanion({super.key, required this.guide, required this.size, this.greet = false, this.attentive = false, this.ack = 0, this.leaving = false, this.onGreeted, this.onLeft, this.control});
+  const CoachCompanion({super.key, required this.guide, required this.size, this.greet = false, this.attentive = false, this.ack = 0, this.leaving = false, this.onGreeted, this.onLeft, this.revealed});
   final CoachGuide guide;
   final Size size;
 
@@ -37,9 +37,9 @@ class CoachCompanion extends StatefulWidget {
   final VoidCallback? onGreeted;
   final VoidCallback? onLeft;
 
-  /// A control placed at the bottom left of the portrait (Hide for today). It comes and goes with the guide, so it is
-  /// never shown, or tappable, while the guide is behind the edge.
-  final Widget? control;
+  /// Written with how far the guide has arrived for what it says (0 hidden, 1 settled): an attached speech bubble
+  /// listens to it, so the words appear as the character settles and leave first when it tucks away.
+  final ValueNotifier<double>? revealed;
 
   @override
   State<CoachCompanion> createState() => CoachCompanionState();
@@ -68,7 +68,7 @@ class _Spring {
 @visibleForTesting
 class CoachCompanionState extends State<CoachCompanion> with SingleTickerProviderStateMixin {
   // Timings (seconds) from docs/COACH.md › Companion › Motion.
-  static const _greetTilt = 0.30, _nodDown = 0.62, _nodUp = 0.80, _greetBlink = 1.05, _greetSettle = 1.55, _settleFor = 7.0;
+  static const _greetReveal = 0.55, _greetTilt = 0.30, _nodDown = 0.62, _nodUp = 0.80, _greetBlink = 1.05, _greetSettle = 1.55, _settleFor = 7.0;
 
   final pose = ValueNotifier<RigPose>(RigPose.hidden);
   late final Ticker _ticker = createTicker(_tick);
@@ -76,8 +76,8 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   final _random = math.Random();
 
   final _slide = _Spring(0, 14, 0.78), _lean = _Spring(0.2, 12, 0.85), _tilt = _Spring(0, 9, 0.9), _nod = _Spring(0, 18, 0.8);
-  final _brow = _Spring(0, 10, 0.9), _smile = _Spring(0, 9, 0.95), _breath = _Spring(0, 4, 1);
-  List<_Spring> get _springs => [_slide, _lean, _tilt, _nod, _brow, _smile, _breath];
+  final _brow = _Spring(0, 10, 0.9), _smile = _Spring(0, 9, 0.95), _breath = _Spring(0, 4, 1), _reveal = _Spring(0, 11, 1);
+  List<_Spring> get _springs => [_slide, _lean, _tilt, _nod, _brow, _smile, _breath, _reveal];
 
   /// Motion time: advances only while it moves, so a pause never skips part of a sequence.
   double _t = 0;
@@ -200,10 +200,13 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _at(_nodDown, () => _nod.target = 1);
     _at(_nodUp, () => _nod.target = 0);
     _at(_greetBlink, _blink);
+    _at(_greetReveal, () => _reveal.target = 1); // the words arrive with the nod, as the guide settles
     _at(_greetSettle, () {
       _tilt.target = RigPose.settled.tilt;
       _brow.target = 0;
+      _smile.target = 0.55; // a small smile for what was just said
     });
+    _at(_greetSettle + 0.8, () => _smile.target = 0);
     _at(_settleFor, () => _breath.target = 0);
   }
 
@@ -267,7 +270,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
       ..target = 0.2
       ..w = 22
       ..z = 1;
-    _smile.target = _brow.target = _nod.target = _breath.target = 0;
+    _smile.target = _brow.target = _nod.target = _breath.target = _reveal.target = 0;
     _run();
   }
 
@@ -370,6 +373,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _brow.target = p.brow;
     _smile.target = p.smile;
     _breath.target = 0;
+    _reveal.target = p.slide;
   }
 
   void _still() {
@@ -388,10 +392,22 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     if (_started && widget.attentive) _attend(true); // still attentive, just without travel
   }
 
-  void _publish() => pose.value = RigPose(
-        slide: _slide.x, lean: _lean.x, tilt: _tilt.x, nod: _nod.x, brow: _brow.x, smile: _smile.x, blink: _closure,
-        breath: _breath.x * math.sin(_t * 2 * math.pi / 4.2),
-      );
+  void _publish() {
+    pose.value = RigPose(
+      slide: _slide.x, lean: _lean.x, tilt: _tilt.x, nod: _nod.x, brow: _brow.x, smile: _smile.x, blink: _closure,
+      breath: _breath.x * math.sin(_t * 2 * math.pi / 4.2),
+    );
+    final revealed = widget.revealed, v = _reveal.x.clamp(0.0, 1.0);
+    if (revealed == null || revealed.value == v) return;
+    // Its listeners rebuild; not while the tree is building (the first pose is published from didChangeDependencies).
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) revealed.value = _reveal.x.clamp(0.0, 1.0);
+      });
+    } else {
+      revealed.value = v;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -400,21 +416,6 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
       duration: context.motion(Motion.quick),
       child: RigPortrait(key: ValueKey(widget.guide), guide: widget.guide, pose: pose, size: widget.size),
     );
-    final control = widget.control;
-    if (control == null) return portrait;
-    return Stack(children: [
-      Positioned.fill(child: portrait),
-      Positioned(
-        left: 0, bottom: 0,
-        child: ValueListenableBuilder<RigPose>(
-          valueListenable: pose,
-          child: control,
-          builder: (context, p, child) {
-            final t = ((p.slide - 0.6) / 0.4).clamp(0.0, 1.0); // in the last part of the entrance, first part of the exit
-            return IgnorePointer(ignoring: t < 0.5, child: Opacity(opacity: t, child: child));
-          },
-        ),
-      ),
-    ]);
+    return portrait;
   }
 }

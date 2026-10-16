@@ -9,6 +9,8 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../activity/activity_screens.dart';
+import '../coach/coach_bubble.dart';
+import '../coach/coach_contract.dart';
 import '../shell/home_shell.dart';
 import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
@@ -145,8 +147,15 @@ class _PlanViewState extends ConsumerState<_PlanView> {
               ? 'A saved draft does not schedule anything until you start it.'
               : 'Start from a familiar split or build your own, and review it before anything is scheduled. Manual training is always available.',
           action: PrimaryButton('Create my plan', key: const Key('create-plan'), onPressed: () => push(context, const CreatePlanScreen())),
-        )
-      else
+        ),
+      // The first time Train is in view without a plan: the coach offers the starting paths, once.
+      if (primary == null && !hasDraft)
+        const CoachSpot(
+          id: 'train.noPlan', introduce: true, padding: EdgeInsets.only(bottom: 8),
+          // Ask me only: Create my plan, just above, is already the way to the starting paths.
+          say: CoachSay('Want a starting point? I can explain the splits or help you build your own.', ask: CoachContext(label: 'Starting a plan')),
+        ),
+      if (primary != null)
         ..._primary(context, primary, today, workouts, proposals),
       if (others.isNotEmpty) ...[
         _between,

@@ -12,6 +12,8 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../coach/coach_avatar.dart' show CoachHelpButton;
+import '../coach/coach_bubble.dart';
 import '../me/account_repository.dart';
 import '../workout/workout_runtime.dart';
 import 'run_tracking.dart';
@@ -124,7 +126,14 @@ class _RunScreenState extends ConsumerState<RunScreen> {
     String km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
 
     final paused = runtime?.isPaused ?? false;
-    return AppPage(title: run.isOpen ? 'Run' : 'Run recorded', subtitle: longDate(run.dayKey), children: [
+    return AppPage(title: run.isOpen ? 'Run' : 'Run recorded', subtitle: longDate(run.dayKey), actions: [
+      if (run.isOpen)
+        CoachHelpButton(
+          key: const Key('coach-help-run'), semanticLabel: 'Help with recording a run',
+          onPressed: () => showCoachHelpSheet(context, title: 'Recording a run', say: const CoachSay(
+              'GPS measures distance while this screen is open. Pause any time; Finish run saves it.')),
+        ),
+    ], children: [
       Panel(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [

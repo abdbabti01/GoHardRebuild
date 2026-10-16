@@ -23,15 +23,23 @@ class CoachPrefs {
 
   static String dayKey(String owner, String day) => '$owner|$day';
 
-  /// Whether Today may play the companion's greeting for [owner] on [day]: once a day, while hints are on.
-  bool mayGreet(String owner, String day) => hintsEnabled && greeted != dayKey(owner, day);
+  /// Whether Today may play the companion's greeting for [owner] on [day]: once a day. Show coach on Today governs
+  /// it; Coaching hints govern the introductions elsewhere (docs/COACH.md › Companion › When the coach appears).
+  bool mayGreet(String owner, String day) => greeted != dayKey(owner, day);
+
+  /// Whether [owner] has already had the one introduction of [context] (a stable id such as `builder.structure`).
+  bool seen(String owner, String context) => dismissed.contains('$owner|$context');
+
+  /// Whether an automatic introduction of [context] may appear for [owner] now that it is in view.
+  bool mayIntroduce(String owner, String context) => hintsEnabled && !seen(owner, context);
   bool hiddenOn(String owner, String day) => hidden == dayKey(owner, day);
 
   CoachPrefs copy({CoachGuide? guide, bool? hintsEnabled, Set<String>? dismissed, bool? onToday, String? greeted, String? hidden}) => CoachPrefs(
       guide: guide ?? this.guide, hintsEnabled: hintsEnabled ?? this.hintsEnabled, dismissed: dismissed ?? this.dismissed, onToday: onToday ?? this.onToday,
       greeted: greeted ?? this.greeted, hidden: hidden ?? this.hidden);
 
-  /// Hints already shown, closed or acted on. None of them shows again until "Show coaching hints again".
+  /// Introductions already shown, as `owner|context`, so one account's never hide or reveal another's. None shows
+  /// again until "Show coaching hints again". (Entries without an owner come from an older build and are ignored.)
   final Set<String> dismissed;
 
   @override
@@ -88,13 +96,14 @@ class CoachPrefsController extends Notifier<CoachPrefs> {
   /// "Hide for today": the companion is back the next day. Ask GoHard stays.
   void hideToday(String owner, String day) => _apply(state.copy(hidden: CoachPrefs.dayKey(owner, day)));
 
-  /// Marks a hint seen: it does not show again in that flow.
-  void dismiss(String hintId) {
-    if (!state.dismissed.contains(hintId)) _apply(state.copy(dismissed: {...state.dismissed, hintId}));
+  /// [owner] has seen the introduction of [context]: it does not appear by itself again.
+  void markSeen(String owner, String context) {
+    if (!state.seen(owner, context)) _apply(state.copy(dismissed: {...state.dismissed, '$owner|$context'}));
   }
 
-  /// "Show coaching hints again": every hint may show once more. The guide and the on/off choice are kept.
-  void resetHints() => _apply(state.copy(dismissed: const {}));
+  /// "Show coaching hints again": every introduction may appear once more for [owner]. Other accounts, the guide and
+  /// the on/off choices are kept.
+  void resetHints(String owner) => _apply(state.copy(dismissed: {for (final k in state.dismissed) if (k.contains('|') && !k.startsWith('$owner|')) k}));
 
   void _apply(CoachPrefs next) {
     ref.read(coachPrefsStoreProvider).value = next;
