@@ -1202,3 +1202,6 @@ CI and IPA on `79fca3d`: **not run**. GitHub refused to start the jobs of `ci` r
 (and, earlier, `ci` run 67 on `c447c44`) with "recent account payments have failed or your spending limit needs to be
 increased", a billing block on the GitHub account, not a code result. They need re-running once billing is fixed.
 The last successful IPA (run 21, `a613cf4`) predates this round. `main` untouched.
+After the repository was made public (free Actions minutes), on `9fa0e60` (the round 3 code plus the ledger note):
+`ci` run 69 (re-run) success, api and app jobs; unsigned IPA run 23 success (`GoHard-Dev-unsigned-ipa`, 12,371,122 bytes,
+expires 30 Oct 2026). `main` untouched. A successful iOS build says nothing about iPhone smoothness or battery.
