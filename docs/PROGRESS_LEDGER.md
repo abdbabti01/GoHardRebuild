@@ -1271,3 +1271,55 @@ frame timing and battery. Still to check on a physical phone: the blink and gaze
 permission prompts (and the "restricted" state, which geolocator reports as not allowed), and VoiceOver.
 
 Known limit: Ask GoHard's suggested questions on Progress are still the plan ones; the context label is right.
+
+## 16 October 2026 (Today panels) — the approved Today mockup: photographic panels (branch `feature/today-photo-panels`, from `feature/coach-companion` at `bbe4fd7`)
+
+Presentation only: no API, contract, sync, stored-data, permission or AI-provider change. Layout and rules in
+docs/DESIGN.md › Today panels.
+
+| Change | Where |
+|---|---|
+| Order: Workout and Nutrition at the full width, then a compact Run tile (64 %) with History beside it; the scene shows around them. The single blurred surface and the rhythm thread are removed (`RhythmTimeline`, `GoColors.panelOpacity` deleted) | `features/today/today_screen.dart` (`TodayScreen`) |
+| One panel family: `_PanelTheme` (pale accent tint, dark ink, deep accent button, same in Light and Dark; Blue and Pink have their own), `_PanelSurface` (opaque tint, soft shadow, thin edge, photograph on the trailing half fading into the tint by a `ShaderMask` gradient), `_Module` (badge, serif display line, secondary lines, button with a quiet link) | `today_screen.dart`; `goThemeOf` split out of `goTheme` in `core/theme.dart` (no change for other screens) |
+| Workout: the real name in the serif; every state kept (due, in progress, saved for later, completed, partly completed, skipped, rest, paused, starts later, block review, draft, no plan); only due and in-progress have the photograph and Start/Resume; other workouts today, unresolved earlier workouts, Start a manual workout and saved-for-later sit under the lead in the same panel; an open manual or other-day workout has its own panel in front | `_TrainingSection`, `_OpenWorkout` |
+| Nutrition: the calorie figure in the serif ("1,400 kcal"), the goal and its bar when set, protein on one line, unknown as a dash, partial as "known", the missing-values line; "No food logged today" (never 0 kcal); Log food filled, Journal quiet | `_NutritionCard`; `NutritionSummary` display figure in `nutrition/nutrition_surface.dart` (only Today uses it) |
+| Run: compact tile with the photograph; real state, Distance/Time only from saved values; Start run / Continue run filled; History on the scene in the header's sky colours on a scrim | `_RunCard` |
+| Sheets and dialogs opened from a panel (Details, Start/Resume, Log food, Start run, Undo skip) open from the context outside the panel theme, so they keep the app's look | `_AppContext`, `_appContext` |
+| Journeys skip the coach setup a new account now gets (it blocked every journey that signs up since round 4) | `integration_test/support.dart` (`Journey.start`) |
+| A device evidence journey for the panels (not in the default run) | `integration_test/journey_today_panels_test.dart` |
+
+**Photographs.** The three bundled ones, unchanged (provenance note added to `app/assets/PROVENANCE.md`). They show the
+mockup's subjects but are not its pictures, which are wet/rainy variants not supplied as files. No asset was added.
+
+**Visible differences from the approved image.**
+- Photographs: see above (dry gym floor and dusk riverside path instead of wet ones).
+- Heights: the due workout panel is 260 at 390 × 844 against about 183 in the mockup, because the 52 px button and
+  the plan-week line ("Week 3 · 50 min planned") are kept; in progress with the ring it is 320.
+- The scene is the live weather (Halifax partly cloudy / overcast during the capture), not the mockup's rain.
+- History has a soft scrim backing so it reads over a light sky as well as a dark one.
+- Nutrition shows the goal line and bars, and the missing-values line, when they apply (the mockup shows the simplest
+  state).
+
+**Checks run** (proportionate; no full suite; no API tests, API unchanged):
+- `flutter analyze` (lib, test, integration_test): clean.
+- `today_ui_test`, `widget_test`, `train_plan_ui_test`, `theme_test`, `weather_contrast_test`, `motion_test`,
+  `today_states_test`, `coach_companion_test`, `coach_avatar_test`, `weather_ui_test`, `weather_motion_test`,
+  `me_ui_test`: all passing. Updated expectations that described the old arrangement (one surface and blur, one
+  filled button on Today, outlined Start run, 84/72 px crops, the old height targets, the serif rule now allowing
+  Today's panel lines, the sections' dark theme in Dark mode); removed the surface contrast test and the timeline half
+  of a motion test with the code they covered. New regression test: Details opens its sheet in the app's Dark look
+  (fails without the fix, passes with it).
+- Renders: `flutter test test/render_test.dart --dart-define=GOHARD_RENDER=true` (Today states, six themes, every
+  weather scene, 320 px at 2×). Before/after pairs at the same fixture and viewport in `docs/evidence/today-panels/`.
+- Device (`emulator-5554`, Pixel 7 image, 1080 × 2400, debug build, local API, live Open-Meteo for Halifax):
+  `scripts\test-android.ps1 -Only journey_today_panels_test` passed. Captures `docs/evidence/screenshots/today-panels-*`
+  (no plan, due, due with food, in progress, open run, Green/Blue/Pink × Light/Dark); the journey checks Start workout
+  → workout → Resume on Today → the same workout; Log food → food form → real values; Journal → Eat; Start run → run
+  → Continue run → finish → Start run; History → Run history. Recording `docs/evidence/recordings/today-panels.mp4`:
+  scrolling, Ask me → Ask GoHard, Details sheet, Journal, History, the guide and the sky at rest.
+- Emulator housekeeping: the data partition was full (install failed). Old recordings on `/sdcard` were copied off
+  first, then removed; this project's earlier profile install `com.gohard.rebuild` was uninstalled (test data only;
+  the original `com.example.go_hard_app` untouched); the emulator was rebooted.
+
+**Pending, physical phone:** the panels and their photographs on a real screen, scroll smoothness over the moving
+sky, VoiceOver/TalkBack by ear. Large text was checked in renders (320 px at 2×), not on the device this time.

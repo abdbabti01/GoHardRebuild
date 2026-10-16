@@ -173,22 +173,27 @@ class NutritionSummary extends StatelessWidget {
     return goals.isEmpty ? null : goals.join(' · ');
   }
 
-  Widget _metric(BuildContext context, Nutrient n, String label, String unit, int? goal, double size) {
+  /// [display]: the calorie figure in the serif with its unit ("513 kcal"), as Today's panel shows it, and the goal or
+  /// "known" under it. Otherwise one line ("6.4 g protein").
+  Widget _metric(BuildContext context, Nutrient n, String label, String unit, int? goal, {required bool display}) {
     final t = coverage[n]!;
     final known = t.hasAnyKnown, partial = known && !t.isComplete;
     final said = n == Nutrient.calories ? 'kilocalories' : 'grams';
+    final value = known ? _amount(n, t.knownTotal) : '—';
+    final quiet = context.sansStyle(display ? 14 : 17, color: context.c.secondary);
     return Semantics(
       label: '$label ${known ? '${_amount(n, t.knownTotal)} $said' : 'unknown'}'
           '${partial ? ', known from ${t.knownEntries} of ${t.knownEntries + t.unknownEntries} foods' : ''}${goal == null ? '' : ', goal ${_grouped(goal)} $said'}',
       child: ExcludeSemantics(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 5, children: [
-            Text(known ? _amount(n, t.knownTotal) : '—', style: context.titleStyle(size)),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 1.5),
-              child: Text('${goal == null ? '' : '/ ${_grouped(goal)} '}$unit${partial ? ' · known' : ''}', style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w400)),
-            ),
-          ]),
+          if (display) ...[
+            Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [Text(value, style: context.pageTitleStyle(44)), Text(unit, style: context.pageTitleStyle(44))]),
+            if (goal != null || partial) Text(goal == null ? 'known so far' : '/ ${_grouped(goal)} $unit${partial ? ' · known' : ''}', style: quiet),
+          ] else
+            Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 5, children: [
+              Text(value, style: context.numStyle(17, color: context.c.text)),
+              Text('${goal == null ? '' : '/ ${_grouped(goal)} '}$unit${partial ? ' · known' : ''}', style: quiet),
+            ]),
           if (goal != null)
             Padding(
               key: Key('today-goal-${n.name}'), padding: const EdgeInsets.only(top: 6),
@@ -205,9 +210,9 @@ class NutritionSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        _metric(context, Nutrient.calories, 'Calories', 'kcal', calorieGoal, 26),
-        const SizedBox(height: 10),
-        _metric(context, Nutrient.protein, 'Protein', 'g protein', proteinGoal, 22),
+        _metric(context, Nutrient.calories, 'Calories', 'kcal', calorieGoal, display: true),
+        const SizedBox(height: 4),
+        _metric(context, Nutrient.protein, 'Protein', 'g protein', proteinGoal, display: false),
       ]);
 }
 

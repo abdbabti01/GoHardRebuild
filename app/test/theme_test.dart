@@ -351,8 +351,13 @@ void main() {
       for (final tab in ['today', 'train', 'eat']) {
         await _tap(tester, 'nav-$tab');
       }
-      final all = [for (final t in tester.widgetList<Text>(find.byType(Text, skipOffstage: false))) if (family(t) == serif) t.data];
-      expect(all.toSet(), {'Today', 'Train', 'Eat', 'Me', "Today's meals"}, reason: "the four tab titles and Eat's one section title, nothing else in the tabs");
+      // Today's panels set their name and calorie figure in the serif (the approved Today design); nothing else does.
+      final panels = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('today-module-'), skipOffstage: false);
+      final all = [
+        for (final e in find.byType(Text, skipOffstage: false).evaluate())
+          if (family(e.widget as Text) == serif && find.ancestor(of: find.byWidget(e.widget, skipOffstage: false), matching: panels).evaluate().isEmpty) (e.widget as Text).data
+      ];
+      expect(all.toSet(), {'Today', 'Train', 'Eat', 'Me', "Today's meals"}, reason: "the four tab titles and Eat's one section title, nothing else in the tabs outside Today's panels");
     });
 
     testWidgets('Appearance: a Today background row, and a preview that cannot be pressed', (tester) async {

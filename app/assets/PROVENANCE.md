@@ -31,6 +31,10 @@ was drawn or downloaded: the motion is a mesh deformation of these pictures and 
 them. To regenerate: replace a source in `design/coach/assets/`, run the script, then re-measure the landmarks in
 `RigArt` (eyes, brows, neck pivot, as fractions of the source) and review `coach_rig_render_test.dart`'s frame strips.
 
+Update, 16 October 2026 (Today panels): no new asset files. The three Today photographs (`assets/images/*.webp`, from
+`gohard-today-photo-design/`, see its `ASSETS.md`) are used unchanged, cropped and faded at runtime. The approved
+mockup's own photographs were not supplied as files and are not used.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",

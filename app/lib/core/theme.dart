@@ -73,11 +73,6 @@ class GoColors extends ThemeExtension<GoColors> {
   /// How much of the page a [scrim] lets through; 0.66 holds 4.5:1 for [text] over a black or a white pixel.
   static const scrimOpacity = 0.66;
 
-  /// Today's sections sit on [surface] at this opacity over the scene, with a soft blur: soft white in Light, charcoal
-  /// in Dark, whatever the weather. `weather_contrast_test` measures text, secondary and accent text on it over every
-  /// pixel of every scene, without counting the blur.
-  static const panelOpacity = 0.92;
-
   /// The top of the calm background behind Train and Eat, fading into [page]: halfway between page and recessed fill,
   /// so everything that reads on both reads on it.
   Color get wash => Color.lerp(page, sunken, 0.5)!;
@@ -170,8 +165,11 @@ extension GoContext on BuildContext {
   TextStyle get label => sansStyle(13.5, color: c.secondary, weight: FontWeight.w600);
 }
 
-ThemeData goTheme(Accent accent, Brightness brightness, {bool highContrast = false}) {
-  final c = GoColors.of(accent, brightness, highContrast: highContrast);
+ThemeData goTheme(Accent accent, Brightness brightness, {bool highContrast = false}) =>
+    goThemeOf(GoColors.of(accent, brightness, highContrast: highContrast), brightness);
+
+/// The same theme from a given palette: Today's photographic panels use it with their own pale tint (today_screen.dart).
+ThemeData goThemeOf(GoColors c, Brightness brightness) {
   final dark = brightness == Brightness.dark;
   final scheme = ColorScheme(
       brightness: brightness, primary: c.accent, onPrimary: c.onAccent, primaryContainer: c.accentSoft, onPrimaryContainer: c.text,

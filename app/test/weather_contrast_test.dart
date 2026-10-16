@@ -96,54 +96,6 @@ void main() {
           expect(bar, greaterThanOrEqualTo(3), reason: '$k: status-bar icons over the scene');
         }
       });
-
-      // Today's sections sit on the surface (GoColors.surface at panelOpacity, in the app's own look whatever the sky)
-      // over the full-screen scene. Without counting the blur, which only evens the pixels out, text, secondary text and
-      // accent-coloured text keep 4.5:1 over the surface laid on every pixel of the scene below the header.
-      testWidgets('Today\'s surface keeps its text readable over every full-screen scene: ${accent.name} ${brightness.name}', (tester) async {
-        const w = 390, h = 844;
-        tester.view.physicalSize = const Size(w + 0.0, h + 0.0);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.reset);
-        final theme = goTheme(accent, brightness);
-        final c = theme.extension<GoColors>()!;
-        final boundary = GlobalKey();
-        final inks = {'text': c.text, 'secondary': c.secondary, 'accent': c.accent};
-        for (final k in keys) {
-          await tester.pumpWidget(MaterialApp(
-              theme: theme,
-              home: RepaintBoundary(key: boundary, child: SizedBox(width: w + 0.0, height: h + 0.0, child: SceneBackdrop(spec: spec(k), animate: false)))));
-          await tester.runAsync(() async {
-            for (final e in find.byType(Image).evaluate()) {
-              await precacheImage((e.widget as Image).image, e);
-            }
-          });
-          await tester.pumpAndSettle();
-          final worst = await tester.runAsync(() async {
-            final image = await (boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary).toImage();
-            final raw = (await image.toByteData())!;
-            final a = GoColors.panelOpacity;
-            int mix(int surface, int pixel) => (surface * a + pixel * (1 - a)).round();
-            final s = [c.surface.r, c.surface.g, c.surface.b].map((v) => (v * 255).round()).toList();
-            final low = {for (final n in inks.keys) n: 99.0};
-            for (var y = 200; y < h; y += 3) {
-              for (var x = 0; x < w; x += 3) {
-                final o = (y * w + x) * 4;
-                final l = 0.2126 * channel(mix(s[0], raw.getUint8(o))) + 0.7152 * channel(mix(s[1], raw.getUint8(o + 1))) + 0.0722 * channel(mix(s[2], raw.getUint8(o + 2)));
-                for (final e in inks.entries) {
-                  low[e.key] = math.min(low[e.key]!, ratio(l, e.value.computeLuminance()));
-                }
-              }
-            }
-            image.dispose();
-            return low;
-          });
-          debugPrint('${accent.name} ${brightness.name} $k surface: ${worst!.entries.map((e) => '${e.key} ${e.value.toStringAsFixed(1)}').join(', ')}');
-          for (final e in worst.entries) {
-            expect(e.value, greaterThanOrEqualTo(4.5), reason: '$k: ${e.key} on Today\'s surface');
-          }
-        }
-      });
     }
   }
 }

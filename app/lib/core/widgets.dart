@@ -475,45 +475,6 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter old) => old.value != value || old.fill != fill || old.track != track || old.stroke != stroke;
 }
 
-/// Today's daily rhythm: one vertical thread with a round icon node at the head of each section (Workout, Run,
-/// Nutrition), thin separators between them, every section the same width. Thread and nodes are decoration; each
-/// section says what it is in words. With very large text the thread gives its width to the content.
-///
-///     RhythmTimeline(sections: [(Icons.fitness_center, workout), (Icons.directions_run, run), (Icons.restaurant, food)])
-class RhythmTimeline extends StatelessWidget {
-  const RhythmTimeline({super.key, required this.sections});
-
-  /// Each section's node icon and content, top to bottom.
-  final List<(IconData, Widget)> sections;
-
-  static const _node = 40.0, _gap = 14.0, _pad = 18.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final roomy = MediaQuery.textScalerOf(context).scale(10) <= 15;
-    final c = context.c;
-    final last = sections.length - 1;
-    Widget thread({double? top, double? bottom, double? height}) =>
-        Positioned(left: _node / 2 - 0.5, width: 1, top: top, bottom: bottom, height: height, child: ColoredBox(color: c.divider));
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      for (final (i, (icon, child)) in sections.indexed)
-        Stack(children: [
-          if (roomy && i > 0) thread(top: 0, height: _pad + 1),
-          if (roomy && i < last) thread(top: _pad + (i > 0 ? 1 : 0) + _node, bottom: 0),
-          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            if (i > 0) Divider(color: c.divider, height: 1, indent: roomy ? _node + _gap : 0),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: _pad),
-              child: roomy
-                  ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [IconTile(icon, size: _node, circle: true), const SizedBox(width: _gap), Expanded(child: child)])
-                  : child,
-            ),
-          ]),
-        ]),
-    ]);
-  }
-}
-
 /// One of a few side-by-side choices drawn as a card (Appearance's accents and modes): [leading] (a colour swatch or
 /// an icon) above [label]. The chosen card has the accent border, the selection tint, a heavier label and a check
 /// badge, so the choice never rests on colour alone; it is announced as a selected button in a mutually exclusive
