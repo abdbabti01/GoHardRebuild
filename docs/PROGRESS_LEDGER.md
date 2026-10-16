@@ -1102,3 +1102,6 @@ passed its one comparison run. The journey now pumps real frames for 0.6 s befor
 intermittent harness race, not proven absent. journey_plan: phase 1 passed again; phase 2 (new process) again failed to
 attach ("Service has disappeared") before any step — **still unverified**, as on 16 Oct. journey_companion_test passed
 against the live weather API (recordings above).
+
+On `a613cf4`: CI `ci` run 66 success; unsigned IPA run 21 success (`GoHard-Dev-unsigned-ipa`, 12,359,935 bytes, expires
+30 Oct 2026). `main` untouched. A successful iOS build says nothing about iPhone smoothness or battery.
