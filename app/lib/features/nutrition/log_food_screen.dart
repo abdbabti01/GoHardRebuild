@@ -309,9 +309,8 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             constraints: const BoxConstraints(minWidth: Targets.minimum, minHeight: Targets.minimum),
             icon: const Icon(Icons.arrow_back_ios_new, size: 22), onPressed: () => Navigator.maybePop(context),
           ),
-          const Expanded(child: Heading('Add food', size: 36, serif: true)),
+          const Expanded(child: Heading('Add food', size: 40, serif: true)),
           const CoachHelpEntry(id: 'food.search', label: 'Help with finding a food'),
-          TextButton.icon(key: const Key('food-scan'), onPressed: _lookingUp != null ? null : _scan, icon: const Icon(Icons.qr_code_scanner, size: 24), label: const Text('Scan')),
         ]),
         Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
           _MealSelector(meal: _meal, onChanged: (m) => setState(() => _meal = m)),
@@ -342,6 +341,9 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
           ),
         ),
         const SizedBox(height: 10),
+        // The second way in, as prominent as the field.
+        SecondaryButton('Scan barcode', key: const Key('food-scan'), icon: Icons.qr_code_scanner, onPressed: _lookingUp != null ? null : _scan),
+        const SizedBox(height: 10),
         _Tabs<FoodScope>(
           values: FoodScope.values, selected: _scope, keyPrefix: 'food-scope',
           label: (s) => const {FoodScope.search: 'Search', FoodScope.recent: 'Recent', FoodScope.favourites: 'Favourites', FoodScope.mine: 'My foods'}[s]!,
@@ -371,9 +373,14 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       if (_lookingUp != null) _status(Icons.hourglass_empty, 'Looking up barcode $_lookingUp…'),
       if (_barcodeMessage != null) _status(Icons.info_outline, _barcodeMessage!, key: const Key('barcode-message'), tone: Tone.warning),
       ...(_scope == FoodScope.search ? _searchRows(catalog, saved, journal, seen, supported) : _ownRows(catalog, saved, journal)),
-      _LinkRow(
-        key: const Key('food-manual'), title: 'Can\'t find it? Create your own food',
-        onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
+      Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: GroupCard(children: [
+          GroupRow(
+            key: const Key('food-manual'), icon: Icons.edit_outlined, title: 'Enter it yourself', subtitle: 'Can\'t find it? Create your own food',
+            onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
+          ),
+        ]),
       ),
       Padding(
         padding: const EdgeInsets.only(top: 28),
@@ -434,7 +441,9 @@ class _MealSelector extends StatelessWidget {
       );
 }
 
-/// Quiet text tabs with an underline on the chosen one. They scroll sideways instead of shrinking or cutting a label.
+/// The lists as a segmented track, in the shared [Segmented] look (the chosen one filled with the pale tint and its
+/// ink). Four labels do not fit every phone, so the track spreads them out when they fit and scrolls sideways when
+/// they do not, instead of shrinking or cutting a label.
 class _Tabs<T extends Enum> extends StatelessWidget {
   const _Tabs({required this.values, required this.selected, required this.label, required this.onChanged, required this.keyPrefix});
   final List<T> values;
@@ -444,33 +453,43 @@ class _Tabs<T extends Enum> extends StatelessWidget {
   final String keyPrefix;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: context.c.divider))),
-        child: SingleChildScrollView(
+  Widget build(BuildContext context) {
+    final ink = GoColors.panelOf(context.c).text;
+    final radius = BorderRadius.circular(Radii.field - 2);
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(Radii.field + 1), border: Border.all(color: context.c.divider)),
+      child: LayoutBuilder(
+        builder: (context, box) => SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            for (final v in values)
-              Semantics(
-                selected: v == selected, button: true, inMutuallyExclusiveGroup: true,
-                child: InkWell(
-                  key: Key('$keyPrefix-${v.name}'),
-                  onTap: () {
-                    if (v != selected) Haptics.selection();
-                    onChanged(v);
-                  },
-                  child: AnimatedContainer(
-                    duration: context.motion(Motion.quick), curve: Curves.easeOut,
-                    constraints: const BoxConstraints(minHeight: Targets.minimum, minWidth: Targets.minimum), padding: const EdgeInsets.symmetric(horizontal: 12),
-                    // The underline, the weight and the colour all mark the choice, so it also reads in grayscale.
-                    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: v == selected ? context.c.accent : Colors.transparent, width: 2.5))),
-                    // Shrink-wrapped: an Align with no factor would take all the height a sideways scroller offers.
-                    child: Center(widthFactor: 1, heightFactor: 1, child: Text(label(v), style: context.sansStyle(15.5, weight: v == selected ? FontWeight.w700 : FontWeight.w500, color: v == selected ? context.c.accent : context.c.secondary))),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: box.maxWidth),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+              for (final v in values)
+                Semantics(
+                  selected: v == selected, button: true, inMutuallyExclusiveGroup: true,
+                  child: InkWell(
+                    key: Key('$keyPrefix-${v.name}'), borderRadius: radius,
+                    onTap: () {
+                      if (v != selected) Haptics.selection();
+                      onChanged(v);
+                    },
+                    child: AnimatedContainer(
+                      duration: context.motion(Motion.quick), curve: Motion.curve,
+                      constraints: const BoxConstraints(minHeight: Targets.minimum, minWidth: Targets.minimum), padding: const EdgeInsets.symmetric(horizontal: 14),
+                      // Fill, weight and a strong luminance step mark the choice, so it also reads in grayscale.
+                      decoration: BoxDecoration(color: v == selected ? context.c.tint : Colors.transparent, borderRadius: radius),
+                      // Shrink-wrapped: an Align with no factor would take all the height a sideways scroller offers.
+                      child: Center(widthFactor: 1, heightFactor: 1, child: Text(label(v), style: context.sansStyle(15, weight: v == selected ? FontWeight.w700 : FontWeight.w500, color: v == selected ? ink : context.c.text))),
+                    ),
                   ),
                 ),
-              ),
-          ]),
+            ]),
+          ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 /// All, then the catalog's categories, in one row that scrolls sideways.
@@ -519,8 +538,9 @@ class _Chips extends StatelessWidget {
       );
 }
 
-/// One food: its name, what tells it apart, the amount its values are for, calories and protein, and a plus that
-/// chooses it. The row and the plus do the same thing: open the amount form. Neither logs.
+/// One food: its name, what tells it apart (its kind, brand or source), the amount its values are for, calories and
+/// protein, and a chevron. The whole row opens the amount form; it never logs. No photograph: there is no licensed
+/// picture of each food.
 class _FoodRow extends StatelessWidget {
   const _FoodRow({super.key, required this.facts, required this.onTap});
   final RowFacts facts;
@@ -535,26 +555,26 @@ class _FoodRow extends StatelessWidget {
     final values = stacked ? '${facts.basis} · $kcal · $protein' : '${facts.basis} · $kcal';
     String spoken(String text) => text.replaceAll('—', 'unknown');
     return Column(children: [
-      InkWell(
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: Targets.navigation),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text(facts.title, style: context.sansStyle(17, weight: FontWeight.w600)),
-                  if (facts.detail != null) Text(facts.detail!, style: context.caption),
-                  Text(values, semanticsLabel: spoken(values), style: context.caption),
-                ]),
-              ),
-              if (!stacked) Padding(padding: const EdgeInsets.only(left: 10), child: Text(protein, semanticsLabel: spoken(protein), style: context.sansStyle(14.5, weight: FontWeight.w500))),
-              IconButton(
-                tooltip: 'Choose ${facts.title}', onPressed: onTap,
-                icon: const IconTile(Icons.add, circle: true, size: 38),
-              ),
-            ]),
+      Semantics(
+        button: true, hint: 'Choose this food',
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: Targets.navigation + 6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text(facts.title, style: context.sansStyle(17, weight: FontWeight.w600)),
+                    if (facts.detail != null) Padding(padding: const EdgeInsets.only(top: 1), child: Text(facts.detail!, style: context.sansStyle(14.5, color: context.c.secondary))),
+                    Text(values, semanticsLabel: spoken(values), style: context.caption),
+                  ]),
+                ),
+                if (!stacked) Padding(padding: const EdgeInsets.only(left: 10), child: Text(protein, semanticsLabel: spoken(protein), style: context.sansStyle(14.5, weight: FontWeight.w500))),
+                Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.chevron_right, size: 24, color: context.c.secondary)),
+              ]),
+            ),
           ),
         ),
       ),

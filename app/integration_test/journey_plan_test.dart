@@ -74,10 +74,11 @@ void main() {
       await j.shot('p06-today-plan-due');
       await j.tapKey('today-start');
       await j.waitFor(find.byKey(const Key('complete-set')));
-      expect(find.textContaining('Target 60'), findsWidgets, reason: 'the target travels into the workout, apart from any record');
+      expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '60 kg', reason: 'the target travels into the workout, apart from any record');
       await j.type('set-load', '57.5');
       await j.type('set-reps', '8');
       await j.tapKey('complete-set');
+      await j.reveal(find.byKey(const Key('set-row-0')));
       await j.waitFor(find.byKey(const Key('set-row-0')));
       await tester.pageBack(); // the workout stays open; nothing finishes it
       await j.waitFor(find.byKey(const Key('today-resume')), what: 'the open workout on Today');
@@ -96,6 +97,8 @@ void main() {
     await j.waitFor(find.text('1'), what: 'the set recorded before the process ended (the count settles after a short animation)');
     await j.waitUntil(() async => await j.apiReachable(), what: 'the network to be back');
     await j.tapKey('today-resume');
+    // The recorded sets sit below the exercise panel and its target tiles, in a list built as it scrolls.
+    await j.reveal(find.byKey(const Key('set-row-0')));
     await j.waitFor(find.byKey(const Key('set-row-0')), what: 'the set recorded offline before the process ended');
     await j.shot('p08-recovered-workout');
     await j.tapKey('finish-workout');

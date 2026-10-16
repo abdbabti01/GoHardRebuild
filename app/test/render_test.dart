@@ -359,7 +359,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final screen in ['today', 'train-plan', 'eat', 'me', 'appearance', 'log-food', 'food-results', 'food-preview', 'scan', 'goals']) {
+  for (final screen in ['today', 'train-workouts', 'train-plan', 'train-progress', 'eat', 'me', 'appearance', 'log-food', 'food-results', 'food-preview', 'scan', 'goals']) {
     testWidgets('six themes: $screen', (tester) async {
       final shots = <String, ui.Image>{};
       for (final mode in [ThemeMode.light, ThemeMode.dark]) {

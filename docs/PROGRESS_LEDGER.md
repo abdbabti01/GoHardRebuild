@@ -1323,3 +1323,56 @@ mockup's subjects but are not its pictures, which are wet/rainy variants not sup
 
 **Pending, physical phone:** the panels and their photographs on a real screen, scroll smoothness over the moving
 sky, VoiceOver/TalkBack by ear. Large text was checked in renders (320 px at 2×), not on the device this time.
+
+## 16 October 2026 (app-wide) — the Today photo-panel language across the app (branch `feature/appwide-design`, from `feature/today-photo-panels` at `72779c9`)
+
+Built from `GoHard_Appwide_UI_Handoff` (its `CLAUDE_PROMPT.md` and five reference boards, kept beside the code and not
+used as images). Presentation only: no API, contract, model, stored-data, sync, permission or AI-provider change; no new
+dependencies or assets. Rules and the shared pieces in docs/DESIGN.md › App-wide panels.
+
+How it was done: the shared tokens and components first (`db5efee`: `GoColors.accentDeep` / `onAccentDeep` / `tint` /
+`panelOf`, `PanelTheme` with `appContext`, `PanelSurface`, `PanelPhoto`, `PhotoPanel`, `QuietLink`, deep filled
+buttons, tinted `Segmented` and `ChoiceCard`; Today moved onto them unchanged in look). Then three screen groups in
+parallel with strict file ownership (Train and workout; Eat, food and run; Me, account, setup and Ask GoHard), then one
+integration pass (tests, renders, device, docs).
+
+| Area | Change |
+|---|---|
+| Train / Plan | Pale plan panel with the dumbbells (`train-pass`); chosen week in the tint; this week's rows in one card with icon-and-word states and today's row outlined and labelled "Today" |
+| Train / Workouts, Progress | Open workouts as panels with Resume and Details; start rows quiet; Progress summary panel from recorded data only (`train-progress-panel`), recent workouts, "Exercise history" |
+| Workout recording | Serif workout name; exercise panel (`workout-exercise-panel`) with the prescription; separate Target and Last recorded tiles from real data; sets, rest, notes, undo, Save for later, Finish unchanged |
+| Plan builder | Numbered step marks; plan-in-progress and Guide me suggestion as pale panels; serif workout names. Workout cards stay ordinary cards (their menus must keep the app's look) |
+| Eat | Summary panel with the bowl and Log food; goals ring and protein bar only when set; unknown "—", partial "known"; journal one card per meal, no photos |
+| Add food, food form | Scan barcode under the search; Search / Recent / Favourites / My foods as a tinted track (scrolls when it does not fit); clean result rows; "Enter it yourself". Form: pale header without a photograph, Amount and Portion, a "You're logging" summary (energy, protein, "—" when unknown), Add your own portion |
+| Run | "Your run": elapsed time in the serif on the runner panel; distance only once measured; Pause and Finish run; GPS start, typed distance, Remove run kept; no pace, map or signal indicator |
+| Me, Appearance, goals | Profile row with initial; quiet rows unchanged. Appearance: small preview, accent swatches, Light / Dark / System segment, coach cards, switches, Motion & haptics (`appearance-motion`), Today background. Goals: optional-goals panel, no prefill |
+| Sign-in, setup, Ask GoHard | Serif wordmark and heading, dumbbells panel, one show/hide password button (`auth-show-password`); "Step N of 2", tinted coach card, "Not now"; Ask GoHard answers in the tint with the guide's avatar, quiet user bubbles, pill suggestions, deep send |
+| Journeys | `Journey.start` skips the coach setup a new account gets (kept from the Today panels branch); `journey_plan_test` reads the target from its tile; new evidence journey `journey_appwide_test` (not in the default run) |
+
+**Checks run** (proportionate; no full suite; no API tests, API unchanged):
+- `flutter analyze` (lib, test, integration_test): clean.
+- Widget tests: today_ui, widget, train_ui, train_plan_ui, plan_builder_ui, plan_builder, today_states, eat_ui, food_ui,
+  food_search, food, me_ui, coach_ask, coach_avatar, coach_companion, weather_ui, motion, reminders_gps, theme: all
+  passing. `theme_test` gains contrast checks for the deep button's label and its edge in Dark, ink on the chosen
+  tint, and secondary and link text on a photo panel (all six looks and increased contrast). The serif rule is now
+  "titles and key figures; never in a control, row, field or the navigation" on every tab and Appearance. Expectations
+  updated where they encoded the old layout (Mode as a segment, food rows opened by the row, outlined vs filled
+  Resume/Start run, the target tiles, meal cards, the image count on Eat); none weakened.
+- Renders (`render_test`, GOHARD_RENDER): six looks for Today, Workouts, Plan, Progress, Eat, Me, Appearance, Add food,
+  results, the food form, scanner, goals; whole pages, 12- and 16-week plans, large text at 320 px. Recording, builder
+  and Ask GoHard need the real database and are captured on the device instead. Before/after pairs at the same
+  fixtures and viewports in `docs/evidence/appwide/`.
+- Device (`emulator-5554`, Pixel 7 image, 1080 × 2400, debug build, local API): `journey_appwide_test` passed:
+  sign-in, registration, Choose your coach, optional features, goals, the builder's steps, Today, workout start, a set
+  recorded, rest, Train's three views, food search and the portion form (choosing logs nothing), a run started and
+  finished, Me, Appearance, Ask GoHard, then Train/Eat in Blue Light, Pink Dark and Green Light. 28 captures in
+  `docs/evidence/screenshots/appwide-*`; recording `docs/evidence/recordings/appwide.mp4` (69 s: tabs, Ask GoHard,
+  the plan, food search with the keyboard, the coach and the sky at rest). `journey_plan_test` (two phases: offline activation, the set recorded before the process ended recovered,
+  move, edit, my own rotation) passed after two harness fixes: the recorded-set row now sits below the exercise panel
+  in a list built as it scrolls, so journeys scroll to it before waiting (`j.reveal`; the same in the cold-start, more,
+  offline and captures journeys, assertions unchanged); one attempt lost the emulator ("device offline") after phase 1
+  and was retried once. Those other journeys were not rerun.
+
+**Not verified:** a physical iPhone or Android phone (smoothness, brightness comfort, battery), VoiceOver/TalkBack by
+ear, System mode following the phone's setting on a device (rendered and tested in widget tests), the keyboard over
+every form (seen on food search and set entry).

@@ -31,6 +31,7 @@ void main() {
       await j.tapKey('manual-start');
       await j.type('set-reps', '10');
       await j.tapKey('complete-set');
+      await j.reveal(find.byKey(const Key('set-row-0')));
       await j.waitFor(find.byKey(const Key('set-row-0')), what: 'the recorded set');
       await tester.pageBack(); // leaves the workout open; nothing finishes it
       await j.tapKey('nav-today');
@@ -72,6 +73,7 @@ void main() {
     await j.tapKey('run-finish');
     await j.waitFor(find.text('Start run'), what: 'Today once that run is finished');
     await j.tapKey('today-resume');
+    await j.reveal(find.byKey(const Key('set-row-0')));
     await j.waitFor(find.byKey(const Key('set-row-0')), what: 'the set recorded before the process ended');
     await j.shot('112-coldstart-workout-resumed');
   });

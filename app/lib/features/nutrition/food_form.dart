@@ -13,6 +13,7 @@ import '../../data/sync.dart';
 import 'food_item.dart';
 import 'food_repository.dart';
 import 'log_food_screen.dart';
+import 'nutrition_surface.dart' show formatKcal;
 
 /// Logging food from Today or Eat. A new entry starts at the place where a food is found (search, scan, saved,
 /// recent or manual entry); an existing one opens straight in the form. Either way nothing is logged until the
@@ -263,9 +264,31 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     final nameField = TextField(key: const Key('food-name'), controller: _name, textCapitalization: TextCapitalization.sentences, textInputAction: TextInputAction.next,
         decoration: InputDecoration(labelText: item == null ? 'What did you eat?' : 'Name in your journal'));
 
-    return AppPage(
-      title: title,
-      subtitle: qualifier,
+    final mealAndDate = [
+      DropdownButtonFormField<String>(
+        key: const Key('food-meal'), initialValue: _meal, isExpanded: true, dropdownColor: context.c.surface,
+        decoration: const InputDecoration(labelText: 'Meal', prefixIcon: Padding(padding: EdgeInsets.all(7), child: IconTile(Icons.restaurant, circle: true, size: 34))),
+        items: [for (final m in meals) DropdownMenuItem(value: m, child: Text(m))],
+        onChanged: (m) => setState(() => _meal = m ?? _meal),
+      ),
+      InkWell(
+        onTap: _pickDate,
+        child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: StatusLine(Icons.event, 'For ${longDate(_dayKey)}. Tap to change the date.')),
+      ),
+    ];
+
+    // A food from a source is headed by a compact panel (no photograph: there is none of this food), which is also
+    // the way into its details. A food typed in by hand keeps the plain page title.
+    final named = editing ? widget.draft.name : title;
+    final header = item == null
+        ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Heading(title, size: 36, serif: true),
+            if (qualifier != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(qualifier, style: context.sansStyle(16, color: context.c.secondary))),
+          ])
+        : _FoodHeader(item, name: named, overline: editing ? 'Edit food' : null, qualifier: editing ? null : qualifier, onTap: () => _details(item));
+
+    return _FormPage(
+      header: header,
       actions: [
         if (item != null) const CoachHelpEntry(id: 'food.portion', label: 'Help with amounts and portions'),
         if (item != null && !editing)
@@ -280,22 +303,8 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
         TextButton(key: const Key('food-cancel'), onPressed: () => Navigator.pop(context), child: Text(editing ? 'Cancel and keep the recorded version' : 'Cancel')),
       ]),
       children: [
-        if (item == null) ...[nameField, const SizedBox(height: 14)],
-        DropdownButtonFormField<String>(
-          key: const Key('food-meal'), initialValue: _meal, isExpanded: true, dropdownColor: context.c.surface,
-          decoration: const InputDecoration(labelText: 'Meal', prefixIcon: Padding(padding: EdgeInsets.all(7), child: IconTile(Icons.restaurant, circle: true, size: 34))),
-          items: [for (final m in meals) DropdownMenuItem(value: m, child: Text(m))],
-          onChanged: (m) => setState(() => _meal = m ?? _meal),
-        ),
-        InkWell(
-          onTap: _pickDate,
-          child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: StatusLine(Icons.event, 'For ${longDate(_dayKey)}. Tap to change the date.')),
-        ),
+        if (item == null) ...[nameField, const SizedBox(height: 14), ...mealAndDate],
         if (item != null) ...[
-          const Rule(),
-          _DetailsRow(item, showName: item.name != title, onTap: () => _details(item)),
-          const Rule(),
-          const SizedBox(height: 18),
           pair(
             TextField(
               key: const Key('food-quantity'), controller: _quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.done,
@@ -309,7 +318,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
             KeyedSubtree(
               key: const Key('food-unit'),
               child: DropdownButtonFormField<String>(
-                key: ValueKey(_portions), initialValue: _unitId, isExpanded: true, decoration: const InputDecoration(labelText: 'Unit'), dropdownColor: context.c.surface,
+                key: ValueKey(_portions), initialValue: _unitId, isExpanded: true, decoration: const InputDecoration(labelText: 'Portion'), dropdownColor: context.c.surface,
                 // The closed field shows the unit's name; the open list adds what one of them weighs.
                 selectedItemBuilder: (_) => [for (final u in FoodScaling.units(item)) Text(u.noun == null ? u.label : '${u.noun}${u.tail}', overflow: TextOverflow.ellipsis)],
                 items: [for (final u in FoodScaling.units(item)) DropdownMenuItem(key: Key('food-unit-${u.id}'), value: u.id, child: Text(u.menuLabel))],
@@ -318,8 +327,9 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
             ),
           ),
           if (definition != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(definition, key: const Key('food-unit-definition'), style: context.caption)),
-          // The amount in full, with its weight when the food states one, so the number and unit are read together.
-          if (amountLine != null) Padding(padding: const EdgeInsets.only(top: 14), child: Text(amountLine, key: const Key('food-amount-line'), style: context.titleStyle(24))),
+          // The amount in full, with its weight when the food states one, so the number and unit are read together,
+          // and what it brings as the fields below say now.
+          if (amountLine != null) Padding(padding: const EdgeInsets.only(top: 14), child: _Logging(amountLine, calories: _macros['calories']!.text, protein: _macros['protein']!.text)),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -331,7 +341,8 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
             id: 'food.portion', introduce: FoodScaling.units(item).length > 1, padding: const EdgeInsets.only(top: 4, bottom: 10),
             say: const CoachSay('You can count portions here. The weight is shown when a reliable conversion is available.'),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
+          ...mealAndDate,
           const Rule(),
         ] else ...[
           TextField(key: const Key('food-amount'), controller: _amount, textInputAction: TextInputAction.next,
@@ -382,40 +393,108 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
 
 const _nutrientLabels = {'calories': 'Calories', 'protein': 'Protein', 'carbs': 'Carbs', 'fat': 'Fat'};
 
-/// The way into the source card: who the values come from, in one line, and the rest on a tap.
-class _DetailsRow extends StatelessWidget {
-  const _DetailsRow(this.item, {required this.showName, required this.onTap});
+/// The page around the form: back and the app bar's actions, the [header], then one scroll view whose fields all
+/// stay built while the keyboard shrinks the page, and the pinned [bottom] action riding above the keyboard (as
+/// [AppPage] does for a form, with a header that is not only a title).
+class _FormPage extends StatelessWidget {
+  const _FormPage({required this.header, required this.actions, required this.bottom, required this.children});
+  final Widget header, bottom;
+  final List<Widget> actions, children;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(actions: actions),
+        body: SafeArea(
+          child: Column(children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 28), keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [header, const SizedBox(height: 18), ...children]),
+              ),
+            ),
+            Padding(padding: EdgeInsets.fromLTRB(context.inset, 8, context.inset, 12), child: bottom),
+          ]),
+        ),
+      );
+}
+
+/// The food being logged, as a compact panel in the approved look with no photograph (there is no licensed picture
+/// of each food): its name in the serif, what tells it apart, the provider's own title when the page is headed by the
+/// everyday name, and who the values come from. A tap opens Food details, the source in full.
+class _FoodHeader extends StatelessWidget {
+  const _FoodHeader(this.item, {required this.name, required this.onTap, this.overline, this.qualifier});
   final FoodItem item;
-  final bool showName;
+  final String name;
+  final String? overline, qualifier;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final credit = sourceCredit(item.source);
-    return Semantics(
-      button: true,
-      child: InkWell(
-        key: const Key('food-source'), onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 64),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(children: [
-              // At very large text the decorative tile gives its width to the words.
-              if (MediaQuery.textScalerOf(context).scale(10) <= 15) ...[const IconTile(Icons.description_outlined, circle: true, size: 44), const SizedBox(width: 14)],
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text('Food details', style: context.sansStyle(16, weight: FontWeight.w600)),
-                  // The provider's own title, when the page is headed by the everyday name.
-                  if (showName) Text(item.name, style: context.caption),
-                  Text([if (credit != null) 'Source: $credit' else 'Your own food', if (item.barcode != null) 'Barcode ${item.barcode}'].join(' · '), style: context.caption),
-                ]),
+    return PanelTheme(
+      child: Builder(
+        builder: (context) => PanelSurface(
+          padding: EdgeInsets.zero,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Semantics(
+              button: true, hint: 'Shows the food details',
+              child: InkWell(
+                key: const Key('food-source'), onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
+                  child: Row(children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                        if (overline != null) Padding(padding: const EdgeInsets.only(bottom: 4), child: Overline(overline!)),
+                        Semantics(header: true, child: Text(name, style: context.pageTitleStyle(32))),
+                        if (qualifier != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(qualifier!, style: context.sansStyle(15.5, color: context.c.secondary, weight: FontWeight.w500))),
+                        // The provider's own title, when the page is headed by the everyday name.
+                        if (item.name != name) Padding(padding: const EdgeInsets.only(top: 2), child: Text(item.name, style: context.caption)),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text([if (credit != null) 'Source: $credit' else 'Your own food', if (item.barcode != null) 'Barcode ${item.barcode}'].join(' · '), style: context.caption),
+                        ),
+                      ]),
+                    ),
+                    Padding(padding: const EdgeInsets.only(left: 8), child: Icon(Icons.chevron_right, size: 24, color: context.c.secondary)),
+                  ]),
+                ),
               ),
-              Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
-            ]),
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "You're logging 2 eggs (100 g)", with the energy and protein the fields below hold now. A blank field is
+/// unknown and shows a dash, never a zero.
+class _Logging extends StatelessWidget {
+  const _Logging(this.amount, {required this.calories, required this.protein});
+  final String amount, calories, protein;
+
+  @override
+  Widget build(BuildContext context) {
+    final kcal = parseNonNegative(calories.trim()), grams = parseNonNegative(protein.trim());
+    Widget cell(String value, String label, String said) => MergeSemantics(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text(value, semanticsLabel: said, style: context.titleStyle(20)),
+            Text(label, style: context.caption),
+          ]),
+        );
+    return Panel(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('You\'re logging', style: context.sansStyle(14.5, color: context.c.secondary, weight: FontWeight.w500)),
+        Text(amount, key: const Key('food-amount-line'), style: context.pageTitleStyle(26)),
+        const SizedBox(height: 10),
+        Wrap(spacing: 28, runSpacing: 8, children: [
+          cell(kcal == null ? '—' : '${formatKcal(kcal)} kcal', 'Energy', kcal == null ? 'unknown' : '${formatKcal(kcal)} kilocalories'),
+          cell(grams == null ? '—' : '${formatNumber((grams * 10).round() / 10)} g', 'Protein', grams == null ? 'unknown' : '${formatNumber((grams * 10).round() / 10)} grams'),
+        ]),
+      ]),
     );
   }
 }

@@ -87,7 +87,7 @@ class ReviewStep extends ConsumerWidget {
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Heading(d.title.trim().isEmpty ? 'Untitled plan' : d.title.trim(), size: 24),
+      Heading(d.title.trim().isEmpty ? 'Untitled plan' : d.title.trim(), size: 30, serif: true),
       const SizedBox(height: 4),
       Text(
         [

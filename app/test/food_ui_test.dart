@@ -52,7 +52,7 @@ void main() {
   String mealShown(WidgetTester tester) => tester.widget<Text>(find.descendant(of: find.byKey(const Key('food-meal-select')), matching: find.byType(Text))).data!;
 
   group('finding a food', () {
-    testWidgets('typing finds a common food at once and asks the wider database nothing; the plus opens the shared form in the stated portion; only the confirmation logs', (tester) async {
+    testWidgets('typing finds a common food at once and asks the wider database nothing; the row opens the shared form in the stated portion; only the confirmation logs', (tester) async {
       final fakes = FoodFakes(discovery: ScriptedDiscovery(results: [chickenRaw(), riceCooked()]));
       await pumpApp(tester, await _overrides(tester, fakes), size: const Size(390, 3200));
 
@@ -71,7 +71,7 @@ void main() {
       expect(find.byKey(const Key('food-search-online')), findsOneWidget, reason: 'the wider database is one tap away');
       expect(find.text('Choose a food to check the amount before logging.'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Choose Eggs'));                           // the plus chooses; it does not log
+      await tester.tap(find.byKey(const Key('common-eggs')));                    // the row chooses; it does not log
       await tester.pumpAndSettle();
       expect(fakes.journal.saved, isEmpty, reason: 'choosing a food logs nothing');
       expect(find.byKey(const Key('food-source')), findsOneWidget);
@@ -458,7 +458,7 @@ void main() {
       await tester.pumpAndSettle();
       same('after a change of theme');
 
-      await tester.tap(find.byIcon(Icons.add).hitTestable().first);
+      await tester.tap(find.byIcon(Icons.chevron_right).hitTestable().first);    // a food row
       await tester.pumpAndSettle();
       expect(find.byType(FoodFormScreen), findsOneWidget);
       expect(find.text('Dinner'), findsOneWidget, reason: 'the meal chosen on the search screen is the form\'s meal');

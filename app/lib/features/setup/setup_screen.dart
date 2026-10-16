@@ -51,10 +51,11 @@ class _ChooseCoachState extends ConsumerState<_ChooseCoach> {
         });
     return AppPage(
       title: 'Choose your coach',
-      subtitle: 'Leon or Leona: the same help either way, only the look changes. You can change this later in Me › Appearance.',
+      subtitle: 'Leon or Leona: the same help either way, only the look changes. You can change this later in Appearance.',
+      actions: const [_Step(1)],
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         PrimaryButton('Continue', key: const Key('setup-continue'), onPressed: () => prefs.setupFeatures(widget.owner)),
-        TextButton(key: const Key('setup-skip'), onPressed: () => prefs.finishSetup(widget.owner), child: const Text('Skip setup')),
+        TextButton(key: const Key('setup-skip'), onPressed: () => prefs.finishSetup(widget.owner), child: const Text('Not now')),
       ]),
       children: [
         if (across)
@@ -85,6 +86,7 @@ class _Features extends ConsumerWidget {
     return AppPage(
       title: 'Optional features',
       subtitle: 'Turn on what you want now, or later in Me. The phone asks for access only when you use a feature that needs it.',
+      actions: const [_Step(2)],
       bottom: PrimaryButton('Done', key: const Key('setup-done'), onPressed: () => done.finishSetup(owner)),
       children: [
         GroupCard(children: [
@@ -109,4 +111,15 @@ class _Features extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// "Step 1 of 2" at the top trailing edge of each setup page.
+class _Step extends StatelessWidget {
+  const _Step(this.n);
+  final int n;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsetsDirectional.only(end: context.inset),
+        child: Center(child: Text('Step $n of 2', style: context.sansStyle(15, color: context.c.secondary, weight: FontWeight.w500))),
+      );
 }

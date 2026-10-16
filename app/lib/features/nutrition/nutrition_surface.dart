@@ -15,16 +15,24 @@ String formatKcal(num v) => _grouped(v.round());
 
 String _amount(Nutrient n, num v) => n == Nutrient.calories ? formatKcal(v) : _grouped(v);
 
-/// The day's overview on Eat. Today's [NutritionSummary] is given the same coverage and goals, so the two screens
-/// can never disagree. Unknown nutrients show a dash, never a zero; partial sums are labelled.
+/// The day's overview on Eat, as a photo panel in the approved Today look: the NUTRITION label, calories in the
+/// serif beside the bowl, [action] (Log food) under them, then goals, protein, carbs and fat full width below the
+/// photograph. Today's [NutritionSummary] is given the same coverage and goals, so the two screens can never
+/// disagree. Unknown nutrients show a dash, never a zero; partial sums are labelled. The bowl is decoration, there
+/// on a day with nothing logged too; it is never one of the entries.
 /// A goal is drawn only when the person set one; none is ever suggested. Calories and protein are the only goals
 /// the app stores, so carbs and fat are known totals and nothing more: one calorie ring, one protein bar.
 class NutritionSurface extends StatelessWidget {
-  const NutritionSurface({super.key, required this.entries, required this.coverage, this.calorieGoal, this.proteinGoal, this.pending = false});
+  const NutritionSurface({super.key, required this.entries, required this.coverage, this.calorieGoal, this.proteinGoal, this.pending = false, this.action});
   final List<FoodEntry> entries;
   final Map<Nutrient, NutrientTotal> coverage;
   final int? calorieGoal, proteinGoal;
   final bool pending;
+
+  /// The panel's one button (Eat's Log food), built by the caller from its own context.
+  final Widget? action;
+
+  static const photo = 'assets/images/nutrition-cover.webp';
 
   String _value(Nutrient n) {
     final t = coverage[n]!;
@@ -51,8 +59,11 @@ class NutritionSurface extends StatelessWidget {
     return '$amount · ${_amount(n, goal - eaten)} $unit left';
   }
 
+  // Everything is built under the panel's theme: dark ink on the pale tint, the deep button, in Light and Dark.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => PanelTheme(child: Builder(builder: _panel));
+
+  Widget _panel(BuildContext context) {
     final c = context.c;
     final complete = NutrientCoverage.allComplete(coverage);
     final unknownSomewhere = coverage.values.any((t) => t.unknownEntries > 0);
@@ -73,17 +84,21 @@ class NutritionSurface extends StatelessWidget {
         : ProgressRing(
             key: const Key('goal-calories-progress'), value: kcal.knownTotal / calorieGoal!, size: 76, stroke: 7, label: 'Calorie goal: $calorieDetail',
             center: Text('${(kcal.knownTotal / calorieGoal! * 100).round()}%', style: context.numStyle(19, weight: FontWeight.w700)));
+    // The figure in the serif, as on Today's panel; an unknown total is a dash and says so in words.
     final calories = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Semantics(
         label: _semantic(Nutrient.calories, 'Calories'),
         child: ExcludeSemantics(
-          child: Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 6, children: [
-            Text(_value(Nutrient.calories), style: context.titleStyle(40)),
-            Padding(padding: const EdgeInsets.only(bottom: 5), child: Text(kcal.hasAnyKnown ? 'kcal' : 'Calories unknown', style: context.sansStyle(17, color: c.secondary, weight: FontWeight.w500))),
+          child: Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
+            Text(_value(Nutrient.calories), style: context.pageTitleStyle(44)),
+            kcal.hasAnyKnown
+                ? Text('kcal', style: context.pageTitleStyle(44))
+                : Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Calories unknown', style: context.sansStyle(16, color: c.secondary, weight: FontWeight.w500))),
           ]),
         ),
       ),
-      if (calorieDetail != null) Padding(padding: const EdgeInsets.only(top: 4), child: ExcludeSemantics(excluding: ring != null, child: detailText(calorieDetail))),
+      // With a ring the progress words sit beside it, below the photograph.
+      if (calorieDetail != null && ring == null) Padding(padding: const EdgeInsets.only(top: 4), child: detailText(calorieDetail)),
     ]);
 
     Widget cell(Nutrient n, String label) {
@@ -110,22 +125,34 @@ class NutritionSurface extends StatelessWidget {
       );
     }
 
-    return Panel(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (entries.isEmpty) ...[
-          Semantics(header: true, child: Text(heading, style: context.titleStyle(19))),
-          const SizedBox(height: 6),
-          Text('Nothing is recorded for this day. That is not the same as nothing eaten.', style: context.sansStyle(15, color: c.secondary)),
-          if (goals != null) ...[const SizedBox(height: 8), Text('Your daily goal: $goals', key: const Key('goal-summary'), style: context.caption)],
-        ] else ...[
-          Text(heading, style: context.label),
-          const SizedBox(height: 6),
-          if (ring == null)
-            calories
-          else if (large)
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [calories, const SizedBox(height: 12), ring])
-          else
-            Row(children: [Expanded(child: calories), const SizedBox(width: 12), ring]),
+    // Beside the photograph: the label, the day's calories (or that nothing is recorded) and the button.
+    final words = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Wrap(spacing: 10, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        Semantics(header: true, child: const Overline('Nutrition')),
+        // "Known totals" when some food has no value: the figures are sums of what was entered.
+        if (entries.isNotEmpty) Text(heading, style: context.sansStyle(13.5, color: c.secondary, weight: FontWeight.w600)),
+      ]),
+      const SizedBox(height: 4),
+      if (entries.isEmpty) ...[
+        Semantics(header: true, child: Text(heading, style: context.pageTitleStyle(30))),
+        const SizedBox(height: 6),
+        Text('Nothing is recorded for this day. That is not the same as nothing eaten.', style: context.sansStyle(15, color: c.secondary)),
+        if (goals != null) ...[const SizedBox(height: 8), Text('Your daily goal: $goals', key: const Key('goal-summary'), style: context.caption)],
+      ] else
+        calories,
+    ]);
+    final pendingLine = pending ? const StatusLine(Icons.phone_iphone, 'Saved on this phone · sync pending') : null;
+    final below = entries.isEmpty
+        ? [?pendingLine]
+        : <Widget>[
+          if (ring != null) ...[
+            const SizedBox(height: 4),
+            // The ring announces its words itself.
+            if (large)
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ring, const SizedBox(height: 8), ExcludeSemantics(child: detailText(calorieDetail!))])
+            else
+              Row(children: [ring, const SizedBox(width: 14), Expanded(child: ExcludeSemantics(child: detailText(calorieDetail!)))]),
+          ],
           const SizedBox(height: 14),
           const Rule(),
           const SizedBox(height: 14),
@@ -151,9 +178,19 @@ class NutritionSurface extends StatelessWidget {
             const SizedBox(height: 12),
             Text('Some foods have no value for a nutrient, so these are sums of what you entered, not full totals.', style: context.caption),
           ],
-        ],
-        if (pending) ...[const SizedBox(height: 12), const StatusLine(Icons.phone_iphone, 'Saved on this phone · sync pending')],
-      ]),
+          if (pendingLine != null) ...[const SizedBox(height: 12), pendingLine],
+        ];
+    // With large text the photograph gives its room to the words.
+    final pictured = !large;
+    return PanelSurface(
+      photo: pictured ? const PanelPhoto(photo, key: Key('eat-photo-nutrition'), alignment: Alignment(0.7, 0)) : null,
+      below: below,
+      child: LayoutBuilder(
+        builder: (context, box) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          ConstrainedBox(constraints: BoxConstraints(maxWidth: pictured ? box.maxWidth * PanelSurface.wordsShare : box.maxWidth), child: words),
+          if (action != null) ...[const SizedBox(height: 14), action!],
+        ]),
+      ),
     );
   }
 }

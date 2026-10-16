@@ -62,7 +62,7 @@ in light, layered charcoal-plum in dark. Accent is for interactive selection and
 The scrim holds 4.5:1 for primary text over any pixel, black to white, so a header over a scene never depends on the
 picture (`TabHeader(onBackdrop: true)`).
 
-**Type.** Inter for everything, plus one serif, DM Serif Display (OFL, `assets/fonts/`), for page titles, and on Today for the panels' display lines (the workout's name, the calorie figure, "Run"):
+**Type.** Inter for everything, plus one serif, DM Serif Display (OFL, `assets/fonts/`), for page titles and for the photo panels' titles and key figures (see App-wide panels):
 the four tabs, Add food, Appearance and secondary page titles, through `context.pageTitleStyle` /
 `Heading(serif: true)` / `TabHeader` / `AppPage`. Figures stay in Inter with tabular digits. Page titles grow with
 the text setting up to 1.3x so a word never breaks.
@@ -201,6 +201,48 @@ mockup's due panel is about 183: the 52 px button and the plan-week line are kep
 `app/assets/PROVENANCE.md`), unchanged. They show the same subjects as the mockup (hex dumbbells by a bench, a chicken
 and quinoa bowl, a runner's shoes on a riverside path) but are not the mockup's pictures, which are wet, rainy
 variants; those were not supplied as files, so they are not used. Each is decoded for the box it is drawn in.
+
+## App-wide panels (16 October 2026, from `GoHard_Appwide_UI_Handoff`)
+
+The Today photo panels are the language of the whole app. The boards (`GoHard_Appwide_UI_Handoff/references/`) are
+visual references with illustrative data; nothing from them is hard-coded.
+
+**Shared pieces** (`core/theme.dart`, `core/widgets.dart`; one set, used everywhere):
+
+| Piece | What it is |
+|---|---|
+| `GoColors.accentDeep` / `onAccentDeep` | The filled button in every screen: the accent's deep shade with a light label, both modes. In Dark it carries a thin accent edge (≥ 3:1 on the page) so its shape reads on charcoal |
+| `GoColors.tint` | The pale accent tint: photo panels, the chosen segment, the chosen choice card, the chosen week |
+| `GoColors.panelOf(c)` | The panel palette (tint, dark ink, deep button, Light status colours), the same in Light and Dark |
+| `PanelTheme` + `appContext(context)` | Puts content in the panel palette; sheets, dialogs and pickers opened from inside a panel open from `appContext` and keep the app's look (regression test in `today_ui_test`) |
+| `PanelSurface`, `PanelPhoto` | The opaque tint with soft depth and a thin edge; a bundled photo on the trailing half fading into the tint (`ShaderMask`), decoded for its box |
+| `PhotoPanel` | One summary per screen: words on the faded side (serif title or figure, quiet lines), then a deep button and a `QuietLink` |
+| `Segmented`, `ChoiceCard` | Chosen = pale tint with the panel ink (a chosen segment no longer fills with the full accent) |
+
+**Where it is used.** Today (unchanged composition). Train: the plan (`train-pass`), Progress (`train-progress-panel`),
+open workouts on Workouts (`train-resume-<id>`), the recording screen's exercise panel (`workout-exercise-panel`) with
+separate Target and Last recorded tiles, the workout detail figures, the builder's "plan in progress" and Guide me
+suggestion. Eat: the day's summary with the bowl and Log food. Food form: the food's header, without a photograph.
+Run: the elapsed time with the runner photo. Me › Nutrition goals: the optional-goals explainer. Appearance: a small
+preview (dusk scene with the chosen guide). Sign-in: the dumbbells panel. Lists, sets, settings and the journal stay
+quiet `GroupCard` rows. The serif is for page titles, panel titles and key figures, never in a control, row, field or the
+navigation (`theme_test`).
+
+**Photographs.** Only the bundled ones: `workout-hero.webp` (plan, progress, workouts, exercise, sign-in),
+`nutrition-cover.webp` (Eat, goals), `run-cover.webp` (run), `scenic-dusk.webp` and the guides' busts (Appearance).
+There is no photograph per food or per exercise: food rows and the food header have none, and every exercise panel
+uses the same dumbbells. No asset was added.
+
+**Deliberate differences from the boards.**
+- No average pace on the run: the recorded time includes stretches GPS did not measure, so a pace from time and
+  distance would be invented. No "GPS active" indicator beyond the tracking state the app really has.
+- No food thumbnails, egg or barbell photographs; no Help row on Me (no destination exists).
+- The builder's workout cards stay ordinary cards (their move buttons and menus open popups that must keep the app's
+  look); the board's pale cards with photos are not used there.
+- Me's profile row reads "Edit profile" (what it opens), not "Account settings".
+- Sign-in uses one show/hide button in the password field, not both an eye and a checkbox (the brief asks for one
+  control); its tagline is our own words.
+- The plan week selector wraps all weeks (any length), rather than the board's fixed two rows of four.
 
 ## Train
 

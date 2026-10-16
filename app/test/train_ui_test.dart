@@ -148,7 +148,7 @@ void main() {
     row('3-3', 'Due', Icons.radio_button_unchecked);
     expect(find.descendant(of: find.byKey(const Key('occasion-3-3')), matching: find.text('Sun')), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('occasion-3-3')), matching: find.text('11')), findsOneWidget);
-    expect(find.bySemanticsLabel('Upper body A, Sunday, October 11, 5 exercises · 18 planned sets, Due'), findsOneWidget);
+    expect(find.bySemanticsLabel('Upper body A, Sunday, October 11, today, 5 exercises · 18 planned sets, Due'), findsOneWidget);
     expect(find.text('1 of 3 completed'), findsNothing, reason: 'an open workout is not a completed one');
     expect(find.text('0 of 3 completed'), findsOneWidget);
 
@@ -221,7 +221,7 @@ void main() {
       await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, workouts: workouts)))!, size: const Size(390, 1400));
       await _openTrain(tester, 'workouts');
       expect(find.byKey(const Key('start-manual')), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Start a run'), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('train-start-run')), matching: find.text('Start a run')), findsOneWidget);
       expect(find.text('Run history'), findsOneWidget);
       expect(find.text(workouts.isEmpty ? 'No workouts recorded yet' : 'Push day'), findsOneWidget);
       await _tap(tester, 'train-history');
@@ -233,6 +233,7 @@ void main() {
       await _tap(tester, 'train-progress');
       expect(find.text(workouts.isEmpty ? 'No training recorded yet' : 'Am I consistent?'), findsOneWidget);
       await tester.ensureVisible(find.text('Workout history'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Workout history'));
       await tester.pumpAndSettle();
       expect(find.byType(WorkoutHistoryScreen), findsOneWidget);
@@ -248,7 +249,7 @@ void main() {
     await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, plans: [plan], primaryPlanId: 'p1', workouts: [open.workout], sets: open.sets)))!);
     await _openTrain(tester, 'workouts');
     expect(find.text('Open workouts'), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'Resume'), findsOneWidget);
+    expect(find.ancestor(of: find.text('Resume'), matching: find.byWidgetPredicate((w) => w is FilledButton)), findsOneWidget, reason: 'the deep Resume button of the open workout panel');
     expect(find.textContaining('In progress · started Sun, Oct 11'), findsOneWidget);
   });
 

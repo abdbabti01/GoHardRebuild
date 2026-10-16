@@ -314,7 +314,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
       onPopInvokedWithResult: (_, _) => _flushDraft(),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(workout.title, overflow: TextOverflow.ellipsis),
           actions: [
             CoachHelpButton(
               key: const Key('coach-help-workout'), semanticLabel: 'Help with recording this workout',
@@ -341,6 +340,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
             padding: EdgeInsets.fromLTRB(context.inset, 4, context.inset, 28),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             children: [
+              // The workout's name is the page title, in the serif like every other page.
+              Heading(workout.title, size: 34, serif: true),
+              const SizedBox(height: 6),
               Row(children: [
                 Expanded(
                   child: Semantics(
@@ -373,22 +375,39 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                 EmptyState('No movements yet', 'Add a movement to start recording sets.',
                     action: SecondaryButton('Add a movement', icon: Icons.add, onPressed: () => _menu('add', workout, null)))
               else ...[
-                Overline('Movement ${exercises.indexOf(selected) + 1} of ${exercises.length}${selected.isPrescribed ? '' : ' · extra'}'),
-                const SizedBox(height: 6),
-                Heading(selected.name, size: 28),
-                if (selected.substitutedForKey != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text('Recorded as ${selected.name}, in place of the planned movement.', style: context.caption)),
-                const SizedBox(height: 8),
-                Text('Target · ${selected.target}', style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400)),
-                // The plan's weight target is the user's own aim. It is never put in the fields or counted as a set.
-                if (selected.targetLoadKg != null)
-                  Text('Target ${formatLoad(selected.targetLoadKg, unit)}', key: const Key('workout-target-load'), style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400)),
-                Text(
-                  previous == null ? 'No previous record for this movement.' : 'Last time ${previous.sets.map((s) => setText(s, unit)).join(', ')} (${shortDate(previous.dayKey)})',
-                  key: const Key('workout-last-time'),
-                  style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w400),
+                // The exercise heading: its place in the workout, the name in the serif and the planned prescription.
+                PhotoPanel(
+                  key: const Key('workout-exercise-panel'),
+                  photo: 'assets/images/workout-hero.webp',
+                  photoAlignment: const Alignment(1, 0.6),
+                  content: (context) => [
+                    Overline('Movement ${exercises.indexOf(selected) + 1} of ${exercises.length}${selected.isPrescribed ? '' : ' · extra'}'),
+                    const SizedBox(height: 4),
+                    Semantics(header: true, child: Text(selected.name, style: context.pageTitleStyle(30))),
+                    const SizedBox(height: 2),
+                    Text(selected.target, key: const Key('workout-prescription'), style: context.numStyle(16, color: context.c.secondary, weight: FontWeight.w500)),
+                    if (selected.substitutedForKey != null)
+                      Padding(padding: const EdgeInsets.only(top: 4), child: Text('Recorded as ${selected.name}, in place of the planned movement.', style: context.caption)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // The plan's target and the user's own last performance, apart: the target is the user's aim and is never
+                // put in the fields or counted as a set; the last record is what was actually done, with its date.
+                _Guidance(
+                  target: _Tile(
+                    icon: Icons.flag_outlined, label: 'Target',
+                    value: selected.targetLoadKg != null ? formatLoad(selected.targetLoadKg, unit) : selected.target,
+                    valueKey: selected.targetLoadKg != null ? const Key('workout-target-load') : null,
+                  ),
+                  last: _Tile(
+                    icon: Icons.history, label: 'Last recorded',
+                    value: previous == null ? 'No previous record' : previous.sets.map((s) => setText(s, unit)).join(', '),
+                    valueKey: const Key('workout-last-time'),
+                    detail: previous == null ? null : shortDate(previous.dayKey),
+                  ),
                 ),
                 if ((selected.notes ?? '').trim().isNotEmpty)
-                  Padding(padding: const EdgeInsets.only(top: 6), child: StatusLine(Icons.sticky_note_2_outlined, selected.notes!.trim())),
+                  Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.sticky_note_2_outlined, selected.notes!.trim())),
                 const SizedBox(height: 16),
                 if (rest != null)
                   Padding(
@@ -425,7 +444,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                 if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
                 if (targetReached) const Padding(padding: EdgeInsets.only(bottom: 10), child: StatusLine(Icons.check_circle_outline, 'Target set count recorded. Add another set, or move on when you are ready.')),
                 // Reaching the target never changes exercise. The same action stays available for extra sets.
-                PrimaryButton(targetReached ? 'Add another set' : 'Complete set', key: const Key('complete-set'), busy: _busy, onPressed: () => _complete(workout, selected)),
+                PrimaryButton(targetReached ? 'Add another set' : 'Complete set', key: const Key('complete-set'), icon: Icons.check_rounded, busy: _busy, onPressed: () => _complete(workout, selected)),
                 if (nextExercise != null) ...[
                   const SizedBox(height: 8),
                   SecondaryButton('Next exercise · ${nextExercise.name}', key: const Key('next-exercise'), onPressed: () {
@@ -474,6 +493,47 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The target and the last record side by side; with large text one above the other, so neither is cut.
+class _Guidance extends StatelessWidget {
+  const _Guidance({required this.target, required this.last});
+  final Widget target, last;
+
+  @override
+  Widget build(BuildContext context) => MediaQuery.textScalerOf(context).scale(10) > 13
+      ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [target, const SizedBox(height: 8), last])
+      : IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: target), const SizedBox(width: 8), Expanded(child: last)]));
+}
+
+/// A small labelled tile: what it is ("Target", "Last recorded"), the value, and an optional date under it.
+class _Tile extends StatelessWidget {
+  const _Tile({required this.icon, required this.label, required this.value, this.valueKey, this.detail});
+  final IconData icon;
+  final String label, value;
+  final String? detail;
+  final Key? valueKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(Radii.tile), border: Border.all(color: c.divider)),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        ExcludeSemantics(child: Padding(padding: const EdgeInsets.only(top: 1), child: Icon(icon, size: 20, color: c.secondary))),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: context.sansStyle(13.5, color: c.secondary, weight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value, key: valueKey, style: context.numStyle(16.5, weight: FontWeight.w600)),
+            if (detail != null) Text(detail!, style: context.numStyle(13.5, color: c.secondary, weight: FontWeight.w400)),
+          ]),
+        ),
+      ]),
     );
   }
 }

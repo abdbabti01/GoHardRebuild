@@ -71,12 +71,15 @@ void main() {
     expect(find.text('Yesterday\'s soup'), findsNothing, reason: 'another day\'s food is not in today\'s journal');
     expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget, reason: 'one general Log food action');
     expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
-    // Only the GH mark and the coach's help avatar: no scene (only Today has one) and no food photograph standing in for a meal.
-    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(2));
+    // The GH mark, the coach's help avatar and the summary panel's decorative bowl: no scene (only Today has one)
+    // and no food photograph standing in for a meal or an entry.
+    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(3));
+    expect(find.byKey(const Key('eat-photo-nutrition')), findsOneWidget);
+    expect(find.descendant(of: find.byType(GroupCard), matching: find.byType(Image)), findsNothing, reason: 'the journal has no photographs');
     expect(find.byKey(const Key('coach-help-eat')), findsOneWidget);
     expect(find.byType(SceneBackdrop), findsNothing);
     expect(find.text("Today's meals"), findsOneWidget);
-    expect(find.byType(GroupCard), findsOneWidget, reason: 'the four meals in one group');
+    expect(find.byType(GroupCard), findsNWidgets(4), reason: 'one quiet group per meal');
 
     // A row opens that entry for editing.
     await tester.tap(find.byKey(const Key('food-row-f2')));
@@ -84,12 +87,12 @@ void main() {
     expect(tester.widget<FoodFormScreen>(find.byType(FoodFormScreen)).existing!.id, 'f2');
   });
 
-  testWidgets('a meal\'s plus opens Log food with that meal already chosen', (tester) async {
+  testWidgets('a meal\'s "Add food to" row opens Log food with that meal already chosen', (tester) async {
     await pumpApp(tester, await fixture(tester), size: const Size(390, 1500));
     await openEat(tester);
     for (final meal in ['breakfast', 'lunch', 'dinner', 'snack']) {
       expect(find.byKey(Key('eat-add-$meal')), findsOneWidget);
-      expect(find.byTooltip('Add to $meal'), findsOneWidget);
+      expect(find.descendant(of: find.byKey(Key('eat-add-$meal')), matching: find.text('Add food to $meal')), findsOneWidget);
       expect(tester.getSize(find.byKey(Key('eat-add-$meal'))).shortestSide, greaterThanOrEqualTo(48));
     }
     await tester.tap(find.byKey(const Key('eat-add-dinner')));

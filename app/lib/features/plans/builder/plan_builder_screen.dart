@@ -64,18 +64,20 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
     final saved = _saved;
     return AppPage(title: 'Create plan', children: [
       if (saved != null) ...[
-        Panel(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // The plan in progress as a pale panel: its name in the serif, where it stopped, Continue and Start over.
+        // Start over asks from the page's own context ([_discard]), never the panel's.
+        PhotoPanel(
+          content: (context) => [
             const Overline('Plan in progress'),
             const SizedBox(height: 4),
-            Text(saved.title.trim().isEmpty ? 'Untitled plan' : saved.title.trim(), style: context.titleStyle(22)),
+            Text(saved.title.trim().isEmpty ? 'Untitled plan' : saved.title.trim(), style: context.pageTitleStyle(28)),
             const SizedBox(height: 4),
             Text('Step ${saved.step.clamp(0, 3) + 1} of 4 · ${_stepNames[saved.step.clamp(0, 3)]}. Saved on this phone; nothing is active yet.', style: context.caption),
-            const SizedBox(height: 14),
-            PrimaryButton('Continue this plan', key: const Key('plan-draft-resume'), onPressed: () => setState(() => _open = saved)),
-            const SizedBox(height: 8),
-            SecondaryButton('Start over', key: const Key('plan-draft-discard'), onPressed: _discard),
-          ]),
+          ],
+          actions: (_) => [
+            PrimaryButton('Continue this plan', key: const Key('plan-draft-resume'), expand: false, onPressed: () => setState(() => _open = saved)),
+            QuietLink('Start over', key: const Key('plan-draft-discard'), said: 'Start over and discard this plan in progress', onPressed: _discard),
+          ],
         ),
       ] else ...[
         Text('Both ways make a plan of your own that you can change at any time.', style: context.sansStyle(16, color: context.c.secondary)),
@@ -110,6 +112,54 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
         ]),
       ],
     ]);
+  }
+}
+
+/// The four steps as numbered marks joined by a line: done steps carry a check, the current one is the deep accent,
+/// later ones are outlined. Drawing only (the builder announces the step in words); the names show under the marks
+/// while they fit and are left to the line above with large text.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator(this.step);
+  final int step;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    Widget mark(int i) {
+      final done = i < step, now = i == step;
+      return Container(
+        width: 28, height: 28, alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: now ? c.accentDeep : done ? c.tint : c.surface,
+          border: Border.all(color: now || done ? c.accentDeep : c.outline, width: 1.5),
+        ),
+        child: done
+            ? Icon(Icons.check_rounded, size: 16, color: GoColors.panelOf(c).text)
+            // Decoration inside a fixed mark (the step is said in words above), so the digit keeps its size.
+            : Text('${i + 1}', textScaler: TextScaler.noScaling, style: context.numStyle(13.5, weight: FontWeight.w700, color: now ? c.onAccentDeep : c.secondary)),
+      );
+    }
+
+    Widget line(int i) => Expanded(child: Container(height: 2, margin: const EdgeInsets.symmetric(horizontal: 4), color: i < step ? c.accentDeep : c.divider));
+    TextStyle style(int i) => context.sansStyle(12.5, weight: i == step ? FontWeight.w700 : FontWeight.w400, color: i == step ? c.text : c.secondary);
+    // The names show only when all four fit at the reader's text size; otherwise the line above names the step.
+    double width(int i) {
+      final p = TextPainter(text: TextSpan(text: _stepNames[i], style: style(i)), textDirection: TextDirection.ltr, textScaler: MediaQuery.textScalerOf(context))..layout();
+      final w = p.width;
+      p.dispose();
+      return w;
+    }
+
+    return LayoutBuilder(builder: (context, box) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        for (var i = 0; i < 4; i++) ...[if (i > 0) line(i), mark(i)],
+      ]),
+      if ([for (var i = 0; i < 4; i++) width(i)].fold(0.0, (a, b) => a + b) + 3 * 12 <= box.maxWidth) ...[
+        const SizedBox(height: 4),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [for (var i = 0; i < 4; i++) Text(_stepNames[i], style: style(i))]),
+      ],
+    ]));
   }
 }
 
@@ -376,8 +426,8 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
                 child: ExcludeSemantics(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     Overline('Step ${step + 1} of 4 · ${_stepNames[step]}'),
-                    const SizedBox(height: 8),
-                    ProgressRail((step + 1) / 4, label: progress, height: 6),
+                    const SizedBox(height: 10),
+                    _StepIndicator(step),
                   ]),
                 ),
               ),

@@ -30,8 +30,10 @@ void main() {
     await j.tapKey('manual-start');
     await j.type('set-reps', '10');
     await j.tapKey('complete-set');
+    await j.reveal(find.byKey(const Key('set-row-0')));
     await j.waitFor(find.byKey(const Key('set-row-0')));
     await j.tapKey('complete-set');
+    await j.reveal(find.byKey(const Key('set-row-1')));
     await j.waitFor(find.byKey(const Key('set-row-1')));
     expect(find.textContaining('sync pending'), findsWidgets, reason: 'saved on the phone, honestly not yet in the account');
     await j.shot('70-offline-sets-pending');

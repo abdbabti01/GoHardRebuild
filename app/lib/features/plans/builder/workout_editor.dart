@@ -351,7 +351,9 @@ class WorkoutsStep extends ConsumerWidget {
             Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Heading(w.name, size: 19),
+                  // The workout's name in the serif, as the plan's own names are elsewhere.
+                  Semantics(header: true, child: Text(w.name, style: context.pageTitleStyle(24))),
+                  Text('${w.exercises.length} ${w.exercises.length == 1 ? 'exercise' : 'exercises'}', style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w500)),
                   Text(usageOf(draft, w.id) ?? 'Not scheduled yet. Choose its days in Structure.', style: context.caption),
                 ]),
               ),

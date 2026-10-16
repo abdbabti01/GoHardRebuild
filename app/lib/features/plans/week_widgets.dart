@@ -158,7 +158,11 @@ class _WeekTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      // The chosen week takes the pale panel tint with its dark ink (the same in Light and Dark), not a heavy fill.
+      selected ? PanelTheme(child: Builder(builder: _tile)) : _tile(context);
+
+  Widget _tile(BuildContext context) {
     final c = context.c;
     final done = week.completion;
     final (label, icon, tone) = weekLook(state, done);
@@ -170,9 +174,9 @@ class _WeekTile extends StatelessWidget {
           '${done.eligible == 0 ? 'no workouts' : '${done.completed} of ${done.eligible} workouts completed'}',
       value: label,
       child: Material(
-        // Selection is the border and the tint. The current week is said in words, so the two never look alike.
-        color: selected ? c.accentSoft : c.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile), side: BorderSide(color: selected ? c.accent : c.divider, width: selected ? 2 : 1)),
+        // Selection is the pale tint and the deep border. The current week is said in words, so the two never look alike.
+        color: selected ? c.tint : c.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile), side: BorderSide(color: selected ? c.accent : c.divider, width: selected ? 1.5 : 1)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: Key('week-${week.number}'),

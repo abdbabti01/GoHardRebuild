@@ -35,6 +35,10 @@ Update, 16 October 2026 (Today panels): no new asset files. The three Today phot
 `gohard-today-photo-design/`, see its `ASSETS.md`) are used unchanged, cropped and faded at runtime. The approved
 mockup's own photographs were not supplied as files and are not used.
 
+Update, 16 October 2026 (app-wide panels): no new asset files. The same bundled photographs and the guides' busts are
+reused across Train, Eat, the run, sign-in, goals and Appearance (docs/DESIGN.md › App-wide panels). The handoff's
+reference boards are not used as images anywhere in the app.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",
