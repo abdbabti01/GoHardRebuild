@@ -352,7 +352,7 @@ class _CoachSection extends ConsumerWidget {
         MergeSemantics(
           child: GroupRow(
             key: const Key('coach-on-today'), icon: Icons.waving_hand_outlined, title: 'Show coach on Today',
-            subtitle: coach.onToday ? '${coach.guide.label} beside your greeting.' : 'Off. Ask GoHard stays on Today.',
+            subtitle: coach.onToday ? '${coach.guide.label} beside your greeting.' : 'Off. Ask GoHard is still ${coach.guide.label}, on Train.',
             trailing: Switch(value: coach.onToday, onChanged: (on) {
               Haptics.selection();
               set.setOnToday(on);

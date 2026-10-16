@@ -84,18 +84,21 @@ class PrimaryButton extends StatelessWidget {
 
 /// The quieter action beside or below a [PrimaryButton]: the same shape and height, outlined.
 class SecondaryButton extends StatelessWidget {
-  const SecondaryButton(this.label, {super.key, required this.onPressed, this.expand = true, this.icon});
+  const SecondaryButton(this.label, {super.key, required this.onPressed, this.expand = true, this.icon, this.leading});
   final String label;
   final VoidCallback? onPressed;
   final bool expand;
   final IconData? icon;
 
+  /// A widget in the icon's place (the guide's avatar on Ask GoHard's buttons).
+  final Widget? leading;
+
   @override
   Widget build(BuildContext context) {
     final child = Text(label, textAlign: TextAlign.center);
-    final button = _ScaledButton((states) => icon == null
+    final button = _ScaledButton((states) => icon == null && leading == null
         ? OutlinedButton(onPressed: onPressed, statesController: states, child: child)
-        : OutlinedButton.icon(onPressed: onPressed, statesController: states, icon: Icon(icon, size: 20), label: child));
+        : OutlinedButton.icon(onPressed: onPressed, statesController: states, icon: leading ?? Icon(icon, size: 20), label: child));
     return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 }

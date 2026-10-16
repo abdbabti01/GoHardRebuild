@@ -267,6 +267,10 @@ void main() {
     await _settle(tester);
     expect(find.text('Answer 1'), findsOneWidget);
     expect(_prefixed('ask-ai-').evaluate().where((e) => (e.widget.key! as ValueKey<String>).value != 'ask-ai-assistant'), hasLength(1), reason: 'the answer is marked AI-generated');
+    final answer = find.ancestor(of: _prefixed('ask-ai-').evaluate().map((e) => find.byWidget(e.widget)).firstWhere((f) => (f.evaluate().single.widget.key! as ValueKey<String>).value != 'ask-ai-assistant'), matching: find.byType(Row)).first;
+    expect(find.descendant(of: answer, matching: find.byType(CoachAvatar)), findsOneWidget, reason: 'answered by the selected guide, face and name, not a generic AI icon');
+    expect(find.descendant(of: answer, matching: find.text('Leon')), findsOneWidget);
+    expect(find.descendant(of: answer, matching: find.byIcon(Icons.auto_awesome_outlined)), findsNothing);
     expect(find.text('AI-generated'), findsOneWidget);
 
     await _ask(tester, 'And for triceps?');

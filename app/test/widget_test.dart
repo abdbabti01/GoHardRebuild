@@ -66,8 +66,9 @@ void main() {
   testWidgets('narrow_scaled_today_has_no_overflow', (tester) async {
     final food = [foodEntry('f1', _day, 'Breakfast', 'Greek yogurt with a long descriptive name', '200 g', calories: 110, fat: 0)];
     await pumpApp(tester, await tester.runAsync(() => overridesFor(day: _day, workouts: [_openWorkout()], food: food)) ?? [], size: const Size(320, 640), textScale: 2);
-    expect(find.text('Resume workout'), findsOneWidget);
     final scroll = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text('Resume workout'), 200, scrollable: scroll); // below the guide's taller bubble
+    expect(find.text('Resume workout'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Log food'), 200, scrollable: scroll);
     expect(find.text('Some nutrition values are missing'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Start run'), -200, scrollable: scroll);

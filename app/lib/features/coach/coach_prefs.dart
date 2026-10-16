@@ -10,16 +10,18 @@ import 'coach_avatar.dart';
 /// The coach's look and coaching hints, for this phone only.
 @immutable
 class CoachPrefs {
-  const CoachPrefs({this.guide = CoachGuide.leon, this.hintsEnabled = true, this.dismissed = const {}, this.onToday = true, this.greeted, this.hidden});
+  const CoachPrefs({this.guide = CoachGuide.leon, this.hintsEnabled = true, this.dismissed = const {}, this.onToday = true, this.greeted});
   final CoachGuide guide;
   final bool hintsEnabled;
 
-  /// Me › Appearance › Show coach on Today: the companion beside Today's greeting. Off, Ask GoHard stays on Today.
+  /// Me › Appearance › Show coach on Today: the companion beside Today's greeting. The only way to remove it; off,
+  /// Ask GoHard is still the guide, on Train.
   final bool onToday;
 
-  /// `owner|day` (the phone's local day) of the last greeting played, and of the day the companion was hidden. One of each is
-  /// enough: a greeting belongs to one account on one day on this phone, and another account or day is a new key.
-  final String? greeted, hidden;
+  /// `owner|day` (the phone's local day) of the last greeting played. One is enough: a greeting belongs to one account
+  /// on one day on this phone, and another account or day is a new key. (Builds before 16 Oct 2026 also kept a "hidden
+  /// for today"; it is no longer read or written: Today's companion stays until Show coach on Today is turned off.)
+  final String? greeted;
 
   static String dayKey(String owner, String day) => '$owner|$day';
 
@@ -32,11 +34,10 @@ class CoachPrefs {
 
   /// Whether an automatic introduction of [context] may appear for [owner] now that it is in view.
   bool mayIntroduce(String owner, String context) => hintsEnabled && !seen(owner, context);
-  bool hiddenOn(String owner, String day) => hidden == dayKey(owner, day);
 
-  CoachPrefs copy({CoachGuide? guide, bool? hintsEnabled, Set<String>? dismissed, bool? onToday, String? greeted, String? hidden}) => CoachPrefs(
+  CoachPrefs copy({CoachGuide? guide, bool? hintsEnabled, Set<String>? dismissed, bool? onToday, String? greeted}) => CoachPrefs(
       guide: guide ?? this.guide, hintsEnabled: hintsEnabled ?? this.hintsEnabled, dismissed: dismissed ?? this.dismissed, onToday: onToday ?? this.onToday,
-      greeted: greeted ?? this.greeted, hidden: hidden ?? this.hidden);
+      greeted: greeted ?? this.greeted);
 
   /// Introductions already shown, as `owner|context`, so one account's never hide or reveal another's. None shows
   /// again until "Show coaching hints again". (Entries without an owner come from an older build and are ignored.)
@@ -44,9 +45,9 @@ class CoachPrefs {
 
   @override
   bool operator ==(Object other) => other is CoachPrefs && other.guide == guide && other.hintsEnabled == hintsEnabled && setEquals(other.dismissed, dismissed) &&
-      other.onToday == onToday && other.greeted == greeted && other.hidden == hidden;
+      other.onToday == onToday && other.greeted == greeted;
   @override
-  int get hashCode => Object.hash(guide, hintsEnabled, Object.hashAllUnordered(dismissed), onToday, greeted, hidden);
+  int get hashCode => Object.hash(guide, hintsEnabled, Object.hashAllUnordered(dismissed), onToday, greeted);
 }
 
 /// Kept in the same platform store as the appearance and read before the first frame. A presentation choice for this
@@ -67,14 +68,14 @@ class CoachPrefsStore {
         guide: CoachGuide.values.asNameMap()[j['guide']] ?? CoachGuide.leon,
         hintsEnabled: j['hints'] != false,
         dismissed: {...(j['dismissed'] as List? ?? const []).whereType<String>()},
-        onToday: j['today'] != false, greeted: j['greeted'] as String?, hidden: j['hidden'] as String?,
+        onToday: j['today'] != false, greeted: j['greeted'] as String?,
       );
     } on Object {
       // An unreadable preference is not worth failing startup for; the defaults apply.
     }
   }
 
-  Future<void> save() => _store.write(_key, jsonEncode({'guide': value.guide.name, 'hints': value.hintsEnabled, 'dismissed': [...value.dismissed], 'today': value.onToday, 'greeted': value.greeted, 'hidden': value.hidden}));
+  Future<void> save() => _store.write(_key, jsonEncode({'guide': value.guide.name, 'hints': value.hintsEnabled, 'dismissed': [...value.dismissed], 'today': value.onToday, 'greeted': value.greeted}));
 }
 
 /// Overridden at startup with the restored store. Left alone (tests), it is an empty in-memory one.
@@ -93,8 +94,6 @@ class CoachPrefsController extends Notifier<CoachPrefs> {
     if (state.greeted != CoachPrefs.dayKey(owner, day)) _apply(state.copy(greeted: CoachPrefs.dayKey(owner, day)));
   }
 
-  /// "Hide for today": the companion is back the next day. Ask GoHard stays.
-  void hideToday(String owner, String day) => _apply(state.copy(hidden: CoachPrefs.dayKey(owner, day)));
 
   /// [owner] has seen the introduction of [context]: it does not appear by itself again.
   void markSeen(String owner, String context) {

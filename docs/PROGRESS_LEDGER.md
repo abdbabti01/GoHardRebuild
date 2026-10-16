@@ -1105,3 +1105,95 @@ against the live weather API (recordings above).
 
 On `a613cf4`: CI `ci` run 66 success; unsigned IPA run 21 success (`GoHard-Dev-unsigned-ipa`, 12,359,935 bytes, expires
 30 Oct 2026). `main` untouched. A successful iOS build says nothing about iPhone smoothness or battery.
+
+## 16 October 2026 (night) — a living companion: moving eyes, the bubble from the mouth, Today until turned off, the guide as Ask GoHard (branch `feature/coach-companion`, continued)
+
+These requirements supersede the earlier rounds where they differ (docs/COACH.md › Companion; TASK_MATRIX C6).
+
+What changed:
+- **Eyes.** The paintings have irises clearly inside their lash lines, so independent eyes are possible without new
+  art: per eye (`RigIris`, measured on the 1254 px originals) an opening polygon inside the lash line, the iris disc and
+  the white's sampled tone. The original iris is toned to the white inside the opening and the same painted iris is
+  redrawn from the texture, moved by the gaze (≤ 30 % of its radius across, 18 % vertically) and turned with the head.
+  Nothing is stretched. The round 1 oval eyelids showed as flat discs when closed (seen on the new pose sheet), so the
+  lids were redone inside the opening: the upper lid covers the painted lash ring, feathered into the fur, with a lash
+  line that rests on the eye's lower contour as a gentle curve.
+- **Motion.** Gaze springs. At rest a timer wakes one natural moment: a blink (35 %), a small look (40 %) or a glance
+  at the bubble with a touch of head (25 %), back to the user after 0.6–1.5 s. Wakes come every 2.5–6 s at first, then
+  every 5–11 s, with no frames in between. The greeting glances at the words as they arrive and then back at the user.
+  Reduce Motion: still, looking at the user, no blink. It pauses off-screen, when covered, on another tab and in the
+  background, as before.
+- **Bubble from the mouth.** `CoachSpeech` draws the tail every frame from the bubble's edge to the muzzle's edge at
+  the mouth's height (`RigArt.mouth`/`front` through `RigGeometry.point`, posed as now), stopping 4 px short of the
+  lips. The bubble's first line is level with the settled mouth, and the portrait's empty side tucks under the bubble.
+  No screen coordinates are used. The first version aimed at the mouth's centre and covered the near lip; this was
+  caught in the render and fixed.
+- **Today stays.** The ×, "Hide coach for today", the stored `hidden` and `_AskButton` are gone. The old JSON key is
+  ignored, not converted. Show coach on Today is the only switch. Narrow phones now get a 68 × 84 guide and large text a
+  taller bubble; before, the guide, and with it Today's Ask access, disappeared below 340 px or above 1.3× text.
+- **Ask GoHard is the guide.** The entry points were audited:
+  - Today: the portrait (`coach-avatar-launcher`, button semantics with a tap action; it had none, which was caught by
+    the new test) and Ask me.
+  - Train header: `CoachAskLauncher`, the guide's avatar, there whether or not Today shows the guide.
+  - Speaker portraits in bubbles and help sheets that have Ask me.
+  - Why this suggestion and About this exercise: their text-only Ask buttons now carry the guide's avatar.
+  - The conversation: each answer is headed by the guide's avatar and name instead of the generic ✦ icon.
+  - Appearance's "off" subtitle said "Ask GoHard stays on Today" and now says it is still the guide, on Train.
+  - Nothing opened or shown calls the AI.
+- **Rendering details found on the device.** A hard grey line under the portrait came from mesh content outside the
+  box: the device's layer bounds don't clip. The canvas is now clipped to the box; confirmed gone in the second
+  recording. At 2× text "›" wrapped alone from a fallback font, so "Ask me ›" is now one unbreakable inline piece,
+  without double text scaling.
+
+Trade-off accepted per the brief (comfortable spacing over a first-viewport target): Today's header is about 285 px
+at 390 × 844 with a notch. The workout section and its action are whole on the first screen, and nutrition is a short
+scroll away. `today_ui_test` and `widget_test` (320 px, 2×) now say so.
+
+Tests: 480 app tests. coach_companion_test has 19, including:
+- an old "hidden for today" is ignored, and an upgraded account sees the guide again the same day;
+- nothing "hidden" is written;
+- the guide and Ask me open Ask GoHard with the same guide;
+- the labelled button;
+- the eyes' moments at rest with no frames in between;
+- Show coach on Today off and on, with the Train launcher;
+- Reduce Motion: no blink or gaze;
+- narrow and 2× text keep the guide.
+
+coach_ask_test covers the answer's identity. The test fixture gained `restDaysProvider`, which Ask's context needed.
+`scripts\test.ps1` passed: API 184/184, analysis clean, 480 app tests.
+
+Renders: `docs/evidence/coach/companion-poses.png` (10 poses × both guides × both framings; replaces
+`companion-frames.png`), all six themes, Today states, narrow, large text and weather scenes.
+
+Real app on the emulator (`emulator-5554`, debug, local API with live Open-Meteo, Halifax), `journey_companion_test`
+passed twice. Recordings `docs/evidence/recordings/coach-*.mp4` from the second run:
+- `today-leon`, `today-leona`: entrance, nod, words arriving with a glance, then 14 s at rest with blinks, looks and
+  bubble glances; the tail stays on the lips through every head movement;
+- `ask-leon`, `ask-leona`: the portrait opens Ask GoHard (same guide in its header), then Ask me does too, then back on
+  Today;
+- `scroll-return`: tabs, Home and relaunch: still there, no replay;
+- `appearance`: Today still there after other screens; off → plain greeting, no Ask button; the guide on Train opens
+  Ask; on → back, settled;
+- `split-help`, `exercise-help`, `food-portion`, `hints-off`: contextual help, unchanged;
+- `reduced`: still portrait with its bubble.
+
+`coach-hide-today.mp4` was removed. The first two attempts failed before any coach step: the API had been started with
+`-FoodFixtures`, which also answers city lookups from recordings, and Halifax isn't in them. The companion journey
+needs the API without that flag.
+
+Not measured: frame timing and battery (no physical device).
+
+Emulator journeys on the finished code, one at a time, local API with recorded provider responses, network restored
+before each run:
+- Passed on the first run: journey_test (it had failed 3 of 6 times at Me › Sign out last round), journey_secondary,
+  journey_offline, journey_device, journey_upgrade, journey_food.
+- journey_plan passed **both phases**. Phase 2, in a new process, had never attached before, so it is now verified on
+  the emulator.
+- journey_coach hung at attach on its first try (the driver extension never became available), then passed.
+- journey_coldstart: phase 1 passed, then phase 2 failed to attach ("Service has disappeared") before any step. Run
+  alone after an adb restart, it hung at attach once more, then passed both phases.
+- journey_more: twice the app printed "+2: All tests passed" and then the driver lost the VM service while collecting
+  results (exit 1). Run alone after the adb restart, it passed cleanly.
+
+Pattern: the attach and "Service has disappeared" failures came after more than an hour of runs and stopped after an
+adb restart. No failure happened at an app step.

@@ -11,6 +11,7 @@ import 'coach_avatar.dart';
 import 'coach_companion.dart';
 import 'coach_contract.dart';
 import 'coach_prefs.dart';
+import 'coach_rig.dart';
 
 /// The coach speaking (docs/COACH.md › Companion › Speech bubbles): the selected guide beside an attached bubble of
 /// native text, with "Ask me" and at most one existing guide action. Screens describe what to say ([CoachSay]) and
@@ -34,43 +35,35 @@ class CoachSay {
   final CoachGuideAction? guide;
 }
 
-/// Where a bubble's tail points: towards the guide's face, left or right of the bubble.
-enum CoachTail { left, right }
-
-/// The speech bubble: the theme's raised surface with a hairline edge, readable over any page or weather scene, and
-/// a small tail towards the face at [tailY] (from the top, or from the bottom with [tailFromBottom], for a face level
-/// with the bubble's foot). Its words and buttons are native and reflow at large text. With [announce] it is read out
-/// once as it appears (an introduction); it never takes focus. [revealed] (0..1) fades and grows it from the tail as the
-/// guide settles, and it is neither visible nor in the semantics tree until it has mostly arrived.
+/// The speech bubble's body: the theme's raised surface with a hairline edge, readable over any page or weather scene.
+/// Its tail is drawn by [CoachSpeech], from the bubble to the guide's mouth. Its words and buttons are native and reflow
+/// at large text. With [announce] it is read out once as it appears (an introduction); it never takes focus.
+/// [revealed] (0..1) fades it in as the guide settles; it is neither visible nor in the semantics tree before that.
 class CoachBubble extends StatelessWidget {
-  const CoachBubble({
-    super.key,
-    required this.say,
-    required this.tail,
-    this.tailY = 30,
-    this.tailFromBottom = false,
-    this.announce = false,
-    this.onClose,
-    this.closeLabel = 'Close',
-    this.closeKey = const Key('coach-say-close'),
-    this.revealed,
-  });
+  const CoachBubble({super.key, required this.say, this.announce = false, this.onClose, this.closeLabel = 'Close', this.closeKey = const Key('coach-say-close'), this.revealed, this.onAsk});
   final CoachSay say;
-  final CoachTail tail;
-  final double tailY;
-  final bool tailFromBottom, announce;
+  final bool announce;
   final VoidCallback? onClose;
   final String closeLabel;
   final Key closeKey;
   final ValueListenable<double>? revealed;
 
-  static const _tailWidth = 8.0;
+  /// Called as Ask me opens Ask GoHard (the guide reacts: a nod for being asked).
+  final VoidCallback? onAsk;
+
+  static const radius = 16.0;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final s = say;
-    final ask = s.onAsk ?? (s.ask == null ? null : () => openAskGoHard(context, s.ask!));
+    final open = s.onAsk ?? (s.ask == null ? null : () => openAskGoHard(context, s.ask!));
+    final ask = open == null
+        ? null
+        : () {
+            onAsk?.call();
+            open();
+          };
     // Ask me as the only action: it ends the sentence ("… today? Ask me ›") and the whole bubble is the button, so a
     // short message needs no row of its own. With a guide action as well, the two are buttons under the words.
     final inline = ask != null && s.guide == null;
@@ -94,13 +87,24 @@ class CoachBubble extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(text: s.text),
-                // Non-breaking spaces: "Ask me ›" moves to the next line as one piece, never split after "Ask".
-                if (inline)
-                  TextSpan(
-                    text: '  Ask me ›',
-                    semanticsLabel: '',
-                    style: context.sansStyle(15, color: c.accent, weight: FontWeight.w600),
+                // One unbreakable piece: "Ask me ›" moves to the next line whole, never split (the chevron can come from a
+                // fallback font, whose run boundary would otherwise allow a break). Read out as the bubble's button label.
+                if (inline) ...[
+                  const TextSpan(text: '  '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    // The paragraph already scales its inline widgets by the text size: not twice.
+                    child: ExcludeSemantics(
+                      child: Text(
+                        'Ask me ›',
+                        softWrap: false,
+                        textScaler: TextScaler.noScaling,
+                        style: context.sansStyle(15, color: c.accent, weight: FontWeight.w600),
+                      ),
+                    ),
                   ),
+                ],
               ],
             ),
             key: const Key('coach-say-text'),
@@ -133,27 +137,23 @@ class CoachBubble extends StatelessWidget {
           ),
       ],
     );
-    final left = tail == CoachTail.left ? _tailWidth : 0.0, right = tail == CoachTail.right ? _tailWidth : 0.0;
-    final radius = BorderRadius.circular(16);
-    Widget content = Padding(padding: EdgeInsets.fromLTRB(left + 14, 10, right + 14, inline || ask == null && s.guide == null ? 8 : 2), child: words);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(radius),
+      side: BorderSide(color: c.divider),
+    );
+    Widget content = Padding(padding: EdgeInsets.fromLTRB(14, 10, 14, inline || ask == null && s.guide == null ? 8 : 2), child: words);
     if (inline) {
       // One button the size of the bubble (at least 48 px high), read as its words and "Ask me".
       content = Semantics(
         button: true,
         hint: 'Ask me',
-        child: Padding(
-          padding: EdgeInsets.only(left: left, right: right),
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              key: const Key('coach-say-ask'),
-              borderRadius: radius,
-              onTap: ask,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: Targets.minimum),
-                child: Padding(padding: const EdgeInsets.fromLTRB(14, 8, 14, 8), child: words),
-              ),
-            ),
+        child: InkWell(
+          key: const Key('coach-say-ask'),
+          customBorder: shape,
+          onTap: ask,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: Targets.minimum),
+            child: Padding(padding: const EdgeInsets.fromLTRB(14, 8, 14, 8), child: words),
           ),
         ),
       );
@@ -161,8 +161,11 @@ class CoachBubble extends StatelessWidget {
     final body = Semantics(
       container: true,
       liveRegion: announce,
-      child: CustomPaint(
-        painter: _BubblePainter(fill: c.raised, edge: c.divider, tail: tail, tailY: tailY, fromBottom: tailFromBottom),
+      child: Material(
+        color: c.raised,
+        shape: shape,
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.5),
         child: Stack(
           children: [
             content,
@@ -170,7 +173,7 @@ class CoachBubble extends StatelessWidget {
             if (onClose != null)
               Positioned(
                 top: 0,
-                right: right,
+                right: 0,
                 child: IconButton(
                   key: closeKey,
                   tooltip: closeLabel,
@@ -192,114 +195,254 @@ class CoachBubble extends StatelessWidget {
         excluding: t < 0.5,
         child: IgnorePointer(
           ignoring: t < 0.5,
-          child: Opacity(
-            opacity: Curves.easeOut.transform(t),
-            child: Transform.scale(scale: 0.94 + 0.06 * t, alignment: tail == CoachTail.left ? Alignment.centerLeft : Alignment.centerRight, child: child),
-          ),
+          child: Opacity(opacity: Curves.easeOut.transform(t), child: child),
         ),
       ),
     );
   }
 }
 
-/// A rounded rectangle with a small tail on one side, filled and edged in one path so the joint never shows.
-class _BubblePainter extends CustomPainter {
-  _BubblePainter({required this.fill, required this.edge, required this.tail, required this.tailY, this.fromBottom = false});
-  final Color fill, edge;
-  final CoachTail tail;
-  final double tailY;
-  final bool fromBottom;
+/// The guide speaking: the small head-and-shoulders portrait right beside its bubble, the bubble's tail running from
+/// the bubble's edge to just short of the guide's mouth and following it every frame, so the words come from the
+/// guide whatever the head is doing, for either guide, any text length and any width. The portrait's empty side
+/// (beyond the muzzle) tucks under the bubble's edge, so only a small deliberate gap is left between the words and the
+/// face. [frame] picks the side: [RigFrame.edge] puts the guide on the right, leaning in from past the right edge by
+/// [bleed] (Today's screen edge); [RigFrame.inline] puts it on the left, whole.
+///
+/// The guide's portrait is the Ask GoHard launcher when [onAvatarTap] is given (a button named for what it opens); otherwise
+/// it is decorative. The bubble's words stay put while the guide moves.
+class CoachSpeech extends ConsumerStatefulWidget {
+  const CoachSpeech({
+    super.key,
+    required this.say,
+    required this.portrait,
+    this.frame = RigFrame.inline,
+    this.bleed = 0,
+    this.greet = false,
+    this.ack = 0,
+    this.attentive = false,
+    this.announce = false,
+    this.onGreeted,
+    this.onClose,
+    this.closeLabel = 'Close',
+    this.onAvatarTap,
+    this.onAsk,
+  });
+  final CoachSay say;
+  final Size portrait;
+  final RigFrame frame;
+  final double bleed;
+  final bool greet, attentive, announce;
+  final int ack;
+  final VoidCallback? onGreeted, onClose, onAvatarTap, onAsk;
+  final String closeLabel;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    const w = CoachBubble._tailWidth, h = 14.0, r = 16.0;
-    final left = tail == CoachTail.left ? w : 0.0, right = size.width - (tail == CoachTail.right ? w : 0.0);
-    final y = (fromBottom ? size.height - tailY : tailY).clamp(r + h / 2, math.max(r + h / 2, size.height - r - h / 2));
-    final rect = RRect.fromLTRBR(left, 0, right, size.height, const Radius.circular(r));
-    final tailPath = Path();
-    if (tail == CoachTail.left) {
-      tailPath
-        ..moveTo(left + 1, y - h / 2)
-        ..quadraticBezierTo(left - w * 0.4, y - 1, 0, y + 1)
-        ..quadraticBezierTo(left - w * 0.2, y + h / 2 - 1, left + 1, y + h / 2)
-        ..close();
-    } else {
-      tailPath
-        ..moveTo(right - 1, y - h / 2)
-        ..quadraticBezierTo(right + w * 0.4, y - 1, size.width, y + 1)
-        ..quadraticBezierTo(right + w * 0.2, y + h / 2 - 1, right - 1, y + h / 2)
-        ..close();
-    }
-    final shape = Path.combine(PathOperation.union, Path()..addRRect(rect), tailPath);
-    canvas
-      ..drawShadow(shape, Colors.black.withValues(alpha: 0.5), 2, false)
-      ..drawPath(shape, Paint()..color = fill)
-      ..drawPath(
-        shape,
-        Paint()
-          ..color = edge
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
+  ConsumerState<CoachSpeech> createState() => _CoachSpeechState();
+}
+
+class _CoachSpeechState extends ConsumerState<CoachSpeech> {
+  final _pose = ValueNotifier<RigPose>(RigPose.hidden);
+  late final _revealed = ValueNotifier<double>(widget.greet ? 0 : 1);
+  final _stack = GlobalKey(), _bubble = GlobalKey(), _face = GlobalKey();
+
+  /// Where the bubble's tail meets the bubble, from its top: about the first line.
+  static const _anchor = 30.0;
+
+  /// The space left between the tail's tip and the lips (the muzzle's edge at the mouth's height).
+  static const _gap = 4.0;
+
+  @override
+  void dispose() {
+    _pose.dispose();
+    _revealed.dispose();
+    super.dispose();
   }
 
   @override
-  bool shouldRepaint(_BubblePainter old) => old.fill != fill || old.edge != edge || old.tail != tail || old.tailY != tailY || old.fromBottom != fromBottom;
+  Widget build(BuildContext context) {
+    final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
+    final art = RigArt.of(guide);
+    final geo = RigGeometry(art, widget.frame, widget.portrait);
+    final right = widget.frame == RigFrame.edge;
+    // From the settled pose: the mouth's height in the portrait, and how far the muzzle reaches towards the bubble.
+    final mouth = geo.point(art.mouth, RigPose.settled);
+    final front = geo.point(Offset(art.front, art.mouth.dy), RigPose.settled);
+    final muzzleIn = right ? front.dx : widget.portrait.width - front.dx;
+    final under = math.max(0.0, muzzleIn - 10); // the portrait's empty side, under the bubble's edge
+    final bubbleTop = math.max(0.0, mouth.dy - _anchor), portraitTop = math.max(0.0, _anchor - mouth.dy);
+    final side = widget.portrait.width - under - (right ? widget.bleed : 0);
+    Widget face = CoachCompanion(
+      guide: guide,
+      size: widget.portrait,
+      frame: widget.frame,
+      pose: _pose,
+      revealed: _revealed,
+      greet: widget.greet,
+      ack: widget.ack,
+      attentive: widget.attentive,
+      onGreeted: widget.onGreeted,
+    );
+    face = widget.onAvatarTap == null
+        ? ExcludeSemantics(child: face)
+        : Semantics(
+            container: true,
+            button: true,
+            label: 'Ask GoHard: open the conversation with ${guide.label}',
+            onTap: widget.onAvatarTap,
+            child: GestureDetector(
+              key: const Key('coach-avatar-launcher'),
+              behavior: HitTestBehavior.opaque,
+              excludeFromSemantics: true,
+              onTap: widget.onAvatarTap,
+              child: ExcludeSemantics(child: face),
+            ),
+          );
+    return Stack(
+      key: _stack,
+      clipBehavior: Clip.none,
+      children: [
+        SizedBox(height: portraitTop + widget.portrait.height, width: double.infinity),
+        Positioned(key: _face, top: portraitTop, width: widget.portrait.width, height: widget.portrait.height, left: right ? null : 0, right: right ? -widget.bleed : null, child: face),
+        Padding(
+          padding: EdgeInsets.only(top: bubbleTop, left: right ? 0 : side, right: right ? side : 0),
+          child: KeyedSubtree(
+            key: _bubble,
+            child: CoachBubble(say: widget.say, announce: widget.announce, onClose: widget.onClose, closeLabel: widget.closeLabel, revealed: _revealed, onAsk: widget.onAsk),
+          ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              painter: _TailPainter(
+                stack: _stack,
+                bubble: _bubble,
+                face: _face,
+                geometry: geo,
+                pose: _pose,
+                revealed: _revealed,
+                right: right,
+                fill: context.c.raised,
+                edge: context.c.divider,
+                gap: _gap,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-/// The guide and its bubble in a page or sheet: a small round portrait on the left (the bubble's tail points at its
-/// face) and the words. An [introduce]d one peeks in and greets, its words arriving as it settles, and is read out
-/// once; help the user asked for is simply there, settled and ready to tap. Used by [CoachSpot] and
-/// [showCoachHelpSheet].
-class CoachSpeaker extends ConsumerStatefulWidget {
+/// The tail: from the bubble's edge (at the mouth's height, kept clear of the bubble's corners) to just short of the
+/// mouth, as the head is now. Filled like the bubble and edged on its two sides only, its base overlapping the bubble so
+/// the join never shows. It fades in with the bubble.
+class _TailPainter extends CustomPainter {
+  _TailPainter({
+    required this.stack,
+    required this.bubble,
+    required this.face,
+    required this.geometry,
+    required this.pose,
+    required this.revealed,
+    required this.right,
+    required this.fill,
+    required this.edge,
+    required this.gap,
+  }) : super(repaint: Listenable.merge([pose, revealed]));
+  final GlobalKey stack, bubble, face;
+  final RigGeometry geometry;
+  final ValueListenable<RigPose> pose;
+  final ValueListenable<double> revealed;
+  final bool right;
+  final Color fill, edge;
+  final double gap;
+
+  /// Where the bubble and the mouth are in this painter's box, laid out and posed as they are now. The mouth is taken at
+  /// the muzzle's edge, where the lips meet the outline, so the tail stops short of the face instead of covering it.
+  ({Rect bubble, Offset mouth})? locate() {
+    final s = stack.currentContext?.findRenderObject() as RenderBox?, b = bubble.currentContext?.findRenderObject() as RenderBox?;
+    final f = face.currentContext?.findRenderObject() as RenderBox?;
+    if (s == null || b == null || f == null || !s.hasSize || !b.hasSize || !f.hasSize || !b.attached || !f.attached) return null;
+    final bo = b.localToGlobal(Offset.zero, ancestor: s), fo = f.localToGlobal(Offset.zero, ancestor: s);
+    return (bubble: bo & b.size, mouth: fo + geometry.point(Offset(geometry.art.front, geometry.art.mouth.dy), pose.value));
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final t = revealed.value;
+    if (t <= 0.01) return;
+    final at = locate();
+    if (at == null) return;
+    final b = at.bubble, m = at.mouth;
+    const r = CoachBubble.radius, half = 7.0;
+    final baseX = right ? b.right - 1.5 : b.left + 1.5;
+    final baseY = m.dy.clamp(b.top + r + half, math.max(b.top + r + half, b.bottom - r - half));
+    final tip = Offset(m.dx + (right ? -gap : gap), m.dy);
+    // A gently curved wedge, wide at the bubble, pointed at the mouth.
+    final path = Path()
+      ..moveTo(baseX, baseY - half)
+      ..quadraticBezierTo((baseX + tip.dx) / 2, (baseY - half + tip.dy) / 2 - 1, tip.dx, tip.dy)
+      ..quadraticBezierTo((baseX + tip.dx) / 2, (baseY + half + tip.dy) / 2 + 1, baseX, baseY + half)
+      ..close();
+    final alpha = Curves.easeOut.transform(t);
+    canvas.drawPath(path, Paint()..color = fill.withValues(alpha: fill.a * alpha));
+    final sides = Path()
+      ..moveTo(baseX, baseY - half)
+      ..quadraticBezierTo((baseX + tip.dx) / 2, (baseY - half + tip.dy) / 2 - 1, tip.dx, tip.dy)
+      ..quadraticBezierTo((baseX + tip.dx) / 2, (baseY + half + tip.dy) / 2 + 1, baseX, baseY + half);
+    canvas.drawPath(
+      sides,
+      Paint()
+        ..color = edge.withValues(alpha: edge.a * alpha)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TailPainter old) => old.geometry != geometry || old.fill != fill || old.edge != edge || old.right != right;
+}
+
+/// The guide and its bubble in a page or sheet: [CoachSpeech] inline, the guide on the left facing its words. An
+/// [introduce]d one peeks in and greets, its words arriving as it settles, and is read out once; help the user asked for
+/// is simply there, settled and ready to tap. Where it can answer (Ask me), the guide's portrait opens Ask GoHard too.
+/// Used by [CoachSpot] and [showCoachHelpSheet].
+class CoachSpeaker extends StatelessWidget {
   const CoachSpeaker({super.key, required this.say, this.introduce = false, this.onClose, this.closeLabel = 'Close'});
   final CoachSay say;
   final bool introduce;
   final VoidCallback? onClose;
   final String closeLabel;
 
-  @override
-  ConsumerState<CoachSpeaker> createState() => _CoachSpeakerState();
-}
-
-class _CoachSpeakerState extends ConsumerState<CoachSpeaker> {
-  late final _revealed = ValueNotifier<double>(widget.introduce ? 0 : 1);
-
-  @override
-  void dispose() {
-    _revealed.dispose();
-    super.dispose();
-  }
-
-  static const _face = 52.0;
+  static const portrait = Size(62, 72);
 
   @override
   Widget build(BuildContext context) {
-    final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
-    return Row(
+    final ask = say.onAsk ?? (say.ask == null ? null : () => openAskGoHard(context, say.ask!));
+    return CoachSpeech(
       key: const Key('coach-speaker'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipOval(
-          child: ColoredBox(
-            color: context.c.sunken,
-            child: CoachCompanion(guide: guide, size: const Size.square(_face), greet: widget.introduce, revealed: widget.introduce ? _revealed : null),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: CoachBubble(
-            say: widget.say,
-            tail: CoachTail.left,
-            tailY: _face / 2,
-            announce: widget.introduce,
-            onClose: widget.onClose,
-            closeLabel: widget.closeLabel,
-            revealed: _revealed,
-          ),
-        ),
-      ],
+      say: say,
+      portrait: portrait,
+      greet: introduce,
+      announce: introduce,
+      onClose: onClose,
+      closeLabel: closeLabel,
+      onAvatarTap: ask,
     );
+  }
+}
+
+/// Ask GoHard's launcher where there is no bubble to say it: the selected guide's avatar in a 48 px button, labelled
+/// by what it does. The same face opens the same conversation everywhere (the Today portrait, Ask me in a bubble, this).
+class CoachAskLauncher extends ConsumerWidget {
+  const CoachAskLauncher({super.key, required this.ask});
+  final CoachContext ask;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
+    return CoachHelpButton(key: const Key('coach-ask-launcher'), semanticLabel: 'Ask GoHard: open the conversation with ${guide.label}', onPressed: () => openAskGoHard(context, ask));
   }
 }
 

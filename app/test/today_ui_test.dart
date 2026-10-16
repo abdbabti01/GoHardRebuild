@@ -109,11 +109,10 @@ void main() {
     final nutritionTop = tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy;
     final calories = tester.getBottomLeft(find.descendant(of: find.byKey(const Key('today-module-nutrition')), matching: find.textContaining('2,200 kcal'))).dy;
     debugPrint('full state: nutrition starts at $nutritionTop, its calorie figure ends at $calories, the navigation bar starts at $navTop');
-    // The brief: nothing is squeezed to fit the first screen. The nutrition section starts on it, its label visible.
-    expect(nutritionTop + 36, lessThan(navTop), reason: 'the nutrition section and its label start on the first screen');
-    // The guide's two-line bubble on Today (docs/COACH.md › Speech bubbles) costs about 30 px: in this, the tallest
-    // state, the Run module starts on the first screen and its button is a short scroll away.
-    expect(tester.getTopLeft(find.byKey(const Key('today-module-run'))).dy, lessThan(navTop));
+    // The brief: nothing is squeezed to fit the first screen, the guide speaking included (comfortable spacing over a
+    // first-viewport target). The first section is whole on it, its action in reach; the rest is a short scroll.
+    expect(tester.getBottomLeft(find.byKey(const Key('today-module-workout'))).dy, lessThan(navTop), reason: 'the workout section and its action are on the first screen');
+    expect(nutritionTop - navTop, lessThan(120), reason: 'nutrition a short scroll away');
 
     // The quietest day: a due workout, no run, nothing logged.
     await pumpApp(tester, await fixture(tester, plans: [plan]), insets: phoneInsets);

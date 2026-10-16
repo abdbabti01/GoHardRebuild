@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer;
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/device_prefs.dart';
+import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
+import 'package:gohard_rebuild/features/coach/coach_client.dart';
 import 'package:gohard_rebuild/features/coach/coach_companion.dart';
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/coach/coach_rig.dart';
 
 import 'ui_support.dart';
 
-/// The Today companion (docs/COACH.md › Companion): when it greets, that it never replays, hiding it for the day,
-/// Reduce Motion, pausing, both guides, the missing-texture fallback, the one acknowledgement of a saved workout and
-/// that none of it asks the AI. Rendering itself is reviewed in docs/evidence/coach (coach_rig_render_test.dart).
+/// The Today companion (docs/COACH.md › Companion): when it greets, that it never replays, that it stays until Show
+/// coach on Today is turned off (no close button; an old "hidden for today" is ignored), the guide as Ask GoHard's
+/// launcher, the eyes' own life, Reduce Motion, pausing, both guides, the missing-texture fallback, the one
+/// acknowledgement of a saved workout and that none of it asks the AI. Rendering itself is reviewed in
+/// docs/evidence/coach (coach_rig_render_test.dart).
 
 const _day = '2026-10-11'; // the fixture block has "Upper body A" due on this Sunday
 final _plan = blockPlan(start: '2026-09-21', recorded: 8);
@@ -41,8 +45,8 @@ Future<ProviderContainer> _today(WidgetTester tester, {String day = _day, CoachP
         ],
         size: size, textScale: textScale, settle: false);
 
-CoachCompanionState _state(WidgetTester tester) => tester.state<CoachCompanionState>(find.byType(CoachCompanion, skipOffstage: false));
-CoachCompanion _widget(WidgetTester tester) => tester.widget<CoachCompanion>(find.byType(CoachCompanion, skipOffstage: false));
+CoachCompanionState _state(WidgetTester tester) => tester.state<CoachCompanionState>(find.byType(CoachCompanion, skipOffstage: false).first);
+CoachCompanion _widget(WidgetTester tester) => tester.widget<CoachCompanion>(find.byType(CoachCompanion, skipOffstage: false).first);
 
 /// Real frames for [ms] milliseconds.
 Future<void> _frames(WidgetTester tester, int ms) async {
@@ -51,9 +55,26 @@ Future<void> _frames(WidgetTester tester, int ms) async {
   }
 }
 
+/// The conversation without its store: these tests only check that it opens, never what it says.
+class _Quiet extends AskConversation {
+  @override
+  AskState build() => const AskState(loaded: true);
+}
+
+final _quiet = askConversationProvider.overrideWith(_Quiet.new);
+
+/// A phone's stored preference as an earlier build wrote it, "hidden for today" included.
+Future<CoachPrefsStore> _upgraded(String hidden) async {
+  final phone = MemorySecretStore();
+  await phone.write('gohard.rebuild.coach', '{"guide":"leon","hints":true,"dismissed":[],"today":true,"greeted":null,"hidden":"$hidden"}');
+  final store = CoachPrefsStore(phone);
+  await store.restore();
+  return store;
+}
+
 void main() {
-  group('daily greeting eligibility', () {
-    test('once per local day per account on this phone; another account or day is new; Coaching hints do not govern Today', () {
+  group('preferences', () {
+    test('the greeting: once per local day per account on this phone; another account or day is new; Coaching hints do not govern Today', () {
       var p = const CoachPrefs();
       expect(p.mayGreet('one', '2026-10-11'), isTrue);
       p = p.copy(greeted: CoachPrefs.dayKey('one', '2026-10-11'));
@@ -61,26 +82,30 @@ void main() {
       expect(p.mayGreet('two', '2026-10-11'), isTrue, reason: 'another account on the same phone');
       expect(p.mayGreet('one', '2026-10-12'), isTrue, reason: 'the next local day');
       expect(p.copy(hintsEnabled: false).mayGreet('one', '2026-10-12'), isTrue, reason: 'Show coach on Today governs the greeting; hints govern introductions elsewhere');
-      p = p.copy(hidden: CoachPrefs.dayKey('one', '2026-10-11'));
-      expect(p.hiddenOn('one', '2026-10-11'), isTrue);
-      expect(p.hiddenOn('one', '2026-10-12'), isFalse, reason: 'hidden for that day only');
     });
 
-    test('Show coach on Today, the greeting day and the hidden day survive a restart; the guide and hints are kept', () async {
+    test('Show coach on Today, the greeting day, the guide and hints survive a restart; no "hidden" is written', () async {
       final phone = MemorySecretStore();
-      final store = CoachPrefsStore(phone)..value = const CoachPrefs(guide: CoachGuide.leona, hintsEnabled: false, onToday: false, greeted: 'one|2026-10-11', hidden: 'one|2026-10-11');
+      final store = CoachPrefsStore(phone)..value = const CoachPrefs(guide: CoachGuide.leona, hintsEnabled: false, onToday: false, greeted: 'one|2026-10-11');
       await store.save();
+      expect(await phone.read('gohard.rebuild.coach'), isNot(contains('hidden')));
       final back = CoachPrefsStore(phone);
       await back.restore();
       expect(back.value, store.value);
-      final old = CoachPrefsStore(MemorySecretStore());
-      await old.restore();
-      expect(old.value.onToday, isTrue, reason: 'on by default, also for a preference saved before this setting existed');
+      final fresh = CoachPrefsStore(MemorySecretStore());
+      await fresh.restore();
+      expect(fresh.value.onToday, isTrue, reason: 'on by default, also for a preference saved before this setting existed');
+    });
+
+    test('an old "hidden for today" is ignored, not turned into Show coach on Today off', () async {
+      final store = await _upgraded('one|2026-10-11');
+      expect(store.value.onToday, isTrue);
+      expect(store.value, const CoachPrefs(), reason: 'nothing of the old flag is kept');
     });
   });
 
   group('Today', () {
-    testWidgets('opening Today: the guide greets once and speaks through its bubble, with Ask me and no second Ask beside the title; no AI request', (tester) async {
+    testWidgets('opening Today: the guide greets once and speaks through its bubble, with Ask me; no close button and no second Ask beside the title; no AI request', (tester) async {
       final recorder = _Recorder();
       final c = await _today(tester, recorder: recorder);
       await tester.pump();
@@ -92,11 +117,24 @@ void main() {
       expect(find.textContaining(RegExp(r'^Good (morning|afternoon|evening), Alex!$')), findsOneWidget, reason: 'the title line of the bubble');
       expect(find.textContaining('Upper body A is planned today.', findRichText: true), findsOneWidget);
       expect(find.byKey(const Key('coach-say-ask')), findsOneWidget, reason: 'Ask me in the bubble');
-      expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no competing Ask beside the title while the guide speaks');
+      expect(find.byKey(const Key('coach-avatar-launcher')), findsOneWidget, reason: 'the guide is the launcher');
+      expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no generic Ask beside the title');
+      expect(find.byKey(const Key('coach-say-close')), findsNothing, reason: 'no close button on Today');
+      expect(find.byTooltip('Hide coach for today'), findsNothing);
       expect(recorder.paths.where((p) => p.contains('coach')), isEmpty, reason: 'greeting and line are worked out on the phone');
     });
 
-    testWidgets('no replay: a rebuild, a tab change, a sync and the app returning show the settled portrait at once', (tester) async {
+    testWidgets('an account that hid the coach for today in an earlier build sees it again after upgrading, that same day', (tester) async {
+      final owner = (await _today(tester)).read(ownerProvider)!;
+      final store = (await tester.runAsync(() => _upgraded('$owner|$_day')))!; // this account, today, as the old build wrote it
+      await tester.pumpWidget(const SizedBox());
+      await _today(tester, coach: store);
+      await tester.pump();
+      expect(find.byType(CoachCompanion), findsOneWidget);
+      expect(find.byKey(const Key('coach-avatar-launcher')), findsOneWidget);
+    });
+
+    testWidgets('no replay: a rebuild, a tab change, a sync and the app returning show the settled portrait at once; it is still there', (tester) async {
       final c = await _today(tester);
       await _frames(tester, 11000); // greeting, settling, rest
       expect(_state(tester).ticking, isFalse, reason: 'at rest nothing ticks');
@@ -126,19 +164,66 @@ void main() {
       expect(_widget(tester).greet, isFalse);
       expect(_state(tester).pose.value.slide, 1);
 
-      // Restart on the same day: still no greeting.
+      // Restart on the same day: still no greeting, still there.
       final again = c.read(coachPrefsStoreProvider);
       await tester.pumpWidget(const SizedBox());
       await _today(tester, coach: again);
       await tester.pump();
       expect(_widget(tester).greet, isFalse);
+      expect(find.byType(CoachCompanion), findsOneWidget);
     });
 
-    testWidgets('a tap plays one short acknowledgement; rapid taps blend instead of stacking', (tester) async {
+    testWidgets('tapping the guide opens Ask GoHard; so does Ask me; both with the same guide in the conversation', (tester) async {
+      await _today(tester, more: [_quiet]);
+      await _frames(tester, 3000);
+      await tester.tap(find.byKey(const Key('coach-avatar-launcher')));
+      await _frames(tester, 600);
+      expect(find.byKey(const Key('ask-input')), findsOneWidget, reason: 'the conversation');
+      expect(find.byKey(const Key('ask-companion')), findsOneWidget, reason: 'the same guide in its header');
+      await tester.tap(find.byKey(const Key('ask-close')));
+      await _frames(tester, 600);
+      await tester.tap(find.byKey(const Key('coach-say-ask')));
+      await _frames(tester, 600);
+      expect(find.byKey(const Key('ask-input')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('ask-close')));
+      await _frames(tester, 600);
+      expect(find.byType(CoachCompanion), findsOneWidget, reason: 'still on Today afterwards');
+    });
+
+    testWidgets('the guide is a labelled button', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _today(tester);
+      await _frames(tester, 3000);
+      expect(tester.getSemantics(find.bySemanticsLabel('Ask GoHard: open the conversation with Leon')), matchesSemantics(isButton: true, hasTapAction: true, label: 'Ask GoHard: open the conversation with Leon'));
+      handle.dispose();
+    });
+
+    testWidgets('at rest the eyes live on their own: a blink, a look away or at the bubble, back to the user; nothing ticks in between', (tester) async {
       await _today(tester);
       await _frames(tester, 11000);
+      var moved = false, restedBetween = false;
+      for (var t = 0; t < 14000; t += 16) {
+        await tester.pump(const Duration(milliseconds: 16));
+        final p = _state(tester).pose.value;
+        if (p.blink > 0.2 || p.gazeX.abs() > 0.15 || p.gazeY.abs() > 0.15) moved = true;
+        if (moved && !_state(tester).ticking) restedBetween = true;
+        expect(p.slide, closeTo(1, 0.001), reason: 'the portrait stays in place');
+      }
+      expect(moved, isTrue);
+      expect(restedBetween, isTrue, reason: 'back at rest, no frames, until the next moment');
+      final p = _state(tester).pose.value;
+      expect(p.gazeX.abs() < 0.05 && p.gazeY.abs() < 0.05 || _state(tester).ticking, isTrue, reason: 'settled means looking at the user');
+    });
+
+    testWidgets('an acknowledgement is one short nod; repeated ones blend instead of stacking', (tester) async {
+      final ack = ValueNotifier(0);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [rigImageProvider.overrideWith((ref, g) async => null)],
+        child: MaterialApp(theme: goTheme(Accent.blue, Brightness.light), home: ValueListenableBuilder(valueListenable: ack, builder: (_, n, _) => Center(child: CoachCompanion(guide: CoachGuide.leon, size: const Size(92, 114), ack: n)))),
+      ));
+      await _frames(tester, 4000);
       for (var i = 0; i < 5; i++) {
-        await tester.tapAt(tester.getTopLeft(find.byKey(const Key('today-coach'))) + const Offset(46, 25)); // the face
+        ack.value++;
         await tester.pump(const Duration(milliseconds: 30));
       }
       expect(_state(tester).ticking, isTrue);
@@ -151,39 +236,31 @@ void main() {
       }
       expect(maxNod, lessThan(1.2), reason: 'one nod, never compounded');
       expect(_state(tester).pose.value.smile, lessThan(0.5), reason: 'the smile is gone again');
+      await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('Hide coach for today tucks it away; Ask GoHard stays; it is back the next day', (tester) async {
-      final c = await _today(tester);
-      await _frames(tester, 2000);
-      await tester.tap(find.byTooltip('Hide coach for today'));
-      await _frames(tester, 600);
-      expect(find.byType(CoachCompanion), findsNothing);
-      expect(c.read(coachPrefsProvider).hiddenOn(c.read(ownerProvider)!, _day), isTrue);
-      expect(find.byKey(const Key('today-ask')), findsOneWidget, reason: 'Ask GoHard stays');
-
-      final store = c.read(coachPrefsStoreProvider);
-      await tester.pumpWidget(const SizedBox());
-      await _today(tester, coach: store);
-      await tester.pump();
-      expect(find.byType(CoachCompanion), findsNothing, reason: 'hidden survives a restart that day');
-
-      await tester.pumpWidget(const SizedBox());
-      await _today(tester, coach: store, day: '2026-10-12');
-      await tester.pump();
-      expect(find.byType(CoachCompanion), findsOneWidget, reason: 'the next day');
-    });
-
-    testWidgets('Show coach on Today off: no portrait, the time-of-day icon is back, Ask GoHard stays', (tester) async {
-      final c = await _today(tester);
+    testWidgets('Show coach on Today off: no portrait, the time-of-day icon is back; Ask GoHard is still the guide on Train; on again, it is back', (tester) async {
+      final c = await _today(tester, more: [_quiet]);
       c.read(coachPrefsProvider.notifier).setOnToday(false);
       await tester.pump();
       expect(find.byType(CoachCompanion), findsNothing);
-      expect(find.byKey(const Key('today-ask')), findsOneWidget);
+      expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no generic Ask button in its place');
       expect(find.byIcon(Icons.wb_sunny_outlined).evaluate().isNotEmpty || find.byIcon(Icons.nightlight_outlined).evaluate().isNotEmpty, isTrue);
+      await tester.tap(find.byKey(const Key('nav-train')));
+      await _frames(tester, 600);
+      expect(find.byKey(const Key('coach-ask-launcher')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('coach-ask-launcher')));
+      await _frames(tester, 600);
+      expect(find.byKey(const Key('ask-input')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('ask-close')));
+      await _frames(tester, 600);
+      c.read(coachPrefsProvider.notifier).setOnToday(true);
+      await tester.tap(find.byKey(const Key('nav-today')));
+      await _frames(tester, 300);
+      expect(find.byType(CoachCompanion), findsOneWidget);
     });
 
-    testWidgets('Reduce Motion: a still, settled portrait at once; no frames, no blinking; the greeting counts as shown', (tester) async {
+    testWidgets('Reduce Motion: a still, settled portrait at once, looking at the user; no frames, no blinking, no eye movement; the greeting counts as shown', (tester) async {
       final c = await _today(tester, device: DevicePrefsStore(MemorySecretStore())..motion = MotionPref.reduced);
       await tester.pump();
       await tester.pump();
@@ -191,13 +268,13 @@ void main() {
       expect(_state(tester).pose.value.blink, 0);
       expect(_state(tester).ticking, isFalse);
       expect(c.read(coachPrefsProvider).greeted, isNotNull);
-      await tester.tapAt(tester.getTopLeft(find.byKey(const Key('today-coach'))) + const Offset(46, 25)); // the face
-      await tester.pump();
-      expect(_state(tester).ticking, isFalse, reason: 'no acknowledgement motion either');
-      await tester.tap(find.byTooltip('Hide coach for today'));
-      await tester.pump();
-      await tester.pump();
-      expect(find.byType(CoachCompanion), findsNothing, reason: 'hidden at once, without the tuck');
+      for (var t = 0; t < 12000; t += 200) {
+        await tester.pump(const Duration(milliseconds: 200));
+        final p = _state(tester).pose.value;
+        expect([p.blink, p.gazeX, p.gazeY], [0, 0, 0]);
+        expect(_state(tester).ticking, isFalse);
+      }
+      expect(find.byKey(const Key('coach-avatar-launcher')), findsOneWidget, reason: 'still the way into Ask GoHard');
     });
 
     testWidgets('turning Reduce Motion on mid-greeting stops it in the settled pose', (tester) async {
@@ -209,29 +286,6 @@ void main() {
       await tester.pump();
       expect(_state(tester).ticking, isFalse);
       expect(_state(tester).pose.value.slide, 1);
-    });
-
-    testWidgets('Reduce Motion switched on during the tuck: it has left at once and the day is recorded as hidden', (tester) async {
-      final c = await _today(tester);
-      await _frames(tester, 2000);
-      await tester.tap(find.byTooltip('Hide coach for today'));
-      await _frames(tester, 80);
-      c.read(devicePrefsProvider.notifier).setMotion(MotionPref.reduced);
-      await tester.pump();
-      await tester.pump();
-      expect(find.byType(CoachCompanion), findsNothing);
-      expect(c.read(coachPrefsProvider).hiddenOn(c.read(ownerProvider)!, _day), isTrue);
-    });
-
-    testWidgets('Hide right after an acknowledgement still tucks it away and records the day', (tester) async {
-      final c = await _today(tester);
-      await _frames(tester, 4500);
-      await tester.tapAt(tester.getTopLeft(find.byKey(const Key('today-coach'))) + const Offset(46, 25));
-      await _frames(tester, 2500);
-      await tester.tap(find.byKey(const Key('today-coach-hide')));
-      await _frames(tester, 1500);
-      expect(find.byType(CoachCompanion), findsNothing);
-      expect(c.read(coachPrefsProvider).hidden, isNotNull);
     });
 
     testWidgets('a covering route pauses it and no timer or ticker is left after leaving', (tester) async {
@@ -279,11 +333,10 @@ void main() {
       expect(c.read(workoutSavedProvider)!.played, isTrue);
       expect(_state(tester).ticking, isTrue, reason: 'the acknowledgement plays');
       await _frames(tester, 11000);
-      expect(_state(tester).ticking, isFalse);
       c.invalidate(dailySnapshotProvider);
       await tester.pump();
       await tester.pump();
-      expect(_state(tester).ticking, isFalse, reason: 'no second celebration');
+      expect(c.read(workoutSavedProvider)!.played, isTrue, reason: 'no second celebration');
     });
 
     testWidgets('Train without a plan: introduced once when its view is really shown, not while built behind Today; it offers Ask me', (tester) async {
@@ -306,15 +359,17 @@ void main() {
       expect(find.byKey(const Key('coach-say-ask')), findsOneWidget, reason: 'Ask me; Create my plan above it is the way to the starting paths');
     });
 
-    testWidgets('narrow phones and large text drop the portrait before any words', (tester) async {
+    testWidgets('narrow phones get a smaller guide and large text a taller bubble: the guide never disappears, nothing overflows', (tester) async {
       await _today(tester, size: const Size(320, 640));
       await tester.pump();
-      expect(find.byType(CoachCompanion), findsNothing);
-      expect(find.byKey(const Key('today-ask')), findsOneWidget);
+      expect(find.byType(CoachCompanion), findsOneWidget);
+      expect(_widget(tester).size, const Size(68, 84));
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
-      await _today(tester, textScale: 1.6);
+      await _today(tester, size: const Size(320, 640), textScale: 2);
       await tester.pump();
-      expect(find.byType(CoachCompanion), findsNothing);
+      expect(find.byType(CoachCompanion), findsOneWidget);
+      expect(find.byKey(const Key('coach-avatar-launcher')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

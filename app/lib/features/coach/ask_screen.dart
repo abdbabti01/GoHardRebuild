@@ -16,6 +16,7 @@ import 'coach_companion.dart';
 import 'coach_client.dart';
 import 'coach_contract.dart';
 import 'coach_prefs.dart';
+import 'coach_rig.dart' show RigFrame;
 import 'coach_proposal.dart';
 
 // ------------------------------------------------------------------ reviewed content (Quick guide, sources)
@@ -215,7 +216,7 @@ class _AskScreenState extends ConsumerState<AskScreen> {
                   ClipOval(
                     child: ColoredBox(
                       color: context.c.sunken,
-                      child: CoachCompanion(key: const Key('ask-companion'), guide: ref.watch(coachPrefsProvider.select((p) => p.guide)), size: const Size.square(48), attentive: s.sending),
+                      child: CoachCompanion(key: const Key('ask-companion'), guide: ref.watch(coachPrefsProvider.select((p) => p.guide)), size: const Size.square(48), frame: RigFrame.inline, attentive: s.sending),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -338,9 +339,12 @@ class _AskScreenState extends ConsumerState<AskScreen> {
       child: Semantics(
         container: true, liveRegion: arrived,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Who answers: the selected guide, the same face as the header and every way into this conversation.
           Row(children: [
-            Icon(Icons.auto_awesome_outlined, size: 16, color: context.c.secondary),
-            const SizedBox(width: 6),
+            const CoachAvatar(size: 26),
+            const SizedBox(width: 8),
+            Text(ref.watch(coachPrefsProvider.select((p) => p.guide)).label, style: context.sansStyle(14, weight: FontWeight.w600)),
+            Text(' · ', style: context.caption),
             Text('AI-generated', key: Key('ask-ai-$id'), style: context.caption),
           ]),
           if (stale)

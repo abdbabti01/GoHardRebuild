@@ -11,14 +11,18 @@ import 'support.dart';
 /// `GOHARD_REC:stop` around each part worth recording and `GOHARD_REC:home` when the host should press Home and bring
 /// the app back (the host records with `adb screenrecord`; see PROGRESS_LEDGER).
 ///
-///   today-leon     Leon peeks in, nods, and speaks: greeting, Today's line, Ask me; a tap's acknowledgement
-///   scroll-return  scrolling and tabs, then Home and back: no replay; the weather sky moving beside the guide
+///   today-leon     Leon peeks in, nods, and speaks: greeting, Today's line, Ask me, the bubble's tail at the mouth
+///                  through the head's movement; then at rest: the eyes look about, glance at the bubble, blink
+///   ask-leon       the guide opens Ask GoHard (the same guide in its header and on the answer); Ask me does too;
+///                  back on Today the guide nods for being asked
+///   scroll-return  scrolling and tabs, then Home and back: no replay, still there; the weather sky beside the guide
 ///   split-help     Train without a plan (introduced once), then the split step's introduction and Compare splits
 ///   exercise-help  the exercise editor's help: the bubble, then About this exercise; the typed sets are kept
 ///   food-portion   food search introduced once, then the portion guidance on a food with portions
-///   hide-today     Hide for today: guide and bubble tuck away; one quiet Ask GoHard stays
+///   appearance     Show coach on Today off: Today without the guide (no Ask button in its place), the guide on Train
+///                  still opens Ask GoHard; on again: back on Today, settled
 ///   hints-off      Coaching hints off: no introduction by itself, help on request (nutrition goals)
-///   today-leona    the same greeting with Leona
+///   today-leona    the same greeting with Leona, ask-leona the same ways into Ask GoHard
 ///   reduced        Motion › Reduced: a settled portrait and its bubble at once
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -65,9 +69,25 @@ void main() {
           // Landing on Today: the guide peeks in, nods, and the bubble arrives as it settles.
           await watch(5000);
           expect(find.byKey(const Key('coach-say-title')), findsOneWidget, reason: 'the greeting is in the bubble');
-          expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no second Ask beside the title');
-          await tester.tapAt(tester.getTopLeft(find.byKey(const Key('today-coach'))) + const Offset(43, 30)); // the face
+          expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no generic Ask beside the title');
+          expect(find.byKey(const Key('coach-say-close')), findsNothing, reason: 'no close button on Today');
+          await watch(14000); // at rest: its eyes' own moments
+        });
+
+    /// Both ways into Ask GoHard from Today: the guide, then Ask me.
+    Future<void> ask(String name) => rec(name, () async {
+          await j.tapKey('coach-avatar-launcher');
+          await j.waitFor(find.byKey(const Key('ask-input')), what: 'Ask GoHard from the guide');
+          expect(find.byKey(const Key('ask-companion')), findsOneWidget, reason: 'the same guide in the conversation');
           await watch(2500);
+          await j.tapKey('ask-close');
+          await watch(1500);
+          await j.tapKey('coach-say-ask');
+          await j.waitFor(find.byKey(const Key('ask-input')), what: 'Ask GoHard from Ask me');
+          await watch(2000);
+          await j.tapKey('ask-close');
+          await watch(3000); // back on Today: the nod for being asked
+          expect(find.byKey(const Key('today-coach')), findsOneWidget);
         });
 
     // --- Account 1, Leon. Live weather first, so the sky moves beside the guide.
@@ -88,6 +108,7 @@ void main() {
     await back();
     await signUpAgain('Babti Leon');
     await greet('today-leon');
+    await ask('ask-leon');
 
     await rec('scroll-return', () async {
       final list = find.byType(Scrollable).hitTestable().first;
@@ -158,13 +179,36 @@ void main() {
       await j.settle(3);
     });
 
-    await rec('hide-today', () async {
+    Future<void> showOnToday() async {
+      await j.tapKey('nav-me');
+      await j.tapKey('me-appearance');
+      await tester.scrollUntilVisible(find.byKey(const Key('coach-on-today')), 300, scrollable: find.byType(Scrollable).hitTestable().last);
+      await watch(800);
+      await j.tap(find.descendant(of: find.byKey(const Key('coach-on-today')), matching: find.byType(Switch)));
+      await watch(1200);
+      await back();
+    }
+
+    await rec('appearance', () async {
       await j.tapKey('nav-today');
-      await watch(1500);
-      await tester.tap(find.byKey(const Key('today-coach-hide')));
       await watch(2000);
-      expect(find.byKey(const Key('today-coach')), findsNothing, reason: 'hidden for today');
-      expect(find.byKey(const Key('today-ask')), findsOneWidget, reason: 'one quiet Ask GoHard stays');
+      expect(find.byKey(const Key('today-coach')), findsOneWidget, reason: 'still there after the other tabs and screens');
+      await showOnToday(); // off
+      await j.tapKey('nav-today');
+      await watch(2500);
+      expect(find.byKey(const Key('today-coach')), findsNothing, reason: 'Show coach on Today off');
+      expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no generic Ask button in its place');
+      await j.tapKey('nav-train');
+      await watch(1500);
+      await j.tapKey('coach-ask-launcher');
+      await j.waitFor(find.byKey(const Key('ask-input')), what: 'Ask GoHard from the guide on Train');
+      await watch(1500);
+      await j.tapKey('ask-close');
+      await watch(1000);
+      await showOnToday(); // on again
+      await j.tapKey('nav-today');
+      await watch(3000);
+      expect(find.byKey(const Key('today-coach')), findsOneWidget, reason: 'back, settled');
     });
 
     // Coaching hints off, then a screen this account has not seen: nothing by itself, help when asked.
@@ -191,6 +235,7 @@ void main() {
     await back();
     await signUpAgain('Ana Leona');
     await greet('today-leona');
+    await ask('ask-leona');
 
     // --- Account 3, Reduced motion.
     await j.tapKey('nav-me');

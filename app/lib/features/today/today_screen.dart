@@ -15,7 +15,7 @@ import '../../data/models.dart';
 import '../activity/activity_screens.dart';
 import '../activity/run_tracking.dart';
 import '../coach/coach_bubble.dart';
-import '../coach/coach_companion.dart';
+import '../coach/coach_rig.dart' show RigFrame;
 import '../coach/coach_contract.dart';
 import '../coach/coach_prefs.dart';
 import '../nutrition/food_form.dart';
@@ -135,9 +135,11 @@ class _Surface extends StatelessWidget {
 /// so a new scene never rebuilds, moves or resets anything here. The header's own scrim keeps its lines readable over
 /// every scene.
 ///
-/// Leon or Leona peeks in at the right edge beside the greeting (docs/COACH.md › Companion), in a slot the greeting
-/// and the sky line leave free, so it never covers text or a control. It is part of this header: it scrolls away with
-/// it and is never over the sections, a form or the navigation. Narrow phones and large text drop it before any words.
+/// Leon or Leona speaks from the right edge (docs/COACH.md › Companion): the head-and-shoulders portrait leaning in
+/// past the header's inset, its bubble right beside it with the greeting, Today's line and Ask me, the tail at the
+/// mouth. It is part of this header for as long as Me › Appearance › Show coach on Today is on: it scrolls away with it,
+/// is never over the sections, a form or the navigation, and there is no close button. The portrait is Ask GoHard's
+/// launcher, like Ask me. Narrow phones get a smaller guide; large text, a taller bubble.
 class _Header extends ConsumerStatefulWidget {
   const _Header({required this.day});
   final String day;
@@ -148,23 +150,16 @@ class _Header extends ConsumerStatefulWidget {
 
 class _HeaderState extends ConsumerState<_Header> {
   int _ack = 0;
-  bool _leaving = false;
 
-  /// How far the guide has arrived, written by the companion: the bubble appears with it and leaves first.
-  final _revealed = ValueNotifier<double>(0);
-
-  @override
-  void dispose() {
-    _revealed.dispose();
-    super.dispose();
-  }
-
-  /// The guide's slot beside its bubble at this width and text size, or null where it would crowd the words.
-  static Size? _slot(BuildContext context) {
+  /// The guide's portrait at this width: smaller on narrow phones, never gone (it is Today's way into Ask GoHard).
+  /// Large text makes the bubble taller, not the guide absent.
+  static Size _slot(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    if (width < 340 || MediaQuery.textScalerOf(context).scale(10) > 13) return null;
-    return width < 380 ? const Size(76, 96) : const Size(86, 106);
+    return width < 340 ? const Size(68, 84) : width < 380 ? const Size(80, 100) : const Size(92, 114);
   }
+
+  /// Asking: the guide nods (seen as Today comes back, since it pauses while covered) and Ask GoHard opens.
+  void _asked() => setState(() => _ack++);
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +175,8 @@ class _HeaderState extends ConsumerState<_Header> {
     // and dark lines over a daylight one, as in Apple Weather. Same accent; increased contrast respected.
     // Scenic and Plain are not weather: they keep the app's own mode.
     final sky = !scene.isWeather ? Theme.of(context).brightness : scene.dark ? Brightness.dark : Brightness.light;
-    final slot = coach.onToday && !coach.hiddenOn(owner, day) ? _slot(context) : null;
+    // Only Show coach on Today decides: an old "hidden for today" from an earlier build is not read at all.
+    final slot = coach.onToday ? _slot(context) : null;
     if (slot != null && justSaved && !saved.played && (ModalRoute.isCurrentOf(context) ?? true) && TickerMode.valuesOf(context).enabled) {
       // The finish this session, acknowledged once, when Today is in view again.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -189,61 +185,40 @@ class _HeaderState extends ConsumerState<_Header> {
         setState(() => _ack++);
       });
     }
-    // While a workout or a run is open the companion stays quiet: no greeting, just the portrait.
+    // While a workout or a run is open the companion stays quiet: no entrance, just the settled guide.
     final busy = (ref.watch(dailySnapshotProvider)?.inProgress.isNotEmpty ?? false) || (ref.watch(runsProvider).value ?? const []).any((r) => r.value.isOpen);
     final greeting = _greeting(context, ref, justSaved: justSaved);
+    const ask = CoachContext(label: 'Your training');
     return Theme(
       key: const Key('today-header'),
       data: goTheme(appearance.accent, sky, highContrast: MediaQuery.highContrastOf(context)),
-      child: Builder(builder: (context) {
-        // The guide speaks: its bubble, ending in Ask me, in the width the portrait leaves free; the portrait at the
-        // screen's edge, its bottom level with the bubble's, rising into the free lower right of the title row (the
-        // mark is at the top of that row, and while the guide speaks there is no Ask GoHard button there).
-        final skyLine = scene.isWeather || scene.fallback != null ? Targets.minimum : 0.0;
-        final speaking = slot == null
-            ? null
-            : Padding(
-                padding: EdgeInsets.only(right: slot.width - context.inset + 2),
-                child: CoachBubble(
-                  say: CoachSay(greeting.line ?? 'Need a hand with today?', title: greeting.title, ask: const CoachContext(label: 'Your training')),
-                  // The face is level with the bubble's foot (both are bottom-aligned), so the tail is placed from there.
-                  tail: CoachTail.right, tailY: slot.height * 0.46, tailFromBottom: true, revealed: _revealed,
-                  closeLabel: 'Hide coach for today', closeKey: const Key('today-coach-hide'),
-                  onClose: _leaving ? null : () => setState(() => _leaving = true),
-                ),
-              );
-        return Stack(children: [
-          Padding(
-            // The scene runs to the top edge, behind the status bar; the lines start below it.
-            padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 8),
-            child: TabHeader(
-              // While the guide speaks, its own Ask me is the invitation: no second one beside the title.
-              title: 'Today', overline: longDate(day), onBackdrop: true, trailing: speaking == null ? const _AskButton() : null,
-              below: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [speaking ?? _Greeting(greeting), const _SkyLine()]),
-            ),
-          ),
-          if (slot != null)
-            Positioned(
-              right: 0, bottom: 8 + skyLine, width: slot.width, height: slot.height,
-              child: GestureDetector(
-                key: const Key('today-coach'),
-                behavior: HitTestBehavior.opaque,
-                excludeFromSemantics: true, // decorative: screen readers never stop on it
-                onTap: () => setState(() => _ack++), // a short acknowledgement, nothing else
-                child: CoachCompanion(
-                  guide: coach.guide, size: slot, ack: _ack, leaving: _leaving, revealed: _revealed,
-                  greet: !busy && coach.mayGreet(owner, day),
+      child: Builder(
+        builder: (context) => Padding(
+          // The scene runs to the top edge, behind the status bar; the lines start below it.
+          padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 8),
+          child: TabHeader(
+            title: 'Today', overline: longDate(day), onBackdrop: true,
+            below: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (slot == null)
+                _Greeting(greeting)
+              else
+                CoachSpeech(
+                  key: const Key('today-coach'),
+                  say: CoachSay(greeting.line ?? 'Need a hand with today?', title: greeting.title, ask: ask),
+                  portrait: slot, frame: RigFrame.edge, bleed: context.inset,
+                  greet: !busy && coach.mayGreet(owner, day), ack: _ack,
                   onGreeted: () => prefs.markGreeted(owner, day), // after the frame, so not through ref
-                  onLeft: () {
-                    if (!mounted) return;
-                    ref.read(coachPrefsProvider.notifier).hideToday(owner, day);
-                    setState(() => _leaving = false);
+                  onAsk: _asked,
+                  onAvatarTap: () {
+                    _asked();
+                    openAskGoHard(context, ask);
                   },
                 ),
-              ),
-            ),
-        ]);
-      }),
+              const _SkyLine(),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -334,32 +309,6 @@ class _Greeting extends StatelessWidget {
       ]);
 }
 
-/// Ask GoHard in Today's title row, always there: with the companion, without it and when it is hidden for the day.
-/// Named where there is room, an icon with the same name at large text or on a narrow phone. Opening it sends nothing.
-class _AskButton extends StatelessWidget {
-  const _AskButton();
-
-  @override
-  Widget build(BuildContext context) {
-    void open() => openAskGoHard(context, const CoachContext(label: 'Your training'));
-    final icon = Icon(Icons.chat_bubble_outline_rounded, size: 20, color: context.c.text);
-    final scaler = MediaQuery.textScalerOf(context);
-    double width(String text, TextStyle style, TextScaler s) => (TextPainter(text: TextSpan(text: text, style: style), textDirection: TextDirection.ltr, textScaler: s)..layout()).width;
-    // The name only while "Today" keeps its one line beside it and the mark: title + button + mark + gaps.
-    final label = context.sansStyle(15, weight: FontWeight.w600);
-    final room = MediaQuery.sizeOf(context).width - 2 * context.inset - width('Today', context.pageTitleStyle(44), scaler.clamp(maxScaleFactor: 1.3)) - 60 - 16;
-    if (scaler.scale(10) > 13 || width('Ask GoHard', label, scaler) + 48 > room) {
-      return IconButton(key: const Key('today-ask'), tooltip: 'Ask GoHard', onPressed: open, icon: icon);
-    }
-    return TextButton.icon(
-      key: const Key('today-ask'),
-      style: TextButton.styleFrom(foregroundColor: context.c.text, minimumSize: const Size(Targets.minimum, Targets.minimum), padding: const EdgeInsets.symmetric(horizontal: 10)),
-      onPressed: open,
-      icon: icon,
-      label: Text('Ask GoHard', style: label),
-    );
-  }
-}
 
 /// The account could not be reached on the last attempt: one quiet line, with the explanation a tap away.
 /// Changes that need a decision (conflicts, refusals) keep their own notice above the navigation bar.

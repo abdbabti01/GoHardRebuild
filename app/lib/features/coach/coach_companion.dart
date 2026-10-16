@@ -9,17 +9,22 @@ import 'coach_avatar.dart';
 import 'coach_rig.dart';
 
 /// The companion's motion (docs/COACH.md › Companion): which pose the rig should be in, and how it gets there.
-/// Driven by plain properties so the page decides only what happens ([greet], [attentive], [ack], [leaving]) and
-/// never how: every change starts from the pose on screen, so a quick tap, a theme change or a new guide blends
-/// instead of snapping or stacking. Under Reduce Motion (the phone's or the app's) it is a still, settled portrait.
+/// Driven by plain properties so the page decides only what happens ([greet], [attentive], [ack]) and never how:
+/// every change starts from the pose on screen, so a quick tap, a theme change or a new guide blends instead of
+/// snapping or stacking. Under Reduce Motion (the phone's or the app's) it is a still, settled portrait.
 ///
-/// It moves only while it can be seen: its tab selected ([TickerMode]), its route the current one, the app in the
-/// foreground and its header on screen. After the greeting it settles and rests; at rest the only movement is an
-/// occasional blink, and nothing ticks between blinks.
+/// While it can be seen it is alive but quiet: the eyes look at the user and now and then at its speech bubble (the
+/// head turning a touch with them), drift a little and come back, and blink at irregular intervals; between those
+/// moments nothing ticks. It moves only while it can be seen: its tab selected ([TickerMode]), its route the current
+/// one, the app in the foreground and its place on screen.
 class CoachCompanion extends StatefulWidget {
-  const CoachCompanion({super.key, required this.guide, required this.size, this.greet = false, this.attentive = false, this.ack = 0, this.leaving = false, this.onGreeted, this.onLeft, this.revealed});
+  const CoachCompanion({super.key, required this.guide, required this.size, this.frame = RigFrame.edge, this.pose, this.greet = false, this.attentive = false, this.ack = 0, this.onGreeted, this.revealed});
   final CoachGuide guide;
   final Size size;
+  final RigFrame frame;
+
+  /// The pose it writes, when the page needs it too (a bubble's tail follows the mouth through it).
+  final ValueNotifier<RigPose>? pose;
 
   /// Peek in and greet the first time it can be seen; otherwise it is simply there, settled.
   final bool greet;
@@ -27,18 +32,14 @@ class CoachCompanion extends StatefulWidget {
   /// A real request is waiting: an attentive pose, held until this turns false.
   final bool attentive;
 
-  /// Each new value plays one acknowledgement (a small smile and a nod).
+  /// Each new value plays one acknowledgement (a small smile and a nod, looking at the user).
   final int ack;
-
-  /// Tuck back behind the edge, then [onLeft].
-  final bool leaving;
 
   /// The greeting has started playing (or, under Reduce Motion, has been shown): it is not to be played again.
   final VoidCallback? onGreeted;
-  final VoidCallback? onLeft;
 
   /// Written with how far the guide has arrived for what it says (0 hidden, 1 settled): an attached speech bubble
-  /// listens to it, so the words appear as the character settles and leave first when it tucks away.
+  /// listens to it, so the words appear as the character settles.
   final ValueNotifier<double>? revealed;
 
   @override
@@ -70,14 +71,20 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   // Timings (seconds) from docs/COACH.md › Companion › Motion.
   static const _greetReveal = 0.55, _greetTilt = 0.30, _nodDown = 0.62, _nodUp = 0.80, _greetBlink = 1.05, _greetSettle = 1.55, _settleFor = 7.0;
 
-  final pose = ValueNotifier<RigPose>(RigPose.hidden);
+  late final ValueNotifier<RigPose> pose = widget.pose ?? ValueNotifier<RigPose>(RigPose.hidden);
   late final Ticker _ticker = createTicker(_tick);
   late final AppLifecycleListener _life = AppLifecycleListener(onStateChange: (_) => _refreshActive());
   final _random = math.Random();
 
   final _slide = _Spring(0, 14, 0.78), _lean = _Spring(0.2, 12, 0.85), _tilt = _Spring(0, 9, 0.9), _nod = _Spring(0, 18, 0.8);
   final _brow = _Spring(0, 10, 0.9), _smile = _Spring(0, 9, 0.95), _breath = _Spring(0, 4, 1), _reveal = _Spring(0, 11, 1);
-  List<_Spring> get _springs => [_slide, _lean, _tilt, _nod, _brow, _smile, _breath, _reveal];
+  // The eyes move quickly but never snap: about 0.15 s to a new point, no overshoot.
+  final _gazeX = _Spring(0, 26, 1), _gazeY = _Spring(0, 26, 1);
+  List<_Spring> get _springs => [_slide, _lean, _tilt, _nod, _brow, _smile, _breath, _reveal, _gazeX, _gazeY];
+
+  /// When (motion time) the eyes next move by themselves while it is moving anyway, and how long it has rested.
+  double? _nextLook;
+  int _restWakes = 0;
 
   /// Motion time: advances only while it moves, so a pause never skips part of a sequence.
   double _t = 0;
@@ -86,7 +93,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   double? _blinkStart, _nextBlink;
   Timer? _wake;
 
-  bool _started = false, _measured = false, _tickerOn = true, _routeCurrent = true, _onscreen = true, _left = false;
+  bool _started = false, _measured = false, _tickerOn = true, _routeCurrent = true, _onscreen = true;
   ScrollPosition? _scroll;
 
   /// For tests: true while frames are being produced.
@@ -129,8 +136,6 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   void didUpdateWidget(CoachCompanion oldWidget) {
     final old = oldWidget;
     super.didUpdateWidget(old);
-    if (widget.leaving && !old.leaving) _leave();
-    if (widget.leaving) return;
     if (widget.attentive != old.attentive) _attend(widget.attentive);
     if (widget.ack != old.ack) _acknowledge();
   }
@@ -141,7 +146,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _wake?.cancel();
     _life.dispose();
     _ticker.dispose();
-    pose.dispose();
+    if (widget.pose == null) pose.dispose();
     super.dispose();
   }
 
@@ -175,7 +180,6 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   /// The first time it can be seen: the greeting, or simply settled in place.
   void _start() {
     _started = true;
-    if (widget.leaving) return;
     if (_reduce || !widget.greet) {
       _set(RigPose.settled);
       for (final s in _springs) {
@@ -184,7 +188,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
       _publish();
       if (widget.greet) _afterFrame(widget.onGreeted);
       if (widget.attentive) _attend(true);
-      _scheduleRestBlink();
+      _scheduleRest();
       return;
     }
     _afterFrame(widget.onGreeted);
@@ -200,19 +204,25 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _at(_nodDown, () => _nod.target = 1);
     _at(_nodUp, () => _nod.target = 0);
     _at(_greetBlink, _blink);
-    _at(_greetReveal, () => _reveal.target = 1); // the words arrive with the nod, as the guide settles
+    _at(_greetReveal, () {
+      _reveal.target = 1; // the words arrive with the nod, as the guide settles
+      _look(-1, 0.3); // a glance at them as they appear
+    });
     _at(_greetSettle, () {
       _tilt.target = RigPose.settled.tilt;
       _brow.target = 0;
       _smile.target = 0.55; // a small smile for what was just said
+      _look(0, 0); // and back to the user
     });
     _at(_greetSettle + 0.8, () => _smile.target = 0);
+    _nextLook = _greetSettle + 1.6;
     _at(_settleFor, () => _breath.target = 0);
   }
 
   void _acknowledge() {
-    if (_reduce || !_started || widget.leaving) return;
+    if (_reduce || !_started) return;
     _events.clear();
+    _look(0, 0);
     _smile.target = 1;
     _brow.target = 0.6;
     _breath.target = 1;
@@ -230,9 +240,10 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   /// Waiting on a real request: the head turns a little the other way, brows up, leaning in. Released: back to the
   /// welcoming settled pose, with a brief smile.
   void _attend(bool on) {
-    if (!_started || widget.leaving) return;
+    if (!_started) return;
     _events.clear();
     _breath.target = 0; // its scheduled fade went with the events; never left breathing (and ticking) for good
+    _look(0, 0); // at the user, waiting with them
     if (on) {
       _tilt.target = 0.6;
       _brow.target = 0.5;
@@ -255,38 +266,6 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _run();
   }
 
-  void _leave() {
-    _events.clear();
-    if (_reduce || !_active) {
-      _done();
-      return;
-    }
-    // Tuck back quickly and without overshoot.
-    _slide
-      ..target = 0
-      ..w = 22
-      ..z = 1;
-    _lean
-      ..target = 0.2
-      ..w = 22
-      ..z = 1;
-    _smile.target = _brow.target = _nod.target = _breath.target = _reveal.target = 0;
-    _run();
-  }
-
-  void _done() {
-    if (_left) return;
-    _left = true;
-    _ticker.stop();
-    _wake?.cancel();
-    _set(RigPose.hidden);
-    for (final s in _springs) {
-      s.snap();
-    }
-    _publish();
-    _afterFrame(widget.onLeft);
-  }
-
   /// The page reacts by changing a preference, which may not happen while the tree is building.
   void _afterFrame(VoidCallback? f) {
     if (f != null) WidgetsBinding.instance.addPostFrameCallback((_) => f());
@@ -300,14 +279,45 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _nextBlink = _t + (_random.nextDouble() < 0.15 ? 0.32 : 2.5 + _random.nextDouble() * 3.5);
   }
 
-  /// At rest nothing ticks; a timer wakes it for an occasional blink, 7 to 16 seconds apart.
-  void _scheduleRestBlink() {
-    _wake?.cancel();
-    if (!_active || _left || widget.leaving) return;
-    _wake = Timer(Duration(milliseconds: 7000 + _random.nextInt(9000)), () {
-      if (!mounted || !_active) return;
+  /// The eyes to a point: 0, 0 is the user; x -1 is the bubble. Looking at the bubble turns the head a touch with
+  /// the eyes; looking back at the user brings it back to its settled tilt.
+  void _look(double x, double y) {
+    _gazeX.target = x;
+    _gazeY.target = y;
+    if (widget.attentive) return;
+    _tilt.target = x <= -0.8 ? -0.7 : RigPose.settled.tilt;
+  }
+
+  /// One natural moment: a blink, the eyes drifting a little and coming back, or a glance at the bubble with the
+  /// head. Never the same rhythm twice.
+  void _liveliness() {
+    final r = _random.nextDouble();
+    if (r < 0.35) {
       _blink();
       _nextBlink = null;
+      return;
+    }
+    if (r < 0.75) {
+      _look((_random.nextDouble() - 0.5) * 0.9, (_random.nextDouble() - 0.5) * 0.8);
+    } else {
+      _look(-1, 0.25);
+    }
+    // Back to the user after a moment, sometimes with a blink on the way.
+    _at(0.6 + _random.nextDouble() * 0.9, () {
+      _look(0, 0);
+      if (_random.nextDouble() < 0.3) _blink();
+    });
+  }
+
+  /// At rest nothing ticks; a timer wakes it for a moment of life: every 2.5 to 6 s at first, then every 5 to 11 s.
+  void _scheduleRest() {
+    _wake?.cancel();
+    if (!_active) return;
+    final ms = _restWakes < 12 ? 2500 + _random.nextInt(3500) : 5000 + _random.nextInt(6000);
+    _wake = Timer(Duration(milliseconds: ms), () {
+      if (!mounted || !_active) return;
+      _restWakes++;
+      _liveliness();
       _run();
     });
   }
@@ -315,7 +325,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   // ------------------------------------------------------------------ the frame loop
 
   void _run() {
-    if (!_active || _left) return;
+    if (!_active) return;
     _wake?.cancel();
     if (!_ticker.isActive) {
       _lastElapsed = null;
@@ -335,13 +345,17 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
       }
     }
     if (_breath.target > 0 && _nextBlink != null && _t >= _nextBlink!) _blink();
+    // While it moves anyway (the greeting's settling), the eyes move by themselves too.
+    if (_breath.target > 0 && _nextLook != null && _t >= _nextLook!) {
+      _liveliness();
+      _nextLook = _t + 1.4 + _random.nextDouble() * 2.2;
+    }
     for (var i = 0; i < 2; i++) {
       for (final s in _springs) {
         s.step(dt / 2);
       }
     }
     _publish();
-    if (widget.leaving && _slide.x < 0.02) return _done();
     final blinking = _blinkStart != null && _t - _blinkStart! < 0.26;
     if (!blinking) _blinkStart = null;
     if (_events.isEmpty && !blinking && _breath.target == 0 && _springs.every((s) => s.resting)) {
@@ -350,7 +364,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
       }
       _publish();
       _ticker.stop();
-      _scheduleRestBlink();
+      _scheduleRest();
     }
   }
 
@@ -374,6 +388,8 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _smile.target = p.smile;
     _breath.target = 0;
     _reveal.target = p.slide;
+    _gazeX.target = p.gazeX;
+    _gazeY.target = p.gazeY;
   }
 
   void _still() {
@@ -381,9 +397,6 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _blinkStart = null;
     _ticker.stop();
     _wake?.cancel();
-    if (_left) return;
-    // Reduce Motion during the tuck: it has left, now.
-    if (widget.leaving) return _done();
     _set(RigPose.settled);
     for (final s in _springs) {
       s.snap();
@@ -395,7 +408,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   void _publish() {
     pose.value = RigPose(
       slide: _slide.x, lean: _lean.x, tilt: _tilt.x, nod: _nod.x, brow: _brow.x, smile: _smile.x, blink: _closure,
-      breath: _breath.x * math.sin(_t * 2 * math.pi / 4.2),
+      breath: _breath.x * math.sin(_t * 2 * math.pi / 4.2), gazeX: _gazeX.x, gazeY: _gazeY.x,
     );
     final revealed = widget.revealed, v = _reveal.x.clamp(0.0, 1.0);
     if (revealed == null || revealed.value == v) return;
@@ -414,7 +427,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     final portrait = AnimatedSwitcher(
       // A new guide crossfades in the same pose; nothing restarts.
       duration: context.motion(Motion.quick),
-      child: RigPortrait(key: ValueKey(widget.guide), guide: widget.guide, pose: pose, size: widget.size),
+      child: RigPortrait(key: ValueKey(widget.guide), guide: widget.guide, pose: pose, size: widget.size, frame: widget.frame),
     );
     return portrait;
   }

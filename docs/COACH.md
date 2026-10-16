@@ -152,27 +152,53 @@ No hint while recording sets, running, reviewing conflicts or reviewing a destru
 One recognisable guide (Leon or Leona) who speaks through an attached speech bubble of native text, greets the user on
 Today and offers relevant help at appropriate moments. Bubbles only: no voice, microphone or lip-sync.
 
-**Today.** The guide peeks in from the right screen edge (head and upper shoulders, mirrored to look in, faded over the
-shoulders; slot 86 × 106 at ≥ 380 px, 76 × 96 below; none below 340 px or above 1.3× text). On its left, its bubble —
-the tail pointing at the face — says "Good afternoon, Babti!" and one factual line from Today's own projection
-(`today_greeting.dart`: "<workout> is planned today.", "Your workout is ready to resume.", "A planned rest day today.",
-"Today's workout is skipped/done/saved.", "Your plan is paused today.", after a finish this session "Your workout is
-saved. Nice work."), or "Need a hand with today?" when there is nothing definite, ending in "Ask me ›" (the whole
-bubble is the button; Ask GoHard opens about "Your training"). The date and "Today" stay above, separate. While the
-bubble shows there is no Ask GoHard button beside the title; × in the bubble ("Hide coach for today") tucks the guide
-and its words away for the day and Ask GoHard returns to the title row. Without the guide (Show coach on Today off,
-hidden for the day, narrow or large text) the plain greeting with its time-of-day icon is shown. The portrait sits in
-the header's own `Stack`, its bottom level with the bubble's, rising into the free lower right of the title row, so
-it covers nothing and scrolls with the header. Worked out on the phone; opening Today never calls the AI; it works
-offline. Trade-off: the bubble makes the header about 30 px taller than the one-line greeting; the nutrition section
-and its label still start on the first screen at 390 × 844, its Log food action (quiet day) is a short scroll away.
+**Today.** The guide leans in from the right screen edge (head and upper shoulders, mirrored to look in, faded over
+the shoulders; portrait 92 × 114 at ≥ 380 px, 80 × 100 below, 68 × 84 below 340 px). Right beside it, its bubble says
+the greeting, one factual line from Today's own projection and Ask me, e.g. "Good morning, Bob! / Workout C is planned
+today. Ask me ›" (`today_greeting.dart`: "<workout> is planned today.", "Your workout is ready to resume.", "A planned
+rest day today.", "Today's workout is skipped/done/saved.", "Your plan is paused today.", after a finish this session
+"Your workout is saved. Nice work.", or "Need a hand with today?" when there is nothing definite). The whole bubble is
+the Ask me button; Ask GoHard opens about "Your training". The date and "Today" stay above, separate.
+
+It stays: there is no close button, no "hide for today" and no timeout. It is part of the header (it scrolls away with
+it and is never over a section, a form or the navigation) for as long as Me › Appearance › Show coach on Today is on;
+that switch is the only way to remove it. Builds before 16 Oct 2026 stored a "hidden for today": it is no longer read
+or written and is not turned into the Appearance setting, so an account that tapped × earlier sees the guide again
+after upgrading. Narrow phones get the smaller portrait and large text a taller bubble; the guide never disappears for
+size. With Show coach on Today off, the plain greeting with its time-of-day icon is shown, and there is no Ask button
+in its place: Ask GoHard is the guide on Train (below). Worked out on the phone; opening Today never calls the AI; it
+works offline. Trade-off (accepted for comfortable spacing): with the guide the header is about 285 px at 390 × 844
+with a notch; the workout section and its action are whole on the first screen, nutrition a short scroll away.
+
+**The bubble comes from the mouth** (`CoachSpeech` in `coach_bubble.dart`). The bubble is a raised rounded rectangle;
+its tail is drawn separately, every frame, from the bubble's edge to the guide's lips: `RigArt.mouth` and `RigArt.front`
+(the muzzle's edge at the mouth's height) are landmarks of the painting, mapped to the screen through the same
+`RigGeometry` the renderer uses, as the head is posed now, so the tail follows a tilt or a nod and stops 4 px short of
+the lips. Layout uses the settled mouth: the bubble's first line is level with it, and the portrait's empty side
+(beyond the muzzle) tucks under the bubble, leaving only that small gap. The same composition holds for both guides,
+any text length (the bubble grows downwards) and any width. No screen coordinates are hard-coded.
+
+**Ask GoHard is the guide.** Every way into the conversation shows the selected guide, labelled by what it does
+("Ask GoHard: open the conversation with Leon", a button with a tap action):
+
+| Entry point | What the user sees |
+|---|---|
+| Today | the guide's portrait (`coach-avatar-launcher`) and Ask me in its bubble (`coach-say-ask`) |
+| Train header | the guide's avatar (`coach-ask-launcher`), there whether or not Today shows the guide |
+| bubbles and help sheets with Ask me | Ask me; the speaker's portrait opens the same conversation |
+| Why this suggestion, About this exercise | "Ask GoHard" / "Ask about this exercise" with the guide's avatar |
+| the conversation | the guide (moving, attentive while a question waits) in its header; each answer is headed by the guide's avatar and name, then "AI-generated" |
+
+There is no generic AI icon and no text-only Ask button; Today has no second Ask beside the title. Opening the
+conversation or showing a bubble sends nothing: only Send asks, and the existing Groq limits and proposal safeguards
+apply unchanged.
 
 **Elsewhere** (`coach_bubble.dart`): `CoachSay` (one or two short sentences, "Ask me" and at most one existing guide
-action), `CoachBubble` (tail towards the face, raised surface, × in the corner, announced once, never takes focus),
-`CoachSpeaker` (a 52 px round portrait that peeks in and greets, its bubble arriving as it settles), `CoachSpot` (where
-a context speaks, in the page's own flow: it pushes content down, covers nothing, scrolls away) and `CoachHelpEntry`
-(the guide's avatar in a 48 px button: the one consistent way to ask for help). One bubble is open at a time
-(`coachHelpProvider`). Where it speaks:
+action), `CoachSpeaker` (`CoachSpeech` inline: the whole 62 × 72 portrait on the left facing its bubble, × in the
+bubble's corner, announced once, never takes focus; introduced, it peeks in and greets and its words arrive as it
+settles), `CoachSpot` (where a context speaks, in the page's own flow: it pushes content down, covers nothing, scrolls
+away) and `CoachHelpEntry` (the guide's avatar in a 48 px button: the one consistent way to ask for help). One bubble is
+open at a time (`coachHelpProvider`). Where it speaks:
 
 | Context id | Where | Appears by itself | Says | Actions |
 |---|---|---|---|---|
@@ -197,32 +223,48 @@ activity underneath keeps its input, timers and drafts, and Ask GoHard opens ove
 painted raster, so a Rive file would be invented, not authored. Instead `coach_rig.dart` draws the approved bust
 (`assets/coach/<guide>-bust.png`, 400 px, from `design/coach/assets/<guide>-avatar.png` by `build-coach-art.ps1`) as a
 skinned mesh (`Canvas.drawVertices`, 18 × 18 grid over the texture): a head bone rotates and nods about the base of
-the skull with its weight easing to zero across the neck (no seam, no cut-out parts), two brow bones lift, breathing
-scales the bust from its bottom row, and painted eyelids (the fur's sampled colours, a soft lash line) close over the
-eyes for a blink or rise from below for the smile's squint. Landmarks are fractions of the 1254 px source (`RigArt`), so
-the texture size can change freely. `RigPortrait` is the only renderer entry point; a missing or unreadable texture
-shows the still round avatar, and the greeting text never waits for it. Frame strips of both guides:
-`flutter test test/coach_rig_render_test.dart --dart-define=GOHARD_RENDER=true` → `docs/evidence/coach/`.
+the skull with its weight easing to zero across the neck (no seam, no cut-out parts), two brow bones lift, and
+breathing scales the bust from its bottom row. Landmarks are fractions of the 1254 px source (`RigArt`), so the
+texture size can change freely.
 
-**Motion** (`coach_companion.dart`). Each pose value (slide, lean, tilt, nod, brow, smile, breath) is a damped spring,
-so any interruption — rapid taps, a guide switch, a theme change — continues from the pose on screen; cues replace each
-other's schedule and never stack. Entrance ≈ 450 ms with a hair of settle (slide ω 14, ζ 0.78); greeting: tilt towards
-the page and brows at 0.30 s, one nod 0.62–0.80 s, a blink at 1.05 s, settled at 1.55 s; gentle breathing and irregular
-blinks (2.5–6 s, sometimes double) until 7 s, then rest. At rest nothing ticks: a timer wakes it for a blink every
-7–16 s. Acknowledgement: smile squint, one nod, back after 1.1 s. Pending (Ask GoHard, only while a request is really
-in flight — `AskState.sending` — ending on answer, error, Cancel or timeout): head the other way, brows up, leaning in,
-held without frames; released with a brief smile. Exit ≈ 250 ms, no overshoot (ω 22, ζ 1). Blink: close 70 ms, hold
-30 ms, open 140 ms. It moves only while its tab is selected (`TickerMode`), its route is current, the app is in the
-foreground and the header is on screen; under Reduce Motion (the phone's or Me › Motion) it is a still settled
-portrait with no blink and the tuck is skipped. No speech, audio, microphone or haptics.
+*Eyes.* The paintings have irises clearly inside their lash lines, so each eye (`RigIris`, measured on the originals)
+has its opening as a polygon inside the lash line, the iris disc and the white's tone, sampled from its lid-shadowed top
+to its lit bottom. Inside the opening (clipped to it) the original iris is toned to the white and the same painted
+iris is drawn again from the texture, moved by the gaze (up to 30 % of its radius across, 18 % up or down) and turned
+with the head; only the thin sliver it uncovers shows the new tone. Lashes, lids and the rest stay the painting:
+nothing is stretched and no patch is painted over the face. Lids: the upper one sweeps down corner to corner over the
+opening and its painted lash ring, feathered into the fur, its edge a dark lash line that comes to rest on the eye's
+lower contour as a gentle curve; the lower one rises a little for the smile's squint. Both follow the opening as the
+head moves.
+
+`RigPortrait` is the only renderer entry point; a missing or unreadable texture shows the still round avatar, and the
+greeting text never waits for it. Pose sheets of both guides in both framings (at the user, towards the bubble, away,
+up, down, half and full blink, smile, head to the bubble, nod):
+`flutter test test/coach_rig_render_test.dart --dart-define=GOHARD_RENDER=true` → `docs/evidence/coach/companion-poses.png`.
+
+**Motion** (`coach_companion.dart`). Each pose value (slide, lean, tilt, nod, brow, smile, breath, gaze across and
+up/down) is a damped spring, so any interruption — rapid taps, a guide switch, a theme change — continues from the
+pose on screen; cues replace each other's schedule and never stack. Entrance ≈ 450 ms with a hair of settle (slide ω 14,
+ζ 0.78); greeting: tilt towards the bubble and brows at 0.30 s, one nod 0.62–0.80 s, a blink at 1.05 s, the words
+arrive with a glance at them, then back to the user with a small smile, settled at 1.55 s; gentle breathing, irregular
+blinks and small looks until 7 s, then rest. At rest nothing ticks: a timer wakes it for one natural moment — a blink
+(35 %), the eyes drifting a little (40 %) or a glance at the bubble with a touch of head (25 %), back to the user
+after 0.6–1.5 s, sometimes with a blink — every 2.5–6 s for the first dozen, then every 5–11 s. Nothing bounces or
+loops. Acknowledgement (being asked: the portrait or Ask me; a saved workout): eyes on the user, smile squint, one nod,
+back after 1.1 s. Pending (Ask GoHard, only while a request is really in flight — `AskState.sending` — ending on answer,
+error, Cancel or timeout): head the other way, brows up, leaning in, looking at the user, held without frames; released
+with a brief smile. Blink: close 70 ms, hold 30 ms, open 140 ms. It moves only while its tab is selected (`TickerMode`),
+its route is current, the app is in the foreground and the header is on screen; under Reduce Motion (the phone's or Me
+› Motion) it is a still settled portrait looking at the user, with no blink and no eye movement. No speech, audio,
+microphone or haptics.
 
 **When the coach appears** (`coach_prefs.dart`, `CoachSpot`). Three kinds:
 
-- *Daily greeting* (Today). At most once per local day per account on this phone (`greeted` = `owner|day`), marked
-  when it starts, so tab switches, rebuilds, scrolling, syncs, theme changes, returning from the background and
-  restarts never replay the entrance; afterwards the guide is simply there, settled, beside its bubble. No entrance
-  while a workout or run is open. Governed by Show coach on Today (not by Coaching hints). A tap plays one
-  acknowledgement.
+- *Today.* Always, while Show coach on Today is on. The entrance and greeting play at most once per local day per
+  account on this phone (`greeted` = `owner|day`), marked when it starts, so tab switches, rebuilds, scrolling, syncs,
+  theme changes, returning from the background and restarts never replay it; afterwards the guide is simply there,
+  settled, beside its bubble. No entrance while a workout or run is open. Governed by Show coach on Today (not by
+  Coaching hints).
 - *Contextual introduction* (the table above). Once per account (`dismissed` holds `owner|context`; another account
   on the phone has its own), the first time the context is really in view: Coaching hints on, its route current and
   its tab selected (the shell builds every tab), the app in the foreground, no keyboard up (the view's own inset — a
