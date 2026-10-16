@@ -10,7 +10,7 @@ import 'coach_avatar.dart';
 /// The coach's look and coaching hints, for this phone only.
 @immutable
 class CoachPrefs {
-  const CoachPrefs({this.guide = CoachGuide.leon, this.hintsEnabled = true, this.dismissed = const {}, this.onToday = true, this.greeted});
+  const CoachPrefs({this.guide = CoachGuide.leon, this.hintsEnabled = true, this.dismissed = const {}, this.onToday = true, this.greeted, this.setup = const {}});
   final CoachGuide guide;
   final bool hintsEnabled;
 
@@ -25,6 +25,10 @@ class CoachPrefs {
 
   static String dayKey(String owner, String day) => '$owner|$day';
 
+  /// Accounts created on this phone that have not finished setup, and the step they are on ('guide' or 'features'):
+  /// a restart resumes there; finishing or skipping removes the entry. Accounts that only sign in never get one.
+  final Map<String, String> setup;
+
   /// Whether Today may play the companion's greeting for [owner] on [day]: once a day. Show coach on Today governs
   /// it; Coaching hints govern the introductions elsewhere (docs/COACH.md › Companion › When the coach appears).
   bool mayGreet(String owner, String day) => greeted != dayKey(owner, day);
@@ -35,9 +39,9 @@ class CoachPrefs {
   /// Whether an automatic introduction of [context] may appear for [owner] now that it is in view.
   bool mayIntroduce(String owner, String context) => hintsEnabled && !seen(owner, context);
 
-  CoachPrefs copy({CoachGuide? guide, bool? hintsEnabled, Set<String>? dismissed, bool? onToday, String? greeted}) => CoachPrefs(
+  CoachPrefs copy({CoachGuide? guide, bool? hintsEnabled, Set<String>? dismissed, bool? onToday, String? greeted, Map<String, String>? setup}) => CoachPrefs(
       guide: guide ?? this.guide, hintsEnabled: hintsEnabled ?? this.hintsEnabled, dismissed: dismissed ?? this.dismissed, onToday: onToday ?? this.onToday,
-      greeted: greeted ?? this.greeted);
+      greeted: greeted ?? this.greeted, setup: setup ?? this.setup);
 
   /// Introductions already shown, as `owner|context`, so one account's never hide or reveal another's. None shows
   /// again until "Show coaching hints again". (Entries without an owner come from an older build and are ignored.)
@@ -45,9 +49,9 @@ class CoachPrefs {
 
   @override
   bool operator ==(Object other) => other is CoachPrefs && other.guide == guide && other.hintsEnabled == hintsEnabled && setEquals(other.dismissed, dismissed) &&
-      other.onToday == onToday && other.greeted == greeted;
+      other.onToday == onToday && other.greeted == greeted && mapEquals(other.setup, setup);
   @override
-  int get hashCode => Object.hash(guide, hintsEnabled, Object.hashAllUnordered(dismissed), onToday, greeted);
+  int get hashCode => Object.hash(guide, hintsEnabled, Object.hashAllUnordered(dismissed), onToday, greeted, Object.hashAllUnordered(setup.entries.map((e) => '${e.key}|${e.value}')));
 }
 
 /// Kept in the same platform store as the appearance and read before the first frame. A presentation choice for this
@@ -69,13 +73,14 @@ class CoachPrefsStore {
         hintsEnabled: j['hints'] != false,
         dismissed: {...(j['dismissed'] as List? ?? const []).whereType<String>()},
         onToday: j['today'] != false, greeted: j['greeted'] as String?,
+        setup: {for (final e in ((j['setup'] as Map?) ?? const {}).entries) if (e.value is String) e.key.toString(): e.value as String},
       );
     } on Object {
       // An unreadable preference is not worth failing startup for; the defaults apply.
     }
   }
 
-  Future<void> save() => _store.write(_key, jsonEncode({'guide': value.guide.name, 'hints': value.hintsEnabled, 'dismissed': [...value.dismissed], 'today': value.onToday, 'greeted': value.greeted}));
+  Future<void> save() => _store.write(_key, jsonEncode({'guide': value.guide.name, 'hints': value.hintsEnabled, 'dismissed': [...value.dismissed], 'today': value.onToday, 'greeted': value.greeted, 'setup': value.setup}));
 }
 
 /// Overridden at startup with the restored store. Left alone (tests), it is an empty in-memory one.
@@ -88,6 +93,13 @@ class CoachPrefsController extends Notifier<CoachPrefs> {
   void setGuide(CoachGuide guide) => _apply(state.copy(guide: guide));
   void setHints(bool on) => _apply(state.copy(hintsEnabled: on));
   void setOnToday(bool on) => _apply(state.copy(onToday: on));
+
+  /// A new account on this phone: setup starts with choosing the coach.
+  void startSetup(String owner) => _apply(state.copy(setup: {...state.setup, owner: 'guide'}));
+  void setupFeatures(String owner) => _apply(state.copy(setup: {...state.setup, owner: 'features'}));
+
+  /// Finished or skipped: never shown again for [owner].
+  void finishSetup(String owner) => _apply(state.copy(setup: {...state.setup}..remove(owner)));
 
   /// The greeting for [owner] on [day] has played: not again that day on this phone.
   void markGreeted(String owner, String day) {

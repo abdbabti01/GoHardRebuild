@@ -246,7 +246,8 @@ class _SkyLine extends ConsumerWidget {
     final String text;
     final IconData icon;
     if (scene.isWeather) {
-      text = scene.label!;
+      final t = scene.temperatureC;
+      text = t == null ? scene.label! : '${formatTemperature(t, fahrenheit: ref.watch(weatherPrefsProvider.select((p) => p.fahrenheit)))} · ${scene.label}';
       icon = Icons.cloud_outlined;
     } else if (scene.fallback != null) {
       text = 'Scenic view · ${issue == null ? scene.fallback!.words : _issue(issue)}';

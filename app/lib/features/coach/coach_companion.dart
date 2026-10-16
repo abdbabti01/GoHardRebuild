@@ -82,9 +82,8 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   final _gazeX = _Spring(0, 26, 1), _gazeY = _Spring(0, 26, 1);
   List<_Spring> get _springs => [_slide, _lean, _tilt, _nod, _brow, _smile, _breath, _reveal, _gazeX, _gazeY];
 
-  /// When (motion time) the eyes next move by themselves while it is moving anyway, and how long it has rested.
+  /// When (motion time) the eyes next move by themselves while it is moving anyway.
   double? _nextLook;
-  int _restWakes = 0;
 
   /// Motion time: advances only while it moves, so a pause never skips part of a sequence.
   double _t = 0;
@@ -110,12 +109,18 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _life; // created now, so it hears every change from here on
     // Nothing starts before its place on screen is known: a header built off screen (in the list's cache, or under a
     // restored scroll offset) must not spend the day's greeting unseen.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _measured = true;
-      _checkOnscreen();
-      _refreshActive();
-    });
+    WidgetsBinding.instance.addPostFrameCallback(_measure);
+  }
+
+  /// Arriving with its route's transition (a help sheet sliding up) it is below the screen at first, and nothing
+  /// scrolls to say when it is in place: it looks again after each frame until it has started. No frame is requested
+  /// for this; it only rides the frames the transition is producing anyway.
+  void _measure(Duration _) {
+    if (!mounted) return;
+    _measured = true;
+    _checkOnscreen();
+    _refreshActive();
+    if (!_started) WidgetsBinding.instance.addPostFrameCallback(_measure);
   }
 
   @override
@@ -276,7 +281,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
   void _blink() {
     _blinkStart = _t;
     // Now and then a double blink; otherwise the next one comes at an irregular interval.
-    _nextBlink = _t + (_random.nextDouble() < 0.15 ? 0.32 : 2.5 + _random.nextDouble() * 3.5);
+    _nextBlink = _t + (_random.nextDouble() < 0.15 ? 0.42 : 2.5 + _random.nextDouble() * 3.5);
   }
 
   /// The eyes to a point: 0, 0 is the user; x -1 is the bubble. Looking at the bubble turns the head a touch with
@@ -288,35 +293,37 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     _tilt.target = x <= -0.8 ? -0.7 : RigPose.settled.tilt;
   }
 
-  /// One natural moment: a blink, the eyes drifting a little and coming back, or a glance at the bubble with the
-  /// head. Never the same rhythm twice.
+  /// One natural moment: a blink (now and then a double one), a clear look to one side held for a moment, or a glance
+  /// at the bubble with the head; each look comes back to the user, often with a blink. Never the same rhythm twice.
+  /// The eyes are about 6 pt tall on Today, so a look goes most of the way across the opening: a small drift is not
+  /// seen at that size (docs/COACH.md › Companion › Motion).
   void _liveliness() {
     final r = _random.nextDouble();
-    if (r < 0.35) {
+    if (r < 0.45) {
       _blink();
       _nextBlink = null;
+      if (_random.nextDouble() < 0.15) _at(0.42, _blink);
       return;
     }
-    if (r < 0.75) {
-      _look((_random.nextDouble() - 0.5) * 0.9, (_random.nextDouble() - 0.5) * 0.8);
+    if (r < 0.8) {
+      final side = _random.nextBool() ? 1.0 : -1.0;
+      _look(side * (0.6 + _random.nextDouble() * 0.4), (_random.nextDouble() - 0.5) * 0.9);
     } else {
       _look(-1, 0.25);
     }
-    // Back to the user after a moment, sometimes with a blink on the way.
-    _at(0.6 + _random.nextDouble() * 0.9, () {
+    _at(0.9 + _random.nextDouble() * 1.3, () {
       _look(0, 0);
-      if (_random.nextDouble() < 0.3) _blink();
+      if (_random.nextDouble() < 0.45) _blink();
     });
   }
 
-  /// At rest nothing ticks; a timer wakes it for a moment of life: every 2.5 to 6 s at first, then every 5 to 11 s.
+  /// At rest nothing ticks; a timer wakes it for a moment of life every 2 to 5 s, for as long as it can be seen.
   void _scheduleRest() {
     _wake?.cancel();
     if (!_active) return;
-    final ms = _restWakes < 12 ? 2500 + _random.nextInt(3500) : 5000 + _random.nextInt(6000);
+    final ms = 2000 + _random.nextInt(3000);
     _wake = Timer(Duration(milliseconds: ms), () {
       if (!mounted || !_active) return;
-      _restWakes++;
       _liveliness();
       _run();
     });
@@ -356,7 +363,7 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
       }
     }
     _publish();
-    final blinking = _blinkStart != null && _t - _blinkStart! < 0.26;
+    final blinking = _blinkStart != null && _t - _blinkStart! < 0.35;
     if (!blinking) _blinkStart = null;
     if (_events.isEmpty && !blinking && _breath.target == 0 && _springs.every((s) => s.resting)) {
       for (final s in _springs) {
@@ -368,14 +375,15 @@ class CoachCompanionState extends State<CoachCompanion> with SingleTickerProvide
     }
   }
 
-  /// A blink: closes in 70 ms, holds 30 ms, opens in 140 ms.
+  /// A blink: closes in 90 ms, stays closed 70 ms, opens in 170 ms. Shorter, it is gone within a frame or two on a
+  /// phone and is not seen on a 6 pt eye.
   double get _closure {
     final b = _blinkStart;
     if (b == null) return 0;
     final u = _t - b;
-    if (u < 0.07) return Curves.easeIn.transform(u / 0.07);
-    if (u < 0.10) return 1;
-    if (u < 0.24) return 1 - Curves.easeOut.transform((u - 0.10) / 0.14);
+    if (u < 0.09) return Curves.easeIn.transform(u / 0.09);
+    if (u < 0.16) return 1;
+    if (u < 0.33) return 1 - Curves.easeOut.transform((u - 0.16) / 0.17);
     return 0;
   }
 

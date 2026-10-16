@@ -71,8 +71,9 @@ void main() {
     expect(find.text('Yesterday\'s soup'), findsNothing, reason: 'another day\'s food is not in today\'s journal');
     expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget, reason: 'one general Log food action');
     expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
-    // Only the GH mark: no scene (only Today has one) and no food photograph standing in for a meal.
-    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsOneWidget);
+    // Only the GH mark and the coach's help avatar: no scene (only Today has one) and no food photograph standing in for a meal.
+    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(2));
+    expect(find.byKey(const Key('coach-help-eat')), findsOneWidget);
     expect(find.byType(SceneBackdrop), findsNothing);
     expect(find.text("Today's meals"), findsOneWidget);
     expect(find.byType(GroupCard), findsOneWidget, reason: 'the four meals in one group');

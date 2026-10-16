@@ -1205,3 +1205,69 @@ The last successful IPA (run 21, `a613cf4`) predates this round. `main` untouche
 After the repository was made public (free Actions minutes), on `9fa0e60` (the round 3 code plus the ledger note):
 `ci` run 69 (re-run) success, api and app jobs; unsigned IPA run 23 success (`GoHard-Dev-unsigned-ipa`, 12,371,122 bytes,
 expires 30 Oct 2026). `main` untouched. A successful iOS build says nothing about iPhone smoothness or battery.
+
+## 16 October 2026 (round 4) — eyes that can be seen, the coach on every tab, setup after sign-up, temperature on Today (branch `feature/coach-companion`, continued)
+
+**Why the eyes looked static on the phone.** Not the scheduler, not repaint, not the layer order. With temporary
+`COACH_DIAG` logging in a profile build on the emulator, the companion stayed active after the greeting
+(`active=true`, tab and route current, foreground, on screen, Reduce Motion off), rest/wake cycles ran, and blinks were
+painted to a full closure on top of the eyes. The pose sheet at 3× showed convincing closed eyes for both guides, so
+the artwork was not the limit either. The cause was size and time:
+- on Today the eye opening is **6.3 pt** tall (logged), and the gaze moved the iris at most 0.30 × its 3 pt radius ≈
+  **0.9 pt**;
+- a blink was fully closed for **30 ms**, 2–4 frames on a phone;
+- after the first minute a blink came about every 14 s.
+Earlier recordings showed blinks clearly because this emulator draws the app at a few frames per second (Choreographer
+"Skipped 136 frames"; in debug, paints about 1 s apart) and the rig caps each step at 1/30 s, so every blink played
+in slow motion. Those recordings overstated what a phone shows. The installed IPA and the phone's own motion settings
+could not be checked from here: no device access.
+
+What changed:
+- **Eyes.** Blink 90 ms closing, 70 ms closed, 170 ms opening. A natural moment every 2–5 s for as long as the guide can
+  be seen (no slowing after a minute): a blink 45 % (double now and then), a clear look to one side 35 %, a glance at
+  the bubble 20 %, each look held 0.9–2.2 s. Gaze up to 55 % of the iris radius across and 22 % vertically (was
+  30 % / 18 %), checked on the 3× pose sheet and a close-up for both guides: no exposed original iris, clipped cleanly
+  at the corners. Reduce Motion: unchanged, still.
+- **Help sheets showed no guide** (found on the emulator in this round; it affected workout and run help too): the
+  companion measured itself once while the sheet was still below the screen and never again. It now looks again after
+  each frame until it has started. Regression test added; it fails without the fix.
+- **Coach on every tab.** Train's avatar asks about the section in view (primary plan / "Your progress" / "Your
+  training"). Eat gained the avatar, opening built-in journal guidance with no Ask me, since the coach endpoint is
+  training-only. Workout and run recording already had the compact app-bar avatar and help sheet.
+- **Setup after creating an account** (docs/COACH.md › Setup): Choose your coach with live previews and the chosen
+  guide's hello in its bubble, then Optional features. Progress is kept per account in the coach preferences, so a
+  restart resumes and finishing or skipping ends it. Accounts that sign in never see it. Nothing asks for access
+  unless the person turns on or uses the feature. Me › Phone permissions shows the platform's actual state.
+- **Temperature.** "10°C · Overcast" on Today from the same fresh answer; °C/°F in Me › Units (a device setting); no
+  API change, because both adapters already return `temperatureC` in °C.
+
+Checks run (no full suite, no API tests: API unchanged):
+- `flutter analyze lib test integration_test`: clean.
+- Tests: weather_scene_test, coach_avatar_test, coach_companion_test, me_ui_test, eat_ui_test, today_ui_test,
+  train_ui_test, weather_ui_test, widget_test, coach_ask_test, all passing after updating three expectations: the Units
+  row now reads "Kilograms · °C", and Eat has the avatar image.
+
+Real app on the emulator (`emulator-5554`, **profile** build, local API with live Open-Meteo, driven by adb; recordings
+in `docs/evidence/recordings`, frames in `docs/evidence/coach`):
+- `eyes-today-leon.mp4`: Leon after the greeting, blinks and looks continuing; `eyes-live-leon-frames.png` shows
+  closures and side glances at device pixel size.
+- `eyes-today-leona-temperature.mp4`: Leona on Today with "10°C · Overcast".
+- `eyes-reduced-motion.mp4` and `eyes-reduced-frames.png`: identical still frames for 16 s.
+- `setup-signup-choose.mp4`, `setup-leona-welcome.mp4`: sign-up lands on Choose your coach, both previews animate,
+  Leona's hello. Then Continue, a force-stop and relaunch, which resumed at Optional features
+  (`setup-features-resumed.png`).
+- `setup-features-refusals-city.mp4`: reminders on → system prompt → Don't allow → stays off with an explanation;
+  Weather → Automatic → GoHard's explanation → system prompt → Don't allow → "Location was not allowed. Choose a city";
+  Halifax; Done → Today.
+- Temperature: Open-Meteo returned 9.5 °C, code 3, for the same grid point. Shown as 10°C, then **49°F** after
+  switching, which is converted from 9.5, not from the rounded 10 (that would be 50).
+- `coach-train-plan-progress-eat.mp4`, `coach-help-sheets.mp4`: Ask GoHard "About: Your progress"; Eat help sheet;
+  workout help sheet with the guide, the avatar clear of fields, timer and Complete set.
+- Large text 1.5× at 720 × 1520: Today fits; Eat's date wraps to three lines beside the avatar (taller header, no
+  overflow; accepted).
+
+Emulator motion runs at about half speed (motion time advanced 7.1 s in 14.7 s of wall time). Not measured: phone
+frame timing and battery. Still to check on a physical phone: the blink and gaze at real size and frame rate, iOS
+permission prompts (and the "restricted" state, which geolocator reports as not allowed), and VoiceOver.
+
+Known limit: Ask GoHard's suggested questions on Progress are still the plan ones; the context label is right.

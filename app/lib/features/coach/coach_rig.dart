@@ -393,7 +393,7 @@ class RigPainter extends CustomPainter {
   }
 
   /// One eye's gaze: inside the opening (clipped to it), the original iris disc is toned to the white, then the same
-  /// painted iris is drawn again moved by the gaze (up to 30% of its radius across, 18% up or down), turning with
+  /// painted iris is drawn again moved by the gaze (up to 55% of its radius across, 22% up or down), turning with
   /// the head. Only the thin sliver the iris uncovers shows the new tone; lashes, lids and the rest are the painting.
   void _iris(Canvas canvas, RigGeometry g, RigIris iris, RigPose s) {
     if (s.blink > 0.96) return; // closed
@@ -404,7 +404,7 @@ class RigPainter extends CustomPainter {
     final r = iris.radius / RigArt.sourcePixels * g.d;
     // Screen direction towards the bubble: left when mirrored, right as painted.
     final towards = g.mirrored ? -1.0 : 1.0;
-    final shift = Offset(-s.gazeX * towards * 0.30 * r, s.gazeY * 0.18 * r);
+    final shift = Offset(-s.gazeX * towards * 0.55 * r, s.gazeY * 0.22 * r);
     final turn = g.turnAt(center, s);
     final plain = g.place(center);
     final kx = (g.mirrored ? -g.d : g.d) / image.width, ky = g.d / image.height;

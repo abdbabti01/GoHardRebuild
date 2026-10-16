@@ -36,8 +36,13 @@ class TrainScreen extends ConsumerWidget {
       // On the calm wash the shell lays behind Train; room for the floating bar at the end.
       padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 28 + MediaQuery.paddingOf(context).bottom),
       children: [
-        // The guide's face is Ask GoHard's way in on Train: there whether or not Today shows the coach.
-        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: const CoachAskLauncher(ask: CoachContext(label: 'Your training'))),
+        // The guide's face is Ask GoHard's way in on Train, there whether or not Today shows the coach, asking about
+        // the section in view: the primary plan on Plan, recorded training on Progress.
+        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: CoachAskLauncher(ask: switch (view) {
+          TrainView.plan => CoachContext(label: ref.watch(primaryPlanProvider)?.title ?? 'Your plan'),
+          TrainView.progress => const CoachContext(label: 'Your progress'),
+          TrainView.workouts => const CoachContext(label: 'Your training'),
+        })),
         const SizedBox(height: 16),
         Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',

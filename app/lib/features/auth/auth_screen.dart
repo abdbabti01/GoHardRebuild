@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../coach/coach_prefs.dart';
 import '../me/account_repository.dart';
 
 /// Sign in or create an account. Typed values are kept through any failure.
@@ -38,7 +39,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     });
     try {
       final auth = ref.read(authRepositoryProvider);
-      await (_register ? auth.register(_email.text, _password.text, _name.text) : auth.signIn(_email.text, _password.text));
+      final coach = ref.read(coachPrefsProvider.notifier);
+      await (_register ? auth.register(_email.text, _password.text, _name.text, onCreated: coach.startSetup) : auth.signIn(_email.text, _password.text));
     } on AuthFailure catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {

@@ -25,7 +25,7 @@ class AuthRepository {
   final SessionManager _sessions;
   final SyncEngine _sync;
 
-  Future<void> _enter(String path, Json body) async {
+  Future<void> _enter(String path, Json body, [void Function(String ownerId)? onCreated]) async {
     ApiResponse r;
     try {
       r = await _api.send('POST', path, data: body, auth: false);
@@ -33,14 +33,16 @@ class AuthRepository {
       throw const AuthFailure('The server cannot be reached. Check your connection and try again; nothing you typed was lost.');
     }
     if (!r.ok) throw AuthFailure(_authMessage(r));
+    onCreated?.call(((r.data as Json)['profile'] as Json)['userId'] as String); // before the app switches to the account
     final session = await _sessions.signIn(r.data as Json);
     // Resume only this owner's queue, then load their account state.
     await _sync.flush();
     if (_sessions.current?.epoch == session.epoch) await _sync.pull();
   }
 
-  Future<void> register(String email, String password, String displayName) =>
-      _enter('/auth/register', {'email': email.trim(), 'password': password, 'displayName': displayName.trim()});
+  /// [onCreated] hears the new account's owner id before its session starts (setup is queued for it).
+  Future<void> register(String email, String password, String displayName, {void Function(String ownerId)? onCreated}) =>
+      _enter('/auth/register', {'email': email.trim(), 'password': password, 'displayName': displayName.trim()}, onCreated);
   Future<void> signIn(String email, String password) => _enter('/auth/login', {'email': email.trim(), 'password': password});
 
   /// Ends the session without deleting anything: this owner's records and pending work stay on the phone,

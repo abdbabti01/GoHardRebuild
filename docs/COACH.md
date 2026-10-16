@@ -230,7 +230,7 @@ texture size can change freely.
 *Eyes.* The paintings have irises clearly inside their lash lines, so each eye (`RigIris`, measured on the originals)
 has its opening as a polygon inside the lash line, the iris disc and the white's tone, sampled from its lid-shadowed top
 to its lit bottom. Inside the opening (clipped to it) the original iris is toned to the white and the same painted
-iris is drawn again from the texture, moved by the gaze (up to 30 % of its radius across, 18 % up or down) and turned
+iris is drawn again from the texture, moved by the gaze (up to 55 % of its radius across, 22 % up or down) and turned
 with the head; only the thin sliver it uncovers shows the new tone. Lashes, lids and the rest stay the painting:
 nothing is stretched and no patch is painted over the face. Lids: the upper one sweeps down corner to corner over the
 opening and its painted lash ring, feathered into the fur, its edge a dark lash line that comes to rest on the eye's
@@ -247,13 +247,21 @@ up/down) is a damped spring, so any interruption — rapid taps, a guide switch,
 pose on screen; cues replace each other's schedule and never stack. Entrance ≈ 450 ms with a hair of settle (slide ω 14,
 ζ 0.78); greeting: tilt towards the bubble and brows at 0.30 s, one nod 0.62–0.80 s, a blink at 1.05 s, the words
 arrive with a glance at them, then back to the user with a small smile, settled at 1.55 s; gentle breathing, irregular
-blinks and small looks until 7 s, then rest. At rest nothing ticks: a timer wakes it for one natural moment — a blink
-(35 %), the eyes drifting a little (40 %) or a glance at the bubble with a touch of head (25 %), back to the user
-after 0.6–1.5 s, sometimes with a blink — every 2.5–6 s for the first dozen, then every 5–11 s. Nothing bounces or
+blinks and small looks until 7 s, then rest. At rest nothing ticks: a timer wakes it for one natural moment every 2–5 s for as long as it can be seen — a blink
+(45 %, now and then a double one), a clear look to one side (35 %) or a glance at the bubble with a touch of head
+(20 %), each look held 0.9–2.2 s and back to the user, often with a blink. Nothing bounces or
 loops. Acknowledgement (being asked: the portrait or Ask me; a saved workout): eyes on the user, smile squint, one nod,
 back after 1.1 s. Pending (Ask GoHard, only while a request is really in flight — `AskState.sending` — ending on answer,
 error, Cancel or timeout): head the other way, brows up, leaning in, looking at the user, held without frames; released
-with a brief smile. Blink: close 70 ms, hold 30 ms, open 140 ms. It moves only while its tab is selected (`TickerMode`),
+with a brief smile. Blink: close 90 ms, closed 70 ms, open 170 ms.
+
+*Why these values (16 Oct 2026, the eyes "never blink" on the phone).* The scheduler, repaint and lids were all working
+(temporary logging on the emulator: blinks scheduled and painted to a full closure after the greeting, rest/wake cycles
+active). What hid them was scale and time: on Today the eye opening is 6.3 pt tall, the old gaze moved the iris at most
+0.9 pt, the old blink was fully closed for 30 ms (2–4 frames on a phone), and after the first minute a blink came about
+every 14 s. Earlier emulator recordings looked fine because that emulator draws this app at a few frames a second and
+the rig caps each step at 1/30 s, so every blink was played in slow motion. Recordings from the emulator still run at
+about half speed for that reason; judge the timing on a phone. It moves only while its tab is selected (`TickerMode`),
 its route is current, the app is in the foreground and the header is on screen; under Reduce Motion (the phone's or Me
 › Motion) it is a still settled portrait looking at the user, with no blink and no eye movement. No speech, audio,
 microphone or haptics.
@@ -277,6 +285,39 @@ A finished workout with training in it is acknowledged once: `workoutSavedProvid
 success path (memory only, cleared with a new sign-in), Today plays it when next in view and marks it played. Reduce
 Motion (phone or app) shows the settled portrait and its bubble at once. There is no global overlay or floating
 assistant: every bubble is laid out in its own page.
+
+### Setup after creating an account
+
+`features/setup/setup_screen.dart`. Only for an account created on this phone: `register` reports the new owner id
+before the session starts, and the coach preferences record `setup[owner] = 'guide'`. `app.dart` shows the setup
+instead of the shell while that entry exists, so a restart resumes at the same step; Continue moves it to
+`'features'`, Skip setup or Done removes it for good. Accounts that sign in never get an entry.
+
+1. **Choose your coach**: Leon and Leona as live companions (blinking, looking about; still under Reduce Motion) on the
+   Appearance cards, applied at once. After a choice the chosen guide says hello through the attached bubble. "You can
+   change this later in Me › Appearance." Continue or Skip setup.
+2. **Optional features**: Weather on Today (opens the Today background setting: a city, or Automatic with its own
+   explanation before the system prompt), Workout reminders (the same switch as Me; notifications are asked for only
+   when it is turned on), and two lines saying barcode scanning and GPS runs ask for the camera or location when first
+   used. Done lands on Today. Nothing on this page asks for access by itself.
+
+Me › Phone permissions reads the platform's current answer each time it opens (and on returning from Settings):
+location through geolocator, notifications through the plugin's own check; the camera has no check without starting
+it, so the row says when it is asked. It never asks, offers Open phone Settings, and says that Units, Appearance and
+Today background are app preferences in Me. Android reports a location refused once the same as never asked, so that
+row says "Not asked yet, or not allowed".
+
+### The coach on every tab
+
+The same selected guide everywhere, small, in the header or the app bar: Today (the companion and its bubble), Train
+(the avatar opens Ask GoHard about the section in view: the primary plan's title on Plan, "Your progress" on
+Progress, "Your training" on Workouts), Eat (the avatar opens a help sheet with built-in journal guidance and no Ask
+me, because Ask GoHard answers training questions only), workout and run recording (the avatar in the app bar opens
+help in a sheet; nothing pops over fields, timers or controls). Showing any of them sends nothing.
+
+A help sheet's guide used to stay hidden: the companion checked once, on its first frame, whether it was on screen,
+and a sheet is still below the screen then, with nothing scrolling to check again. It now looks again after each frame
+until it has started (no frames are requested for that). `coach_companion_test` covers it.
 
 ### Groq rate limits in practice (live, 15 Oct 2026)
 

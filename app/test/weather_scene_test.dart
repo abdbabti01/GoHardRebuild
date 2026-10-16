@@ -130,4 +130,21 @@ void main() {
       expect(sceneArt[k]!.sky, isNotNull, reason: '$k paints its own sky');
     }
   });
+
+  test('temperature: from the same fresh answer, °C converted once, zero and below zero kept, missing stays missing', () {
+    WeatherEntry withTemp(double? c, {Duration age = const Duration(minutes: 10)}) => WeatherEntry(source: 'city:6325494', region: '46.8,-71.2', fetchedAtUtc: now,
+        conditions: WeatherConditions(family: 'rain', code: 55, isDay: true, validAtUtc: now.subtract(age), description: 'Dense drizzle', temperatureC: c));
+    expect(scene(withTemp(8.2)).temperatureC, 8.2);
+    expect(scene(withTemp(null)).temperatureC, isNull, reason: 'unavailable, never 0');
+    expect(scene(withTemp(8.2, age: const Duration(minutes: 61))).temperatureC, isNull, reason: 'stale weather shows no temperature');
+    expect(formatTemperature(8.2, fahrenheit: false), '8°C');
+    expect(formatTemperature(0, fahrenheit: false), '0°C');
+    expect(formatTemperature(-0.4, fahrenheit: false), '0°C');
+    expect(formatTemperature(-12.6, fahrenheit: false), '-13°C');
+    expect(formatTemperature(0, fahrenheit: true), '32°F');
+    expect(formatTemperature(-40, fahrenheit: true), '-40°F');
+    expect(formatTemperature(-17.9, fahrenheit: true), '0°F');
+    expect(WeatherPrefs.fromJson(const WeatherPrefs(fahrenheit: true).toJson()).fahrenheit, isTrue);
+    expect(WeatherPrefs.fromJson(const {'background': 'weather'}).fahrenheit, isFalse, reason: 'saved before the choice existed: °C');
+  });
 }

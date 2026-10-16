@@ -19,8 +19,23 @@ import '../coach/coach_prefs.dart';
 import '../nutrition/nutrition_surface.dart';
 import '../weather/weather.dart';
 import 'account_repository.dart';
+import 'permissions_screen.dart';
 import 'reminders.dart';
 import 'sync_review_screen.dart';
+
+/// Workout reminders on or off (Me, setup). Notification permission is asked for only here, when they are turned on.
+Future<void> setReminders(BuildContext context, WidgetRef ref, Profile profile, bool on) async {
+  if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
+    if (context.mounted) toast(context, 'Notifications are not allowed for GoHard, so reminders stay off. You can allow them in the phone\'s settings.');
+    return;
+  }
+  try {
+    await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
+    Haptics.selection();
+  } on LocalSaveFailure {
+    if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
+  }
+}
 
 /// Me: who is signed in, personal information, preferences for this phone and the account. Training, history and
 /// progress live in Train; nothing here repeats them.
@@ -58,6 +73,18 @@ class MeScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 4),
           Text('Changes how loads are entered and shown. Your recorded training is stored in kilograms and is never rewritten. Time is shown in minutes and seconds.', style: context.caption),
+          const SizedBox(height: 16),
+          Text('Temperature', style: context.label),
+          for (final f in const [false, true])
+            ChoiceTile<bool>(
+              key: Key('unit-${f ? 'fahrenheit' : 'celsius'}'), value: f, groupValue: ref.read(weatherPrefsProvider).fahrenheit, title: f ? 'Fahrenheit (°F)' : 'Celsius (°C)',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                ref.read(weatherPrefsProvider.notifier).setFahrenheit(chosen);
+              },
+            ),
+          const SizedBox(height: 4),
+          Text('For the weather on Today. Set on this phone.', style: context.caption),
         ]));
 
     // What is true about the account right now, in a word and a sentence. "Saved" is said only when nothing is
@@ -136,8 +163,9 @@ class MeScreen extends ConsumerWidget {
             onTap: () => push(context, const AppearanceScreen()),
           ),
           if (profile != null)
-            GroupRow(key: const Key('me-units'), icon: Icons.straighten, title: 'Units', value: LoadUnit.parse(profile.loadUnit) == LoadUnit.kg ? 'Kilograms' : 'Pounds', onTap: chooseUnit),
+            GroupRow(key: const Key('me-units'), icon: Icons.straighten, title: 'Units', value: '${LoadUnit.parse(profile.loadUnit) == LoadUnit.kg ? 'Kilograms' : 'Pounds'} · ${ref.watch(weatherPrefsProvider.select((p) => p.fahrenheit)) ? '°F' : '°C'}', onTap: chooseUnit),
           GroupRow(key: const Key('me-motion'), icon: Icons.animation, title: 'Motion & haptics', value: motionLabel(prefs), onTap: () => push(context, const MotionHapticsScreen())),
+          GroupRow(key: const Key('me-permissions'), icon: Icons.verified_user_outlined, title: 'Phone permissions', subtitle: 'Location, camera and notifications', onTap: () => push(context, const PermissionsScreen())),
           if (profile != null) ...[
             MergeSemantics(
               child: GroupRow(
@@ -147,19 +175,7 @@ class MeScreen extends ConsumerWidget {
                 subtitle: profile.remindersEnabled ? 'On days with a planned workout. None while your plan is paused.' : 'Off',
                 trailing: Switch(
                   value: profile.remindersEnabled,
-                  onChanged: (on) async {
-                    // Permission is asked for only here, when the user turns reminders on.
-                    if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
-                      if (context.mounted) toast(context, 'Notifications are not allowed for GoHard, so reminders stay off. You can allow them in the phone\'s settings.');
-                      return;
-                    }
-                    try {
-                      await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
-                      Haptics.selection();
-                    } on LocalSaveFailure {
-                      if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
-                    }
-                  },
+                  onChanged: (on) => setReminders(context, ref, profile, on),
                 ),
               ),
             ),
@@ -339,7 +355,7 @@ class _CoachSection extends ConsumerWidget {
     final set = ref.read(coachPrefsProvider.notifier);
     // Side by side, picture above name, while the names fit; at large text one under another, picture beside name.
     final across = MediaQuery.textScalerOf(context).scale(10) <= 15;
-    final cards = [for (final g in CoachGuide.values) _CoachChoice(g, selected: g == coach.guide, across: across, onTap: () => set.setGuide(g))];
+    final cards = [for (final g in CoachGuide.values) CoachChoice(g, selected: g == coach.guide, across: across, onTap: () => set.setGuide(g))];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       const _AppearanceSection(Icons.face_outlined, 'Coach avatar', 'Leon, a lion, or Leona, a lioness. The same coach either way: only the look changes.'),
       if (across)
@@ -384,9 +400,12 @@ class _CoachSection extends ConsumerWidget {
 /// One guide's card: a 64 px preview (56 px beside the name at large text), the name and "Lion" / "Lioness". Selected:
 /// accent border, tint, heavier name and a check badge, so never colour alone; announced as "Leon, lion", a selected
 /// button in a mutually exclusive group. ChoiceCard's icon slot is 36 px, too small to tell the two faces apart.
-class _CoachChoice extends StatelessWidget {
-  const _CoachChoice(this.guide, {required this.selected, required this.across, required this.onTap});
+class CoachChoice extends StatelessWidget {
+  const CoachChoice(this.guide, {super.key, required this.selected, required this.across, required this.onTap, this.face});
   final CoachGuide guide;
+
+  /// Shown instead of the still avatar (setup's animated previews).
+  final Widget? face;
   final bool selected, across;
   final VoidCallback onTap;
 
@@ -416,8 +435,8 @@ class _CoachChoice extends StatelessWidget {
                 Padding(
                   padding: across ? const EdgeInsets.fromLTRB(8, 14, 8, 12) : const EdgeInsetsDirectional.fromSTEB(12, 10, 40, 10),
                   child: across
-                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [CoachAvatar(size: 64, guide: guide), const SizedBox(height: 8), names]))
-                      : Row(children: [CoachAvatar(size: 56, guide: guide), const SizedBox(width: 12), Expanded(child: names)]),
+                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [face ?? CoachAvatar(size: 64, guide: guide), const SizedBox(height: 8), names]))
+                      : Row(children: [face ?? CoachAvatar(size: 56, guide: guide), const SizedBox(width: 12), Expanded(child: names)]),
                 ),
                 if (selected)
                   PositionedDirectional(

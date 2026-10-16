@@ -92,6 +92,28 @@ Future<void> _openAppearance(WidgetTester tester) async {
 }
 
 void main() {
+  test('setup is per account and survives a restart: resumes at its step, ends for good when finished or skipped', () async {
+    final phone = MemorySecretStore();
+    Future<ProviderContainer> launch() async => ProviderContainer(overrides: [coachPrefsStoreProvider.overrideWithValue(await _restored(phone))]);
+    Future<void> saved() => Future<void>.delayed(Duration.zero);
+
+    var app = await launch();
+    app.read(coachPrefsProvider.notifier)
+      ..startSetup('new')
+      ..setGuide(CoachGuide.leona)
+      ..setupFeatures('new');
+    await saved();
+    app = await launch(); // interrupted: the app is closed during the second step
+    expect(app.read(coachPrefsProvider).setup, {'new': 'features'});
+    expect(app.read(coachPrefsProvider).guide, CoachGuide.leona);
+    expect(app.read(coachPrefsProvider).setup['existing'], isNull, reason: 'an account that only signs in has no setup');
+
+    app.read(coachPrefsProvider.notifier).finishSetup('new');
+    await saved();
+    app = await launch();
+    expect(app.read(coachPrefsProvider).setup, isEmpty, reason: 'finished: never shown again');
+  });
+
   testWidgets('a fresh install is Leon whatever the profile; Leona applies at once, survives a restart and resets nothing else', (tester) async {
     final phone = MemorySecretStore();
     final appearance = AppearanceStore(MemorySecretStore())

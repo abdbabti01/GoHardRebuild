@@ -7,6 +7,7 @@ import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
+import 'package:gohard_rebuild/features/coach/coach_bubble.dart';
 import 'package:gohard_rebuild/features/coach/coach_client.dart';
 import 'package:gohard_rebuild/features/coach/coach_companion.dart';
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
@@ -372,5 +373,13 @@ void main() {
       expect(find.byKey(const Key('coach-avatar-launcher')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+  });
+
+  testWidgets('in a help sheet the guide comes in once the sheet is up (it starts below the screen, and nothing scrolls)', (tester) async {
+    await pumpApp(tester, [coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore()))], settle: false,
+        home: Scaffold(body: Builder(builder: (context) => TextButton(onPressed: () => showCoachHelpSheet(context, title: 'Help', say: const CoachSay('Words.')), child: const Text('help')))));
+    await tester.tap(find.text('help'));
+    await _frames(tester, 2000);
+    expect(_state(tester).pose.value.slide, closeTo(1, 0.01), reason: 'the guide beside its words, not left hidden');
   });
 }

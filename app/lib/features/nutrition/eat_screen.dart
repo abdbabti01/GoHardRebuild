@@ -8,6 +8,8 @@ import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
+import '../coach/coach_avatar.dart';
+import '../coach/coach_bubble.dart';
 import 'food_form.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
@@ -74,6 +76,13 @@ class _EatScreenState extends ConsumerState<EatScreen> {
             child: TabHeader(
               title: 'Eat', overline: longDate(day),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                // Help with the journal from the same guide. Built-in words only: Ask GoHard answers training questions,
+                // so nothing here offers to ask it about food.
+                CoachHelpButton(
+                  key: const Key('coach-help-eat'), semanticLabel: 'Help with your food journal',
+                  onPressed: () => showCoachHelpSheet(context, title: 'Your food journal', say: const CoachSay(
+                      'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged, and your goals are set in Me › Nutrition goals.')),
+                ),
                 IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
                 IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
               ]),
