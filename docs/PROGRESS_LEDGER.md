@@ -1197,3 +1197,8 @@ before each run:
 
 Pattern: the attach and "Service has disappeared" failures came after more than an hour of runs and stopped after an
 adb restart. No failure happened at an app step.
+
+CI and IPA on `79fca3d`: **not run**. GitHub refused to start the jobs of `ci` run 68 and `ios-unsigned-ipa` run 22
+(and, earlier, `ci` run 67 on `c447c44`) with "recent account payments have failed or your spending limit needs to be
+increased", a billing block on the GitHub account, not a code result. They need re-running once billing is fixed.
+The last successful IPA (run 21, `a613cf4`) predates this round. `main` untouched.
