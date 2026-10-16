@@ -242,6 +242,12 @@ void main() {
     await tapKey(tester, 'accent-blue');
     await tester.pageBack();
     await settle(tester, 4);
+    // Let the page finish closing and the new theme settle before the next tap: on a device pump() does not wait, and a
+    // tap during that moment intermittently found nothing (seen 16 Oct 2026; Me itself was intact throughout).
+    for (var i = 0; i < 12; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await tester.pump();
+    }
     await tapKey(tester, 'me-sign-out');
     await tap(tester, find.widgetWithText(FilledButton, 'Sign out'));
     await waitFor(tester, find.byKey(const Key('auth-submit')), what: 'the sign-in screen after sign-out');

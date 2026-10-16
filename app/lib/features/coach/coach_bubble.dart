@@ -94,9 +94,10 @@ class CoachBubble extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(text: s.text),
+                // Non-breaking spaces: "Ask me ›" moves to the next line as one piece, never split after "Ask".
                 if (inline)
                   TextSpan(
-                    text: '  Ask me ›',
+                    text: '  Ask me ›',
                     semanticsLabel: '',
                     style: context.sansStyle(15, color: c.accent, weight: FontWeight.w600),
                   ),

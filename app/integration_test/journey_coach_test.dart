@@ -49,6 +49,12 @@ void main() {
     // --- Structure: the guide introduces it once, in the page; the suggestion and its reason.
     await j.waitFor(find.byKey(const Key('coach-spot-builder.structure')), what: 'the one-time split introduction');
     await j.waitFor(find.byKey(const Key('guide-suggestion')), what: 'the suggested starting plan');
+    // The words arrive as the guide settles (taps wait for them): real time and real frames, as pump() alone does not
+    // wait on a device.
+    for (var i = 0; i < 50; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await tester.pump(); // a device test advances animation only on pumped frames
+    }
     await j.shot('c05-guided-suggestion-with-hint');
     await j.tapKey('coach-say-close');
     expect(find.byKey(const Key('coach-spot-builder.structure')), findsNothing);

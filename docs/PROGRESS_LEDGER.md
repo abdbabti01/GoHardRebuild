@@ -1086,3 +1086,19 @@ peeks into it (reads as the window it appears in; left as is). Green outlines an
 highlights. The journey's own assertions passed (bubble present, no second Ask, hidden for today, hints off).
 
 Not measured: frame timing and battery (no physical device; no profile mode on the x86 emulator).
+
+Checks and journeys on the finished code (commit after `e1000f0`): `scripts\test.ps1` passed (API 184/184, analysis
+clean, 478 app tests). CI `ci` run 65 success and unsigned IPA run 20 success (`GoHard-Dev-unsigned-ipa`, 12,360,035
+bytes) on `e1000f0`; the last commit adds the non-breaking "Ask me ›" (the real-app capture showed it split as
+"Ask" / "me ›" at 360 dp), two journey waits and this ledger (CI/IPA re-run on it, below). Emulator journeys against the
+local API with recorded provider responses, one at a time, network restored before each:
+journey_food, journey_device (GPS run, now with the run help entry in its app bar), journey_secondary, journey_more,
+journey_offline, journey_upgrade, journey_coldstart passed cleanly. journey_coach failed twice at closing the split
+introduction: the device test advances animation only on pumped frames, so the bubble (which ignores taps until it
+has arrived) had not arrived during a 2 s wait without pumping — the journey now pumps real frames while waiting, and
+then passed. journey_test failed 3 times in 6 runs at Me › Sign out right after the theme and accent change (the row
+was found, scrolled into view and gone two frames later); a diagnostic run showed Me intact and passed; on `main` it
+passed its one comparison run. The journey now pumps real frames for 0.6 s before that tap; it is recorded here as an
+intermittent harness race, not proven absent. journey_plan: phase 1 passed again; phase 2 (new process) again failed to
+attach ("Service has disappeared") before any step — **still unverified**, as on 16 Oct. journey_companion_test passed
+against the live weather API (recordings above).
