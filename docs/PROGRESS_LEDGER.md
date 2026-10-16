@@ -1025,7 +1025,11 @@ journey_secondary, journey_more, journey_device (GPS run recovery), journey_upgr
 journey_offline, journey_food, journey_coach passed cleanly. journey_test passed every step on its second run; its
 first run failed once at the Me › Sign out tap right after a theme change (not reproduced; no companion involvement),
 and both of its runs ended with the driver's "Service has disappeared" after the test (the known harness issue; all
-steps passed). journey_plan: PLAN_RESULT. The first full pass also left the emulator offline after journey_plan's
+steps passed). journey_plan: phase 1 (template customised and activated offline, moved, edited, replaced by a rotation) passed in three separate runs; phase 2 (new process, same install) never reached an app step in any of them (driver could not attach: "Service has disappeared", "Flutter Driver extension is taking a long time", VM service connection refused), including once after an emulator reboot, so **phase 2 is unverified for this branch** (the cold-start recovery it checks is also exercised by journey_coldstart, which passed). The first full pass also left the emulator offline after journey_plan's
 offline phase died in teardown, which made that pass's journey_coach fail at sign-up ("The server cannot be
 reached"); Wi-Fi and data were re-enabled and the re-run passed. journey_companion_test needs the live weather
 API (it searches Halifax) and passed there three times; against the recordings it cannot find the city.
+
+Commit `138daa8` pushed to `feature/coach-companion` (main untouched). CI `ci` run 63: success (api, app). Unsigned IPA
+`ios-unsigned-ipa.yml` dispatched on the branch: run 19 success, artifact `GoHard-Dev-unsigned-ipa` (12,353,059 bytes,
+expires 30 Oct 2026). A successful iOS build says nothing about iPhone smoothness or battery.
