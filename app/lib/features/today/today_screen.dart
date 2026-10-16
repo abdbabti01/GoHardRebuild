@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,14 +71,14 @@ class TodayScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                _PanelTheme(
+                PanelTheme(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    if (reachable == false) ...[const _PanelSurface(child: _ConnectionStatus()), gap],
+                    if (reachable == false) ...[const PanelSurface(child: _ConnectionStatus()), gap],
                     // A nutrition problem never hides training, and the reverse.
                     if (localError)
-                      const _PanelSurface(child: StatusLine(Icons.error_outline, 'Your training could not be read from this phone. Pull down to try again.', tone: Tone.error))
+                      const PanelSurface(child: StatusLine(Icons.error_outline, 'Your training could not be read from this phone. Pull down to try again.', tone: Tone.error))
                     else if (snapshot == null)
-                      const _PanelSurface(child: StatusLine(Icons.hourglass_empty, 'Loading your training…'))
+                      const PanelSurface(child: StatusLine(Icons.hourglass_empty, 'Loading your training…'))
                     else
                       _TrainingSection(snapshot),
                     gap,
@@ -90,7 +89,7 @@ class TodayScreen extends ConsumerWidget {
                 // The compact tile under the panel theme and History beside it on the scene.
                 _RunCard(today: day, finishedToday: finishedRuns),
                 // What was actually recorded today. Absent when there is nothing to show.
-                if (snapshot != null && (snapshot.recordedToday.isNotEmpty || finishedRuns.length > 1)) ...[gap, _PanelTheme(child: _PanelSurface(child: _ActivitySection(snapshot, finishedRuns)))],
+                if (snapshot != null && (snapshot.recordedToday.isNotEmpty || finishedRuns.length > 1)) ...[gap, PanelTheme(child: PanelSurface(child: _ActivitySection(snapshot, finishedRuns)))],
               ]),
             ),
           ],
@@ -330,122 +329,9 @@ class _ConnectionStatusState extends ConsumerState<_ConnectionStatus> {
 
 // ---------------------------------------------------------------------------- the shared module
 
-/// A small decorative crop at the trailing side of a module. It is decoded for the size it is drawn at, not for
-/// the screen: the bundled photographs are 3:2, so covering the crop needs its width or 1.5 × its height,
-/// whichever is larger, in device pixels (rounded up to a step of 64 so a few pixels of height change nothing).
-class _Photo extends StatelessWidget {
-  const _Photo(this.asset, {super.key, required this.alignment});
-  final String asset;
-  final Alignment alignment;
-
-  @override
-  Widget build(BuildContext context) => ExcludeSemantics(
-        child: LayoutBuilder(builder: (context, box) {
-          final pixels = math.max(box.maxWidth, box.maxHeight * 1.5) * MediaQuery.devicePixelRatioOf(context);
-          return Image.asset(asset, width: box.maxWidth, height: box.maxHeight, fit: BoxFit.cover, alignment: alignment,
-              cacheWidth: ((pixels / 64).ceil() * 64).clamp(64, 1536), errorBuilder: (context, _, _) => ColoredBox(color: context.c.sunken));
-        }),
-      );
-}
-
-/// Today's panel palette: a pale, desaturated tint of the chosen accent with dark ink text, and a deep shade of the
-/// accent for the filled button, the same in Light and Dark (the approved Today design: pale panels over the scene in
-/// both modes). Status colours are Light's, which hold on the pale tint. Only Today's panels use it.
-GoColors _panelColors(Accent accent, {required bool highContrast}) {
-  final light = GoColors.of(accent, Brightness.light, highContrast: highContrast);
-  final (tint, soft, deep, ink) = switch (accent) {
-    Accent.green => (0xFFD4ECDD, 0xFFBADFC8, 0xFF143B2C, 0xFF0E1C17),
-    Accent.blue => (0xFFD8E4F1, 0xFFBDD0E6, 0xFF173554, 0xFF0E1724),
-    Accent.pink => (0xFFF2DCE6, 0xFFE6C3D3, 0xFF4F1E37, 0xFF20111A),
-  };
-  final t = Color(tint), text = Color(ink), white = const Color(0xFFFFFFFF);
-  Color towardTint(double share) => Color.lerp(text, t, share)!;
-  return GoColors(
-      page: t, surface: Color.lerp(t, white, 0.5)!, raised: Color.lerp(t, white, 0.5)!, sunken: Color(soft),
-      text: text, secondary: towardTint(highContrast ? 0.12 : 0.3), divider: towardTint(highContrast ? 0.5 : 0.8), outline: towardTint(highContrast ? 0.3 : 0.5),
-      accent: Color(deep), onAccent: Color.lerp(white, t, 0.25)!, accentSoft: Color(soft),
-      success: light.success, warning: light.warning, error: light.error, scrim: t.withValues(alpha: GoColors.scrimOpacity));
-}
-
-/// Puts what it wraps in the panels' palette ([_panelColors]), so every line and control built under it (the panel's
-/// words, a status badge, a progress ring, the buttons) takes the panel's colours. Today's sections are built under
-/// it; the header and History beside the Run tile are not: they sit on the scene.
-class _PanelTheme extends ConsumerWidget {
-  const _PanelTheme({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => _AppContext(
-      context, Theme(data: goThemeOf(_panelColors(ref.watch(appearanceProvider).accent, highContrast: MediaQuery.highContrastOf(context)), Brightness.light), child: child));
-}
-
-/// The context just outside a [_PanelTheme]. A sheet or dialog takes the theme of the context it is opened from, so
-/// actions that may open one (Details, Start workout, Log food, Start run) open it from here, in the app's own look.
-class _AppContext extends InheritedWidget {
-  const _AppContext(this.app, Widget child) : super(child: child);
-  final BuildContext app;
-  @override
-  bool updateShouldNotify(_AppContext old) => false;
-}
-
-BuildContext _appContext(BuildContext context) => context.getInheritedWidgetOfExactType<_AppContext>()?.app ?? context;
-
-/// One of Today's panels, under a [_PanelTheme]: the pale tint with dark ink, rounded, lifted off the scene by a soft
-/// shadow and a thin edge. A [photo] fills its trailing half ([photoShare]) at full height and fades into the tint toward the
-/// words, so text sits on the tint or on the faintest part of the fade, never on the picture. [below] is a full-width
-/// part under the photograph (other workouts today, saved for later), where the photograph fades out downward too.
-class _PanelSurface extends StatelessWidget {
-  const _PanelSurface({super.key, required this.child, this.photo, this.below = const []});
-  final Widget child;
-  final Widget? photo;
-  final List<Widget> below;
-
-  /// How much of the panel's width the photograph takes, at its trailing side.
-  static const photoShare = 0.5;
-
-  static Widget _fade(Widget child, {required Alignment to, List<double> stops = const [0, 0.35, 0.65, 0.92]}) => ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (r) => LinearGradient(begin: -to, end: to, stops: stops, colors: const [Color(0x00000000), Color(0x24000000), Color(0xA6000000), Color(0xFF000000)]).createShader(r),
-        child: child,
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    final radius = BorderRadius.circular(Radii.panel);
-    var picture = photo;
-    if (picture != null) {
-      picture = _fade(picture, to: Alignment.centerRight);
-      if (below.isNotEmpty) picture = _fade(picture, to: Alignment.topCenter, stops: const [0, 0.15, 0.35, 0.5]);
-    }
-    return Container(
-      decoration: BoxDecoration(color: c.page, borderRadius: radius, boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 6))]),
-      foregroundDecoration: BoxDecoration(borderRadius: radius, border: Border.all(color: c.text.withValues(alpha: 0.08))),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-          Stack(children: [
-            if (picture != null) Positioned.fill(child: Align(alignment: Alignment.centerRight, child: FractionallySizedBox(widthFactor: photoShare, child: picture))),
-            Padding(padding: EdgeInsets.fromLTRB(18, 16, 16, below.isEmpty ? 16 : 10), child: child),
-          ]),
-          if (below.isNotEmpty)
-            Padding(padding: const EdgeInsets.fromLTRB(18, 0, 16, 12), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: below)),
-        ]),
-      ),
-    );
-  }
-}
-
 /// A state in an icon and a word ("In progress", "Due today"), the panel's badge. The tone only adds to the word:
 /// accent for what is live or due, the success colour for what is finished, quiet otherwise.
 typedef _Status = (String label, IconData icon, Tone tone);
-
-/// The quiet link beside a panel's button ("Details ›", "Journal ›"); [said] is what a screen reader hears.
-/// [background] backs it on the scene (History).
-Widget _quietLink(String text, {required Key key, required String said, required VoidCallback onPressed, Color? background}) => TextButton(
-      key: key, onPressed: onPressed, style: background == null ? null : TextButton.styleFrom(backgroundColor: background),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(text, semanticsLabel: said)), const SizedBox(width: 2), const Icon(Icons.chevron_right, size: 20)]),
-    );
 
 /// The content of one of Today's panels, all three built from this: the label (Nutrition, Run) and the state badge,
 /// the content, then the main button with a quiet link beside it. The words keep to the part of the panel the
@@ -478,12 +364,12 @@ class _Module extends StatelessWidget {
       if (s != null) StatusPill(s.$1, icon: s.$2, tone: s.$3),
     ]);
     final words = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [labelRow, ...head, ...body, ?footer]);
-    return _PanelSurface(
-      photo: pictured ? _Photo(photo!, key: Key('today-photo-${label.toLowerCase()}'), alignment: photoAlignment) : null,
+    return PanelSurface(
+      photo: pictured ? PanelPhoto(photo!, key: Key('today-photo-${label.toLowerCase()}'), alignment: photoAlignment) : null,
       below: below,
       child: LayoutBuilder(
         builder: (context, box) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          ConstrainedBox(constraints: BoxConstraints(maxWidth: pictured ? box.maxWidth * (1 - _PanelSurface.photoShare * 0.6) : box.maxWidth), child: words),
+          ConstrainedBox(constraints: BoxConstraints(maxWidth: pictured ? box.maxWidth * PanelSurface.wordsShare : box.maxWidth), child: words),
           const SizedBox(height: 14),
           Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [action, ?quiet]),
         ]),
@@ -518,7 +404,7 @@ class _TrainingSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final a = snapshot.training;
     final c = context.c;
-    final app = _appContext(context);
+    final app = appContext(context);
     final today = snapshot.dayKey;
     final all = ref.watch(workoutListProvider);
     // Within the coming week the weekday, further out the full date.
@@ -534,7 +420,7 @@ class _TrainingSection extends ConsumerWidget {
     // The workout's name in the serif, as the approved design has it; a long name wraps.
     Widget title(String text) => Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: context.pageTitleStyle(36)));
     Widget line(String text, {double top = 4}) => Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: context.sansStyle(15, color: c.secondary)));
-    Widget details(VoidCallback onPressed) => _quietLink('Details', key: const Key('today-details'), said: 'Workout details', onPressed: onPressed);
+    Widget details(VoidCallback onPressed) => QuietLink('Details', key: const Key('today-details'), said: 'Workout details', onPressed: onPressed);
     // Under the lead workout in the same panel: other workouts today, missed ones, a manual workout, saved for later.
     // Set before the lead is built (below).
     var extras = const <Widget>[];
@@ -769,8 +655,8 @@ class _OpenWorkout extends ConsumerWidget {
     final sets = SetProgress.of(w, ref.watch(trustedSetsProvider));
     final n = w.exercises.length;
     final what = w.isManual ? 'Manual workout' : 'Planned workout from ${shortDate(w.dayKey)}';
-    final app = _appContext(context);
-    return _PanelSurface(
+    final app = appContext(context);
+    return PanelSurface(
       key: Key('today-open-${w.id}'),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -878,7 +764,7 @@ class _RunCardState extends ConsumerState<_RunCard> {
     // The tile is built under the panel theme; History sits on the scene beside it, in the header's sky colours on a
     // scrim so it reads over any weather.
     final app = context;
-    final tile = _PanelTheme(
+    final tile = PanelTheme(
       child: Builder(
         builder: (context) => _Module(
           key: const Key('today-module-run'), label: 'Run', status: status,
@@ -896,7 +782,7 @@ class _RunCardState extends ConsumerState<_RunCard> {
     final history = Theme(
       data: _skyTheme(context, ref),
       child: Builder(
-        builder: (context) => _quietLink('History', key: const Key('today-run-history'), said: 'Run history', onPressed: () => push(context, const RunHistoryScreen()),
+        builder: (context) => QuietLink('History', key: const Key('today-run-history'), said: 'Run history', onPressed: () => push(context, const RunHistoryScreen()),
             background: context.c.scrim),
       ),
     );
@@ -944,8 +830,8 @@ class _NutritionCard extends ConsumerWidget {
       footer: logged ? NutritionMissingNote(coverage: s.coverage, onDetails: openEat) : null,
       // The bowl at the trailing side.
       photo: _Photos.nutrition, photoAlignment: const Alignment(0.7, 0),
-      action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(_appContext(context), dayKey: day)),
-      quiet: _quietLink('Journal', key: const Key('today-open-eat'), said: 'Food journal', onPressed: openEat),
+      action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(appContext(context), dayKey: day)),
+      quiet: QuietLink('Journal', key: const Key('today-open-eat'), said: 'Food journal', onPressed: openEat),
     );
   }
 }

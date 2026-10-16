@@ -7,8 +7,8 @@ import 'device_prefs.dart';
 import 'theme.dart';
 
 /// Shared Daily Rhythm building blocks: one button, card, list, sheet and form system for every screen.
-/// Spacing and quiet separators come before containers; no card inside a card. The serif appears only in page titles
-/// ([TabHeader], [AppPage], `Heading(serif: true)`); everything else is Inter.
+/// Spacing and quiet separators come before containers; no card inside a card. The serif appears in page titles
+/// ([TabHeader], [AppPage], `Heading(serif: true)`) and in a photo panel's title or key figure; everything else is Inter.
 
 /// Scales its child to [Motion.pressScale] while pressed. With Reduce Motion nothing scales; the tint still shows.
 class _PressScale extends StatelessWidget {
@@ -494,10 +494,11 @@ class ChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final ink = GoColors.panelOf(c).text;
     return Semantics(
       button: true, selected: selected, inMutuallyExclusiveGroup: true, label: semanticLabel ?? label,
       child: Material(
-        color: selected ? c.accentSoft : c.surface,
+        color: selected ? c.tint : c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: selected ? c.accent : c.outline, width: selected ? 2 : 1)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -513,10 +514,10 @@ class ChoiceCard extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(6, 16, 6, 14),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     if (leading != null) ...[
-                      IconTheme.merge(data: IconThemeData(size: 30, color: selected ? c.accent : c.text), child: SizedBox(height: 36, child: Center(child: leading))),
+                      IconTheme.merge(data: IconThemeData(size: 30, color: selected ? ink : c.text), child: SizedBox(height: 36, child: Center(child: leading))),
                       const SizedBox(height: 8),
                     ],
-                    Text(label, textAlign: TextAlign.center, style: context.sansStyle(15.5, weight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? c.accent : c.text)),
+                    Text(label, textAlign: TextAlign.center, style: context.sansStyle(15.5, weight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? ink : c.text)),
                   ]),
                 ),
                 if (selected)
@@ -524,8 +525,8 @@ class ChoiceCard extends StatelessWidget {
                     top: 8, right: 8,
                     child: Container(
                       width: 22, height: 22,
-                      decoration: BoxDecoration(color: c.accent, shape: BoxShape.circle),
-                      child: Icon(Icons.check_rounded, size: 16, color: c.onAccent),
+                      decoration: BoxDecoration(color: c.accentDeep, shape: BoxShape.circle),
+                      child: Icon(Icons.check_rounded, size: 16, color: c.onAccentDeep),
                     ),
                   ),
               ]),
@@ -704,6 +705,7 @@ class Segmented<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stacked = MediaQuery.textScalerOf(context).scale(10) > 13.5;
+    final ink = GoColors.panelOf(context.c).text;
     Widget segment(T v) {
       final on = v == selected;
       final name = v is Enum ? v.name : '$v';
@@ -721,9 +723,9 @@ class Segmented<T> extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: Targets.minimum),
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(color: on ? context.c.accent : context.c.sunken, borderRadius: BorderRadius.circular(Radii.field - 2)),
+            decoration: BoxDecoration(color: on ? context.c.tint : Colors.transparent, borderRadius: BorderRadius.circular(Radii.field - 2)),
             // Fill, weight and a strong luminance step mark the choice, so it also reads in grayscale.
-            child: Text(label(v), textAlign: TextAlign.center, style: context.sansStyle(15, weight: on ? FontWeight.w700 : FontWeight.w500, color: on ? context.c.onAccent : context.c.text)),
+            child: Text(label(v), textAlign: TextAlign.center, style: context.sansStyle(15, weight: on ? FontWeight.w700 : FontWeight.w500, color: on ? ink : context.c.text)),
           ),
         ),
       );
@@ -731,12 +733,163 @@ class Segmented<T> extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(color: context.c.sunken, borderRadius: BorderRadius.circular(Radii.field + 1)),
+      decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(Radii.field + 1), border: Border.all(color: context.c.divider)),
       child: stacked
           ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final v in values) segment(v)])
           : Row(children: [for (final v in values) Expanded(child: segment(v))]),
     );
   }
+}
+
+// ---------------------------------------------------------------------------- photo panels (the approved Today look)
+
+/// Puts what it wraps in the pale panel palette ([GoColors.panelOf]): every line and control built under it takes the
+/// panel's dark ink, deep button and tint, the same in Light and Dark. A sheet or dialog takes the theme of the
+/// context it is opened from, so actions inside a panel open them from [appContext], which keeps the app's own look.
+class PanelTheme extends StatelessWidget {
+  const PanelTheme({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final themed = Theme(data: goThemeOf(GoColors.panelOf(context.c), Brightness.light), child: child);
+    // Nested panels keep the outermost app context.
+    return context.getInheritedWidgetOfExactType<_AppContext>() == null ? _AppContext(context, themed) : themed;
+  }
+}
+
+class _AppContext extends InheritedWidget {
+  const _AppContext(this.app, Widget child) : super(child: child);
+  final BuildContext app;
+  @override
+  bool updateShouldNotify(_AppContext old) => false;
+}
+
+/// The context just outside the nearest [PanelTheme] (or [context] itself outside any panel): open sheets, dialogs
+/// and pickers from it so they keep the app's look, not the pale panel's.
+BuildContext appContext(BuildContext context) => context.getInheritedWidgetOfExactType<_AppContext>()?.app ?? context;
+
+/// A bundled photograph decoded for the box it is drawn in (3:2 sources: its width or 1.5 × its height, whichever is
+/// larger, in device pixels, rounded up to a step of 64). Decoration only: never announced; a missing file leaves the
+/// tint.
+class PanelPhoto extends StatelessWidget {
+  const PanelPhoto(this.asset, {super.key, this.alignment = Alignment.center});
+  final String asset;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: LayoutBuilder(builder: (context, box) {
+          final pixels = math.max(box.maxWidth, box.maxHeight * 1.5) * MediaQuery.devicePixelRatioOf(context);
+          return Image.asset(asset, width: box.maxWidth, height: box.maxHeight, fit: BoxFit.cover, alignment: alignment,
+              cacheWidth: ((pixels / 64).ceil() * 64).clamp(64, 1536), errorBuilder: (context, _, _) => const SizedBox.shrink());
+        }),
+      );
+}
+
+/// The surface of a photo panel, under a [PanelTheme]: the pale tint, rounded, lifted off the page by a soft shadow
+/// and a thin edge. A [photo] fills the trailing [PanelSurface.photoShare] at full height and fades into the tint toward
+/// the words, so text sits on the tint or the faintest part of the fade. [below] is a full-width part under the
+/// photograph, where it fades out downward too.
+class PanelSurface extends StatelessWidget {
+  const PanelSurface({super.key, required this.child, this.photo, this.below = const [], this.padding = const EdgeInsets.fromLTRB(18, 16, 16, 16)});
+  final Widget child;
+  final Widget? photo;
+  final List<Widget> below;
+  final EdgeInsets padding;
+
+  /// How much of the panel's width the photograph takes, at its trailing side.
+  static const photoShare = 0.5;
+
+  /// The words' share of the content width beside a photograph (the button row may reach further).
+  static const wordsShare = 1 - photoShare * 0.6;
+
+  static Widget _fade(Widget child, {required Alignment to, List<double> stops = const [0, 0.35, 0.65, 0.92]}) => ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (r) => LinearGradient(begin: -to, end: to, stops: stops, colors: const [Color(0x00000000), Color(0x24000000), Color(0xA6000000), Color(0xFF000000)]).createShader(r),
+        child: child,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final radius = BorderRadius.circular(Radii.panel);
+    var picture = photo;
+    if (picture != null) {
+      picture = _fade(picture, to: Alignment.centerRight);
+      if (below.isNotEmpty) picture = _fade(picture, to: Alignment.topCenter, stops: const [0, 0.15, 0.35, 0.5]);
+    }
+    return Container(
+      decoration: BoxDecoration(color: c.page, borderRadius: radius, boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 6))]),
+      foregroundDecoration: BoxDecoration(borderRadius: radius, border: Border.all(color: c.text.withValues(alpha: 0.08))),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          Stack(children: [
+            if (picture != null) Positioned.fill(child: Align(alignment: Alignment.centerRight, child: FractionallySizedBox(widthFactor: photoShare, child: picture))),
+            Padding(padding: below.isEmpty ? padding : padding.copyWith(bottom: 10), child: child),
+          ]),
+          if (below.isNotEmpty)
+            Padding(padding: EdgeInsets.fromLTRB(padding.left, 0, padding.right, 12), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: below)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// A summary panel in the approved Today look, for the top of a screen (the plan, progress, the day's food, an exercise,
+/// a run, a food being logged): [content] (the words: a label, a serif title or figure, quiet lines) keeps to the side
+/// the photograph has faded out of, then [actions] (a deep button and a quiet link) run under it. Both are built under
+/// the panel's [PanelTheme], so build their styles from the context they are given. With large text the photograph
+/// gives its room to the words. Use it for one summary per screen, not for list rows.
+///
+///     PhotoPanel(photo: 'assets/images/workout-hero.webp', content: (context) => [Overline('Plan'), Text(name, style: context.pageTitleStyle(32))])
+class PhotoPanel extends StatelessWidget {
+  const PhotoPanel({super.key, required this.content, this.actions, this.photo, this.photoAlignment = Alignment.center, this.photoKey});
+  final List<Widget> Function(BuildContext context) content;
+  final List<Widget> Function(BuildContext context)? actions;
+  final String? photo;
+  final Alignment photoAlignment;
+  final Key? photoKey;
+
+  @override
+  Widget build(BuildContext context) => PanelTheme(
+        child: Builder(builder: (context) {
+          final pictured = photo != null && MediaQuery.textScalerOf(context).scale(10) <= 13;
+          final buttons = actions?.call(context) ?? const <Widget>[];
+          return PanelSurface(
+            photo: pictured ? PanelPhoto(photo!, key: photoKey, alignment: photoAlignment) : null,
+            child: LayoutBuilder(
+              builder: (context, box) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: pictured ? box.maxWidth * PanelSurface.wordsShare : box.maxWidth),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: content(context)),
+                ),
+                if (buttons.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: buttons),
+                ],
+              ]),
+            ),
+          );
+        }),
+      );
+}
+
+/// The quiet link beside a panel's button ("Details ›", "Journal ›"); [said] is what a screen reader hears.
+/// [background] backs it when it sits on a scene (History beside Today's Run tile).
+class QuietLink extends StatelessWidget {
+  const QuietLink(this.text, {super.key, required this.onPressed, this.said, this.background});
+  final String text;
+  final String? said;
+  final VoidCallback? onPressed;
+  final Color? background;
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+        onPressed: onPressed, style: background == null ? null : TextButton.styleFrom(backgroundColor: background),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(text, semanticsLabel: said)), const SizedBox(width: 2), const Icon(Icons.chevron_right, size: 20)]),
+      );
 }
 
 /// A raised card on the page.

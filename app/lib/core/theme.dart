@@ -17,7 +17,41 @@ enum Accent {
 class GoColors extends ThemeExtension<GoColors> {
   const GoColors({required this.page, required this.surface, required this.sunken, required this.text, required this.secondary, required this.divider,
       required this.outline, required this.accent, required this.onAccent, required this.accentSoft, required this.success, required this.warning, required this.error,
-      required this.raised, required this.scrim});
+      required this.raised, required this.scrim, required this.accentDeep, required this.onAccentDeep, required this.tint, required this.hue, this.highContrast = false});
+
+  /// The filled button: a deep shade of the accent with a light label, the same in Light and Dark (the approved Today
+  /// panels' button, used app-wide).
+  final Color accentDeep, onAccentDeep;
+
+  /// The pale accent tint of the photo panels, also the fill of a chosen segment or chip (with [GoColors.panelOf]'s
+  /// ink on it).
+  final Color tint;
+
+  /// Which accent and contrast these colours were made for, so a panel palette can be derived from them anywhere.
+  final Accent hue;
+  final bool highContrast;
+
+  /// Per accent: the pale panel tint, the panel's badge/track tint, the deep button colour and the panel's ink.
+  static (int tint, int soft, int deep, int ink) _panel(Accent a) => switch (a) {
+        Accent.green => (0xFFD4ECDD, 0xFFBADFC8, 0xFF143B2C, 0xFF0E1C17),
+        Accent.blue => (0xFFD8E4F1, 0xFFBDD0E6, 0xFF173554, 0xFF0E1724),
+        Accent.pink => (0xFFF2DCE6, 0xFFE6C3D3, 0xFF4F1E37, 0xFF20111A),
+      };
+
+  /// The photo panels' palette: the pale tint with dark ink and the deep button, the same in Light and Dark. Status
+  /// colours are Light's, which hold on the pale tint. Used under [PanelTheme] (widgets.dart).
+  static GoColors panelOf(GoColors from) {
+    final light = GoColors.of(from.hue, Brightness.light, highContrast: from.highContrast);
+    final (tint, soft, deep, ink) = _panel(from.hue);
+    final t = Color(tint), text = Color(ink), white = const Color(0xFFFFFFFF);
+    Color towardTint(double share) => Color.lerp(text, t, share)!;
+    final hc = from.highContrast;
+    return GoColors(
+        page: t, surface: Color.lerp(t, white, 0.5)!, raised: Color.lerp(t, white, 0.5)!, sunken: Color(soft),
+        text: text, secondary: towardTint(hc ? 0.12 : 0.3), divider: towardTint(hc ? 0.5 : 0.8), outline: towardTint(hc ? 0.3 : 0.5),
+        accent: Color(deep), onAccent: Color.lerp(white, t, 0.25)!, accentSoft: Color(soft), accentDeep: Color(deep), onAccentDeep: Color.lerp(white, t, 0.25)!, tint: t,
+        success: light.success, warning: light.warning, error: light.error, scrim: t.withValues(alpha: scrimOpacity), hue: from.hue, highContrast: hc);
+  }
 
   /// Page behind everything; raised cards; recessed fills (tracks, unselected segments, neutral icon tiles).
   /// Page and surface differ by a small step, so a card reads as raised before its thin border is noticed.
@@ -52,7 +86,9 @@ class GoColors extends ThemeExtension<GoColors> {
       (Accent.pink, true) => (0xFFF58CB9, 0xFF3D2033),
     };
     final page = Color(dark ? 0xFF16141A : 0xFFF5F2EE);
+    final (tint, _, deep, _) = _panel(accent);
     return GoColors(
+      accentDeep: Color(deep), onAccentDeep: Color.lerp(const Color(0xFFFFFFFF), Color(tint), 0.25)!, tint: Color(tint), hue: accent, highContrast: highContrast,
       page: page,
       surface: Color(dark ? 0xFF1F1C24 : 0xFFFCFBF9),
       sunken: Color(dark ? 0xFF2C2832 : 0xFFEAE5DF),
@@ -88,7 +124,9 @@ class GoColors extends ThemeExtension<GoColors> {
         page: f(page, other.page), surface: f(surface, other.surface), sunken: f(sunken, other.sunken), text: f(text, other.text),
         secondary: f(secondary, other.secondary), divider: f(divider, other.divider), outline: f(outline, other.outline), accent: f(accent, other.accent),
         onAccent: f(onAccent, other.onAccent), accentSoft: f(accentSoft, other.accentSoft), success: f(success, other.success),
-        warning: f(warning, other.warning), error: f(error, other.error), raised: f(raised, other.raised), scrim: f(scrim, other.scrim));
+        warning: f(warning, other.warning), error: f(error, other.error), raised: f(raised, other.raised), scrim: f(scrim, other.scrim),
+        accentDeep: f(accentDeep, other.accentDeep), onAccentDeep: f(onAccentDeep, other.onAccentDeep), tint: f(tint, other.tint), hue: t < 0.5 ? hue : other.hue,
+        highContrast: t < 0.5 ? highContrast : other.highContrast);
   }
 }
 
@@ -200,9 +238,11 @@ ThemeData goThemeOf(GoColors c, Brightness brightness) {
       border: border(c.outline), enabledBorder: border(c.outline), focusedBorder: border(c.accent, 2), errorBorder: border(c.error), focusedErrorBorder: border(c.error, 2),
     ),
     filledButtonTheme: FilledButtonThemeData(
+        // Deep accent with a light label in both modes; on a dark page a thin accent edge keeps its shape visible.
         style: FilledButton.styleFrom(
-            backgroundColor: c.accent, foregroundColor: c.onAccent, disabledBackgroundColor: c.sunken, disabledForegroundColor: c.secondary,
-            minimumSize: const Size(64, Targets.primary), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), shape: button,
+            backgroundColor: c.accentDeep, foregroundColor: c.onAccentDeep, disabledBackgroundColor: c.sunken, disabledForegroundColor: c.secondary,
+            minimumSize: const Size(64, Targets.primary), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            shape: dark ? button.copyWith(side: BorderSide(color: c.accent.withValues(alpha: 0.55))) : button,
             textStyle: const TextStyle(fontFamily: sans, fontSize: 16.5, fontWeight: FontWeight.w600))),
     outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(

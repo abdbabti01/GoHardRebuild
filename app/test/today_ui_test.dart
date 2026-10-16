@@ -203,7 +203,7 @@ void main() {
       expect(find.text('RECORDED TODAY'), findsOneWidget);
 
       // Details is the quiet way to the existing workout sheet, where the exercises are (opened in the native journey).
-      expect(tester.widget<TextButton>(find.byKey(const Key('today-details'))).onPressed, isNotNull);
+      expect(tester.widget<TextButton>(find.descendant(of: find.byKey(const Key('today-details')), matching: find.byType(TextButton))).onPressed, isNotNull);
       expect(find.widgetWithText(TextButton, 'Details'), findsOneWidget);
     });
 
