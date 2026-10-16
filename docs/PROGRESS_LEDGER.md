@@ -1033,3 +1033,56 @@ API (it searches Halifax) and passed there three times; against the recordings i
 Commit `138daa8` pushed to `feature/coach-companion` (main untouched). CI `ci` run 63: success (api, app). Unsigned IPA
 `ios-unsigned-ipa.yml` dispatched on the branch: run 19 success, artifact `GoHard-Dev-unsigned-ipa` (12,353,059 bytes,
 expires 30 Oct 2026). A successful iOS build says nothing about iPhone smoothness or battery.
+
+## 16 October 2026 (evening) — the coach speaks through attached bubbles (branch `feature/coach-companion`, continued)
+
+What changed (docs/COACH.md › Companion): one recognisable guide who speaks through an attached speech bubble of
+native text. Today: the guide peeks in from the right edge, nods, and its bubble says "Good evening, Babti!" with
+Today's factual line (or "Need a hand with today?") ending in "Ask me ›"; no second Ask GoHard beside the title while
+it speaks; × hides guide and bubble for the day and Ask GoHard returns to the title row. Elsewhere, shared pieces in
+`coach_bubble.dart` (CoachSay, CoachBubble, CoachSpeaker, CoachSpot, CoachHelpEntry; one open bubble at a time; a help
+sheet for focused activities) speak on Train without a plan, the builder's three steps (Compare splits on the split
+step), the exercise sets sheet (About this exercise), food search, food portions, nutrition goals and Appearance, and
+as user-opened sheets while recording sets or a run. CoachHint is gone (replaced). Introductions are once per account
+(`owner|context`), only when really in view; manual help works with Coaching hints off; Today's greeting is governed by
+Show coach on Today (no longer by hints). Requested help appears settled; introductions arrive with the guide and are
+announced once. Nothing shown calls the AI; food, goals, appearance and runs have no Ask me (outside the coach server
+contract). Kept the existing renderer (the skinned mesh) — no new library.
+
+Found and fixed while building (all with tests): an introduction would have been marked seen on a hidden tab (the
+shell builds every tab; now TickerMode must be on); inside a Scaffold the keyboard inset is stripped from MediaQuery,
+so "no keyboard" was always true (now the view's inset; the old hint had the same flaw); an introduction blocked by
+the keyboard no longer pops in as it closes; AnimatedSize with no duration under Reduce Motion; CoachSpot cleanup after
+the provider container was gone; the food search introduction moved under the field (it pushed the field off short
+screens) and steps aside while typing.
+
+Independent visual and interaction review (read-only agent, 12 findings, none blocking): applied — Train's duplicate
+"Guide me" removed (Create my plan is just above), help copy shortened to 1–2 sentences, the help entry dims and says
+"expanded" while its bubble is open (one character on screen), requested help shown settled and tappable at once,
+Today's tail anchored to the bubble's foot (tracks the face when the bubble grows), "Ask me ›" read cleanly (no
+glyph), live-region announcement only for introductions and nothing in the semantics tree before the bubble arrives,
+the sets sheet's extra caption removed, button row aligned with the words, one "Ask me" look, the coach render now
+shows the close button. Not applied: 4 px more header padding (nutrition-on-first-screen has 1 px to spare).
+
+Deliberate trade-off for review: Today's header is about 30 px taller than the one-line greeting. At 390 × 844 the
+three sections and the nutrition label still start on the first screen; the Run button (tallest state) and Log food
+(quiet day) are now a short scroll away. today_ui_test records this (the old "actions on the first screen" checks
+became "sections start on the first screen"), and weather_contrast_test's header band is 71–290 px (was 71–201).
+
+Tests: 478 app tests (coach_avatar_test 15, coach_companion_test 16, new builder and food coach tests). Renders
+regenerated: `six themes: today`, `six themes: coach`, Today states, large text, weather scenes (`docs/evidence/design/`;
+unrelated renders restored to `main`).
+
+Real app on the emulator (`emulator-5554`, Android x86_64, debug build, local API with live Open-Meteo, Halifax clear
+night), `journey_companion_test` (rewritten; not in the default run), recordings `docs/evidence/recordings/coach-*.mp4`
+(the previous `companion-*.mp4` replaced): `today-leon` (peek, nod, bubble arriving as it settles, acknowledgement),
+`scroll-return` (scroll, tabs, real Home and relaunch: no replay; the sky moving), `split-help` (Train's introduction,
+the split step's introduction, Compare splits), `exercise-help` (help in the sets sheet appears settled, the entry dims,
+About this exercise, the typed 5 kept), `food-portion` (search introduction under the field, gone when typing; the
+portion guidance on eggs), `hide-today` (bubble fades, guide tucks, plain greeting and one Ask GoHard), `hints-off`
+(Nutrition goals: nothing by itself, help on request), `today-leona`, `reduced` (settled portrait and bubble at once).
+Inspected frame by frame: no clipping or snapping; the round portrait's backdrop shows for a moment before the guide
+peeks into it (reads as the window it appears in; left as is). Green outlines and crosshairs are the harness's tap
+highlights. The journey's own assertions passed (bubble present, no second Ask, hidden for today, hints off).
+
+Not measured: frame timing and battery (no physical device; no profile mode on the x86 emulator).
