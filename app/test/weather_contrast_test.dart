@@ -25,8 +25,8 @@ void main() {
   }
 
   // Today's header on a 390 × 844 phone with a 47 px status bar: 200 px from the top edge, its date, title and
-  // greeting at 71–197 px (24 px of open scene below the status bar; checked in today_ui_test).
-  const status = 47, height = 200, textTop = 71, textBottom = 197;
+  // greeting and its summary line at 71–201 px (24 px of open scene below the status bar; checked in today_ui_test).
+  const status = 47, height = 210, textTop = 71, textBottom = 201;
   // The rows the status-bar icons occupy: the veil's solid part.
   final iconBottom = (status * StatusBarVeil.solid).floor();
   final keys = ['dusk', for (final f in weatherFamilies) ...['$f-day', '$f-night', '$f-neutral']];

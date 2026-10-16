@@ -12,8 +12,10 @@ import '../../data/models.dart';
 import '../plans/builder/workout_editor.dart' show rxText;
 import '../plans/plan_draft.dart';
 import 'coach_avatar.dart';
+import 'coach_companion.dart';
 import 'coach_client.dart';
 import 'coach_contract.dart';
+import 'coach_prefs.dart';
 import 'coach_proposal.dart';
 
 // ------------------------------------------------------------------ reviewed content (Quick guide, sources)
@@ -209,7 +211,13 @@ class _AskScreenState extends ConsumerState<AskScreen> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
                 Row(children: [
-                  const CoachAvatar(size: 40),
+                  // Attentive only while a question is really waiting; an answer, an error, Cancel or a timeout ends it.
+                  ClipOval(
+                    child: ColoredBox(
+                      color: context.c.sunken,
+                      child: CoachCompanion(key: const Key('ask-companion'), guide: ref.watch(coachPrefsProvider.select((p) => p.guide)), size: const Size.square(48), attentive: s.sending),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

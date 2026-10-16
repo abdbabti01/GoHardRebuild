@@ -340,6 +340,17 @@ class _CoachSection extends ConsumerWidget {
         ...[cards[0], const SizedBox(height: 10), cards[1]],
       const SizedBox(height: 14),
       GroupCard(children: [
+        // The companion beside Today's greeting. Off, Ask GoHard and the Quick guide stay exactly where they are.
+        MergeSemantics(
+          child: GroupRow(
+            key: const Key('coach-on-today'), icon: Icons.waving_hand_outlined, title: 'Show coach on Today',
+            subtitle: coach.onToday ? '${coach.guide.label} beside your greeting.' : 'Off. Ask GoHard stays on Today.',
+            trailing: Switch(value: coach.onToday, onChanged: (on) {
+              Haptics.selection();
+              set.setOnToday(on);
+            }),
+          ),
+        ),
         MergeSemantics(
           child: GroupRow(
             key: const Key('coach-hints'), icon: Icons.lightbulb_outline, title: 'Coaching hints',

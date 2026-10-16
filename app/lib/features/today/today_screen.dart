@@ -14,6 +14,9 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../activity/activity_screens.dart';
 import '../activity/run_tracking.dart';
+import '../coach/coach_companion.dart';
+import '../coach/coach_contract.dart';
+import '../coach/coach_prefs.dart';
 import '../nutrition/food_form.dart';
 import '../nutrition/nutrition_surface.dart';
 import '../plans/builder/plan_builder_screen.dart';
@@ -29,6 +32,7 @@ import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import '../workout/workout_runtime.dart';
 import 'daily.dart';
+import 'today_greeting.dart';
 
 /// The three photographs of Today. They are bundled decoration made for this app: not the user's workout, not a
 /// route, not a meal anyone logged. Screen readers never hear about them, and a missing file leaves a plain panel.
@@ -129,31 +133,110 @@ class _Surface extends StatelessWidget {
 /// page, as chosen in Appearance) that fills the tab behind it. Only the scene reads the weather; it repaints alone,
 /// so a new scene never rebuilds, moves or resets anything here. The header's own scrim keeps its lines readable over
 /// every scene.
-class _Header extends ConsumerWidget {
+///
+/// Leon or Leona peeks in at the right edge beside the greeting (docs/COACH.md › Companion), in a slot the greeting
+/// and the sky line leave free, so it never covers text or a control. It is part of this header: it scrolls away with
+/// it and is never over the sections, a form or the navigation. Narrow phones and large text drop it before any words.
+class _Header extends ConsumerStatefulWidget {
   const _Header({required this.day});
   final String day;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Header> createState() => _HeaderState();
+}
+
+class _HeaderState extends ConsumerState<_Header> {
+  int _ack = 0;
+  bool _leaving = false;
+
+  /// The companion's slot at this width and text size, or null where it would crowd the words. Shorter when there is
+  /// no sky line, so it never makes the header taller than its lines.
+  static Size? _slot(BuildContext context, {required bool skyLine}) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width < 340 || MediaQuery.textScalerOf(context).scale(10) > 13) return null;
+    return width < 380 ? Size(80, skyLine ? 100 : 84) : Size(92, skyLine ? 112 : 90);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final day = widget.day;
     final scene = ref.watch(todaySceneProvider);
     final appearance = ref.watch(appearanceProvider);
+    final coach = ref.watch(coachPrefsProvider);
+    final prefs = ref.read(coachPrefsProvider.notifier);
+    final owner = ref.watch(ownerProvider) ?? '';
+    final saved = ref.watch(workoutSavedProvider);
+    final justSaved = saved != null && saved.day == day;
     // The header's text and scrim follow the sky, not the app's mode: light lines over a night, rain or storm sky
     // and dark lines over a daylight one, as in Apple Weather. Same accent; increased contrast respected.
     // Scenic and Plain are not weather: they keep the app's own mode.
     final sky = !scene.isWeather ? Theme.of(context).brightness : scene.dark ? Brightness.dark : Brightness.light;
+    final slot = coach.onToday && !coach.hiddenOn(owner, day) ? _slot(context, skyLine: scene.isWeather || scene.fallback != null) : null;
+    if (slot != null && justSaved && !saved.played && (ModalRoute.isCurrentOf(context) ?? true) && TickerMode.valuesOf(context).enabled) {
+      // The finish this session, acknowledged once, when Today is in view again.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(workoutSavedProvider.notifier).played();
+        setState(() => _ack++);
+      });
+    }
+    // While a workout or a run is open the companion stays quiet: no greeting, just the portrait.
+    final busy = (ref.watch(dailySnapshotProvider)?.inProgress.isNotEmpty ?? false) || (ref.watch(runsProvider).value ?? const []).any((r) => r.value.isOpen);
     return Theme(
       key: const Key('today-header'),
       data: goTheme(appearance.accent, sky, highContrast: MediaQuery.highContrastOf(context)),
-      child: Builder(
-        builder: (context) => Padding(
-          // The scene runs to the top edge, behind the status bar; the lines start below it.
-          padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 8),
-          child: TabHeader(
-            title: 'Today', overline: longDate(day), onBackdrop: true,
-            below: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_Greeting(), _SkyLine()]),
+      child: Builder(builder: (context) {
+        // The text keeps clear of the slot, which runs to the screen's edge (past the header's inset).
+        final reserve = slot == null ? 0.0 : slot.width - context.inset + 4;
+        return Stack(children: [
+          Padding(
+            // The scene runs to the top edge, behind the status bar; the lines start below it.
+            padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 8),
+            child: TabHeader(
+              title: 'Today', overline: longDate(day), onBackdrop: true, trailing: const _AskButton(),
+              below: Padding(
+                padding: EdgeInsets.only(right: reserve),
+                // Tall enough that the portrait, aligned to the bottom, rises no further than the free lower right of
+                // the title row, under Ask GoHard and the mark.
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: slot == null ? 0 : slot.height - 44),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_Greeting(companion: slot != null, justSaved: justSaved), const _SkyLine()]),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+          if (slot != null)
+            Positioned(
+              right: 0, bottom: 0, width: slot.width, height: slot.height,
+              child: GestureDetector(
+                key: const Key('today-coach'),
+                behavior: HitTestBehavior.opaque,
+                excludeFromSemantics: true, // decorative: screen readers never stop on it
+                onTap: () => setState(() => _ack++), // a short acknowledgement, nothing else
+                child: CoachCompanion(
+                  guide: coach.guide, size: slot, ack: _ack, leaving: _leaving,
+                  greet: !busy && coach.mayGreet(owner, day),
+                  onGreeted: () => prefs.markGreeted(owner, day), // after the frame, so not through ref
+                  onLeft: () {
+                    if (!mounted) return;
+                    ref.read(coachPrefsProvider.notifier).hideToday(owner, day);
+                    setState(() => _leaving = false);
+                  },
+                  // Bottom left, on the faded shoulder: clear of the face and of Ask GoHard above.
+                  control: IconButton(
+                    key: const Key('today-coach-hide'),
+                    tooltip: 'Hide coach for today',
+                    onPressed: _leaving ? null : () => setState(() => _leaving = true),
+                    icon: DecoratedBox(
+                      decoration: BoxDecoration(color: context.c.scrim, shape: BoxShape.circle),
+                      child: Padding(padding: const EdgeInsets.all(3), child: Icon(Icons.close_rounded, size: 14, color: context.c.secondary)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ]);
+      }),
     );
   }
 }
@@ -209,25 +292,60 @@ class _SkyLine extends ConsumerWidget {
   }
 }
 
-/// "Good evening, Alex": the phone's local time and the first word of the name on the profile. Without a name it
-/// is just the greeting. It is worked out when Today is built, which is often enough for a part of the day.
+/// "Good evening, Alex. Upper body is planned today.": the phone's local time, the first word of the name on the
+/// profile and one factual line from Today's own projection (today_greeting.dart), worked out on the phone; opening
+/// Today never asks the AI. Without the companion the round time-of-day icon stands where it was.
 class _Greeting extends ConsumerWidget {
-  const _Greeting();
+  const _Greeting({required this.companion, required this.justSaved});
+  final bool companion, justSaved;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hour = ref.watch(clockProvider).utcNow().toLocal().hour;
-    final (words, icon) = hour >= 5 && hour < 12
-        ? ('Good morning', Icons.wb_sunny_outlined)
-        : hour >= 12 && hour < 18
-            ? ('Good afternoon', Icons.wb_sunny_outlined)
-            : ('Good evening', Icons.nightlight_outlined);
-    final name = (ref.watch(profileProvider).value?.j['displayName'] as String? ?? '').trim().split(RegExp(r'\s+')).first;
+    final words = partOfDay(hour);
+    final name = firstName(ref.watch(profileProvider).value?.j['displayName'] as String?);
+    final snapshot = ref.watch(dailySnapshotProvider);
+    // At large text the workout module below already says it; the greeting stays one line so the day starts sooner.
+    final line = snapshot == null || MediaQuery.textScalerOf(context).scale(10) > 13 ? null : todayLine(snapshot, ref.watch(workoutListProvider), justSaved: justSaved);
+    final text = MergeSemantics(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(name == null ? words : '$words, $name', key: const Key('today-greeting'), style: context.sansStyle(18, weight: FontWeight.w500)),
+        if (line != null) Text(line, key: const Key('today-greeting-line'), style: context.sansStyle(15, color: context.c.text)),
+      ]),
+    );
+    if (companion) return text;
     return Row(children: [
-      IconTile(icon, size: 40, circle: true),
+      IconTile(hour >= 5 && hour < 18 ? Icons.wb_sunny_outlined : Icons.nightlight_outlined, size: 40, circle: true),
       const SizedBox(width: 14),
-      Expanded(child: Text(name.isEmpty ? words : '$words, $name', key: const Key('today-greeting'), style: context.sansStyle(18, weight: FontWeight.w500))),
+      Expanded(child: text),
     ]);
+  }
+}
+
+/// Ask GoHard in Today's title row, always there: with the companion, without it and when it is hidden for the day.
+/// Named where there is room, an icon with the same name at large text or on a narrow phone. Opening it sends nothing.
+class _AskButton extends StatelessWidget {
+  const _AskButton();
+
+  @override
+  Widget build(BuildContext context) {
+    void open() => openAskGoHard(context, const CoachContext(label: 'Your training'));
+    final icon = Icon(Icons.chat_bubble_outline_rounded, size: 20, color: context.c.text);
+    final scaler = MediaQuery.textScalerOf(context);
+    double width(String text, TextStyle style, TextScaler s) => (TextPainter(text: TextSpan(text: text, style: style), textDirection: TextDirection.ltr, textScaler: s)..layout()).width;
+    // The name only while "Today" keeps its one line beside it and the mark: title + button + mark + gaps.
+    final label = context.sansStyle(15, weight: FontWeight.w600);
+    final room = MediaQuery.sizeOf(context).width - 2 * context.inset - width('Today', context.pageTitleStyle(44), scaler.clamp(maxScaleFactor: 1.3)) - 60 - 16;
+    if (scaler.scale(10) > 13 || width('Ask GoHard', label, scaler) + 48 > room) {
+      return IconButton(key: const Key('today-ask'), tooltip: 'Ask GoHard', onPressed: open, icon: icon);
+    }
+    return TextButton.icon(
+      key: const Key('today-ask'),
+      style: TextButton.styleFrom(foregroundColor: context.c.text, minimumSize: const Size(Targets.minimum, Targets.minimum), padding: const EdgeInsets.symmetric(horizontal: 10)),
+      onPressed: open,
+      icon: icon,
+      label: Text('Ask GoHard', style: label),
+    );
   }
 }
 

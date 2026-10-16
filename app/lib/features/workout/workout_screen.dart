@@ -10,6 +10,7 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../coach/coach_prefs.dart' show workoutSavedProvider;
 import '../plans/plan_progress.dart';
 import 'progress.dart';
 import 'result_rules.dart';
@@ -235,7 +236,11 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
     try {
       _closed = true; // the runtime is removed with the finish; nothing may write it back
       ScaffoldMessenger.of(context).clearSnackBars(); // a lingering Undo must not cover the result's Done action
+      // Read before the await: the screen may be gone when the finish returns.
+      final cue = ref.read(workoutSavedProvider.notifier), today = ref.read(todayKeyProvider);
       await _repo.finish(workout);
+      // Saved with training in it: Today's companion acknowledges this one finish, once (docs/COACH.md › Companion).
+      if (!noData) cue.saved(workout.id, today);
       if (mounted) await Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => WorkoutDetailScreen(workoutId: workout.id, justFinished: true)));
     } on LocalSaveFailure {
       _closed = false;

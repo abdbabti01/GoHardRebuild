@@ -131,10 +131,10 @@ void main() {
     // One veil behind the status bar, over every tab.
     expect(tester.getRect(find.byType(StatusBarVeil)), const Rect.fromLTWH(0, 0, 390, 47));
     expect(tester.getRect(find.byType(TodayBackdrop)), screen, reason: 'top edge to bottom edge, under the navigation bar too');
-    // weather_contrast_test measures the header's text band at 71–197 px; this keeps the two in step.
+    // weather_contrast_test measures the header's text band at 71–201 px; this keeps the two in step.
     final lines = tester.getRect(find.byType(TabHeader));
     expect(lines.top, top + 24);
-    expect(lines.bottom, lessThanOrEqualTo(197));
+    expect(lines.bottom, lessThanOrEqualTo(201)); // 197 before the greeting gained its one summary line
 
     // Every section sits on the one surface, below the header; nothing of the day is drawn on the scene itself.
     final surface = find.byKey(const Key('today-surface'));

@@ -14,6 +14,7 @@ import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
 import 'package:gohard_rebuild/features/coach/ask_screen.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
+import 'package:gohard_rebuild/features/coach/coach_companion.dart';
 import 'package:gohard_rebuild/features/coach/coach_contract.dart';
 import 'package:gohard_rebuild/features/coach/coach_proposal.dart';
 import 'package:gohard_rebuild/features/plans/plan_draft.dart';
@@ -351,6 +352,47 @@ void main() {
     expect((one!['messages'] as List), isEmpty, reason: 'the answer belongs to no one now');
     expect(((two?['messages'] as List?) ?? const []), isEmpty);
     expect(find.bySemanticsLabel('You asked: Slow question'), findsNothing, reason: 'the next owner sees none of it');
+  });
+
+  testWidgets('the companion is attentive only while a question is really waiting: an answer, a failure or Cancel ends it', (tester) async {
+    bool attentive() => tester.widget<CoachCompanion>(find.byKey(const Key('ask-companion'))).attentive;
+    // While waiting, the progress line animates (so no pumpAndSettle here); the companion itself reaches its pose and stops.
+    Future<void> send(String q) async {
+      await tester.enterText(find.byKey(const Key('ask-input')), q);
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('ask-send')));
+      for (var i = 0; i < 120; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+    }
+
+    await _launch(tester, install);
+    expect(attentive(), isFalse, reason: 'opening sends nothing, so nothing is pending');
+
+    install.coach.hold = Completer();
+    await send('First');
+    expect(attentive(), isTrue);
+    expect(tester.state<CoachCompanionState>(find.byKey(const Key('ask-companion'))).ticking, isFalse, reason: 'holds the pose without frames');
+    install.coach.hold!.complete();
+    install.coach.hold = null;
+    await _settle(tester);
+    expect(find.text('Answer 1'), findsOneWidget);
+    expect(attentive(), isFalse, reason: 'answered');
+
+    install.coach.replies.add((_) => const ApiResponse(503, null));
+    await _ask(tester, 'Second');
+    expect(attentive(), isFalse, reason: 'failed: no pose pretends to wait');
+
+    await _key(tester, 'ask-edit');
+    install.coach.hold = Completer();
+    await send('Third');
+    expect(attentive(), isTrue);
+    await tester.tap(find.byKey(const Key('ask-cancel')));
+    await tester.pump();
+    expect(attentive(), isFalse, reason: 'cancelled');
+    install.coach.hold!.complete();
+    install.coach.hold = null;
+    await _settle(tester);
   });
 
   testWidgets('the conversation and unsent text survive closing, a restart and a theme change, and no other account sees them; Close returns to the same place', (tester) async {

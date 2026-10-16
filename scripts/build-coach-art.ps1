@@ -112,6 +112,9 @@ public static class CoachArt {
 foreach ($n in 'leon', 'leona') {
   $b = [CoachArt]::Load((Join-Path $src "$n-avatar.png"), 16)
   [CoachArt]::Resize($b, [Drawing.Rectangle]::new(0, 0, $b.Width, $b.Height), 192, 192, (Join-Path $out "$n-avatar.png"))
+  # The animated companion's texture (coach_rig.dart): the same square, larger, so a 112 px bust is sharp at 3.0x. Its
+  # landmarks (eyes, brows, neck pivot) are measured on the 1254 px source and kept as fractions, so any size works.
+  [CoachArt]::Resize($b, [Drawing.Rectangle]::new(0, 0, $b.Width, $b.Height), 400, 400, (Join-Path $out "$n-bust.png"))
   $b.Dispose()
 }
 

@@ -88,6 +88,8 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('draft')), 'Week 1 draft');
     await _openAppearance(tester);
+    await tester.ensureVisible(find.byKey(const Key('coach-leona')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('coach-leona')));
     await tester.pump();
     expect(container.read(coachPrefsProvider).guide, CoachGuide.leona);

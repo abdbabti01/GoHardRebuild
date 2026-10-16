@@ -24,6 +24,13 @@ same box). The concept boards themselves (their text, buttons and help strips) a
 The two full-body files also carry a faint warm-white rim just outside the alpha edge (2 px, 25% opacity, softened),
 added by the same script so the charcoal clothing keeps its outline on dark pages; the originals are unchanged.
 
+Update, 16 October 2026 (animated companion): `leon-bust.png` (255,942 bytes) and `leona-bust.png` (222,852 bytes),
+400 × 400, are the same two approved avatar sources resized by `scripts/build-coach-art.ps1` (alpha below 16 cleared,
+no rim) as textures for the companion rig (`features/coach/coach_rig.dart`, docs/COACH.md › Companion). No new artwork
+was drawn or downloaded: the motion is a mesh deformation of these pictures and painted eyelids in colours sampled from
+them. To regenerate: replace a source in `design/coach/assets/`, run the script, then re-measure the landmarks in
+`RigArt` (eyes, brows, neck pivot, as fractions of the source) and review `coach_rig_render_test.dart`'s frame strips.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",

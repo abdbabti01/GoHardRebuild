@@ -147,6 +147,53 @@ theme; the accent only colours controls and selected indicators. Coaching hints:
 once per flow until "Show coaching hints again"; "Coaching hints" off removes unsolicited hints, never manual help.
 No hint while recording sets, running, reviewing conflicts or reviewing a destructive change.
 
+### Companion (Today and Ask GoHard)
+
+The selected guide peeks into Today from the right screen edge beside the greeting: head and upper shoulders, mirrored
+so the face looks in towards the page, leaning around the edge, faded out over the shoulders (no cut torso). Slot
+92 × 112 at ≥ 380 px (80 × 100 below), 90/84 high when there is no sky line; none below 340 px or above 1.3× text,
+where the time-of-day icon returns. It sits in the header's own `Stack`, in space the greeting and sky line leave free
+(`_HeaderState` in `today_screen.dart`), so it scrolls with the header and is never over a section, form, keyboard or
+the navigation bar. The greeting is native text: "Good morning, Bob" plus at most one factual line from Today's own
+projection (`today_greeting.dart`: "<workout> is planned today.", "Your workout is ready to resume.", "A planned rest
+day today.", "Today's workout is skipped/done/saved.", "Your plan is paused today.", or after a finish this session
+"Your workout is saved. Nice work."; otherwise nothing). Worked out on the phone; opening Today never calls the AI and
+everything works offline. The line is dropped at large text (the module says the same). Ask GoHard is always in
+Today's title row (named where it fits beside "Today", an icon with the same name otherwise).
+
+**Rendering — why not Rive.** No Rive editor is available to author or maintain a `.riv` rig here, and the art is a
+painted raster, so a Rive file would be invented, not authored. Instead `coach_rig.dart` draws the approved bust
+(`assets/coach/<guide>-bust.png`, 400 px, from `design/coach/assets/<guide>-avatar.png` by `build-coach-art.ps1`) as a
+skinned mesh (`Canvas.drawVertices`, 18 × 18 grid over the texture): a head bone rotates and nods about the base of
+the skull with its weight easing to zero across the neck (no seam, no cut-out parts), two brow bones lift, breathing
+scales the bust from its bottom row, and painted eyelids (the fur's sampled colours, a soft lash line) close over the
+eyes for a blink or rise from below for the smile's squint. Landmarks are fractions of the 1254 px source (`RigArt`), so
+the texture size can change freely. `RigPortrait` is the only renderer entry point; a missing or unreadable texture
+shows the still round avatar, and the greeting text never waits for it. Frame strips of both guides:
+`flutter test test/coach_rig_render_test.dart --dart-define=GOHARD_RENDER=true` → `docs/evidence/coach/`.
+
+**Motion** (`coach_companion.dart`). Each pose value (slide, lean, tilt, nod, brow, smile, breath) is a damped spring,
+so any interruption — rapid taps, a guide switch, a theme change — continues from the pose on screen; cues replace each
+other's schedule and never stack. Entrance ≈ 450 ms with a hair of settle (slide ω 14, ζ 0.78); greeting: tilt towards
+the page and brows at 0.30 s, one nod 0.62–0.80 s, a blink at 1.05 s, settled at 1.55 s; gentle breathing and irregular
+blinks (2.5–6 s, sometimes double) until 7 s, then rest. At rest nothing ticks: a timer wakes it for a blink every
+7–16 s. Acknowledgement: smile squint, one nod, back after 1.1 s. Pending (Ask GoHard, only while a request is really
+in flight — `AskState.sending` — ending on answer, error, Cancel or timeout): head the other way, brows up, leaning in,
+held without frames; released with a brief smile. Exit ≈ 250 ms, no overshoot (ω 22, ζ 1). Blink: close 70 ms, hold
+30 ms, open 140 ms. It moves only while its tab is selected (`TickerMode`), its route is current, the app is in the
+foreground and the header is on screen; under Reduce Motion (the phone's or Me › Motion) it is a still settled
+portrait with no blink and the tuck is skipped. No speech, audio, microphone or haptics.
+
+**Presence rules** (`coach_prefs.dart`). Greets at most once per local day per account on this phone (`greeted` =
+`owner|day`), marked when it starts, so tab switches, rebuilds, scrolling, syncs, returning from the background and
+restarts never replay it; no greeting while coaching hints are off or a workout or run is open (just the portrait).
+A tap plays one acknowledgement. "Hide coach for today" (bottom left of the portrait) tucks it away until the next
+day (`hidden`); Ask GoHard stays. Me › Appearance › Show coach on Today turns it off entirely without touching Ask
+GoHard, the Quick guide or the guide choice. A finished workout with training in it is acknowledged once:
+`workoutSavedProvider` is set only by the finish's own success path (memory only, cleared with a new sign-in), Today
+plays it when next in view and marks it played. Elsewhere help stays in the existing Guide me / help placements; there
+is no floating assistant.
+
 ### Groq rate limits in practice (live, 15 Oct 2026)
 
 `openai/gpt-oss-120b` on this account's Groq plan allows 30 requests and 8K tokens a minute (console.groq.com/docs/

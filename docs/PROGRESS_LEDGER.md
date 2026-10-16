@@ -960,3 +960,72 @@ Railway; never seen here).** After `main` reached `1cdf1e0`, `/capabilities` dec
 
 IPA: run 17 (`1cdf1e0`) failed on GitHub's runner (timed out downloading the Flutter SDK, before any build step);
 run 18 from `95d5430` succeeded — the final client code (later commits change API, scripts and docs only).
+
+## 16 October 2026 — animated Leon/Leona companion (branch `feature/coach-companion`, from `main` at `dc8c967`)
+
+What changed (docs/COACH.md › Companion): Leon or Leona peeks into Today's header from the right edge beside the
+greeting (head and upper shoulders, mirrored to look in, leaning around the edge, faded over the shoulders), in a
+reserved slot of the header's own `Stack`; the greeting gained one factual line from Today's projection
+(`today_greeting.dart`, worked out on the phone); Ask GoHard moved into Today's title row and is always there; Me ›
+Appearance › Show coach on Today; Hide for today; once-a-day greeting per account; a finished workout acknowledged
+once; the Ask GoHard header portrait is attentive only while a request is in flight.
+
+Animation approach: **not Rive.** No Rive editor is available here to author or maintain a rig, and the approved art
+is a painted raster, so a `.riv` would have been invented. Instead a Flutter-native rig (`coach_rig.dart`): the
+approved avatar source drawn as a skinned mesh (`Canvas.drawVertices`, 18 × 18 grid) with a head bone (turn and nod
+on the neck, weights easing to zero, no seam), brow bones, breathing, and painted eyelids (blink, smile squint) in
+colours sampled from the fur; motion (`coach_companion.dart`) is a set of damped springs, so every interruption
+blends from the pose on screen. `RigPortrait` is the only renderer entry point (a Rive or other renderer can replace
+it behind the same pose). Assets: `leon-bust.png` 255,942 B, `leona-bust.png` 222,852 B (400 × 400, from the
+existing sources by `build-coach-art.ps1`; nothing new drawn or downloaded; regeneration in PROVENANCE.md).
+
+Pipeline proof first: `coach_rig_render_test.dart` frame strips of both guides — entrance, greeting tilt and brows,
+nod, blink, acknowledgement, exit — on a light and a dark sky (`docs/evidence/coach/companion-frames.png`). Test
+engine renders, not device captures.
+
+Tests: `coach_companion_test` (15), a new pending-pose test in `coach_ask_test` (19 total), updated `today_ui_test`
+and `weather_contrast_test` (the header text band is 71–201 px, was 197: the greeting's one summary line; the
+contrast check now covers it), `coach_avatar_test` (scrolls to the guide cards, which moved down by one row).
+`scripts\test.ps1`: API 184/184, app analysis clean, 470 app tests passed (before the review fixes; re-run below).
+
+Independent review (read-only agent): no high-severity findings; fixed — Reduce Motion switched on during the tuck
+never finished leaving (now leaves at once; test added), the tap target was an unlabelled semantics node (now
+excluded), `ref` read after an await in the workout finish, `onGreeted` through `ref` after the frame, a greeting
+could start while the header was built off screen (now measured first), attentive pose lost under Reduce Motion,
+per-frame `Vertices`/gradient objects (disposed / cached), the hide target clipped, and a latent ever-breathing loop.
+
+Real app on the emulator (`emulator-5554`, Android x86_64 image, debug build, local API with live Open-Meteo,
+Halifax clear night), `journey_companion_test` with `adb screenrecord` driven by GOHARD_REC markers (the
+`return` part presses Home for real and relaunches). Recordings in `docs/evidence/recordings/`:
+`companion-leon.mp4` (entrance ≈ 450 ms with a slight settle, greeting tilt, blink, a tap's acknowledgement),
+`companion-scroll.mp4` (the portrait scrolls away with the header; Train, Eat, Me and back show it settled at once,
+no replay; the night sky moving behind), `companion-return.mp4` (Home, launcher, relaunch: settled, no replay),
+`companion-leon-hide.mp4` (Hide for today: tucks away, the header reflows, Ask GoHard stays), `companion-leona.mp4`
+(the same for Leona; blinks visible mid-close), `companion-reduced.mp4` (Motion › Reduced: still portrait at once,
+hidden without the tuck). Inspected frame by frame (WinRT thumbnails): no seams, clipping or snapping; found and
+fixed from the footage — the hide × showed before the guide arrived and lingered after the tuck (it now fades with
+the guide), and the recorder lost the end of a part (padded). The green outline and crosshairs in the clips are the
+test harness's tap highlights, not app UI. Journey runs on the way: the first recorded only the integration-test
+placeholder (`convertFlutterSurfaceToImage` hides the live surface; the journey now reverts it), one had two
+recorders writing the same files (a stale watcher), the last two passed with all six parts recorded.
+
+Not measured: frame timing, raster cost beside the weather sky and battery. There is no physical device here and
+Flutter has no profile mode on the x86 emulator; nothing in this entry is a performance claim. Pending on a phone:
+`flutter run --profile` on Today with the weather sky and the companion greeting (DevTools frame chart, raster
+thread), VoiceOver/TalkBack by ear (the companion is excluded; the greeting reads as one line; Hide coach for today
+is a labelled button), and the art on a real screen.
+
+Final checks on the finished code: `scripts\test.ps1 -SkipApi` passed (analysis clean, 472 app tests; the API part,
+184/184, passed earlier the same evening and no API code changed). Render `six themes: today`, Today states, large
+text, narrow and all weather scenes regenerated (`docs/evidence/design/`, Today and Appearance renders only; the
+greeting now wraps at large text instead of being cut). Emulator journeys against the local API with recorded
+provider responses, one at a time (several attach hangs — "isolate taking unusually long" — were stopped and retried
+after an adb restart, and once after an emulator reboot; none reached an app step):
+journey_secondary, journey_more, journey_device (GPS run recovery), journey_upgrade, journey_coldstart,
+journey_offline, journey_food, journey_coach passed cleanly. journey_test passed every step on its second run; its
+first run failed once at the Me › Sign out tap right after a theme change (not reproduced; no companion involvement),
+and both of its runs ended with the driver's "Service has disappeared" after the test (the known harness issue; all
+steps passed). journey_plan: PLAN_RESULT. The first full pass also left the emulator offline after journey_plan's
+offline phase died in teardown, which made that pass's journey_coach fail at sign-up ("The server cannot be
+reached"); Wi-Fi and data were re-enabled and the re-run passed. journey_companion_test needs the live weather
+API (it searches Halifax) and passed there three times; against the recordings it cannot find the city.
