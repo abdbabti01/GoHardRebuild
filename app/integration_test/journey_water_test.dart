@@ -67,21 +67,22 @@ void main() {
       await j.settle(8);
       await j.shot('water-01-today-no-goals');
 
-      // --- Goals from Today: the shared form, empty, nothing suggested.
-      expect(find.text('Set daily goals'), findsWidgets);
+      // --- Goals in Eat (Today shows progress only): the shared form, empty.
+      expect(find.byKey(const Key('today-goals')), findsNothing);
+      await j.tapKey('nav-eat');
       // Right after sign-up the link waits (disabled) until the account's profile, which holds the goals, has arrived.
-      await j.waitUntil(() async => tester.widget<TextButton>(find.descendant(of: find.byKey(const Key('today-goals')), matching: find.byType(TextButton))).onPressed != null,
+      await j.waitUntil(() async => tester.widget<TextButton>(find.descendant(of: find.byKey(const Key('eat-goals')), matching: find.byType(TextButton))).onPressed != null,
           what: 'the profile to arrive so goals can be set');
-      await j.tapKey('today-goals');
+      await j.tapKey('eat-goals');
       await j.waitFor(find.byKey(const Key('goal-calories')), what: 'the goals sheet');
       expect(tester.widget<TextField>(find.byKey(const Key('goal-calories'))).controller!.text, isEmpty);
       await j.type('goal-calories', '2200');
       await j.type('goal-protein', '140');
       await j.shot('water-02-goals-sheet-keyboard');
       await j.tapKey('goal-save');
-      await j.waitFor(find.text('Edit goals'), what: 'Today offering Edit goals');
-      await j.tapKey('nav-eat');
-      await j.waitFor(find.text('Your daily goal: 2,200 kcal · 140 g protein'), what: 'Eat reading the same goals');
+      await j.waitFor(find.text('Edit goals'), what: 'Eat offering Edit goals');
+      await j.tapKey('nav-today');
+      await j.waitFor(find.text('Your daily goal: 2,200 kcal · 140 g protein'), what: 'Today reading the same goals');
       await j.tapKey('nav-me');
       await j.waitFor(find.text('2,200 kcal · 140 g protein'), what: 'Me reading the same goals');
       await j.tapKey('nav-today');
@@ -108,12 +109,17 @@ void main() {
       await j.tap(find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('water-delete-')).first);
       await j.waitUntil(() async => tester.widget<Text>(find.byKey(const Key('water-sheet-total'))).data == '250 mL', what: 'the removal');
 
-      // --- A water goal from the sheet: the same goals form, now with water.
-      await j.tapKey('water-goal');
-      await j.waitFor(find.byKey(const Key('goal-water')), what: 'the goals form with water');
-      await j.type('goal-water', '2000');
+      // --- A water goal in Eat: the same goals form, now with water and the suggested starting goal.
+      expect(find.byKey(const Key('water-goal')), findsNothing, reason: 'no goal shortcut in the water sheet');
+      await closeSheet();
+      await j.tapKey('nav-eat');
+      await top();
+      await j.tapKey('eat-goals');
+      await j.waitFor(find.byKey(const Key('water-suggestion')), what: 'the suggested starting goal');
+      await j.tapKey('water-suggestion-use');
       await j.tapKey('goal-save');
-      await j.waitFor(find.text('of 2 L'), what: 'the water goal on Today');
+      await j.tapKey('nav-today');
+      await j.waitFor(find.text('250 / 2,000 mL'), what: 'the water goal on Today');
       await top();
       await j.shot('water-04-today-water-goal');
 
@@ -177,9 +183,6 @@ void main() {
     await const MethodChannel('plugins.flutter.io/integration_test').invokeMethod<void>('revertFlutterImage');
     debugPrint('GOHARD_REC:start:goals-water');
     await watch(2000);
-    await j.tap(find.byKey(const Key('today-goals')));
-    await watch(2200);
-    await closeSheet();
     await watch(1500);
     await j.tap(find.byKey(const Key('water-quick-add')));
     await watch(1500);

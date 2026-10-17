@@ -1478,3 +1478,22 @@ only now.
 
 **Not verified:** a physical phone; VoiceOver/TalkBack by ear; the hosted API, which lacks `profile.tracking-display`
 until `main` is deployed (it already declares `water.entries`).
+
+### Same branch, follow-up: the water goal bar, a suggested starting water goal, goals only in Eat
+
+| Change | Where |
+|---|---|
+| Water drawn like the nutrition goals: "750 / 2,000 mL", a 6 px bar and the real share (full bar above the goal, "120%"); no bar or percentage without a goal; the chosen unit throughout (`VolumeUnit.format` no longer switches to litres; `number`, `progress`) | `nutrition/water.dart`, `nutrition_tools.dart` (`WaterRow`, `WaterGoalBar`, water sheet) |
+| Eat's goals form offers "Suggested starting goal: 2,000 mL daily." while no water goal is saved: Use fills the field only, info dialog (needs vary, other drinks count, only logged water is counted), blank keeps no goal, a saved goal is never replaced | `nutrition_tools.dart` (`GoalsEditor`) |
+| Goals set and edited only in Eat: Today's goals link and the water sheet's goal shortcut removed; Today keeps totals, progress, logging and Customize tracking | `today_screen.dart` (`NutritionTools(goals: false)`), `nutrition_tools.dart` |
+
+Storage, sync and validation unchanged (the same `setGoals` path and ranges).
+
+**Checks run:** `flutter analyze` clean; water_ui (new: above-goal bar and words, no bar or % without a goal; Today
+and its water sheet without goal shortcuts while logging and removal stay; the suggestion offered, info, skip saves no
+goal, Use then edit saves only what Save goals sends; an existing goal kept and no suggestion; fl oz suggestion), water
+(formatting and progress text), today_ui, eat_ui, me_ui, food_ui, widget, coach_companion, tracking_sync, theme, food:
+188 passing. Device: `journey_coach_tabs_test` extended (goals sheet with the suggestion, Use + Save, 500 mL, the bar on
+Eat and Today, no goals link on Today) passed after one retry (the first attempt failed to attach: "Service has
+disappeared"); captures `coach-tabs-09/10/11`; recording `coach-train-eat.mp4` refreshed. `journey_water_test` and
+`journey_water_demo_test` (not default) were updated to set goals in Eat but not rerun.

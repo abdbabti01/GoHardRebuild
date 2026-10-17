@@ -32,13 +32,18 @@ enum VolumeUnit {
   /// A typed amount in this unit as it is read back: whole millilitres, or ounces to one decimal.
   String amount(double v) => this == ml ? _grouped(v.round()) : _trim(v.toStringAsFixed(1));
 
-  /// "250 mL", "1.25 L", "8 fl oz". The total is converted once from the stored millilitres, never summed from
-  /// rounded figures.
-  String format(double ml) {
-    if (this == flOz) return '${_trim((ml / mlPerFlOz).toStringAsFixed(1))} fl oz';
-    if (ml >= 1000) return '${_trim((ml / 1000).toStringAsFixed(2))} L';
-    return '${_grouped(ml.round())} mL';
-  }
+  /// "250 mL", "2,000 mL", "8 fl oz": always the chosen unit, never switching to litres. The total is converted once
+  /// from the stored millilitres, never summed from rounded figures.
+  String format(double ml) => '${number(ml)} $short';
+
+  /// The figure alone, in this unit: "1,250" or "42.3".
+  String number(double ml) => this == flOz ? _trim((ml / mlPerFlOz).toStringAsFixed(1)) : _grouped(ml.round());
+
+  /// "750 / 2,000 mL": what was logged against the goal, the real amount also above it.
+  String progress(double ml, double goalMl) => '${number(ml)} / ${format(goalMl)}';
+
+  /// The general starting point offered when no water goal is set (never saved without the person choosing it).
+  static const suggestedGoalMl = 2000;
 
   /// "mL" or "fl oz", for a field's suffix.
   String get short => this == ml ? 'mL' : 'fl oz';

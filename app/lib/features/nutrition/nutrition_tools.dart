@@ -14,10 +14,12 @@ import 'water.dart';
 
 // ---------------------------------------------------------------------------- daily goals
 
-/// The one goals form, used by Me › Nutrition goals and by the sheet Today and Eat open. All of them read and write
-/// the profile's goals through [ProfileRepository.setGoals], with the same validation; fields start from the saved
-/// goals or empty, and the app never suggests or pre-fills a number. The water goal is shown (and sent) only while
-/// water tracking is on, so a form without it never clears it.
+/// The one goals form, used by Me › Nutrition goals and by the sheet Eat opens. All of them read and write the
+/// profile's goals through [ProfileRepository.setGoals], with the same validation; fields start from the saved goals
+/// or empty. No calorie or protein goal is ever suggested. For water, while no water goal is saved, a general starting
+/// point (2,000 mL) is offered: "Use it" only fills the field, nothing is saved until Save goals, and leaving the
+/// field blank keeps no goal. The water goal is shown (and sent) only while water tracking is on, so a form without it
+/// never clears it.
 class GoalsEditor extends ConsumerStatefulWidget {
   const GoalsEditor({super.key, required this.profile, required this.onSaved});
   final Profile profile;
@@ -33,6 +35,20 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
   late final _water = TextEditingController(text: switch (widget.profile.waterGoalMl) { final ml? => _unit.amount(_unit == VolumeUnit.ml ? ml.toDouble() : ml / VolumeUnit.mlPerFlOz), null => '' });
   String? _error;
   bool _busy = false;
+
+  /// "Use it" fills the field with the suggestion; until the field is typed in or saved, nothing is decided.
+  void _useSuggestion() => setState(() => _water.text = _unit.number(VolumeUnit.suggestedGoalMl.toDouble()).replaceAll(',', ''));
+
+  void _aboutSuggestion() => showDialog<void>(context: context, builder: (dialog) => AlertDialog(
+        key: const Key('water-suggestion-about'),
+        title: const Text('About the suggested water goal'),
+        content: Text(
+            '${_unit.format(VolumeUnit.suggestedGoalMl.toDouble())} a day is a general starting point, not a recommendation worked out for you. '
+            'How much someone needs varies with body size, activity, heat and health; if a condition or medicine affects how much you should drink, '
+            'follow your doctor\'s advice.\n\nOther drinks and food also contribute to hydration. GoHard counts only the water you log yourself, '
+            'so your total here is not everything you drank.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('OK'))],
+      ));
 
   @override
   void dispose() {
@@ -90,17 +106,45 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
         TextField(key: const Key('goal-water'), controller: _water, keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(labelText: 'Daily water', suffixText: _unit.short, hintText: 'No goal',
                 helperText: _unit == VolumeUnit.ml ? '100 to 10,000. Leave blank for no water goal.' : '3.4 to 338 (US fluid ounces). Leave blank for no water goal.')),
+        // Offered only while the account has no water goal; an existing goal is never replaced by it.
+        if (widget.profile.waterGoalMl == null)
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _water,
+            builder: (context, value, _) => value.text.trim().isNotEmpty
+                ? const SizedBox.shrink()
+                : Padding(
+                    key: const Key('water-suggestion'),
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text('Suggested starting goal: ${_unit.format(VolumeUnit.suggestedGoalMl.toDouble())} daily.', style: context.sansStyle(15, weight: FontWeight.w600)),
+                          ),
+                          Text('A general starting point; your needs may differ. Only water you log is counted.', style: context.caption),
+                          Transform.translate(
+                            offset: const Offset(-8, 0),
+                            child: TextButton(key: const Key('water-suggestion-use'), onPressed: _useSuggestion,
+                                child: Text('Use ${_unit.format(VolumeUnit.suggestedGoalMl.toDouble())}')),
+                          ),
+                        ]),
+                      ),
+                      IconButton(key: const Key('water-suggestion-info'), tooltip: 'About the suggested water goal', icon: const Icon(Icons.info_outline), onPressed: _aboutSuggestion),
+                    ]),
+                  ),
+          ),
       ],
       const SizedBox(height: 14),
       if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
       PrimaryButton('Save goals', key: const Key('goal-save'), busy: _busy, onPressed: _save),
       const SizedBox(height: 10),
-      Text('GoHard does not suggest a goal. If you are unsure what suits you, a dietitian or doctor can help.', style: context.caption),
+      Text('GoHard does not suggest a calorie or protein goal. If you are unsure what suits you, a dietitian or doctor can help.', style: context.caption),
     ]);
   }
 }
 
-/// Today's and Eat's way to the same goals: a compact sheet over the page. They repeat every day.
+/// Eat's way to the goals: a compact sheet over the page. They repeat every day. (Today shows progress only.)
 Future<void> showGoalsSheet(BuildContext context, WidgetRef ref) async {
   final profile = ref.read(profileProvider).value;
   if (profile == null) return;
@@ -113,8 +157,9 @@ Future<void> showGoalsSheet(BuildContext context, WidgetRef ref) async {
 
 // ---------------------------------------------------------------------------- water
 
-/// The day's water in one quiet line under the nutrition figures: a droplet, what was logged, the goal's bar only when
-/// a goal is set (full at the goal, the words keep the real amount), and an add button. Opens [showWaterSheet].
+/// The day's water under the nutrition figures, drawn like their goal bars: a droplet, "750 / 2,000 mL" and a bar with
+/// the real share when a goal is saved (the bar full at the goal, the words and the share keep the real amount above
+/// it); without a goal just the amount, with no bar or percentage. An add button. Opens [showWaterSheet].
 class WaterRow extends ConsumerWidget {
   const WaterRow({super.key, required this.day});
   final String day;
@@ -127,7 +172,7 @@ class WaterRow extends ConsumerWidget {
     final total = rows.hasValue ? waterTotal([for (final r in rows.value!) r.value]) : null;
     final goal = ref.watch(profileProvider).value?.waterGoalMl;
     final c = context.c;
-    final said = total == null ? 'Water, loading' : 'Water ${unit.format(total)}${goal == null ? '' : ' of ${unit.format(goal.toDouble())}'}';
+    final said = total == null ? 'Water, loading' : 'Water ${unit.format(total)}${goal == null ? '' : ' of ${unit.format(goal.toDouble())}, ${(total / goal * 100).round()} percent'}';
     return Semantics(
       container: true,
       child: Row(children: [
@@ -149,10 +194,9 @@ class WaterRow extends ConsumerWidget {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                         Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 6, children: [
                           Text('Water', style: context.sansStyle(15, weight: FontWeight.w600)),
-                          if (total != null) Text(unit.format(total), key: const Key('water-total'), style: context.numStyle(15)),
-                          if (goal != null) Text('of ${unit.format(goal.toDouble())}', style: context.sansStyle(14, color: c.secondary)),
+                          if (total != null) Text(goal == null ? unit.format(total) : unit.progress(total, goal.toDouble()), key: const Key('water-total'), style: context.numStyle(15)),
                         ]),
-                        if (goal != null && total != null) Padding(padding: const EdgeInsets.only(top: 5), child: ProgressRail(total / goal, label: 'Water goal', height: 5)),
+                        if (goal != null && total != null) Padding(padding: const EdgeInsets.only(top: 6), child: WaterGoalBar(total: total, goal: goal.toDouble())),
                       ]),
                     ),
                   ]),
@@ -165,6 +209,21 @@ class WaterRow extends ConsumerWidget {
       ]),
     );
   }
+}
+
+/// The water goal's bar and its real share ("38%", also "120%"), as the calorie and protein goal bars draw theirs.
+class WaterGoalBar extends StatelessWidget {
+  const WaterGoalBar({super.key, required this.total, required this.goal});
+  final double total, goal;
+
+  @override
+  Widget build(BuildContext context) => Row(key: const Key('water-goal-bar'), children: [
+        Expanded(child: ProgressRail(total / goal, label: 'Water goal', height: 6)),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 48),
+          child: Text('${(total / goal * 100).round()}%', textAlign: TextAlign.end, style: context.numStyle(13, color: context.c.secondary, weight: FontWeight.w500)),
+        ),
+      ]);
 }
 
 /// Logging water for [day] (pinned when the sheet opens): three quick amounts in the chosen unit, a custom amount,
@@ -244,12 +303,10 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
       Text(widget.day == today ? 'Today' : longDate(widget.day), style: context.caption),
       Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
         Text(unit.format(total), key: const Key('water-sheet-total'), style: context.pageTitleStyle(34)),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(goal == null ? 'No daily goal' : 'of ${unit.format(goal.toDouble())}', style: context.sansStyle(15, color: c.secondary)),
-        ),
+        if (goal != null)
+          Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('/ ${unit.format(goal.toDouble())}', style: context.sansStyle(15, color: c.secondary))),
       ]),
-      if (goal != null) Padding(padding: const EdgeInsets.only(top: 8), child: ProgressRail(total / goal, label: 'Water goal', height: 6)),
+      if (goal != null) Padding(padding: const EdgeInsets.only(top: 8), child: WaterGoalBar(total: total, goal: goal.toDouble())),
       const SizedBox(height: 18),
       Text('Add', style: context.label),
       const SizedBox(height: 8),
@@ -285,14 +342,8 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
             ),
         ]),
       ],
-      const SizedBox(height: 8),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: QuietLink(goal == null ? 'Set a water goal' : 'Edit water goal', key: const Key('water-goal'), onPressed: () {
-          Navigator.pop(context);
-          showGoalsSheet(context, ref);
-        }),
-      ),
+      // Logging, correcting and removing only: the water goal is set with the other goals, in Eat.
+      const SizedBox(height: 10),
       Text('Only water you log here is counted, not drinks or food.', style: context.caption),
     ]);
   }
@@ -368,10 +419,13 @@ class _TrackingSheet extends ConsumerWidget {
   }
 }
 
-/// The two quiet ways from a nutrition summary to its settings: the daily goals ("Set daily goals" while none is set,
-/// "Edit goals" once one is) and Customize tracking.
+/// The quiet ways from a nutrition summary to its settings: the daily goals ("Set daily goals" while none is set,
+/// "Edit goals" once one is; Eat only, [goals]) and Customize tracking.
 class NutritionTools extends ConsumerWidget {
-  const NutritionTools({super.key, this.keyPrefix = 'nutrition'});
+  const NutritionTools({super.key, this.keyPrefix = 'nutrition', this.goals = true});
+
+  /// Whether the goals link is offered here. Goals are set and edited in Eat; Today shows progress only.
+  final bool goals;
 
   /// Distinguishes Today's from Eat's when both are built (the tabs stay alive).
   final String keyPrefix;
@@ -384,7 +438,7 @@ class NutritionTools extends ConsumerWidget {
     return Row(children: [
       // The link takes all the room the icon does not, so large text wraps by words, never by letters.
       Expanded(
-        child: Align(
+        child: !goals ? const SizedBox.shrink() : Align(
           alignment: Alignment.centerLeft,
           child: QuietLink(hasGoal ? 'Edit goals' : 'Set daily goals', key: Key('$keyPrefix-goals'), said: hasGoal ? 'Edit daily goals' : 'Set daily goals',
               onPressed: p == null ? null : () => showGoalsSheet(context, ref)),

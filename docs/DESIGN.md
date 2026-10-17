@@ -246,17 +246,27 @@ uses the same dumbbells. No asset was added.
 
 ### Goals, water and Customize tracking (17 October 2026)
 
-- **Daily goals from Today and Eat.** The Nutrition summary on both ends with one quiet line: "Set daily goals" while
+- **Daily goals from Today and Eat** (Today's link removed later the same day; see "Goals belong to Eat"). The Nutrition summary on both ends with one quiet line: "Set daily goals" while
   no goal is set (also on a day with nothing logged), "Edit goals" once one is, and a labelled tune icon,
   "Customize tracking". Goals open a compact sheet in the app's own look (`showGoalsSheet`, opened from `appContext`)
   with the same `GoalsEditor` Me › Nutrition goals uses: one form, one validation, one save path
   (`ProfileRepository.setGoals`), fields empty unless a goal is saved, nothing suggested. The sheet says the goals
   repeat every day. Today, Eat and Me all read the one profile, so a save shows everywhere at once.
 - **Water** (off until turned on; data in docs/FOOD_DATA.md › Water). A compact line under the figures: a droplet,
-  the day's amount, "of 2 L" and a thin bar only when a goal is set (full at the goal, the words keep the real
-  amount), and an add button. It opens the water sheet: the day's total in the serif, three quick amounts in the
-  chosen unit, another amount, Add, Undo in the message bar, and the day's entries, each tappable to correct and
-  with a remove button, plus "Set a water goal" / "Edit water goal" (the same goals form, now with water).
+  "Water 750 / 2,000 mL" and, when a goal is saved, the same 6 px bar and real share ("38%", also "120%") as the
+  calorie and protein goals (the bar full at the goal, the words keep the real amount); without a goal only the
+  amount, no bar or percentage. Always the chosen unit (mL or fl oz), never switching to litres. An add button. It
+  opens the water sheet: the day's total in the serif with "/ goal" and the bar, three quick amounts in the chosen
+  unit, another amount, Add, Undo in the message bar, and the day's entries, each tappable to correct and with a
+  remove button. No goal shortcut in the sheet.
+- **Goals belong to Eat (17 Oct 2026, later).** Today shows the totals and progress toward saved goals and keeps Log
+  food, the water sheet and Customize tracking, but no "Set daily goals" / "Edit goals". Eat's summary keeps the goals
+  link to the shared form (calories, protein, water). With water shown and no water goal saved, the form offers
+  "Suggested starting goal: 2,000 mL daily." (in fl oz when chosen) with one line ("A general starting point; your
+  needs may differ. Only water you log is counted."), "Use 2,000 mL" (fills the field; nothing is saved until Save
+  goals) and an info button explaining that needs vary, other drinks and food contribute, and only logged water is
+  counted. It disappears once the field has a value, and never appears over a saved goal. No calorie or protein goal
+  is suggested; nothing is worked out by AI or from the weather.
 - **Customize tracking.** A short sheet of switches: Water, Carbs, Fat. Calories and protein always stay. Hiding is
   presentation only; it is kept per account on this phone, like the coach preferences. Water is offered only where
   the server declares `water.entries`.

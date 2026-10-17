@@ -835,9 +835,9 @@ class _NutritionCard extends ConsumerWidget {
       photo: _Photos.nutrition, photoAlignment: const Alignment(0.7, 0),
       action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(appContext(context), dayKey: day)),
       quiet: QuietLink('Journal', key: const Key('today-open-eat'), said: 'Food journal', onPressed: openEat),
-      // Under the figures, quieter than them: the day's water when it is tracked, then the goals (set or edit, also
-      // with nothing logged) and Customize tracking. Sheets open in the app's own look.
-      below: [if (display.water) WaterRow(key: const Key('today-water'), day: day), const NutritionTools(keyPrefix: 'today')],
+      // Under the figures, quieter than them: the day's water when it is tracked, then Customize tracking. Goals are
+      // shown here as progress only; they are set and edited in Eat. Sheets open in the app's own look.
+      below: [if (display.water) WaterRow(key: const Key('today-water'), day: day), const NutritionTools(keyPrefix: 'today', goals: false)],
     );
   }
 }

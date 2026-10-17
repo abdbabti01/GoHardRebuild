@@ -27,15 +27,16 @@ void main() {
     }
 
     await j.start('Water Demo');
-    await j.waitUntil(() async => tester.widget<TextButton>(find.descendant(of: find.byKey(const Key('today-goals')), matching: find.byType(TextButton))).onPressed != null,
+    await j.tapKey('nav-eat');
+    await j.waitUntil(() async => tester.widget<TextButton>(find.descendant(of: find.byKey(const Key('eat-goals')), matching: find.byType(TextButton))).onPressed != null,
         what: 'the profile to arrive');
     await j.shot('water-demo-start'); // the script publishes a journey's captures; one before the recording
     await const MethodChannel('plugins.flutter.io/integration_test').invokeMethod<void>('revertFlutterImage');
     debugPrint('GOHARD_REC:start:goals-water');
     await watch(2000);
 
-    // Goals from Today, in the sheet; the panel then offers Edit goals.
-    await j.tapKey('today-goals');
+    // Goals from Eat, in the sheet; the panel then offers Edit goals.
+    await j.tapKey('eat-goals');
     await watch(1200);
     await j.type('goal-calories', '2200');
     await j.type('goal-protein', '140');
@@ -43,8 +44,8 @@ void main() {
     await j.tapKey('goal-save');
     await watch(1800);
 
-    // Customize tracking: water on.
-    await j.tapKey('today-customize');
+    // Customize tracking: water on (still in Eat).
+    await j.tapKey('eat-customize');
     await watch(1200);
     await j.tapKey('track-water');
     await watch(1200);

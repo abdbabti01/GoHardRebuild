@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/widgets.dart' show ProgressRail;
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
@@ -66,45 +67,132 @@ void main() {
 
     await setWater(true);
     final row = find.byKey(const Key('today-water'));
-    expect(find.descendant(of: row, matching: find.text('750 mL')), findsOneWidget, reason: 'today\'s two entries; yesterday\'s stays on its own day');
-    expect(find.descendant(of: row, matching: find.text('of 2 L')), findsOneWidget, reason: 'the goal the person set');
+    expect(find.descendant(of: row, matching: find.text('750 / 2,000 mL')), findsOneWidget, reason: 'today\'s two entries against the saved goal; yesterday\'s stays on its own day');
+    expect(find.descendant(of: row, matching: find.text('38%')), findsOneWidget, reason: 'the goal bar with its real share, like the nutrition bars');
 
     await setWater(false);
     expect(find.byKey(const Key('today-water')), findsNothing);
     await setWater(true);
-    expect(find.descendant(of: find.byKey(const Key('today-water')), matching: find.text('750 mL')), findsOneWidget, reason: 'hiding removed nothing');
+    expect(find.descendant(of: find.byKey(const Key('today-water')), matching: find.text('750 / 2,000 mL')), findsOneWidget, reason: 'hiding removed nothing');
 
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
-    expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.text('750 mL')), findsOneWidget, reason: 'Eat shows the same day\'s water');
+    expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.text('750 / 2,000 mL')), findsOneWidget, reason: 'Eat shows the same day\'s water');
     await tester.pump(const Duration(seconds: 3));
     expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.textContaining('water', findRichText: true)), findsOneWidget, reason: 'the coach mentions water once it is shown');
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('goals from Today: the shared form, in the app\'s own look, saves to the one profile; no number is suggested', (tester) async {
+  testWidgets('above the goal the bar stays full and the words keep the real amount; without a goal, only the amount', (tester) async {
+    final container = await pumpApp(tester, await _fixture(tester, water: [_entry('a', 1500), _entry('b', 900)], profile: {'waterGoalMl': 2000}), size: const Size(390, 1400));
+    container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
+    await tester.pumpAndSettle();
+    final row = find.byKey(const Key('today-water'));
+    expect(find.descendant(of: row, matching: find.text('2,400 / 2,000 mL')), findsOneWidget);
+    expect(find.descendant(of: row, matching: find.text('120%')), findsOneWidget);
+    expect(tester.widget<ProgressRail>(find.descendant(of: row, matching: find.byType(ProgressRail))).value, greaterThanOrEqualTo(1));
+
+    await tester.pumpWidget(const SizedBox());
+    final noGoal = await pumpApp(tester, await _fixture(tester, water: [_entry('a', 750)]), size: const Size(390, 1400));
+    noGoal.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
+    await tester.pumpAndSettle();
+    final plain = find.byKey(const Key('today-water'));
+    expect(find.descendant(of: plain, matching: find.text('750 mL')), findsOneWidget);
+    expect(find.descendant(of: plain, matching: find.byType(ProgressRail)), findsNothing, reason: 'no goal, no bar');
+    expect(find.descendant(of: plain, matching: find.textContaining('%')), findsNothing, reason: 'and no percentage');
+  });
+
+  testWidgets('goals are set in Eat, not Today: Today and its water sheet show progress and logging only', (tester) async {
+    final container = await pumpApp(tester, await _fixture(tester, water: [_entry('a', 500)], profile: {'waterGoalMl': 2000}), size: const Size(390, 1400));
+    container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('today-goals')), findsNothing);
+    expect(find.descendant(of: find.byKey(const Key('today-module-nutrition')), matching: find.textContaining('goals')), findsNothing, reason: 'no Set or Edit goals on Today');
+    expect(find.byKey(const Key('today-customize')), findsOneWidget, reason: 'what is shown can still be chosen');
+    await tester.tap(find.byKey(const Key('water-quick-add')).first);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('water-goal')), findsNothing, reason: 'the water sheet logs, corrects and removes; it does not edit goals');
+    expect(find.byKey(const Key('water-add-250')), findsOneWidget);
+    expect(find.byKey(const Key('water-delete-a')), findsOneWidget);
+    Navigator.of(tester.element(find.byKey(const Key('water-add-250')))).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('eat-goals')), findsOneWidget, reason: 'goals live in Eat');
+  });
+
+  testWidgets('Eat\'s goals: a suggested 2,000 mL starting goal only while none is saved; Use fills, nothing is saved by itself; blank keeps no goal', (tester) async {
     final profiles = RecordingProfiles();
     final container = await pumpApp(tester, await _fixture(tester, profiles: profiles), size: const Size(390, 1400));
     container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
     await tester.pumpAndSettle();
-
-    expect(find.text('Set daily goals'), findsWidgets, reason: 'no goal yet: offered on Today (and Eat), also with nothing logged');
-    await tester.tap(find.byKey(const Key('today-goals')));
+    await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
-    final sheet = find.byType(BottomSheet);
-    expect(Theme.of(tester.element(sheet)).brightness, Brightness.dark, reason: 'the sheet keeps the app\'s Dark look, not the pale panel\'s');
-    expect(find.textContaining('repeat every day'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('eat-goals')));
+    await tester.pumpAndSettle();
+    expect(Theme.of(tester.element(find.byType(BottomSheet))).brightness, Brightness.dark, reason: 'the sheet keeps the app\'s Dark look');
     for (final k in ['goal-calories', 'goal-protein', 'goal-water']) {
-      expect(tester.widget<TextField>(find.byKey(Key(k))).controller!.text, isEmpty, reason: '$k starts empty: nothing is suggested');
+      expect(tester.widget<TextField>(find.byKey(Key(k))).controller!.text, isEmpty, reason: '$k starts empty');
     }
+    expect(find.text('Suggested starting goal: 2,000 mL daily.'), findsOneWidget);
+    expect(profiles.waterGoals, isEmpty, reason: 'offering it saves nothing');
+
+    await tester.tap(find.byKey(const Key('water-suggestion-info')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('general starting point', findRichText: true), findsWidgets);
+    expect(find.textContaining('Other drinks and food also contribute', findRichText: true), findsOneWidget);
+    expect(find.textContaining('counts only the water you log', findRichText: true), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    // Continue without a goal: blank stays no goal.
     await tester.enterText(find.byKey(const Key('goal-calories')), '2200');
-    await tester.enterText(find.byKey(const Key('goal-water')), '2000');
+    await tester.ensureVisible(find.byKey(const Key('goal-save')));
     await tester.tap(find.byKey(const Key('goal-save')));
     await tester.pumpAndSettle();
-    expect(profiles.goals.single, (2200, null), reason: 'blank protein stays no goal');
-    expect(profiles.waterGoals.single, 2000);
-    expect(find.byType(BottomSheet), findsNothing);
+    expect(profiles.waterGoals.single, isNull);
+
+    // Accept it, then edit it: the field holds the figure, the person decides what is saved.
+    await tester.tap(find.byKey(const Key('eat-goals')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('water-suggestion-use')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byKey(const Key('goal-water'))).controller!.text, '2000');
+    expect(find.byKey(const Key('water-suggestion')), findsNothing);
+    expect(profiles.waterGoals, hasLength(1), reason: 'still nothing new saved');
+    await tester.enterText(find.byKey(const Key('goal-water')), '2500');
+    await tester.ensureVisible(find.byKey(const Key('goal-save')));
+    await tester.tap(find.byKey(const Key('goal-save')));
+    await tester.pumpAndSettle();
+    expect(profiles.waterGoals.last, 2500);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an existing water goal is never replaced by the suggestion; in fl oz the suggestion is in fl oz', (tester) async {
+    final container = await pumpApp(tester, await _fixture(tester, profile: {'waterGoalMl': 1500}), size: const Size(390, 1400));
+    container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('eat-goals')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byKey(const Key('goal-water'))).controller!.text, '1,500', reason: 'the saved goal, kept');
+    expect(find.byKey(const Key('water-suggestion')), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    final oz = await pumpApp(tester, await _fixture(tester), size: const Size(390, 1400));
+    oz.read(trackingPrefsProvider.notifier)
+      ..setDisplay('one', const NutritionDisplay(water: true))
+      ..setUnit(VolumeUnit.flOz);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('eat-goals')));
+    await tester.pumpAndSettle();
+    expect(find.text('Suggested starting goal: 67.6 fl oz daily.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('water-suggestion-use')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byKey(const Key('goal-water'))).controller!.text, '67.6');
   });
 
   testWidgets('while the day\'s water is still being read, no amount is shown (an unknown amount is not 0 mL)', (tester) async {

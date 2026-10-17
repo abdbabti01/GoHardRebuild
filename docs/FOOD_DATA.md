@@ -214,7 +214,8 @@ counted or estimated from foods or drinks in the food journal.
   delete). Same idempotency, revision and `ENTRY_DELETED` rules as food entries; another account's entry is a 404.
 - `GET /api/v1/water-entries?date=YYYY-MM-DD` lists that day's live entries; the sync snapshot carries every entry,
   deleted ones included, as the optional `waterEntries`.
-- Goal: `waterGoalMl` on the profile, 100 to 10,000 mL, null = no goal, never defaulted. Same three cases as the
+- Goal: `waterGoalMl` on the profile, 100 to 10,000 mL, null = no goal, never defaulted or saved by the app (Eat's
+  goals form offers 2,000 mL as a general starting point while none is saved; only Save goals stores it). Same three cases as the
   nutrition goals in `profile.update`: left out = kept, `null` = cleared, a number = set.
 
 On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):

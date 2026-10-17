@@ -125,6 +125,28 @@ void main() {
     debugPrint('GOHARD_PROFILE_DISPLAY: showWater=${profile['showWater']} showCarbs=${profile['showCarbs']} showFat=${profile['showFat']}');
     expect((profile['showWater'], profile['showCarbs'], profile['showFat']), (true, false, true), reason: 'the choice is on the account');
 
+    // Goals are set in Eat: the suggested starting water goal, accepted, then saved by the person.
+    await j.tapKey('eat-goals');
+    await j.waitFor(find.byKey(const Key('water-suggestion')), what: 'the suggested starting goal');
+    await shot('coach-tabs-09-goals-suggestion');
+    await j.tapKey('water-suggestion-use');
+    await j.tapKey('goal-save');
+    await j.waitFor(find.byKey(const Key('water-goal-bar')), what: 'the water goal bar');
+    await j.tapKey('water-quick-add');
+    await j.tapKey('water-add-500');
+    await j.settle(4);
+    Navigator.of(tester.element(find.byKey(const Key('water-add-500')))).pop();
+    await watch(1500);
+    await tester.drag(find.byKey(const Key('eat-water')), const Offset(0, -260));
+    await watch(800);
+    await shot('coach-tabs-10-eat-water-bar');
+    await j.tapKey('nav-today');
+    await watch(1500);
+    expect(find.byKey(const Key('today-goals')), findsNothing, reason: 'Today shows progress, not goal editing');
+    await tester.drag(find.byKey(const Key('today-module-nutrition')), const Offset(0, -380));
+    await watch(1000);
+    await shot('coach-tabs-11-today-water-bar');
+
     // Pink Dark.
     await j.tapKey('nav-me');
     await tester.scrollUntilVisible(find.byKey(const Key('me-appearance')), 300, scrollable: find.byType(Scrollable).hitTestable().first);
