@@ -106,23 +106,24 @@ void main() {
     await j.waitFor(find.byKey(const Key('eat-add-breakfast')), what: 'Eat from Journal');
     await j.tapKey('nav-today');
 
-    // --- Start run opens a run; back on Today it is Continue run; finishing it leaves a finished run.
-    await j.tapKey('today-run');
-    await j.waitFor(find.byKey(const Key('run-finish')), what: 'the run screen');
+    // --- Start opens Run / Walk; back on Today it is Resume; finishing and saving leaves a finished run.
+    await j.startActivity();
     await back();
-    await j.waitFor(find.text('Continue run'), what: 'the open run on Today');
-    expect(find.text('Start run'), findsNothing);
+    await j.waitFor(find.widgetWithText(FilledButton, 'Resume'), what: 'the open run on Today');
     await j.reveal(find.byKey(const Key('today-run-history')));
     await tester.ensureVisible(find.byKey(const Key('today-run-history')));
     await j.shot('today-panels-05-run-open-green-dark');
     await j.tapKey('today-run');
-    await j.waitFor(find.byKey(const Key('run-finish')), what: 'the same run');
-    await j.tapKey('run-finish');
-    await j.waitFor(find.text('Start run'), what: 'Start run again once finished');
+    await j.waitFor(find.byKey(const Key('runwalk-finish')), what: 'the same run');
+    await j.tapKey('runwalk-finish');
+    await j.waitFor(find.byKey(const Key('runwalk-save')), what: 'the save review');
+    await j.tapKey('runwalk-save');
+    await j.tapKey('activity-done');
+    await j.waitFor(find.widgetWithText(FilledButton, 'Start'), what: 'Start again once saved');
 
-    // --- History is the run history.
+    // --- History is the Run / Walk history.
     await j.tapKey('today-run-history');
-    await j.waitFor(find.text('Run history'), what: 'run history');
+    await j.waitFor(find.text('History'), what: 'Run / Walk history');
     await back();
 
     // --- Resume opens the same workout, with its recorded set.

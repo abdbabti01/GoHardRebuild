@@ -32,11 +32,20 @@ try {
         # A clean install, so a journey never starts from another run's signed-in state. Only this app's debug identity is touched.
         & $Adb -s $device uninstall $appId 2>$null | Out-Null
         $feeder = $null
+        $gpsFeed = $null
         # A test cannot tap system permission dialogs, so for these journeys the app is installed first and the permissions granted.
-        $grants = @{ journey_device_test = 'POST_NOTIFICATIONS', 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'; journey_food_test = @('CAMERA') }[$journey]
+        $location = 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'
+        $grants = @{
+            journey_device_test = @('POST_NOTIFICATIONS') + $location; journey_food_test = @('CAMERA'); journey_runwalk_test = @('POST_NOTIFICATIONS') + $location
+            # These start a run or walk on the way (Run / Walk asks for location when Start is pressed).
+            journey_coldstart_test = $location; journey_today_panels_test = $location; journey_appwide_test = $location
+        }[$journey]
         if ($grants) {
             Step "Building and installing the app to grant: $($grants -join ', ')"
-            flutter build apk --debug --dart-define=GOHARD_API_BASE=$ApiBase | Out-Null
+            # Only the device's ABI: the all-ABI debug APK (with Google Maps) no longer fits the emulator's free space twice over.
+            $abi = (& $Adb -s $device shell getprop ro.product.cpu.abi).Trim()
+            $platform = @{ 'x86_64' = 'android-x64'; 'arm64-v8a' = 'android-arm64'; 'armeabi-v7a' = 'android-arm' }[$abi]
+            flutter build apk --debug --target-platform $platform --dart-define=GOHARD_API_BASE=$ApiBase | Out-Null
             if ($LASTEXITCODE -ne 0) { Fail 'The debug build failed.' }
             & $Adb -s $device install -r 'build\app\outputs\flutter-apk\app-debug.apk' | Out-Null
             foreach ($p in $grants) { & $Adb -s $device shell pm grant $appId "android.permission.$p" }
@@ -54,6 +63,64 @@ try {
                     $lat = [string]::Format([cultureinfo]::InvariantCulture, '{0:F6}', 45.5017 + $i * 0.00007)
                     & $adb -s $device shell cmd location providers set-test-provider-location gps --location "$lat,-73.5673" --accuracy 5 | Out-Null
                     Start-Sleep -Seconds 2
+                }
+            }
+        }
+        if ($journey -eq 'journey_runwalk_test') {
+            if ($device -notmatch '^emulator-') { Fail 'journey_runwalk_test simulates GPS positions and so needs an emulator.' }
+            # SIMULATED GPS: a walk north at about 1.4 m/s, one position a second, through Android's test location provider,
+            # so the real geolocator stream and its foreground service are used. It runs through both phases.
+            & $Adb -s $device shell appops set com.android.shell android:mock_location allow
+            & $Adb -s $device shell cmd location providers add-test-provider gps 2>$null | Out-Null
+            & $Adb -s $device shell cmd location providers set-test-provider-enabled gps true | Out-Null
+            $gpsFeed = Start-Job -ArgumentList $Adb, $device -ScriptBlock {
+                param($adb, $device)
+                for ($i = 1; $i -le 1800; $i++) {
+                    $lat = [string]::Format([cultureinfo]::InvariantCulture, '{0:F7}', 46.8000 + $i * 0.0000126)
+                    & $adb -s $device shell cmd location providers set-test-provider-location gps --location "$lat,-71.2200" --accuracy 5 | Out-Null
+                    Start-Sleep -Milliseconds 1000
+                }
+            }
+            # The journey prints markers; this answers them: captures (adb screencap, so the map's platform view is in
+            # them), the screen recording, Home / screen off and back, and the network off and on.
+            $runShots = Join-Path $AppDir "build\journey-shots\runwalk-host-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            New-Item -ItemType Directory -Force $runShots | Out-Null
+            & $Adb -s $device logcat -c
+            $feeder = Start-Job -ArgumentList $Adb, $device, $runShots, $appId -ScriptBlock {
+                param($adb, $device, $out, $appId)
+                & $adb -s $device logcat -s flutter:I | ForEach-Object {
+                    if ($_ -match 'GOHARD_SHOT:([\w-]+)') {
+                        & $adb -s $device shell screencap -p "/sdcard/$($Matches[1]).png"
+                        & $adb -s $device pull "/sdcard/$($Matches[1]).png" (Join-Path $out "$($Matches[1]).png") | Out-Null
+                    } elseif ($_ -match 'GOHARD_REC:start:([\w-]+)') {
+                        Start-Process -FilePath $adb -ArgumentList '-s', $device, 'shell', 'screenrecord', '--time-limit', '170', "/sdcard/$($Matches[1]).mp4" -WindowStyle Hidden
+                        Set-Content (Join-Path $out 'recording.txt') $Matches[1]
+                    } elseif ($_ -match 'GOHARD_REC:stop') {
+                        & $adb -s $device shell pkill -INT screenrecord
+                        Start-Sleep -Seconds 3
+                        $name = Get-Content (Join-Path $out 'recording.txt')
+                        & $adb -s $device pull "/sdcard/$name.mp4" (Join-Path $out "$name.mp4") | Out-Null
+                    } elseif ($_ -match 'GOHARD_BG:home') {
+                        & $adb -s $device shell input keyevent KEYCODE_HOME
+                        Start-Sleep -Seconds 6
+                        & $adb -s $device shell cmd statusbar expand-notifications
+                        Start-Sleep -Seconds 2
+                        & $adb -s $device shell screencap -p /sdcard/runwalk-07-notification.png
+                        & $adb -s $device pull /sdcard/runwalk-07-notification.png (Join-Path $out 'runwalk-07-notification.png') | Out-Null
+                        & $adb -s $device shell cmd statusbar collapse
+                        (& $adb -s $device shell dumpsys notification --noredact) -match 'GoHard is recording|android.title=' | Set-Content (Join-Path $out 'notification.txt')
+                        Start-Sleep -Seconds 8
+                        & $adb -s $device shell am start -n "$appId/com.gohard.gohard_rebuild.MainActivity" | Out-Null
+                    } elseif ($_ -match 'GOHARD_BG:lock') {
+                        & $adb -s $device shell input keyevent KEYCODE_SLEEP
+                        Start-Sleep -Seconds 18
+                        & $adb -s $device shell input keyevent KEYCODE_WAKEUP
+                        & $adb -s $device shell wm dismiss-keyguard
+                    } elseif ($_ -match 'GOHARD_NET:(off|on)') {
+                        $state = if ($Matches[1] -eq 'off') { 'disable' } else { 'enable' }
+                        & $adb -s $device shell svc wifi $state
+                        & $adb -s $device shell svc data $state
+                    }
                 }
             }
         }
@@ -82,7 +149,7 @@ try {
             # The cold-start journey runs twice on one install. The Flutter tool uninstalls the app when a run ends,
             # which would wipe what the first run saved, so the first run leaves the app in place and its process is
             # killed here instead. The second run is then a new process that can only show what was saved on the device.
-            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test') { '1', '2' } else { @('') }
+            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test') { '1', '2' } else { @('') }
             foreach ($phase in $phases) {
                 if ($phase) { Step "  phase $phase of 2$(if ($phase -eq '2') { ' (new process, same install)' })" }
                 $keep = if ($phase -eq '1') { '--keep-app-running' } else { '--no-keep-app-running' }
@@ -114,9 +181,22 @@ try {
                 if (-not $copied) { Fail "The screenshot $($shot.Name) could not be written to docs\evidence\screenshots (still locked after 20 seconds). The fresh capture is in $shots." }
             }
             Write-Host "    $($captured.Count) fresh screenshots from '$journey' copied to docs\evidence\screenshots" -ForegroundColor DarkGray
+            if ($journey -eq 'journey_runwalk_test') {
+                Start-Sleep -Seconds 4   # the last host capture
+                foreach ($f in Get-ChildItem $runShots -Include *.png, *.mp4, *.txt -Recurse) {
+                    $dest = if ($f.Extension -eq '.mp4') { "docs\evidence\recordings\$($f.Name)" } elseif ($f.Extension -eq '.txt') { "docs\evidence\runwalk-$($f.Name)" } else { "docs\evidence\screenshots\$($f.Name)" }
+                    Copy-Item $f.FullName (Join-Path $Root $dest) -Force
+                }
+                Write-Host "    host captures from '$journey' copied (screenshots, recording, notification check)" -ForegroundColor DarkGray
+            }
         } finally {
+            if ($gpsFeed) {
+                Stop-Job $gpsFeed; Remove-Job $gpsFeed; $gpsFeed = $null
+                & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null
+            }
             if ($feeder) {
                 Stop-Job $feeder; Remove-Job $feeder
+                if ($journey -eq 'journey_runwalk_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
                 if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }

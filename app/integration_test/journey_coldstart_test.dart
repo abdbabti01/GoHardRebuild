@@ -45,10 +45,9 @@ void main() {
       await j.tapKey('food-save');
       await j.waitFor(find.text('105'), what: 'the food\'s calories on Today');
 
-      await j.tapKey('today-run');
-      await j.waitFor(find.byKey(const Key('run-finish')), what: 'the run screen');
-      await tester.pageBack(); // leaves the run open
-      await j.waitFor(find.text('Continue run'), what: 'the open run on Today');
+      await j.startActivity();
+      await tester.pageBack(); // leaves the run open, recording
+      await j.waitFor(find.widgetWithText(FilledButton, 'Resume'), what: 'the open run on Today');
       await j.shot('110-coldstart-before-process-ends');
       return;
     }
@@ -57,9 +56,9 @@ void main() {
     // A new process. No sign-in, no setup: only what the previous process saved.
     await app.main();
     await binding.convertFlutterSurfaceToImage();
-    await j.waitFor(find.text('Continue run'), what: 'the open run after a cold start', seconds: 40);
+    await j.waitFor(find.text('Run interrupted'), what: 'the open run after a cold start, its recorder gone', seconds: 40);
     expect(find.byKey(const Key('auth-submit')), findsNothing, reason: 'the session was kept');
-    expect(find.text('Start run'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Start'), findsNothing);
     await j.waitFor(find.byKey(const Key('today-resume')), what: 'the open workout after a cold start');
     expect(find.text('Back'), findsOneWidget);
     await j.waitFor(find.text('1 set recorded'), what: 'the set recorded before the process ended');
@@ -69,9 +68,9 @@ void main() {
 
     // The same run, then the same workout with its set.
     await j.tapKey('today-run');
-    await j.waitFor(find.byKey(const Key('run-finish')), what: 'the same run');
-    await j.tapKey('run-finish');
-    await j.waitFor(find.text('Start run'), what: 'Today once that run is finished');
+    await j.waitFor(find.byKey(const Key('runwalk-resume')), what: 'the same run, interrupted');
+    await j.finishAndSaveActivity();
+    await j.waitFor(find.widgetWithText(FilledButton, 'Start'), what: 'Today once that run is saved');
     await j.tapKey('today-resume');
     await j.reveal(find.byKey(const Key('set-row-0')));
     await j.waitFor(find.byKey(const Key('set-row-0')), what: 'the set recorded before the process ended');

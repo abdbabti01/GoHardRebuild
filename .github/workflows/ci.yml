@@ -27,4 +27,6 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test integration_test || true   # formatting is not yet enforced; see docs/PROGRESS_LEDGER.md
       - run: flutter analyze
       - run: flutter test
+      # Optional Google Maps key (docs/RUN_WALK.md › Map). Without it the build still works and draws routes without a map.
       - run: flutter build apk --debug --dart-define=GOHARD_API_BASE=http://10.0.2.2:5131
+        env: { ANDROID_GOOGLE_MAPS_API_KEY: '${{ secrets.ANDROID_GOOGLE_MAPS_API_KEY }}' }

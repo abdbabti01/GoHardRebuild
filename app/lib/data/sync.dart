@@ -66,6 +66,8 @@ List<ServerRec> recordsFromAck(String kind, dynamic data, String owner) {
     'food' => [_simple(Kinds.food, j)],
     'water' => [_simple(Kinds.water, j)],
     'run' => [_simple(Kinds.run, j)],
+    // route.complete answers with the activity (its routeState); a chunk's answer changes no record.
+    'route' => kind == 'route.complete' ? [_simple(Kinds.run, j)] : const [],
     'metric' => [_simple(Kinds.metric, j)],
     'savedfood' => [_simple(Kinds.savedFood, j)],
     'customexercise' => [_simple(Kinds.customExercise, j)],
@@ -116,6 +118,10 @@ class SyncEngine {
   /// True while this build is known to be too old for the account's server. Nothing is sent or pulled then;
   /// every command stays in the outbox, untouched, for when the check passes again.
   bool Function() isBlocked = () => false;
+
+  /// False for a command this account's server cannot take yet (a Walk or a route on a server from before them).
+  /// It stays pending, untouched, and so do the commands that depend on it.
+  bool Function(Cmd cmd) mayDispatch = (_) => true;
 
   /// Test seam: called just before a dispatch, after the outbound payload is persisted.
   Future<void> Function(Cmd cmd)? beforeDispatch;
@@ -194,11 +200,13 @@ class SyncEngine {
   /// `payload` may contain placeholders resolved once before first dispatch:
   /// `{"\$rev": [kind, id]}` → that record's acknowledged revision, `{"\$sets": workoutId}` → its live sets.
   /// `after` lists other records whose open commands must be acknowledged first.
+  /// [dispatch] false: a caller that submits several commands inside its own transaction starts the dispatch itself,
+  /// after that transaction (a dispatch started inside it would outlive it).
   Future<Receipt> submit(String owner, {
     required String kind, String method = 'POST', required String path, required Json payload,
     required String targetKind, required String targetId, List<LocalWrite> writes = const [],
     List<(String, String)> after = const [], String? operationId, List<String> extraDependsOn = const [],
-    List<LocalWrite> locals = const [],
+    List<LocalWrite> locals = const [], bool dispatch = true,
   }) async {
     final op = operationId ?? newId();
     await _guard(() => db.transaction(() async {
@@ -221,7 +229,7 @@ class SyncEngine {
               payload: jsonEncode({...payload, 'operationId': op}), targetKind: targetKind, targetId: targetId,
               capturedLocalRevision: target?.localRevision ?? 0, dependsOn: Value(jsonEncode(deps.toList()))));
         }));
-    kick();
+    if (dispatch) kick();
     return Receipt(op, 'pending');
   }
 
@@ -275,7 +283,7 @@ class SyncEngine {
     for (final c in pending) {
       final deps = (jsonDecode(c.dependsOn) as List).cast<String>();
       // A dependency in conflict or rejected blocks its dependents until the user decides.
-      if (deps.every((d) => const ['accepted', 'superseded', null].contains(states[d]))) return c;
+      if (deps.every((d) => const ['accepted', 'superseded', null].contains(states[d])) && mayDispatch(c)) return c;
     }
     return null;
   }
@@ -345,7 +353,9 @@ class SyncEngine {
     await db.transaction(() async {
       final ackJson = ack == null ? null : jsonEncode(ack);
       if (status == 'accepted') {
-        await (db.update(db.commands)..where((c) => c.seq.equals(cmd.seq))).write(CommandsCompanion(state: const Value('accepted'), ack: Value(ackJson)));
+        await (db.update(db.commands)..where((c) => c.seq.equals(cmd.seq))).write(CommandsCompanion(state: const Value('accepted'), ack: Value(ackJson),
+            // An acknowledged route chunk is never sent again: its copy of the route (the phone keeps the route itself) is dropped.
+            payload: cmd.kind == 'route.chunk' ? const Value('{}') : const Value.absent(), outbound: cmd.kind == 'route.chunk' ? const Value('{}') : const Value.absent()));
         for (final rec in recordsFromAck(cmd.kind, ack!['data'], owner)) {
           await _merge(owner, rec, exceptSeq: cmd.seq);
         }
@@ -383,6 +393,13 @@ class SyncEngine {
   /// Withdraws a command that changed nothing locally (for example a refused draft request).
   Future<void> abandon(String operationId) =>
       (db.update(db.commands)..where((c) => c.operationId.equals(operationId) & c.state.isNotValue('accepted'))).write(const CommandsCompanion(state: Value('superseded')));
+
+  /// Withdraws every unsent command for a record and removes the record (an erased route's queued uploads).
+  Future<void> withdraw(String owner, String kind, String id) => _guard(() => db.transaction(() async {
+        await (db.update(db.commands)..where((c) => c.ownerId.equals(owner) & c.targetKind.equals(kind) & c.targetId.equals(id) & c.state.isNotIn(const ['accepted', 'superseded'])))
+            .write(const CommandsCompanion(state: Value('superseded')));
+        await deleteLocal(owner, kind, id);
+      }));
 
   /// Applies the account's version of a record without ever overwriting a newer local edit.
   Future<void> _merge(String owner, ServerRec r, {int? exceptSeq, bool force = false, bool keepAlternative = false}) async {
@@ -521,5 +538,6 @@ class SyncEngine {
   Future<void> eraseOwner(String owner) => db.transaction(() async {
         await (db.delete(db.records)..where((r) => r.ownerId.equals(owner))).go();
         await (db.delete(db.commands)..where((c) => c.ownerId.equals(owner))).go();
+        await (db.delete(db.trackEntries)..where((r) => r.ownerId.equals(owner))).go();
       });
 }

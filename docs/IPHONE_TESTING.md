@@ -11,7 +11,7 @@ or TestFlight.
 | Workflow | `.github/workflows/ios-dev-ipa.yml` (manual run) → artifact **GoHard-Dev-ipa** |
 | API container | `api/Dockerfile`, `api/railway.json` |
 | API check | `scripts\verify-api.ps1 -BaseUrl <url>` |
-| Maps | The app has **no map**. Runs record GPS distance only, so no Google Maps key is used or needed |
+| Maps | Run / Walk shows Google Maps when the repository secret `IOS_GOOGLE_MAPS_API_KEY` is set (written to the gitignored `app/ios/Flutter/Secrets.xcconfig` by the workflow). Without it the IPA works and draws routes without a map. See docs/RUN_WALK.md › Map |
 
 ## What is already done and verified locally
 
@@ -180,14 +180,23 @@ not in the profile: add the device, regenerate the profile, update the secret an
 - [ ] **Saving data:** Me shows "Everything is saved to your account". Sign out, sign in again: everything is still there.
 - [ ] **Restart:** start a workout, record a set, swipe the app away, reopen: Today offers "Resume workout" with the set.
 - [ ] **Offline:** airplane mode, record a set, turn it off again: Me returns to "Everything is saved".
-- [ ] **Running:** Today → Start run → allow location → walk outside for a minute: distance rises; finish; the run
-      shows time and distance. There is **no map**. Distance is measured only while the run screen is open.
+- [ ] **Run / Walk (docs/RUN_WALK.md):** Today → Start → Walk → allow location *While Using* → Start walk outdoors.
+      Walk 3–5 minutes with the phone **locked** for at least 2 of them and another app open for 1: the blue location
+      indicator shows, the distance and route keep growing, Map/Stats switching and zooming never stop it. Pause:
+      nothing is added while paused. Finish → title → Save with airplane mode on: Saved shows the route, splits and
+      charts, "waiting to upload"; airplane mode off: Overview says "Route saved to your account".
+- [ ] **Run / Walk, interrupted:** start a run, swipe GoHard away, reopen: Today says "Run interrupted"; Resume
+      starts a new segment, the gap is not counted; Finish and Save.
+- [ ] **Run / Walk, permissions:** in Settings set Location to *Never*, then Ready shows "Location is blocked";
+      turn off Precise Location: Ready asks for precise; Start without GPS offers "timer only".
+- [ ] **Map:** with `IOS_GOOGLE_MAPS_API_KEY` set, Ready and Saved show Google's map with its logo; without it the
+      route is drawn on a plain background ("Route drawn without a map") and nothing crashes.
 - [ ] **Reminders:** Me → Workout reminders → allow notifications → set a time a few minutes ahead on a day with a
       planned workout: a notification arrives. Pause the plan: no reminder.
 - [ ] **Both apps:** the original GoHard app is still installed and unchanged next to GoHard Dev.
 
 Known limits for this build: food search is in English and mostly United States foods; barcode data is strongest
-for European and North American products and can be incomplete; no route map, no background GPS, no social, health sync, music or AI features, and
+for European and North American products and can be incomplete; no offline map downloads, route planning, social, health sync or music, and
 the baseline plan content still needs your review.
 
 ## Fastest route: unsigned IPA + Sideloadly (no Apple certificate needed)

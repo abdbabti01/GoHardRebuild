@@ -131,12 +131,11 @@ void main() {
 
     // --- A run: started, captured, finished.
     await j.tapKey('nav-today');
-    await j.tapKey('today-run');
-    await j.waitFor(find.byKey(const Key('run-finish')), what: 'the run screen');
+    await j.startActivity();
     await j.settle(6);
     await j.shot('appwide-17-run');
-    await j.tapKey('run-finish');
-    await j.waitFor(find.text('Start run'), what: 'Start run once finished');
+    await j.finishAndSaveActivity();
+    await j.waitFor(find.widgetWithText(FilledButton, 'Start'), what: 'Start once saved');
 
     // --- Me, Appearance, Ask GoHard.
     await j.tapKey('nav-me');

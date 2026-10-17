@@ -20,7 +20,7 @@ public static class GoHardEndpoints
         "auth.password", "commands.idempotent", "plans.lifecycle", "plans.baseline-drafts", "plans.manual-drafts", "plans.proposals",
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
-        "water.entries", "profile.tracking-display",
+        "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes",
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -216,6 +216,15 @@ public static class GoHardEndpoints
             run.RunAsync(u.UserId(), r.OperationId, "run.finish", new { id, r }, () => s.FinishRunAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/runs/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "run.delete", new { id, r }, () => s.DeleteRunAsync(u.UserId(), id, r, ct), ct));
+        me.MapPut("/runs/{id:guid}", (Guid id, RunUpdateRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "run.update", new { id, r }, () => s.UpdateRunAsync(u.UserId(), id, r, ct), ct));
+        me.MapPut("/runs/{id:guid}/route/chunks/{index:int}", (Guid id, int index, RouteChunkRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "route.chunk", new { id, index, r }, () => s.PutRouteChunkAsync(u.UserId(), id, index, r, ct), ct));
+        me.MapPost("/runs/{id:guid}/route/complete", (Guid id, RouteCompleteRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "route.complete", new { id, r }, () => s.CompleteRouteAsync(u.UserId(), id, r, ct), ct));
+        me.MapGet("/runs/{id:guid}/route", async (Guid id, int? fromIndex, int? limit, ClaimsPrincipal u, ActivityService s, CancellationToken ct) =>
+            await s.RoutePageAsync(u.UserId(), id, fromIndex ?? 0, limit ?? ActivityService.RoutePageLimit, ct) is { } page
+                ? Results.Json(page, CommandRunner.Json) : Results.NotFound());
         me.MapPost("/body-metrics", (BodyMetricRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "metric.create", r, () => s.AddMetricAsync(u.UserId(), r, ct), ct));
         me.MapPost("/body-metrics/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>

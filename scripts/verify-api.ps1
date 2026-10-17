@@ -121,6 +121,25 @@ if ($capabilities -contains 'food.saved') {
         'one saved food; the journal is unchanged'
     }
 }
+if ($capabilities -contains 'runs.routes') {
+    Check 'Run / Walk: a walk, its route in a chunk retried once, completed, read back and erased with the walk' {
+        $id = [Guid]::NewGuid(); $at = [DateTime]::UtcNow.AddMinutes(-20).ToString('o')
+        Api POST '/api/v1/runs' @{ operationId = [Guid]::NewGuid(); runId = $id; dayKey = $today; startedAtUtc = $at; activityType = 'walk' } $token | Out-Null
+        $done = Api POST "/api/v1/runs/$id/finish" @{ operationId = [Guid]::NewGuid(); expectedRevision = 1; activeDurationSeconds = 600; distanceMeters = 800; finishedAtUtc = [DateTime]::UtcNow.ToString('o'); title = 'Verification walk'; metrics = @{ distanceSource = 'gps' } } $token
+        # Synthetic entries (not a real place): a start and three fixes.
+        $entries = @(@{ s = 0; y = 'start'; g = 0; t = 1 }) + @(1..3 | ForEach-Object { @{ s = $_; y = 'fix'; g = 0; t = 1 + $_ * 1000; la = 0.001 * $_; lo = 0.0; a = 5 } })
+        $chunk = @{ operationId = [Guid]::NewGuid(); firstSeq = 0; lastSeq = 3; entries = $entries }
+        $a = Api PUT "/api/v1/runs/$id/route/chunks/0" $chunk $token
+        $b = Api PUT "/api/v1/runs/$id/route/chunks/0" $chunk $token
+        $c = Api POST "/api/v1/runs/$id/route/complete" @{ operationId = [Guid]::NewGuid(); chunkCount = 1; entryCount = 4 } $token
+        $page = Api GET "/api/v1/runs/$id/route" $null $token
+        if ($done.data.activityType -ne 'walk' -or $a.status -ne 'accepted' -or $b.status -ne 'accepted' -or $c.data.routeState -ne 'complete' -or @($page.chunks[0].entries).Count -ne 4) { throw 'walk or route not stored as sent' }
+        if ((Api GET '/api/v1/sync/snapshot' $null $token | ConvertTo-Json -Depth 8) -match '"la"') { throw 'route points appeared in the snapshot' }
+        Api POST "/api/v1/runs/$id/delete" @{ operationId = [Guid]::NewGuid(); expectedRevision = $done.revision } $token | Out-Null
+        try { Api GET "/api/v1/runs/$id/route" $null $token | Out-Null; throw 'route still readable after delete' } catch { if ((Status $_) -ne 404) { throw } }
+        'walk kept as walk; chunk idempotent; route complete, paged, not in the snapshot, erased on delete'
+    }
+} else { Write-Host '  SKIP  Run / Walk routes - this server does not declare runs.routes' -ForegroundColor Yellow }
 function Lookup($path) {
     try { @{ ok = $true; data = (Api GET $path $null $token) } }
     catch { @{ ok = $false; status = $_.Exception.Response.StatusCode.value__; code = $(try { ($_.ErrorDetails.Message | ConvertFrom-Json).code } catch { $null }) } }

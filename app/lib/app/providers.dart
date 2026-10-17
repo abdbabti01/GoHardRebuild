@@ -13,6 +13,8 @@ import '../data/db.dart';
 import '../data/models.dart';
 import '../data/session.dart';
 import '../data/sync.dart';
+import '../features/activity/activity_repository.dart';
+import '../features/activity/track_store.dart';
 import '../features/me/account_repository.dart';
 import '../features/nutrition/food_discovery.dart';
 import '../features/nutrition/food_item.dart';
@@ -40,6 +42,7 @@ final syncProvider = Provider<SyncEngine>((ref) {
   final engine = SyncEngine(ref.watch(dbProvider), ref.watch(apiProvider), ref.watch(sessionsProvider));
   // Read at the moment of use: a build the server no longer accepts sends and pulls nothing, and keeps its outbox.
   engine.isBlocked = () => ref.read(compatibilityProvider).blocked;
+  engine.mayDispatch = (cmd) => RunRepository.serverTakes(cmd, ref.read(compatibilityProvider).capabilities);
   ref.onDispose(engine.dispose);
   return engine;
 });
@@ -186,7 +189,9 @@ final savedFoodRepositoryProvider = Provider((ref) => _owned(ref, SavedFoodRepos
 final foodDiscoveryProvider = Provider((ref) => _owned(ref, (s, o) => FoodDiscovery(ref.watch(apiProvider), s, o, ref.watch(clockProvider))));
 final profileRepositoryProvider = Provider((ref) => _owned(ref, ProfileRepository.new));
 final workoutRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => WorkoutRepository(s, o, ref.watch(clockProvider))));
-final activityRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => ActivityRepository(s, o, ref.watch(clockProvider))));
+final activityRepositoryProvider = Provider((ref) => _owned(ref, ActivityRepository.new));
+final trackStoreProvider = Provider((ref) => TrackStore(ref.watch(dbProvider)));
+final runRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => RunRepository(s, o, ref.watch(trackStoreProvider), ref.watch(apiProvider))));
 
 // ---------------------------------------------------------------------------- shared projections
 

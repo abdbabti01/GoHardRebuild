@@ -19,6 +19,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<CustomExercise> CustomExercises => Set<CustomExercise>();
     public DbSet<CatalogExercise> CatalogExercises => Set<CatalogExercise>();
     public DbSet<Run> Runs => Set<Run>();
+    public DbSet<RouteChunk> RouteChunks => Set<RouteChunk>();
     public DbSet<BodyMetric> BodyMetrics => Set<BodyMetric>();
     public DbSet<Proposal> Proposals => Set<Proposal>();
 
@@ -89,6 +90,16 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         });
 
         Owned<Run>(b, x => x.UserId).Property(x => x.DistanceMeters).HasPrecision(10, 1);
+        b.Entity<Run>(e =>
+        {
+            e.Property(x => x.ActivityType).HasMaxLength(8).HasDefaultValue("run");
+            e.Property(x => x.Title).HasMaxLength(80);
+            e.Property(x => x.Notes).HasMaxLength(1000);
+            e.Property(x => x.MetricsJson).HasColumnType("jsonb");
+            e.Property(x => x.RouteState).HasMaxLength(12).HasDefaultValue("none");
+        });
+        Owned<RouteChunk>(b, x => x.UserId).HasKey(x => new { x.RunId, x.Index });
+        b.Entity<RouteChunk>().HasOne<Run>().WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.Cascade);
         Owned<BodyMetric>(b, x => x.UserId).Property(x => x.WeightKg).HasPrecision(6, 2);
         b.Entity<BodyMetric>().Property(x => x.BodyFatPercent).HasPrecision(5, 2);
         Owned<Proposal>(b, x => x.UserId).HasOne<Plan>().WithMany().HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Cascade);

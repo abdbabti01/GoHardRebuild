@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/features/activity/run_walk_screens.dart' show StatFigure;
 import 'package:gohard_rebuild/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
@@ -108,6 +109,9 @@ void main() {
     await type(tester, 'auth-email', 'device-${DateTime.now().millisecondsSinceEpoch}@example.test');
     await type(tester, 'auth-password', 'device password 1');
     await tapKey(tester, 'auth-submit');
+    // A new account is offered the coach setup first (docs/COACH.md › Setup); this journey skips it.
+    await waitFor(tester, find.byWidgetPredicate((w) => w.key == const Key('setup-skip') || (w is Text && w.data == 'No active plan')), what: 'the setup or Today');
+    if (find.byKey(const Key('setup-skip')).evaluate().isNotEmpty) await tapKey(tester, 'setup-skip');
     await waitFor(tester, find.text('No active plan'), what: 'Today for a new account');
 
     // --- Reminders. With no plan, turning them on schedules nothing.
@@ -140,35 +144,31 @@ void main() {
 
     // --- GPS run. The host is feeding the emulator a walk north while this runs.
     await tapKey(tester, 'nav-today');
-    await tapKey(tester, 'today-run');
-    // With permission already given, tracking starts by itself; otherwise the button asks for it.
-    await settle(tester, 8);
-    if (find.byKey(const Key('run-gps-start')).evaluate().isNotEmpty) await tapKey(tester, 'run-gps-start');
-    await waitFor(tester, find.byKey(const Key('run-gps-distance')), what: 'GPS tracking started');
-    var km = 0.0;
-    for (var i = 0; i < 240 && km < 0.03; i++) {
-      await tester.pump(const Duration(milliseconds: 500));
-      km = double.parse(tester.widget<Text>(find.byKey(const Key('run-gps-distance'))).data!.split(' ').first);
+    final j = Journey(tester, binding);
+    await j.startActivity();
+    double km() => double.tryParse(tester.widget<StatFigure>(find.byKey(const Key('runwalk-distance'))).value) ?? 0;
+    for (var i = 0; i < 240 && km() < 0.03; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      await tester.pump();
     }
-    expect(km, greaterThanOrEqualTo(0.03),
-        reason: 'distance grows from real location readings. On screen: ${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').join(' | ')}');
+    final measured = km();
+    expect(measured, greaterThanOrEqualTo(0.03), reason: 'distance grows from real location readings. On screen: ${j.onScreen}');
     await binding.takeScreenshot('51-run-gps-distance');
 
-    // Leaving the run does not end it: Today offers to continue it, also after the app is closed and opened again.
+    // Leaving the screen does not end it: Today offers Resume, and the run kept recording meanwhile. (A real process
+    // end is journey_coldstart_test and journey_runwalk_test; calling main() again here would leave this process's
+    // first app instance running.)
     await tester.pageBack();
-    await waitFor(tester, find.text('Continue run'), what: 'the open run on Today');
-    expect(find.text('Start run'), findsNothing);
+    await waitFor(tester, find.widgetWithText(FilledButton, 'Resume'), what: 'the open run on Today');
+    await waitFor(tester, find.text('Run in progress'), what: 'still recording while away from its screen');
     await settle(tester, 8); // let the page transition finish before the capture
     await binding.takeScreenshot('51b-today-continue-run');
-    await app.main();
-    await waitFor(tester, find.text('Continue run'), what: 'the same open run after a restart');
     await tapKey(tester, 'today-run');
-    await waitFor(tester, find.byKey(const Key('run-gps-distance')), what: 'the same run, still measuring');
-    expect(double.parse(tester.widget<Text>(find.byKey(const Key('run-gps-distance'))).data!.split(' ').first), greaterThanOrEqualTo(km), reason: 'the distance measured before the restart is kept');
-    await tapKey(tester, 'run-finish');
-    await waitFor(tester, find.text('Start run'), what: 'Today offering a new run once this one is finished');
+    await waitFor(tester, find.byKey(const Key('runwalk-finish')), what: 'the same run');
+    expect(km(), greaterThanOrEqualTo(measured), reason: 'the distance measured before leaving is kept');
+    await j.finishAndSaveActivity();
+    await waitFor(tester, find.text('Run finished today'), what: 'Today with the saved run');
     await waitFor(tester, find.textContaining(' km'), what: 'the finished run with its measured distance on Today');
-    expect(find.textContaining('distance not recorded'), findsNothing);
     await binding.takeScreenshot('52-today-run-with-distance');
 
     // --- Signing out removes this owner's reminders from the phone (resume first so there are some to remove).

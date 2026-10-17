@@ -9,6 +9,32 @@ enum LoadUnit {
 
 const double kgPerLb = 0.45359237;
 
+/// Run / Walk display units. Distance is canonical metres everywhere else; pace, speed and elevation follow:
+/// km → min/km, km/h, m; mi → min/mi, mph, ft.
+enum DistanceUnit {
+  km('km', 1000, 'km/h', 'm', 1),
+  mi('mi', 1609.344, 'mph', 'ft', 3.28084);
+
+  const DistanceUnit(this.label, this.meters, this.speedLabel, this.elevationLabel, this.feetPerMeter);
+  final String label, speedLabel, elevationLabel;
+  final double meters, feetPerMeter;
+
+  /// "2.40" (two decimals), the number only.
+  String number(double meters) => (meters / this.meters).toStringAsFixed(2);
+  String distance(double? meters) => meters == null ? '—' : '${number(meters)} $label';
+
+  /// "12:30" per unit, or "—" when there is no honest pace.
+  String paceNumber(double? secondsPerUnit) {
+    if (secondsPerUnit == null || !secondsPerUnit.isFinite || secondsPerUnit <= 0 || secondsPerUnit > 5940) return '—';
+    final s = secondsPerUnit.round();
+    return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+  }
+
+  String pace(double? secondsPerUnit) => paceNumber(secondsPerUnit) == '—' ? '—' : '${paceNumber(secondsPerUnit)} /$label';
+  String speed(double? metersPerSecond) => metersPerSecond == null ? '—' : '${(metersPerSecond * 3600 / meters).toStringAsFixed(1)} $speedLabel';
+  String elevation(double? meters) => meters == null ? '—' : '${(meters * feetPerMeter).round()} $elevationLabel';
+}
+
 double loadInputToKg(double value, LoadUnit unit) => unit == LoadUnit.lb ? value * kgPerLb : value;
 double loadKgToDisplay(double kg, LoadUnit unit) => unit == LoadUnit.lb ? kg / kgPerLb : kg;
 

@@ -1,0 +1,3 @@
+                android.title=String (GoHard is recording your walk)
+                android.title=String (Virtual SD card)
+                android.title=String (Set a screen lock)

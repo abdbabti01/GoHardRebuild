@@ -221,8 +221,8 @@ void main() {
       await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, workouts: workouts)))!, size: const Size(390, 1400));
       await _openTrain(tester, 'workouts');
       expect(find.byKey(const Key('start-manual')), findsOneWidget);
-      expect(find.descendant(of: find.byKey(const Key('train-start-run')), matching: find.text('Start a run')), findsOneWidget);
-      expect(find.text('Run history'), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('train-start-run')), matching: find.text('Run / Walk')), findsOneWidget);
+      expect(find.text('Run / Walk history'), findsOneWidget);
       expect(find.text(workouts.isEmpty ? 'No workouts recorded yet' : 'Push day'), findsOneWidget);
       await _tap(tester, 'train-history');
       expect(find.byType(WorkoutHistoryScreen), findsOneWidget);

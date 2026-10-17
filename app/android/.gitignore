@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Google Maps key (docs/RUN_WALK.md). Never commit it.
+secrets.properties

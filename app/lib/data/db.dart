@@ -56,13 +56,42 @@ class Commands extends Table {
   TextColumn get ack => text().nullable()();
 }
 
-@DriftDatabase(tables: [Records, Commands])
+/// The stored route of a Run / Walk (docs/RUN_WALK.md › Route format): append-only, ordered by `seq`, owner-scoped.
+/// One row per fix or recording event, so the route and every metric can be reproduced.
+@DataClassName('TrackRow')
+class TrackEntries extends Table {
+  TextColumn get ownerId => text()();
+  TextColumn get activityId => text()();
+  IntColumn get seq => integer()();
+  TextColumn get type => text()();
+  IntColumn get segment => integer()();
+
+  /// UTC epoch milliseconds.
+  IntColumn get t => integer()();
+  RealColumn get lat => real().nullable()();
+  RealColumn get lon => real().nullable()();
+  RealColumn get acc => real().nullable()();
+  RealColumn get alt => real().nullable()();
+  RealColumn get altAcc => real().nullable()();
+  RealColumn get speed => real().nullable()();
+  RealColumn get speedAcc => real().nullable()();
+  RealColumn get heading => real().nullable()();
+
+  /// Event details as JSON (legacy distance/time, interruption reason).
+  TextColumn get meta => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {ownerId, activityId, seq};
+}
+
+@DriftDatabase(tables: [Records, Commands, TrackEntries])
 class AppDb extends _$AppDb {
   AppDb(super.e);
 
   /// v1: initial. v2: adds Records.alternativeBody and Commands.ack (conflict evidence retention).
+  /// v3: adds track_entries (Run / Walk routes).
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -77,6 +106,7 @@ class AppDb extends _$AppDb {
             await m.addColumn(records, records.alternativeBody);
             await m.addColumn(commands, commands.ack);
           }
+          if (from < 3) await m.createTable(trackEntries); // additive: no existing row changes
         },
       );
 }

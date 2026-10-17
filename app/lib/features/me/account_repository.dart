@@ -1,4 +1,3 @@
-import '../../core/clock.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../data/sync.dart';
@@ -122,33 +121,11 @@ class ProfileRepository {
   }
 }
 
-/// Supporting activity: manually timed runs and optional body measurements.
+/// Optional body measurements. Run / Walk is features/activity/activity_repository.dart.
 class ActivityRepository {
-  ActivityRepository(this._sync, this._owner, this._clock);
+  ActivityRepository(this._sync, this._owner);
   final SyncEngine _sync;
   final String _owner;
-  final AppClock _clock;
-
-  /// Creates the owned run record first; callers navigate only once this has succeeded.
-  Future<Run> startRun(String dayKey) async {
-    final id = SyncEngine.newId();
-    final at = _clock.utcNow().toIso8601String();
-    final body = <String, dynamic>{'id': id, 'dayKey': dayKey, 'startedAtUtc': at, 'finishedAtUtc': null, 'activeDurationSeconds': null, 'distanceMeters': null, 'revision': 0, 'isDeleted': false};
-    await _sync.submit(_owner, kind: 'run.start', path: '/runs', targetKind: Kinds.run, targetId: id,
-        writes: [LocalWrite(Kinds.run, id, body, dayKey: dayKey)], payload: {'runId': id, 'dayKey': dayKey, 'startedAtUtc': at});
-    return Run(body);
-  }
-
-  /// Distance is optional and only ever what the user typed; no GPS route or estimate is invented.
-  Future<void> finishRun(Run run, {required int activeSeconds, double? distanceMeters}) {
-    final at = _clock.utcNow().toIso8601String();
-    return _sync.submit(_owner, kind: 'run.finish', path: '/runs/${run.id}/finish', targetKind: Kinds.run, targetId: run.id,
-        writes: [LocalWrite(Kinds.run, run.id, copyJson(run.j)..addAll({'finishedAtUtc': at, 'activeDurationSeconds': activeSeconds, 'distanceMeters': distanceMeters}), dayKey: run.dayKey)],
-        payload: {'expectedRevision': {r'$rev': [Kinds.run, run.id]}, 'activeDurationSeconds': activeSeconds, 'distanceMeters': distanceMeters, 'finishedAtUtc': at});
-  }
-
-  Future<void> deleteRun(Run run) => _sync.submit(_owner, kind: 'run.delete', path: '/runs/${run.id}/delete', targetKind: Kinds.run, targetId: run.id,
-      writes: [LocalWrite(Kinds.run, run.id, copyJson(run.j)..['isDeleted'] = true, dayKey: run.dayKey)], payload: {'expectedRevision': {r'$rev': [Kinds.run, run.id]}});
 
   Future<void> addMetric(String dayKey, {double? weightKg, double? bodyFatPercent, String? note}) {
     if (weightKg == null && bodyFatPercent == null) throw const AuthFailure('Enter a weight or a body-fat value.');

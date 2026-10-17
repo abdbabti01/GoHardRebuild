@@ -1567,16 +1567,856 @@ class CommandsCompanion extends UpdateCompanion<Cmd> {
   }
 }
 
+class $TrackEntriesTable extends TrackEntries
+    with TableInfo<$TrackEntriesTable, TrackRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrackEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityIdMeta = const VerificationMeta(
+    'activityId',
+  );
+  @override
+  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
+    'activity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seqMeta = const VerificationMeta('seq');
+  @override
+  late final GeneratedColumn<int> seq = GeneratedColumn<int>(
+    'seq',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _segmentMeta = const VerificationMeta(
+    'segment',
+  );
+  @override
+  late final GeneratedColumn<int> segment = GeneratedColumn<int>(
+    'segment',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tMeta = const VerificationMeta('t');
+  @override
+  late final GeneratedColumn<int> t = GeneratedColumn<int>(
+    't',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _latMeta = const VerificationMeta('lat');
+  @override
+  late final GeneratedColumn<double> lat = GeneratedColumn<double>(
+    'lat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lonMeta = const VerificationMeta('lon');
+  @override
+  late final GeneratedColumn<double> lon = GeneratedColumn<double>(
+    'lon',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _accMeta = const VerificationMeta('acc');
+  @override
+  late final GeneratedColumn<double> acc = GeneratedColumn<double>(
+    'acc',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _altMeta = const VerificationMeta('alt');
+  @override
+  late final GeneratedColumn<double> alt = GeneratedColumn<double>(
+    'alt',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _altAccMeta = const VerificationMeta('altAcc');
+  @override
+  late final GeneratedColumn<double> altAcc = GeneratedColumn<double>(
+    'alt_acc',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _speedMeta = const VerificationMeta('speed');
+  @override
+  late final GeneratedColumn<double> speed = GeneratedColumn<double>(
+    'speed',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _speedAccMeta = const VerificationMeta(
+    'speedAcc',
+  );
+  @override
+  late final GeneratedColumn<double> speedAcc = GeneratedColumn<double>(
+    'speed_acc',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _headingMeta = const VerificationMeta(
+    'heading',
+  );
+  @override
+  late final GeneratedColumn<double> heading = GeneratedColumn<double>(
+    'heading',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _metaMeta = const VerificationMeta('meta');
+  @override
+  late final GeneratedColumn<String> meta = GeneratedColumn<String>(
+    'meta',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    activityId,
+    seq,
+    type,
+    segment,
+    t,
+    lat,
+    lon,
+    acc,
+    alt,
+    altAcc,
+    speed,
+    speedAcc,
+    heading,
+    meta,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'track_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrackRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('activity_id')) {
+      context.handle(
+        _activityIdMeta,
+        activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_activityIdMeta);
+    }
+    if (data.containsKey('seq')) {
+      context.handle(
+        _seqMeta,
+        seq.isAcceptableOrUnknown(data['seq']!, _seqMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seqMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('segment')) {
+      context.handle(
+        _segmentMeta,
+        segment.isAcceptableOrUnknown(data['segment']!, _segmentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_segmentMeta);
+    }
+    if (data.containsKey('t')) {
+      context.handle(_tMeta, t.isAcceptableOrUnknown(data['t']!, _tMeta));
+    } else if (isInserting) {
+      context.missing(_tMeta);
+    }
+    if (data.containsKey('lat')) {
+      context.handle(
+        _latMeta,
+        lat.isAcceptableOrUnknown(data['lat']!, _latMeta),
+      );
+    }
+    if (data.containsKey('lon')) {
+      context.handle(
+        _lonMeta,
+        lon.isAcceptableOrUnknown(data['lon']!, _lonMeta),
+      );
+    }
+    if (data.containsKey('acc')) {
+      context.handle(
+        _accMeta,
+        acc.isAcceptableOrUnknown(data['acc']!, _accMeta),
+      );
+    }
+    if (data.containsKey('alt')) {
+      context.handle(
+        _altMeta,
+        alt.isAcceptableOrUnknown(data['alt']!, _altMeta),
+      );
+    }
+    if (data.containsKey('alt_acc')) {
+      context.handle(
+        _altAccMeta,
+        altAcc.isAcceptableOrUnknown(data['alt_acc']!, _altAccMeta),
+      );
+    }
+    if (data.containsKey('speed')) {
+      context.handle(
+        _speedMeta,
+        speed.isAcceptableOrUnknown(data['speed']!, _speedMeta),
+      );
+    }
+    if (data.containsKey('speed_acc')) {
+      context.handle(
+        _speedAccMeta,
+        speedAcc.isAcceptableOrUnknown(data['speed_acc']!, _speedAccMeta),
+      );
+    }
+    if (data.containsKey('heading')) {
+      context.handle(
+        _headingMeta,
+        heading.isAcceptableOrUnknown(data['heading']!, _headingMeta),
+      );
+    }
+    if (data.containsKey('meta')) {
+      context.handle(
+        _metaMeta,
+        meta.isAcceptableOrUnknown(data['meta']!, _metaMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, activityId, seq};
+  @override
+  TrackRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrackRow(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      activityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_id'],
+      )!,
+      seq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}seq'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      segment: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}segment'],
+      )!,
+      t: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}t'],
+      )!,
+      lat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lat'],
+      ),
+      lon: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lon'],
+      ),
+      acc: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}acc'],
+      ),
+      alt: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}alt'],
+      ),
+      altAcc: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}alt_acc'],
+      ),
+      speed: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}speed'],
+      ),
+      speedAcc: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}speed_acc'],
+      ),
+      heading: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}heading'],
+      ),
+      meta: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meta'],
+      ),
+    );
+  }
+
+  @override
+  $TrackEntriesTable createAlias(String alias) {
+    return $TrackEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class TrackRow extends DataClass implements Insertable<TrackRow> {
+  final String ownerId;
+  final String activityId;
+  final int seq;
+  final String type;
+  final int segment;
+
+  /// UTC epoch milliseconds.
+  final int t;
+  final double? lat;
+  final double? lon;
+  final double? acc;
+  final double? alt;
+  final double? altAcc;
+  final double? speed;
+  final double? speedAcc;
+  final double? heading;
+
+  /// Event details as JSON (legacy distance/time, interruption reason).
+  final String? meta;
+  const TrackRow({
+    required this.ownerId,
+    required this.activityId,
+    required this.seq,
+    required this.type,
+    required this.segment,
+    required this.t,
+    this.lat,
+    this.lon,
+    this.acc,
+    this.alt,
+    this.altAcc,
+    this.speed,
+    this.speedAcc,
+    this.heading,
+    this.meta,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['activity_id'] = Variable<String>(activityId);
+    map['seq'] = Variable<int>(seq);
+    map['type'] = Variable<String>(type);
+    map['segment'] = Variable<int>(segment);
+    map['t'] = Variable<int>(t);
+    if (!nullToAbsent || lat != null) {
+      map['lat'] = Variable<double>(lat);
+    }
+    if (!nullToAbsent || lon != null) {
+      map['lon'] = Variable<double>(lon);
+    }
+    if (!nullToAbsent || acc != null) {
+      map['acc'] = Variable<double>(acc);
+    }
+    if (!nullToAbsent || alt != null) {
+      map['alt'] = Variable<double>(alt);
+    }
+    if (!nullToAbsent || altAcc != null) {
+      map['alt_acc'] = Variable<double>(altAcc);
+    }
+    if (!nullToAbsent || speed != null) {
+      map['speed'] = Variable<double>(speed);
+    }
+    if (!nullToAbsent || speedAcc != null) {
+      map['speed_acc'] = Variable<double>(speedAcc);
+    }
+    if (!nullToAbsent || heading != null) {
+      map['heading'] = Variable<double>(heading);
+    }
+    if (!nullToAbsent || meta != null) {
+      map['meta'] = Variable<String>(meta);
+    }
+    return map;
+  }
+
+  TrackEntriesCompanion toCompanion(bool nullToAbsent) {
+    return TrackEntriesCompanion(
+      ownerId: Value(ownerId),
+      activityId: Value(activityId),
+      seq: Value(seq),
+      type: Value(type),
+      segment: Value(segment),
+      t: Value(t),
+      lat: lat == null && nullToAbsent ? const Value.absent() : Value(lat),
+      lon: lon == null && nullToAbsent ? const Value.absent() : Value(lon),
+      acc: acc == null && nullToAbsent ? const Value.absent() : Value(acc),
+      alt: alt == null && nullToAbsent ? const Value.absent() : Value(alt),
+      altAcc: altAcc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(altAcc),
+      speed: speed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(speed),
+      speedAcc: speedAcc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(speedAcc),
+      heading: heading == null && nullToAbsent
+          ? const Value.absent()
+          : Value(heading),
+      meta: meta == null && nullToAbsent ? const Value.absent() : Value(meta),
+    );
+  }
+
+  factory TrackRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrackRow(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      activityId: serializer.fromJson<String>(json['activityId']),
+      seq: serializer.fromJson<int>(json['seq']),
+      type: serializer.fromJson<String>(json['type']),
+      segment: serializer.fromJson<int>(json['segment']),
+      t: serializer.fromJson<int>(json['t']),
+      lat: serializer.fromJson<double?>(json['lat']),
+      lon: serializer.fromJson<double?>(json['lon']),
+      acc: serializer.fromJson<double?>(json['acc']),
+      alt: serializer.fromJson<double?>(json['alt']),
+      altAcc: serializer.fromJson<double?>(json['altAcc']),
+      speed: serializer.fromJson<double?>(json['speed']),
+      speedAcc: serializer.fromJson<double?>(json['speedAcc']),
+      heading: serializer.fromJson<double?>(json['heading']),
+      meta: serializer.fromJson<String?>(json['meta']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'activityId': serializer.toJson<String>(activityId),
+      'seq': serializer.toJson<int>(seq),
+      'type': serializer.toJson<String>(type),
+      'segment': serializer.toJson<int>(segment),
+      't': serializer.toJson<int>(t),
+      'lat': serializer.toJson<double?>(lat),
+      'lon': serializer.toJson<double?>(lon),
+      'acc': serializer.toJson<double?>(acc),
+      'alt': serializer.toJson<double?>(alt),
+      'altAcc': serializer.toJson<double?>(altAcc),
+      'speed': serializer.toJson<double?>(speed),
+      'speedAcc': serializer.toJson<double?>(speedAcc),
+      'heading': serializer.toJson<double?>(heading),
+      'meta': serializer.toJson<String?>(meta),
+    };
+  }
+
+  TrackRow copyWith({
+    String? ownerId,
+    String? activityId,
+    int? seq,
+    String? type,
+    int? segment,
+    int? t,
+    Value<double?> lat = const Value.absent(),
+    Value<double?> lon = const Value.absent(),
+    Value<double?> acc = const Value.absent(),
+    Value<double?> alt = const Value.absent(),
+    Value<double?> altAcc = const Value.absent(),
+    Value<double?> speed = const Value.absent(),
+    Value<double?> speedAcc = const Value.absent(),
+    Value<double?> heading = const Value.absent(),
+    Value<String?> meta = const Value.absent(),
+  }) => TrackRow(
+    ownerId: ownerId ?? this.ownerId,
+    activityId: activityId ?? this.activityId,
+    seq: seq ?? this.seq,
+    type: type ?? this.type,
+    segment: segment ?? this.segment,
+    t: t ?? this.t,
+    lat: lat.present ? lat.value : this.lat,
+    lon: lon.present ? lon.value : this.lon,
+    acc: acc.present ? acc.value : this.acc,
+    alt: alt.present ? alt.value : this.alt,
+    altAcc: altAcc.present ? altAcc.value : this.altAcc,
+    speed: speed.present ? speed.value : this.speed,
+    speedAcc: speedAcc.present ? speedAcc.value : this.speedAcc,
+    heading: heading.present ? heading.value : this.heading,
+    meta: meta.present ? meta.value : this.meta,
+  );
+  TrackRow copyWithCompanion(TrackEntriesCompanion data) {
+    return TrackRow(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      activityId: data.activityId.present
+          ? data.activityId.value
+          : this.activityId,
+      seq: data.seq.present ? data.seq.value : this.seq,
+      type: data.type.present ? data.type.value : this.type,
+      segment: data.segment.present ? data.segment.value : this.segment,
+      t: data.t.present ? data.t.value : this.t,
+      lat: data.lat.present ? data.lat.value : this.lat,
+      lon: data.lon.present ? data.lon.value : this.lon,
+      acc: data.acc.present ? data.acc.value : this.acc,
+      alt: data.alt.present ? data.alt.value : this.alt,
+      altAcc: data.altAcc.present ? data.altAcc.value : this.altAcc,
+      speed: data.speed.present ? data.speed.value : this.speed,
+      speedAcc: data.speedAcc.present ? data.speedAcc.value : this.speedAcc,
+      heading: data.heading.present ? data.heading.value : this.heading,
+      meta: data.meta.present ? data.meta.value : this.meta,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackRow(')
+          ..write('ownerId: $ownerId, ')
+          ..write('activityId: $activityId, ')
+          ..write('seq: $seq, ')
+          ..write('type: $type, ')
+          ..write('segment: $segment, ')
+          ..write('t: $t, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon, ')
+          ..write('acc: $acc, ')
+          ..write('alt: $alt, ')
+          ..write('altAcc: $altAcc, ')
+          ..write('speed: $speed, ')
+          ..write('speedAcc: $speedAcc, ')
+          ..write('heading: $heading, ')
+          ..write('meta: $meta')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    activityId,
+    seq,
+    type,
+    segment,
+    t,
+    lat,
+    lon,
+    acc,
+    alt,
+    altAcc,
+    speed,
+    speedAcc,
+    heading,
+    meta,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrackRow &&
+          other.ownerId == this.ownerId &&
+          other.activityId == this.activityId &&
+          other.seq == this.seq &&
+          other.type == this.type &&
+          other.segment == this.segment &&
+          other.t == this.t &&
+          other.lat == this.lat &&
+          other.lon == this.lon &&
+          other.acc == this.acc &&
+          other.alt == this.alt &&
+          other.altAcc == this.altAcc &&
+          other.speed == this.speed &&
+          other.speedAcc == this.speedAcc &&
+          other.heading == this.heading &&
+          other.meta == this.meta);
+}
+
+class TrackEntriesCompanion extends UpdateCompanion<TrackRow> {
+  final Value<String> ownerId;
+  final Value<String> activityId;
+  final Value<int> seq;
+  final Value<String> type;
+  final Value<int> segment;
+  final Value<int> t;
+  final Value<double?> lat;
+  final Value<double?> lon;
+  final Value<double?> acc;
+  final Value<double?> alt;
+  final Value<double?> altAcc;
+  final Value<double?> speed;
+  final Value<double?> speedAcc;
+  final Value<double?> heading;
+  final Value<String?> meta;
+  final Value<int> rowid;
+  const TrackEntriesCompanion({
+    this.ownerId = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.seq = const Value.absent(),
+    this.type = const Value.absent(),
+    this.segment = const Value.absent(),
+    this.t = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lon = const Value.absent(),
+    this.acc = const Value.absent(),
+    this.alt = const Value.absent(),
+    this.altAcc = const Value.absent(),
+    this.speed = const Value.absent(),
+    this.speedAcc = const Value.absent(),
+    this.heading = const Value.absent(),
+    this.meta = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TrackEntriesCompanion.insert({
+    required String ownerId,
+    required String activityId,
+    required int seq,
+    required String type,
+    required int segment,
+    required int t,
+    this.lat = const Value.absent(),
+    this.lon = const Value.absent(),
+    this.acc = const Value.absent(),
+    this.alt = const Value.absent(),
+    this.altAcc = const Value.absent(),
+    this.speed = const Value.absent(),
+    this.speedAcc = const Value.absent(),
+    this.heading = const Value.absent(),
+    this.meta = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       activityId = Value(activityId),
+       seq = Value(seq),
+       type = Value(type),
+       segment = Value(segment),
+       t = Value(t);
+  static Insertable<TrackRow> custom({
+    Expression<String>? ownerId,
+    Expression<String>? activityId,
+    Expression<int>? seq,
+    Expression<String>? type,
+    Expression<int>? segment,
+    Expression<int>? t,
+    Expression<double>? lat,
+    Expression<double>? lon,
+    Expression<double>? acc,
+    Expression<double>? alt,
+    Expression<double>? altAcc,
+    Expression<double>? speed,
+    Expression<double>? speedAcc,
+    Expression<double>? heading,
+    Expression<String>? meta,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (activityId != null) 'activity_id': activityId,
+      if (seq != null) 'seq': seq,
+      if (type != null) 'type': type,
+      if (segment != null) 'segment': segment,
+      if (t != null) 't': t,
+      if (lat != null) 'lat': lat,
+      if (lon != null) 'lon': lon,
+      if (acc != null) 'acc': acc,
+      if (alt != null) 'alt': alt,
+      if (altAcc != null) 'alt_acc': altAcc,
+      if (speed != null) 'speed': speed,
+      if (speedAcc != null) 'speed_acc': speedAcc,
+      if (heading != null) 'heading': heading,
+      if (meta != null) 'meta': meta,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TrackEntriesCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? activityId,
+    Value<int>? seq,
+    Value<String>? type,
+    Value<int>? segment,
+    Value<int>? t,
+    Value<double?>? lat,
+    Value<double?>? lon,
+    Value<double?>? acc,
+    Value<double?>? alt,
+    Value<double?>? altAcc,
+    Value<double?>? speed,
+    Value<double?>? speedAcc,
+    Value<double?>? heading,
+    Value<String?>? meta,
+    Value<int>? rowid,
+  }) {
+    return TrackEntriesCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      activityId: activityId ?? this.activityId,
+      seq: seq ?? this.seq,
+      type: type ?? this.type,
+      segment: segment ?? this.segment,
+      t: t ?? this.t,
+      lat: lat ?? this.lat,
+      lon: lon ?? this.lon,
+      acc: acc ?? this.acc,
+      alt: alt ?? this.alt,
+      altAcc: altAcc ?? this.altAcc,
+      speed: speed ?? this.speed,
+      speedAcc: speedAcc ?? this.speedAcc,
+      heading: heading ?? this.heading,
+      meta: meta ?? this.meta,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (activityId.present) {
+      map['activity_id'] = Variable<String>(activityId.value);
+    }
+    if (seq.present) {
+      map['seq'] = Variable<int>(seq.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (segment.present) {
+      map['segment'] = Variable<int>(segment.value);
+    }
+    if (t.present) {
+      map['t'] = Variable<int>(t.value);
+    }
+    if (lat.present) {
+      map['lat'] = Variable<double>(lat.value);
+    }
+    if (lon.present) {
+      map['lon'] = Variable<double>(lon.value);
+    }
+    if (acc.present) {
+      map['acc'] = Variable<double>(acc.value);
+    }
+    if (alt.present) {
+      map['alt'] = Variable<double>(alt.value);
+    }
+    if (altAcc.present) {
+      map['alt_acc'] = Variable<double>(altAcc.value);
+    }
+    if (speed.present) {
+      map['speed'] = Variable<double>(speed.value);
+    }
+    if (speedAcc.present) {
+      map['speed_acc'] = Variable<double>(speedAcc.value);
+    }
+    if (heading.present) {
+      map['heading'] = Variable<double>(heading.value);
+    }
+    if (meta.present) {
+      map['meta'] = Variable<String>(meta.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackEntriesCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('activityId: $activityId, ')
+          ..write('seq: $seq, ')
+          ..write('type: $type, ')
+          ..write('segment: $segment, ')
+          ..write('t: $t, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon, ')
+          ..write('acc: $acc, ')
+          ..write('alt: $alt, ')
+          ..write('altAcc: $altAcc, ')
+          ..write('speed: $speed, ')
+          ..write('speedAcc: $speedAcc, ')
+          ..write('heading: $heading, ')
+          ..write('meta: $meta, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDb extends GeneratedDatabase {
   _$AppDb(QueryExecutor e) : super(e);
   $AppDbManager get managers => $AppDbManager(this);
   late final $RecordsTable records = $RecordsTable(this);
   late final $CommandsTable commands = $CommandsTable(this);
+  late final $TrackEntriesTable trackEntries = $TrackEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [records, commands];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    records,
+    commands,
+    trackEntries,
+  ];
 }
 
 typedef $$RecordsTableCreateCompanionBuilder = RecordsCompanion Function({
@@ -2299,6 +3139,401 @@ typedef $$CommandsTableProcessedTableManager =
       Cmd,
       PrefetchHooks Function()
     >;
+typedef $$TrackEntriesTableCreateCompanionBuilder =
+    TrackEntriesCompanion Function({
+      required String ownerId,
+      required String activityId,
+      required int seq,
+      required String type,
+      required int segment,
+      required int t,
+      Value<double?> lat,
+      Value<double?> lon,
+      Value<double?> acc,
+      Value<double?> alt,
+      Value<double?> altAcc,
+      Value<double?> speed,
+      Value<double?> speedAcc,
+      Value<double?> heading,
+      Value<String?> meta,
+      Value<int> rowid,
+    });
+typedef $$TrackEntriesTableUpdateCompanionBuilder =
+    TrackEntriesCompanion Function({
+      Value<String> ownerId,
+      Value<String> activityId,
+      Value<int> seq,
+      Value<String> type,
+      Value<int> segment,
+      Value<int> t,
+      Value<double?> lat,
+      Value<double?> lon,
+      Value<double?> acc,
+      Value<double?> alt,
+      Value<double?> altAcc,
+      Value<double?> speed,
+      Value<double?> speedAcc,
+      Value<double?> heading,
+      Value<String?> meta,
+      Value<int> rowid,
+    });
+
+class $$TrackEntriesTableFilterComposer
+    extends Composer<_$AppDb, $TrackEntriesTable> {
+  $$TrackEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get seq => $composableBuilder(
+    column: $table.seq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get t => $composableBuilder(
+    column: $table.t,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lon => $composableBuilder(
+    column: $table.lon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get acc => $composableBuilder(
+    column: $table.acc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get alt => $composableBuilder(
+    column: $table.alt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get altAcc => $composableBuilder(
+    column: $table.altAcc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get speed => $composableBuilder(
+    column: $table.speed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get speedAcc => $composableBuilder(
+    column: $table.speedAcc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get heading => $composableBuilder(
+    column: $table.heading,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get meta => $composableBuilder(
+    column: $table.meta,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TrackEntriesTableOrderingComposer
+    extends Composer<_$AppDb, $TrackEntriesTable> {
+  $$TrackEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get seq => $composableBuilder(
+    column: $table.seq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get t => $composableBuilder(
+    column: $table.t,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lon => $composableBuilder(
+    column: $table.lon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get acc => $composableBuilder(
+    column: $table.acc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get alt => $composableBuilder(
+    column: $table.alt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get altAcc => $composableBuilder(
+    column: $table.altAcc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get speed => $composableBuilder(
+    column: $table.speed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get speedAcc => $composableBuilder(
+    column: $table.speedAcc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get heading => $composableBuilder(
+    column: $table.heading,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get meta => $composableBuilder(
+    column: $table.meta,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TrackEntriesTableAnnotationComposer
+    extends Composer<_$AppDb, $TrackEntriesTable> {
+  $$TrackEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get seq =>
+      $composableBuilder(column: $table.seq, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get segment =>
+      $composableBuilder(column: $table.segment, builder: (column) => column);
+
+  GeneratedColumn<int> get t =>
+      $composableBuilder(column: $table.t, builder: (column) => column);
+
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
+
+  GeneratedColumn<double> get lon =>
+      $composableBuilder(column: $table.lon, builder: (column) => column);
+
+  GeneratedColumn<double> get acc =>
+      $composableBuilder(column: $table.acc, builder: (column) => column);
+
+  GeneratedColumn<double> get alt =>
+      $composableBuilder(column: $table.alt, builder: (column) => column);
+
+  GeneratedColumn<double> get altAcc =>
+      $composableBuilder(column: $table.altAcc, builder: (column) => column);
+
+  GeneratedColumn<double> get speed =>
+      $composableBuilder(column: $table.speed, builder: (column) => column);
+
+  GeneratedColumn<double> get speedAcc =>
+      $composableBuilder(column: $table.speedAcc, builder: (column) => column);
+
+  GeneratedColumn<double> get heading =>
+      $composableBuilder(column: $table.heading, builder: (column) => column);
+
+  GeneratedColumn<String> get meta =>
+      $composableBuilder(column: $table.meta, builder: (column) => column);
+}
+
+class $$TrackEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDb,
+          $TrackEntriesTable,
+          TrackRow,
+          $$TrackEntriesTableFilterComposer,
+          $$TrackEntriesTableOrderingComposer,
+          $$TrackEntriesTableAnnotationComposer,
+          $$TrackEntriesTableCreateCompanionBuilder,
+          $$TrackEntriesTableUpdateCompanionBuilder,
+          (TrackRow, BaseReferences<_$AppDb, $TrackEntriesTable, TrackRow>),
+          TrackRow,
+          PrefetchHooks Function()
+        > {
+  $$TrackEntriesTableTableManager(_$AppDb db, $TrackEntriesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrackEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrackEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TrackEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> activityId = const Value.absent(),
+                Value<int> seq = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<int> segment = const Value.absent(),
+                Value<int> t = const Value.absent(),
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lon = const Value.absent(),
+                Value<double?> acc = const Value.absent(),
+                Value<double?> alt = const Value.absent(),
+                Value<double?> altAcc = const Value.absent(),
+                Value<double?> speed = const Value.absent(),
+                Value<double?> speedAcc = const Value.absent(),
+                Value<double?> heading = const Value.absent(),
+                Value<String?> meta = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrackEntriesCompanion(
+                ownerId: ownerId,
+                activityId: activityId,
+                seq: seq,
+                type: type,
+                segment: segment,
+                t: t,
+                lat: lat,
+                lon: lon,
+                acc: acc,
+                alt: alt,
+                altAcc: altAcc,
+                speed: speed,
+                speedAcc: speedAcc,
+                heading: heading,
+                meta: meta,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String activityId,
+                required int seq,
+                required String type,
+                required int segment,
+                required int t,
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lon = const Value.absent(),
+                Value<double?> acc = const Value.absent(),
+                Value<double?> alt = const Value.absent(),
+                Value<double?> altAcc = const Value.absent(),
+                Value<double?> speed = const Value.absent(),
+                Value<double?> speedAcc = const Value.absent(),
+                Value<double?> heading = const Value.absent(),
+                Value<String?> meta = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrackEntriesCompanion.insert(
+                ownerId: ownerId,
+                activityId: activityId,
+                seq: seq,
+                type: type,
+                segment: segment,
+                t: t,
+                lat: lat,
+                lon: lon,
+                acc: acc,
+                alt: alt,
+                altAcc: altAcc,
+                speed: speed,
+                speedAcc: speedAcc,
+                heading: heading,
+                meta: meta,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TrackEntriesTable, TrackRow>(table),
+                  BaseReferences<_$AppDb, $TrackEntriesTable, TrackRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TrackEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDb,
+      $TrackEntriesTable,
+      TrackRow,
+      $$TrackEntriesTableFilterComposer,
+      $$TrackEntriesTableOrderingComposer,
+      $$TrackEntriesTableAnnotationComposer,
+      $$TrackEntriesTableCreateCompanionBuilder,
+      $$TrackEntriesTableUpdateCompanionBuilder,
+      (TrackRow, BaseReferences<_$AppDb, $TrackEntriesTable, TrackRow>),
+      TrackRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDbManager {
   final _$AppDb _db;
@@ -2307,4 +3542,6 @@ class $AppDbManager {
       $$RecordsTableTableManager(_db, _db.records);
   $$CommandsTableTableManager get commands =>
       $$CommandsTableTableManager(_db, _db.commands);
+  $$TrackEntriesTableTableManager get trackEntries =>
+      $$TrackEntriesTableTableManager(_db, _db.trackEntries);
 }

@@ -165,17 +165,36 @@ public sealed class SavedFoodService(GoHardDb db)
         (await db.SavedFoods.AsNoTracking().Where(f => f.UserId == userId).OrderBy(f => f.CreatedAtUtc).ToListAsync(ct)).Select(ToDto).ToList();
 }
 
-/// <summary>Supporting activity records: manually timed runs and optional body measurements.</summary>
+/// <summary>Supporting activity records: Run / Walk activities with their routes (docs/RUN_WALK.md) and optional body measurements.</summary>
 public sealed class ActivityService(GoHardDb db)
 {
-    public static RunDto ToDto(Run r) => new(r.Id, r.DayKey, r.StartedAtUtc, r.FinishedAtUtc, r.ActiveDurationSeconds, r.DistanceMeters, r.Revision, r.DeletedAtUtc != null);
+    public static readonly string[] Types = ["run", "walk"];
+    public const int ChunkSize = 500, MaxChunks = 10000, RoutePageLimit = 20;
+
+    public static RunDto ToDto(Run r) => new(r.Id, r.DayKey, r.StartedAtUtc, r.FinishedAtUtc, r.ActiveDurationSeconds, r.DistanceMeters, r.Revision, r.DeletedAtUtc != null,
+        r.ActivityType, r.Title, r.Notes, r.MetricsJson is null ? null : JsonSerializer.Deserialize<JsonElement>(r.MetricsJson), r.RouteState, r.RouteChunkCount);
     public static BodyMetricDto ToDto(BodyMetric m) => new(m.Id, m.DayKey, m.WeightKg, m.BodyFatPercent, m.Note, m.Revision, m.DeletedAtUtc != null);
+
+    /// <summary>Title 1–80 characters, notes up to 1,000, metrics a JSON object of at most 4,000 characters; each optional.</summary>
+    private static bool ValidDetails(string? title, string? notes, JsonElement? metrics) =>
+        (title is null || title.Trim().Length is > 0 and <= 80) && (notes is null || notes.Length <= 1000) &&
+        (metrics is null || (metrics.Value.ValueKind == JsonValueKind.Object && metrics.Value.GetRawText().Length <= 4000));
+
+    private static void SetDetails(Run run, string? title, string? notes, JsonElement? metrics)
+    {
+        if (title is not null) run.Title = title.Trim();
+        if (notes is not null) run.Notes = notes.Length == 0 ? null : notes;
+        if (metrics is not null) run.MetricsJson = metrics.Value.GetRawText();
+    }
+
+    private Task<Run?> Owned(Guid userId, Guid id, CancellationToken ct) =>
+        db.Runs.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId && x.DeletedAtUtc == null, ct);
 
     public async Task<Outcome<RunDto>> StartRunAsync(Guid userId, RunStartRequest r, CancellationToken ct)
     {
-        if (r.RunId == Guid.Empty) return Outcome.Rejected<RunDto>(Ack.Invalid);
+        if (r.RunId == Guid.Empty || (r.ActivityType is not null && !Types.Contains(r.ActivityType))) return Outcome.Rejected<RunDto>(Ack.Invalid);
         if (await db.Runs.AnyAsync(x => x.Id == r.RunId, ct)) return Outcome.Conflict<RunDto>("DUPLICATE_ID");
-        var run = new Run { Id = r.RunId, UserId = userId, DayKey = r.DayKey, StartedAtUtc = WorkoutService.Utc(r.StartedAtUtc) };
+        var run = new Run { Id = r.RunId, UserId = userId, DayKey = r.DayKey, StartedAtUtc = WorkoutService.Utc(r.StartedAtUtc), ActivityType = r.ActivityType ?? "run" };
         db.Runs.Add(run);
         await db.SaveChangesAsync(ct);
         return Outcome.Accepted(run.Revision, ToDto(run));
@@ -183,25 +202,109 @@ public sealed class ActivityService(GoHardDb db)
 
     public async Task<Outcome<RunDto>> FinishRunAsync(Guid userId, Guid id, RunFinishRequest r, CancellationToken ct)
     {
-        var run = await db.Runs.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId && x.DeletedAtUtc == null, ct);
+        var run = await Owned(userId, id, ct);
         if (run is null) return Outcome.NotFound<RunDto>();
-        if (r.ActiveDurationSeconds is < 0 or > 604800 || r.DistanceMeters is < 0 or > 1000000) return Outcome.Rejected<RunDto>(Ack.Invalid);
+        if (r.ActiveDurationSeconds is < 0 or > 604800 || r.DistanceMeters is < 0 or > 1000000 || !ValidDetails(r.Title, r.Notes, r.Metrics)) return Outcome.Rejected<RunDto>(Ack.Invalid);
         if (run.FinishedAtUtc != null) return Outcome.Conflict("ALREADY_FINISHED", run.Revision, ToDto(run));
         if (run.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, run.Revision, ToDto(run));
         (run.FinishedAtUtc, run.ActiveDurationSeconds, run.DistanceMeters) = (WorkoutService.Utc(r.FinishedAtUtc), r.ActiveDurationSeconds, r.DistanceMeters);
+        SetDetails(run, r.Title, r.Notes, r.Metrics);
         run.Revision++;
         await db.SaveChangesAsync(ct);
         return Outcome.Accepted(run.Revision, ToDto(run));
     }
 
+    /// <summary>Edits a saved activity. The type changes only here, by the person's choice.</summary>
+    public async Task<Outcome<RunDto>> UpdateRunAsync(Guid userId, Guid id, RunUpdateRequest r, CancellationToken ct)
+    {
+        var run = await Owned(userId, id, ct);
+        if (run is null) return Outcome.NotFound<RunDto>();
+        if (!Types.Contains(r.ActivityType) || r.DistanceMeters is < 0 or > 1000000 || !ValidDetails(r.Title, r.Notes, r.Metrics)) return Outcome.Rejected<RunDto>(Ack.Invalid);
+        if (run.FinishedAtUtc == null) return Outcome.Conflict("RUN_OPEN", run.Revision, ToDto(run));
+        if (run.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, run.Revision, ToDto(run));
+        (run.ActivityType, run.DistanceMeters, run.Notes) = (r.ActivityType, r.DistanceMeters, string.IsNullOrEmpty(r.Notes) ? null : r.Notes);
+        SetDetails(run, r.Title, null, r.Metrics);
+        run.Revision++;
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(run.Revision, ToDto(run));
+    }
+
+    /// <summary>Deleting an activity erases its route on the account; a chunk arriving later finds no activity.</summary>
     public async Task<Outcome<RunDto>> DeleteRunAsync(Guid userId, Guid id, RevisionCommand r, CancellationToken ct)
     {
         var run = await db.Runs.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, ct);
         if (run is null) return Outcome.NotFound<RunDto>();
         if (run.DeletedAtUtc != null || run.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, run.Revision, ToDto(run));
+        await db.RouteChunks.Where(c => c.UserId == userId && c.RunId == id).ExecuteDeleteAsync(ct);
         run.DeletedAtUtc = DateTime.UtcNow; run.Revision++;
+        (run.RouteState, run.RouteChunkCount) = ("none", 0);
         await db.SaveChangesAsync(ct);
         return Outcome.Accepted(run.Revision, ToDto(run));
+    }
+
+    private static bool ValidEntries(int index, RouteChunkRequest r)
+    {
+        if (index is < 0 or >= MaxChunks || r.Entries is not { Count: > 0 and <= ChunkSize }) return false;
+        int lo = index * ChunkSize, hi = lo + ChunkSize - 1, prev = -1;
+        foreach (var e in r.Entries)
+        {
+            if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty("s", out var s) || !s.TryGetInt32(out var seq) || seq < lo || seq > hi || seq <= prev) return false;
+            if (!e.TryGetProperty("t", out var t) || !t.TryGetInt64(out _) || !e.TryGetProperty("y", out var y) || y.ValueKind != JsonValueKind.String) return false;
+            if (e.TryGetProperty("la", out var la) && (!la.TryGetDouble(out var lat) || lat is < -90 or > 90)) return false;
+            if (e.TryGetProperty("lo", out var lg) && (!lg.TryGetDouble(out var lon) || lon is < -180 or > 180)) return false;
+            prev = seq;
+        }
+        return r.FirstSeq == r.Entries[0].GetProperty("s").GetInt32() && r.LastSeq == prev;
+    }
+
+    /// <summary>Stores one route chunk. The same chunk again (a retry, a lost response) is accepted unchanged.</summary>
+    public async Task<Outcome<RouteChunkResult>> PutRouteChunkAsync(Guid userId, Guid id, int index, RouteChunkRequest r, CancellationToken ct)
+    {
+        var run = await Owned(userId, id, ct);
+        if (run is null) return Outcome.NotFound<RouteChunkResult>();
+        if (!ValidEntries(index, r)) return Outcome.Rejected<RouteChunkResult>(Ack.Invalid);
+        if (run.FinishedAtUtc == null) return Outcome.Conflict<RouteChunkResult>("RUN_OPEN", run.Revision);
+        var json = JsonSerializer.Serialize(r.Entries);
+        var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(json)));
+        var result = new RouteChunkResult(id, index, r.Entries.Count);
+        var existing = await db.RouteChunks.AsNoTracking().FirstOrDefaultAsync(c => c.RunId == id && c.Index == index, ct);
+        if (existing is not null)
+            return existing.Sha256 == sha ? Outcome.Accepted(run.Revision, result) : Outcome.Conflict<RouteChunkResult>("ROUTE_CHUNK_MISMATCH", run.Revision);
+        db.RouteChunks.Add(new RouteChunk
+        {
+            UserId = userId, RunId = id, Index = index, FirstSeq = r.FirstSeq, LastSeq = r.LastSeq, EntryCount = r.Entries.Count,
+            EntriesJson = json, Sha256 = sha, CreatedAtUtc = DateTime.UtcNow,
+        });
+        run.RouteChunkCount++;
+        if (run.RouteState == "none") run.RouteState = "uploading";
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(run.Revision, result);
+    }
+
+    /// <summary>Marks the route whole once every chunk 0 … n-1 is stored with the expected number of entries.</summary>
+    public async Task<Outcome<RunDto>> CompleteRouteAsync(Guid userId, Guid id, RouteCompleteRequest r, CancellationToken ct)
+    {
+        var run = await Owned(userId, id, ct);
+        if (run is null) return Outcome.NotFound<RunDto>();
+        if (r.ChunkCount is < 1 or > MaxChunks || r.EntryCount < 1) return Outcome.Rejected<RunDto>(Ack.Invalid);
+        var chunks = await db.RouteChunks.AsNoTracking().Where(c => c.RunId == id).Select(c => new { c.Index, c.EntryCount }).ToListAsync(ct);
+        if (chunks.Count != r.ChunkCount || chunks.Any(c => c.Index >= r.ChunkCount) || chunks.Sum(c => c.EntryCount) != r.EntryCount)
+            return Outcome.Conflict("ROUTE_INCOMPLETE", run.Revision, ToDto(run));
+        run.RouteState = "complete";
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(run.Revision, ToDto(run));
+    }
+
+    /// <summary>A bounded page of an activity's route chunks, in order. Routes are never part of the account snapshot.</summary>
+    public async Task<RoutePage?> RoutePageAsync(Guid userId, Guid id, int fromIndex, int limit, CancellationToken ct)
+    {
+        var run = await db.Runs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId && x.DeletedAtUtc == null, ct);
+        if (run is null) return null;
+        limit = Math.Clamp(limit, 1, RoutePageLimit);
+        var page = await db.RouteChunks.AsNoTracking().Where(c => c.RunId == id && c.UserId == userId && c.Index >= Math.Max(0, fromIndex))
+            .OrderBy(c => c.Index).Take(limit + 1).ToListAsync(ct);
+        var chunks = page.Take(limit).Select(c => new RouteChunkDto(c.Index, c.FirstSeq, c.LastSeq, JsonSerializer.Deserialize<JsonElement>(c.EntriesJson))).ToList();
+        return new RoutePage(id, run.RouteState, run.RouteChunkCount, chunks, page.Count > limit ? page[limit].Index : null);
     }
 
     public async Task<Outcome<BodyMetricDto>> AddMetricAsync(Guid userId, BodyMetricRequest r, CancellationToken ct)

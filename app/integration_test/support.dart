@@ -162,6 +162,24 @@ class Journey {
     await waitFor(find.byKey(const Key('train-plan')), what: 'Train after activating');
   }
 
+  /// Run / Walk from Today: Ready, then Start. Location permission must already be granted (the runner does it).
+  Future<void> startActivity({String type = 'run'}) async {
+    await tapKey('today-run');
+    await waitFor(find.byKey(const Key('runwalk-start')), what: 'Run / Walk Ready');
+    await tapKey('activity-type-$type');
+    await tapKey('runwalk-start');
+    await waitFor(find.byKey(const Key('runwalk-finish')), what: 'recording');
+  }
+
+  /// Finish, Save in the review, then Done on Saved: back where the activity was opened from.
+  Future<void> finishAndSaveActivity() async {
+    await tapKey('runwalk-finish');
+    await waitFor(find.byKey(const Key('runwalk-save')), what: 'the save review');
+    await tapKey('runwalk-save');
+    await waitFor(find.byKey(const Key('activity-done')), what: 'Saved');
+    await tapKey('activity-done');
+  }
+
   /// Signs in to the API directly, as a second device would, and returns the bearer token.
   Future<String> apiToken() async => ((await api.post<Map>('/auth/login', data: {'email': email, 'password': password})).data!)['accessToken'] as String;
 

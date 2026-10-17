@@ -117,10 +117,30 @@ public sealed record WaterEntryDto(Guid Id, DateOnly DayKey, decimal VolumeMl, i
 public sealed record WaterCreateRequest(Guid OperationId, Guid EntryId, DateOnly DayKey, decimal VolumeMl);
 public sealed record WaterUpdateRequest(Guid OperationId, int ExpectedRevision, DateOnly DayKey, decimal VolumeMl);
 
+/// <summary>A Run or Walk (docs/RUN_WALK.md). The fields after IsDeleted are additive: an older client ignores them.</summary>
+/// <param name="ActivityType">run | walk. Every record from before Run / Walk is a run.</param>
+/// <param name="Metrics">Derived summary for lists and other devices (bounded object), recomputable from the route.</param>
+/// <param name="RouteState">none | uploading | complete: whether the account holds the whole route.</param>
 public sealed record RunDto(Guid Id, DateOnly DayKey, DateTime StartedAtUtc, DateTime? FinishedAtUtc, int? ActiveDurationSeconds,
-    decimal? DistanceMeters, int Revision, bool IsDeleted);
-public sealed record RunStartRequest(Guid OperationId, Guid RunId, DateOnly DayKey, DateTime StartedAtUtc);
-public sealed record RunFinishRequest(Guid OperationId, int ExpectedRevision, int ActiveDurationSeconds, decimal? DistanceMeters, DateTime FinishedAtUtc);
+    decimal? DistanceMeters, int Revision, bool IsDeleted, string ActivityType = "run",
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Title = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Notes = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Metrics = null,
+    string RouteState = "none", int RouteChunkCount = 0);
+public sealed record RunStartRequest(Guid OperationId, Guid RunId, DateOnly DayKey, DateTime StartedAtUtc,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ActivityType = null);
+public sealed record RunFinishRequest(Guid OperationId, int ExpectedRevision, int ActiveDurationSeconds, decimal? DistanceMeters, DateTime FinishedAtUtc,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Title = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Notes = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Metrics = null);
+/// <summary>An edit of a saved activity: type, title, notes and the reported distance (a correction keeps the GPS value in Metrics).</summary>
+public sealed record RunUpdateRequest(Guid OperationId, int ExpectedRevision, string ActivityType, string? Title, string? Notes, decimal? DistanceMeters, JsonElement? Metrics);
+/// <summary>Route chunk n holds the entries with seq 500n … 500n+499, in order (docs/RUN_WALK.md › Sync contract).</summary>
+public sealed record RouteChunkRequest(Guid OperationId, int FirstSeq, int LastSeq, List<JsonElement> Entries);
+public sealed record RouteChunkResult(Guid RunId, int Index, int EntryCount);
+public sealed record RouteCompleteRequest(Guid OperationId, int ChunkCount, int EntryCount);
+public sealed record RouteChunkDto(int Index, int FirstSeq, int LastSeq, JsonElement Entries);
+public sealed record RoutePage(Guid RunId, string RouteState, int ChunkCount, List<RouteChunkDto> Chunks, int? NextIndex);
 public sealed record BodyMetricDto(Guid Id, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note, int Revision, bool IsDeleted);
 public sealed record BodyMetricRequest(Guid OperationId, Guid MetricId, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note);
 

@@ -13,7 +13,10 @@ import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/models.dart';
-import 'package:gohard_rebuild/features/activity/activity_screens.dart';
+import 'package:gohard_rebuild/features/activity/activity_history.dart';
+import 'package:gohard_rebuild/features/activity/recorder.dart';
+import 'package:gohard_rebuild/features/activity/run_walk_screens.dart';
+import 'package:gohard_rebuild/features/activity/track_math.dart';
 import 'package:gohard_rebuild/features/nutrition/nutrient_coverage.dart';
 import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart';
 import 'package:gohard_rebuild/features/plans/week_widgets.dart';
@@ -44,6 +47,22 @@ Override runtimes(Map<String, Json> byId) => runtimesProvider.overrideWith((ref)
 /// A paused clock at 31 minutes with 5.2 km measured: values that do not move while the test runs.
 const Json pausedRun = {'accumulatedActiveSeconds': 1860, 'runningAnchorUtc': null, 'isPaused': true, 'track': {'distanceMeters': 5200.0, 'fixes': 40, 'gaps': 0}};
 
+/// The one recorder holding [r] paused with [clock]'s time and distance (no database in widget tests).
+class _FixedRecorder extends Recorder {
+  _FixedRecorder(this.view);
+  final RecorderView view;
+  @override
+  RecorderView build() => view;
+  @override
+  Future<void> adopt(Run run) async {}
+}
+
+Override pausedRecorder(Json r, Json clock) => recorderProvider.overrideWith(() => _FixedRecorder(RecorderView(state: RecState.paused, run: Run(r),
+    analysis: TrackAnalysis()
+      ..add(TrackEntry(seq: 0, type: EntryType.legacy, segment: 0, t: 0, meta: {
+        'distanceMeters': (clock['track'] as Json)['distanceMeters'], 'activeMs': (clock['accumulatedActiveSeconds'] as int) * 1000,
+      })))));
+
 final food = [foodEntry('f1', day, 'Lunch', 'Rice', '1 bowl', calories: 400, protein: 25, carbs: 80, fat: 2), foodEntry('f2', day, 'Snack', 'Toast', '2 slices', calories: 110)];
 
 Finder photo(String module) => find.byKey(Key('today-photo-$module'));
@@ -58,6 +77,11 @@ Future<List<Override>> fixture(WidgetTester tester, {List<Json> plans = const []
         // overridesFor gives an empty runtime list at this position; a test that needs runtimes replaces it.
         if (runtime == null || i != _runtimeIndex) o,
       if (runtime != null) runtimes(runtime),
+      // A run's clock and distance are the recorder's: a paused-run runtime becomes a paused recorder.
+      for (final e in (runtime ?? const <String, Json>{}).entries)
+        if (e.value.containsKey('track'))
+          for (final r in runs)
+            if (r['id'] == e.key) pausedRecorder(r, e.value),
       ...more,
     ];
 
@@ -195,7 +219,7 @@ void main() {
         expect(find.text(gone), findsNothing, reason: '$gone belongs to the workout sheet, Train or Me');
       }
       expect(find.textContaining('sets recorded'), findsNothing, reason: 'nothing was recorded for a workout that has not started');
-      expect(find.byType(FilledButton), findsNWidgets(3), reason: 'one filled button per panel: Start workout, Log food, Start run');
+      expect(find.byType(FilledButton), findsNWidgets(3), reason: 'one filled button per panel: Start workout, Log food, Start');
       expect(find.byKey(const Key('today-start')).hitTestable(), findsOneWidget, reason: 'still due after an unrelated manual workout');
       expect(find.text('Completed'), findsNothing);
       // The manual workout is its own record, in its own words.
@@ -341,12 +365,13 @@ void main() {
     });
   });
 
-  group('run', () {
-    testWidgets('one Start run on a day without a run; no target, percentage or route is made up', (tester) async {
+  group('run / walk', () {
+    testWidgets('one Start on a day without a run or walk; no target, percentage or route is made up', (tester) async {
       await pumpApp(tester, await fixture(tester));
-      expect(find.widgetWithText(FilledButton, 'Start run'), findsOneWidget);
-      expect(find.text('No run today'), findsOneWidget);
-      expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one running entry point');
+      expect(find.text('Run / Walk'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+      expect(find.text('No run or walk today'), findsOneWidget);
+      expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one entry point');
       final module = find.byKey(const Key('today-module-run'));
       for (final invented in ['Distance', 'Time']) {
         expect(find.descendant(of: module, matching: find.text(invented)), findsNothing, reason: invented);
@@ -358,17 +383,21 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('today-run-history')));
       await tester.pumpAndSettle();
-      expect(find.byType(RunHistoryScreen), findsOneWidget, reason: 'history is the existing screen');
+      expect(find.byType(ActivityHistoryScreen), findsOneWidget, reason: 'Run / Walk history');
     });
 
     testWidgets('a run finished today shows its saved distance and time, and is not repeated below', (tester) async {
       await pumpApp(tester, await fixture(tester, runs: [run('r0', day, open: false)]));
-      expect(find.text('Finished today'), findsOneWidget);
+      expect(find.text('Run finished today'), findsOneWidget);
       expect(find.text('Distance'), findsOneWidget);
       expect(find.text('5.00 km'), findsOneWidget);
       expect(find.text('Time'), findsOneWidget);
       expect(find.text('30 min'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Start run'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+
+      // A walk says it is a walk.
+      await pumpApp(tester, await fixture(tester, runs: [{...run('w0', day, open: false), 'activityType': 'walk'}]));
+      expect(find.text('Walk finished today'), findsOneWidget);
       expect(find.text('RECORDED TODAY'), findsNothing, reason: 'a single run is said once, on its module');
 
       await pumpApp(tester, await fixture(tester, runs: [run('r0', day, open: false, meters: null)]));
@@ -381,34 +410,35 @@ void main() {
       final rest = blockPlan(start: '2026-09-22', recorded: 8);
       await pumpApp(tester, await fixture(tester, plans: [rest], runs: [run('r1', '2026-10-10'), run('r0', day, open: false)]));
       expect(find.text('Rest day'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Continue run'), findsOneWidget);
-      expect(find.text('In progress'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Resume'), findsOneWidget);
+      expect(find.text('Run in progress'), findsOneWidget);
       expect(find.text('Started Sat, Oct 10'), findsOneWidget);
       expect(find.text('Distance'), findsNothing, reason: 'no distance is claimed before one was measured');
-      expect(find.text('Time'), findsNothing, reason: 'no saved clock on this phone, so no time is guessed');
+      expect(find.text('Time'), findsNothing, reason: 'no recorder holds it yet, so no time is guessed');
       expect(find.text('5.00 km'), findsNothing, reason: 'the finished run does not lend its values to the open one');
-      expect(find.text('Start run'), findsNothing, reason: 'an open run is never started twice');
+      expect(find.widgetWithText(FilledButton, 'Start'), findsNothing, reason: 'an open run is never started twice');
       expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one way into the open run, not two');
       expect(find.text('RECORDED TODAY'), findsNothing, reason: 'the open run is not listed as recorded');
 
-      // The same run with its saved clock and measured distance.
+      // The same run held by the recorder, paused, with its active time and measured distance.
       await pumpApp(tester, await fixture(tester, runs: [run('r1', '2026-10-10')], runtime: {'r1': pausedRun}));
-      expect(find.text('Paused'), findsOneWidget);
+      expect(find.text('Run paused'), findsOneWidget);
       expect(find.text('Distance'), findsOneWidget);
       expect(find.text('5.20 km'), findsOneWidget);
       expect(find.text('Time'), findsOneWidget);
       expect(find.text('31 min'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Continue run'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Resume'), findsOneWidget);
 
-      // Continue opens that run, not a new one.
+      // Resume opens Run / Walk on that activity, not a new one.
       await tester.ensureVisible(find.byKey(const Key('today-run')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('today-run')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
-      expect(tester.widget<RunScreen>(find.byType(RunScreen)).runId, 'r1');
-      expect(find.byKey(const Key('run-finish')), findsOneWidget);
-      await tester.pumpWidget(const SizedBox()); // stops the run screen's display timer
+      expect(find.byType(RunWalkScreen), findsOneWidget);
+      expect(find.byKey(const Key('runwalk-recording')), findsOneWidget);
+      expect(find.byKey(const Key('runwalk-resume')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox()); // stops the recording screen's display timer
       expect(tester.takeException(), isNull);
     });
 
@@ -521,7 +551,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(photo('workout'), findsNothing);
     expect(photo('run'), findsNothing);
-    for (final text in ['of 18 sets', '5.20 km', '510', 'Some nutrition values are missing', 'Resume workout', 'Continue run', 'Log food']) {
+    for (final text in ['of 18 sets', '5.20 km', '510', 'Some nutrition values are missing', 'Resume workout', 'Resume', 'Log food']) {
       expect(find.text(text), findsOneWidget, reason: '$text is still there, not hidden to save space');
     }
     for (final state in [
@@ -577,7 +607,7 @@ void main() {
             ];
         GoColors colors() => Theme.of(tester.element(find.byType(TodayScreen))).extension<GoColors>()!;
         final (before, said, look) = (layout(), words(), colors().accent);
-        expect(said, containsAll(['In progress', 'Paused', '33%', 'Resume workout', 'Continue run', '/ 2,200 kcal']));
+        expect(said, containsAll(['In progress', 'Run paused', '33%', 'Resume workout', 'Resume', '/ 2,200 kcal']));
         for (final family in weatherFamilies) {
           for (final isDay in [true, false]) {
             await weather(tester, c, w, family, isDay);

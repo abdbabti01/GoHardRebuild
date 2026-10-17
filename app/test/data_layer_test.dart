@@ -452,7 +452,7 @@ void main() {
     expect(h.server.callsTo('/me'), isEmpty, reason: 'owner one\'s change waits for owner one');
   });
 
-  test('schema upgrade v1 to v2 keeps records and pending commands byte for byte', () async {
+  test('schema upgrade v1 to v3 keeps records and pending commands byte for byte, and adds the empty route table', () async {
     final store = TestStore();
     final raw = sql.sqlite3.open(store.file.path);
     raw.execute('''
@@ -476,7 +476,8 @@ void main() {
     expect((rec.syncState, rec.alternativeBody), ('pending', null));
     final entry = FoodEntry(jsonDecode(rec.body) as Json);
     expect((entry.calories, entry.protein), (0, null), reason: 'unknown stays unknown through the upgrade');
-    expect((await db.customSelect('PRAGMA user_version').getSingle()).data.values.single, 2);
+    expect((await db.customSelect('PRAGMA user_version').getSingle()).data.values.single, 3);
+    expect(await db.select(db.trackEntries).get(), isEmpty, reason: 'v3 adds the Run / Walk route table, empty');
     await db.close();
     store.dispose();
   });

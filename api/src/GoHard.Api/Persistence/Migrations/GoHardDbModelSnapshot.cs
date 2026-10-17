@@ -451,6 +451,44 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.RouteChunk", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Index")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EntriesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("EntryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FirstSeq")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LastSeq")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("RunId", "Index");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RouteChunks");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.Run", b =>
                 {
                     b.Property<Guid>("Id")
@@ -459,6 +497,13 @@ namespace GoHard.Api.Persistence.Migrations
 
                     b.Property<int?>("ActiveDurationSeconds")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasDefaultValue("run");
 
                     b.Property<DateOnly>("DayKey")
                         .HasColumnType("date");
@@ -473,11 +518,32 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<DateTime?>("FinishedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("MetricsJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<int>("Revision")
                         .HasColumnType("integer");
 
+                    b.Property<int>("RouteChunkCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RouteState")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasDefaultValue("none");
+
                     b.Property<DateTime>("StartedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -902,6 +968,21 @@ namespace GoHard.Api.Persistence.Migrations
 
             modelBuilder.Entity("GoHard.Api.Persistence.RefreshToken", b =>
                 {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.RouteChunk", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.Run", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")

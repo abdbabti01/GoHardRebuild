@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/session.dart';
+import 'units.dart';
 
 /// Motion: follow the phone's Reduce Motion setting, or always reduce in this app.
 enum MotionPref {
@@ -24,18 +25,24 @@ enum HapticsPref {
 
 @immutable
 class DevicePrefs {
-  const DevicePrefs({this.motion = MotionPref.device, this.haptics = HapticsPref.device});
+  const DevicePrefs({this.motion = MotionPref.device, this.haptics = HapticsPref.device, this.distance = DistanceUnit.km, this.activity = 'run', this.autoPause = false});
   final MotionPref motion;
   final HapticsPref haptics;
 
+  /// Run / Walk: km or miles (pace, speed and elevation follow), the last chosen activity, and optional auto-pause.
+  final DistanceUnit distance;
+  final String activity;
+  final bool autoPause;
+
   @override
-  bool operator ==(Object other) => other is DevicePrefs && other.motion == motion && other.haptics == haptics;
+  bool operator ==(Object other) =>
+      other is DevicePrefs && other.motion == motion && other.haptics == haptics && other.distance == distance && other.activity == activity && other.autoPause == autoPause;
   @override
-  int get hashCode => Object.hash(motion, haptics);
+  int get hashCode => Object.hash(motion, haptics, distance, activity, autoPause);
 }
 
-/// Motion and haptics kept on this device, in the same platform store as the session and the appearance. They are
-/// read before the first frame. They are presentation choices for this phone, so they are never part of the account.
+/// Motion, haptics and Run / Walk choices kept on this device, in the same platform store as the session and the
+/// appearance. They are read before the first frame. They are choices for this phone, so they are never part of the account.
 class DevicePrefsStore {
   DevicePrefsStore(this._store);
   static const _key = 'gohard.rebuild.device-prefs';
@@ -43,18 +50,25 @@ class DevicePrefsStore {
 
   MotionPref motion = MotionPref.device;
   HapticsPref haptics = HapticsPref.device;
+  DistanceUnit distance = DistanceUnit.km;
+  String activity = 'run';
+  bool autoPause = false;
 
   Future<void> restore() async {
     try {
       final parts = (await _store.read(_key))?.split('|') ?? const <String>[];
       if (parts.isNotEmpty) motion = MotionPref.values.asNameMap()[parts[0]] ?? MotionPref.device;
       if (parts.length > 1) haptics = HapticsPref.values.asNameMap()[parts[1]] ?? HapticsPref.device;
+      if (parts.length > 2) distance = DistanceUnit.values.asNameMap()[parts[2]] ?? DistanceUnit.km;
+      if (parts.length > 3) activity = parts[3] == 'walk' ? 'walk' : 'run';
+      if (parts.length > 4) autoPause = parts[4] == 'on';
     } on Object {
       // An unreadable preference is not worth failing startup for; the defaults apply.
     }
   }
 
-  Future<void> save() => _store.write(_key, '${motion.name}|${haptics.name}');
+  DevicePrefs get value => DevicePrefs(motion: motion, haptics: haptics, distance: distance, activity: activity, autoPause: autoPause);
+  Future<void> save() => _store.write(_key, '${motion.name}|${haptics.name}|${distance.name}|$activity|${autoPause ? 'on' : 'off'}');
 }
 
 /// Overridden at startup with the restored store. Left alone (tests), it is an empty in-memory one.
@@ -67,18 +81,19 @@ class DevicePrefsController extends Notifier<DevicePrefs> {
   DevicePrefs build() {
     final s = ref.watch(devicePrefsStoreProvider);
     Haptics.enabled = s.haptics == HapticsPref.device;
-    return DevicePrefs(motion: s.motion, haptics: s.haptics);
+    return s.value;
   }
 
-  void setMotion(MotionPref motion) => _apply(motion, _saved.haptics);
-  void setHaptics(HapticsPref haptics) => _apply(_saved.motion, haptics);
+  void setMotion(MotionPref motion) => _apply(() => _saved.motion = motion);
+  void setHaptics(HapticsPref haptics) => _apply(() => _saved.haptics = haptics);
+  void setDistance(DistanceUnit unit) => _apply(() => _saved.distance = unit);
+  void setActivity(String type) => _apply(() => _saved.activity = type);
+  void setAutoPause(bool on) => _apply(() => _saved.autoPause = on);
 
-  void _apply(MotionPref motion, HapticsPref haptics) {
-    _saved
-      ..motion = motion
-      ..haptics = haptics;
-    Haptics.enabled = haptics == HapticsPref.device;
-    state = DevicePrefs(motion: motion, haptics: haptics);
+  void _apply(void Function() change) {
+    change();
+    Haptics.enabled = _saved.haptics == HapticsPref.device;
+    state = _saved.value;
     _saved.save().ignore(); // already applied; a failed write only means it is asked for again
   }
 }

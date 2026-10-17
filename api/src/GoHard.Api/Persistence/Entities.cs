@@ -265,6 +265,33 @@ public class Run
     public decimal? DistanceMeters { get; set; }
     public int Revision { get; set; } = 1;
     public DateTime? DeletedAtUtc { get; set; }
+    /// <summary>run | walk (docs/RUN_WALK.md). Existing rows are runs.</summary>
+    public string ActivityType { get; set; } = "run";
+    public string? Title { get; set; }
+    public string? Notes { get; set; }
+    /// <summary>Derived summary (bounded JSON object), recomputable from the route.</summary>
+    public string? MetricsJson { get; set; }
+    /// <summary>none | uploading | complete. Changes with route uploads, not with the record's revision.</summary>
+    public string RouteState { get; set; } = "none";
+    public int RouteChunkCount { get; set; }
+}
+
+/// <summary>
+/// A bounded, ordered piece of an activity's route: the entries with seq 500·Index … 500·Index+499, stored as sent.
+/// Private account data, erased with the activity and with the account.
+/// </summary>
+public class RouteChunk
+{
+    public Guid UserId { get; set; }
+    public Guid RunId { get; set; }
+    public int Index { get; set; }
+    public int FirstSeq { get; set; }
+    public int LastSeq { get; set; }
+    public int EntryCount { get; set; }
+    public string EntriesJson { get; set; } = "[]";
+    /// <summary>SHA-256 of the entries: the same chunk sent again is accepted, a different one is a conflict.</summary>
+    public string Sha256 { get; set; } = "";
+    public DateTime CreatedAtUtc { get; set; }
 }
 
 public class BodyMetric

@@ -6,9 +6,14 @@
     <!-- Workout reminders (asked only when the user turns them on) and rescheduling them after a reboot. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <!-- GPS distance for runs, only while the run screen is open. No background location. -->
+    <!-- Run / Walk (docs/RUN_WALK.md): precise location while the app is in use. A recording continues with the screen
+         locked or another app open through geolocator's location foreground service, started from the visible app, with
+         an ongoing notification. Background ("all the time") location is not declared or asked for. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <application
         android:label="GoHard"
         android:allowBackup="false"
@@ -43,6 +48,8 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
             </intent-filter>
         </receiver>
+        <!-- Injected at build time from android/secrets.properties or a CI secret; empty in a build without one. -->
+        <meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

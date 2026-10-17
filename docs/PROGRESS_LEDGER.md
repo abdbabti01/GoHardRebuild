@@ -1497,3 +1497,60 @@ goal, Use then edit saves only what Save goals sends; an existing goal kept and 
 Eat and Today, no goals link on Today) passed after one retry (the first attempt failed to attach: "Service has
 disappeared"); captures `coach-tabs-09/10/11`; recording `coach-train-eat.mp4` refreshed. `journey_water_test` and
 `journey_water_demo_test` (not default) were updated to set goals in Eat but not rerun.
+
+
+## 17 October 2026 (Run / Walk) — the approved Focus Dial: durable routes, background recording, route sync (branch `feature/run-walk`, from `origin/main` at `f47ab98`)
+
+Started after the nutrition/coach work was merged to `main` (PR #6, CI green). Design and contract: `docs/RUN_WALK.md`.
+
+| Change | Where |
+|---|---|
+| One metric pipeline over the stored entries: acceptance (accuracy, order, impossible jumps with outlier recovery), 3-fix smoothing, accuracy-scaled anchor + Doppler-speed gate against drift, gaps and segments, active / moving / elapsed, pace, splits with a labelled partial, pace and elevation profiles, gain/loss with hysteresis and coverage (unknown ≠ 0), auto-pause rules | `app/lib/features/activity/track_math.dart` |
+| Durable route: Drift v3 `track_entries` (every fix and event, ordered `seq`, owner-scoped), additive migration | `data/db.dart`, `features/activity/track_store.dart` |
+| One recorder for the device, outside any screen: Start/Pause/Resume/Finish/Save/Discard, ordered writes with visible failure and retry, checkpoints, Interrupted after process death, legacy open runs adopted with their time and distance, auto-pause | `features/activity/recorder.dart` |
+| Location: one geolocator stream; Android location foreground service with notification; iOS background updates with indicator; truthful permission states incl. approximate; timer-only fallback | `location_source.dart`, Android manifest (`FOREGROUND_SERVICE(_LOCATION)`, `WAKE_LOCK`; no background location), iOS `Info.plist` (`UIBackgroundModes location`, temporary precise purpose), `Podfile` |
+| Map: Google Maps when a key is configured (channel `gohard/maps`), otherwise a drawn route; Follow / Free / Fit route, zoom buttons, gestures claimed by the map | `route_map.dart`, `MainActivity.kt`, `AppDelegate.swift`, `build.gradle.kts`, xcconfigs |
+| Screens from the approved board: Ready, Recording (Stats dial / Map), Save review, Saved (Overview / Splits / Charts, edit, delete, GPX), History (All/Run/Walk, week/month totals, lazy rows, thumbnails); Today tile "Run / Walk" (Start / Resume, real type); Train entries; Me › Units km/mi | `run_walk_screens.dart`, `activity_detail.dart`, `activity_history.dart`, `gpx.dart`, `today_screen.dart`, `train_screen.dart`, `me_screen.dart`, `core/units.dart`, `core/device_prefs.dart` |
+| Sync: activity type/title/notes/metrics, `run.update`, route chunks (500 entries, idempotent by content), `route.complete`, paged reads; commands a server cannot take yet stay queued (`mayDispatch`); acknowledged chunks drop their payload copy; delete withdraws queued uploads | `activity_repository.dart`, `data/sync.dart`, `app/providers.dart` |
+| API: `Run` + `ActivityType`, `Title`, `Notes`, `MetricsJson`, `RouteState`, `RouteChunkCount`; `RouteChunks` table; `PUT /runs/{id}`, `PUT /runs/{id}/route/chunks/{i}`, `POST /runs/{id}/route/complete`, `GET /runs/{id}/route`; capabilities `runs.activity-type`, `runs.routes`; migration `AddRunRoutes` (additive) | `Entities.cs`, `GoHardDb.cs`, `Contracts.cs`, `JournalServices.cs`, `Endpoints.cs` |
+| CI: optional Maps key secrets, never printed | `ci.yml`, `ios-unsigned-ipa.yml`, `ios-dev-ipa.yml` |
+| Removed: screen-owned GPS (`run_tracking.dart`, `RunScreen`, `RunHistoryScreen`) | |
+
+**Found and fixed during verification.** (1) GPS fixtures showed white-noise jitter inflating distance 45 % and
+10 minutes standing adding 300 m: smoothing, a 1.5 × accuracy threshold and the Doppler-speed gate (speed stored only
+with its accuracy, since Android reports 0.0 for "none"). (2) Saving queued several commands inside one transaction
+and each started a dispatch inside it ("transaction used after being closed"): `submit(dispatch: false)` and one
+dispatch after commit (found by `run_walk_recorder_test`). (3) The "Route not recorded" panel overflowed at a fixed
+height. (4) On the emulator the map opened on the whole world until zoomed: the first position now frames it at
+street level. (5) `DevicePrefs` gained three fields; the stored value stays readable from the two-field form.
+
+**Checks run.**
+- `flutter analyze`: clean. Full `flutter test` once (sync, database and Today are shared): all passed after updating
+  3 motion tests for the stored preference format; new `track_math_test` (16, SYNTHETIC GPS fixtures), 
+  `run_walk_recorder_test` (7, real Drift file + fake account), `run_walk_ui_test` (5). Today/Train/widget tests
+  updated for "Run / Walk", Start/Resume and the recorder.
+- API: `dotnet test -c Release`: 189 passed, including new `RunRouteTests` (2: idempotent chunk, mismatch conflict,
+  invalid ranges, partial upload then complete, paged reads, snapshot without points, ownership, delete and account
+  erasure remove chunks, older-client run shape, edits). `verify-api.ps1` against the local API: all passed, including
+  the new Run / Walk check.
+- Device (`emulator-5554`, Pixel 7 image, Android 16 / API 36, debug build, local API, **simulated GPS** through
+  Android's test location provider, old Maps key in the local gitignored `secrets.properties`):
+  `journey_runwalk_test` (new, two phases, not default) **passed**: Ready with GPS ready; Walk recorded; Stats and Map
+  views, Zoom in kept while fixes arrived, Recenter, Pause added nothing over 8 s; with another app in front and with
+  the screen off distance kept growing (foreground service; notification "GoHard is recording your walk" captured);
+  force-stop while recording; new process: "Walk interrupted", Resume, Finish, Save **offline**, Saved / Splits /
+  Charts / History; online: the account holds one walk titled "Morning walk" with route state complete, 189 entries
+  in order with one `interrupt` (210.2 m); then a short run. Captures `docs/evidence/screenshots/runwalk-01…19`,
+  recording `docs/evidence/recordings/runwalk-flow.mp4`, notification check `docs/evidence/runwalk-notification.txt`.
+  Earlier attempts failed on a too-strict pause tolerance (fixes in flight), the account email in phase 2, a record
+  matcher, a screenshot call, and four times on emulator storage (`INSTALL_FAILED_INSUFFICIENT_STORAGE`: the 6 GB data
+  partition; the runner now builds the grant APK for the device ABI only, and the emulator was rebooted before runs).
+- `journey_coldstart_test` (default run; real process end) passed: an open run left recording is "Run interrupted" in the new
+  process, then finished and saved. `journey_device_test` (default run) passed after two fixes to the journey itself: it
+  never skipped the coach setup added on 16 Oct, and its in-process `main()` restart left the first app instance
+  recording (not a real restart; replaced by leave-and-resume, real restarts being the two journeys above).
+
+**Not verified:** a physical phone (outdoor GPS accuracy, real lock-screen and app-switch behaviour, battery, Doze),
+iOS anything beyond CI compilation (background location, Maps SDK, permission prompts), the hosted API (needs `main`
+deployed), Google Cloud key restrictions and billing (no console access), `journey_today_panels_test` and
+`journey_appwide_test` (updated, not rerun), TalkBack/VoiceOver by ear.

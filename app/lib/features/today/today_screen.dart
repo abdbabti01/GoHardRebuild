@@ -10,8 +10,11 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
-import '../activity/activity_screens.dart';
-import '../activity/run_tracking.dart';
+import '../../core/device_prefs.dart';
+import '../activity/activity_detail.dart';
+import '../activity/activity_history.dart';
+import '../activity/recorder.dart';
+import '../activity/run_walk_screens.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_rig.dart' show RigFrame;
 import '../coach/coach_contract.dart';
@@ -31,7 +34,6 @@ import '../weather/weather.dart';
 import '../workout/result_rules.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
-import '../workout/workout_runtime.dart';
 import 'daily.dart';
 import 'today_greeting.dart';
 
@@ -367,7 +369,7 @@ class _Module extends StatelessWidget {
     ]);
     final words = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [labelRow, ...head, ...body, ?footer]);
     return PanelSurface(
-      photo: pictured ? PanelPhoto(photo!, key: Key('today-photo-${label.toLowerCase()}'), alignment: photoAlignment) : null,
+      photo: pictured ? PanelPhoto(photo!, key: Key('today-photo-${label.toLowerCase().split(' ').first}'), alignment: photoAlignment) : null,
       below: below,
       child: LayoutBuilder(
         builder: (context, box) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -682,7 +684,6 @@ class _OpenWorkout extends ConsumerWidget {
 // ---------------------------------------------------------------------------- running
 
 /// "5.20 km"
-String _km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
 
 /// Labelled values of a run ("Distance", "Time"). Only ever built from values that were saved.
 class _Cells extends StatelessWidget {
@@ -709,10 +710,10 @@ class _Cells extends StatelessWidget {
       );
 }
 
-/// Today's one way into running, on every kind of day. An open run is read from the saved records, whatever day
-/// it began, so it is continued (never started twice) also after the app was closed. Distance and time appear
-/// only when they were saved: there is no target, no percentage and no route. The photograph is not a map and
-/// says nothing about tracking; distance is measured only while the run's own screen is open.
+/// Today's one way into Run / Walk (docs/RUN_WALK.md), on every kind of day. An open activity is read from the
+/// saved records, whatever day it began, and taken over by the one recorder, so it is resumed (never started twice)
+/// also after the app was closed. Distance and time are the recorder's or the saved ones: there is no target and no
+/// percentage. The photograph is decoration, not a map.
 class _RunCard extends ConsumerStatefulWidget {
   const _RunCard({required this.today, required this.finishedToday});
   final String today;
@@ -734,9 +735,12 @@ class _RunCardState extends ConsumerState<_RunCard> {
   @override
   Widget build(BuildContext context) {
     final open = [for (final r in ref.watch(runsProvider).value ?? const <Stored<Run>>[]) if (r.value.isOpen) r.value].firstOrNull;
-    final row = open == null ? null : (ref.watch(runtimesProvider).value ?? const <Stored<Json>>[]).where((r) => r.rec.id == open.id).firstOrNull;
-    final runtime = row == null ? null : WorkoutRuntime(row.value);
-    final ticking = runtime != null && !runtime.isPaused;
+    final rec = ref.watch(recorderProvider);
+    // An open activity found at startup (after a restart, or from the build before routes) is taken over by the one
+    // recorder, so it is resumed and never started twice.
+    if (open != null && !rec.open) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? adoptOpenActivity(ref) : null);
+    final owned = rec.run?.id == open?.id ? rec : null;
+    final ticking = owned != null && owned.state == RecState.recording;
     if (ticking) {
       _minute ??= Timer.periodic(const Duration(seconds: 20), (_) => setState(() {}));
     } else {
@@ -748,20 +752,32 @@ class _RunCardState extends ConsumerState<_RunCard> {
     final _Status? status;
     final String? note;
     var cells = const <(String, String)>[];
+    final unit = ref.watch(devicePrefsProvider.select((p) => p.distance));
     if (open != null) {
-      // The saved clock and the distance measured so far. Without them the card says only that a run is open.
-      final track = RunTrack(runtime?.j['track'] as Json? ?? const {});
-      cells = [if (track.hasDistance) ('Distance', _km(track.distanceMeters)), if (runtime != null) ('Time', time(runtime.elapsedSeconds(ref.read(clockProvider).utcNow())))];
-      status = runtime?.isPaused ?? false ? ('Paused', Icons.pause_circle_outline, Tone.accent) : ('In progress', Icons.timelapse, Tone.accent);
+      // The recorder's active time and the distance measured so far. Without them the card says only what is open.
+      final a = owned?.analysis;
+      final now = ref.read(clockProvider).utcNow().millisecondsSinceEpoch;
+      cells = [
+        if (a != null && (a.measured || a.hasLegacy)) ('Distance', unit.distance(a.distance + a.legacyDistance)),
+        if (a != null) ('Time', time(a.activeMs(now) ~/ 1000)),
+      ];
+      final noun = activityTitle(open.activityType);
+      status = switch (owned?.state) {
+        RecState.paused || RecState.autoPaused => ('$noun paused', Icons.pause_circle_outline, Tone.accent),
+        RecState.interrupted => ('$noun interrupted', Icons.warning_amber_rounded, Tone.warning),
+        RecState.review => ('$noun not saved yet', Icons.edit_note, Tone.accent),
+        _ => ('$noun in progress', Icons.timelapse, Tone.accent),
+      };
       note = open.dayKey == widget.today ? (cells.isEmpty ? 'Started today' : null) : 'Started ${shortDate(open.dayKey)}';
     } else if (widget.finishedToday.isNotEmpty) {
       final last = widget.finishedToday.last;
-      cells = [if (last.distanceMeters != null) ('Distance', _km(last.distanceMeters!)), if (last.activeDurationSeconds != null) ('Time', time(last.activeDurationSeconds!))];
-      status = ('Finished today', Icons.check, Tone.neutral);
+      final t = last.movingSeconds ?? last.activeDurationSeconds;
+      cells = [if (last.distanceMeters != null) ('Distance', unit.distance(last.distanceMeters)), if (t != null) ('Time', time(t))];
+      status = ('${activityTitle(last.activityType)} finished today', Icons.check, Tone.neutral);
       note = null;
     } else {
       status = null;
-      note = 'No run today';
+      note = 'No run or walk today';
     }
     // The tile is built under the panel theme; History sits on the scene beside it, in the header's sky colours on a
     // scrim so it reads over any weather.
@@ -769,22 +785,22 @@ class _RunCardState extends ConsumerState<_RunCard> {
     final tile = PanelTheme(
       child: Builder(
         builder: (context) => _Module(
-          key: const Key('today-module-run'), label: 'Run', status: status,
-          head: [Padding(padding: const EdgeInsets.only(top: 6), child: Text('Run', style: context.pageTitleStyle(30)))],
+          key: const Key('today-module-run'), label: 'Run / Walk', status: status,
+          head: [Padding(padding: const EdgeInsets.only(top: 6), child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Run / Walk', style: context.pageTitleStyle(30))))],
           body: [
             if (note != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note, style: context.sansStyle(14.5, color: context.c.secondary))),
             if (cells.isNotEmpty) _Cells(cells),
           ],
           // The near shoe and the far leg, at the tile's trailing side.
           photo: _Photos.run, photoAlignment: const Alignment(0.6, 0),
-          action: PrimaryButton(open == null ? 'Start run' : 'Continue run', key: const Key('today-run'), icon: Icons.play_arrow_rounded, expand: false, onPressed: () => startRunFlow(app, ref)),
+          action: PrimaryButton(open == null ? 'Start' : 'Resume', key: const Key('today-run'), icon: Icons.play_arrow_rounded, expand: false, onPressed: () => openRunWalk(app, ref)),
         ),
       ),
     );
     final history = Theme(
       data: _skyTheme(context, ref),
       child: Builder(
-        builder: (context) => QuietLink('History', key: const Key('today-run-history'), said: 'Run history', onPressed: () => push(context, const RunHistoryScreen()),
+        builder: (context) => QuietLink('History', key: const Key('today-run-history'), said: 'Run and walk history', onPressed: () => push(context, const ActivityHistoryScreen()),
             background: context.c.scrim),
       ),
     );
@@ -865,9 +881,9 @@ class _ActivitySection extends ConsumerWidget {
           if (finishedRuns.length > 1)
             for (final r in finishedRuns)
               GroupRow(
-                icon: Icons.directions_run, tone: Tone.neutral, title: 'Run',
-                subtitle: '${durationText(r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${_km(r.distanceMeters!)}'}',
-                onTap: () => push(context, RunScreen(runId: r.id)),
+                icon: r.isWalk ? Icons.directions_walk : Icons.directions_run, tone: Tone.neutral, title: r.title ?? activityTitle(r.activityType),
+                subtitle: '${durationText(r.movingSeconds ?? r.activeDurationSeconds ?? 0)}${r.distanceMeters == null ? '' : ' · ${ref.watch(devicePrefsProvider).distance.distance(r.distanceMeters)}'}',
+                onTap: () => push(context, ActivityDetailScreen(runId: r.id)),
               ),
         ]),
       ]);

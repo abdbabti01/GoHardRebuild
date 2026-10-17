@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/data/models.dart';
-import 'package:gohard_rebuild/features/activity/run_tracking.dart';
 import 'package:gohard_rebuild/features/me/reminders.dart';
-import 'package:gohard_rebuild/features/workout/workout_runtime.dart';
 
 Plan _plan({String lifecycle = 'active', String? pausedOn}) => Plan({
       'id': 'p', 'title': 'Plan', 'lifecycle': lifecycle, 'startDate': '2026-10-05', 'blockWeeks': 1, 'pausedOn': pausedOn,
@@ -13,9 +11,6 @@ Plan _plan({String lifecycle = 'active', String? pausedOn}) => Plan({
     });
 
 final _openWorkout = Workout({'id': 'w', 'occasionId': 'open', 'kind': 'planned', 'title': 'x', 'dayKey': '2026-10-09', 'startedAtUtc': '2026-10-09T10:00:00Z', 'finishedAtUtc': null, 'isDeleted': false, 'exercises': []});
-
-Fix _fix(double metersNorth, int second, {double accuracy = 5}) =>
-    Fix(45.0 + metersNorth / 111195.0, -73.0, accuracy, DateTime.utc(2026, 10, 9, 12).add(Duration(seconds: second)));
 
 void main() {
   group('R3 reminders', () {
@@ -46,50 +41,5 @@ void main() {
       expect(first.map((r) => r.id).toSet().length, first.length);
     });
   });
-
-  group('R3 GPS distance', () {
-    test('adds only consecutive trustworthy readings', () {
-      var t = RunTrack({});
-      for (final (i, m) in [0.0, 10.0, 20.0, 30.0].indexed) {
-        t = t.added(_fix(m, i * 4));
-      }
-      expect(t.distanceMeters, closeTo(30, 0.2));
-      expect((t.fixes, t.gaps, t.hasDistance), (4, 0, true));
-    });
-
-    test('vague readings, jitter and position jumps add nothing', () {
-      var t = RunTrack({}).added(_fix(0, 0));
-      t = t.added(_fix(50, 4, accuracy: 80)); // too vague
-      t = t.added(_fix(1, 8)); // standing still
-      t = t.added(_fix(500, 12)); // 125 m/s: a jump, not running
-      expect(t.distanceMeters, 0);
-      expect(t.hasDistance, isFalse, reason: 'nothing measured means distance stays unknown, not zero');
-      t = t.added(_fix(12, 16));
-      expect(t.distanceMeters, closeTo(12, 0.2));
-    });
-
-    test('a stretch without readings is a counted gap, never bridged with a straight line', () {
-      var t = RunTrack({}).added(_fix(0, 0)).added(_fix(10, 4));
-      t = t.added(_fix(900, 300)); // the screen was closed for five minutes
-      expect(t.distanceMeters, closeTo(10, 0.2), reason: 'the 890 m in between were not measured');
-      expect(t.gaps, 1);
-      t = t.added(_fix(910, 304));
-      expect(t.distanceMeters, closeTo(20, 0.2));
-    });
-
-    test('paused movement is not counted, and the track rides along with the durable runtime', () {
-      var t = RunTrack({}).added(_fix(0, 0)).added(_fix(10, 4)).detached();
-      t = t.added(_fix(200, 8)); // moved while paused: only a new anchor
-      expect((t.distanceMeters.round(), t.gaps), (10, 0));
-      t = t.added(_fix(210, 12));
-      expect(t.distanceMeters, closeTo(20, 0.2));
-
-      final now = DateTime.utc(2026, 10, 9, 12);
-      final runtime = WorkoutRuntime({...WorkoutRuntime.started(now).j, 'track': t.j});
-      final resumed = runtime.paused(now.add(const Duration(seconds: 30))).resumed(now.add(const Duration(seconds: 90)));
-      expect(RunTrack(resumed.j['track'] as Json).distanceMeters, closeTo(20, 0.2), reason: 'pause and resume keep what was measured');
-      expect(resumed.elapsedSeconds(now.add(const Duration(seconds: 100))), 40);
-      expect(haversineMeters(45, -73, 45, -73), 0);
-    });
-  });
+  // GPS distance moved to the Run / Walk pipeline: test/track_math_test.dart.
 }

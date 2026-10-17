@@ -40,6 +40,15 @@ jobs:
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
 
+      # Optional Google Maps key (docs/RUN_WALK.md › Map), written to the gitignored Secrets.xcconfig and never printed.
+      # Without it the IPA works and draws routes without a map (the Maps SDK is never started without a key).
+      - name: Google Maps key
+        working-directory: app/ios/Flutter
+        env: { MAPS_KEY: '${{ secrets.IOS_GOOGLE_MAPS_API_KEY }}' }
+        run: |
+          if [ -n "$MAPS_KEY" ]; then printf 'GOOGLE_MAPS_API_KEY=%s\n' "$MAPS_KEY" > Secrets.xcconfig; echo "Maps key configured";
+          else echo "::notice::IOS_GOOGLE_MAPS_API_KEY is not set: this IPA draws routes without a map"; fi
+
       - name: Build (no code signing)
         working-directory: app
         run: flutter build ios --release --no-codesign --dart-define=GOHARD_API_BASE="${API_BASE%/}" --build-number="${{ github.run_number }}" --dart-define=GOHARD_COMMIT="${GITHUB_SHA::7}" --dart-define=GOHARD_BUILD="${{ github.run_number }}"

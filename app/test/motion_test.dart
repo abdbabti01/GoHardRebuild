@@ -44,7 +44,7 @@ void main() {
         ..motion = MotionPref.reduced
         ..haptics = HapticsPref.off;
       await first.save();
-      expect(disk.values['gohard.rebuild.device-prefs'], 'reduced|off');
+      expect(disk.values['gohard.rebuild.device-prefs'], 'reduced|off|km|run|off'); // + Run / Walk: distance unit, last activity, auto-pause
       final relaunched = DevicePrefsStore(disk);
       await relaunched.restore();
       expect((relaunched.motion, relaunched.haptics), (MotionPref.reduced, HapticsPref.off));
@@ -116,7 +116,7 @@ void main() {
       Haptics.confirm();
       expect(calls, isEmpty);
       expect(container.read(devicePrefsProvider), const DevicePrefs(motion: MotionPref.reduced, haptics: HapticsPref.off));
-      expect(disk.values['gohard.rebuild.device-prefs'], 'reduced|off');
+      expect(disk.values['gohard.rebuild.device-prefs'], 'reduced|off|km|run|off'); // + Run / Walk: distance unit, last activity, auto-pause
       expect(find.text('GoHard does not vibrate this phone.'), findsOneWidget);
 
       await _tap(tester, 'haptics-device');
@@ -152,7 +152,7 @@ void main() {
       expect(tester.getSemantics(find.byKey(const Key('motion-reduced'))), isSemantics(isSelected: true, isButton: true, hasSelectedState: true, isInMutuallyExclusiveGroup: true, hasTapAction: true, hasFocusAction: true, isFocusable: true, label: 'Reduced'));
       expect(container.read(shellProvider).tab, 3);
       expect(container.read(shellProvider).trainView, TrainView.plan);
-      expect(disk.values['gohard.rebuild.device-prefs'], 'reduced|off');
+      expect(disk.values['gohard.rebuild.device-prefs'], 'reduced|off|km|run|off'); // + Run / Walk: distance unit, last activity, auto-pause
 
       await tester.pageBack();
       await tester.pumpAndSettle();

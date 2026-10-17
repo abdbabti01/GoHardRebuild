@@ -98,6 +98,19 @@ class MeScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 4),
           Text('For water you log. Stored in millilitres, so changing this never changes an amount. Fluid ounces are a volume, not a weight. Set on this phone.', style: context.caption),
+          const SizedBox(height: 16),
+          Text('Run / Walk', style: context.label),
+          for (final u in DistanceUnit.values)
+            ChoiceTile<DistanceUnit>(
+              key: Key('unit-distance-${u.name}'), value: u, groupValue: ref.read(devicePrefsProvider).distance,
+              title: u == DistanceUnit.km ? 'Kilometres (min/km, km/h, m)' : 'Miles (min/mi, mph, ft)',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                ref.read(devicePrefsProvider.notifier).setDistance(chosen);
+              },
+            ),
+          const SizedBox(height: 4),
+          Text('Distance, pace, speed and elevation. Routes are stored in metres, so changing this never changes a recording. Set on this phone.', style: context.caption),
         ]));
 
     // What is true about the account right now, in a word and a sentence. "Saved" is said only when nothing is

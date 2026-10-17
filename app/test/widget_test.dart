@@ -47,7 +47,7 @@ void main() {
     expect(find.text('No active plan'), findsOneWidget);
     expect(find.text('Your week'), findsNothing, reason: 'no plan, so no invented week');
     await tester.scrollUntilVisible(find.text('No food logged today'), 300, scrollable: find.byType(Scrollable).first);
-    expect(find.text('No run today'), findsOneWidget);
+    expect(find.text('No run or walk today'), findsOneWidget);
     expect(find.byKey(const Key('today-photo-workout')), findsNothing, reason: 'no workout, so no workout photograph beside "No active plan"');
     expect(find.text('RECORDED TODAY'), findsNothing, reason: 'no activity, so no activity section');
     expect(find.textContaining('kcal'), findsNothing, reason: 'no invented nutrition');
@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Resume workout'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Log food'), 200, scrollable: scroll);
     expect(find.text('Some nutrition values are missing'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Start run'), -200, scrollable: scroll);
+    await tester.scrollUntilVisible(find.text('Run / Walk'), -200, scrollable: scroll);
     for (final tab in ['train', 'eat', 'me']) {
       await tester.tap(find.byKey(Key('nav-$tab')));
       await tester.pumpAndSettle();

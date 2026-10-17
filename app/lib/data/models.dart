@@ -21,7 +21,8 @@ double? _d(Object? v) => (v as num?)?.toDouble();
 /// Record kinds in the local store.
 abstract final class Kinds {
   static const profile = 'profile', context = 'context', plan = 'plan', workout = 'workout', set = 'set', food = 'food';
-  static const run = 'run', metric = 'metric', proposal = 'proposal', catalog = 'catalog', savedFood = 'saved_food';
+  /// `route` (id = the activity's id) tracks the upload of a saved route: pending until the account confirms it whole.
+  static const run = 'run', route = 'route', metric = 'metric', proposal = 'proposal', catalog = 'catalog', savedFood = 'saved_food';
   /// Water the owner logged (features/nutrition/water.dart).
   static const water = 'water';
   /// The owner's private exercises; referenced from prescriptions as `custom:<id>`.
@@ -271,6 +272,7 @@ extension type Profile(Json j) {
   int get revision => j['revision'] as int? ?? 0;
 }
 
+/// A Run or Walk (docs/RUN_WALK.md). Records from before Run / Walk have no type and are runs.
 extension type Run(Json j) {
   String get id => j['id'] as String;
   String get dayKey => j['dayKey'] as String;
@@ -280,6 +282,25 @@ extension type Run(Json j) {
   double? get distanceMeters => _d(j['distanceMeters']);
   bool get isDeleted => j['isDeleted'] as bool? ?? false;
   bool get isOpen => finishedAtUtc == null && !isDeleted;
+
+  /// `run` or `walk`; never changed except by the person's edit.
+  String get activityType => j['activityType'] as String? ?? 'run';
+  bool get isWalk => activityType == 'walk';
+  String? get title => j['title'] as String?;
+  String? get notes => j['notes'] as String?;
+
+  /// Derived summary (docs/RUN_WALK.md › Activity record). Empty for a record from before routes.
+  Json get metrics => (j['metrics'] as Map?)?.cast<String, dynamic>() ?? const {};
+  bool get isLegacy => j['metrics'] == null;
+  int? get movingSeconds => metrics['movingSeconds'] as int?;
+  int? get elapsedSeconds => metrics['elapsedSeconds'] as int?;
+  double? get elevationGainMeters => _d(metrics['elevationGainMeters']);
+
+  /// gps | corrected | manual | none
+  String get distanceSource => metrics['distanceSource'] as String? ?? (distanceMeters == null ? 'none' : 'manual');
+
+  /// What the account holds of the route: none | uploading | complete.
+  String get routeState => j['routeState'] as String? ?? 'none';
 }
 
 extension type BodyMetric(Json j) {

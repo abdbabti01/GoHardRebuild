@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Google Maps key (docs/RUN_WALK.md › Map): from the gitignored android/secrets.properties (MAPS_API_KEY=…) or the
+// ANDROID_GOOGLE_MAPS_API_KEY environment variable (CI secret). Never committed. Empty = no map; the app then draws
+// the route without a basemap.
+val mapsApiKey: String = Properties().also { p ->
+    rootProject.file("secrets.properties").takeIf { it.exists() }?.inputStream()?.use { p.load(it) }
+}.getProperty("MAPS_API_KEY") ?: System.getenv("ANDROID_GOOGLE_MAPS_API_KEY") ?: ""
 
 android {
     namespace = "com.gohard.gohard_rebuild"
@@ -28,6 +37,7 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
