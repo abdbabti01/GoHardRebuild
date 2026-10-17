@@ -264,7 +264,10 @@ void main() {
       expect(tester.takeException(), isNull, reason: section);
     }
     await _tap(tester, 'train-plan');
+    await tester.scrollUntilVisible(find.byKey(const Key('week-16')), 200, scrollable: find.byType(Scrollable).first);
     expect(find.byKey(const Key('week-16')), findsOneWidget, reason: 'every week is there, one to a row');
+    await tester.ensureVisible(find.byKey(const Key('week-1')));
+    await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.byKey(const Key('week-2'))).dy, greaterThan(tester.getTopLeft(find.byKey(const Key('week-1'))).dy));
     expect(tester.getSize(find.byKey(const Key('week-1'))).height, greaterThanOrEqualTo(48));
     await _tap(tester, 'occasion-3-1');
@@ -339,9 +342,9 @@ void main() {
     await tester.tap(find.byKey(const Key('train-plan')));
     await tester.pump();
     await tester.pump();
-    expect(find.text('No plan yet'), findsOneWidget);
+    expect(find.byKey(const Key('train-manual-instead')), findsOneWidget);
     expect(find.byKey(const Key('start-manual')), findsNothing);
-    expect(tester.widget<FadeTransition>(find.ancestor(of: find.text('No plan yet'), matching: find.byType(FadeTransition)).first).opacity.value, 1);
+    expect(tester.widget<FadeTransition>(find.ancestor(of: find.byKey(const Key('train-manual-instead')), matching: find.byType(FadeTransition)).first).opacity.value, 1);
     expect(find.byType(GroupCard), findsNothing);
   });
 }

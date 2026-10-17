@@ -25,7 +25,7 @@ typedef CoachGuideAction = ({String label, Key key, VoidCallback onPressed});
 /// when [ask] is given (Ask GoHard about that context; nothing is sent until the user asks) and one [guide] action.
 @immutable
 class CoachSay {
-  const CoachSay(this.text, {this.title, this.ask, this.onAsk, this.guide});
+  const CoachSay(this.text, {this.title, this.ask, this.onAsk, this.guide, this.primary});
   final String? title;
   final String text;
   final CoachContext? ask;
@@ -33,6 +33,10 @@ class CoachSay {
   /// Instead of [ask]: the page's own way into Ask GoHard (a builder passes its draft and its Apply).
   final VoidCallback? onAsk;
   final CoachGuideAction? guide;
+
+  /// The page's main next step, said by the coach (Train's "Create my plan"): a deep filled button under the words,
+  /// so the invitation and the action are one thing. The page does not repeat it.
+  final CoachGuideAction? primary;
 }
 
 /// The speech bubble's body: the theme's raised surface with a hairline edge, readable over any page or weather scene.
@@ -66,7 +70,7 @@ class CoachBubble extends StatelessWidget {
           };
     // Ask me as the only action: it ends the sentence ("… today? Ask me ›") and the whole bubble is the button, so a
     // short message needs no row of its own. With a guide action as well, the two are buttons under the words.
-    final inline = ask != null && s.guide == null;
+    final inline = ask != null && s.guide == null && s.primary == null;
     final closeRoom = onClose == null ? 0.0 : 28.0;
     final words = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +115,18 @@ class CoachBubble extends StatelessWidget {
             style: context.sansStyle(15, color: c.text),
           ),
         ),
-        if (!inline && (ask != null || s.guide != null))
+        if (s.primary case final p?)
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 8),
+            child: Wrap(spacing: 4, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              PrimaryButton(p.label, key: p.key, expand: false, onPressed: p.onPressed),
+              if (ask != null)
+                TextButton(key: const Key('coach-say-ask'), style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: ask, child: const Text('Ask me')),
+              if (s.guide case final g?)
+                TextButton(key: g.key, style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: g.onPressed, child: Text(g.label)),
+            ]),
+          )
+        else if (!inline && (ask != null || s.guide != null))
           // The first button's label starts at the words' left edge (its padding hangs into the bubble's margin).
           Transform.translate(
             offset: const Offset(-8, 0),
@@ -227,8 +242,12 @@ class CoachSpeech extends ConsumerStatefulWidget {
     this.closeLabel = 'Close',
     this.onAvatarTap,
     this.onAsk,
+    this.avatarLabel,
   });
   final CoachSay say;
+
+  /// What the portrait opens, when it is a button (default: Ask GoHard).
+  final String? avatarLabel;
   final Size portrait;
   final RigFrame frame;
   final double bleed;
@@ -288,7 +307,7 @@ class _CoachSpeechState extends ConsumerState<CoachSpeech> {
         : Semantics(
             container: true,
             button: true,
-            label: 'Ask GoHard: open the conversation with ${guide.label}',
+            label: widget.avatarLabel ?? 'Ask GoHard: open the conversation with ${guide.label}',
             onTap: widget.onAvatarTap,
             child: GestureDetector(
               key: const Key('coach-avatar-launcher'),
@@ -605,3 +624,45 @@ Future<void> showCoachHelpSheet(BuildContext context, {required String title, re
     child: CoachSpeaker(key: const Key('coach-help-sheet'), say: say),
   ),
 );
+
+/// Leon or Leona on Train and Eat (docs/COACH.md › Companion › Train and Eat): Today's bust and mouth-attached bubble,
+/// peeking in from the right edge under the tab's title, saying one short thing about the section in view, with at most
+/// one main action ([CoachSay.primary]). Shown while Me › Appearance › Show coach on Train and Eat is on; there is no
+/// close button. It peeks in once for as long as the tab is alive (the shell keeps tabs built), the first time the tab
+/// is really in view; a new message or a rebuild changes the words, never replays the entrance. The portrait is the
+/// page's help entry ([onAvatarTap], named by [avatarLabel]). Opening the tab never asks the AI.
+class TabCoach extends StatefulWidget {
+  const TabCoach({super.key, required this.say, required this.onAvatarTap, this.avatarLabel});
+  final CoachSay say;
+  final VoidCallback onAvatarTap;
+  final String? avatarLabel;
+
+  /// Smaller than Today's: a compact bust that leaves the section's content in view.
+  static Size slot(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    return width < 340 ? const Size(60, 74) : width < 380 ? const Size(70, 88) : const Size(80, 100);
+  }
+
+  @override
+  State<TabCoach> createState() => _TabCoachState();
+}
+
+class _TabCoachState extends State<TabCoach> {
+  int _ack = 0;
+
+  @override
+  Widget build(BuildContext context) => CoachSpeech(
+        say: widget.say,
+        portrait: TabCoach.slot(context),
+        frame: RigFrame.edge,
+        bleed: context.inset,
+        greet: true,
+        ack: _ack,
+        onAsk: () => setState(() => _ack++),
+        avatarLabel: widget.avatarLabel,
+        onAvatarTap: () {
+          setState(() => _ack++);
+          widget.onAvatarTap();
+        },
+      );
+}

@@ -10,13 +10,17 @@ import 'coach_avatar.dart';
 /// The coach's look and coaching hints, for this phone only.
 @immutable
 class CoachPrefs {
-  const CoachPrefs({this.guide = CoachGuide.leon, this.hintsEnabled = true, this.dismissed = const {}, this.onToday = true, this.greeted, this.setup = const {}});
+  const CoachPrefs({this.guide = CoachGuide.leon, this.hintsEnabled = true, this.dismissed = const {}, this.onToday = true, this.onTabs = true, this.greeted, this.setup = const {}});
   final CoachGuide guide;
   final bool hintsEnabled;
 
   /// Me › Appearance › Show coach on Today: the companion beside Today's greeting. The only way to remove it; off,
   /// Ask GoHard is still the guide, on Train.
   final bool onToday;
+
+  /// Me › Appearance › Show coach on Train and Eat: the same companion under those tabs' titles. Separate from
+  /// [onToday], so turning one off never changes the other (builds before 17 Oct 2026 had only [onToday]).
+  final bool onTabs;
 
   /// `owner|day` (the phone's local day) of the last greeting played. One is enough: a greeting belongs to one account
   /// on one day on this phone, and another account or day is a new key. (Builds before 16 Oct 2026 also kept a "hidden
@@ -39,8 +43,8 @@ class CoachPrefs {
   /// Whether an automatic introduction of [context] may appear for [owner] now that it is in view.
   bool mayIntroduce(String owner, String context) => hintsEnabled && !seen(owner, context);
 
-  CoachPrefs copy({CoachGuide? guide, bool? hintsEnabled, Set<String>? dismissed, bool? onToday, String? greeted, Map<String, String>? setup}) => CoachPrefs(
-      guide: guide ?? this.guide, hintsEnabled: hintsEnabled ?? this.hintsEnabled, dismissed: dismissed ?? this.dismissed, onToday: onToday ?? this.onToday,
+  CoachPrefs copy({CoachGuide? guide, bool? hintsEnabled, Set<String>? dismissed, bool? onToday, bool? onTabs, String? greeted, Map<String, String>? setup}) => CoachPrefs(
+      guide: guide ?? this.guide, hintsEnabled: hintsEnabled ?? this.hintsEnabled, dismissed: dismissed ?? this.dismissed, onToday: onToday ?? this.onToday, onTabs: onTabs ?? this.onTabs,
       greeted: greeted ?? this.greeted, setup: setup ?? this.setup);
 
   /// Introductions already shown, as `owner|context`, so one account's never hide or reveal another's. None shows
@@ -49,9 +53,9 @@ class CoachPrefs {
 
   @override
   bool operator ==(Object other) => other is CoachPrefs && other.guide == guide && other.hintsEnabled == hintsEnabled && setEquals(other.dismissed, dismissed) &&
-      other.onToday == onToday && other.greeted == greeted && mapEquals(other.setup, setup);
+      other.onToday == onToday && other.onTabs == onTabs && other.greeted == greeted && mapEquals(other.setup, setup);
   @override
-  int get hashCode => Object.hash(guide, hintsEnabled, Object.hashAllUnordered(dismissed), onToday, greeted, Object.hashAllUnordered(setup.entries.map((e) => '${e.key}|${e.value}')));
+  int get hashCode => Object.hash(guide, hintsEnabled, Object.hashAllUnordered(dismissed), onToday, onTabs, greeted, Object.hashAllUnordered(setup.entries.map((e) => '${e.key}|${e.value}')));
 }
 
 /// Kept in the same platform store as the appearance and read before the first frame. A presentation choice for this
@@ -72,7 +76,7 @@ class CoachPrefsStore {
         guide: CoachGuide.values.asNameMap()[j['guide']] ?? CoachGuide.leon,
         hintsEnabled: j['hints'] != false,
         dismissed: {...(j['dismissed'] as List? ?? const []).whereType<String>()},
-        onToday: j['today'] != false, greeted: j['greeted'] as String?,
+        onToday: j['today'] != false, onTabs: j['tabs'] != false, greeted: j['greeted'] as String?,
         setup: {for (final e in ((j['setup'] as Map?) ?? const {}).entries) if (e.value is String) e.key.toString(): e.value as String},
       );
     } on Object {
@@ -80,7 +84,7 @@ class CoachPrefsStore {
     }
   }
 
-  Future<void> save() => _store.write(_key, jsonEncode({'guide': value.guide.name, 'hints': value.hintsEnabled, 'dismissed': [...value.dismissed], 'today': value.onToday, 'greeted': value.greeted, 'setup': value.setup}));
+  Future<void> save() => _store.write(_key, jsonEncode({'guide': value.guide.name, 'hints': value.hintsEnabled, 'dismissed': [...value.dismissed], 'today': value.onToday, 'tabs': value.onTabs, 'greeted': value.greeted, 'setup': value.setup}));
 }
 
 /// Overridden at startup with the restored store. Left alone (tests), it is an empty in-memory one.
@@ -93,6 +97,7 @@ class CoachPrefsController extends Notifier<CoachPrefs> {
   void setGuide(CoachGuide guide) => _apply(state.copy(guide: guide));
   void setHints(bool on) => _apply(state.copy(hintsEnabled: on));
   void setOnToday(bool on) => _apply(state.copy(onToday: on));
+  void setOnTabs(bool on) => _apply(state.copy(onTabs: on));
 
   /// A new account on this phone: setup starts with choosing the coach.
   void startSetup(String owner) => _apply(state.copy(setup: {...state.setup, owner: 'guide'}));

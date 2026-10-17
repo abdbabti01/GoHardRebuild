@@ -67,16 +67,21 @@ void main() {
       }
     }
     expect(find.text('370 kcal'), findsOneWidget, reason: 'the breakfast subtotal: 180 + 190');
-    expect(find.text('Nothing logged'), findsNWidgets(2), reason: 'dinner and snack');
+    // Dinner and snack are empty: their heading and the small add action, no repeated explanation.
+    expect(find.text('Nothing logged'), findsNothing);
+    for (final meal in ['Dinner', 'Snack']) {
+      expect(find.text(meal), findsOneWidget);
+    }
     expect(find.text('Yesterday\'s soup'), findsNothing, reason: 'another day\'s food is not in today\'s journal');
     expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget, reason: 'one general Log food action');
     expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
-    // The GH mark, the coach's help avatar and the summary panel's decorative bowl: no scene (only Today has one)
+    // The GH mark and the summary panel's decorative bowl (the coach is painted, not an image): no scene (only Today has one)
     // and no food photograph standing in for a meal or an entry.
-    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(3));
+    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(2));
     expect(find.byKey(const Key('eat-photo-nutrition')), findsOneWidget);
     expect(find.descendant(of: find.byType(GroupCard), matching: find.byType(Image)), findsNothing, reason: 'the journal has no photographs');
-    expect(find.byKey(const Key('coach-help-eat')), findsOneWidget);
+    expect(find.byKey(const Key('eat-coach')), findsOneWidget, reason: 'the guide speaks under the title');
+    expect(find.byKey(const Key('coach-help-eat')), findsNothing, reason: 'no second, small avatar beside the speaking one');
     expect(find.byType(SceneBackdrop), findsNothing);
     expect(find.text("Today's meals"), findsOneWidget);
     expect(find.byType(GroupCard), findsNWidgets(4), reason: 'one quiet group per meal');
@@ -92,13 +97,20 @@ void main() {
     await openEat(tester);
     for (final meal in ['breakfast', 'lunch', 'dinner', 'snack']) {
       expect(find.byKey(Key('eat-add-$meal')), findsOneWidget);
-      expect(find.descendant(of: find.byKey(Key('eat-add-$meal')), matching: find.text('Add food to $meal')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(Key('eat-add-$meal')), matching: find.text('Add food')), findsOneWidget, reason: 'short on screen');
+      expect(tester.getSemantics(find.byKey(Key('eat-add-$meal'))).label, 'Add food to $meal', reason: 'the meal is said');
+      expect(find.descendant(of: find.byKey(Key('eat-add-$meal')), matching: find.byType(IconTile)), findsNothing, reason: 'no tile like the meal heading');
       expect(tester.getSize(find.byKey(Key('eat-add-$meal'))).shortestSide, greaterThanOrEqualTo(48));
     }
+    // On an earlier day, the footer keeps that day: nothing is logged by opening it.
+    await tester.tap(find.byTooltip('Previous day'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('eat-add-dinner')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('eat-add-dinner')));
     await tester.pumpAndSettle();
     final screen = tester.widget<LogFoodScreen>(find.byType(LogFoodScreen));
-    expect((screen.meal, screen.dayKey), ('Dinner', day));
+    expect((screen.meal, screen.dayKey), ('Dinner', '2026-10-10'));
   });
 
   testWidgets('unknown values are a dash, a partial meal sum is called known, and no remainder comes from a partial total', (tester) async {
