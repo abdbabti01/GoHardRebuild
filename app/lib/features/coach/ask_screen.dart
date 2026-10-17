@@ -12,8 +12,11 @@ import '../../data/models.dart';
 import '../plans/builder/workout_editor.dart' show rxText;
 import '../plans/plan_draft.dart';
 import 'coach_avatar.dart';
+import 'coach_companion.dart';
 import 'coach_client.dart';
 import 'coach_contract.dart';
+import 'coach_prefs.dart';
+import 'coach_rig.dart' show RigFrame;
 import 'coach_proposal.dart';
 
 // ------------------------------------------------------------------ reviewed content (Quick guide, sources)
@@ -209,12 +212,22 @@ class _AskScreenState extends ConsumerState<AskScreen> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
                 Row(children: [
-                  const CoachAvatar(size: 40),
+                  // Attentive only while a question is really waiting; an answer, an error, Cancel or a timeout ends it.
+                  ClipOval(
+                    child: ColoredBox(
+                      color: context.c.sunken,
+                      child: CoachCompanion(key: const Key('ask-companion'), guide: ref.watch(coachPrefsProvider.select((p) => p.guide)), size: const Size.square(48), frame: RigFrame.inline, attentive: s.sending),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       const Heading('Ask GoHard', size: 30, serif: true),
-                      Text('AI training assistant', key: const Key('ask-ai-assistant'), style: context.caption),
+                      Wrap(children: [
+                        Text(ref.watch(coachPrefsProvider.select((p) => p.guide)).label, style: context.sansStyle(14, weight: FontWeight.w600)),
+                        Text(' · ', style: context.caption),
+                        Text('AI training assistant', key: const Key('ask-ai-assistant'), style: context.caption),
+                      ]),
                     ]),
                   ),
                 ]),
@@ -230,6 +243,7 @@ class _AskScreenState extends ConsumerState<AskScreen> {
                     for (final (i, q) in _suggestions.indexed)
                       ActionChip(
                           key: Key('ask-suggest-$i'), label: Text(q), materialTapTargetSize: MaterialTapTargetSize.padded,
+                          shape: StadiumBorder(side: BorderSide(color: context.c.outline)),
                           onPressed: s.sending || !s.loaded ? null : () => _send(q)),
                   ]),
                 ],
@@ -257,7 +271,7 @@ class _AskScreenState extends ConsumerState<AskScreen> {
               buildCounter: (context, {required currentLength, required isFocused, maxLength}) => currentLength < 500 ? null : Text('$currentLength / $maxLength'),
               textInputAction: TextInputAction.send, textCapitalization: TextCapitalization.sentences,
               onSubmitted: (v) => _send(v),
-              decoration: const InputDecoration(hintText: 'Ask a question'),
+              decoration: InputDecoration(hintText: 'Ask a question', border: OutlineInputBorder(borderRadius: BorderRadius.circular(26))),
             ),
           ),
           const SizedBox(width: 8),
@@ -265,7 +279,8 @@ class _AskScreenState extends ConsumerState<AskScreen> {
             valueListenable: _text,
             builder: (context, v, _) => IconButton.filled(
                 key: const Key('ask-send'), tooltip: 'Send', iconSize: 24, constraints: const BoxConstraints(minWidth: 52, minHeight: 52),
-                onPressed: s.sending || !s.loaded || v.text.trim().isEmpty ? null : () => _send(_text.text), icon: const Icon(Icons.arrow_upward)),
+                style: IconButton.styleFrom(backgroundColor: context.c.accentDeep, foregroundColor: context.c.onAccentDeep, disabledBackgroundColor: context.c.sunken, disabledForegroundColor: context.c.secondary),
+                onPressed: s.sending || !s.loaded || v.text.trim().isEmpty ? null : () => _send(_text.text), icon: const Icon(Icons.send_rounded)),
           ),
         ]),
       );
@@ -275,7 +290,8 @@ class _AskScreenState extends ConsumerState<AskScreen> {
         child: Container(
           margin: const EdgeInsets.only(top: 16, left: 32),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(color: context.c.accentSoft, borderRadius: BorderRadius.circular(Radii.panel)),
+          // The person's own words: a quiet bubble, so the answers in the pale tint stand out.
+          decoration: BoxDecoration(color: context.c.surface, border: Border.all(color: context.c.outline), borderRadius: BorderRadius.circular(Radii.panel)),
           child: Semantics(label: 'You asked: $text', excludeSemantics: true, child: Text(text, style: context.body)),
         ),
       );
@@ -330,15 +346,24 @@ class _AskScreenState extends ConsumerState<AskScreen> {
       child: Semantics(
         container: true, liveRegion: arrived,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Who answers: the selected guide, the same face as the header and every way into this conversation.
           Row(children: [
-            Icon(Icons.auto_awesome_outlined, size: 16, color: context.c.secondary),
-            const SizedBox(width: 6),
+            const CoachAvatar(size: 26),
+            const SizedBox(width: 8),
+            Text(ref.watch(coachPrefsProvider.select((p) => p.guide)).label, style: context.sansStyle(14, weight: FontWeight.w600)),
+            Text(' · ', style: context.caption),
             Text('AI-generated', key: Key('ask-ai-$id'), style: context.caption),
           ]),
           if (stale)
             Padding(padding: const EdgeInsets.only(top: 4), child: StatusLine(Icons.history, 'Based on an earlier version of your draft', key: Key('ask-stale-$id'), tone: Tone.warning)),
           const SizedBox(height: 6),
-          Text(m['text'] as String, key: Key('ask-answer-$id'), style: context.body),
+          // The answer in the pale panel tint with its dark ink, the same in Light and Dark.
+          Container(
+            margin: const EdgeInsetsDirectional.only(end: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(color: context.c.tint, borderRadius: BorderRadius.circular(Radii.panel)),
+            child: Text(m['text'] as String, key: Key('ask-answer-$id'), style: context.body.copyWith(color: GoColors.panelOf(context.c).text)),
+          ),
           if (cites.isNotEmpty)
             TextButton(
                 key: Key('ask-more-$id'),

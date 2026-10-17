@@ -67,6 +67,11 @@ Checked 2026-10-13/14 (open-meteo.com/en/docs, /en/docs/geocoding-api, /en/prici
   with no code change: `Weather__ForecastBaseUrl=https://customer-api.open-meteo.com/v1/`,
   `Weather__GeocodingBaseUrl=https://customer-geocoding-api.open-meteo.com/v1/` and the key
   `GOHARD_Weather__ApiKey=<key>` (sent as the documented `apikey` query parameter, server-side only).
+- **Temperature on Today.** The sky line reads "8°C · Dense drizzle": `temperatureC` from the same answer as the
+  description, carried by the scene only while that answer is fresh and for the chosen place (stale, ahead or another
+  place: no temperature, as no label). Both providers give °C (Open-Meteo's default unit, MET's `air_temperature`);
+  the phone converts to °F once from that value when Me › Units › Temperature says so (a device setting stored with
+  the weather preferences) and rounds to whole degrees; a missing value shows only the description, never 0.
 - **Schema used.** `GET /v1/forecast?latitude=&longitude=&current=weather_code,is_day,temperature_2m&timezone=auto`.
   `current.time` is wall-clock time **at the place** (ISO without offset, e.g. `2026-10-13T23:15`);
   `utc_offset_seconds` (resolved at request time) turns it into an instant. `current.interval` is 900 s: current

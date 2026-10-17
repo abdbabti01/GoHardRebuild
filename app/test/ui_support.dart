@@ -53,6 +53,7 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     allSetsProvider.overrideWith((ref) => Stream.value(setRows(null))),
     setsProvider.overrideWith((ref, id) => Stream.value(setRows(id))),
     runtimesProvider.overrideWith((ref) => Stream.value(const [])),
+    restDaysProvider.overrideWith((ref) => Stream.value(const [])),
     foodProvider.overrideWith((ref, d) => foodFails ? Stream.error(StateError('disk')) : Stream.value([for (final f in food) if (f['dayKey'] == d) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
     runsProvider.overrideWith((ref) => Stream.value([for (final r in runs) stored(Run(r), Kinds.run, r['id'] as String, r)])),
     metricsProvider.overrideWith((ref) => Stream.value(const [])),

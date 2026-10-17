@@ -44,14 +44,14 @@ Json authFor(String owner) => {
 class FakeServer implements Transport {
   final calls = <({String method, String path, String body, String? bearer})>[];
   final operations = <String, (String body, ApiResponse response)>{};
-  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{};
+  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{};
 
   /// The account's profile as this authority holds it. A field a request leaves out is kept, as on the real server.
   Json profile = {...authFor('owner-from-server')['profile'] as Json};
 
   /// Answers for the read-only endpoints: food lookups by path, and what the server says it supports.
   final lookups = <String, ApiResponse>{};
-  Json capabilities = {'contractVersion': 1, 'minimumClientContract': 1, 'capabilities': ['food.search', 'food.barcode', 'food.saved', 'profile.nutrition-goals']};
+  Json capabilities = {'contractVersion': 1, 'minimumClientContract': 1, 'capabilities': ['food.search', 'food.barcode', 'food.saved', 'profile.nutrition-goals', 'water.entries']};
   bool offline = false, loseNextResponse = false;
   Completer<void>? hold;
 
@@ -79,7 +79,7 @@ class FakeServer implements Transport {
       return ApiResponse(200, {
         'profile': profile, 'context': {'contextRevision': 1, 'primaryPlanId': null, 'plans': []},
         'workouts': [for (final w in workouts.values) {...w, 'exercises': [for (final e in w['exercises'] as List) {...e as Json, 'sets': [for (final s in sets.values) if (s['exerciseId'] == e['id']) s]}]}],
-        'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': [], 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(),
+        'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': [], 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(), 'waterEntries': water.values.toList(),
       });
     }
     if (path == '/capabilities') return ApiResponse(200, capabilities);
@@ -133,6 +133,15 @@ class FakeServer implements Transport {
         return _revisioned(food, id, d, op, (r) => r.addAll({for (final k in ['dayKey', 'meal', 'name', 'amountDescription', 'macros', 'source', 'provenance']) k: d[k]}));
       case ['food-entries', final id, 'delete']:
         return _revisioned(food, id, d, op, (r) => r['isDeleted'] = true);
+      case ['water-entries']:
+        if (water.containsKey(d['entryId'])) return _ack(op, 'conflict', 1, null, 'DUPLICATE_ID');
+        final w = {'id': d['entryId'], 'dayKey': d['dayKey'], 'volumeMl': d['volumeMl'], 'revision': 1, 'isDeleted': false};
+        water[w['id'] as String] = w;
+        return _ack(op, 'accepted', 1, Map.of(w));
+      case ['water-entries', final id] when method == 'PUT':
+        return _revisioned(water, id, d, op, (r) => r.addAll({'dayKey': d['dayKey'], 'volumeMl': d['volumeMl']}));
+      case ['water-entries', final id, 'delete']:
+        return _revisioned(water, id, d, op, (r) => r['isDeleted'] = true);
       case ['saved-foods', final id] when method == 'PUT':
         final row = savedFoods[id];
         if ((row?['revision'] ?? 0) != d['expectedRevision']) return row == null ? const ApiResponse(404, null) : _ack(op, 'conflict', row['revision'] as int, row, 'REVISION_CONFLICT');

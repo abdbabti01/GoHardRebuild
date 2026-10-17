@@ -65,14 +65,18 @@ class WorkoutDetailScreen extends ConsumerWidget {
         if (row.isPending) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.phone_iphone, 'Saved on this phone · sync pending')),
         if (row.needsReview) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, 'Saved on this phone; needs your review before it can sync.', tone: Tone.warning)),
         const SizedBox(height: 16),
-        Panel(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          // Three facts side by side; they wrap onto their own lines with large text.
-          child: Wrap(spacing: 28, runSpacing: 10, children: [
-            _Fact('Time', w.activeDurationSeconds == null ? '—' : durationText(w.activeDurationSeconds!)),
-            _Fact('Sets', '${sets.length}'),
-            _Fact('Movements', '${sets.map((s) => s.exerciseId).toSet().length}'),
-          ]),
+        // The recorded facts as the page's pale summary panel; they wrap onto their own lines with large text.
+        PhotoPanel(
+          key: const Key('workout-facts'),
+          photo: 'assets/images/workout-hero.webp',
+          photoAlignment: const Alignment(1, 0.6),
+          content: (_) => [
+            Wrap(spacing: 24, runSpacing: 10, children: [
+              _Fact('Time', w.activeDurationSeconds == null ? '—' : durationText(w.activeDurationSeconds!)),
+              _Fact('Sets', '${sets.length}'),
+              _Fact('Movements', '${sets.map((s) => s.exerciseId).toSet().length}'),
+            ]),
+          ],
         ),
         const SizedBox(height: 20),
         if (w.isOpen) PrimaryButton('Resume workout', onPressed: () => resumeWorkout(context, ref, w)),
@@ -100,7 +104,7 @@ class _Fact extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         Overline(label),
-        Text(value, style: context.titleStyle(23)),
+        Text(value, style: context.pageTitleStyle(28)),
       ]);
 }
 

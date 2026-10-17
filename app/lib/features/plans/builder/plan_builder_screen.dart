@@ -7,7 +7,9 @@ import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../data/models.dart';
 import '../../../data/sync.dart';
-import '../../coach/coach_avatar.dart';
+import '../../coach/coach_bubble.dart';
+import '../../coach/guide.dart';
+import '../../coach/guide_sheets.dart';
 import '../../coach/coach_contract.dart';
 import '../../shell/home_shell.dart';
 import '../plan_actions.dart' show runPlanDecision;
@@ -62,18 +64,20 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
     final saved = _saved;
     return AppPage(title: 'Create plan', children: [
       if (saved != null) ...[
-        Panel(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // The plan in progress as a pale panel: its name in the serif, where it stopped, Continue and Start over.
+        // Start over asks from the page's own context ([_discard]), never the panel's.
+        PhotoPanel(
+          content: (context) => [
             const Overline('Plan in progress'),
             const SizedBox(height: 4),
-            Text(saved.title.trim().isEmpty ? 'Untitled plan' : saved.title.trim(), style: context.titleStyle(22)),
+            Text(saved.title.trim().isEmpty ? 'Untitled plan' : saved.title.trim(), style: context.pageTitleStyle(28)),
             const SizedBox(height: 4),
             Text('Step ${saved.step.clamp(0, 3) + 1} of 4 · ${_stepNames[saved.step.clamp(0, 3)]}. Saved on this phone; nothing is active yet.', style: context.caption),
-            const SizedBox(height: 14),
-            PrimaryButton('Continue this plan', key: const Key('plan-draft-resume'), onPressed: () => setState(() => _open = saved)),
-            const SizedBox(height: 8),
-            SecondaryButton('Start over', key: const Key('plan-draft-discard'), onPressed: _discard),
-          ]),
+          ],
+          actions: (_) => [
+            PrimaryButton('Continue this plan', key: const Key('plan-draft-resume'), expand: false, onPressed: () => setState(() => _open = saved)),
+            QuietLink('Start over', key: const Key('plan-draft-discard'), said: 'Start over and discard this plan in progress', onPressed: _discard),
+          ],
         ),
       ] else ...[
         Text('Both ways make a plan of your own that you can change at any time.', style: context.sansStyle(16, color: context.c.secondary)),
@@ -108,6 +112,54 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
         ]),
       ],
     ]);
+  }
+}
+
+/// The four steps as numbered marks joined by a line: done steps carry a check, the current one is the deep accent,
+/// later ones are outlined. Drawing only (the builder announces the step in words); the names show under the marks
+/// while they fit and are left to the line above with large text.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator(this.step);
+  final int step;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    Widget mark(int i) {
+      final done = i < step, now = i == step;
+      return Container(
+        width: 28, height: 28, alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: now ? c.accentDeep : done ? c.tint : c.surface,
+          border: Border.all(color: now || done ? c.accentDeep : c.outline, width: 1.5),
+        ),
+        child: done
+            ? Icon(Icons.check_rounded, size: 16, color: GoColors.panelOf(c).text)
+            // Decoration inside a fixed mark (the step is said in words above), so the digit keeps its size.
+            : Text('${i + 1}', textScaler: TextScaler.noScaling, style: context.numStyle(13.5, weight: FontWeight.w700, color: now ? c.onAccentDeep : c.secondary)),
+      );
+    }
+
+    Widget line(int i) => Expanded(child: Container(height: 2, margin: const EdgeInsets.symmetric(horizontal: 4), color: i < step ? c.accentDeep : c.divider));
+    TextStyle style(int i) => context.sansStyle(12.5, weight: i == step ? FontWeight.w700 : FontWeight.w400, color: i == step ? c.text : c.secondary);
+    // The names show only when all four fit at the reader's text size; otherwise the line above names the step.
+    double width(int i) {
+      final p = TextPainter(text: TextSpan(text: _stepNames[i], style: style(i)), textDirection: TextDirection.ltr, textScaler: MediaQuery.textScalerOf(context))..layout();
+      final w = p.width;
+      p.dispose();
+      return w;
+    }
+
+    return LayoutBuilder(builder: (context, box) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        for (var i = 0; i < 4; i++) ...[if (i > 0) line(i), mark(i)],
+      ]),
+      if ([for (var i = 0; i < 4; i++) width(i)].fold(0.0, (a, b) => a + b) + 3 * 12 <= box.maxWidth) ...[
+        const SizedBox(height: 4),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [for (var i = 0; i < 4; i++) Text(_stepNames[i], style: style(i))]),
+      ],
+    ]));
   }
 }
 
@@ -216,6 +268,41 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     return draft.title.trim().isEmpty ? 'My plan' : draft.title.trim();
   }
 
+  /// What the coach says on each step (docs/COACH.md › Companion › Where it speaks), with Ask me about the draft and,
+  /// on the split step, the built-in Compare splits. Nothing on the review step: it is a summary to check, not a task.
+  ({String id, String label, CoachSay say})? _help(int step) {
+    CoachContext ask(String label, CoachFocus focus) =>
+        CoachContext(label: label, focus: focus, templateId: draft.templateId, draft: () => draft, applyToDraft: _applyFromCoach);
+    switch (step) {
+      case 0:
+        return (
+          id: 'builder.preferences', label: 'Help with your training week',
+          say: CoachSay('Pick the days you can train and your equipment. The next step suggests a starting point from these answers.',
+              ask: ask('Your training week', CoachFocus.plan)),
+        );
+      case 1:
+        final templates = ref.watch(planTemplatesProvider).value, guide = ref.watch(coachGuideProvider).value;
+        final s = guidedSuggestion(draft.days.length, draft.equipment, experience: draft.experience);
+        return (
+          id: 'builder.structure', label: 'Help with choosing a split',
+          say: CoachSay('Unsure which split fits your week? Let\'s compare your options.',
+              ask: ask('Choosing a split', CoachFocus.split),
+              guide: templates == null || guide == null || draft.path != 'template'
+                  ? null
+                  : (label: 'Compare splits', key: const Key('coach-compare'), onPressed: () => showCompareSplits(context,
+                      guide: guide, templates: templates, draft: draft, templateIds: [s.templateId, ...s.alternatives], suggestedId: s.templateId))),
+        );
+      case 2:
+        return (
+          id: 'builder.workouts', label: 'Help with these workouts',
+          say: CoachSay('Questions about sets, reps or a movement? The info button beside each exercise has the built-in guide.',
+              ask: ask(draft.title.trim().isEmpty ? _splitLabel : draft.title.trim(), CoachFocus.workout)),
+        );
+      default:
+        return null;
+    }
+  }
+
   void _back() => _step <= _first ? Navigator.maybePop(context) : _change((d) => d.step = _step - 1);
 
   /// What stops the user leaving this step, in words.
@@ -320,6 +407,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     ref.watch(primaryPlanProvider);
     ref.watch(workoutListProvider);
     final title = switch (draft.mode) { 'edit' => 'Edit plan', 'duplicate' => 'Duplicate plan', _ => 'Create plan' };
+    final help = _help(step);
     final progress = 'Step ${step + 1} of 4: ${_stepNames[step]}';
     return PopScope(
       canPop: step <= _first,
@@ -338,28 +426,21 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
                 child: ExcludeSemantics(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     Overline('Step ${step + 1} of 4 · ${_stepNames[step]}'),
-                    const SizedBox(height: 8),
-                    ProgressRail((step + 1) / 4, label: progress, height: 6),
+                    const SizedBox(height: 10),
+                    _StepIndicator(step),
                   ]),
                 ),
               ),
             ),
-            // A reserved slot beside the progress: never over fields, actions or the keyboard.
-            if (step == 1) ...[
+            // The coach's help entry, in a reserved slot beside the progress: never over fields, actions or the keyboard.
+            if (help != null) ...[
               const SizedBox(width: 8),
-              CoachHelpButton(
-                key: const Key('coach-help-structure'), semanticLabel: 'Ask GoHard about this split',
-                onPressed: () => _ask(_splitLabel, CoachFocus.split)),
-            ],
-            if (step == 2) ...[
-              const SizedBox(width: 8),
-              CoachHelpButton(
-                key: const Key('coach-help-workouts'), semanticLabel: 'Ask GoHard about this workout',
-                onPressed: () => _ask(draft.title.trim().isEmpty ? _splitLabel : draft.title.trim(), CoachFocus.workout)),
+              CoachHelpEntry(id: help.id, label: help.label),
             ],
           ]),
-          // Once, in the page's flow under the progress: it moves the step down and covers nothing.
-          if (step == 1) CoachHint(hintId: 'builder.structure', text: 'Need help choosing a split?', onAsk: () => _ask(_splitLabel, CoachFocus.split)),
+          // In the page's flow under the progress: it moves the step down and covers nothing. The split step
+          // introduces itself once, the first time it is in view; the others speak when asked.
+          if (help != null) CoachSpot(id: help.id, say: help.say, introduce: help.id == 'builder.structure'),
           const SizedBox(height: 18),
           switch (step) {
             0 => PreferencesStep(draft: draft, change: _change),

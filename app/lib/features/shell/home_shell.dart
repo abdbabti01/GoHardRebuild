@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -211,7 +213,8 @@ class GoNavigationBar extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 9),
                           child: Column(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
-                            Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? c.accent : c.secondary),
+                            // Train's dumbbell lies flat, as in the approved boards (the Material glyph is drawn diagonally).
+                            Transform.rotate(angle: i == 1 ? -math.pi / 4 : 0, child: Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? c.accent : c.secondary)),
                             const SizedBox(height: 4),
                             Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis,
                                 style: context.sansStyle(12.5, color: i == currentIndex ? c.accent : c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500)),

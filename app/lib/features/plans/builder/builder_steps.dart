@@ -181,41 +181,41 @@ class _StructureStepState extends ConsumerState<StructureStep> {
         : primary
             ? PrimaryButton('Use this starting plan', key: Key('guide-use-$id'), onPressed: () => _pick(templates, id))
             : SecondaryButton('Use this starting plan', key: Key('guide-use-$id'), onPressed: () => _pick(templates, id));
-    Widget week(String id) => Text(weekLine(previewOf(d, templates, id)), style: context.sansStyle(15, weight: FontWeight.w500));
+    // Styles come from the context they are drawn in: the pale panel's ink inside it, the page's outside.
+    Widget week(BuildContext context, String id) => Text(weekLine(previewOf(d, templates, id)), style: context.sansStyle(15, weight: FontWeight.w500));
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (d.j['edited'] == true && chosen != null && chosen != s.templateId) ...[
         StatusLine(Icons.info_outline, key: const Key('guide-answers-changed'), tone: Tone.warning,
             'Your answers now suggest $name. Your edited workouts stay as they are unless you choose Use this starting plan below.'),
         const SizedBox(height: 10),
       ],
-      Panel(
+      // The suggestion is the step's summary, a pale panel in the Today look. Its sheets open from this page's
+      // context (the State's), so they keep the app's look.
+      PhotoPanel(
         key: const Key('guide-suggestion'),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        content: (pc) => [
           const Overline('Suggested starting plan'),
           const SizedBox(height: 4),
-          Heading(name, size: 22),
+          Semantics(header: true, child: Text(name, style: pc.pageTitleStyle(28))),
           const SizedBox(height: 6),
-          Text(s.reason, key: const Key('guide-reason'), style: context.body),
+          Text(s.reason, key: const Key('guide-reason'), style: pc.body),
           _label('Your week'),
-          week(s.templateId),
-          if (guide?.split(s.templateId) case final split?) Padding(padding: const EdgeInsets.only(top: 4), child: Text(split.organisation, style: context.caption)),
+          week(pc, s.templateId),
+          if (guide?.split(s.templateId) case final split?) Padding(padding: const EdgeInsets.only(top: 4), child: Text(split.organisation, style: pc.caption)),
           const SizedBox(height: 14),
-          use(s.templateId, primary: true),
+          SizedBox(width: double.infinity, child: use(s.templateId, primary: true)),
           const SizedBox(height: 8),
           SecondaryButton('Compare splits', key: const Key('guide-compare'), onPressed: guide == null
               ? null
               : () => showCompareSplits(context, guide: guide, templates: templates, draft: d, templateIds: [s.templateId, ...s.alternatives], suggestedId: s.templateId)),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              key: const Key('guide-why'), icon: const Icon(Icons.help_outline, size: 18), label: const Text('Why this suggestion?'),
-              onPressed: guide == null
-                  ? null
-                  : () => showWhySuggestion(context, guide: guide, templateId: s.templateId, name: name, reason: s.reason,
-                      onAsk: () => widget.ask?.call(name, CoachFocus.split, templateId: s.templateId)),
-            ),
+          TextButton.icon(
+            key: const Key('guide-why'), icon: const Icon(Icons.help_outline, size: 18), label: const Text('Why this suggestion?'),
+            onPressed: guide == null
+                ? null
+                : () => showWhySuggestion(context, guide: guide, templateId: s.templateId, name: name, reason: s.reason,
+                    onAsk: () => widget.ask?.call(name, CoachFocus.split, templateId: s.templateId)),
           ),
-        ]),
+        ],
       ),
       if (s.alternatives.isNotEmpty) _label('Also fits your days'),
       for (final id in s.alternatives)
@@ -224,11 +224,11 @@ class _StructureStepState extends ConsumerState<StructureStep> {
           child: Panel(
             key: Key('guide-alt-$id'),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Heading(templates.byId(id).name, size: 19),
+              Heading(templates.byId(id).name, size: 20),
               const SizedBox(height: 4),
               Text(fitLine(templates.byId(id), d.days.length), style: context.caption),
               const SizedBox(height: 6),
-              week(id),
+              week(context, id),
               const SizedBox(height: 12),
               use(id),
             ]),

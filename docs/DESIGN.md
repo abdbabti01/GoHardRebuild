@@ -56,13 +56,13 @@ in light, layered charcoal-plum in dark. Accent is for interactive selection and
 | Text on a filled accent | `#FFFFFF` | page |
 | Success / warning / error | `#0C6B63` / `#7D5200` / `#B3261E` | `#5FD4C4` / `#F2C36B` / `#FFB4AB` |
 | Header scrim over a scene (`scrim`) | page at 66% | page at 66% |
-| Today's surface over the scene | surface at 92% (`panelOpacity`) over an 18 px blur | the same |
+| Today's panels (`_panelColors` in `today_screen.dart`): tint / badge / button / ink | Green `#D4ECDD` / `#BADFC8` / `#143B2C` / `#0E1C17`; Blue `#D8E4F1` / `#BDD0E6` / `#173554` / `#0E1724`; Pink `#F2DCE6` / `#E6C3D3` / `#4F1E37` / `#20111A` | the same (pale panels in both modes) |
 | Calm wash at the top of Train and Eat (`wash`) | halfway between page and recessed fill, fading into the page | the same |
 
 The scrim holds 4.5:1 for primary text over any pixel, black to white, so a header over a scene never depends on the
 picture (`TabHeader(onBackdrop: true)`).
 
-**Type.** Inter for everything, plus one serif, DM Serif Display (OFL, `assets/fonts/`), for page titles only:
+**Type.** Inter for everything, plus one serif, DM Serif Display (OFL, `assets/fonts/`), for page titles and for the photo panels' titles and key figures (see App-wide panels):
 the four tabs, Add food, Appearance and secondary page titles, through `context.pageTitleStyle` /
 `Heading(serif: true)` / `TabHeader` / `AppPage`. Figures stay in Inter with tabular digits. Page titles grow with
 the text setting up to 1.3x so a word never breaks.
@@ -70,7 +70,7 @@ the text setting up to 1.3x so a word never breaks.
 **Shell.** The navigation bar floats inset (12 px from the sides, above the home indicator), rounded, on `raised`
 with a thin border and one soft low shadow. Secondary pages have back navigation and no bar.
 
-**New components** (`core/widgets.dart`): `ProgressRing`, `IconTile(circle: true)`, `RhythmTimeline`,
+**New components** (`core/widgets.dart`): `ProgressRing`, `IconTile(circle: true)`,
 `ChoiceCard`, `TabHeader(onBackdrop:)`, `Heading(serif:)`.
 
 ### Calm Momentum (previous values, kept for history)
@@ -87,8 +87,8 @@ Changes from the brief's starting values, each made because the measured contras
 4.5:1); success is teal so that "completed" never looks like the green accent. Status is always an icon and a word.
 
 With the phone's Increased Contrast setting, secondary text, separators and control boundaries move toward the
-primary text colour (`highContrastTheme`). The one translucent panel is Today's surface; its contrast is measured without
-the blur, at 92% opacity, so it does not depend on Reduce Transparency. With Reduce Motion, pages appear without a slide and rails and segments change without easing.
+primary text colour (`highContrastTheme`). Today's panels are opaque (no blur), so nothing depends on Reduce Transparency; with increased contrast their
+secondary text moves toward their ink. With Reduce Motion, pages appear without a slide and rails and segments change without easing.
 
 ## Motion and haptics
 
@@ -165,25 +165,109 @@ the sky's look (light lines over a dark sky, dark over a light one); `test/weath
 6:1 or more against the worst pixel of every scene in all six looks. Weather changes only the scene and the header's
 light or dark lines: never the sections, states, accent, appearance preference or navigation.
 
-Below it, all sections sit on one surface (`_Surface`): the app's own surface colour (soft white in Light, charcoal
-in Dark, whatever the sky) at 92% over one 18 px blur of the scene, a thin edge, inset 12 px like the floating bar.
-The scene stays visible around it and faintly through it. `weather_contrast_test` measures text, secondary and accent
-text on the surface laid over every pixel of every full-screen scene, without counting the blur: 4.6:1 or more (accent
-in Light), 5.8:1 secondary, 11:1 text. One blur for the whole column; the sky's motion repaints only its own layer and
-the backdrop is const in Today's tree, so no animation tick rebuilds a widget.
+### Today panels (16 October 2026, from the approved Today mockup)
 
-On the surface, `RhythmTimeline` joins three sections of comparable weight:
+Below the header, in this order: **Workout** and **Nutrition** at the full width, then a compact **Run** tile (64% of
+the width) with **History** beside it, the scene showing around all of them. The single blurred surface and the rhythm
+thread are gone. Each panel (`_PanelSurface` for the surface, `_Module` for the content, `_PanelTheme` for the colours,
+all in `features/today/today_screen.dart`) is:
 
-| Section | What it shows |
+- a pale, desaturated tint of the chosen accent with dark ink text, the same in Light and Dark, opaque, with a soft
+  shadow and a thin edge to lift it off the scene, radius 18, 16 px from the screen edges;
+- a photograph filling its trailing half at full height and fading into the tint toward the words (a `ShaderMask`
+  gradient, so it adapts to any panel size); the words keep to the part the photograph has faded out of (at most about
+  a third of the way into the fade, where it is under 20% opaque), and the button row may reach a little further;
+- a state badge (the existing `StatusPill`), the display line in the serif (the workout's real name at 36, the calorie
+  figure at 44, "Run" at 30), secondary lines in Inter, then one filled button in the accent's deep shade with a quiet
+  link beside it ("Details ›", "Journal ›").
+
+Only Today uses the panel palette (`_panelColors`); `goThemeOf` in `core/theme.dart` builds a theme from it, and every
+other screen keeps `GoColors.of`. History sits on the scene in the header's sky colours on a `scrim` backing, so it
+reads over any weather.
+
+| Panel | What it shows |
 |---|---|
-| Workout | Name and state; "5 exercises · 18 planned sets"; recorded planned sets as a ring ("6 of 18 sets", "33% recorded": recorded, not completed); a manual workout as a count with no percentage; one filled Start or Resume and Details (the existing sheet). Text-first states (rest, paused, done, starts later, review, draft, no plan) carry no gym photo. |
-| Run | One Start run / Continue run for the saved open run; Distance and Time only from saved values; History. |
-| Nutrition | Calories and protein from the same coverage as Eat, bars only for goals that were set, unknown as a dash, a compact missing-values line that opens Eat; Log food and Journal. |
+| Workout | The badge (Due today, In progress, Saved for later, Completed, Skipped, Planned rest day, Plan paused, Starts …, Block ready to review, plan ready to review) and the real name; counts and the plan week, or the recorded-sets ring while in progress; Start or Resume (outlined when another workout is open in front, or when saved for later) and Details. Rest, done, skipped, paused, starts later, review, draft and no plan have no photograph and no Start. Under the lead, in the same panel: other workouts today, unresolved earlier workouts, Start a manual workout, workouts saved for later. A manual or other-day open workout has its own panel in front, without a photograph. |
+| Nutrition | "No food logged today" in the serif (never "0 kcal") with the goal when one is set; or the calorie figure ("1,400 kcal"), "/ 2,200 kcal" and its bar when a calorie goal is set, protein on one line with its bar when a protein goal is set, unknown as a dash, partial sums marked "known"; the missing-values line opening Eat; Log food and Journal. The bowl is decoration, there on an empty day too. |
+| Run | The badge (In progress, Paused, Finished today), "Run", "No run today" / "Started …", Distance and Time only from saved values; Start run or Continue run. |
 
-"Start a manual workout", workouts saved for later, Recorded today (only activity not already shown, by identity)
-and the connection notice are kept. Heights at 390 × 844 with the real font: workout 238, run 164, nutrition 215 in
-the fullest state (194 / 164 / 164 quiet) before the surface; 244 / 145 / 213 on it. Nutrition starts on the first
-screen; nothing is shrunk to fit more. The photographs are 84 px wide on the surface (72 on narrow phones).
+Recorded today and the connection notice are panels too, without a photograph. With large text (over 1.3×) the
+photographs give their room to the words, the button and link wrap, and History goes under the Run tile; on a phone
+narrower than 350 px the Run tile takes the full width with History under it. Heights at 390 × 844 with the real
+font, fullest state: workout 320, nutrition 309, run 261; quiet (due, nothing logged, no run): 260 / 214 / 176. The
+mockup's due panel is about 183: the 52 px button and the plan-week line are kept on purpose.
+
+**Photographs.** The three bundled ones (`workout-hero.webp`, `nutrition-cover.webp`, `run-cover.webp`, provenance in
+`app/assets/PROVENANCE.md`), unchanged. They show the same subjects as the mockup (hex dumbbells by a bench, a chicken
+and quinoa bowl, a runner's shoes on a riverside path) but are not the mockup's pictures, which are wet, rainy
+variants; those were not supplied as files, so they are not used. Each is decoded for the box it is drawn in.
+
+## App-wide panels (16 October 2026, from `GoHard_Appwide_UI_Handoff`)
+
+The Today photo panels are the language of the whole app. The boards (`GoHard_Appwide_UI_Handoff/references/`) are
+visual references with illustrative data; nothing from them is hard-coded.
+
+**Shared pieces** (`core/theme.dart`, `core/widgets.dart`; one set, used everywhere):
+
+| Piece | What it is |
+|---|---|
+| `GoColors.accentDeep` / `onAccentDeep` | The filled button in every screen: the accent's deep shade with a light label, both modes. In Dark it carries a thin accent edge (≥ 3:1 on the page) so its shape reads on charcoal |
+| `GoColors.tint` | The pale accent tint: photo panels, the chosen segment, the chosen choice card, the chosen week |
+| `GoColors.panelOf(c)` | The panel palette (tint, dark ink, deep button, Light status colours), the same in Light and Dark |
+| `PanelTheme` + `appContext(context)` | Puts content in the panel palette; sheets, dialogs and pickers opened from inside a panel open from `appContext` and keep the app's look (regression test in `today_ui_test`) |
+| `PanelSurface`, `PanelPhoto` | The opaque tint with soft depth and a thin edge; a bundled photo on the trailing half fading into the tint (`ShaderMask`), decoded for its box |
+| `PhotoPanel` | One summary per screen: words on the faded side (serif title or figure, quiet lines), then a deep button and a `QuietLink` |
+| `Segmented`, `ChoiceCard` | Chosen = pale tint with the panel ink (a chosen segment no longer fills with the full accent) |
+
+**Where it is used.** Today (unchanged composition). Train: the plan (`train-pass`), Progress (`train-progress-panel`),
+open workouts on Workouts (`train-resume-<id>`), the recording screen's exercise panel (`workout-exercise-panel`) with
+separate Target and Last recorded tiles, the workout detail figures, the builder's "plan in progress" and Guide me
+suggestion. Eat: the day's summary with the bowl and Log food. Food form: the food's header, without a photograph.
+Run: the elapsed time with the runner photo. Me › Nutrition goals: the optional-goals explainer. Appearance: a small
+preview (dusk scene with the chosen guide). Sign-in: the dumbbells panel. Lists, sets, settings and the journal stay
+quiet `GroupCard` rows. The serif is for page titles, panel titles and key figures, never in a control, row, field or the
+navigation (`theme_test`).
+
+**Photographs.** Only the bundled ones: `workout-hero.webp` (plan, progress, workouts, exercise, sign-in),
+`nutrition-cover.webp` (Eat, goals), `run-cover.webp` (run), `scenic-dusk.webp` and the guides' busts (Appearance).
+There is no photograph per food or per exercise: food rows and the food header have none, and every exercise panel
+uses the same dumbbells. No asset was added.
+
+**Deliberate differences from the boards.**
+- No average pace on the run: the recorded time includes stretches GPS did not measure, so a pace from time and
+  distance would be invented. No "GPS active" indicator beyond the tracking state the app really has.
+- No food thumbnails, egg or barbell photographs; no Help row on Me (no destination exists).
+- The builder's workout cards stay ordinary cards (their move buttons and menus open popups that must keep the app's
+  look); the board's pale cards with photos are not used there.
+- Me's profile row reads "Edit profile" (what it opens), not "Account settings".
+- Sign-in uses one show/hide button in the password field, not both an eye and a checkbox (the brief asks for one
+  control); its tagline is our own words.
+- The plan week selector wraps all weeks (any length), rather than the board's fixed two rows of four.
+
+### Goals, water and Customize tracking (17 October 2026)
+
+- **Daily goals from Today and Eat.** The Nutrition summary on both ends with one quiet line: "Set daily goals" while
+  no goal is set (also on a day with nothing logged), "Edit goals" once one is, and a labelled tune icon,
+  "Customize tracking". Goals open a compact sheet in the app's own look (`showGoalsSheet`, opened from `appContext`)
+  with the same `GoalsEditor` Me › Nutrition goals uses: one form, one validation, one save path
+  (`ProfileRepository.setGoals`), fields empty unless a goal is saved, nothing suggested. The sheet says the goals
+  repeat every day. Today, Eat and Me all read the one profile, so a save shows everywhere at once.
+- **Water** (off until turned on; data in docs/FOOD_DATA.md › Water). A compact line under the figures: a droplet,
+  the day's amount, "of 2 L" and a thin bar only when a goal is set (full at the goal, the words keep the real
+  amount), and an add button. It opens the water sheet: the day's total in the serif, three quick amounts in the
+  chosen unit, another amount, Add, Undo in the message bar, and the day's entries, each tappable to correct and
+  with a remove button, plus "Set a water goal" / "Edit water goal" (the same goals form, now with water).
+- **Customize tracking.** A short sheet of switches: Water, Carbs, Fat. Calories and protein always stay. Hiding is
+  presentation only; it is kept per account on this phone, like the coach preferences. Water is offered only where
+  the server declares `water.entries`.
+- **Eat's summary** is now the same compact composition as Today's Nutrition panel (calories in the serif and
+  protein, each with its goal bar, the deep Log food beside the full-height bowl), with Eat's own extra lines under
+  it: what is left or over, carbs and fat (when shown), the missing-values note, water, then the goals line. The
+  separate calorie ring is gone: one bar per goal, as on Today.
+- **Meal icons**: one outlined Material family on the same tile: Breakfast `wb_twilight` (sunrise), Lunch
+  `light_mode` (sun), Dinner `dark_mode` (moon), Snack `cookie` (Material Icons has no apple fruit; `Icons.apple` is
+  the brand logo).
+- **Train's icon** in the navigation bar lies flat (the Material dumbbell rotated 45°), as in the boards.
 
 ## Train
 

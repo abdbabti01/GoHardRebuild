@@ -38,6 +38,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('rest-clock')));
     await j.tapKey('rest-skip');
     await j.tapKey('complete-set');
+    await j.reveal(find.byKey(const Key('set-row-1')));
     await j.waitFor(find.byKey(const Key('set-row-1')));
     await tester.pageBack();
     await j.settle(4);

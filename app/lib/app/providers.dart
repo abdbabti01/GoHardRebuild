@@ -19,6 +19,7 @@ import '../features/nutrition/food_item.dart';
 import '../features/nutrition/food_repository.dart';
 import '../features/nutrition/food_search.dart';
 import '../features/nutrition/nutrient_coverage.dart';
+import '../features/nutrition/water.dart';
 import '../features/plans/plan_draft.dart';
 import '../features/plans/plan_repository.dart';
 import '../features/today/daily.dart';
@@ -103,6 +104,8 @@ final allSetsProvider = StreamProvider<List<Stored<WorkoutSet>>>((ref) => _rows(
 final setsProvider = StreamProvider.family<List<Stored<WorkoutSet>>, String>((ref, workoutId) => _rows(ref, Kinds.set, WorkoutSet.new, parentId: workoutId));
 final runtimesProvider = StreamProvider<List<Stored<Json>>>((ref) => _rows(ref, Kinds.runtime, (j) => j));
 final foodProvider = StreamProvider.family<List<Stored<FoodEntry>>, String>((ref, dayKey) => _rows(ref, Kinds.food, FoodEntry.new, dayKey: dayKey));
+/// One day's water entries, deleted ones included (the readers leave them out), on the day they were logged.
+final waterProvider = StreamProvider.family<List<Stored<WaterEntry>>, String>((ref, dayKey) => _rows(ref, Kinds.water, WaterEntry.new, dayKey: dayKey));
 /// Every food entry of the owner, for "recent": the journal itself is the history of what was eaten.
 final foodJournalProvider = StreamProvider<List<Stored<FoodEntry>>>((ref) => _rows(ref, Kinds.food, FoodEntry.new));
 final savedFoodsProvider = StreamProvider<List<Stored<SavedFood>>>((ref) => _rows(ref, Kinds.savedFood, SavedFood.new));
@@ -178,6 +181,7 @@ T _owned<T>(Ref ref, T Function(SyncEngine sync, String owner) create) {
 final authRepositoryProvider = Provider((ref) => AuthRepository(ref.watch(apiProvider), ref.watch(sessionsProvider), ref.watch(syncProvider)));
 final planRepositoryProvider = Provider((ref) => _owned(ref, PlanRepository.new));
 final foodRepositoryProvider = Provider((ref) => _owned(ref, FoodRepository.new));
+final waterRepositoryProvider = Provider((ref) => _owned(ref, WaterRepository.new));
 final savedFoodRepositoryProvider = Provider((ref) => _owned(ref, SavedFoodRepository.new));
 final foodDiscoveryProvider = Provider((ref) => _owned(ref, (s, o) => FoodDiscovery(ref.watch(apiProvider), s, o, ref.watch(clockProvider))));
 final profileRepositoryProvider = Provider((ref) => _owned(ref, ProfileRepository.new));

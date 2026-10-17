@@ -47,27 +47,31 @@ class WeatherPlace {
 
 @immutable
 class WeatherPrefs {
-  const WeatherPrefs({this.background = TodayBackground.scenic, this.mode = WeatherLocationMode.automatic, this.city});
+  const WeatherPrefs({this.background = TodayBackground.scenic, this.mode = WeatherLocationMode.automatic, this.city, this.fahrenheit = false});
   final TodayBackground background;
   final WeatherLocationMode mode;
   final WeatherPlace? city;
 
-  WeatherPrefs copyWith({TodayBackground? background, WeatherLocationMode? mode, WeatherPlace? city}) =>
-      WeatherPrefs(background: background ?? this.background, mode: mode ?? this.mode, city: city ?? this.city);
+  /// Today's temperature in °F instead of °C. A display choice on this phone, like the rest of these.
+  final bool fahrenheit;
+
+  WeatherPrefs copyWith({TodayBackground? background, WeatherLocationMode? mode, WeatherPlace? city, bool? fahrenheit}) =>
+      WeatherPrefs(background: background ?? this.background, mode: mode ?? this.mode, city: city ?? this.city, fahrenheit: fahrenheit ?? this.fahrenheit);
 
   /// Which conditions may be shown: `city:<id>` or `auto`. Cached conditions from another source are not used.
   String get source => mode == WeatherLocationMode.city ? 'city:${city?.id}' : 'auto';
 
-  Json toJson() => {'background': background.name, 'mode': mode.name, 'city': city?.toJson()};
+  Json toJson() => {'background': background.name, 'mode': mode.name, 'city': city?.toJson(), 'fahrenheit': fahrenheit};
   static WeatherPrefs fromJson(Json j) => WeatherPrefs(
       background: TodayBackground.values.asNameMap()[j['background']] ?? TodayBackground.scenic,
       mode: WeatherLocationMode.values.asNameMap()[j['mode']] ?? WeatherLocationMode.automatic,
-      city: j['city'] is Map ? WeatherPlace.fromJson((j['city'] as Map).cast<String, Object?>()) : null);
+      city: j['city'] is Map ? WeatherPlace.fromJson((j['city'] as Map).cast<String, Object?>()) : null,
+      fahrenheit: j['fahrenheit'] == true);
 
   @override
-  bool operator ==(Object other) => other is WeatherPrefs && other.background == background && other.mode == mode && other.city == city;
+  bool operator ==(Object other) => other is WeatherPrefs && other.background == background && other.mode == mode && other.city == city && other.fahrenheit == fahrenheit;
   @override
-  int get hashCode => Object.hash(background, mode, city);
+  int get hashCode => Object.hash(background, mode, city, fahrenheit);
 }
 
 /// Scene families. The server's contract has six (clear, cloudy, fog, rain, snow, storm); the phone splits "cloudy"
@@ -163,7 +167,7 @@ abstract final class WeatherPolicy {
 /// What the backdrop paints. [key] names the treatment; the crossfade runs only when it changes.
 @immutable
 class SceneSpec {
-  const SceneSpec({required this.key, this.isWeather = false, this.label, this.family, this.isDay, this.fallback});
+  const SceneSpec({required this.key, this.isWeather = false, this.label, this.family, this.isDay, this.fallback, this.temperatureC});
   final String key;
   final bool isWeather;
 
@@ -175,6 +179,9 @@ class SceneSpec {
   final String? family;
   final bool? isDay;
 
+  /// The temperature from the same fresh answer as [label], in °C as the API gives it; null when it did not say.
+  final double? temperatureC;
+
   /// A dark sky (night, storm, rain; with no day or night given, overcast, rain, storm and fog): the header text over
   /// it is drawn light. Dusk and Plain are not weather and never dark.
   bool get dark => isWeather &&
@@ -184,9 +191,9 @@ class SceneSpec {
   static const plain = SceneSpec(key: 'plain');
 
   @override
-  bool operator ==(Object other) => other is SceneSpec && other.key == key && other.label == label && other.fallback == fallback;
+  bool operator ==(Object other) => other is SceneSpec && other.key == key && other.label == label && other.fallback == fallback && other.temperatureC == temperatureC;
   @override
-  int get hashCode => Object.hash(key, label, fallback);
+  int get hashCode => Object.hash(key, label, fallback, temperatureC);
   @override
   String toString() => 'SceneSpec($key${label == null ? '' : ', $label'}${fallback == null ? '' : ', fallback: ${fallback!.name}'})';
 }
@@ -231,8 +238,12 @@ SceneSpec resolveScene({required WeatherPrefs prefs, required WeatherEntry? entr
       if (!weatherFamilies.contains(family)) return fall(WeatherFallback.unknownCode);
       final key = '$family-${switch (c.isDay) { true => 'day', false => 'night', null => 'neutral' }}';
       if (!(available ?? sceneKeys).contains(key)) return fall(WeatherFallback.noArt);
-      return SceneSpec(key: key, isWeather: true, label: c.description ?? _familyLabel[family], family: family, isDay: c.isDay);
+      return SceneSpec(key: key, isWeather: true, label: c.description ?? _familyLabel[family], family: family, isDay: c.isDay, temperatureC: c.temperatureC);
   }
 }
 
 const _familyLabel = {'clear': 'Clear', 'partly': 'Partly cloudy', 'cloudy': 'Overcast', 'fog': 'Fog', 'rain': 'Rain', 'snow': 'Snow', 'storm': 'Thunderstorm'};
+
+/// "8°C", "-3°F", "0°C": the API's °C converted once and rounded to whole degrees (a rounded -0.4 is "0", never "-0").
+String formatTemperature(double celsius, {required bool fahrenheit}) =>
+    '${(fahrenheit ? celsius * 9 / 5 + 32 : celsius).round()}°${fahrenheit ? 'F' : 'C'}';

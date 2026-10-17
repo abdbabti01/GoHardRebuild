@@ -12,6 +12,7 @@ import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/me/me_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/barcode_scan_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/food_discovery.dart';
@@ -29,10 +30,12 @@ import 'ui_support.dart';
 const _day = '2026-10-09';
 
 Future<List<Override>> _overrides(WidgetTester tester, FoodFakes fakes,
-        {List<Json> food = const [], List<Json> savedFoods = const [], List<Json> seenFoods = const [], int? calorieGoal, int? proteinGoal, AppearanceStore? appearance}) async =>
+        {List<Json> food = const [], List<Json> savedFoods = const [], List<Json> seenFoods = const [], int? calorieGoal, int? proteinGoal, AppearanceStore? appearance, bool hints = false}) async =>
     [
       ...(await tester.runAsync(() => overridesFor(day: _day, food: food, savedFoods: savedFoods, seenFoods: seenFoods, calorieGoal: calorieGoal, proteinGoal: proteinGoal, appearance: appearance)))!,
       ...fakes.overrides,
+      // These tests are about finding food; the coach's one-time introduction here is covered in coach_avatar_test.
+      coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())..value = CoachPrefs(hintsEnabled: hints)),
     ];
 
 String _field(WidgetTester tester, String key) => tester.widget<TextField>(find.byKey(Key(key))).controller!.text;
@@ -49,7 +52,7 @@ void main() {
   String mealShown(WidgetTester tester) => tester.widget<Text>(find.descendant(of: find.byKey(const Key('food-meal-select')), matching: find.byType(Text))).data!;
 
   group('finding a food', () {
-    testWidgets('typing finds a common food at once and asks the wider database nothing; the plus opens the shared form in the stated portion; only the confirmation logs', (tester) async {
+    testWidgets('typing finds a common food at once and asks the wider database nothing; the row opens the shared form in the stated portion; only the confirmation logs', (tester) async {
       final fakes = FoodFakes(discovery: ScriptedDiscovery(results: [chickenRaw(), riceCooked()]));
       await pumpApp(tester, await _overrides(tester, fakes), size: const Size(390, 3200));
 
@@ -68,7 +71,7 @@ void main() {
       expect(find.byKey(const Key('food-search-online')), findsOneWidget, reason: 'the wider database is one tap away');
       expect(find.text('Choose a food to check the amount before logging.'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Choose Eggs'));                           // the plus chooses; it does not log
+      await tester.tap(find.byKey(const Key('common-eggs')));                    // the row chooses; it does not log
       await tester.pumpAndSettle();
       expect(fakes.journal.saved, isEmpty, reason: 'choosing a food logs nothing');
       expect(find.byKey(const Key('food-source')), findsOneWidget);
@@ -455,7 +458,7 @@ void main() {
       await tester.pumpAndSettle();
       same('after a change of theme');
 
-      await tester.tap(find.byIcon(Icons.add).hitTestable().first);
+      await tester.tap(find.byIcon(Icons.chevron_right).hitTestable().first);    // a food row
       await tester.pumpAndSettle();
       expect(find.byType(FoodFormScreen), findsOneWidget);
       expect(find.text('Dinner'), findsOneWidget, reason: 'the meal chosen on the search screen is the form\'s meal');
@@ -522,6 +525,33 @@ void main() {
       await _tap(tester, 'food-save');
       expect(find.textContaining('a number above zero'), findsOneWidget);
       expect(fakes.journal.saved, isEmpty);
+    });
+
+    testWidgets('the coach on food: search is introduced once and steps aside while typing; portions are explained once, on a food with portions; nothing is sent', (tester) async {
+      final fakes = FoodFakes();
+      final net = FakeServer();
+      await pumpApp(tester, [...await _overrides(tester, fakes, hints: true), transportProvider.overrideWithValue(net)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.search')), findsOneWidget, reason: 'the first time the page is in view');
+      expect(tester.getTopLeft(find.byKey(const Key('food-search'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('coach-spot-food.search'))).dy), reason: 'under the field: the field never moves');
+      await tester.enterText(find.byKey(const Key('food-search')), 'rice');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.search')), findsNothing, reason: 'typing puts it away');
+      await tester.enterText(find.byKey(const Key('food-search')), '');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.search')), findsNothing, reason: 'seen: it does not come back by itself');
+      await _tap(tester, 'coach-help-food.search');
+      expect(find.byKey(const Key('coach-spot-food.search')), findsOneWidget, reason: 'asked for');
+
+      final cereal = FoodItem({'source': 'usda', 'sourceId': 'c1', 'name': 'Bran flakes', 'basis': '100g', 'nutrients': {'calories': 360, 'protein': 10, 'carbs': 70, 'fat': null},
+        'servings': [{'label': '1 serving', 'grams': 30, 'milliliters': null}]});
+      await tester.pumpWidget(const SizedBox());
+      await pumpApp(tester, [...await _overrides(tester, fakes, hints: true), transportProvider.overrideWithValue(net)],
+          home: FoodFormScreen(draft: FoodDraft.of(cereal, dayKey: _day, meal: 'Breakfast')), size: const Size(390, 1500));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coach-spot-food.portion')), findsOneWidget, reason: 'this food has portions to count');
+      expect(find.textContaining('You can count portions here', findRichText: true), findsOneWidget);
+      expect(net.calls.where((c) => c.path.contains('coach')), isEmpty, reason: 'no AI is asked');
     });
 
     testWidgets('changing the unit says the same amount in the new unit, both ways, and the values do not move', (tester) async {
@@ -735,8 +765,8 @@ void main() {
       await surface(tester, [entry('a', calories: 1400, protein: 62)]);
       expect(find.byType(ProgressRail), findsNothing);
       await surface(tester, [entry('a', calories: 1400, protein: 62)], proteinGoal: 140);
-      expect(find.byKey(const Key('goal-calories-progress')), findsNothing);
-      expect(find.byKey(const Key('goal-protein-progress')), findsOneWidget);
+      expect(find.byKey(const Key('eat-goal-calories')), findsNothing);
+      expect(find.byKey(const Key('eat-goal-protein')), findsOneWidget);
       expect(find.text('Protein 62 of 140 g · 78 g left'), findsOneWidget);
     });
 
@@ -751,7 +781,7 @@ void main() {
 
       await surface(tester, [entry('a')], calorieGoal: 2200);
       expect(find.text('No calorie value entered yet · goal 2,200 kcal'), findsOneWidget);
-      expect(find.byType(ProgressRing), findsNothing, reason: 'an unknown total is not an empty ring');
+      expect(find.text('—'), findsWidgets, reason: 'an unknown total is a dash, as on Today; the words say no value was entered');
       await surface(tester, const [], calorieGoal: 2200, proteinGoal: 140);
       expect(find.text('Your daily goal: 2,200 kcal · 140 g protein'), findsOneWidget);
       expect(find.byType(ProgressRail), findsNothing, reason: 'nothing logged is not zero eaten');
@@ -761,10 +791,10 @@ void main() {
       final handle = tester.ensureSemantics();
       await surface(tester, [entry('a', calories: 2500, protein: 150)], calorieGoal: 2200, proteinGoal: 140);
       expect(find.text('2,500 of 2,200 kcal · 300 kcal over'), findsOneWidget);
-      expect(find.text('114%'), findsOneWidget, reason: "the ring's centre gives the real share");
-      final ring = tester.getSemantics(find.byKey(const Key('goal-calories-progress')));
-      expect((ring.label, ring.value), ('Calorie goal: 2,500 of 2,200 kcal · 300 kcal over', '100 percent'), reason: 'the ring stops at full');
-      expect(tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(const Key('goal-protein-progress')), matching: find.byType(LinearProgressIndicator))).value, 1.0);
+      expect(find.text('114%'), findsOneWidget, reason: 'the share beside the bar is the real one');
+      double bar(String key) => tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(LinearProgressIndicator))).value!;
+      expect(bar('eat-goal-calories'), 1.0, reason: 'the bar stops at full');
+      expect(bar('eat-goal-protein'), 1.0);
       handle.dispose();
     });
 

@@ -15,6 +15,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<WorkoutSet> WorkoutSets => Set<WorkoutSet>();
     public DbSet<FoodEntry> FoodEntries => Set<FoodEntry>();
     public DbSet<SavedFood> SavedFoods => Set<SavedFood>();
+    public DbSet<WaterEntry> WaterEntries => Set<WaterEntry>();
     public DbSet<CustomExercise> CustomExercises => Set<CustomExercise>();
     public DbSet<CatalogExercise> CatalogExercises => Set<CatalogExercise>();
     public DbSet<Run> Runs => Set<Run>();
@@ -69,6 +70,12 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
             e.Property(x => x.CarbsG).HasPrecision(9, 2);
             e.Property(x => x.FatG).HasPrecision(9, 2);
             e.Property(x => x.SourceJson).HasColumnType("jsonb");
+        });
+        Owned<WaterEntry>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
+        b.Entity<WaterEntry>(e =>
+        {
+            e.HasIndex(x => new { x.UserId, x.DayKey });
+            e.Property(x => x.VolumeMl).HasPrecision(9, 3);
         });
         Owned<SavedFood>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
         b.Entity<SavedFood>().Property(x => x.ItemJson).HasColumnType("jsonb");

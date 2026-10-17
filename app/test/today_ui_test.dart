@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,14 +80,14 @@ void main() {
         pumpApp(tester, await fixture(tester, profile: profile, profileLoaded: loaded, more: [clockProvider.overrideWithValue(FakeClock(DateTime(2026, 10, 11, hour).toUtc()))]));
     await at(9);
     expect(find.text('Sunday, October 11'), findsOneWidget);
-    expect(find.text('Good morning, Alex'), findsOneWidget, reason: 'the fixture profile is "Alex Sample"');
+    expect(find.text('Good morning, Alex!'), findsOneWidget, reason: 'the fixture profile is "Alex Sample"; the guide says it in its bubble');
     expect(find.bySemanticsLabel('GoHard'), findsOneWidget, reason: 'the small mark');
     await at(14, profile: {'displayName': '  Sam  '});
-    expect(find.text('Good afternoon, Sam'), findsOneWidget);
+    expect(find.text('Good afternoon, Sam!'), findsOneWidget);
     await at(21, profile: {'displayName': ''});
-    expect(find.text('Good evening'), findsOneWidget, reason: 'no name is no name; none is invented');
+    expect(find.text('Good evening!'), findsOneWidget, reason: 'no name is no name; none is invented');
     await at(2, loaded: false);
-    expect(find.text('Good evening'), findsOneWidget, reason: 'the profile has not been read yet');
+    expect(find.text('Good evening!'), findsOneWidget, reason: 'the profile has not been read yet');
     expect(tester.takeException(), isNull);
   });
 
@@ -97,30 +98,35 @@ void main() {
     expect(find.text('5.20 km'), findsOneWidget, reason: 'the runtime override reached the Run module');
     final (w, r, n) = (height(tester, 'workout'), height(tester, 'run'), height(tester, 'nutrition'));
     debugPrint('module heights, full state: workout $w, run $r, nutrition $n');
-    expect(w, inInclusiveRange(225, 255), reason: 'workout, in progress with a planned total and its ring');
-    expect(r, inInclusiveRange(130, 165), reason: 'run, open with a distance and a time: no taller than its photograph needs');
-    expect(n, inInclusiveRange(195, 230), reason: 'nutrition, two goals');
+    // The approved panels: serif names and figures, the button row under the words (docs/DESIGN.md › Today panels).
+    expect(w, inInclusiveRange(290, 340), reason: 'workout, in progress with a planned total and its ring');
+    expect(r, inInclusiveRange(230, 280), reason: 'run, open with a distance and a time, stacked in the compact tile');
+    expect(n, inInclusiveRange(330, 380), reason: 'nutrition, two goals, the missing-values line, and the goals / Customize tracking line');
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
     debugPrint('header region $header');
-    expect(header, inInclusiveRange(160, 280), reason: 'the date, title, greeting and sky line, then the surface');
+    expect(header, inInclusiveRange(160, 300), reason: 'the date, title, the guide speaking (bubble with Ask me) and the sky line, then the surface');
     final navTop = tester.getTopLeft(find.byKey(const Key('nav-today'))).dy;
     // The nutrition label and its calorie figure are on the first screen, above the navigation bar.
     final nutritionTop = tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy;
     final calories = tester.getBottomLeft(find.descendant(of: find.byKey(const Key('today-module-nutrition')), matching: find.textContaining('2,200 kcal'))).dy;
     debugPrint('full state: nutrition starts at $nutritionTop, its calorie figure ends at $calories, the navigation bar starts at $navTop');
-    // The brief: nothing is squeezed to fit the first screen. The nutrition section starts on it, its label visible.
-    expect(nutritionTop + 36, lessThan(navTop), reason: 'the nutrition section and its label start on the first screen');
-    expect(tester.getBottomLeft(find.byKey(const Key('today-run'))).dy, lessThan(navTop));
+    // The brief: nothing is squeezed to fit the first screen, the guide speaking included (comfortable spacing over a
+    // first-viewport target). The first section is whole on it, its action in reach; the rest is a short scroll.
+    expect(tester.getBottomLeft(find.byKey(const Key('today-module-workout'))).dy, lessThan(navTop), reason: 'the workout section and its action are on the first screen');
+    expect(nutritionTop - navTop, lessThan(120), reason: 'nutrition a short scroll away');
 
     // The quietest day: a due workout, no run, nothing logged.
     await pumpApp(tester, await fixture(tester, plans: [plan]), insets: phoneInsets);
     final quiet = (height(tester, 'workout'), height(tester, 'run'), height(tester, 'nutrition'));
     debugPrint('module heights, quiet state: workout ${quiet.$1}, run ${quiet.$2}, nutrition ${quiet.$3}');
-    expect(quiet.$1, inInclusiveRange(160, 215));
-    expect(quiet.$2, inInclusiveRange(120, 150), reason: 'no run: the label and one line beside the photograph');
-    expect(quiet.$3, inInclusiveRange(115, 190));
-    expect(tester.getBottomLeft(find.byKey(const Key('log-food'))).dy, lessThan(navTop), reason: 'all three sections, actions included, are on the first screen');
+    // Taller than the mockup's due panel (about 183): the 52 px button and the plan-week line are kept on purpose.
+    expect(quiet.$1, inInclusiveRange(240, 275));
+    expect(quiet.$2, inInclusiveRange(160, 195), reason: 'no run: the label, the title, one line and the button');
+    expect(quiet.$3, inInclusiveRange(255, 295), reason: 'empty day: the words, Log food, and the Set daily goals / Customize tracking line');
+    // With the guide's bubble the three sections and the nutrition label start on the first screen; Log food is a
+    // short scroll away (it was on the first screen before the bubble: a deliberate trade-off, docs/COACH.md).
+    expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 36, lessThan(navTop), reason: 'all three sections start on the first screen');
     expect(tester.takeException(), isNull);
   });
 
@@ -131,27 +137,27 @@ void main() {
     // One veil behind the status bar, over every tab.
     expect(tester.getRect(find.byType(StatusBarVeil)), const Rect.fromLTWH(0, 0, 390, 47));
     expect(tester.getRect(find.byType(TodayBackdrop)), screen, reason: 'top edge to bottom edge, under the navigation bar too');
-    // weather_contrast_test measures the header's text band at 71–197 px; this keeps the two in step.
+    // weather_contrast_test measures the header's text band at 71–290 px; this keeps the two in step. The guide's
+    // bubble (greeting, one line, Ask me) made it taller: 201 before (docs/COACH.md › Speech bubbles).
     final lines = tester.getRect(find.byType(TabHeader));
     expect(lines.top, top + 24);
-    expect(lines.bottom, lessThanOrEqualTo(197));
+    expect(lines.bottom, lessThanOrEqualTo(290));
 
-    // Every section sits on the one surface, below the header; nothing of the day is drawn on the scene itself.
-    final surface = find.byKey(const Key('today-surface'));
-    expect(surface, findsOneWidget);
-    for (final k in ['today-module-workout', 'today-module-run', 'today-module-nutrition']) {
-      expect(find.descendant(of: surface, matching: find.byKey(Key(k))), findsOneWidget, reason: '$k on the surface');
-    }
-    expect(find.descendant(of: surface, matching: find.text('Quick pull-ups')), findsOneWidget, reason: 'recorded today, on the surface too');
-    expect(tester.getTopLeft(surface).dy, greaterThan(lines.bottom), reason: 'the surface starts below the header');
-    expect(find.descendant(of: surface, matching: find.byType(BackdropFilter)), findsOneWidget, reason: 'one blur for the whole surface');
+    // Workout, then nutrition, then the compact Run tile, all below the header; nothing is blurred.
+    final tops = [for (final k in ['workout', 'nutrition', 'run']) tester.getTopLeft(find.byKey(Key('today-module-$k'))).dy];
+    expect(tops.first, greaterThan(lines.bottom), reason: 'the panels start below the header');
+    expect(tops, orderedEquals([...tops]..sort()), reason: 'workout first, nutrition second, run third');
+    expect(tester.getSize(find.byKey(const Key('today-module-run'))).width, lessThan(0.7 * tester.getSize(find.byKey(const Key('today-module-workout'))).width),
+        reason: 'run is the compact tile, with History beside it');
+    expect(tester.getTopLeft(find.byKey(const Key('today-run-history'))).dx, greaterThan(tester.getTopRight(find.byKey(const Key('today-module-run'))).dx));
+    expect(find.descendant(of: find.byType(TodayScreen), matching: find.byType(BackdropFilter)), findsNothing);
 
     // Scrolled to the end: the scene has not moved, and the last control clears the floating bar.
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -3000));
     await tester.pumpAndSettle();
     expect(tester.getRect(find.byType(TodayBackdrop)), screen, reason: 'the scene is fixed to the screen, not to the page');
     final navTop = tester.getTopLeft(find.byKey(const Key('nav-today'))).dy;
-    expect(tester.getBottomLeft(surface).dy, lessThan(navTop), reason: 'the end of the page clears the navigation bar');
+    expect(tester.getBottomLeft(find.byKey(const Key('today-run'))).dy, lessThan(navTop), reason: 'the Run action clears the navigation bar');
     expect(tester.getBottomLeft(find.text('Quick pull-ups')).dy, lessThan(navTop));
     expect(tester.takeException(), isNull);
   });
@@ -189,7 +195,7 @@ void main() {
         expect(find.text(gone), findsNothing, reason: '$gone belongs to the workout sheet, Train or Me');
       }
       expect(find.textContaining('sets recorded'), findsNothing, reason: 'nothing was recorded for a workout that has not started');
-      expect(find.byType(FilledButton), findsOneWidget, reason: 'one filled button on Today');
+      expect(find.byType(FilledButton), findsNWidgets(3), reason: 'one filled button per panel: Start workout, Log food, Start run');
       expect(find.byKey(const Key('today-start')).hitTestable(), findsOneWidget, reason: 'still due after an unrelated manual workout');
       expect(find.text('Completed'), findsNothing);
       // The manual workout is its own record, in its own words.
@@ -197,8 +203,21 @@ void main() {
       expect(find.text('RECORDED TODAY'), findsOneWidget);
 
       // Details is the quiet way to the existing workout sheet, where the exercises are (opened in the native journey).
-      expect(tester.widget<TextButton>(find.byKey(const Key('today-details'))).onPressed, isNotNull);
+      expect(tester.widget<TextButton>(find.descendant(of: find.byKey(const Key('today-details')), matching: find.byType(TextButton))).onPressed, isNotNull);
       expect(find.widgetWithText(TextButton, 'Details'), findsOneWidget);
+    });
+
+    testWidgets('Details opens the workout sheet in the app\'s own look, not the panel\'s pale tint', (tester) async {
+      final store = AppearanceStore(MemorySecretStore())
+        ..accent = Accent.green
+        ..mode = ThemeMode.dark;
+      await pumpApp(tester, await fixture(tester, plans: [plan], more: [appearanceStoreProvider.overrideWithValue(store)]));
+      expect(Theme.of(tester.element(find.byKey(const Key('today-details')))).brightness, Brightness.light, reason: 'the panel itself is pale');
+      await tester.tap(find.byKey(const Key('today-details')));
+      await tester.pumpAndSettle();
+      final sheet = find.byType(BottomSheet);
+      expect(sheet, findsOneWidget);
+      expect(Theme.of(tester.element(sheet)).brightness, Brightness.dark, reason: 'a sheet opened from a panel keeps the app\'s Dark look');
     });
 
     testWidgets('in progress with a plan: recorded sets against the planned total, a ring and one Resume', (tester) async {
@@ -325,7 +344,7 @@ void main() {
   group('run', () {
     testWidgets('one Start run on a day without a run; no target, percentage or route is made up', (tester) async {
       await pumpApp(tester, await fixture(tester));
-      expect(find.widgetWithText(OutlinedButton, 'Start run'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Start run'), findsOneWidget);
       expect(find.text('No run today'), findsOneWidget);
       expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one running entry point');
       final module = find.byKey(const Key('today-module-run'));
@@ -335,6 +354,8 @@ void main() {
       expect(find.descendant(of: module, matching: find.textContaining('%')), findsNothing);
       expect(find.descendant(of: module, matching: find.byType(LinearProgressIndicator)), findsNothing);
 
+      await tester.ensureVisible(find.byKey(const Key('today-run-history')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('today-run-history')));
       await tester.pumpAndSettle();
       expect(find.byType(RunHistoryScreen), findsOneWidget, reason: 'history is the existing screen');
@@ -347,7 +368,7 @@ void main() {
       expect(find.text('5.00 km'), findsOneWidget);
       expect(find.text('Time'), findsOneWidget);
       expect(find.text('30 min'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Start run'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Start run'), findsOneWidget);
       expect(find.text('RECORDED TODAY'), findsNothing, reason: 'a single run is said once, on its module');
 
       await pumpApp(tester, await fixture(tester, runs: [run('r0', day, open: false, meters: null)]));
@@ -360,7 +381,7 @@ void main() {
       final rest = blockPlan(start: '2026-09-22', recorded: 8);
       await pumpApp(tester, await fixture(tester, plans: [rest], runs: [run('r1', '2026-10-10'), run('r0', day, open: false)]));
       expect(find.text('Rest day'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Continue run'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Continue run'), findsOneWidget);
       expect(find.text('In progress'), findsOneWidget);
       expect(find.text('Started Sat, Oct 10'), findsOneWidget);
       expect(find.text('Distance'), findsNothing, reason: 'no distance is claimed before one was measured');
@@ -377,9 +398,11 @@ void main() {
       expect(find.text('5.20 km'), findsOneWidget);
       expect(find.text('Time'), findsOneWidget);
       expect(find.text('31 min'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Continue run'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Continue run'), findsOneWidget);
 
       // Continue opens that run, not a new one.
+      await tester.ensureVisible(find.byKey(const Key('today-run')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('today-run')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
@@ -475,12 +498,16 @@ void main() {
     await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food));
     for (final module in ['workout', 'run', 'nutrition']) {
       final box = tester.getSize(photo(module));
-      expect(box.width, 84, reason: 'a supporting crop, not a header');
+      final panel = tester.getSize(find.byKey(Key('today-module-$module')));
+      expect(box.width, lessThan(0.65 * panel.width), reason: 'the trailing side of its panel, not the whole panel');
+      // Nutrition has its goals line (and water, when tracked) under the photograph, where it fades out.
+      expect(box.height, module == 'nutrition' ? lessThan(panel.height) : panel.height, reason: 'the full height of its panel, or of its upper part');
       final image = tester.widget<Image>(find.descendant(of: photo(module), matching: find.byType(Image)));
       expect(image.fit, BoxFit.cover);
       final decoded = (image.image as ResizeImage).width!;
-      expect(decoded, lessThan(390), reason: '$module is not decoded at the width of the screen');
-      expect(decoded, greaterThanOrEqualTo(box.height * 1.5), reason: 'enough pixels to cover a ${box.width} × ${box.height} crop of a 3:2 picture');
+      final dpr = tester.view.devicePixelRatio;
+      expect(decoded, lessThanOrEqualTo(math.max(box.width, box.height * 1.5) * dpr + 64), reason: '$module is decoded for its box, not for the screen');
+      expect(decoded, greaterThanOrEqualTo(box.height * 1.5 * dpr), reason: 'enough pixels to cover a ${box.width} × ${box.height} crop of a 3:2 picture');
       expect(find.descendant(of: photo(module), matching: find.bySemanticsLabel(RegExp('.'))), findsNothing);
     }
     handle.dispose();
@@ -507,9 +534,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
-    // A narrow phone at normal text keeps a smaller crop.
+    // A narrow phone at normal text keeps its photographs; the Run tile takes the width, with History under it.
     await pumpApp(tester, await fixture(tester, plans: [plan]), size: const Size(320, 800));
-    expect(tester.getSize(photo('workout')).width, 72);
+    expect(photo('workout'), findsOneWidget);
+    expect(tester.getTopLeft(find.byKey(const Key('today-run-history'))).dy, greaterThan(tester.getBottomLeft(find.byKey(const Key('today-module-run'))).dy));
     expect(tester.takeException(), isNull);
   });
 
@@ -540,7 +568,7 @@ void main() {
     for (final mode in [ThemeMode.light, ThemeMode.dark]) {
       testWidgets('${mode.name}: every scene changes the backdrop only; layout, states, accent and navigation stay, and the header keeps its scrim', (tester) async {
         final (c, w) = await today(tester, mode: mode);
-        const keys = ['today-header', 'today-greeting', 'today-module-workout', 'today-module-run', 'today-module-nutrition', 'today-resume', 'today-details', 'today-run', 'log-food', 'nav-today'];
+        const keys = ['today-header', 'coach-say-title', 'today-module-workout', 'today-module-run', 'today-module-nutrition', 'today-resume', 'today-details', 'today-run', 'log-food', 'nav-today'];
         Map<String, Rect> layout() => {for (final k in keys) k: tester.getRect(find.byKey(Key(k)))};
         // Everything but the line naming the weather, which is meant to change with it.
         List<String?> words() => [
@@ -562,12 +590,12 @@ void main() {
             // the sky; the header's lines sit on its page-coloured scrim in the sky's text colour (weather_contrast_test
             // measures both over every scene and theme).
             expect(tester.getRect(find.byType(SceneBackdrop)), Offset.zero & tester.getSize(find.byType(TodayScreen)));
-            expect(Theme.of(tester.element(find.byKey(const Key('today-module-workout')))).brightness, mode == ThemeMode.dark ? Brightness.dark : Brightness.light,
-                reason: '$where: the sections keep the app\'s look');
+            expect(Theme.of(tester.element(find.byKey(const Key('today-module-workout')))).brightness, Brightness.light,
+                reason: '$where: the panels keep their pale tint and dark ink in both modes, whatever the sky');
             expect(tester.widget<TabHeader>(find.descendant(of: find.byType(TodayScreen), matching: find.byType(TabHeader))).onBackdrop, isTrue);
             // The header's lines follow the sky, not the app's mode: light over a dark sky, dark over a light one.
             final sky = goTheme(Accent.pink, c.read(todaySceneProvider).dark ? Brightness.dark : Brightness.light).extension<GoColors>()!;
-            expect(tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color, sky.text, reason: '$where: header text follows the sky');
+            expect(tester.widget<Text>(find.byKey(const Key('coach-say-title'))).style!.color, sky.text, reason: '$where: header text follows the sky');
             expect(find.descendant(of: find.byKey(const Key('today-sky-line')), matching: find.text(c.read(todaySceneProvider).label!)), findsOneWidget);
             expect(tester.takeException(), isNull);
           }
@@ -577,7 +605,7 @@ void main() {
     }
 
     testWidgets('a clear night stays a night with light text in Light mode, and a clear day keeps dark text in Dark mode', (tester) async {
-      Color greeting() => tester.widget<Text>(find.byKey(const Key('today-greeting'))).style!.color!;
+      Color greeting() => tester.widget<Text>(find.byKey(const Key('coach-say-title'))).style!.color!;
       final light = goTheme(Accent.pink, Brightness.light).extension<GoColors>()!, dark = goTheme(Accent.pink, Brightness.dark).extension<GoColors>()!;
       final (c, w) = await today(tester, mode: ThemeMode.light);
       await weather(tester, c, w, 'clear', false);

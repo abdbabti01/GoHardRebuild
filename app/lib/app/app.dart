@@ -11,7 +11,9 @@ import '../core/device_prefs.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
 import '../features/auth/auth_screen.dart';
+import '../features/coach/coach_prefs.dart';
 import '../features/me/reminders.dart';
+import '../features/setup/setup_screen.dart';
 import '../features/shell/home_shell.dart';
 import 'providers.dart';
 
@@ -66,6 +68,8 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     ref.watch(reminderSyncProvider); // keeps scheduled reminders equal to the accepted plan; removes them when signed out
     final owner = ref.watch(ownerProvider);
+    // A new account's setup, until it is finished or skipped (docs/COACH.md › Setup).
+    final setup = owner == null ? null : ref.watch(coachPrefsProvider.select((p) => p.setup[owner]));
     final appearance = ref.watch(appearanceProvider);
     ref.listen(profileProvider, (_, next) => ref.read(appearanceProvider.notifier).adoptAccountAppearance(next.value?.appearance));
     final accent = appearance.accent;
@@ -92,7 +96,9 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
           : owner == null
               ? const AuthScreen()
               // Keyed by owner: switching accounts rebuilds the whole shell with none of the previous owner's state.
-              : HomeShell(key: ValueKey(owner)),
+              : setup != null
+                  ? SetupScreen(key: ValueKey('setup-$owner'), owner: owner, step: setup)
+                  : HomeShell(key: ValueKey(owner)),
     );
   }
 }

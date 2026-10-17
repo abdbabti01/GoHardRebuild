@@ -20,6 +20,7 @@ public static class GoHardEndpoints
         "auth.password", "commands.idempotent", "plans.lifecycle", "plans.baseline-drafts", "plans.manual-drafts", "plans.proposals",
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
+        "water.entries",
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -30,7 +31,7 @@ public static class GoHardEndpoints
         .AddFoodDiscovery(config)
         .AddWeather(config)
         .AddCoach(config)
-        .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>()
+        .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<WaterService>()
         .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>();
 
     /// <summary>Ownership always comes from the validated token, never from a client-supplied user ID.</summary>
@@ -81,7 +82,7 @@ public static class GoHardEndpoints
             await s.DeleteOwnAccountAsync(u.UserId(), r.Password, ct) ? Results.NoContent() : Results.Json(new AuthError("WRONG_PASSWORD"), statusCode: 400));
 
         me.MapGet("/sync/snapshot", async (ClaimsPrincipal u, GoHardDb db, PlanService plans, WorkoutService workouts, FoodService food,
-            ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, CancellationToken ct) =>
+            ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, WaterService water, CancellationToken ct) =>
         {
             var id = u.UserId();
             return Results.Ok(new SnapshotDto(
@@ -91,7 +92,8 @@ public static class GoHardEndpoints
                 (await db.BodyMetrics.AsNoTracking().Where(x => x.UserId == id).OrderBy(x => x.DayKey).ToListAsync(ct)).Select(ActivityService.ToDto).ToList(),
                 await proposals.ListAsync(id, ct),
                 await db.CatalogExercises.AsNoTracking().OrderBy(c => c.Name).Select(c => new CatalogExerciseDto(c.Key, c.Name, c.Category, c.Equipment, c.IsTimed)).ToListAsync(ct),
-                DateTime.UtcNow, await saved.ListAsync(id, ct), await custom.ListAsync(id, ct)));
+                DateTime.UtcNow, await saved.ListAsync(id, ct), await custom.ListAsync(id, ct),
+                await water.ListAsync(id, null, ct)));
         });
 
         // Plans
@@ -157,6 +159,15 @@ public static class GoHardEndpoints
             run.RunAsync(u.UserId(), r.OperationId, "food.update", new { id, r }, () => s.UpdateAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/food-entries/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, FoodService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "food.delete", new { id, r }, () => s.DeleteAsync(u.UserId(), id, r, ct), ct));
+
+        // Water, logged explicitly in millilitres
+        me.MapGet("/water-entries", async (DateOnly date, ClaimsPrincipal u, WaterService s, CancellationToken ct) => Results.Ok(await s.ListAsync(u.UserId(), date, ct)));
+        me.MapPost("/water-entries", (WaterCreateRequest r, ClaimsPrincipal u, CommandRunner run, WaterService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "water.create", r, () => s.CreateAsync(u.UserId(), r, ct), ct));
+        me.MapPut("/water-entries/{id:guid}", (Guid id, WaterUpdateRequest r, ClaimsPrincipal u, CommandRunner run, WaterService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "water.update", new { id, r }, () => s.UpdateAsync(u.UserId(), id, r, ct), ct));
+        me.MapPost("/water-entries/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, WaterService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "water.delete", new { id, r }, () => s.DeleteAsync(u.UserId(), id, r, ct), ct));
 
         // Reusable foods and favourites
         me.MapPut("/saved-foods/{id:guid}", (Guid id, SavedFoodPutRequest r, ClaimsPrincipal u, CommandRunner run, SavedFoodService s, CancellationToken ct) =>

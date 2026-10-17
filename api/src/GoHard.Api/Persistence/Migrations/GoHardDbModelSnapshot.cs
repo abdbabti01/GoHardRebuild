@@ -593,12 +593,48 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<string>("TrainingSetupJson")
                         .HasColumnType("text");
 
+                    b.Property<int?>("WaterGoalMl")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.WaterEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("DayKey")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("VolumeMl")
+                        .HasPrecision(9, 3)
+                        .HasColumnType("numeric(9,3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "DayKey");
+
+                    b.ToTable("WaterEntries");
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.Workout", b =>
@@ -883,6 +919,15 @@ namespace GoHard.Api.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.TrainingContext", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.WaterEntry", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()

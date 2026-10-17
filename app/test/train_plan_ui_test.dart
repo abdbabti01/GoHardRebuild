@@ -371,12 +371,17 @@ void main() {
     await pumpApp(tester, [...overrides, workoutRepositoryProvider.overrideWithValue(repo)], home: const WorkoutScreen(workoutId: 'w-open'), settle: false);
     await tester.pump();
     await tester.pump();
-    expect(find.byKey(const Key('workout-target-load')), findsOneWidget);
-    expect(find.text('Target 60 kg'), findsOneWidget);
-    expect(find.text('Last time 57.5 kg × 8 (Fri, Oct 9)'), findsOneWidget);
+    // Two labelled tiles: the plan's target and the last record with its date, never merged into one line.
+    expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '60 kg');
+    expect(find.text('Target'), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('workout-last-time'))).data, '57.5 kg × 8');
+    expect(find.text('Last recorded'), findsOneWidget);
+    expect(find.text('Fri, Oct 9'), findsOneWidget);
+    expect(find.text('3 sets · 8–12 reps'), findsOneWidget, reason: 'the planned prescription under the exercise name');
     expect(find.text('Pause at the bottom'), findsOneWidget);
     final load = tester.widget<TextField>(find.descendant(of: find.byKey(const Key('set-load')), matching: find.byType(TextField)));
     expect(load.controller!.text, isNot('60'), reason: 'a suggestion only ever comes from what was recorded, never from the target');
+    await tester.dragUntilVisible(find.text('None yet. Targets and suggestions are not recorded sets.'), find.byType(Scrollable).first, const Offset(0, -200));
     expect(find.text('None yet. Targets and suggestions are not recorded sets.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });

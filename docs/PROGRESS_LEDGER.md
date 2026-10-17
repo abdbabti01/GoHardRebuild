@@ -960,3 +960,473 @@ Railway; never seen here).** After `main` reached `1cdf1e0`, `/capabilities` dec
 
 IPA: run 17 (`1cdf1e0`) failed on GitHub's runner (timed out downloading the Flutter SDK, before any build step);
 run 18 from `95d5430` succeeded — the final client code (later commits change API, scripts and docs only).
+
+## 16 October 2026 — animated Leon/Leona companion (branch `feature/coach-companion`, from `main` at `dc8c967`)
+
+What changed (docs/COACH.md › Companion): Leon or Leona peeks into Today's header from the right edge beside the
+greeting (head and upper shoulders, mirrored to look in, leaning around the edge, faded over the shoulders), in a
+reserved slot of the header's own `Stack`; the greeting gained one factual line from Today's projection
+(`today_greeting.dart`, worked out on the phone); Ask GoHard moved into Today's title row and is always there; Me ›
+Appearance › Show coach on Today; Hide for today; once-a-day greeting per account; a finished workout acknowledged
+once; the Ask GoHard header portrait is attentive only while a request is in flight.
+
+Animation approach: **not Rive.** No Rive editor is available here to author or maintain a rig, and the approved art
+is a painted raster, so a `.riv` would have been invented. Instead a Flutter-native rig (`coach_rig.dart`): the
+approved avatar source drawn as a skinned mesh (`Canvas.drawVertices`, 18 × 18 grid) with a head bone (turn and nod
+on the neck, weights easing to zero, no seam), brow bones, breathing, and painted eyelids (blink, smile squint) in
+colours sampled from the fur; motion (`coach_companion.dart`) is a set of damped springs, so every interruption
+blends from the pose on screen. `RigPortrait` is the only renderer entry point (a Rive or other renderer can replace
+it behind the same pose). Assets: `leon-bust.png` 255,942 B, `leona-bust.png` 222,852 B (400 × 400, from the
+existing sources by `build-coach-art.ps1`; nothing new drawn or downloaded; regeneration in PROVENANCE.md).
+
+Pipeline proof first: `coach_rig_render_test.dart` frame strips of both guides — entrance, greeting tilt and brows,
+nod, blink, acknowledgement, exit — on a light and a dark sky (`docs/evidence/coach/companion-frames.png`). Test
+engine renders, not device captures.
+
+Tests: `coach_companion_test` (15), a new pending-pose test in `coach_ask_test` (19 total), updated `today_ui_test`
+and `weather_contrast_test` (the header text band is 71–201 px, was 197: the greeting's one summary line; the
+contrast check now covers it), `coach_avatar_test` (scrolls to the guide cards, which moved down by one row).
+`scripts\test.ps1`: API 184/184, app analysis clean, 470 app tests passed (before the review fixes; re-run below).
+
+Independent review (read-only agent): no high-severity findings; fixed — Reduce Motion switched on during the tuck
+never finished leaving (now leaves at once; test added), the tap target was an unlabelled semantics node (now
+excluded), `ref` read after an await in the workout finish, `onGreeted` through `ref` after the frame, a greeting
+could start while the header was built off screen (now measured first), attentive pose lost under Reduce Motion,
+per-frame `Vertices`/gradient objects (disposed / cached), the hide target clipped, and a latent ever-breathing loop.
+
+Real app on the emulator (`emulator-5554`, Android x86_64 image, debug build, local API with live Open-Meteo,
+Halifax clear night), `journey_companion_test` with `adb screenrecord` driven by GOHARD_REC markers (the
+`return` part presses Home for real and relaunches). Recordings in `docs/evidence/recordings/`:
+`companion-leon.mp4` (entrance ≈ 450 ms with a slight settle, greeting tilt, blink, a tap's acknowledgement),
+`companion-scroll.mp4` (the portrait scrolls away with the header; Train, Eat, Me and back show it settled at once,
+no replay; the night sky moving behind), `companion-return.mp4` (Home, launcher, relaunch: settled, no replay),
+`companion-leon-hide.mp4` (Hide for today: tucks away, the header reflows, Ask GoHard stays), `companion-leona.mp4`
+(the same for Leona; blinks visible mid-close), `companion-reduced.mp4` (Motion › Reduced: still portrait at once,
+hidden without the tuck). Inspected frame by frame (WinRT thumbnails): no seams, clipping or snapping; found and
+fixed from the footage — the hide × showed before the guide arrived and lingered after the tuck (it now fades with
+the guide), and the recorder lost the end of a part (padded). The green outline and crosshairs in the clips are the
+test harness's tap highlights, not app UI. Journey runs on the way: the first recorded only the integration-test
+placeholder (`convertFlutterSurfaceToImage` hides the live surface; the journey now reverts it), one had two
+recorders writing the same files (a stale watcher), the last two passed with all six parts recorded.
+
+Not measured: frame timing, raster cost beside the weather sky and battery. There is no physical device here and
+Flutter has no profile mode on the x86 emulator; nothing in this entry is a performance claim. Pending on a phone:
+`flutter run --profile` on Today with the weather sky and the companion greeting (DevTools frame chart, raster
+thread), VoiceOver/TalkBack by ear (the companion is excluded; the greeting reads as one line; Hide coach for today
+is a labelled button), and the art on a real screen.
+
+Final checks on the finished code: `scripts\test.ps1 -SkipApi` passed (analysis clean, 472 app tests; the API part,
+184/184, passed earlier the same evening and no API code changed). Render `six themes: today`, Today states, large
+text, narrow and all weather scenes regenerated (`docs/evidence/design/`, Today and Appearance renders only; the
+greeting now wraps at large text instead of being cut). Emulator journeys against the local API with recorded
+provider responses, one at a time (several attach hangs — "isolate taking unusually long" — were stopped and retried
+after an adb restart, and once after an emulator reboot; none reached an app step):
+journey_secondary, journey_more, journey_device (GPS run recovery), journey_upgrade, journey_coldstart,
+journey_offline, journey_food, journey_coach passed cleanly. journey_test passed every step on its second run; its
+first run failed once at the Me › Sign out tap right after a theme change (not reproduced; no companion involvement),
+and both of its runs ended with the driver's "Service has disappeared" after the test (the known harness issue; all
+steps passed). journey_plan: phase 1 (template customised and activated offline, moved, edited, replaced by a rotation) passed in three separate runs; phase 2 (new process, same install) never reached an app step in any of them (driver could not attach: "Service has disappeared", "Flutter Driver extension is taking a long time", VM service connection refused), including once after an emulator reboot, so **phase 2 is unverified for this branch** (the cold-start recovery it checks is also exercised by journey_coldstart, which passed). The first full pass also left the emulator offline after journey_plan's
+offline phase died in teardown, which made that pass's journey_coach fail at sign-up ("The server cannot be
+reached"); Wi-Fi and data were re-enabled and the re-run passed. journey_companion_test needs the live weather
+API (it searches Halifax) and passed there three times; against the recordings it cannot find the city.
+
+Commit `138daa8` pushed to `feature/coach-companion` (main untouched). CI `ci` run 63: success (api, app). Unsigned IPA
+`ios-unsigned-ipa.yml` dispatched on the branch: run 19 success, artifact `GoHard-Dev-unsigned-ipa` (12,353,059 bytes,
+expires 30 Oct 2026). A successful iOS build says nothing about iPhone smoothness or battery.
+
+## 16 October 2026 (evening) — the coach speaks through attached bubbles (branch `feature/coach-companion`, continued)
+
+What changed (docs/COACH.md › Companion): one recognisable guide who speaks through an attached speech bubble of
+native text. Today: the guide peeks in from the right edge, nods, and its bubble says "Good evening, Babti!" with
+Today's factual line (or "Need a hand with today?") ending in "Ask me ›"; no second Ask GoHard beside the title while
+it speaks; × hides guide and bubble for the day and Ask GoHard returns to the title row. Elsewhere, shared pieces in
+`coach_bubble.dart` (CoachSay, CoachBubble, CoachSpeaker, CoachSpot, CoachHelpEntry; one open bubble at a time; a help
+sheet for focused activities) speak on Train without a plan, the builder's three steps (Compare splits on the split
+step), the exercise sets sheet (About this exercise), food search, food portions, nutrition goals and Appearance, and
+as user-opened sheets while recording sets or a run. CoachHint is gone (replaced). Introductions are once per account
+(`owner|context`), only when really in view; manual help works with Coaching hints off; Today's greeting is governed by
+Show coach on Today (no longer by hints). Requested help appears settled; introductions arrive with the guide and are
+announced once. Nothing shown calls the AI; food, goals, appearance and runs have no Ask me (outside the coach server
+contract). Kept the existing renderer (the skinned mesh) — no new library.
+
+Found and fixed while building (all with tests): an introduction would have been marked seen on a hidden tab (the
+shell builds every tab; now TickerMode must be on); inside a Scaffold the keyboard inset is stripped from MediaQuery,
+so "no keyboard" was always true (now the view's inset; the old hint had the same flaw); an introduction blocked by
+the keyboard no longer pops in as it closes; AnimatedSize with no duration under Reduce Motion; CoachSpot cleanup after
+the provider container was gone; the food search introduction moved under the field (it pushed the field off short
+screens) and steps aside while typing.
+
+Independent visual and interaction review (read-only agent, 12 findings, none blocking): applied — Train's duplicate
+"Guide me" removed (Create my plan is just above), help copy shortened to 1–2 sentences, the help entry dims and says
+"expanded" while its bubble is open (one character on screen), requested help shown settled and tappable at once,
+Today's tail anchored to the bubble's foot (tracks the face when the bubble grows), "Ask me ›" read cleanly (no
+glyph), live-region announcement only for introductions and nothing in the semantics tree before the bubble arrives,
+the sets sheet's extra caption removed, button row aligned with the words, one "Ask me" look, the coach render now
+shows the close button. Not applied: 4 px more header padding (nutrition-on-first-screen has 1 px to spare).
+
+Deliberate trade-off for review: Today's header is about 30 px taller than the one-line greeting. At 390 × 844 the
+three sections and the nutrition label still start on the first screen; the Run button (tallest state) and Log food
+(quiet day) are now a short scroll away. today_ui_test records this (the old "actions on the first screen" checks
+became "sections start on the first screen"), and weather_contrast_test's header band is 71–290 px (was 71–201).
+
+Tests: 478 app tests (coach_avatar_test 15, coach_companion_test 16, new builder and food coach tests). Renders
+regenerated: `six themes: today`, `six themes: coach`, Today states, large text, weather scenes (`docs/evidence/design/`;
+unrelated renders restored to `main`).
+
+Real app on the emulator (`emulator-5554`, Android x86_64, debug build, local API with live Open-Meteo, Halifax clear
+night), `journey_companion_test` (rewritten; not in the default run), recordings `docs/evidence/recordings/coach-*.mp4`
+(the previous `companion-*.mp4` replaced): `today-leon` (peek, nod, bubble arriving as it settles, acknowledgement),
+`scroll-return` (scroll, tabs, real Home and relaunch: no replay; the sky moving), `split-help` (Train's introduction,
+the split step's introduction, Compare splits), `exercise-help` (help in the sets sheet appears settled, the entry dims,
+About this exercise, the typed 5 kept), `food-portion` (search introduction under the field, gone when typing; the
+portion guidance on eggs), `hide-today` (bubble fades, guide tucks, plain greeting and one Ask GoHard), `hints-off`
+(Nutrition goals: nothing by itself, help on request), `today-leona`, `reduced` (settled portrait and bubble at once).
+Inspected frame by frame: no clipping or snapping; the round portrait's backdrop shows for a moment before the guide
+peeks into it (reads as the window it appears in; left as is). Green outlines and crosshairs are the harness's tap
+highlights. The journey's own assertions passed (bubble present, no second Ask, hidden for today, hints off).
+
+Not measured: frame timing and battery (no physical device; no profile mode on the x86 emulator).
+
+Checks and journeys on the finished code (commit after `e1000f0`): `scripts\test.ps1` passed (API 184/184, analysis
+clean, 478 app tests). CI `ci` run 65 success and unsigned IPA run 20 success (`GoHard-Dev-unsigned-ipa`, 12,360,035
+bytes) on `e1000f0`; the last commit adds the non-breaking "Ask me ›" (the real-app capture showed it split as
+"Ask" / "me ›" at 360 dp), two journey waits and this ledger (CI/IPA re-run on it, below). Emulator journeys against the
+local API with recorded provider responses, one at a time, network restored before each:
+journey_food, journey_device (GPS run, now with the run help entry in its app bar), journey_secondary, journey_more,
+journey_offline, journey_upgrade, journey_coldstart passed cleanly. journey_coach failed twice at closing the split
+introduction: the device test advances animation only on pumped frames, so the bubble (which ignores taps until it
+has arrived) had not arrived during a 2 s wait without pumping — the journey now pumps real frames while waiting, and
+then passed. journey_test failed 3 times in 6 runs at Me › Sign out right after the theme and accent change (the row
+was found, scrolled into view and gone two frames later); a diagnostic run showed Me intact and passed; on `main` it
+passed its one comparison run. The journey now pumps real frames for 0.6 s before that tap; it is recorded here as an
+intermittent harness race, not proven absent. journey_plan: phase 1 passed again; phase 2 (new process) again failed to
+attach ("Service has disappeared") before any step — **still unverified**, as on 16 Oct. journey_companion_test passed
+against the live weather API (recordings above).
+
+On `a613cf4`: CI `ci` run 66 success; unsigned IPA run 21 success (`GoHard-Dev-unsigned-ipa`, 12,359,935 bytes, expires
+30 Oct 2026). `main` untouched. A successful iOS build says nothing about iPhone smoothness or battery.
+
+## 16 October 2026 (night) — a living companion: moving eyes, the bubble from the mouth, Today until turned off, the guide as Ask GoHard (branch `feature/coach-companion`, continued)
+
+These requirements supersede the earlier rounds where they differ (docs/COACH.md › Companion; TASK_MATRIX C6).
+
+What changed:
+- **Eyes.** The paintings have irises clearly inside their lash lines, so independent eyes are possible without new
+  art: per eye (`RigIris`, measured on the 1254 px originals) an opening polygon inside the lash line, the iris disc and
+  the white's sampled tone. The original iris is toned to the white inside the opening and the same painted iris is
+  redrawn from the texture, moved by the gaze (≤ 30 % of its radius across, 18 % vertically) and turned with the head.
+  Nothing is stretched. The round 1 oval eyelids showed as flat discs when closed (seen on the new pose sheet), so the
+  lids were redone inside the opening: the upper lid covers the painted lash ring, feathered into the fur, with a lash
+  line that rests on the eye's lower contour as a gentle curve.
+- **Motion.** Gaze springs. At rest a timer wakes one natural moment: a blink (35 %), a small look (40 %) or a glance
+  at the bubble with a touch of head (25 %), back to the user after 0.6–1.5 s. Wakes come every 2.5–6 s at first, then
+  every 5–11 s, with no frames in between. The greeting glances at the words as they arrive and then back at the user.
+  Reduce Motion: still, looking at the user, no blink. It pauses off-screen, when covered, on another tab and in the
+  background, as before.
+- **Bubble from the mouth.** `CoachSpeech` draws the tail every frame from the bubble's edge to the muzzle's edge at
+  the mouth's height (`RigArt.mouth`/`front` through `RigGeometry.point`, posed as now), stopping 4 px short of the
+  lips. The bubble's first line is level with the settled mouth, and the portrait's empty side tucks under the bubble.
+  No screen coordinates are used. The first version aimed at the mouth's centre and covered the near lip; this was
+  caught in the render and fixed.
+- **Today stays.** The ×, "Hide coach for today", the stored `hidden` and `_AskButton` are gone. The old JSON key is
+  ignored, not converted. Show coach on Today is the only switch. Narrow phones now get a 68 × 84 guide and large text a
+  taller bubble; before, the guide, and with it Today's Ask access, disappeared below 340 px or above 1.3× text.
+- **Ask GoHard is the guide.** The entry points were audited:
+  - Today: the portrait (`coach-avatar-launcher`, button semantics with a tap action; it had none, which was caught by
+    the new test) and Ask me.
+  - Train header: `CoachAskLauncher`, the guide's avatar, there whether or not Today shows the guide.
+  - Speaker portraits in bubbles and help sheets that have Ask me.
+  - Why this suggestion and About this exercise: their text-only Ask buttons now carry the guide's avatar.
+  - The conversation: each answer is headed by the guide's avatar and name instead of the generic ✦ icon.
+  - Appearance's "off" subtitle said "Ask GoHard stays on Today" and now says it is still the guide, on Train.
+  - Nothing opened or shown calls the AI.
+- **Rendering details found on the device.** A hard grey line under the portrait came from mesh content outside the
+  box: the device's layer bounds don't clip. The canvas is now clipped to the box; confirmed gone in the second
+  recording. At 2× text "›" wrapped alone from a fallback font, so "Ask me ›" is now one unbreakable inline piece,
+  without double text scaling.
+
+Trade-off accepted per the brief (comfortable spacing over a first-viewport target): Today's header is about 285 px
+at 390 × 844 with a notch. The workout section and its action are whole on the first screen, and nutrition is a short
+scroll away. `today_ui_test` and `widget_test` (320 px, 2×) now say so.
+
+Tests: 480 app tests. coach_companion_test has 19, including:
+- an old "hidden for today" is ignored, and an upgraded account sees the guide again the same day;
+- nothing "hidden" is written;
+- the guide and Ask me open Ask GoHard with the same guide;
+- the labelled button;
+- the eyes' moments at rest with no frames in between;
+- Show coach on Today off and on, with the Train launcher;
+- Reduce Motion: no blink or gaze;
+- narrow and 2× text keep the guide.
+
+coach_ask_test covers the answer's identity. The test fixture gained `restDaysProvider`, which Ask's context needed.
+`scripts\test.ps1` passed: API 184/184, analysis clean, 480 app tests.
+
+Renders: `docs/evidence/coach/companion-poses.png` (10 poses × both guides × both framings; replaces
+`companion-frames.png`), all six themes, Today states, narrow, large text and weather scenes.
+
+Real app on the emulator (`emulator-5554`, debug, local API with live Open-Meteo, Halifax), `journey_companion_test`
+passed twice. Recordings `docs/evidence/recordings/coach-*.mp4` from the second run:
+- `today-leon`, `today-leona`: entrance, nod, words arriving with a glance, then 14 s at rest with blinks, looks and
+  bubble glances; the tail stays on the lips through every head movement;
+- `ask-leon`, `ask-leona`: the portrait opens Ask GoHard (same guide in its header), then Ask me does too, then back on
+  Today;
+- `scroll-return`: tabs, Home and relaunch: still there, no replay;
+- `appearance`: Today still there after other screens; off → plain greeting, no Ask button; the guide on Train opens
+  Ask; on → back, settled;
+- `split-help`, `exercise-help`, `food-portion`, `hints-off`: contextual help, unchanged;
+- `reduced`: still portrait with its bubble.
+
+`coach-hide-today.mp4` was removed. The first two attempts failed before any coach step: the API had been started with
+`-FoodFixtures`, which also answers city lookups from recordings, and Halifax isn't in them. The companion journey
+needs the API without that flag.
+
+Not measured: frame timing and battery (no physical device).
+
+Emulator journeys on the finished code, one at a time, local API with recorded provider responses, network restored
+before each run:
+- Passed on the first run: journey_test (it had failed 3 of 6 times at Me › Sign out last round), journey_secondary,
+  journey_offline, journey_device, journey_upgrade, journey_food.
+- journey_plan passed **both phases**. Phase 2, in a new process, had never attached before, so it is now verified on
+  the emulator.
+- journey_coach hung at attach on its first try (the driver extension never became available), then passed.
+- journey_coldstart: phase 1 passed, then phase 2 failed to attach ("Service has disappeared") before any step. Run
+  alone after an adb restart, it hung at attach once more, then passed both phases.
+- journey_more: twice the app printed "+2: All tests passed" and then the driver lost the VM service while collecting
+  results (exit 1). Run alone after the adb restart, it passed cleanly.
+
+Pattern: the attach and "Service has disappeared" failures came after more than an hour of runs and stopped after an
+adb restart. No failure happened at an app step.
+
+CI and IPA on `79fca3d`: **not run**. GitHub refused to start the jobs of `ci` run 68 and `ios-unsigned-ipa` run 22
+(and, earlier, `ci` run 67 on `c447c44`) with "recent account payments have failed or your spending limit needs to be
+increased", a billing block on the GitHub account, not a code result. They need re-running once billing is fixed.
+The last successful IPA (run 21, `a613cf4`) predates this round. `main` untouched.
+After the repository was made public (free Actions minutes), on `9fa0e60` (the round 3 code plus the ledger note):
+`ci` run 69 (re-run) success, api and app jobs; unsigned IPA run 23 success (`GoHard-Dev-unsigned-ipa`, 12,371,122 bytes,
+expires 30 Oct 2026). `main` untouched. A successful iOS build says nothing about iPhone smoothness or battery.
+
+## 16 October 2026 (round 4) — eyes that can be seen, the coach on every tab, setup after sign-up, temperature on Today (branch `feature/coach-companion`, continued)
+
+**Why the eyes looked static on the phone.** Not the scheduler, not repaint, not the layer order. With temporary
+`COACH_DIAG` logging in a profile build on the emulator, the companion stayed active after the greeting
+(`active=true`, tab and route current, foreground, on screen, Reduce Motion off), rest/wake cycles ran, and blinks were
+painted to a full closure on top of the eyes. The pose sheet at 3× showed convincing closed eyes for both guides, so
+the artwork was not the limit either. The cause was size and time:
+- on Today the eye opening is **6.3 pt** tall (logged), and the gaze moved the iris at most 0.30 × its 3 pt radius ≈
+  **0.9 pt**;
+- a blink was fully closed for **30 ms**, 2–4 frames on a phone;
+- after the first minute a blink came about every 14 s.
+Earlier recordings showed blinks clearly because this emulator draws the app at a few frames per second (Choreographer
+"Skipped 136 frames"; in debug, paints about 1 s apart) and the rig caps each step at 1/30 s, so every blink played
+in slow motion. Those recordings overstated what a phone shows. The installed IPA and the phone's own motion settings
+could not be checked from here: no device access.
+
+What changed:
+- **Eyes.** Blink 90 ms closing, 70 ms closed, 170 ms opening. A natural moment every 2–5 s for as long as the guide can
+  be seen (no slowing after a minute): a blink 45 % (double now and then), a clear look to one side 35 %, a glance at
+  the bubble 20 %, each look held 0.9–2.2 s. Gaze up to 55 % of the iris radius across and 22 % vertically (was
+  30 % / 18 %), checked on the 3× pose sheet and a close-up for both guides: no exposed original iris, clipped cleanly
+  at the corners. Reduce Motion: unchanged, still.
+- **Help sheets showed no guide** (found on the emulator in this round; it affected workout and run help too): the
+  companion measured itself once while the sheet was still below the screen and never again. It now looks again after
+  each frame until it has started. Regression test added; it fails without the fix.
+- **Coach on every tab.** Train's avatar asks about the section in view (primary plan / "Your progress" / "Your
+  training"). Eat gained the avatar, opening built-in journal guidance with no Ask me, since the coach endpoint is
+  training-only. Workout and run recording already had the compact app-bar avatar and help sheet.
+- **Setup after creating an account** (docs/COACH.md › Setup): Choose your coach with live previews and the chosen
+  guide's hello in its bubble, then Optional features. Progress is kept per account in the coach preferences, so a
+  restart resumes and finishing or skipping ends it. Accounts that sign in never see it. Nothing asks for access
+  unless the person turns on or uses the feature. Me › Phone permissions shows the platform's actual state.
+- **Temperature.** "10°C · Overcast" on Today from the same fresh answer; °C/°F in Me › Units (a device setting); no
+  API change, because both adapters already return `temperatureC` in °C.
+
+Checks run (no full suite, no API tests: API unchanged):
+- `flutter analyze lib test integration_test`: clean.
+- Tests: weather_scene_test, coach_avatar_test, coach_companion_test, me_ui_test, eat_ui_test, today_ui_test,
+  train_ui_test, weather_ui_test, widget_test, coach_ask_test, all passing after updating three expectations: the Units
+  row now reads "Kilograms · °C", and Eat has the avatar image.
+
+Real app on the emulator (`emulator-5554`, **profile** build, local API with live Open-Meteo, driven by adb; recordings
+in `docs/evidence/recordings`, frames in `docs/evidence/coach`):
+- `eyes-today-leon.mp4`: Leon after the greeting, blinks and looks continuing; `eyes-live-leon-frames.png` shows
+  closures and side glances at device pixel size.
+- `eyes-today-leona-temperature.mp4`: Leona on Today with "10°C · Overcast".
+- `eyes-reduced-motion.mp4` and `eyes-reduced-frames.png`: identical still frames for 16 s.
+- `setup-signup-choose.mp4`, `setup-leona-welcome.mp4`: sign-up lands on Choose your coach, both previews animate,
+  Leona's hello. Then Continue, a force-stop and relaunch, which resumed at Optional features
+  (`setup-features-resumed.png`).
+- `setup-features-refusals-city.mp4`: reminders on → system prompt → Don't allow → stays off with an explanation;
+  Weather → Automatic → GoHard's explanation → system prompt → Don't allow → "Location was not allowed. Choose a city";
+  Halifax; Done → Today.
+- Temperature: Open-Meteo returned 9.5 °C, code 3, for the same grid point. Shown as 10°C, then **49°F** after
+  switching, which is converted from 9.5, not from the rounded 10 (that would be 50).
+- `coach-train-plan-progress-eat.mp4`, `coach-help-sheets.mp4`: Ask GoHard "About: Your progress"; Eat help sheet;
+  workout help sheet with the guide, the avatar clear of fields, timer and Complete set.
+- Large text 1.5× at 720 × 1520: Today fits; Eat's date wraps to three lines beside the avatar (taller header, no
+  overflow; accepted).
+
+Emulator motion runs at about half speed (motion time advanced 7.1 s in 14.7 s of wall time). Not measured: phone
+frame timing and battery. Still to check on a physical phone: the blink and gaze at real size and frame rate, iOS
+permission prompts (and the "restricted" state, which geolocator reports as not allowed), and VoiceOver.
+
+Known limit: Ask GoHard's suggested questions on Progress are still the plan ones; the context label is right.
+
+## 16 October 2026 (Today panels) — the approved Today mockup: photographic panels (branch `feature/today-photo-panels`, from `feature/coach-companion` at `bbe4fd7`)
+
+Presentation only: no API, contract, sync, stored-data, permission or AI-provider change. Layout and rules in
+docs/DESIGN.md › Today panels.
+
+| Change | Where |
+|---|---|
+| Order: Workout and Nutrition at the full width, then a compact Run tile (64 %) with History beside it; the scene shows around them. The single blurred surface and the rhythm thread are removed (`RhythmTimeline`, `GoColors.panelOpacity` deleted) | `features/today/today_screen.dart` (`TodayScreen`) |
+| One panel family: `_PanelTheme` (pale accent tint, dark ink, deep accent button, same in Light and Dark; Blue and Pink have their own), `_PanelSurface` (opaque tint, soft shadow, thin edge, photograph on the trailing half fading into the tint by a `ShaderMask` gradient), `_Module` (badge, serif display line, secondary lines, button with a quiet link) | `today_screen.dart`; `goThemeOf` split out of `goTheme` in `core/theme.dart` (no change for other screens) |
+| Workout: the real name in the serif; every state kept (due, in progress, saved for later, completed, partly completed, skipped, rest, paused, starts later, block review, draft, no plan); only due and in-progress have the photograph and Start/Resume; other workouts today, unresolved earlier workouts, Start a manual workout and saved-for-later sit under the lead in the same panel; an open manual or other-day workout has its own panel in front | `_TrainingSection`, `_OpenWorkout` |
+| Nutrition: the calorie figure in the serif ("1,400 kcal"), the goal and its bar when set, protein on one line, unknown as a dash, partial as "known", the missing-values line; "No food logged today" (never 0 kcal); Log food filled, Journal quiet | `_NutritionCard`; `NutritionSummary` display figure in `nutrition/nutrition_surface.dart` (only Today uses it) |
+| Run: compact tile with the photograph; real state, Distance/Time only from saved values; Start run / Continue run filled; History on the scene in the header's sky colours on a scrim | `_RunCard` |
+| Sheets and dialogs opened from a panel (Details, Start/Resume, Log food, Start run, Undo skip) open from the context outside the panel theme, so they keep the app's look | `_AppContext`, `_appContext` |
+| Journeys skip the coach setup a new account now gets (it blocked every journey that signs up since round 4) | `integration_test/support.dart` (`Journey.start`) |
+| A device evidence journey for the panels (not in the default run) | `integration_test/journey_today_panels_test.dart` |
+
+**Photographs.** The three bundled ones, unchanged (provenance note added to `app/assets/PROVENANCE.md`). They show the
+mockup's subjects but are not its pictures, which are wet/rainy variants not supplied as files. No asset was added.
+
+**Visible differences from the approved image.**
+- Photographs: see above (dry gym floor and dusk riverside path instead of wet ones).
+- Heights: the due workout panel is 260 at 390 × 844 against about 183 in the mockup, because the 52 px button and
+  the plan-week line ("Week 3 · 50 min planned") are kept; in progress with the ring it is 320.
+- The scene is the live weather (Halifax partly cloudy / overcast during the capture), not the mockup's rain.
+- History has a soft scrim backing so it reads over a light sky as well as a dark one.
+- Nutrition shows the goal line and bars, and the missing-values line, when they apply (the mockup shows the simplest
+  state).
+
+**Checks run** (proportionate; no full suite; no API tests, API unchanged):
+- `flutter analyze` (lib, test, integration_test): clean.
+- `today_ui_test`, `widget_test`, `train_plan_ui_test`, `theme_test`, `weather_contrast_test`, `motion_test`,
+  `today_states_test`, `coach_companion_test`, `coach_avatar_test`, `weather_ui_test`, `weather_motion_test`,
+  `me_ui_test`: all passing. Updated expectations that described the old arrangement (one surface and blur, one
+  filled button on Today, outlined Start run, 84/72 px crops, the old height targets, the serif rule now allowing
+  Today's panel lines, the sections' dark theme in Dark mode); removed the surface contrast test and the timeline half
+  of a motion test with the code they covered. New regression test: Details opens its sheet in the app's Dark look
+  (fails without the fix, passes with it).
+- Renders: `flutter test test/render_test.dart --dart-define=GOHARD_RENDER=true` (Today states, six themes, every
+  weather scene, 320 px at 2×). Before/after pairs at the same fixture and viewport in `docs/evidence/today-panels/`.
+- Device (`emulator-5554`, Pixel 7 image, 1080 × 2400, debug build, local API, live Open-Meteo for Halifax):
+  `scripts\test-android.ps1 -Only journey_today_panels_test` passed. Captures `docs/evidence/screenshots/today-panels-*`
+  (no plan, due, due with food, in progress, open run, Green/Blue/Pink × Light/Dark); the journey checks Start workout
+  → workout → Resume on Today → the same workout; Log food → food form → real values; Journal → Eat; Start run → run
+  → Continue run → finish → Start run; History → Run history. Recording `docs/evidence/recordings/today-panels.mp4`:
+  scrolling, Ask me → Ask GoHard, Details sheet, Journal, History, the guide and the sky at rest.
+- Emulator housekeeping: the data partition was full (install failed). Old recordings on `/sdcard` were copied off
+  first, then removed; this project's earlier profile install `com.gohard.rebuild` was uninstalled (test data only;
+  the original `com.example.go_hard_app` untouched); the emulator was rebooted.
+
+**Pending, physical phone:** the panels and their photographs on a real screen, scroll smoothness over the moving
+sky, VoiceOver/TalkBack by ear. Large text was checked in renders (320 px at 2×), not on the device this time.
+
+## 16 October 2026 (app-wide) — the Today photo-panel language across the app (branch `feature/appwide-design`, from `feature/today-photo-panels` at `72779c9`)
+
+Built from `GoHard_Appwide_UI_Handoff` (its `CLAUDE_PROMPT.md` and five reference boards, kept beside the code and not
+used as images). Presentation only: no API, contract, model, stored-data, sync, permission or AI-provider change; no new
+dependencies or assets. Rules and the shared pieces in docs/DESIGN.md › App-wide panels.
+
+How it was done: the shared tokens and components first (`db5efee`: `GoColors.accentDeep` / `onAccentDeep` / `tint` /
+`panelOf`, `PanelTheme` with `appContext`, `PanelSurface`, `PanelPhoto`, `PhotoPanel`, `QuietLink`, deep filled
+buttons, tinted `Segmented` and `ChoiceCard`; Today moved onto them unchanged in look). Then three screen groups in
+parallel with strict file ownership (Train and workout; Eat, food and run; Me, account, setup and Ask GoHard), then one
+integration pass (tests, renders, device, docs).
+
+| Area | Change |
+|---|---|
+| Train / Plan | Pale plan panel with the dumbbells (`train-pass`); chosen week in the tint; this week's rows in one card with icon-and-word states and today's row outlined and labelled "Today" |
+| Train / Workouts, Progress | Open workouts as panels with Resume and Details; start rows quiet; Progress summary panel from recorded data only (`train-progress-panel`), recent workouts, "Exercise history" |
+| Workout recording | Serif workout name; exercise panel (`workout-exercise-panel`) with the prescription; separate Target and Last recorded tiles from real data; sets, rest, notes, undo, Save for later, Finish unchanged |
+| Plan builder | Numbered step marks; plan-in-progress and Guide me suggestion as pale panels; serif workout names. Workout cards stay ordinary cards (their menus must keep the app's look) |
+| Eat | Summary panel with the bowl and Log food; goals ring and protein bar only when set; unknown "—", partial "known"; journal one card per meal, no photos |
+| Add food, food form | Scan barcode under the search; Search / Recent / Favourites / My foods as a tinted track (scrolls when it does not fit); clean result rows; "Enter it yourself". Form: pale header without a photograph, Amount and Portion, a "You're logging" summary (energy, protein, "—" when unknown), Add your own portion |
+| Run | "Your run": elapsed time in the serif on the runner panel; distance only once measured; Pause and Finish run; GPS start, typed distance, Remove run kept; no pace, map or signal indicator |
+| Me, Appearance, goals | Profile row with initial; quiet rows unchanged. Appearance: small preview, accent swatches, Light / Dark / System segment, coach cards, switches, Motion & haptics (`appearance-motion`), Today background. Goals: optional-goals panel, no prefill |
+| Sign-in, setup, Ask GoHard | Serif wordmark and heading, dumbbells panel, one show/hide password button (`auth-show-password`); "Step N of 2", tinted coach card, "Not now"; Ask GoHard answers in the tint with the guide's avatar, quiet user bubbles, pill suggestions, deep send |
+| Journeys | `Journey.start` skips the coach setup a new account gets (kept from the Today panels branch); `journey_plan_test` reads the target from its tile; new evidence journey `journey_appwide_test` (not in the default run) |
+
+**Checks run** (proportionate; no full suite; no API tests, API unchanged):
+- `flutter analyze` (lib, test, integration_test): clean.
+- Widget tests: today_ui, widget, train_ui, train_plan_ui, plan_builder_ui, plan_builder, today_states, eat_ui, food_ui,
+  food_search, food, me_ui, coach_ask, coach_avatar, coach_companion, weather_ui, motion, reminders_gps, theme: all
+  passing. `theme_test` gains contrast checks for the deep button's label and its edge in Dark, ink on the chosen
+  tint, and secondary and link text on a photo panel (all six looks and increased contrast). The serif rule is now
+  "titles and key figures; never in a control, row, field or the navigation" on every tab and Appearance. Expectations
+  updated where they encoded the old layout (Mode as a segment, food rows opened by the row, outlined vs filled
+  Resume/Start run, the target tiles, meal cards, the image count on Eat); none weakened.
+- Renders (`render_test`, GOHARD_RENDER): six looks for Today, Workouts, Plan, Progress, Eat, Me, Appearance, Add food,
+  results, the food form, scanner, goals; whole pages, 12- and 16-week plans, large text at 320 px. Recording, builder
+  and Ask GoHard need the real database and are captured on the device instead. Before/after pairs at the same
+  fixtures and viewports in `docs/evidence/appwide/`.
+- Device (`emulator-5554`, Pixel 7 image, 1080 × 2400, debug build, local API): `journey_appwide_test` passed:
+  sign-in, registration, Choose your coach, optional features, goals, the builder's steps, Today, workout start, a set
+  recorded, rest, Train's three views, food search and the portion form (choosing logs nothing), a run started and
+  finished, Me, Appearance, Ask GoHard, then Train/Eat in Blue Light, Pink Dark and Green Light. 28 captures in
+  `docs/evidence/screenshots/appwide-*`; recording `docs/evidence/recordings/appwide.mp4` (69 s: tabs, Ask GoHard,
+  the plan, food search with the keyboard, the coach and the sky at rest). `journey_plan_test` (two phases: offline activation, the set recorded before the process ended recovered,
+  move, edit, my own rotation) passed after two harness fixes: the recorded-set row now sits below the exercise panel
+  in a list built as it scrolls, so journeys scroll to it before waiting (`j.reveal`; the same in the cold-start, more,
+  offline and captures journeys, assertions unchanged); one attempt lost the emulator ("device offline") after phase 1
+  and was retried once. Those other journeys were not rerun.
+
+**Not verified:** a physical iPhone or Android phone (smoothness, brightness comfort, battery), VoiceOver/TalkBack by
+ear, System mode following the phone's setting on a device (rendered and tested in widget tests), the keyboard over
+every form (seen on food search and set entry).
+
+## 17 October 2026 — daily goals from Today, optional water, Customize tracking, visual corrections (branch `feature/nutrition-goals-water`, from `feature/appwide-design` at `5b24cb8`)
+
+| Change | Where |
+|---|---|
+| Water entries on the account: table `WaterEntries` (migration `AddWaterTracking`, additive), `water.create/update/delete` commands, `GET /water-entries?date=`, `waterEntries` in the snapshot, `waterGoalMl` on the profile (kept when left out), capability `water.entries` | `api/src/GoHard.Api` (`Persistence/Entities.cs`, `GoHardDb.cs`, `Application/JournalServices.cs` `WaterService`, `Contracts.cs`, `AuthService.cs`, `Endpoints.cs`), `api/tests/.../WaterTests.cs` |
+| Water on the phone: record kind `water`, `WaterRepository` through the outbox, `waterProvider` per day, US fl oz / mL display unit (Me › Units), per-account display choices (`TrackingPrefsStore`, off by default), capability-gated | `app/lib/features/nutrition/water.dart`, `data/models.dart`, `data/sync.dart`, `app/providers.dart`, `main.dart`, `features/me/me_screen.dart`, `sync_review_screen.dart` |
+| Goals from Today and Eat: one `GoalsEditor` for Me's page and the new sheet; "Set daily goals" / "Edit goals" and Customize tracking under both nutrition summaries; the water line and sheet; the Customize tracking sheet | `app/lib/features/nutrition/nutrition_tools.dart`, `today/today_screen.dart`, `nutrition/eat_screen.dart`, `me/me_screen.dart`, `me/account_repository.dart` (`setGoals(withWater, waterGoalMl)`, `validateWaterGoal`) |
+| Eat's summary: the same compact composition as Today's (full-height bowl), its own extra lines below; carbs and fat follow Customize tracking | `nutrition/nutrition_surface.dart` |
+| Meal icons sunrise / sun / moon / cookie; Train's navigation icon lies flat | `nutrition/eat_screen.dart`, `shell/home_shell.dart` |
+| A two-phase device journey (not in the default run) | `integration_test/journey_water_test.dart`, `scripts/test-android.ps1` (phases and network switching) |
+
+**Decisions.** Display choices (water / carbs / fat) are kept per account on this phone, like the coach preferences:
+they are presentation, and a second phone starts with water off until it is turned on there (the entries and the goal
+are on the account and appear as soon as it is). Water is offered only when the server declares `water.entries`, so an
+older server can never be sent a command it would refuse. The water goal travels only from a form that shows it, so
+Today's goals sheet without water never clears it. On Eat the calorie ring became a bar, as on Today, so both screens
+draw goals the same way; Eat keeps its "what is left or over" words. An unknown total with a goal keeps Today's
+existing rule (a dash, the words, a bar at 0).
+
+**Checks run** (proportionate):
+- `flutter analyze` (lib, test, integration_test): clean. `dotnet build api -c Release`: clean (the Debug build was
+  locked by the running dev API at the time; it built after that process was restarted).
+- API: `dotnet test api -c Release --filter WaterTests|FoodDataTests|WorkoutAndFoodTests|FoundationTests`: 30 passed,
+  including two new water tests (idempotent retry, payload mismatch, duplicate id, ranges, update/delete revisions,
+  another account 404 and no snapshot leak, erasure with the account; goal set / kept when omitted / cleared / range).
+- App, new: `water_test` (real Drift file and the fake authority: offline add through restart, a lost response retried
+  byte-identically with one entry on the server, the logged day kept after a late sync; correction and removal by
+  revision; another account sees nothing; pulled entries grouped by day, a new day at zero; fl oz conversion and exact
+  totals) and `water_ui_test` (off until turned on, hide and show keep the day's water and goal on Today and Eat; goals
+  from Today in a Dark sheet, empty fields, saved through the one profile path; quick additions in fl oz, Undo, invalid
+  amount refused).
+- App, existing: today_ui, eat_ui, food_ui, me_ui, widget, theme, data_layer: passing after updating expectations tied
+  to the old Eat ring and the new heights (Today's nutrition panel is taller by its goals line).
+- Renders: all states and six looks; a large-text defect found and fixed (the goals link broke letter by letter at 2×
+  text on 320 px).
+- Device (`emulator-5554`, Pixel 7 image, debug build, local API migrated with `AddWaterTracking`):
+  `journey_water_test` passed both phases. Phase 1: goals set from Today's sheet (empty fields, keyboard open) and read
+  back on Eat and Me; water turned on; 250 + 330 mL logged, the 330 corrected to 300 and then removed; a 2 L goal set
+  from the water sheet; offline, 500 mL saved on the phone. Phase 2, a new process back online: 750 mL read back, the
+  queue drained ("Everything is saved to your account"), a pull from the account showed exactly two entries (no
+  duplicate), the keyboard over the water sheet, hide and show kept the total. Captures
+  `docs/evidence/screenshots/water-0*.png`; recording `docs/evidence/recordings/goals-water.mp4` (from the short
+  `journey_water_demo_test`). Before/after renders in `docs/evidence/goals-water/`.
+- Found on the device and fixed, each with a regression test in `water_ui_test`: the "Correct this amount" dialog
+  used its text field after disposing it (it closed with an exception); the water line showed "0 mL" while the day's
+  entries were still being read after a restart (it now shows nothing until they are known).
+- Harness, not the app: two attempts hung before the test attached (adb restarts and a cold emulator boot cleared
+  it), one lost the emulator after phase 1; the journey now waits for the goals link to be enabled (it is disabled for
+  a few seconds after sign-up until the account's profile arrives) and closes sheets by popping their route.
+
+**Not verified:** a physical phone; VoiceOver/TalkBack by ear; the hosted API, which gets the migration only when
+`main` is deployed (until then the capability is absent there and water stays hidden; goals work as before). The
+installed IPA talks to the hosted API, so water will not appear in it until that deployment.

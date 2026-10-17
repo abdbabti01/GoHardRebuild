@@ -20,7 +20,7 @@ const _day = '2026-10-11';
 class _Profiles implements ProfileRepository {
   final units = <String?>[];
   @override
-  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal}) => throw UnimplementedError();
+  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal, bool withWater = false, int? waterGoalMl}) => throw UnimplementedError();
   @override
   Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) async {
     units.add(loadUnit);
@@ -31,6 +31,8 @@ class _Profiles implements ProfileRepository {
 class _NoReminders implements ReminderScheduler {
   @override
   Future<bool> requestPermission() async => true;
+  @override
+  Future<bool?> notificationsAllowed() async => null;
   @override
   Future<void> replaceAll(List<PlannedReminder> reminders, String localTime) async {}
 }
@@ -65,7 +67,7 @@ void main() {
       expect(find.byKey(Key(key)), findsOneWidget, reason: key);
     }
     expect(_in('me-appearance', find.text('Blue · System')), findsOneWidget);
-    expect(_in('me-units', find.text('Kilograms')), findsOneWidget);
+    expect(_in('me-units', find.text('Kilograms · °C')), findsOneWidget);
     expect(_in('me-motion', find.text('Device')), findsOneWidget);
 
     // Training lives in Train. None of it is repeated here.
@@ -157,13 +159,18 @@ void main() {
     }
 
     await tap('me-units');
-    expect(find.text('Kilograms'), findsNWidgets(2), reason: 'the row\'s value and the choice in the sheet');
+    expect(find.text('Kilograms · °C'), findsOneWidget, reason: 'the row\'s value');
+    expect(find.text('Kilograms'), findsOneWidget, reason: 'the choice in the sheet');
     await tap('unit-lb');
     expect(profiles.units, ['lb'], reason: 'saved through the profile, as before');
     expect(find.byKey(const Key('unit-lb')), findsNothing, reason: 'the sheet closed on the choice');
     await tap('me-units');
     await tap('unit-kg');
     expect(profiles.units, ['lb'], reason: 'choosing the unit already in use changes nothing');
+    await tap('me-units');
+    await tap('unit-fahrenheit');
+    expect(find.textContaining('· °F'), findsOneWidget, reason: 'temperature is a phone setting beside the load unit');
+    expect(profiles.units, ['lb'], reason: 'the account is not touched by it');
 
     for (final (key, title) in [('me-edit-name', 'Edit profile'), ('me-body', 'Body measurements'), ('me-goals', 'Nutrition goals'), ('me-appearance', 'Appearance'), ('me-motion', 'Motion & haptics'), ('me-delete-account', 'Delete account')]) {
       await tap(key);

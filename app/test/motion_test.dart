@@ -303,20 +303,15 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('the rhythm timeline and a header on a backdrop fit 320 px at twice the text size', (tester) async {
+    testWidgets('a header on a backdrop fits 320 px at twice the text size', (tester) async {
       for (final scale in [1.0, 2.0]) {
         await pumpApp(tester, const [], size: const Size(320, 1400), textScale: scale, home: Scaffold(
             body: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   const TabHeader(title: 'Today', overline: 'Tuesday, October 13, 2026', below: Text('Good evening, Alexandria'), onBackdrop: true),
-                  RhythmTimeline(sections: [
-                    for (final (icon, name) in const [(Icons.fitness_center, 'Workout'), (Icons.directions_run, 'Run'), (Icons.restaurant, 'Nutrition')])
-                      (icon, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Overline('Module'), Text('$name with a fairly long description that wraps')])),
-                  ]),
                 ]))));
         expect(tester.takeException(), isNull, reason: 'text scale $scale');
-        expect(find.byType(IconTile), scale == 1 ? findsNWidgets(3) : findsNothing, reason: 'nodes at normal text; the content takes the width at large text');
       }
     });
   });

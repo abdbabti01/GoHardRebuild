@@ -10,6 +10,7 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/db.dart';
 import '../../data/models.dart';
+import '../nutrition/water.dart';
 import '../workout/workout_screen.dart';
 
 /// A plain description of one stored version, for comparing "on this phone" with "in your account".
@@ -23,15 +24,18 @@ String describeRecord(String kind, Json j, LoadUnit unit) => switch (kind) {
       Kinds.context => j['primaryPlanId'] == null ? 'No primary plan' : 'A primary plan is set',
       Kinds.plan => '${j['title']} · ${j['lifecycle']}',
       Kinds.profile => '${j['displayName']} · ${j['appearance']} · ${j['loadUnit']}'
-          '${j['calorieGoal'] == null ? '' : ' · goal ${j['calorieGoal']} kcal'}${j['proteinGoal'] == null ? '' : ' · goal ${j['proteinGoal']} g protein'}',
+          '${j['calorieGoal'] == null ? '' : ' · goal ${j['calorieGoal']} kcal'}${j['proteinGoal'] == null ? '' : ' · goal ${j['proteinGoal']} g protein'}'
+          '${j['waterGoalMl'] == null ? '' : ' · goal ${j['waterGoalMl']} mL water'}',
       Kinds.savedFood => (j['isDeleted'] as bool? ?? false) ? 'Removed' : '${(j['item'] as Json?)?['name'] ?? 'Food'}${j['isFavourite'] == true ? ' · favourite' : ''}',
       Kinds.run => 'Run · ${shortDate(j['dayKey'] as String)}',
+      // Water is described in millilitres, the stored amount, whatever display unit is chosen.
+      Kinds.water => (j['isDeleted'] as bool? ?? false) ? 'Removed' : 'Water · ${VolumeUnit.ml.format((j['volumeMl'] as num).toDouble())} · ${shortDate(j['dayKey'] as String)}',
       _ => kind,
     };
 
 const _titles = {
   Kinds.set: 'Recorded set', Kinds.food: 'Food entry', Kinds.workout: 'Workout', Kinds.context: 'Primary plan change', Kinds.plan: 'Plan schedule change',
-  Kinds.profile: 'Profile', Kinds.run: 'Run', Kinds.metric: 'Body measurement', Kinds.proposal: 'Suggested change', Kinds.savedFood: 'Saved food',
+  Kinds.profile: 'Profile', Kinds.run: 'Run', Kinds.metric: 'Body measurement', Kinds.proposal: 'Suggested change', Kinds.savedFood: 'Saved food', Kinds.water: 'Water entry',
 };
 
 String _reason(String? code) => switch (code) {

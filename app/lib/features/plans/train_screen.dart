@@ -9,6 +9,8 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../activity/activity_screens.dart';
+import '../coach/coach_bubble.dart';
+import '../coach/coach_contract.dart';
 import '../shell/home_shell.dart';
 import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
@@ -34,7 +36,13 @@ class TrainScreen extends ConsumerWidget {
       // On the calm wash the shell lays behind Train; room for the floating bar at the end.
       padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 28 + MediaQuery.paddingOf(context).bottom),
       children: [
-        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider))),
+        // The guide's face is Ask GoHard's way in on Train, there whether or not Today shows the coach, asking about
+        // the section in view: the primary plan on Plan, recorded training on Progress.
+        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: CoachAskLauncher(ask: switch (view) {
+          TrainView.plan => CoachContext(label: ref.watch(primaryPlanProvider)?.title ?? 'Your plan'),
+          TrainView.progress => const CoachContext(label: 'Your progress'),
+          TrainView.workouts => const CoachContext(label: 'Your training'),
+        })),
         const SizedBox(height: 16),
         Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',
@@ -75,29 +83,24 @@ class _WorkoutsView extends ConsumerWidget {
     final all = [for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted) w]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
     final open = all.where((w) => w.isOpen).toList(), done = all.where((w) => !w.isOpen).toList();
     final parked = ref.watch(parkedIdsProvider);
-    final roomy = MediaQuery.textScalerOf(context).scale(10) <= 13;
+    final sets = ref.watch(trustedSetsProvider);
     return _section([
       if (open.isNotEmpty) ...[
         const SectionHeader('Open workouts'),
         _gap,
-        GroupCard(children: [
-          for (final w in open) ...[
-            GroupRow(
-              icon: parked.contains(w.id) ? Icons.bookmark_outline : Icons.timelapse,
-              title: w.title,
-              subtitle: '${parked.contains(w.id) ? 'Saved for later' : 'In progress'} · started ${shortDate(w.dayKey)}',
-              trailing: roomy ? TextButton(onPressed: () => resumeWorkout(context, ref, w), child: const Text('Resume')) : null,
-              onTap: () => resumeWorkout(context, ref, w),
-            ),
-            // With large text the button takes its own line instead of squeezing the workout's name.
-            if (!roomy) Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => resumeWorkout(context, ref, w), child: const Text('Resume'))),
-          ],
-        ]),
+        // Each open workout is a panel with its own Resume (the deep button; quiet when saved for later) and Details.
+        // The photograph goes to the first one only, so a second open workout does not repeat it.
+        for (final (i, w) in open.indexed) ...[
+          if (i > 0) const SizedBox(height: 12),
+          _OpenPanel(w, parked: parked.contains(w.id), photo: i == 0, recorded: SetProgress.of(w, sets).recorded),
+        ],
         const SizedBox(height: 20),
       ],
-      PrimaryButton('Start a manual workout', key: const Key('start-manual'), icon: Icons.add, onPressed: () => startManualWorkout(context, ref)),
-      _gap,
-      SecondaryButton('Start a run', icon: Icons.directions_run, onPressed: () => startRunFlow(context, ref)),
+      GroupCard(children: [
+        GroupRow(key: const Key('start-manual'), icon: Icons.add, title: 'Start a manual workout', subtitle: 'Train without a plan. It never ticks off a planned workout.',
+            onTap: () => startManualWorkout(context, ref)),
+        GroupRow(key: const Key('train-start-run'), icon: Icons.directions_run, title: 'Start a run', onTap: () => startRunFlow(context, ref)),
+      ]),
       _between,
       const SectionHeader('Recent'),
       if (done.isEmpty)
@@ -111,6 +114,39 @@ class _WorkoutsView extends ConsumerWidget {
       _gap,
       const _HistoryCard(runs: true),
     ]);
+  }
+}
+
+/// An open workout on Train › Workouts, in the Today panel language: its state in an icon and a word, the name in
+/// the serif, when it started and what is recorded, then Resume and Details. A workout saved for later keeps a quiet
+/// Resume: it is still there, but it does not take over. Dialogs open from the app's context, not the panel's.
+class _OpenPanel extends ConsumerWidget {
+  const _OpenPanel(this.w, {required this.parked, required this.photo, required this.recorded});
+  final Workout w;
+  final bool parked, photo;
+  final int recorded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = parked ? 'Saved for later' : 'In progress';
+    void resume() => resumeWorkout(context, ref, w);
+    return PhotoPanel(
+      key: Key('train-open-${w.id}'),
+      photo: photo ? 'assets/images/workout-hero.webp' : null,
+      photoAlignment: const Alignment(1, 0.6),
+      content: (context) => [
+        StatusPill(status, icon: parked ? Icons.bookmark_outline : Icons.timelapse, tone: parked ? Tone.neutral : Tone.accent),
+        Padding(padding: const EdgeInsets.only(top: 8), child: Text(w.title, style: context.pageTitleStyle(30))),
+        Padding(padding: const EdgeInsets.only(top: 2), child: Text('$status · started ${shortDate(w.dayKey)}', style: context.sansStyle(15, color: context.c.secondary))),
+        if (recorded > 0) Padding(padding: const EdgeInsets.only(top: 2), child: Text('$recorded ${recorded == 1 ? 'set' : 'sets'} recorded', style: context.numStyle(15))),
+      ],
+      actions: (_) => [
+        parked
+            ? TextButton(key: Key('train-resume-${w.id}'), onPressed: resume, child: const Text('Resume'))
+            : PrimaryButton('Resume', key: Key('train-resume-${w.id}'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume),
+        QuietLink('Details', said: 'Details of ${w.title}', onPressed: () => push(context, WorkoutDetailScreen(workoutId: w.id))),
+      ],
+    );
   }
 }
 
@@ -145,8 +181,15 @@ class _PlanViewState extends ConsumerState<_PlanView> {
               ? 'A saved draft does not schedule anything until you start it.'
               : 'Start from a familiar split or build your own, and review it before anything is scheduled. Manual training is always available.',
           action: PrimaryButton('Create my plan', key: const Key('create-plan'), onPressed: () => push(context, const CreatePlanScreen())),
-        )
-      else
+        ),
+      // The first time Train is in view without a plan: the coach offers the starting paths, once.
+      if (primary == null && !hasDraft)
+        const CoachSpot(
+          id: 'train.noPlan', introduce: true, padding: EdgeInsets.only(bottom: 8),
+          // Ask me only: Create my plan, just above, is already the way to the starting paths.
+          say: CoachSay('Want a starting point? I can explain the splits or help you build your own.', ask: CoachContext(label: 'Starting a plan')),
+        ),
+      if (primary != null)
         ..._primary(context, primary, today, workouts, proposals),
       if (others.isNotEmpty) ...[
         _between,
@@ -257,10 +300,9 @@ class _PlanViewState extends ConsumerState<_PlanView> {
       ],
       const SizedBox(height: 16),
       WeekDayStrip(week: week, plan: plan, today: today, workouts: workouts),
-      const SizedBox(height: 10),
-      const Rule(),
-      if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Text('No workouts are planned in this week.', style: context.caption)),
-      for (final o in week.occasions) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts)),
+      const SizedBox(height: 14),
+      if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('No workouts are planned in this week.', style: context.caption)),
+      _rows([for (final o in week.occasions) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), today: today)]),
     ];
   }
 
@@ -289,22 +331,24 @@ class _PlanViewState extends ConsumerState<_PlanView> {
       SectionHeader('Coming up', detail: dateRange(today, end)),
       _gap,
       WeekDayStrip(week: days7, plan: plan, today: today, workouts: workouts),
-      const SizedBox(height: 10),
-      const Rule(),
-      if (ahead.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Text('Nothing is left in this plan.', style: context.caption)),
-      for (final o in ahead) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}', note: noteOf(o)),
+      const SizedBox(height: 14),
+      if (ahead.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('Nothing is left in this plan.', style: context.caption)),
+      _rows([
+        for (final o in ahead)
+          _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), today: today, rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}', note: noteOf(o)),
+      ]),
       if (recent.isNotEmpty) ...[
         _between,
         const SectionHeader('Recent sessions'),
         _gap,
-        const Rule(),
-        for (final o in recent) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}'),
+        _rows([for (final o in recent) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), today: today, rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}')]),
       ],
     ];
   }
 }
 
-/// The cycle in order (Push → Pull → Legs), the next workout's step marked by a border, a tint and the word "Next".
+/// The cycle in order (Push → Pull → Legs), the next workout's step in the pale panel tint with a border and the
+/// word "Next".
 class _CycleStrip extends StatelessWidget {
   const _CycleStrip({required this.cycle, required this.position});
   final List<WorkoutDefinition> cycle;
@@ -312,39 +356,41 @@ class _CycleStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.c;
+    Widget step(BuildContext context, int i, WorkoutDefinition w) {
+      final c = context.c, next = i == position;
+      return Container(
+        key: Key('cycle-step-$i'),
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: next ? c.tint : c.surface,
+          borderRadius: BorderRadius.circular(Radii.field),
+          border: Border.all(color: next ? c.accent : c.divider, width: next ? 1.5 : 1),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(w.name, style: context.sansStyle(15, weight: FontWeight.w600)),
+          if (next) Text('Next', style: context.numStyle(12.5, color: c.accent)),
+        ]),
+      );
+    }
+
     return Wrap(spacing: 6, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
       for (final (i, w) in cycle.indexed) ...[
-        if (i > 0) ExcludeSemantics(child: Icon(Icons.arrow_forward, size: 16, color: c.secondary)),
+        if (i > 0) ExcludeSemantics(child: Icon(Icons.arrow_forward, size: 16, color: context.c.secondary)),
         Semantics(
           label: 'Step ${i + 1} of ${cycle.length}, ${w.name}${i == position ? ', next' : ''}',
-          child: ExcludeSemantics(
-            child: Container(
-              key: Key('cycle-step-$i'),
-              constraints: const BoxConstraints(minHeight: 44),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: i == position ? c.accentSoft : c.surface,
-                borderRadius: BorderRadius.circular(Radii.field),
-                border: Border.all(color: i == position ? c.accent : c.divider, width: i == position ? 2 : 1),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(w.name, style: context.sansStyle(15, weight: FontWeight.w600)),
-                if (i == position) Text('Next', style: context.numStyle(12.5, color: c.accent)),
-              ]),
-            ),
-          ),
+          // The next step takes the panel palette: dark ink and the deep accent on the pale tint, in Light and Dark.
+          child: ExcludeSemantics(child: i == position ? PanelTheme(child: Builder(builder: (context) => step(context, i, w))) : step(context, i, w)),
         ),
       ],
     ]);
   }
 }
 
-/// The training pass: the plan's real name and where the calendar is. A finite fixed plan adds workouts with a
-/// recorded result out of the ones still expected; a rotation has no meaningful total, so it shows this week's
-/// completed sessions and the position in the cycle instead, and no percentage. A small category photograph sits at
-/// the trailing edge while there is room for it. (Built here rather than with the shared PassCard, which has no
-/// place for the photograph.)
+/// The training pass, as a photo panel in the Today look: the plan's real name in the serif and where the calendar
+/// is. A finite fixed plan adds workouts with a recorded result out of the ones still expected, with the rail; a
+/// rotation has no meaningful total, so it shows this week's completed sessions and the position in the cycle
+/// instead, and no percentage. The dumbbells photograph appears only while the plan is running.
 class _TrainPass extends StatelessWidget {
   const _TrainPass({required this.title, required this.week, required this.completion, required this.photo, this.rotation, this.thisWeek = 0});
   final String title, week;
@@ -355,9 +401,6 @@ class _TrainPass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.c;
-    final media = MediaQuery.of(context);
-    final showPhoto = photo && media.size.width >= 360 && media.textScaler.scale(10) <= 13;
     final done = completion ?? const Completion(0, 0);
     final measured = done.eligible > 0;
     final percent = '${(done.fraction * 100).round()}%';
@@ -367,64 +410,52 @@ class _TrainPass extends StatelessWidget {
         : r.next == null
             ? 'Cycle ${r.cyclesDone + 1} · nothing left'
             : 'Cycle ${r.cyclesDone + 1} · step ${r.position + 1} of ${r.cycle.length} · ${r.next!.title} next';
-    // About a third of the card, inset with its own rounded corners, decoded at the size it is drawn.
-    final photoWidth = ((media.size.width - 2 * context.inset) * 0.32).roundToDouble();
     return Semantics(
       container: true,
       label: r == null
           ? '$title. $week. ${done.completed} / ${done.eligible} workouts completed${measured ? ', $percent' : ''}.'
           : '$title. $week. $thisWeek ${thisWeek == 1 ? 'session' : 'sessions'} completed this week. $cycleLine.',
       child: ExcludeSemantics(
-        child: Material(
-          color: c.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: c.divider)),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(18, 18, 18 + (showPhoto ? photoWidth + 6 : 0), 18),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Overline('Training plan'),
-                const SizedBox(height: 4),
-                // The plan's name is the one serif line in the body, as in the reference pass.
-                Text(title, style: context.pageTitleStyle(30)),
-                Padding(padding: const EdgeInsets.only(top: 2), child: Text(week, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500))),
-                const SizedBox(height: 14),
-                if (r == null) ...[
-                  Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
-                    Text.rich(TextSpan(text: '${done.completed}', children: [TextSpan(text: ' / ${done.eligible}', style: TextStyle(color: c.secondary))]), style: context.titleStyle(34)),
-                    Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('Workouts completed', style: context.sansStyle(15, color: c.secondary))),
-                  ]),
-                  if (measured) ...[
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: ProgressRail(done.fraction, label: 'Workouts completed')),
-                      const SizedBox(width: 12),
-                      Text(percent, style: context.numStyle(15)),
-                    ]),
-                  ],
-                ] else ...[
-                  Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 10, children: [
-                    Text('$thisWeek', style: context.titleStyle(34)),
-                    Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('${thisWeek == 1 ? 'Session' : 'Sessions'} completed this week', style: context.sansStyle(15, color: c.secondary))),
-                  ]),
-                  const SizedBox(height: 6),
-                  Text(cycleLine!, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500)),
-                ],
+        child: PhotoPanel(
+          key: const Key('train-pass'),
+          photo: photo ? 'assets/images/workout-hero.webp' : null,
+          // The dumbbells sit low and right in the picture.
+          photoAlignment: const Alignment(1, 0.6),
+          content: (context) {
+            final c = context.c;
+            return [
+              Row(children: [
+                Icon(Icons.event_note_outlined, size: 18, color: c.secondary),
+                const SizedBox(width: 6),
+                const Flexible(child: Overline('Training plan')),
               ]),
-            ),
-            if (showPhoto)
-              Positioned(
-                top: 6, bottom: 6, right: 6, width: photoWidth,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(Radii.panel - 6),
-                  // Decoded at the crop's height (the source is landscape, so its width follows and still covers).
-                  child: LayoutBuilder(
-                    builder: (context, box) => Image.asset('assets/images/workout-hero.webp', fit: BoxFit.cover,
-                        cacheHeight: (box.maxHeight * media.devicePixelRatio).round().clamp(64, 1536), errorBuilder: (context, _, _) => ColoredBox(color: c.sunken)),
-                  ),
-                ),
-              ),
-          ]),
+              const SizedBox(height: 4),
+              Text(title, style: context.pageTitleStyle(30)),
+              Padding(padding: const EdgeInsets.only(top: 2), child: Text(week, style: context.numStyle(16, weight: FontWeight.w600))),
+              const SizedBox(height: 10),
+              if (r == null) ...[
+                Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
+                  Text.rich(TextSpan(text: '${done.completed}', children: [TextSpan(text: ' / ${done.eligible}', style: TextStyle(color: c.secondary))]), style: context.titleStyle(28)),
+                  Padding(padding: const EdgeInsets.only(bottom: 3), child: Text('Workouts completed', style: context.sansStyle(15, color: c.secondary))),
+                ]),
+                if (measured) ...[
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: ProgressRail(done.fraction, label: 'Workouts completed')),
+                    const SizedBox(width: 10),
+                    Text(percent, style: context.numStyle(15)),
+                  ]),
+                ],
+              ] else ...[
+                Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
+                  Text('$thisWeek', style: context.titleStyle(28)),
+                  Padding(padding: const EdgeInsets.only(bottom: 3), child: Text('${thisWeek == 1 ? 'Session' : 'Sessions'} completed this week', style: context.sansStyle(15, color: c.secondary))),
+                ]),
+                const SizedBox(height: 4),
+                Text(cycleLine!, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500)),
+              ],
+            ];
+          },
         ),
       ),
     );
@@ -437,13 +468,18 @@ String _plannedSummary(List<Prescription> prescription) {
   return '${prescription.length} ${prescription.length == 1 ? 'exercise' : 'exercises'}${sets == 0 ? '' : ' · $sets planned ${sets == 1 ? 'set' : 'sets'}'}';
 }
 
-/// One workout of the plan: its day, name, what is planned and its named state. Fixed rows are keyed
-/// `occasion-<week>-<ordinal>`; a rotation's rows `rotation-<sequenceIndex>` ([rowKey]).
+/// The rows of one week (or of the rotation ahead) in one quiet card, so the days read as a single schedule.
+Widget _rows(List<Widget> rows) => rows.isEmpty ? const SizedBox.shrink() : GroupCard(children: rows);
+
+/// One workout of the plan, a row of a [GroupCard]: its day, name, what is planned and its named state. Today's row
+/// is outlined in the accent and says "Today" beside the date, so it never rests on colour alone. Fixed rows are
+/// keyed `occasion-<week>-<ordinal>`; a rotation's rows `rotation-<sequenceIndex>` ([rowKey]).
 class _OccasionRow extends ConsumerWidget {
-  const _OccasionRow({required this.plan, required this.occasion, required this.status, this.rowKey, this.note});
+  const _OccasionRow({required this.plan, required this.occasion, required this.status, required this.today, this.rowKey, this.note});
   final Plan plan;
   final Occasion occasion;
   final OccasionStatus status;
+  final String today;
   final String? rowKey, note;
 
   @override
@@ -451,50 +487,55 @@ class _OccasionRow extends ConsumerWidget {
     final o = occasion, c = context.c;
     final pill = OccasionPill(status);
     final day = parseDayKey(o.scheduledDate);
+    final isToday = o.scheduledDate == today;
     final summary = _plannedSummary(o.prescription);
     final moved = o.wasMoved ? 'Moved · originally ${shortDate(o.originalDate)}' : null;
     final extra = [?moved, ?note].join(' · ');
     // With large text the state sits under the title instead of squeezing it.
     final below = MediaQuery.textScalerOf(context).scale(10) > 13;
-    final active = status == OccasionStatus.inProgress || status == OccasionStatus.due;
-    return Column(children: [
-      Pressable(
-        key: Key(rowKey ?? 'occasion-${o.weekNumber}-${o.ordinal}'),
-        borderRadius: BorderRadius.circular(Radii.field),
-        semanticLabel: '${o.title}, ${longDate(o.scheduledDate)}, $summary${extra.isEmpty ? '' : ', $extra'}, ${status.label}',
-        onTap: () => showOccasionSheet(context, ref, plan, o),
-        child: LayoutBuilder(
-          builder: (context, box) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 36),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(weekdayShort(day.weekday), style: context.sansStyle(13, color: c.secondary)),
-                  Text('${day.day}', style: context.numStyle(18)),
-                ]),
-              ),
-              const SizedBox(width: 10),
-              if (!below && box.maxWidth >= 330) ...[IconTile(Icons.fitness_center, circle: true, tone: active ? Tone.accent : Tone.neutral), const SizedBox(width: 12)],
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  // The state shares the name's line while both fit; otherwise it drops under it, never squeezing the name.
-                  Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 4, children: [
-                    Text(o.title, style: context.sansStyle(16, weight: FontWeight.w600)),
-                    if (!below) pill,
-                  ]),
-                  Padding(padding: const EdgeInsets.only(top: 2), child: Text(summary, style: context.numStyle(13.5, color: c.secondary, weight: FontWeight.w400))),
-                  if (extra.isNotEmpty) Text(extra, style: context.caption),
-                  if (below) Padding(padding: const EdgeInsets.only(top: 6), child: Align(alignment: AlignmentDirectional.centerStart, child: pill)),
-                ]),
-              ),
-              Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.chevron_right, size: 22, color: c.secondary)),
+    final row = Pressable(
+      key: Key(rowKey ?? 'occasion-${o.weekNumber}-${o.ordinal}'),
+      borderRadius: BorderRadius.circular(Radii.field),
+      semanticLabel: '${o.title}, ${longDate(o.scheduledDate)}${isToday ? ', today' : ''}, $summary${extra.isEmpty ? '' : ', $extra'}, ${status.label}',
+      onTap: () => showOccasionSheet(context, ref, plan, o),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        child: Row(children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 44),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(weekdayShort(day.weekday), style: context.sansStyle(13, color: isToday ? c.text : c.secondary, weight: isToday ? FontWeight.w700 : FontWeight.w400)),
+              Text('${day.day}', style: context.numStyle(18)),
+              if (isToday) Text('Today', style: context.sansStyle(12.5, color: c.accent, weight: FontWeight.w700)),
             ]),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              // The state shares the name's line while both fit; otherwise it drops under it, never squeezing the name.
+              Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 4, children: [
+                Text(o.title, style: context.sansStyle(16, weight: FontWeight.w600)),
+                if (!below) pill,
+              ]),
+              Padding(padding: const EdgeInsets.only(top: 2), child: Text(summary, style: context.numStyle(13.5, color: c.secondary, weight: FontWeight.w400))),
+              if (extra.isNotEmpty) Text(extra, style: context.caption),
+              if (below) Padding(padding: const EdgeInsets.only(top: 6), child: Align(alignment: AlignmentDirectional.centerStart, child: pill)),
+            ]),
+          ),
+          Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.chevron_right, size: 22, color: c.secondary)),
+        ]),
       ),
-      const Rule(),
-    ]);
+    );
+    if (!isToday) return row;
+    // Today: an accent outline inside the card's corners.
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(Radii.field), border: Border.all(color: c.accent, width: 1.5)),
+        child: row,
+      ),
+    );
   }
 }
 
@@ -515,7 +556,35 @@ class _ProgressView extends ConsumerWidget {
       ]);
     }
     final most = p.weeks.fold<int>(1, (m, w) => w.$2 > m ? w.$2 : m);
+    final thisWeek = p.weeks.last.$2;
+    final recent = ([for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted && !w.isOpen) w]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc))).take(3).toList();
     return _section([
+      // Only what was recorded: training days this week and the total, with their periods. Nothing is inferred.
+      Semantics(
+        container: true,
+        label: 'Training progress. $thisWeek training ${thisWeek == 1 ? 'day' : 'days'} this week. ${p.sessions} ${p.sessions == 1 ? 'workout' : 'workouts'} recorded in total.',
+        child: ExcludeSemantics(
+          child: PhotoPanel(
+            key: const Key('train-progress-panel'),
+            photo: 'assets/images/workout-hero.webp',
+            photoAlignment: const Alignment(1, 0.6),
+            content: (context) => [
+              Row(children: [
+                Icon(Icons.bar_chart_rounded, size: 18, color: context.c.secondary),
+                const SizedBox(width: 6),
+                const Flexible(child: Overline('Training progress')),
+              ]),
+              const SizedBox(height: 6),
+              Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
+                Text('$thisWeek', style: context.pageTitleStyle(40)),
+                Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('training ${thisWeek == 1 ? 'day' : 'days'} this week', style: context.sansStyle(15, color: context.c.secondary))),
+              ]),
+              Text('${p.sessions} ${p.sessions == 1 ? 'workout' : 'workouts'} recorded in total', style: context.numStyle(15, weight: FontWeight.w500)),
+            ],
+          ),
+        ),
+      ),
+      _between,
       const SectionHeader('Am I following my plan?'),
       _gap,
       Panel(
@@ -557,8 +626,14 @@ class _ProgressView extends ConsumerWidget {
           ),
         ]),
       ),
+      if (recent.isNotEmpty) ...[
+        _between,
+        const SectionHeader('Recent workouts'),
+        _gap,
+        GroupCard(children: [for (final w in recent) WorkoutRow(w, grouped: true)]),
+      ],
       _between,
-      const SectionHeader('Am I getting stronger?'),
+      const SectionHeader('Exercise history'),
       _gap,
       if (p.insights.isEmpty)
         Panel(child: Text('Not enough comparable records yet. This needs the same movement recorded in at least two sessions.', style: context.caption))

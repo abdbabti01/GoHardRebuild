@@ -12,6 +12,8 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../coach/coach_avatar.dart' show CoachHelpButton;
+import '../coach/coach_bubble.dart';
 import '../me/account_repository.dart';
 import '../workout/workout_runtime.dart';
 import 'run_tracking.dart';
@@ -124,39 +126,80 @@ class _RunScreenState extends ConsumerState<RunScreen> {
     String km(double meters) => '${(meters / 1000).toStringAsFixed(2)} km';
 
     final paused = runtime?.isPaused ?? false;
-    return AppPage(title: run.isOpen ? 'Run' : 'Run recorded', subtitle: longDate(run.dayKey), children: [
-      Panel(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const IconTile(Icons.directions_run, size: 40, circle: true),
-            const SizedBox(width: 10),
-            Expanded(child: Overline(run.isOpen && paused ? 'Time · paused' : 'Time')),
+    // Side by side, or one under the other when the text is large or the phone narrow.
+    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
+    // A figure with its label under it; only ever built from a value that was measured, typed or saved.
+    // Built from the panel's context, so it takes the panel's ink.
+    Widget figure(BuildContext context, String value, String label, {Key? key, String? said}) => MergeSemantics(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text(value, key: key, semanticsLabel: said, style: context.pageTitleStyle(30)),
+            Text(label, style: context.sansStyle(15, color: context.c.secondary)),
+          ]),
+        );
+    final pause = SecondaryButton(paused ? 'Resume' : 'Pause', icon: paused ? Icons.play_arrow : Icons.pause,
+        onPressed: runtime == null
+            ? null
+            : () => _save(runtime.isPaused ? runtime.resumed(now) : WorkoutRuntime(copyJson(runtime.paused(now).j)..['track'] = track.detached().j)));
+    final finish = PrimaryButton('Finish run', key: const Key('run-finish'), icon: Icons.stop_rounded, onPressed: () async {
+      final typed = parseNonNegative(_km.text);
+      if (_km.text.trim().isNotEmpty && typed == null) return setState(() => _error = 'Enter the distance as a number, or leave it blank.');
+      // What you typed wins; otherwise the measured distance; otherwise distance stays unknown.
+      final meters = typed != null ? typed * 1000 : track.hasDistance ? double.parse(track.distanceMeters.toStringAsFixed(1)) : null;
+      try {
+        _closed = true;
+        await ref.read(activityRepositoryProvider).finishRun(run, activeSeconds: elapsed, distanceMeters: meters);
+        await _sync.deleteLocal(_owner, Kinds.runtime, run.id);
+        if (context.mounted) Navigator.pop(context);
+      } on LocalSaveFailure {
+        _closed = false;
+        setState(() => _error = 'The run could not be saved on this phone. It is still open.');
+      }
+    });
+    return AppPage(title: run.isOpen ? 'Your run' : 'Run recorded', subtitle: longDate(run.dayKey), actions: [
+      if (run.isOpen)
+        CoachHelpButton(
+          key: const Key('coach-help-run'), semanticLabel: 'Help with recording a run',
+          onPressed: () => showCoachHelpSheet(context, title: 'Recording a run', say: const CoachSay(
+              'GPS measures distance while this screen is open. Pause any time; Finish run saves it.')),
+        ),
+    ], children: [
+      // The time big in the serif beside the runner. The photograph is not a map and says nothing about tracking;
+      // distance appears only once GPS is measuring (or as saved), and no pace is worked out: the time includes
+      // stretches GPS did not measure, so a pace from the two would be invented.
+      PhotoPanel(
+        key: const Key('run-panel'), photo: 'assets/images/run-cover.webp', photoAlignment: const Alignment(0.6, 0),
+        content: (context) => [
+          Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            Semantics(header: true, child: const Overline('Run')),
+            if (run.isOpen) paused ? const StatusPill('Paused', icon: Icons.pause_circle_outline, tone: Tone.accent) : const StatusPill('In progress', icon: Icons.timelapse, tone: Tone.accent),
           ]),
           const SizedBox(height: 6),
           Semantics(
-            label: 'Run time ${durationText(elapsed)}',
-            child: ExcludeSemantics(child: Text(clockText(elapsed), style: context.titleStyle(60, weight: FontWeight.w500))),
+            label: 'Run time ${durationText(elapsed)}${run.isOpen && paused ? ', paused' : ''}',
+            child: ExcludeSemantics(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                FittedBox(fit: BoxFit.scaleDown, child: Text(clockText(elapsed), style: context.pageTitleStyle(64))),
+                Text(run.isOpen ? 'Elapsed time' : 'Time', style: context.sansStyle(15, color: context.c.secondary)),
+              ]),
+            ),
           ),
           if (run.isOpen && _gps != null) ...[
-            const SizedBox(height: 12),
-            const Rule(),
-            const SizedBox(height: 12),
-            const Overline('Distance'),
-            Text(km(track.distanceMeters), key: const Key('run-gps-distance'), style: context.titleStyle(30)),
-            const SizedBox(height: 6),
-            StatusLine(Icons.gps_fixed, track.fixes == 0
-                ? 'Waiting for a GPS position…'
-                : 'Measured by GPS while this screen is open.${track.gaps > 0 ? ' ${track.gaps} stretch${track.gaps == 1 ? '' : 'es'} without readings ${track.gaps == 1 ? 'was' : 'were'} left out, not estimated.' : ''}'),
+            const SizedBox(height: 14),
+            figure(context, km(track.distanceMeters), 'Distance', key: const Key('run-gps-distance')),
           ] else if (!run.isOpen) ...[
-            const SizedBox(height: 12),
-            const Rule(),
-            const SizedBox(height: 12),
-            const Overline('Distance'),
-            Text(run.distanceMeters == null ? '—' : km(run.distanceMeters!), semanticsLabel: run.distanceMeters == null ? 'Distance not recorded' : null, style: context.titleStyle(30)),
-            if (run.distanceMeters == null) Text('Distance not recorded', style: context.caption),
+            const SizedBox(height: 14),
+            figure(context, run.distanceMeters == null ? '—' : km(run.distanceMeters!), run.distanceMeters == null ? 'Distance not recorded' : 'Distance',
+                said: run.distanceMeters == null ? 'Distance not recorded' : null),
           ],
-        ]),
+        ],
       ),
+      if (run.isOpen && _gps != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: StatusLine(Icons.gps_fixed, track.fixes == 0
+              ? 'Waiting for a GPS position…'
+              : 'Measured by GPS while this screen is open.${track.gaps > 0 ? ' ${track.gaps} stretch${track.gaps == 1 ? '' : 'es'} without readings ${track.gaps == 1 ? 'was' : 'were'} left out, not estimated.' : ''}'),
+        ),
       if (run.isOpen) ...[
         if (_gps == null) ...[
           const SizedBox(height: 12),
@@ -165,31 +208,13 @@ class _RunScreenState extends ConsumerState<RunScreen> {
           Text('Distance is only recorded from real GPS readings, or from what you type below.', style: context.caption),
         ],
         if (_gpsNote != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.info_outline, _gpsNote!, tone: Tone.warning)),
-        const SizedBox(height: 12),
-        SecondaryButton(paused ? 'Resume' : 'Pause', icon: paused ? Icons.play_arrow : Icons.pause,
-            onPressed: runtime == null
-                ? null
-                : () => _save(runtime.isPaused ? runtime.resumed(now) : WorkoutRuntime(copyJson(runtime.paused(now).j)..['track'] = track.detached().j))),
         const SizedBox(height: 16),
         TextField(key: const Key('run-distance'), controller: _km, keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(labelText: track.hasDistance ? 'Correct the distance (optional)' : 'Distance (optional)', suffixText: 'km', hintText: track.hasDistance ? (track.distanceMeters / 1000).toStringAsFixed(2) : 'Unknown')),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-        PrimaryButton('Finish run', key: const Key('run-finish'), onPressed: () async {
-          final typed = parseNonNegative(_km.text);
-          if (_km.text.trim().isNotEmpty && typed == null) return setState(() => _error = 'Enter the distance as a number, or leave it blank.');
-          // What you typed wins; otherwise the measured distance; otherwise distance stays unknown.
-          final meters = typed != null ? typed * 1000 : track.hasDistance ? double.parse(track.distanceMeters.toStringAsFixed(1)) : null;
-          try {
-            _closed = true;
-            await ref.read(activityRepositoryProvider).finishRun(run, activeSeconds: elapsed, distanceMeters: meters);
-            await _sync.deleteLocal(_owner, Kinds.runtime, run.id);
-            if (context.mounted) Navigator.pop(context);
-          } on LocalSaveFailure {
-            _closed = false;
-            setState(() => _error = 'The run could not be saved on this phone. It is still open.');
-          }
-        }),
+        // Pause and Finish run together; Finish run is the deep primary.
+        if (stacked) ...[pause, const SizedBox(height: 10), finish] else Row(children: [Expanded(child: pause), const SizedBox(width: 12), Expanded(child: finish)]),
       ],
       const SizedBox(height: 8),
       Center(

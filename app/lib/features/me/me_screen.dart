@@ -13,13 +13,30 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/activity_screens.dart';
 import '../coach/coach_avatar.dart';
+import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 // Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
-import '../nutrition/nutrition_surface.dart';
+import '../nutrition/nutrition_tools.dart';
+import '../nutrition/water.dart';
 import '../weather/weather.dart';
 import 'account_repository.dart';
+import 'permissions_screen.dart';
 import 'reminders.dart';
 import 'sync_review_screen.dart';
+
+/// Workout reminders on or off (Me, setup). Notification permission is asked for only here, when they are turned on.
+Future<void> setReminders(BuildContext context, WidgetRef ref, Profile profile, bool on) async {
+  if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
+    if (context.mounted) toast(context, 'Notifications are not allowed for GoHard, so reminders stay off. You can allow them in the phone\'s settings.');
+    return;
+  }
+  try {
+    await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
+    Haptics.selection();
+  } on LocalSaveFailure {
+    if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
+  }
+}
 
 /// Me: who is signed in, personal information, preferences for this phone and the account. Training, history and
 /// progress live in Train; nothing here repeats them.
@@ -57,6 +74,30 @@ class MeScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 4),
           Text('Changes how loads are entered and shown. Your recorded training is stored in kilograms and is never rewritten. Time is shown in minutes and seconds.', style: context.caption),
+          const SizedBox(height: 16),
+          Text('Temperature', style: context.label),
+          for (final f in const [false, true])
+            ChoiceTile<bool>(
+              key: Key('unit-${f ? 'fahrenheit' : 'celsius'}'), value: f, groupValue: ref.read(weatherPrefsProvider).fahrenheit, title: f ? 'Fahrenheit (°F)' : 'Celsius (°C)',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                ref.read(weatherPrefsProvider.notifier).setFahrenheit(chosen);
+              },
+            ),
+          const SizedBox(height: 4),
+          Text('For the weather on Today. Set on this phone.', style: context.caption),
+          const SizedBox(height: 16),
+          Text('Water', style: context.label),
+          for (final u in VolumeUnit.values)
+            ChoiceTile<VolumeUnit>(
+              key: Key('unit-water-${u.name}'), value: u, groupValue: ref.read(volumeUnitProvider), title: u == VolumeUnit.ml ? 'Millilitres (mL, L)' : 'US fluid ounces (fl oz)',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                ref.read(trackingPrefsProvider.notifier).setUnit(chosen);
+              },
+            ),
+          const SizedBox(height: 4),
+          Text('For water you log. Stored in millilitres, so changing this never changes an amount. Fluid ounces are a volume, not a weight. Set on this phone.', style: context.caption),
         ]));
 
     // What is true about the account right now, in a word and a sentence. "Saved" is said only when nothing is
@@ -85,25 +126,24 @@ class MeScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(children: [
-                  // An initial, not a photograph: the account has no picture, so none is invented.
+                  // An initial, not a photograph: the account has no picture, so none is invented. The pale panel tint
+                  // with its dark ink, as on Today's panels.
                   ExcludeSemantics(
                     child: Container(
                       width: 56, height: 56, alignment: Alignment.center,
-                      decoration: BoxDecoration(color: context.c.accentSoft, shape: BoxShape.circle, border: Border.all(color: context.c.accent.withValues(alpha: 0.32))),
-                      child: Text(name.isEmpty ? '' : name[0].toUpperCase(), textScaler: TextScaler.noScaling, style: context.sansStyle(24, weight: FontWeight.w600, color: context.c.accent)),
+                      decoration: BoxDecoration(color: context.c.tint, shape: BoxShape.circle),
+                      child: Text(name.isEmpty ? '' : name[0].toUpperCase(), textScaler: TextScaler.noScaling,
+                          style: context.pageTitleStyle(26, color: GoColors.panelOf(context.c).text)),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, runSpacing: 4, children: [
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                       Text(name, key: const Key('me-name'), style: context.sansStyle(20, weight: FontWeight.w600)),
-                      if (profile != null)
-                        Row(mainAxisSize: MainAxisSize.min, children: [
-                          Flexible(child: Text('Edit profile', style: context.sansStyle(15, weight: FontWeight.w500, color: context.c.secondary))),
-                          Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
-                        ]),
+                      if (profile != null) Text('Edit profile', style: context.sansStyle(15, color: context.c.secondary)),
                     ]),
                   ),
+                  if (profile != null) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.chevron_right, size: 22, color: context.c.secondary)),
                 ]),
               ),
             ),
@@ -119,10 +159,8 @@ class MeScreen extends ConsumerWidget {
             GroupRow(
               key: const Key('me-goals'), icon: Icons.restaurant_outlined, title: 'Nutrition goals',
               // Only a goal the person set is shown; nothing is suggested in its place.
-              subtitle: profile.calorieGoal == null && profile.proteinGoal == null ? 'None set' : 'Daily goals you set',
-              value: profile.calorieGoal == null && profile.proteinGoal == null
-                  ? null
-                  : [if (profile.calorieGoal != null) '${formatKcal(profile.calorieGoal!)} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
+              subtitle: goalsSummary(profile, ref.watch(volumeUnitProvider), water: ref.watch(nutritionDisplayProvider).water) == null ? 'None set' : 'Daily goals you set',
+              value: goalsSummary(profile, ref.watch(volumeUnitProvider), water: ref.watch(nutritionDisplayProvider).water),
               onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
             ),
         ]),
@@ -135,8 +173,9 @@ class MeScreen extends ConsumerWidget {
             onTap: () => push(context, const AppearanceScreen()),
           ),
           if (profile != null)
-            GroupRow(key: const Key('me-units'), icon: Icons.straighten, title: 'Units', value: LoadUnit.parse(profile.loadUnit) == LoadUnit.kg ? 'Kilograms' : 'Pounds', onTap: chooseUnit),
+            GroupRow(key: const Key('me-units'), icon: Icons.straighten, title: 'Units', value: '${LoadUnit.parse(profile.loadUnit) == LoadUnit.kg ? 'Kilograms' : 'Pounds'} · ${ref.watch(weatherPrefsProvider.select((p) => p.fahrenheit)) ? '°F' : '°C'}', onTap: chooseUnit),
           GroupRow(key: const Key('me-motion'), icon: Icons.animation, title: 'Motion & haptics', value: motionLabel(prefs), onTap: () => push(context, const MotionHapticsScreen())),
+          GroupRow(key: const Key('me-permissions'), icon: Icons.verified_user_outlined, title: 'Phone permissions', subtitle: 'Location, camera and notifications', onTap: () => push(context, const PermissionsScreen())),
           if (profile != null) ...[
             MergeSemantics(
               child: GroupRow(
@@ -146,19 +185,7 @@ class MeScreen extends ConsumerWidget {
                 subtitle: profile.remindersEnabled ? 'On days with a planned workout. None while your plan is paused.' : 'Off',
                 trailing: Switch(
                   value: profile.remindersEnabled,
-                  onChanged: (on) async {
-                    // Permission is asked for only here, when the user turns reminders on.
-                    if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
-                      if (context.mounted) toast(context, 'Notifications are not allowed for GoHard, so reminders stay off. You can allow them in the phone\'s settings.');
-                      return;
-                    }
-                    try {
-                      await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
-                      Haptics.selection();
-                    } on LocalSaveFailure {
-                      if (context.mounted) toast(context, 'That preference could not be saved on this phone.');
-                    }
-                  },
+                  onChanged: (on) => setReminders(context, ref, profile, on),
                 ),
               ),
             ),
@@ -265,7 +292,8 @@ class MotionHapticsScreen extends ConsumerWidget {
   }
 }
 
-/// Appearance: two independent choices, applied at once everywhere and remembered on this phone.
+/// Appearance: two independent choices, applied at once everywhere and remembered on this phone. A small preview,
+/// then the accent (three swatches), the mode (Light, Dark, System), and the guide's and this phone's settings.
 class AppearanceScreen extends ConsumerWidget {
   const AppearanceScreen({super.key});
 
@@ -274,42 +302,27 @@ class AppearanceScreen extends ConsumerWidget {
     final appearance = ref.watch(appearanceProvider);
     final set = ref.read(appearanceProvider.notifier);
     final brightness = Theme.of(context).brightness;
-    // Three cards across while their labels fit; one under another at large text.
-    final across = MediaQuery.textScalerOf(context).scale(10) <= 13;
-    Widget cards(List<Widget> children) => across
-        ? IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final (i, c) in children.indexed) ...[if (i > 0) const SizedBox(width: 10), Expanded(child: c)]]))
-        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final (i, c) in children.indexed) ...[if (i > 0) const SizedBox(height: 10), c]]);
-    return AppPage(title: 'Appearance', subtitle: 'Personalize the look and feel of GoHard.', children: [
-      const _AppearanceSection(Icons.palette_outlined, 'Accent', 'Choose the accent color used throughout the app.'),
-      cards([
-        for (final a in Accent.values)
-          ChoiceCard(
-            key: Key('accent-${a.name}'), label: a.label, semanticLabel: '${a.label} accent', selected: a == appearance.accent, onTap: () => set.setAccent(a),
-            // Each swatch is that accent as it looks in the current mode.
-            leading: Container(width: 36, height: 36, decoration: BoxDecoration(color: GoColors.of(a, brightness).accent, shape: BoxShape.circle)),
-          ),
-      ]),
-      const _Divided(),
-      const _AppearanceSection(Icons.light_mode_outlined, 'Mode', 'Choose how the app appears.'),
-      cards([
-        for (final (mode, icon) in const [(ThemeMode.light, Icons.light_mode_outlined), (ThemeMode.dark, Icons.dark_mode_outlined), (ThemeMode.system, Icons.devices_outlined)])
-          ChoiceCard(key: Key('appearance-${mode.name}'), label: modeLabel(mode), leading: Icon(icon), selected: mode == appearance.mode, onTap: () => set.setMode(mode)),
-      ]),
-      const SizedBox(height: 10),
-      Text('System follows your phone\'s appearance.', style: context.caption),
-      const _Divided(),
-      const _AppearanceSection(Icons.landscape_outlined, 'Today', 'The scene behind the top of Today. It never changes your accent or mode.'),
-      GroupCard(children: [
-        GroupRow(
-          key: const Key('appearance-today-background'), icon: Icons.wb_twilight_outlined, title: 'Today background', value: ref.watch(todayBackgroundSummaryProvider),
-          onTap: () => push(context, const TodayBackgroundScreen()),
-        ),
-      ]),
-      const _Divided(),
-      const _CoachSection(),
-      const _Divided(),
-      const _AppearanceSection(Icons.visibility_outlined, 'Preview', 'A sample of the selected appearance and accent color.'),
+    return AppPage(title: 'Appearance', subtitle: 'Make GoHard feel like yours.', actions: const [
+      // Help only when asked for: Me stays about the account and its preferences.
+      CoachHelpEntry(id: 'me.appearance', label: 'Help with these settings'),
+    ], children: [
+      const CoachSpot(
+        id: 'me.appearance', padding: EdgeInsets.only(bottom: 18),
+        say: CoachSay('Pick your guide and when I show up. Motion & haptics sets how much I move.'),
+      ),
       const _Preview(),
+      const SizedBox(height: 14),
+      _Section('Accent', 'Used for buttons, highlights and the panels.', Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        for (final a in Accent.values)
+          // Each swatch is that accent as it looks in the current mode.
+          Expanded(child: _Swatch(a, color: GoColors.of(a, brightness).accent, selected: a == appearance.accent, onTap: () => set.setAccent(a))),
+      ])),
+      const SizedBox(height: 12),
+      _Section('Mode', 'System follows your phone\'s appearance.', Segmented<ThemeMode>(
+        values: const [ThemeMode.light, ThemeMode.dark, ThemeMode.system], selected: appearance.mode, keyPrefix: 'appearance', label: modeLabel, onChanged: set.setMode,
+      )),
+      const SizedBox(height: 12),
+      const _CoachSection(),
       const SizedBox(height: 18),
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(Icons.info_outline, size: 20, color: context.c.secondary),
@@ -320,8 +333,71 @@ class AppearanceScreen extends ConsumerWidget {
   }
 }
 
-/// Leon or Leona, and the coaching hints. Choosing applies at once and changes nothing else: not the accent or mode,
-/// not an open page, draft or conversation. Never inferred from the profile.
+/// One Appearance choice on a quiet card: its name, one line, then the control.
+class _Section extends StatelessWidget {
+  const _Section(this.title, this.body, this.child);
+  final String title, body;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Panel(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Semantics(header: true, child: Text(title, style: context.sansStyle(17, weight: FontWeight.w600))),
+          const SizedBox(height: 2),
+          Text(body, style: context.caption),
+          const SizedBox(height: 12),
+          child,
+        ]),
+      );
+}
+
+/// An accent as a round swatch above its name. The chosen one has a ring, a check and a heavier name, so the choice
+/// never rests on colour alone; announced as "Blue accent", a selected button in a mutually exclusive group.
+class _Swatch extends StatelessWidget {
+  const _Swatch(this.accent, {required this.color, required this.selected, required this.onTap});
+  final Accent accent;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Semantics(
+      key: Key('accent-${accent.name}'), container: true, button: true, selected: selected, inMutuallyExclusiveGroup: true, label: '${accent.label} accent',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Radii.field),
+        onTap: () {
+          if (!selected) Haptics.selection();
+          onTap();
+        },
+        child: ExcludeSemantics(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: Targets.minimum, minWidth: Targets.minimum),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 50, height: 50, padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: selected ? c.text : Colors.transparent, width: 2)),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    child: selected ? Icon(Icons.check_rounded, size: 22, color: GoColors.of(accent, Theme.of(context).brightness).onAccent) : null,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(accent.label, textAlign: TextAlign.center, style: context.sansStyle(15, weight: selected ? FontWeight.w700 : FontWeight.w500)),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Leon or Leona, the coaching hints, and the other settings for this phone. Choosing a guide applies at once and
+/// changes nothing else: not the accent or mode, not an open page, draft or conversation. Never inferred from the profile.
 class _CoachSection extends ConsumerWidget {
   const _CoachSection();
 
@@ -331,19 +407,31 @@ class _CoachSection extends ConsumerWidget {
     final set = ref.read(coachPrefsProvider.notifier);
     // Side by side, picture above name, while the names fit; at large text one under another, picture beside name.
     final across = MediaQuery.textScalerOf(context).scale(10) <= 15;
-    final cards = [for (final g in CoachGuide.values) _CoachChoice(g, selected: g == coach.guide, across: across, onTap: () => set.setGuide(g))];
+    final cards = [for (final g in CoachGuide.values) CoachChoice(g, selected: g == coach.guide, across: across, onTap: () => set.setGuide(g))];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const _AppearanceSection(Icons.face_outlined, 'Coach avatar', 'Leon, a lion, or Leona, a lioness. The same coach either way: only the look changes.'),
-      if (across)
-        IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: cards[0]), const SizedBox(width: 10), Expanded(child: cards[1])]))
-      else
-        ...[cards[0], const SizedBox(height: 10), cards[1]],
-      const SizedBox(height: 14),
+      _Section(
+        'Coach', 'Leon, a lion, or Leona, a lioness. The same coach either way: only the look changes.',
+        across
+            ? IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: cards[0]), const SizedBox(width: 10), Expanded(child: cards[1])]))
+            : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [cards[0], const SizedBox(height: 10), cards[1]]),
+      ),
+      const SizedBox(height: 12),
       GroupCard(children: [
+        // The companion beside Today's greeting. Off, Ask GoHard and the Quick guide stay exactly where they are.
         MergeSemantics(
           child: GroupRow(
-            key: const Key('coach-hints'), icon: Icons.lightbulb_outline, title: 'Coaching hints',
-            subtitle: coach.hintsEnabled ? 'A short tip beside GoHard\'s help, once each.' : 'Off. Help is still there when you ask.',
+            key: const Key('coach-on-today'), icon: Icons.visibility_outlined, title: 'Show coach on Today',
+            subtitle: coach.onToday ? '${coach.guide.label} beside your greeting.' : 'Off. Ask GoHard is still ${coach.guide.label}, on Train.',
+            trailing: Switch(value: coach.onToday, onChanged: (on) {
+              Haptics.selection();
+              set.setOnToday(on);
+            }),
+          ),
+        ),
+        MergeSemantics(
+          child: GroupRow(
+            key: const Key('coach-hints'), icon: Icons.chat_bubble_outline, title: 'Coaching hints',
+            subtitle: coach.hintsEnabled ? 'A short tip from ${coach.guide.label} beside GoHard\'s help, once each.' : 'Off. Help is still there when you ask.',
             trailing: Switch(value: coach.hintsEnabled, onChanged: (on) {
               Haptics.selection();
               set.setHints(on);
@@ -353,9 +441,18 @@ class _CoachSection extends ConsumerWidget {
         GroupRow(
           key: const Key('coach-hints-reset'), icon: Icons.replay_rounded, title: 'Show coaching hints again',
           onTap: () {
-            set.resetHints();
+            set.resetHints(ref.read(ownerProvider) ?? '');
             toast(context, 'Coaching hints you have seen can show again.');
           },
+        ),
+        GroupRow(
+          key: const Key('appearance-motion'), icon: Icons.animation, title: 'Motion & haptics', value: motionLabel(ref.watch(devicePrefsProvider)),
+          onTap: () => push(context, const MotionHapticsScreen()),
+        ),
+        // The scene behind the top of Today. It never changes the accent or mode.
+        GroupRow(
+          key: const Key('appearance-today-background'), icon: Icons.wb_twilight_outlined, title: 'Today background', value: ref.watch(todayBackgroundSummaryProvider),
+          onTap: () => push(context, const TodayBackgroundScreen()),
         ),
       ]),
     ]);
@@ -363,26 +460,31 @@ class _CoachSection extends ConsumerWidget {
 }
 
 /// One guide's card: a 64 px preview (56 px beside the name at large text), the name and "Lion" / "Lioness". Selected:
-/// accent border, tint, heavier name and a check badge, so never colour alone; announced as "Leon, lion", a selected
-/// button in a mutually exclusive group. ChoiceCard's icon slot is 36 px, too small to tell the two faces apart.
-class _CoachChoice extends StatelessWidget {
-  const _CoachChoice(this.guide, {required this.selected, required this.across, required this.onTap});
+/// the pale panel tint with its dark ink, an accent border, a heavier name and a check badge, so never colour alone;
+/// announced as "Leon, lion", a selected button in a mutually exclusive group. ChoiceCard's icon slot is 36 px, too
+/// small to tell the two faces apart.
+class CoachChoice extends StatelessWidget {
+  const CoachChoice(this.guide, {super.key, required this.selected, required this.across, required this.onTap, this.face});
   final CoachGuide guide;
+
+  /// Shown instead of the still avatar (setup's animated previews).
+  final Widget? face;
   final bool selected, across;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final p = GoColors.panelOf(c);
     final align = across ? TextAlign.center : TextAlign.start;
     final names = Column(crossAxisAlignment: across ? CrossAxisAlignment.center : CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-      Text(guide.label, textAlign: align, style: context.sansStyle(15.5, weight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? c.accent : c.text)),
-      Text('${guide.animal[0].toUpperCase()}${guide.animal.substring(1)}', textAlign: align, style: context.caption),
+      Text(guide.label, textAlign: align, style: context.pageTitleStyle(22, color: selected ? p.text : c.text)),
+      Text('${guide.animal[0].toUpperCase()}${guide.animal.substring(1)}', textAlign: align, style: context.sansStyle(14, color: selected ? p.secondary : c.secondary)),
     ]);
     return Semantics(
       key: Key('coach-${guide.name}'), button: true, selected: selected, inMutuallyExclusiveGroup: true, label: '${guide.label}, ${guide.animal}',
       child: Material(
-        color: selected ? c.accentSoft : c.surface,
+        color: selected ? c.tint : c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel), side: BorderSide(color: selected ? c.accent : c.outline, width: selected ? 2 : 1)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -397,16 +499,16 @@ class _CoachChoice extends StatelessWidget {
                 Padding(
                   padding: across ? const EdgeInsets.fromLTRB(8, 14, 8, 12) : const EdgeInsetsDirectional.fromSTEB(12, 10, 40, 10),
                   child: across
-                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [CoachAvatar(size: 64, guide: guide), const SizedBox(height: 8), names]))
-                      : Row(children: [CoachAvatar(size: 56, guide: guide), const SizedBox(width: 12), Expanded(child: names)]),
+                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [face ?? CoachAvatar(size: 64, guide: guide), const SizedBox(height: 8), names]))
+                      : Row(children: [face ?? CoachAvatar(size: 56, guide: guide), const SizedBox(width: 12), Expanded(child: names)]),
                 ),
                 if (selected)
                   PositionedDirectional(
                     top: 8, end: 8,
                     child: Container(
-                      width: 22, height: 22,
-                      decoration: BoxDecoration(color: c.accent, shape: BoxShape.circle),
-                      child: Icon(Icons.check_rounded, size: 16, color: c.onAccent),
+                      width: 24, height: 24,
+                      decoration: BoxDecoration(color: c.accentDeep, shape: BoxShape.circle),
+                      child: Icon(Icons.check_rounded, size: 17, color: c.onAccentDeep),
                     ),
                   ),
               ]),
@@ -418,87 +520,57 @@ class _CoachChoice extends StatelessWidget {
   }
 }
 
-/// A quiet separator with room around it, between Appearance's sections.
-class _Divided extends StatelessWidget {
-  const _Divided();
-  @override
-  Widget build(BuildContext context) => const Padding(padding: EdgeInsets.symmetric(vertical: 22), child: Rule());
-}
-
-/// The head of an Appearance section: a round icon node, the section name in small capitals, and one line.
-class _AppearanceSection extends StatelessWidget {
-  const _AppearanceSection(this.icon, this.title, this.body);
-  final IconData icon;
-  final String title, body;
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          IconTile(icon, circle: true, size: 40),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(padding: const EdgeInsets.only(top: 2), child: Semantics(header: true, child: Overline(title))),
-              const SizedBox(height: 3),
-              Text(body, style: context.caption),
-            ]),
-          ),
-        ]),
-      );
-}
-
-/// A still picture of a Today workout module in the chosen look. It is not a control: nothing in it can be tapped
-/// or focused, and it is announced as one "Preview" image. The pictured workout is sample text, not the account's.
-class _Preview extends StatelessWidget {
+/// A small still picture of Today in the chosen look: the pale panel over a scene, the selected guide, and a deep
+/// button. It is not a control: nothing in it can be tapped or focused, and it is announced as one "Preview" image.
+class _Preview extends ConsumerWidget {
   const _Preview();
   @override
-  Widget build(BuildContext context) {
-    final c = context.c;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
+    final pictured = MediaQuery.textScalerOf(context).scale(10) <= 13;
     return Semantics(
-      key: const Key('appearance-preview'), container: true, image: true, label: 'Preview of a workout card in this appearance',
+      key: const Key('appearance-preview'), container: true, image: true, label: 'Preview of Today in this appearance',
       child: ExcludeSemantics(
         child: IgnorePointer(
-          child: Panel(
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (MediaQuery.textScalerOf(context).scale(10) <= 15) ...[const IconTile(Icons.fitness_center, circle: true, size: 40), const SizedBox(width: 14)],
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: const [
-                    Overline('Workout'),
-                    StatusPill('In progress', icon: Icons.timelapse, tone: Tone.accent),
-                  ]),
-                  const SizedBox(height: 8),
-                  Text('Back', style: context.sansStyle(22, weight: FontWeight.w700)),
-                  Text('6 exercises · 18 planned sets', style: context.caption),
-                  const SizedBox(height: 14),
-                  Wrap(spacing: 16, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                    ProgressRing(
-                      value: 6 / 18, label: 'Sample sets recorded', size: 84,
-                      center: Column(mainAxisSize: MainAxisSize.min, children: [
-                        Text('6', style: context.titleStyle(24)),
-                        Text('of 18 sets', style: context.sansStyle(12, color: c.secondary)),
+          child: PanelTheme(
+            child: Builder(builder: (context) {
+              final c = context.c;
+              return PanelSurface(
+                photo: pictured
+                    ? Stack(fit: StackFit.expand, children: [
+                        const PanelPhoto('assets/scenes/scenic-dusk.webp'),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: FractionallySizedBox(
+                            heightFactor: 0.92,
+                            child: Image.asset('assets/coach/${guide.name}-bust.png', fit: BoxFit.contain, alignment: Alignment.bottomRight, cacheHeight: 360,
+                                excludeFromSemantics: true, gaplessPlayback: true, errorBuilder: (context, _, _) => const SizedBox.shrink()),
+                          ),
+                        ),
+                      ])
+                    : null,
+                child: FractionallySizedBox(
+                  widthFactor: pictured ? PanelSurface.wordsShare : 1, alignment: AlignmentDirectional.centerStart,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    const Overline('Preview'),
+                    Text('Today', style: context.pageTitleStyle(30)),
+                    Text('Your accent, your mode.', style: context.sansStyle(14.5, color: c.secondary)),
+                    const SizedBox(height: 12),
+                    // Drawn like the primary button, but it is a picture of one: it has no action at all.
+                    Container(
+                      constraints: const BoxConstraints(minHeight: 40),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(color: c.accentDeep, borderRadius: BorderRadius.circular(Radii.tile)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.play_arrow_rounded, size: 20, color: c.onAccentDeep),
+                        const SizedBox(width: 6),
+                        Flexible(child: Text('Resume workout', style: context.sansStyle(15, weight: FontWeight.w600, color: c.onAccentDeep))),
                       ]),
                     ),
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                      Text('33%', style: context.numStyle(20, color: c.accent, weight: FontWeight.w700)),
-                      Text('recorded', style: context.caption),
-                    ]),
                   ]),
-                  const SizedBox(height: 14),
-                  // Drawn like the primary button, but it is a picture of one: it has no action at all.
-                  Container(
-                    constraints: const BoxConstraints(minHeight: Targets.primary), alignment: Alignment.center,
-                    decoration: BoxDecoration(color: c.accent, borderRadius: BorderRadius.circular(Radii.tile)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.play_arrow_rounded, size: 22, color: c.onAccent),
-                      const SizedBox(width: 8),
-                      Flexible(child: Text('Resume workout', style: context.sansStyle(16.5, weight: FontWeight.w600, color: c.onAccent))),
-                    ]),
-                  ),
-                ]),
-              ),
-            ]),
+                ),
+              );
+            }),
           ),
         ),
       ),
@@ -560,55 +632,27 @@ class NutritionGoalsScreen extends ConsumerStatefulWidget {
 }
 
 class _NutritionGoalsScreenState extends ConsumerState<NutritionGoalsScreen> {
-  late final _calories = TextEditingController(text: widget.profile.calorieGoal?.toString() ?? '');
-  late final _protein = TextEditingController(text: widget.profile.proteinGoal?.toString() ?? '');
-  String? _error;
-
-  @override
-  void dispose() {
-    _calories.dispose();
-    _protein.dispose();
-    super.dispose();
-  }
-
-  /// Blank is "no goal". Anything else has to be a whole number.
-  static int? _whole(String raw, String what) {
-    if (raw.trim().isEmpty) return null;
-    final v = parsePositiveInt(raw);
-    if (v == null) throw AuthFailure('$what is a whole number, or left blank for no goal.');
-    return v;
-  }
-
-  Future<void> _save() async {
-    try {
-      // The newest profile on this phone, so a goal change never carries an older name or unit with it.
-      final current = ref.read(profileProvider).value ?? widget.profile;
-      await ref.read(profileRepositoryProvider).setGoals(current, calorieGoal: _whole(_calories.text, 'A calorie goal'), proteinGoal: _whole(_protein.text, 'A protein goal'));
-      if (mounted) Navigator.pop(context);
-    } on AuthFailure catch (e) {
-      setState(() => _error = e.message);
-    } on LocalSaveFailure {
-      setState(() => _error = 'Your goals could not be saved on this phone. What you typed is still here.');
-    }
-  }
-
   @override
   Widget build(BuildContext context) => AppPage(
         title: 'Nutrition goals',
-        subtitle: 'Optional. Today and Eat show your progress toward a goal once you set one.',
-        bottom: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-          PrimaryButton('Save goals', key: const Key('goal-save'), onPressed: _save),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        ]),
+        actions: const [CoachHelpEntry(id: 'me.goals', label: 'Help with nutrition goals')],
         children: [
-          TextField(key: const Key('goal-calories'), controller: _calories, keyboardType: TextInputType.number, textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Daily calories', suffixText: 'kcal', hintText: 'No goal', helperText: '500 to 10,000. Leave blank for no calorie goal.')),
-          const SizedBox(height: 14),
-          TextField(key: const Key('goal-protein'), controller: _protein, keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Daily protein', suffixText: 'g', hintText: 'No goal', helperText: '10 to 500. Leave blank for no protein goal.')),
-          const SizedBox(height: 16),
-          Text('GoHard does not suggest a goal. If you are unsure what suits you, a dietitian or doctor can help.', style: context.caption),
+          const CoachSpot(
+            id: 'me.goals', introduce: true, padding: EdgeInsets.only(bottom: 16),
+            say: CoachSay('These are your daily tracking targets. You can leave either one blank.'),
+          ),
+          // Words only, no figure: the panel explains goals, it never shows or suggests one.
+          PhotoPanel(
+            photo: 'assets/images/nutrition-cover.webp',
+            content: (context) => [
+              Text('Set your own daily targets. Any of them may be left blank.', style: context.sansStyle(18, weight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Text('They repeat every day until you change them. Today and Eat show your progress once you set one.', style: context.sansStyle(14.5, color: context.c.secondary)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // The same form Today and Eat open in a sheet: one set of goals, one validation.
+          GoalsEditor(profile: widget.profile, onSaved: () => Navigator.pop(context)),
         ],
       );
 }

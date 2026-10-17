@@ -8,9 +8,13 @@ import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
+import '../coach/coach_avatar.dart';
+import '../coach/coach_bubble.dart';
 import 'food_form.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
+import 'nutrition_tools.dart';
+import 'water.dart';
 
 /// The dated food journal: the day's overview, one Log food action, then Breakfast, Lunch, Dinner and Snack,
 /// built only from food the user logged as eaten. Each entry is its own row with the name, portion and values
@@ -25,7 +29,9 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// Null = follow the shared "today"; a picked day stays put when midnight passes.
   String? _picked;
 
-  static const _icons = {'Breakfast': Icons.egg_alt_outlined, 'Lunch': Icons.lunch_dining_outlined, 'Dinner': Icons.dinner_dining_outlined, 'Snack': Icons.cookie_outlined};
+  /// One family for the meals, the time of day they belong to: sunrise, sun, moon, and a snack. Outlined Material icons
+  /// on the same tile, with the meal's name beside them.
+  static const _icons = {'Breakfast': Icons.wb_twilight_outlined, 'Lunch': Icons.light_mode_outlined, 'Dinner': Icons.dark_mode_outlined, 'Snack': Icons.cookie_outlined};
 
   /// The portion as it was saved, then the macros that are known, then how the record stands with the account.
   static String _detail(Stored<FoodEntry> r) {
@@ -56,11 +62,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final live = [for (final r in rows.value ?? const <Stored<FoodEntry>>[]) if (!r.value.isDeleted) r];
     final entries = [for (final r in live) r.value];
     final profile = ref.watch(profileProvider).value;
+    final display = ref.watch(nutritionDisplayProvider);
     final c = context.c;
 
+    // With very large text the decorative tile gives its room to the words.
     final roomy = MediaQuery.textScalerOf(context).scale(10) <= 15;
-    // Entries line up under their meal's name; with very large text the decorative tile gives its room to the words.
-    final indent = roomy ? 16.0 + _tile + 14 : 12.0;
+    final indent = roomy ? 16.0 : 12.0;
 
     return RefreshIndicator(
       edgeOffset: MediaQuery.paddingOf(context).top,
@@ -74,6 +81,13 @@ class _EatScreenState extends ConsumerState<EatScreen> {
             child: TabHeader(
               title: 'Eat', overline: longDate(day),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                // Help with the journal from the same guide. Built-in words only: Ask GoHard answers training questions,
+                // so nothing here offers to ask it about food.
+                CoachHelpButton(
+                  key: const Key('coach-help-eat'), semanticLabel: 'Help with your food journal',
+                  onPressed: () => showCoachHelpSheet(context, title: 'Your food journal', say: const CoachSay(
+                      'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged. Your daily goals are set from the summary here, on Today or in Me.')),
+                ),
                 IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
                 IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
               ]),
@@ -93,43 +107,44 @@ class _EatScreenState extends ConsumerState<EatScreen> {
               else if (!rows.hasValue)
                 const Panel(child: StatusLine(Icons.hourglass_empty, 'Loading your journal…'))
               else ...[
-                NutritionSurface(entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, pending: live.any((r) => r.isPending)),
-                const SizedBox(height: 14),
-                PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.add, onPressed: () => openFoodForm(context, dayKey: day)),
+                // The day's summary as a photo panel, with the one general Log food in it.
+                NutritionSurface(
+                  entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, pending: live.any((r) => r.isPending),
+                  showCarbs: display.carbs, showFat: display.fat,
+                  footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
+                  action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
+                ),
                 const SizedBox(height: 28),
-                Heading(day == today ? 'Today\'s meals' : 'Meals', size: 28, serif: true),
+                Heading(day == today ? 'Today\'s meals' : 'Meals', size: 20),
                 const SizedBox(height: 12),
-                // All four meals in one group: the meal (tile, name, what its foods add up to, a plus that opens Log
-                // food for this meal), then each logged food as its own row.
-                GroupCard(children: [
-                  for (final meal in meals)
-                    () {
-                      final mine = [for (final r in live) if (r.value.meal == meal) r];
-                      final label = meal.toLowerCase();
-                      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(roomy ? 16 : 12, 10, 12, mine.isEmpty ? 10 : 2),
-                          child: Row(children: [
-                            if (roomy) ...[IconTile(_icons[meal] ?? Icons.restaurant, size: _tile), const SizedBox(width: 14)],
-                            Expanded(
-                              child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, children: [
-                                Semantics(header: true, child: Text(meal, style: context.sansStyle(17, weight: FontWeight.w700))),
-                                Text(mine.isEmpty ? 'Nothing logged' : _mealCalories([for (final r in mine) r.value]),
-                                    style: mine.isEmpty ? context.sansStyle(14.5, color: c.secondary) : context.numStyle(16, weight: FontWeight.w600)),
-                              ]),
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              key: Key('eat-add-$label'), tooltip: 'Add to $label', onPressed: () => openFoodForm(context, dayKey: day, meal: meal),
-                              style: IconButton.styleFrom(backgroundColor: c.accentSoft), icon: Icon(Icons.add, color: c.accent)),
-                          ]),
-                        ),
-                        for (final r in mine) _EntryRow(r, indent: indent, detail: _detail(r), onTap: () => openFoodForm(context, dayKey: day, entry: r.value)),
-                        if (mine.isNotEmpty) const SizedBox(height: 6),
-                      ]);
-                    }(),
-                ]),
-                const SizedBox(height: 12),
+                // One quiet group per meal: the meal (tile, name, what its foods add up to), each logged food as its
+                // own row, then "Add food to <meal>", which opens Log food for this meal. No photographs here.
+                for (final meal in meals) ...[
+                  () {
+                    final mine = [for (final r in live) if (r.value.meal == meal) r];
+                    final label = meal.toLowerCase();
+                    return GroupCard(children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(roomy ? 16 : 12, 12, 16, 12),
+                        child: Row(children: [
+                          if (roomy) ...[IconTile(_icons[meal] ?? Icons.restaurant, size: _tile), const SizedBox(width: 14)],
+                          Expanded(
+                            child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, children: [
+                              Semantics(header: true, child: Text(meal, style: context.sansStyle(17, weight: FontWeight.w700))),
+                              Text(mine.isEmpty ? 'Nothing logged' : _mealCalories([for (final r in mine) r.value]),
+                                  style: mine.isEmpty ? context.sansStyle(14.5, color: c.secondary) : context.numStyle(16, weight: FontWeight.w600)),
+                            ]),
+                          ),
+                        ]),
+                      ),
+                      for (final r in mine) _EntryRow(r, indent: indent, detail: _detail(r), onTap: () => openFoodForm(context, dayKey: day, entry: r.value)),
+                      GroupRow(
+                        key: Key('eat-add-$label'), icon: Icons.add, title: 'Add food to $label', trailing: const SizedBox.shrink(),
+                        onTap: () => openFoodForm(context, dayKey: day, meal: meal)),
+                    ]);
+                  }(),
+                  const SizedBox(height: 12),
+                ],
                 Text('Only food you logged as eaten appears here.', style: context.caption),
               ],
             ]),
@@ -139,7 +154,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     );
   }
 
-  static const _tile = 44.0;
+  static const _tile = 40.0;
 }
 
 /// One logged food under its meal: the saved name, then the saved portion and known values; its calories at the

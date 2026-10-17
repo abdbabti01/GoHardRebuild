@@ -16,6 +16,7 @@ public class User
     // Optional daily goals the person set. Null = no goal; none is ever suggested or defaulted.
     public int? CalorieGoal { get; set; }
     public int? ProteinGoalG { get; set; }
+    public int? WaterGoalMl { get; set; }
     public string? TrainingSetupJson { get; set; }
     public int Revision { get; set; } = 1;
     public string SecurityStamp { get; set; } = "";
@@ -192,6 +193,18 @@ public class FoodEntry
     /// A snapshot, so a later change at the provider or to a saved food never rewrites this meal. Null = typed by hand.
     /// </summary>
     public string? SourceJson { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+}
+
+/// <summary>Water the person deliberately logged. Never derived from foods.</summary>
+public class WaterEntry
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public DateOnly DayKey { get; set; }
+    public decimal VolumeMl { get; set; }
     public int Revision { get; set; } = 1;
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? DeletedAtUtc { get; set; }

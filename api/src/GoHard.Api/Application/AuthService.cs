@@ -23,7 +23,8 @@ public sealed record RegisterRequest(string Email, string Password, string Displ
 public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 public sealed record ProfileDto(Guid UserId, string Email, string DisplayName, string Appearance, string LoadUnit,
-    bool RemindersEnabled, string? ReminderLocalTime, int Revision, int? CalorieGoal = null, int? ProteinGoal = null);
+    bool RemindersEnabled, string? ReminderLocalTime, int Revision, int? CalorieGoal = null, int? ProteinGoal = null,
+    int? WaterGoalMl = null);
 public sealed record AuthResponse(string AccessToken, DateTime AccessTokenExpiresAtUtc, string RefreshToken, ProfileDto Profile);
 public sealed record AuthError(string Code);
 
@@ -33,7 +34,7 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
     private static readonly PasswordHasher<User> Hasher = new();
 
     public static ProfileDto ToProfile(User u) =>
-        new(u.Id, u.Email, u.DisplayName, u.Appearance, u.LoadUnit, u.RemindersEnabled, u.ReminderLocalTime, u.Revision, u.CalorieGoal, u.ProteinGoalG);
+        new(u.Id, u.Email, u.DisplayName, u.Appearance, u.LoadUnit, u.RemindersEnabled, u.ReminderLocalTime, u.Revision, u.CalorieGoal, u.ProteinGoalG, u.WaterGoalMl);
 
     public async Task<(AuthResponse? Ok, string? Error)> RegisterAsync(RegisterRequest r, CancellationToken ct)
     {

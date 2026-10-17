@@ -200,6 +200,35 @@ Today and Eat draw the same `NutritionSurface`. A rail appears only for a goal t
 the words give the real total. "Left" is stated only when every food that day has a value; otherwise the line
 says "known so far".
 
+## Water
+
+Optional, declared by the capability `water.entries`. Water is only what the person logs on purpose; it is never
+counted or estimated from foods or drinks in the food journal.
+
+- `WaterEntryDto`: `{ id, dayKey: "YYYY-MM-DD", volumeMl, revision, isDeleted }`. `volumeMl` is canonical millilitres,
+  above 0 and at most 5,000 per entry, up to 3 decimals (stored as numeric(9,3)). `dayKey` is a calendar date, stored
+  as sent and never zone-converted. Display units are the app's business.
+- `POST /api/v1/water-entries` `{ operationId, entryId, dayKey, volumeMl }` (command `water.create`; an existing id is
+  a `DUPLICATE_ID` conflict), `PUT /api/v1/water-entries/{id}` `{ operationId, expectedRevision, dayKey, volumeMl }`
+  (`water.update`), `POST /api/v1/water-entries/{id}/delete` `{ operationId, expectedRevision }` (`water.delete`, soft
+  delete). Same idempotency, revision and `ENTRY_DELETED` rules as food entries; another account's entry is a 404.
+- `GET /api/v1/water-entries?date=YYYY-MM-DD` lists that day's live entries; the sync snapshot carries every entry,
+  deleted ones included, as the optional `waterEntries`.
+- Goal: `waterGoalMl` on the profile, 100 to 10,000 mL, null = no goal, never defaulted. Same three cases as the
+  nutrition goals in `profile.update`: left out = kept, `null` = cleared, a number = set.
+
+On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
+
+- Entries are the record kind `water`, written by `WaterRepository` through the same outbox as food: saved on the
+  phone first, one operation per change, byte-identical retries, the day pinned when the sheet opened.
+- Display unit: Me › Units › Water, millilitres (mL, L) or US fluid ounces (1 fl oz = 29.5735295625 mL), set on this
+  phone like °C/°F. Quick additions are 100 / 250 / 500 mL or 4 / 8 / 16 fl oz. An amount is converted to mL once
+  (three decimals) when it is entered; totals are exact sums of the stored mL and are rounded only when shown.
+- Water is off until turned on in Customize tracking (per account, on this phone, with carbs and fat shown or
+  hidden); hiding it changes nothing stored. It is offered only where the server declares `water.entries`, so nothing
+  is queued that an older server could never accept.
+- The water goal is edited in the same goals form as calories and protein, and only sent while that form shows it.
+
 ## Compatibility gate
 
 On start and on resume the app asks `/capabilities` once, waiting at most 6 seconds. If the server's

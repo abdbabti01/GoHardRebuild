@@ -24,6 +24,21 @@ same box). The concept boards themselves (their text, buttons and help strips) a
 The two full-body files also carry a faint warm-white rim just outside the alpha edge (2 px, 25% opacity, softened),
 added by the same script so the charcoal clothing keeps its outline on dark pages; the originals are unchanged.
 
+Update, 16 October 2026 (animated companion): `leon-bust.png` (255,942 bytes) and `leona-bust.png` (222,852 bytes),
+400 × 400, are the same two approved avatar sources resized by `scripts/build-coach-art.ps1` (alpha below 16 cleared,
+no rim) as textures for the companion rig (`features/coach/coach_rig.dart`, docs/COACH.md › Companion). No new artwork
+was drawn or downloaded: the motion is a mesh deformation of these pictures and painted eyelids in colours sampled from
+them. To regenerate: replace a source in `design/coach/assets/`, run the script, then re-measure the landmarks in
+`RigArt` (eyes, brows, neck pivot, as fractions of the source) and review `coach_rig_render_test.dart`'s frame strips.
+
+Update, 16 October 2026 (Today panels): no new asset files. The three Today photographs (`assets/images/*.webp`, from
+`gohard-today-photo-design/`, see its `ASSETS.md`) are used unchanged, cropped and faded at runtime. The approved
+mockup's own photographs were not supplied as files and are not used.
+
+Update, 16 October 2026 (app-wide panels): no new asset files. The same bundled photographs and the guides' busts are
+reused across Train, Eat, the run, sign-in, goals and Appearance (docs/DESIGN.md › App-wide panels). The handoff's
+reference boards are not used as images anywhere in the app.
+
 [
   {
     "path": "reference/assets/fonts/FONT_SOURCES.md",

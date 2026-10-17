@@ -8,6 +8,7 @@ import '../../../core/units.dart';
 import '../../../core/widgets.dart';
 import '../../../data/models.dart';
 import '../../../data/sync.dart';
+import '../../coach/coach_bubble.dart';
 import '../../coach/coach_contract.dart';
 import '../../coach/guide_sheets.dart';
 import '../../workout/workout_flow.dart';
@@ -88,13 +89,16 @@ class _NameFormState extends State<_NameForm> {
 
 typedef _Rx = ({int? sets, int? repsMin, int? repsMax, int? seconds, int? rest, double? loadKg, String? notes});
 
-Future<_Rx?> _editPrescription(BuildContext context, Prescription e, LoadUnit unit) =>
-    showGoSheet<_Rx>(context, title: e.name, builder: (_) => _RxForm(e: e, unit: unit));
+Future<_Rx?> _editPrescription(BuildContext context, Prescription e, LoadUnit unit, {CoachSay? help}) =>
+    showGoSheet<_Rx>(context, title: e.name, builder: (_) => _RxForm(e: e, unit: unit, help: help));
 
 class _RxForm extends StatefulWidget {
-  const _RxForm({required this.e, required this.unit});
+  const _RxForm({required this.e, required this.unit, this.help});
   final Prescription e;
   final LoadUnit unit;
+
+  /// What the coach says here when asked: its help entry sits above the fields, and nothing appears by itself in a form.
+  final CoachSay? help;
   @override
   State<_RxForm> createState() => _RxFormState();
 }
@@ -156,6 +160,10 @@ class _RxFormState extends State<_RxForm> {
 
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        if (widget.help case final help?) ...[
+          const Align(alignment: Alignment.centerRight, child: CoachHelpEntry(id: 'exercise.prescription', label: 'Help with sets, reps and this exercise')),
+          CoachSpot(id: 'exercise.prescription', say: help, padding: const EdgeInsets.only(top: 4, bottom: 12)),
+        ],
         _field('rx-sets', 'Sets', _sets, error: _errors['sets']),
         if (e.isTimed)
           _field('rx-seconds', 'Time per set (seconds)', _secs, error: _errors['secs'])
@@ -194,8 +202,17 @@ class ExerciseListEditor extends ConsumerWidget {
     final w = draft.workout(workoutId)!;
     final list = w.exercises;
     final wi = index;
+    late final void Function(Prescription) about;
+    void askAbout(Prescription e) {
+      final label = '${e.name} · ${w.name}';
+      if (ask != null) return ask!(label, CoachFocus.exercise, workoutId: workoutId, occurrenceKey: e.occurrenceKey, catalogKey: e.catalogKey);
+      openAskGoHard(context, CoachContext(label: label, focus: CoachFocus.exercise, workoutId: workoutId, occurrenceKey: e.occurrenceKey, catalogKey: e.catalogKey));
+    }
+
     Future<void> edit(Prescription e) async {
-      final rx = await _editPrescription(context, e, unit);
+      final rx = await _editPrescription(context, e, unit,
+          help: CoachSay('Questions about sets, reps or this movement?',
+              onAsk: () => askAbout(e), guide: (label: 'About this exercise', key: const Key('coach-exercise-info'), onPressed: () => about(e))));
       if (rx == null) return;
       change((d) => d.setPrescription(workoutId, e.occurrenceKey,
           sets: rx.sets, repsMin: rx.repsMin, repsMax: rx.repsMax, seconds: rx.seconds, restSeconds: rx.rest, targetLoadKg: rx.loadKg, notes: rx.notes), edits: true);
@@ -206,11 +223,7 @@ class ExerciseListEditor extends ConsumerWidget {
       if (picked != null) change((d) => d.replaceExercise(workoutId, e.occurrenceKey, picked), edits: true);
     }
 
-    void about(Prescription e) => showExerciseInfo(context, exercise: e, workoutName: w.name, onReplace: () => replace(e), onAsk: () {
-          final label = '${e.name} · ${w.name}';
-          if (ask != null) return ask!(label, CoachFocus.exercise, workoutId: workoutId, occurrenceKey: e.occurrenceKey, catalogKey: e.catalogKey);
-          openAskGoHard(context, CoachContext(label: label, focus: CoachFocus.exercise, workoutId: workoutId, occurrenceKey: e.occurrenceKey, catalogKey: e.catalogKey));
-        });
+    about = (e) => showExerciseInfo(context, exercise: e, workoutName: w.name, onReplace: () => replace(e), onAsk: () => askAbout(e));
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (list.isEmpty)
@@ -338,7 +351,9 @@ class WorkoutsStep extends ConsumerWidget {
             Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Heading(w.name, size: 19),
+                  // The workout's name in the serif, as the plan's own names are elsewhere.
+                  Semantics(header: true, child: Text(w.name, style: context.pageTitleStyle(24))),
+                  Text('${w.exercises.length} ${w.exercises.length == 1 ? 'exercise' : 'exercises'}', style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w500)),
                   Text(usageOf(draft, w.id) ?? 'Not scheduled yet. Choose its days in Structure.', style: context.caption),
                 ]),
               ),

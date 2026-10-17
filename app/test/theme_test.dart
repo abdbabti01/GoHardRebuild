@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/nutrition/food_form.dart';
@@ -71,6 +72,14 @@ void main() {
             atLeast(3, c.outline, c.raised, 'control boundary on the raised bar');
             expect(contrast(c.raised, c.page), greaterThan(1.04), reason: 'the floating bar is a visible step from the page');
             atLeast(4.5, c.onAccent, c.accent, 'label on a filled accent control');
+            atLeast(4.5, c.onAccentDeep, c.accentDeep, 'label on the filled (deep accent) button');
+            // A chosen segment or chip: the pale tint with the panel's ink, and the tint told apart from the surface.
+            final panel = GoColors.panelOf(c);
+            atLeast(4.5, panel.text, c.tint, 'ink on the chosen segment');
+            atLeast(4.5, panel.secondary, panel.page, 'secondary text on a photo panel');
+            atLeast(4.5, panel.accent, panel.page, 'link text on a photo panel');
+            // In Dark the deep button carries a thin accent edge so its shape reads on the charcoal page.
+            if (brightness == Brightness.dark) atLeast(3, Color.alphaBlend(c.accent.withValues(alpha: 0.55), c.page), c.page, 'the deep button\'s edge on the page');
             atLeast(4.5, c.page, c.error, 'label on a destructive action');
             // Controls and graphics: 3:1 against what they sit next to.
             atLeast(3, c.outline, c.page, 'control boundary on page');
@@ -145,9 +154,9 @@ void main() {
       await _tap(tester, 'appearance-dark');
       expect(_colors(tester).accent, GoColors.of(Accent.green, Brightness.dark).accent);
       expect(Theme.of(tester.element(find.byType(Scaffold).first)).brightness, Brightness.dark);
-      // The selected card uses the chosen accent, not a fixed blue.
-      final card = tester.widget<Material>(find.descendant(of: find.byKey(const Key('appearance-dark')), matching: find.byType(Material)).first);
-      expect((card.shape! as RoundedRectangleBorder).side.color, GoColors.of(Accent.green, Brightness.dark).accent);
+      // The chosen segment is filled with the chosen accent's tint, not a fixed blue.
+      final segment = tester.widget<AnimatedContainer>(find.descendant(of: find.byKey(const Key('appearance-dark')), matching: find.byType(AnimatedContainer)).first);
+      expect((segment.decoration! as BoxDecoration).color, GoColors.of(Accent.green, Brightness.dark).tint);
       expect(tester.getSemantics(find.byKey(const Key('appearance-dark'))), isSemantics(isSelected: true, isButton: true, isInMutuallyExclusiveGroup: true, label: 'Dark'));
       expect(tester.getSemantics(find.byKey(const Key('accent-green'))), isSemantics(isSelected: true, label: 'Green accent'));
       expect(tester.getSemantics(find.byKey(const Key('accent-blue'))), isSemantics(isSelected: false));
@@ -338,21 +347,27 @@ void main() {
   });
 
   group('Daily Rhythm type and Appearance', () {
-    testWidgets('the serif is used for page titles only; controls, rows and figures stay in Inter', (tester) async {
+    testWidgets('the serif is for titles and key figures only; controls, rows, fields and the navigation stay in Inter', (tester) async {
       await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, calorieGoal: 2200, proteinGoal: 140)))!, size: const Size(390, 1600));
-      await _openAppearance(tester);
-      Iterable<Text> texts() => tester.widgetList<Text>(find.byType(Text));
       String? family(Text t) => t.style?.fontFamily;
-      final serifTexts = [for (final t in texts()) if (family(t) == serif) t.data];
-      expect(serifTexts, ['Appearance'], reason: 'only the page title on Appearance');
+      // Where the serif must never appear: what is pressed, typed or read as a row.
+      final controls = find.byWidgetPredicate((w) => w is ButtonStyleButton || w is GroupRow || w is ListRow || w is TextField || w is InputDecorator || w is Segmented || w is GoNavigationBar || w is ChoiceCard,
+          skipOffstage: false);
+      List<String?> serifInControls() => [
+            for (final e in find.byType(Text, skipOffstage: false).evaluate())
+              if (family(e.widget as Text) == serif && find.ancestor(of: find.byWidget(e.widget, skipOffstage: false), matching: controls).evaluate().isNotEmpty) (e.widget as Text).data
+          ];
+      bool titled(String title) => tester.widgetList<Text>(find.text(title, skipOffstage: false)).any((t) => family(t) == serif);
+      await _openAppearance(tester);
+      expect(titled('Appearance'), isTrue, reason: 'the page title is in the serif');
+      expect(serifInControls(), isEmpty, reason: 'Appearance: no serif in a control or row');
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect([for (final t in texts()) if (family(t) == serif) t.data], ['Me'], reason: 'only the tab title on Me');
-      for (final tab in ['today', 'train', 'eat']) {
+      for (final (tab, title) in [('me', 'Me'), ('today', 'Today'), ('train', 'Train'), ('eat', 'Eat')]) {
         await _tap(tester, 'nav-$tab');
+        expect(titled(title), isTrue, reason: '$title: the tab title is in the serif');
+        expect(serifInControls(), isEmpty, reason: '$title: no serif in a control, row, field or the navigation');
       }
-      final all = [for (final t in tester.widgetList<Text>(find.byType(Text, skipOffstage: false))) if (family(t) == serif) t.data];
-      expect(all.toSet(), {'Today', 'Train', 'Eat', 'Me', "Today's meals"}, reason: "the four tab titles and Eat's one section title, nothing else in the tabs");
     });
 
     testWidgets('Appearance: a Today background row, and a preview that cannot be pressed', (tester) async {

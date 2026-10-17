@@ -11,6 +11,7 @@ import 'core/device_prefs.dart';
 import 'data/db.dart';
 import 'data/session.dart';
 import 'features/coach/coach_prefs.dart';
+import 'features/nutrition/water.dart';
 import 'features/weather/weather.dart';
 
 class SecureSecretStore implements SecretStore {
@@ -37,6 +38,8 @@ Future<void> main() async {
   // Leon or Leona and the coaching hints, so the first frame already shows the chosen guide.
   final coachPrefs = CoachPrefsStore(const SecureSecretStore());
   await coachPrefs.restore();
+  final trackingPrefs = TrackingPrefsStore(const SecureSecretStore());
+  await trackingPrefs.restore();
   // A confirmed "this build is too old" survives a restart, including one with no connection.
   final compatibility = CompatibilityStore(const SecureSecretStore());
   await compatibility.restore();
@@ -45,7 +48,7 @@ Future<void> main() async {
   runApp(ProviderScope(
     retry: (_, _) => null,
     overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance),
-      devicePrefsStoreProvider.overrideWithValue(devicePrefs), coachPrefsStoreProvider.overrideWithValue(coachPrefs),
+      devicePrefsStoreProvider.overrideWithValue(devicePrefs), coachPrefsStoreProvider.overrideWithValue(coachPrefs), trackingPrefsStoreProvider.overrideWithValue(trackingPrefs),
       compatibilityStoreProvider.overrideWithValue(compatibility), weatherPrefs],
     child: const GoHardApp(),
   ));

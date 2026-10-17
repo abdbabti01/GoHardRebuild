@@ -122,6 +122,9 @@ class Journey {
     await type('auth-email', email);
     await type('auth-password', password);
     await tapKey('auth-submit');
+    // A new account is offered the coach setup first (docs/COACH.md › Setup); journeys skip it.
+    await waitFor(find.byWidgetPredicate((w) => w.key == const Key('setup-skip') || (w is Text && w.data == 'No active plan')), what: 'the setup or Today');
+    if (find.byKey(const Key('setup-skip')).evaluate().isNotEmpty) await tapKey('setup-skip');
     await waitFor(find.text('No active plan'), what: 'Today for a new account');
   }
 

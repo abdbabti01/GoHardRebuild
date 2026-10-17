@@ -63,6 +63,7 @@ class WeatherPrefsController extends Notifier<WeatherPrefs> {
   void setBackground(TodayBackground b) => _apply(state.copyWith(background: b));
   void setMode(WeatherLocationMode m) => _apply(state.copyWith(mode: m));
   void selectCity(WeatherPlace city) => _apply(state.copyWith(mode: WeatherLocationMode.city, city: city));
+  void setFahrenheit(bool on) => _apply(state.copyWith(fahrenheit: on));
 
   void _apply(WeatherPrefs next) {
     if (next == state) return;

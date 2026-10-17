@@ -91,12 +91,14 @@ void main() {
     expect((typed('set-load'), typed('set-reps')), ('100', '5'), reason: 'the unsaved entry survives a theme change');
     expect(find.byKey(const Key('set-row-0')), findsNothing, reason: 'and nothing was saved twice or by itself');
     await j.tapKey('complete-set');
+    await j.reveal(find.byKey(const Key('set-row-0')));
     await j.waitFor(find.byKey(const Key('set-row-0')));
     expect(find.textContaining('100 lb × 5'), findsWidgets);
     await tester.tap(find.widgetWithText(SnackBarAction, 'Undo')); // tapped directly: it only exists while the message shows
     await j.settle();
     await j.waitFor(find.textContaining('None yet'), what: 'the set removed by Undo');
     await j.tapKey('complete-set'); // the entry kept its values, so recording it again is one tap
+    await j.reveal(find.byKey(const Key('set-row-0')));
     await j.waitFor(find.byKey(const Key('set-row-0')));
     await j.tapKey('set-row-0');
     await j.waitFor(find.text('Edit set'));

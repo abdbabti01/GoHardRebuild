@@ -7,6 +7,7 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../plans/builder/workout_editor.dart' show rxText;
 import '../plans/plan_draft.dart';
+import 'coach_avatar.dart';
 import 'guide.dart';
 
 /// The Quick guide sheets: reviewed bundled text, shown at once and offline. "Ask GoHard" is a separate, explicit
@@ -56,7 +57,7 @@ Future<void> showWhySuggestion(BuildContext context, {required CoachGuideContent
         _section(context, 'Choosing a split', [splitEvidenceNote]),
         if (split != null) _sources(context, guide.sourcesFor(split.sources)),
         const SizedBox(height: 16),
-        SecondaryButton('Ask GoHard', key: const Key('guide-why-ask'), onPressed: () {
+        SecondaryButton('Ask GoHard', key: const Key('guide-why-ask'), leading: const CoachAvatar(size: 24), onPressed: () {
           Navigator.pop(sheet);
           onAsk();
         }),
@@ -151,7 +152,7 @@ class _ExerciseInfo extends ConsumerWidget {
       if (info != null) _sources(context, guide!.sourcesFor({...info.sources, ...?term?.sources}.toList())),
       const SizedBox(height: 16),
       if (onAsk != null)
-        SecondaryButton('Ask about this exercise', key: const Key('exercise-info-ask'), onPressed: () {
+        SecondaryButton('Ask about this exercise', key: const Key('exercise-info-ask'), leading: const CoachAvatar(size: 24), onPressed: () {
           Navigator.pop(context);
           onAsk!();
         }),

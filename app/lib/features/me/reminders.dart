@@ -34,6 +34,9 @@ abstract interface class ReminderScheduler {
   /// Asks for notification permission. Called only when the user turns reminders on, never at startup.
   Future<bool> requestPermission();
 
+  /// Whether the phone currently allows GoHard's notifications, without asking. Null when it cannot say.
+  Future<bool?> notificationsAllowed();
+
   /// Replaces every scheduled reminder with exactly this list at `localTime` ("HH:mm") in the phone's current zone.
   Future<void> replaceAll(List<PlannedReminder> reminders, String localTime);
 }
@@ -61,6 +64,15 @@ class DeviceReminderScheduler implements ReminderScheduler {
     if (android != null) return await android.requestNotificationsPermission() ?? false;
     final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
     return await ios?.requestPermissions(alert: true, sound: true) ?? false;
+  }
+
+  @override
+  Future<bool?> notificationsAllowed() async {
+    await _init();
+    final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (android != null) return android.areNotificationsEnabled();
+    final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    return (await ios?.checkPermissions())?.isEnabled;
   }
 
   Future<void> _queue = Future.value();
