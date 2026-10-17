@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
-import '../../app/providers.dart' show ownerProvider;
+import '../../app/providers.dart' show ownerProvider, profileProvider, profileRepositoryProvider;
 import '../../core/compatibility.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
@@ -122,9 +123,12 @@ class NutritionDisplay {
   bool operator ==(Object other) => other is NutritionDisplay && other.water == water && other.carbs == carbs && other.fat == fat;
   @override
   int get hashCode => Object.hash(water, carbs, fat);
+  @override
+  String toString() => 'NutritionDisplay(water: $water, carbs: $carbs, fat: $fat)';
 }
 
-/// Tracking preferences on this phone: the volume unit (a display unit, like °C/°F) and, per account, what is shown.
+/// Tracking preferences on this phone: the volume unit (a display unit, like °C/°F) and, per account, the explicit
+/// choice of what is shown made here (an account that keeps its choice overrides it: [rawNutritionDisplayProvider]).
 /// Kept in the same platform store as the appearance and the coach, read before the first frame.
 @immutable
 class TrackingPrefs {
@@ -188,10 +192,58 @@ final trackingPrefsProvider = NotifierProvider<TrackingPrefsController, Tracking
 /// Whether the account's server keeps water (capability `water.entries`). Unknown counts as yes, as elsewhere.
 final waterSupportedProvider = Provider<bool>((ref) => ref.watch(compatibilityProvider).supports('water.entries'));
 
+/// Whether the account keeps the display choices (capability `profile.tracking-display`). Unknown counts as no here:
+/// the choice is then only kept on this phone, and no server is sent fields it was never said to understand.
+final displaySyncProvider = Provider<bool>((ref) => ref.watch(compatibilityProvider).capabilities?.contains('profile.tracking-display') ?? false);
+
+/// What the signed-in account chose, field by field: the account's choice when it has one (the profile record, which
+/// also holds an edit made offline until it is sent), else the choice made on this phone, else the defaults. A fresh
+/// phone has no choice of its own, so it shows the account's and never sends its defaults.
+final rawNutritionDisplayProvider = Provider<NutritionDisplay>((ref) {
+  final local = ref.watch(trackingPrefsProvider).owners[ref.watch(ownerProvider)];
+  final p = ref.watch(profileProvider).value;
+  const none = NutritionDisplay();
+  return NutritionDisplay(water: p?.showWater ?? local?.water ?? none.water, carbs: p?.showCarbs ?? local?.carbs ?? none.carbs, fat: p?.showFat ?? local?.fat ?? none.fat);
+});
+
 /// What the signed-in account sees in its nutrition. Water is shown only where the server can keep it, so nothing is
 /// logged that could never sync.
 final nutritionDisplayProvider = Provider<NutritionDisplay>((ref) {
-  final d = ref.watch(trackingPrefsProvider).of(ref.watch(ownerProvider));
+  final d = ref.watch(rawNutritionDisplayProvider);
   return ref.watch(waterSupportedProvider) ? d : d.copy(water: false);
+});
+
+/// Changes what the signed-in account sees: at once on this phone (kept here too, for an account whose server does
+/// not keep it), and on the account through the outbox where it can, so the account's other phones follow.
+/// [read] is a `ref.read` (a widget's or a container's).
+Future<void> setNutritionDisplay(T Function<T>(ProviderListenable<T>) read, NutritionDisplay next) async {
+  final owner = read(ownerProvider);
+  if (owner == null) return;
+  read(trackingPrefsProvider.notifier).setDisplay(owner, next);
+  final profile = read(profileProvider).value;
+  if (profile != null && read(displaySyncProvider)) await read(profileRepositoryProvider).setDisplay(profile, water: next.water, carbs: next.carbs, fat: next.fat);
+}
+
+/// A choice made on this phone before the account could keep it is sent once, when the account has none. A choice
+/// already on the account is never replaced this way, and a phone without a choice of its own sends nothing.
+/// [sent] holds the owners already handled, so a profile emitted again before the edit lands sends nothing twice.
+void uploadLocalDisplayChoice(Ref ref, Profile p, Set<String> sent) {
+  final owner = ref.read(ownerProvider);
+  final local = ref.read(trackingPrefsProvider).owners[owner];
+  if (owner == null || local == null || !ref.read(displaySyncProvider)) return;
+  if (p.showWater != null || p.showCarbs != null || p.showFat != null || !sent.add(owner)) return;
+  ref.read(profileRepositoryProvider).setDisplay(p, water: local.water, carbs: local.carbs, fat: local.fat).ignore();
+}
+
+/// Kept alive by the shell while someone is signed in: watches the account's profile for [uploadLocalDisplayChoice].
+final displayMigrationProvider = Provider<void>((ref) {
+  final sent = <String>{};
+  ref.listen(profileProvider, (_, next) {
+    if (next.value case final p?) uploadLocalDisplayChoice(ref, p, sent);
+  }, fireImmediately: true);
+  ref.listen(displaySyncProvider, (_, on) {
+    final p = ref.read(profileProvider).value;
+    if (on && p != null) uploadLocalDisplayChoice(ref, p, sent);
+  });
 });
 final volumeUnitProvider = Provider<VolumeUnit>((ref) => ref.watch(trackingPrefsProvider.select((p) => p.unit)));

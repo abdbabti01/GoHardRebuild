@@ -343,11 +343,11 @@ class _TrackingSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final owner = ref.watch(ownerProvider);
+    // Built from the choice itself, not from what an older server lets be shown, so changing carbs never writes
+    // "water off" for the account.
+    final raw = ref.watch(rawNutritionDisplayProvider);
     final d = ref.watch(nutritionDisplayProvider);
-    void set(NutritionDisplay next) {
-      if (owner != null) ref.read(trackingPrefsProvider.notifier).setDisplay(owner, next);
-    }
+    void set(NutritionDisplay next) => setNutritionDisplay(ref.read, next).ignore();
 
     Widget toggle(String key, String title, String subtitle, bool value, NutritionDisplay Function(bool) next) => SwitchListTile(
         key: Key(key), contentPadding: EdgeInsets.zero, title: Text(title, style: context.sansStyle(16, weight: FontWeight.w600)),
@@ -358,11 +358,12 @@ class _TrackingSheet extends ConsumerWidget {
           style: context.sansStyle(15, color: context.c.secondary)),
       const SizedBox(height: 8),
       if (ref.watch(waterSupportedProvider))
-        toggle('track-water', 'Water', 'A water line on Today and Eat, with an optional goal', d.water, (v) => d.copy(water: v))
+        toggle('track-water', 'Water', 'A water line on Today and Eat, with an optional goal', d.water, (v) => raw.copy(water: v))
       else
         Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: StatusLine(Icons.info_outline, "Water tracking needs a newer version of your account's server. Nothing else changes.")),
-      toggle('track-carbs', 'Carbs', 'The carbohydrate total in Eat', d.carbs, (v) => d.copy(carbs: v)),
-      toggle('track-fat', 'Fat', 'The fat total in Eat', d.fat, (v) => d.copy(fat: v)),
+      toggle('track-carbs', 'Carbs', 'The carbohydrate total in Eat', d.carbs, (v) => raw.copy(carbs: v)),
+      toggle('track-fat', 'Fat', 'The fat total in Eat', d.fat, (v) => raw.copy(fat: v)),
+      if (ref.watch(displaySyncProvider)) Padding(padding: const EdgeInsets.only(top: 4), child: Text('These choices follow your account to your other phones.', style: context.caption)),
     ]);
   }
 }

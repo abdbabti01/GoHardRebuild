@@ -137,6 +137,14 @@ class RecordingProfiles implements ProfileRepository {
     return _receipt;
   }
 
+  /// Display choices sent to the account.
+  final displays = <(bool, bool, bool)>[];
+  @override
+  Future<Receipt> setDisplay(Profile current, {required bool water, required bool carbs, required bool fat}) async {
+    displays.add((water, carbs, fat));
+    return _receipt;
+  }
+
   @override
   Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) async => _receipt;
 }

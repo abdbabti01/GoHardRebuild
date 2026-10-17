@@ -127,11 +127,15 @@ public sealed record BodyMetricRequest(Guid OperationId, Guid MetricId, DateOnly
 /// <param name="CalorieGoal">Left out: the stored goal is kept. Null: it is cleared. A number: it is set (500 to 10,000 kcal).</param>
 /// <param name="ProteinGoal">Same three cases, 10 to 500 g.</param>
 /// <param name="WaterGoalMl">Same three cases, 100 to 10,000 mL.</param>
+/// <param name="ShowWater">Left out or null: the stored choice is kept. True or false: it is set. Hiding never touches records or goals.</param>
 public sealed record ProfileUpdateRequest(Guid OperationId, int ExpectedRevision, string DisplayName, string Appearance, string LoadUnit,
     bool RemindersEnabled, string? ReminderLocalTime,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt CalorieGoal = default,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt ProteinGoal = default,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt WaterGoalMl = default);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt WaterGoalMl = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? ShowWater = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? ShowCarbs = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? ShowFat = null);
 public sealed record DeleteAccountRequest(string Password);
 
 public sealed record ProposalMove(Guid OccasionId, DateOnly From, DateOnly To);

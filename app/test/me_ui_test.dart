@@ -22,6 +22,8 @@ class _Profiles implements ProfileRepository {
   @override
   Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal, bool withWater = false, int? waterGoalMl}) => throw UnimplementedError();
   @override
+  Future<Receipt> setDisplay(Profile current, {required bool water, required bool carbs, required bool fat}) => throw UnimplementedError();
+  @override
   Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) async {
     units.add(loadUnit);
     return const Receipt('op', 'pending');
