@@ -428,6 +428,18 @@ class _CoachSection extends ConsumerWidget {
             }),
           ),
         ),
+        // Its own switch: turning it off never changes Today. Off, Create my plan, Log food and goals stay on the page and
+        // the coach's small avatar still opens help.
+        MergeSemantics(
+          child: GroupRow(
+            key: const Key('coach-on-tabs'), icon: Icons.forum_outlined, title: 'Show coach on Train and Eat',
+            subtitle: coach.onTabs ? '${coach.guide.label} with a short tip under the title.' : 'Off. Help is still a tap on ${coach.guide.label}\'s avatar.',
+            trailing: Switch(value: coach.onTabs, onChanged: (on) {
+              Haptics.selection();
+              set.setOnTabs(on);
+            }),
+          ),
+        ),
         MergeSemantics(
           child: GroupRow(
             key: const Key('coach-hints'), icon: Icons.chat_bubble_outline, title: 'Coaching hints',

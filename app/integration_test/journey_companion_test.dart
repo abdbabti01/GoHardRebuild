@@ -16,7 +16,7 @@ import 'support.dart';
 ///   ask-leon       the guide opens Ask GoHard (the same guide in its header and on the answer); Ask me does too;
 ///                  back on Today the guide nods for being asked
 ///   scroll-return  scrolling and tabs, then Home and back: no replay, still there; the weather sky beside the guide
-///   split-help     Train without a plan (introduced once), then the split step's introduction and Compare splits
+///   split-help     the coach on Train without a plan (Create my plan in its bubble), then the split step's introduction and Compare splits
 ///   exercise-help  the exercise editor's help: the bubble, then About this exercise; the typed sets are kept
 ///   food-portion   food search introduced once, then the portion guidance on a food with portions
 ///   appearance     Show coach on Today off: Today without the guide (no Ask button in its place), the guide on Train
@@ -127,10 +127,9 @@ void main() {
     await rec('split-help', () async {
       await j.tapKey('nav-train');
       await j.tapKey('train-plan');
-      await j.waitFor(find.byKey(const Key('coach-spot-train.noPlan')), what: 'Train\'s one-time introduction');
+      await j.waitFor(find.byKey(const Key('train-coach')), what: 'the coach on Train');
       await watch(3500);
-      await j.tapKey('coach-say-close');
-      await j.tapKey('create-plan');
+      await j.tapKey('create-plan'); // in the coach's bubble
       await j.tapKey('plan-path-guided');
       await j.tapKey('days-4');
       await j.tapKey('builder-next');
@@ -200,7 +199,7 @@ void main() {
       expect(find.byKey(const Key('today-ask')), findsNothing, reason: 'no generic Ask button in its place');
       await j.tapKey('nav-train');
       await watch(1500);
-      await j.tapKey('coach-ask-launcher');
+      await j.tap(find.descendant(of: find.byKey(const Key('train-coach')), matching: find.byKey(const Key('coach-avatar-launcher'))));
       await j.waitFor(find.byKey(const Key('ask-input')), what: 'Ask GoHard from the guide on Train');
       await watch(1500);
       await j.tapKey('ask-close');

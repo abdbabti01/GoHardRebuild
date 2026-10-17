@@ -263,6 +263,11 @@ extension type Profile(Json j) {
   int? get proteinGoal => j['proteinGoal'] as int?;
   /// Optional daily water goal in millilitres; null = none (never suggested).
   int? get waterGoalMl => j['waterGoalMl'] as int?;
+
+  /// What the account chose to see in its nutrition; null = never chosen on the account (an explicit false is a choice).
+  bool? get showWater => j['showWater'] as bool?;
+  bool? get showCarbs => j['showCarbs'] as bool?;
+  bool? get showFat => j['showFat'] as bool?;
   int get revision => j['revision'] as int? ?? 0;
 }
 

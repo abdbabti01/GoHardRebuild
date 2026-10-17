@@ -98,4 +98,33 @@ public class WaterTests(PostgresFixture pg)
         var profile = (await a.SnapshotAsync()).Profile;
         Assert.Equal((null, 2000), (profile.WaterGoalMl, profile.CalorieGoal));
     }
+
+    [Fact]
+    public async Task Tracking_display_is_unset_until_chosen_set_including_false_and_kept_when_omitted()
+    {
+        var a = await Account.RegisterAsync(pg.Api);
+        Assert.Contains("\"profile.tracking-display\"", await a.Http.GetStringAsync("/api/v1/capabilities"));
+        var fresh = (await a.SnapshotAsync()).Profile;
+        Assert.Equal((null, null, null), (fresh.ShowWater, fresh.ShowCarbs, fresh.ShowFat)); // no choice is invented
+
+        var set = await a.Http.PutAsync("/api/v1/me", Raw($$"""{"operationId":"{{Guid.NewGuid()}}","expectedRevision":1,"displayName":"Test Person","appearance":"dark","loadUnit":"kg","remindersEnabled":false,"reminderLocalTime":null,"waterGoalMl":2000,"showWater":true,"showCarbs":false,"showFat":true}"""));
+        Assert.Equal(HttpStatusCode.OK, set.StatusCode);
+
+        // An older app (no display fields) renames the account: the choices, the explicit false included, are kept.
+        var legacy = await a.Http.PutAsync("/api/v1/me", Raw($$"""{"operationId":"{{Guid.NewGuid()}}","expectedRevision":2,"displayName":"Renamed","appearance":"dark","loadUnit":"kg","remindersEnabled":false,"reminderLocalTime":null}"""));
+        Assert.Equal(HttpStatusCode.OK, legacy.StatusCode);
+        var p = (await a.SnapshotAsync()).Profile;
+        Assert.Equal((true, false, true, 2000, "Renamed"), (p.ShowWater, p.ShowCarbs, p.ShowFat, p.WaterGoalMl, p.DisplayName));
+
+        // Hiding water changes only what is shown: the goal stays.
+        var hide = await a.Http.PutAsync("/api/v1/me", Raw($$"""{"operationId":"{{Guid.NewGuid()}}","expectedRevision":3,"displayName":"Renamed","appearance":"dark","loadUnit":"kg","remindersEnabled":false,"reminderLocalTime":null,"showWater":false}"""));
+        Assert.Equal(HttpStatusCode.OK, hide.StatusCode);
+        p = (await a.SnapshotAsync()).Profile;
+        Assert.Equal((false, false, true, 2000), (p.ShowWater, p.ShowCarbs, p.ShowFat, p.WaterGoalMl));
+
+        // A stale revision is a conflict, not a silent overwrite.
+        var stale = await a.PutAsync<ProfileDto>("/me", new ProfileUpdateRequest(Guid.NewGuid(), 1, "Renamed", "dark", "kg", false, null, ShowCarbs: true));
+        Assert.Equal("conflict", stale.Status);
+        Assert.False((await a.SnapshotAsync()).Profile.ShowCarbs);
+    }
 }

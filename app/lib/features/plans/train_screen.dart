@@ -11,6 +11,7 @@ import '../../data/models.dart';
 import '../activity/activity_screens.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_contract.dart';
+import '../coach/coach_prefs.dart';
 import '../shell/home_shell.dart';
 import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
@@ -18,6 +19,7 @@ import '../workout/workout_flow.dart';
 import '../workout/workout_screen.dart';
 import 'builder/plan_builder_screen.dart';
 import 'plan_actions.dart';
+import 'plan_draft.dart';
 import 'plan_progress.dart';
 import 'plan_projection.dart';
 import 'plan_rules.dart';
@@ -32,23 +34,34 @@ class TrainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(shellProvider.select((s) => s.trainView));
+    final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
+    final noPlan = ref.watch(primaryPlanProvider) == null;
+    // Ask GoHard about the section in view: the primary plan on Plan, recorded training on Progress.
+    final ask = switch (view) {
+      TrainView.plan when noPlan => const CoachContext(label: 'Starting a plan'),
+      TrainView.plan => CoachContext(label: ref.watch(primaryPlanProvider)?.title ?? 'Your plan'),
+      TrainView.progress => const CoachContext(label: 'Your progress'),
+      TrainView.workouts => const CoachContext(label: 'Your training'),
+    };
     return ListView(
       // On the calm wash the shell lays behind Train; room for the floating bar at the end.
       padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 28 + MediaQuery.paddingOf(context).bottom),
       children: [
-        // The guide's face is Ask GoHard's way in on Train, there whether or not Today shows the coach, asking about
-        // the section in view: the primary plan on Plan, recorded training on Progress.
-        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: CoachAskLauncher(ask: switch (view) {
-          TrainView.plan => CoachContext(label: ref.watch(primaryPlanProvider)?.title ?? 'Your plan'),
-          TrainView.progress => const CoachContext(label: 'Your progress'),
-          TrainView.workouts => const CoachContext(label: 'Your training'),
-        })),
+        // The guide's face is Ask GoHard's way in on Train: the speaking bust (Show coach on Train and Eat), or, with
+        // that off, its small avatar beside the title. Never both.
+        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: coachOn ? null : CoachAskLauncher(ask: ask)),
         const SizedBox(height: 16),
         Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',
           label: (v) => '${v.name[0].toUpperCase()}${v.name.substring(1)}',
           onChanged: (v) => ref.read(shellProvider.notifier).selectTrainView(v),
         ),
+        // Under the sections, speaking about the one chosen: with large text its words can run long, and the sections
+        // stay at the top where they are always reached.
+        if (coachOn) ...[
+          const SizedBox(height: 14),
+          TabCoach(key: const Key('train-coach'), id: 'train', say: _coachSay(context, ref, view), onAvatarTap: () => openAskGoHard(context, ask)),
+        ],
         const SizedBox(height: 20),
         // The section that was chosen fades in; the one left is simply gone, so nothing is shown twice.
         AnimatedSwitcher(
@@ -58,6 +71,55 @@ class TrainScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+}
+
+/// The builder's plan in progress on this phone, if any (what Create plan offers to continue).
+final builderDraftProvider = FutureProvider.autoDispose<PlanDraft?>((ref) => ref.watch(planRepositoryProvider).builderDraft('new'));
+
+/// How someone without a primary plan starts one, the same with or without the coach: continue the builder's plan in
+/// progress (never discarded here), review a saved draft, or create one. Opens the existing builder or review page.
+({String text, String title, String body, CoachGuideAction action}) _planStart(BuildContext context, WidgetRef ref) {
+  Future<void> open(Widget page) async {
+    await push<void>(context, page);
+    ref.invalidate(builderDraftProvider); // finished, discarded or still in progress: read again
+  }
+
+  final inProgress = ref.watch(builderDraftProvider).value;
+  final saved = ref.watch(planListProvider).where((p) => p.isDraft && !p.isArchived).firstOrNull;
+  if (inProgress != null) {
+    return (text: 'Your plan in progress is saved on this phone. Pick up where you left off.', title: 'Plan in progress', body: 'Saved on this phone. Nothing is scheduled until you start it.',
+        action: (label: 'Continue my plan', key: const Key('plan-builder-continue'), onPressed: () => open(PlanBuilder(initial: inProgress))));
+  }
+  if (saved != null) {
+    return (text: 'Your plan is saved as a draft. Review it, then start it when you\'re ready.', title: 'Your plan is ready to review', body: 'A saved draft does not schedule anything until you start it.',
+        action: (label: 'Review my plan', key: const Key('plan-review-draft'), onPressed: () => open(PlanReviewScreen(planId: saved.id))));
+  }
+  return (text: 'Let\'s build your training plan. Choose a familiar split or make your own.', title: 'No plan yet', body: 'Choose a familiar split or make your own. Nothing is scheduled until you review it.',
+      action: (label: 'Create my plan', key: const Key('create-plan'), onPressed: () => open(const CreatePlanScreen())));
+}
+
+/// What the coach says on Train, from the section in view and what is really there. Facts and next steps only: no
+/// judgement of the training, no score, nothing about form.
+CoachSay _coachSay(BuildContext context, WidgetRef ref, TrainView view) {
+  final plan = ref.watch(primaryPlanProvider);
+  final workouts = [for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted) w];
+  switch (view) {
+    case TrainView.plan when plan == null:
+      final start = _planStart(context, ref);
+      return CoachSay(start.text, primary: start.action);
+    case TrainView.plan:
+      return CoachSay(plan!.isPaused ? 'Your plan is paused, so nothing counts as missed. Resume it below when you\'re ready.' : 'Here\'s your plan week by week. Tap a workout for its details, or ask me about the schedule.',
+          ask: CoachContext(label: plan.title));
+    case TrainView.workouts:
+      return CoachSay(
+          workouts.any((w) => w.isOpen) ? 'A workout is still open. Resume it below when you\'re ready.'
+              : plan != null ? 'Start your planned workout from Today, or record one of your own here.'
+              : 'Record a workout of your own here. A plan can schedule them for you.',
+          ask: const CoachContext(label: 'Your training'));
+    case TrainView.progress:
+      return CoachSay(workouts.any((w) => !w.isOpen) ? 'This is what you\'ve recorded so far. Ask me about any of it.' : 'What you record shows up here once you finish a workout.',
+          ask: const CoachContext(label: 'Your progress'));
   }
 }
 
@@ -169,26 +231,23 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final ctxRow = ref.watch(contextRowProvider).value;
     final others = plans.where((p) => p.id != primary?.id).toList();
     final proposals = [for (final r in ref.watch(proposalsProvider).value ?? const <Stored<Proposal>>[]) if (r.value.planId == primary?.id && (r.value.state == 'open' || r.value.state == 'needs_review')) r.value];
-    final hasDraft = others.any((p) => p.isDraft && !p.isArchived);
 
     return _section([
       if (ctxRow?.needsReview ?? false)
         const Padding(padding: EdgeInsets.only(bottom: 14), child: StatusLine(Icons.rule, 'A plan change saved on this phone differs from your account. Review it from the notice at the bottom of the screen.', tone: Tone.warning)),
-      if (primary == null)
-        EmptyState(
-          hasDraft ? 'Your plan is ready to review' : 'No plan yet',
-          hasDraft
-              ? 'A saved draft does not schedule anything until you start it.'
-              : 'Start from a familiar split or build your own, and review it before anything is scheduled. Manual training is always available.',
-          action: PrimaryButton('Create my plan', key: const Key('create-plan'), onPressed: () => push(context, const CreatePlanScreen())),
+      // No plan: with the coach on Train, its bubble holds the one way to start (above); without it, the same action
+      // here. Manual training stays a quiet alternative either way.
+      if (primary == null) ...[
+        if (!ref.watch(coachPrefsProvider.select((p) => p.onTabs)))
+          () {
+            final start = _planStart(context, ref);
+            return EmptyState(start.title, start.body, action: PrimaryButton(start.action.label, key: start.action.key, onPressed: start.action.onPressed));
+          }(),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: QuietLink('Train without a plan', key: const Key('train-manual-instead'), said: 'Start a manual workout without a plan', onPressed: () => startManualWorkout(context, ref)),
         ),
-      // The first time Train is in view without a plan: the coach offers the starting paths, once.
-      if (primary == null && !hasDraft)
-        const CoachSpot(
-          id: 'train.noPlan', introduce: true, padding: EdgeInsets.only(bottom: 8),
-          // Ask me only: Create my plan, just above, is already the way to the starting paths.
-          say: CoachSay('Want a starting point? I can explain the splits or help you build your own.', ask: CoachContext(label: 'Starting a plan')),
-        ),
+      ],
       if (primary != null)
         ..._primary(context, primary, today, workouts, proposals),
       if (others.isNotEmpty) ...[

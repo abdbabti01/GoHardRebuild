@@ -246,17 +246,27 @@ uses the same dumbbells. No asset was added.
 
 ### Goals, water and Customize tracking (17 October 2026)
 
-- **Daily goals from Today and Eat.** The Nutrition summary on both ends with one quiet line: "Set daily goals" while
+- **Daily goals from Today and Eat** (Today's link removed later the same day; see "Goals belong to Eat"). The Nutrition summary on both ends with one quiet line: "Set daily goals" while
   no goal is set (also on a day with nothing logged), "Edit goals" once one is, and a labelled tune icon,
   "Customize tracking". Goals open a compact sheet in the app's own look (`showGoalsSheet`, opened from `appContext`)
   with the same `GoalsEditor` Me › Nutrition goals uses: one form, one validation, one save path
   (`ProfileRepository.setGoals`), fields empty unless a goal is saved, nothing suggested. The sheet says the goals
   repeat every day. Today, Eat and Me all read the one profile, so a save shows everywhere at once.
 - **Water** (off until turned on; data in docs/FOOD_DATA.md › Water). A compact line under the figures: a droplet,
-  the day's amount, "of 2 L" and a thin bar only when a goal is set (full at the goal, the words keep the real
-  amount), and an add button. It opens the water sheet: the day's total in the serif, three quick amounts in the
-  chosen unit, another amount, Add, Undo in the message bar, and the day's entries, each tappable to correct and
-  with a remove button, plus "Set a water goal" / "Edit water goal" (the same goals form, now with water).
+  "Water 750 / 2,000 mL" and, when a goal is saved, the same 6 px bar and real share ("38%", also "120%") as the
+  calorie and protein goals (the bar full at the goal, the words keep the real amount); without a goal only the
+  amount, no bar or percentage. Always the chosen unit (mL or fl oz), never switching to litres. An add button. It
+  opens the water sheet: the day's total in the serif with "/ goal" and the bar, three quick amounts in the chosen
+  unit, another amount, Add, Undo in the message bar, and the day's entries, each tappable to correct and with a
+  remove button. No goal shortcut in the sheet.
+- **Goals belong to Eat (17 Oct 2026, later).** Today shows the totals and progress toward saved goals and keeps Log
+  food, the water sheet and Customize tracking, but no "Set daily goals" / "Edit goals". Eat's summary keeps the goals
+  link to the shared form (calories, protein, water). With water shown and no water goal saved, the form offers
+  "Suggested starting goal: 2,000 mL daily." (in fl oz when chosen) with one line ("A general starting point; your
+  needs may differ. Only water you log is counted."), "Use 2,000 mL" (fills the field; nothing is saved until Save
+  goals) and an info button explaining that needs vary, other drinks and food contribute, and only logged water is
+  counted. It disappears once the field has a value, and never appears over a saved goal. No calorie or protein goal
+  is suggested; nothing is worked out by AI or from the weather.
 - **Customize tracking.** A short sheet of switches: Water, Carbs, Fat. Calories and protein always stay. Hiding is
   presentation only; it is kept per account on this phone, like the coach preferences. Water is offered only where
   the server declares `water.entries`.
@@ -344,6 +354,16 @@ over only for a complete total with a goal, Protein with its bar when that goal 
 totals. One "Log food". "Today's meals" in the serif: one grouped card, each meal with its icon, subtotal and a plus
 for that meal, and one row per logged food with its own name, saved portion wording and known values.
 
+**Meal hierarchy (17 Oct 2026).** Each meal group reads parent → foods → action:
+- Heading: the outlined meal icon (sunrise / sun / moon / cookie) on its tile, the meal's name at 18 px bold, and the
+  subtotal as a quieter second item (14.5 px, secondary colour, "known" when partial, "Calories unknown" when none is
+  known). An empty meal shows no subtotal and no "Nothing logged" line.
+- Foods: unchanged rows (name, saved portion, known macros, kcal or a dash, opens the entry).
+- "+ Add food": a footer, 15 px medium in the accent with a small plus, no tile, 48 px tall across the card; read out
+  as "Add food to lunch". Opens Log food for that meal and the day shown; nothing is logged until saved.
+The coach speaks under the title (docs/COACH.md › Train and Eat); with Show coach on Train and Eat off, the small
+avatar beside the date arrows opens the journal help instead.
+
 ## Me
 
 Redesigned on 13 October 2026 from `me-reference.png`. Me is identity, personal information, preferences and the
@@ -387,3 +407,47 @@ clothing separates from dark surfaces; invisible on light ones; fur, faces and c
 | Green check marks for done weeks | teal checks with the word "Done" | completion must not be confused with the Green accent |
 | Calorie and protein bars in different colours | both in the chosen accent | one accent per look |
 | One line per meal ("Eggs and toast") | one row per logged food | entries are never merged into an invented meal name |
+
+## Screen inventory against the approved boards (17 Oct 2026)
+
+Compared with `GoHard_Appwide_UI_Handoff/references/00`–`04` using the current Flutter renders (`render_test`, all six
+looks, 320 px at 2× text; `docs/evidence/design`) and device captures (`docs/evidence/screenshots/coach-tabs-*`,
+`appwide-*`). "Matches" means the approved direction (pale tinted photo panels with dark ink, serif titles and key
+figures, sans controls, deep accent buttons, Light/Dark foundations, independent accents), not pixel identity.
+
+| Screen | Status | Note |
+|---|---|---|
+| Today (panels, weather, temperature, greeting coach) | Matches | unchanged in this pass |
+| Train › Workouts, Plan, Progress | **Corrected** | the speaking coach under the sections replaces the circular launcher; no-plan empty paragraph and its one-time spot replaced by the coach's invitation with Create my plan in the bubble (before/after: `docs/evidence/coach-tabs/before|after/new-account-*`, `full-plan-light`, `workouts-light`, `progress-light`) |
+| Plan builder (Create plan, four steps, compare sheets) | Matches | entered directly from Create my plan; Continue my plan reopens a saved draft |
+| Workout recording, workout detail, history | Matches | help stays a sheet from the app-bar avatar (fields, timer and keyboard stay clear) |
+| Eat | **Corrected** | speaking coach under the title; meal groups as heading → foods → small "+ Add food" (`coach-tabs/…/full-eat-*`, `new-account-eat`, `large-text-eat-goals-320`; device `coach-tabs-04/05/08`) |
+| Add food (search, Recent / Favourites / My foods, scanner, Enter it yourself) | Matches, one deliberate difference | rows without food photographs (below) |
+| Food form / portions | Matches | |
+| Customize tracking sheet | **Corrected** | says when the choices follow the account |
+| Run, run history | Deliberately differs | no "GPS active" line and no pace unless measured (below) |
+| Me, Units, Edit profile, Delete account | Matches | no coach on Me: Me is about the person (the board shows one) |
+| Appearance | **Corrected** | adds Show coach on Train and Eat beside Show coach on Today |
+| Nutrition goals (page and sheet) | Matches | |
+| Sign-in, registration, Choose your coach, optional features | Matches | |
+| Ask GoHard | Matches | |
+| Conflict review, dialogs, loading / empty / error states | Matches | renders `state-dialog-*`; sync review unchanged |
+
+Deliberate differences found in this pass (in addition to the table above it):
+
+| Board | App | Why |
+|---|---|---|
+| Food thumbnails in search results | clean rows without photographs | no licensed per-food image set; a wrong or generic photo would misrepresent the food |
+| A small coach with a bubble at the top of Add food, workout recording, nutrition goals and Create plan | a help entry (the avatar) that opens the bubble in the page or a sheet; introductions once | a permanent bubble there would sit over fields, timers and the keyboard |
+| Coach beside the "Train" title | under Workouts / Plan / Progress | at large text the bubble grows; the sections must stay at the top |
+| Collapsible meals with chevrons, "Nothing logged" | every meal open; empty meals show only the heading and "+ Add food" | nothing is hidden behind a tap; no repeated explanation |
+| "GPS active · Tracking your run", pace | distance and time from saved or measured values only | no fake signal state or estimate |
+| Coach on Me | none | Me is the person's settings, not another coached page |
+
+Still pending, with the blocker:
+- A physical phone (look, brightness comfort, scroll smoothness, coach frame rate, VoiceOver/TalkBack by ear): no device
+  attached to this machine; everything above is renders and the Android emulator.
+- System mode following the phone's setting on a device: covered in widget tests only.
+- The hosted testing API (checked 17 Oct 2026): it declares `water.entries` but not `profile.tracking-display`, so a
+  hosted account keeps its display choice on each phone until this branch reaches `main` and Railway deploys it
+  (migration `AddTrackingDisplay` runs in the pre-deploy step). The app sends nothing new to it meanwhile.

@@ -242,6 +242,8 @@ public sealed class AccountService(GoHardDb db)
         // A client that predates goals does not send them, and so cannot erase them.
         (user.CalorieGoal, user.ProteinGoalG, user.WaterGoalMl) =
             (r.CalorieGoal.OrKeep(user.CalorieGoal), r.ProteinGoal.OrKeep(user.ProteinGoalG), r.WaterGoalMl.OrKeep(user.WaterGoalMl));
+        // Display choices likewise: only a client that sends one changes it.
+        (user.ShowWater, user.ShowCarbs, user.ShowFat) = (r.ShowWater ?? user.ShowWater, r.ShowCarbs ?? user.ShowCarbs, r.ShowFat ?? user.ShowFat);
         user.Revision++;
         await db.SaveChangesAsync(ct);
         return Outcome.Accepted(user.Revision, AuthService.ToProfile(user));

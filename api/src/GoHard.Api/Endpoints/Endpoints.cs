@@ -20,7 +20,7 @@ public static class GoHardEndpoints
         "auth.password", "commands.idempotent", "plans.lifecycle", "plans.baseline-drafts", "plans.manual-drafts", "plans.proposals",
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
-        "water.entries",
+        "water.entries", "profile.tracking-display",
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";

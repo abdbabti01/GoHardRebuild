@@ -92,8 +92,11 @@ void main() {
     final total = waterTotal([eight, eight, eight]);
     expect(VolumeUnit.flOz.format(total), '24 fl oz', reason: 'three 8 fl oz entries read back as 24, with no drift');
     expect(VolumeUnit.ml.format(total), '710 mL');
-    expect(VolumeUnit.ml.format(1250), '1.25 L');
-    expect(VolumeUnit.ml.format(2000), '2 L');
+    expect(VolumeUnit.ml.format(1250), '1,250 mL', reason: 'the chosen unit throughout, never switching to litres');
+    expect(VolumeUnit.ml.progress(750, 2000), '750 / 2,000 mL');
+    expect(VolumeUnit.ml.progress(2400, 2000), '2,400 / 2,000 mL', reason: 'the real amount above the goal');
+    expect(VolumeUnit.flOz.progress(236.5882365, 2000), '8 / 67.6 fl oz');
+    expect(VolumeUnit.ml.format(2000), '2,000 mL');
     expect(VolumeUnit.flOz.quick, [4, 8, 16], reason: 'quick additions follow the chosen unit');
     expect(VolumeUnit.ml.quick, [100, 250, 500]);
   });

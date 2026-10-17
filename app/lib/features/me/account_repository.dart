@@ -102,13 +102,18 @@ class ProfileRepository {
     return update(current, goals: {'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal, if (withWater) 'waterGoalMl': waterGoalMl});
   }
 
+  /// What the account shows in its nutrition. All three travel together, so another phone receives the whole choice.
+  /// Only sent where the server declares `profile.tracking-display`.
+  Future<Receipt> setDisplay(Profile current, {required bool water, required bool carbs, required bool fat}) =>
+      update(current, goals: {'showWater': water, 'showCarbs': carbs, 'showFat': fat});
+
   Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) {
     final name = (displayName ?? current.displayName).trim();
     if (name.isEmpty || name.length > 80) throw const AuthFailure('Enter a name of 1 to 80 characters.');
     final fields = {
       'displayName': name, 'appearance': appearance ?? current.appearance, 'loadUnit': loadUnit ?? current.loadUnit,
       'remindersEnabled': remindersEnabled ?? current.remindersEnabled, 'reminderLocalTime': reminderLocalTime ?? current.reminderLocalTime,
-      // Goals travel only when they are the thing being changed. Left out, the server keeps what it has.
+      // Goals and display choices travel only when they are the thing being changed. Left out, the server keeps what it has.
       ...?goals,
     };
     return _sync.submit(_owner, kind: 'profile.update', method: 'PUT', path: '/me', targetKind: Kinds.profile, targetId: _owner,

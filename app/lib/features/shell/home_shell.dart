@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../me/me_screen.dart';
 import '../me/sync_review_screen.dart';
 import '../nutrition/eat_screen.dart';
+import '../nutrition/water.dart' show displayMigrationProvider;
 import '../today/today_screen.dart';
 import '../plans/train_screen.dart';
 import '../weather/weather.dart' show todaySceneProvider;
@@ -45,6 +46,7 @@ class HomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final shell = ref.watch(shellProvider);
     final issues = ref.watch(issuesProvider).value ?? const [];
+    ref.watch(displayMigrationProvider); // a display choice made here before the account could keep it goes up once
     return Scaffold(
       // The tabs run under the floating bar too (Today's scene shows around it); each list ends with
       // `MediaQuery.paddingOf(context).bottom`, the bar's height, so its last control is never covered.

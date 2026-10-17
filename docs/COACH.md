@@ -309,11 +309,41 @@ row says "Not asked yet, or not allowed".
 
 ### The coach on every tab
 
-The same selected guide everywhere, small, in the header or the app bar: Today (the companion and its bubble), Train
-(the avatar opens Ask GoHard about the section in view: the primary plan's title on Plan, "Your progress" on
-Progress, "Your training" on Workouts), Eat (the avatar opens a help sheet with built-in journal guidance and no Ask
-me, because Ask GoHard answers training questions only), workout and run recording (the avatar in the app bar opens
-help in a sheet; nothing pops over fields, timers or controls). Showing any of them sends nothing.
+The same selected guide everywhere: Today (the companion and its bubble), Train and Eat (below), workout and run
+recording (the avatar in the app bar opens help in a sheet; nothing pops over fields, timers or controls). Showing any
+of them sends nothing.
+
+#### Train and Eat (17 Oct 2026)
+
+Today's bust and mouth-attached bubble (`TabCoach` in `coach_bubble.dart`, the same `CoachSpeech` / `CoachCompanion`
+renderer and lifecycle) peek in from the right edge, compact (80 × 100 at 390 px, 70 × 88 below 380, 60 × 74 below
+340). On Train it sits under Workouts / Plan / Progress, so the sections stay at the top with large text; on Eat under
+the title. It is part of the page's flow: never over a control, a form or the keyboard (neither tab has a field). It
+peeks in once while the tab is alive (the shell keeps tabs built), the first time the tab is in view (selected, its
+route current, the app in the foreground, on screen); a new section or a rebuild changes only the words. Reduce Motion:
+settled at once. No close button. There is no second, small launcher beside it: the bust is the help entry.
+
+What it says is fixed words chosen from the real state (`train_screen.dart` `_coachSay`, `eat_screen.dart` `_say`):
+
+| Where | Words | Action |
+|---|---|---|
+| Train › Plan, no plan | "Let's build your training plan. Choose a familiar split or make your own." | **Create my plan** (deep button in the bubble) → the existing Create plan page; the only one on the page. "Train without a plan" stays below as a quiet link |
+| … a plan in progress in the builder | "Your plan in progress is saved on this phone. Pick up where you left off." | **Continue my plan** → the builder on that draft (nothing discarded) |
+| … a saved draft plan | "Your plan is saved as a draft. Review it, then start it when you're ready." | **Review my plan** |
+| Train › Plan, a plan | how to read and adjust the week (or that it is paused) | Ask me about the plan |
+| Train › Workouts | an open workout to resume, or recording one's own (and where the planned one starts) | Ask me ("Your training") |
+| Train › Progress | what is recorded, or that it appears once a workout is finished | Ask me ("Your progress") |
+| Eat | "Log a meal, or set your daily goals." (with goals: "… and see how the day adds up against your goals"; with water shown: "Log a meal or some water…") | None: Log food and the goals link are right below it in the summary. No Ask me: Ask GoHard answers training questions only |
+
+No score, trend, readiness or form judgement is ever said. On Train the bust opens Ask GoHard about the section in view
+(the plan's title, "Starting a plan", "Your progress", "Your training"); on Eat it opens the built-in journal help.
+Water is mentioned only when it is shown (turned on, and the server declares `water.entries`).
+
+Me › Appearance › **Show coach on Train and Eat** (default on, `CoachPrefs.onTabs`, key `tabs`) is separate from Show
+coach on Today, whose meaning is unchanged. Off: Train shows the same Create / Continue / Review action as an ordinary
+empty state, Eat keeps Log food and the goals link, and the guide's small avatar beside the title is the help entry.
+The old one-time "Train without a plan" introduction (`train.noPlan`) is gone: the coach now says it every time, in
+place of the long empty-state paragraph.
 
 A help sheet's guide used to stay hidden: the companion checked once, on its first frame, whether it was on screen,
 and a sheet is still below the screen then, with nothing scrolling to check again. It now looks again after each frame

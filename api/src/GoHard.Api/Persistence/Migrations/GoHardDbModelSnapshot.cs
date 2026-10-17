@@ -590,6 +590,15 @@ namespace GoHard.Api.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool?>("ShowCarbs")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("ShowFat")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("ShowWater")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("TrainingSetupJson")
                         .HasColumnType("text");
 

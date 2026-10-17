@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -5,13 +7,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/data/sync.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
 import 'package:gohard_rebuild/features/coach/coach_bubble.dart';
 import 'package:gohard_rebuild/features/coach/coach_client.dart';
 import 'package:gohard_rebuild/features/coach/coach_companion.dart';
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/coach/coach_rig.dart';
+import 'package:gohard_rebuild/features/plans/builder/plan_builder_screen.dart';
+import 'package:gohard_rebuild/features/plans/plan_draft.dart';
+import 'package:gohard_rebuild/features/plans/train_screen.dart' show builderDraftProvider;
 
 import 'ui_support.dart';
 
@@ -48,6 +55,21 @@ Future<ProviderContainer> _today(WidgetTester tester, {String day = _day, CoachP
 
 CoachCompanionState _state(WidgetTester tester) => tester.state<CoachCompanionState>(find.byType(CoachCompanion, skipOffstage: false).first);
 CoachCompanion _widget(WidgetTester tester) => tester.widget<CoachCompanion>(find.byType(CoachCompanion, skipOffstage: false).first);
+
+/// A database for the builder's plan in progress (kept on the phone); nothing is ever sent.
+List<Override> _withDb() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  final db = AppDb(NativeDatabase.memory());
+  addTearDown(db.close);
+  return [
+    dbProvider.overrideWithValue(db),
+    syncProvider.overrideWith((ref) {
+      final engine = SyncEngine(db, Api(_Recorder(), ref.watch(sessionsProvider)), ref.watch(sessionsProvider))..isBlocked = () => true;
+      ref.onDispose(engine.dispose);
+      return engine;
+    }),
+  ];
+}
 
 /// Real frames for [ms] milliseconds.
 Future<void> _frames(WidgetTester tester, int ms) async {
@@ -240,7 +262,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('Show coach on Today off: no portrait, the time-of-day icon is back; Ask GoHard is still the guide on Train; on again, it is back', (tester) async {
+    testWidgets('Show coach on Today off: no portrait, the time-of-day icon is back; Train keeps its own coach; on again, it is back', (tester) async {
       final c = await _today(tester, more: [_quiet]);
       c.read(coachPrefsProvider.notifier).setOnToday(false);
       await tester.pump();
@@ -249,8 +271,9 @@ void main() {
       expect(find.byIcon(Icons.wb_sunny_outlined).evaluate().isNotEmpty || find.byIcon(Icons.nightlight_outlined).evaluate().isNotEmpty, isTrue);
       await tester.tap(find.byKey(const Key('nav-train')));
       await _frames(tester, 600);
-      expect(find.byKey(const Key('coach-ask-launcher')), findsOneWidget);
-      await tester.tap(find.byKey(const Key('coach-ask-launcher')));
+      final trainFace = find.descendant(of: find.byKey(const Key('train-coach')), matching: find.byKey(const Key('coach-avatar-launcher')));
+      expect(trainFace, findsOneWidget, reason: 'Today\'s switch does not change Train');
+      await tester.tap(trainFace);
       await _frames(tester, 600);
       expect(find.byKey(const Key('ask-input')), findsOneWidget);
       await tester.tap(find.byKey(const Key('ask-close')));
@@ -340,24 +363,128 @@ void main() {
       expect(c.read(workoutSavedProvider)!.played, isTrue, reason: 'no second celebration');
     });
 
-    testWidgets('Train without a plan: introduced once when its view is really shown, not while built behind Today; it offers Ask me', (tester) async {
+    testWidgets('Train and Eat: the guide speaks under the tab, with no second launcher or close button; Create my plan is in its bubble and opens the builder; a new section changes the words, never replays; nothing asks the AI', (tester) async {
+      final recorder = _Recorder();
+      await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: _day)))!,
+        coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())),
+        transportProvider.overrideWithValue(recorder),
+        ..._withDb(),
+      ], settle: false);
+      await _frames(tester, 600);
+      await tester.tap(find.byKey(const Key('nav-train')));
+      await _frames(tester, 400);
+      await tester.tap(find.byKey(const Key('train-plan')));
+      await _frames(tester, 2500);
+      final coach = find.byKey(const Key('train-coach'));
+      expect(find.descendant(of: coach, matching: find.textContaining('Let\'s build your training plan.', findRichText: true)), findsOneWidget);
+      expect(find.descendant(of: coach, matching: find.byKey(const Key('create-plan'))), findsOneWidget, reason: 'the action is in the bubble');
+      expect(find.byKey(const Key('create-plan')), findsOneWidget, reason: 'and nowhere else on the page');
+      expect(find.byKey(const Key('train-manual-instead')), findsOneWidget, reason: 'manual training stays, quietly');
+      expect(find.byKey(const Key('coach-ask-launcher')), findsNothing, reason: 'no small avatar beside the speaking one');
+      expect(find.byKey(const Key('coach-say-close')), findsNothing);
+
+      CoachCompanionState face() => tester.state<CoachCompanionState>(find.descendant(of: coach, matching: find.byType(CoachCompanion)));
+      final first = face();
+      expect(first.pose.value.slide, closeTo(1, 0.02), reason: 'arrived');
+      await tester.tap(find.byKey(const Key('train-progress')));
+      await _frames(tester, 100);
+      expect(identical(face(), first), isTrue, reason: 'the same guide, not a new entrance');
+      expect(face().pose.value.slide, closeTo(1, 0.02));
+      expect(find.descendant(of: coach, matching: find.textContaining('once you finish a workout', findRichText: true)), findsOneWidget);
+      await tester.tap(find.byKey(const Key('train-plan')));
+      await _frames(tester, 300);
+
+      await tester.tap(find.byKey(const Key('create-plan')));
+      await _frames(tester, 800);
+      expect(find.byType(CreatePlanScreen), findsOneWidget, reason: 'the existing builder, directly');
+      Navigator.of(tester.element(find.byType(CreatePlanScreen))).pop();
+      await _frames(tester, 600);
+
+      await tester.tap(find.byKey(const Key('nav-eat')));
+      await _frames(tester, 2500);
+      final eat = find.byKey(const Key('eat-coach'));
+      expect(find.descendant(of: eat, matching: find.textContaining('Log a meal, or set your daily goals.', findRichText: true)), findsOneWidget);
+      expect(find.byKey(const Key('coach-help-eat')), findsNothing);
+      expect(find.descendant(of: eat, matching: find.byKey(const Key('coach-say-ask'))), findsNothing, reason: 'no AI offered for food');
+      expect(find.textContaining('water', findRichText: true), findsNothing, reason: 'water is off');
+      await tester.tap(find.descendant(of: eat, matching: find.byKey(const Key('coach-avatar-launcher'))));
+      await _frames(tester, 800);
+      expect(find.byKey(const Key('coach-help-sheet')), findsOneWidget, reason: 'the guide opens the built-in food help');
+      expect(recorder.paths.where((p) => p.contains('coach')), isEmpty, reason: 'opening Train and Eat never asks the AI');
+    });
+
+    testWidgets('scrolled out of the page and back, the tab coach is simply there: the entrance is not played again', (tester) async {
+      await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: _day, food: [foodEntry('f1', _day, 'Lunch', 'Rice', '1 bowl', calories: 400)])))!,
+        coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())),
+        transportProvider.overrideWithValue(_Recorder()),
+      ], size: const Size(390, 640), settle: false);
+      await tester.tap(find.byKey(const Key('nav-eat')));
+      await _frames(tester, 2500);
+      final coach = find.byKey(const Key('eat-coach'));
+      expect(coach, findsOneWidget);
+      await tester.drag(find.byKey(const Key('log-food')), const Offset(0, -2500));
+      await _frames(tester, 600);
+      expect(coach, findsNothing, reason: 'out of the lazy list, so built again on the way back');
+      await tester.drag(find.byKey(const Key('eat-add-lunch')), const Offset(0, 2500));
+      await tester.pump();
+      await tester.pump();
+      final face = tester.state<CoachCompanionState>(find.descendant(of: coach, matching: find.byType(CoachCompanion)));
+      expect(face.pose.value.slide, 1, reason: 'settled at once, no second peek');
+    });
+
+    testWidgets('a plan in progress in the builder: Train offers to continue it, opens the builder on it and discards nothing', (tester) async {
       final c = await pumpApp(tester, [
         ...(await tester.runAsync(() => overridesFor(day: _day)))!,
         coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())),
         transportProvider.overrideWithValue(_Recorder()),
+        ..._withDb(),
       ], settle: false);
-      await _frames(tester, 3000);
-      final owner = c.read(ownerProvider)!;
-      expect(c.read(coachPrefsProvider).seen(owner, 'train.noPlan'), isFalse, reason: 'the Train tab is built behind Today, not seen');
+      final draft = PlanDraft.fresh(today: _day, path: 'custom')..j['title'] = 'My split';
+      await tester.runAsync(() => c.read(planRepositoryProvider).saveBuilderDraft(draft));
+      c.invalidate(builderDraftProvider);
       await tester.tap(find.byKey(const Key('nav-train')));
-      await _frames(tester, 600);
-      if (find.byKey(const Key('train-plan')).evaluate().isNotEmpty) {
-        await tester.tap(find.byKey(const Key('train-plan')));
-        await _frames(tester, 2500);
-      }
-      expect(find.byKey(const Key('coach-spot-train.noPlan')), findsOneWidget);
-      expect(c.read(coachPrefsProvider).seen(owner, 'train.noPlan'), isTrue);
-      expect(find.byKey(const Key('coach-say-ask')), findsOneWidget, reason: 'Ask me; Create my plan above it is the way to the starting paths');
+      await _frames(tester, 300);
+      await tester.tap(find.byKey(const Key('train-plan')));
+      await tester.runAsync(() => c.read(builderDraftProvider.future));
+      await _frames(tester, 2000);
+      expect(find.byKey(const Key('create-plan')), findsNothing, reason: 'not a fresh start while one is in progress');
+      await tester.tap(find.byKey(const Key('plan-builder-continue')));
+      await _frames(tester, 800);
+      expect(tester.widget<PlanBuilder>(find.byType(PlanBuilder)).initial.j['title'], 'My split');
+      expect((await tester.runAsync(() => c.read(planRepositoryProvider).builderDraft('new')))?.j['title'], 'My split', reason: 'still saved');
+    });
+
+    testWidgets('Show coach on Train and Eat off: Create my plan, Log food and goals stay; the small avatar is the help; Today is unchanged; Reduce Motion on the tabs is still', (tester) async {
+      final c = await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: _day)))!,
+        coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())),
+        devicePrefsStoreProvider.overrideWithValue(DevicePrefsStore(MemorySecretStore())..motion = MotionPref.reduced),
+        transportProvider.overrideWithValue(_Recorder()),
+      ], settle: false);
+      await tester.tap(find.byKey(const Key('nav-train')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('train-plan')));
+      await tester.pump();
+      await tester.pump();
+      final face = tester.state<CoachCompanionState>(find.descendant(of: find.byKey(const Key('train-coach')), matching: find.byType(CoachCompanion)));
+      expect((face.pose.value.slide, face.ticking), (1, false), reason: 'Reduce Motion: there at once, nothing moving');
+
+      c.read(coachPrefsProvider.notifier).setOnTabs(false);
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(const Key('train-coach')), findsNothing);
+      expect(find.byKey(const Key('create-plan')), findsOneWidget, reason: 'the way to a plan stays on the page');
+      expect(find.byKey(const Key('coach-ask-launcher')), findsOneWidget, reason: 'help: the small avatar');
+      await tester.tap(find.byKey(const Key('nav-eat')));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(const Key('eat-coach')), findsNothing);
+      expect(find.byKey(const Key('log-food')), findsOneWidget);
+      expect(find.byKey(const Key('eat-goals')), findsOneWidget);
+      expect(find.byKey(const Key('coach-help-eat')), findsOneWidget);
+      expect(c.read(coachPrefsProvider).onToday, isTrue, reason: 'Today\'s own switch is untouched');
     });
 
     testWidgets('narrow phones get a smaller guide and large text a taller bubble: the guide never disappears, nothing overflows', (tester) async {

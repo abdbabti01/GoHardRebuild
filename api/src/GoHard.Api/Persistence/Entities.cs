@@ -17,6 +17,10 @@ public class User
     public int? CalorieGoal { get; set; }
     public int? ProteinGoalG { get; set; }
     public int? WaterGoalMl { get; set; }
+    // What the person chose to see in their nutrition (presentation only). Null = never chosen on the account.
+    public bool? ShowWater { get; set; }
+    public bool? ShowCarbs { get; set; }
+    public bool? ShowFat { get; set; }
     public string? TrainingSetupJson { get; set; }
     public int Revision { get; set; } = 1;
     public string SecurityStamp { get; set; } = "";
