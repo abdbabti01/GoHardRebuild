@@ -1430,3 +1430,51 @@ existing rule (a dash, the words, a bar at 0).
 **Not verified:** a physical phone; VoiceOver/TalkBack by ear; the hosted API, which gets the migration only when
 `main` is deployed (until then the capability is absent there and water stays hidden; goals work as before). The
 installed IPA talks to the hosted API, so water will not appear in it until that deployment.
+
+## 17 October 2026 (later) — display choices on the account, the coach on Train and Eat, meal hierarchy, screen inventory (branch `feature/coach-tabs-tracking-sync`, from `feature/nutrition-goals-water` at `3948f07`)
+
+| Change | Where |
+|---|---|
+| Water / Carbs / Fat visibility on the account: `ShowWater`, `ShowCarbs`, `ShowFat` (nullable) on `Users`, migration `AddTrackingDisplay` (additive), in `ProfileDto` and `profile.update` (left out or null = kept), capability `profile.tracking-display` | `api/src/GoHard.Api` (`Persistence/Entities.cs`, `Application/Contracts.cs`, `AuthService.cs`, `JournalServices.cs`, `Endpoints/Endpoints.cs`), `WaterTests.Tracking_display_*` |
+| On the phone: account value per field, else this phone's own choice, else defaults; changes at once and through the outbox; a local choice sent once when the account has none; unknown capability = not sent | `features/nutrition/water.dart` (`rawNutritionDisplayProvider`, `setNutritionDisplay`, `displayMigrationProvider`), `data/models.dart`, `me/account_repository.dart` (`setDisplay`), `nutrition_tools.dart`, `shell/home_shell.dart` |
+| The coach speaks on Train and Eat: Today's bust and mouth-attached bubble (`TabCoach` over `CoachSpeech`), once per tab per session; Create my plan / Continue my plan / Review my plan in the bubble; words per section; no second launcher; Show coach on Train and Eat in Appearance | `coach/coach_bubble.dart` (`CoachSay.primary`, `TabCoach`, `tabsGreetedProvider`), `coach_prefs.dart` (`onTabs`), `plans/train_screen.dart`, `nutrition/eat_screen.dart`, `me/me_screen.dart` |
+| Meal groups: heading (icon, name, quieter subtotal), foods, small "+ Add food" footer read as "Add food to lunch"; no "Nothing logged" | `nutrition/eat_screen.dart` (`_AddFood`) |
+| Docs | `COACH.md` › Train and Eat, `FOOD_DATA.md` › What is shown follows the account, `DESIGN.md` › Eat and › Screen inventory |
+
+**Found and fixed during verification.** (1) With the coach under Train's title, 2× text at 320 px pushed Workouts /
+Plan / Progress off the first screen: the coach now sits under the sections (`train_ui_test` 320 px case). (2) On the
+device, scrolling Eat's coach out of the lazy list and back made it peek in again: the entrance is now remembered per
+tab for the session (regression test in `coach_companion_test`, fails without the fix). (3) Device captures showed
+the Eat bubble repeating the summary's "Set daily goals" and mentioning goals that were not set: the bubble is words
+only now.
+
+**Checks run** (proportionate; no full suite):
+- `flutter analyze` (app, test, integration_test): clean. `dotnet test -c Release --filter WaterTests|FoundationTests`:
+  12 passed (new: unset until chosen, explicit false kept, omitted fields kept by an older client, hiding keeps the
+  water goal, stale revision is a conflict).
+- `tracking_sync_test` (new, 5; two phones with real Drift files and one fake account): two phones converge both
+  ways; a fresh phone sends no defaults; offline change survives restart and syncs; arriving account data does not
+  discard a pending edit; stale revision → conflict, edit kept; a pre-capability choice is uploaded exactly once and
+  an existing account choice wins; goals updates omit and keep the choice; another account is isolated. Mutation
+  checks: disabling the upload and reversing the precedence each fail it.
+- Widget tests: eat_ui, train_ui, train_plan_ui, plan_builder_ui, coach_companion (22, new: Train/Eat bubble, single
+  Create my plan opening the builder, no replay on a section change, food help from the bust, no AI request; builder
+  draft → Continue my plan without discarding; Appearance off keeps Create my plan, Log food, goals and the small
+  avatar, Today untouched; Reduce Motion settled; scroll-back no replay), coach_avatar, coach_ask, me_ui, food_ui,
+  widget, theme, today_ui, water_ui (coach mentions water once shown), water, food, data_layer: 308 passing.
+  Expectations updated where they described the removed launcher, the one-time Train spot, "Nothing logged" and the
+  "Add food to …" row text; the add action is now checked by its semantics label, size, meal and day.
+- Renders: full `render_test` (103, six looks, large text 320 px). Before/after at the same fixture and viewport:
+  `docs/evidence/coach-tabs/before|after/`.
+- Device (`emulator-5554`, Pixel 7 image, debug build, local API migrated with `AddTrackingDisplay`):
+  `journey_coach_tabs_test` (new, not default) passed: coach on Train and Eat, Create my plan → builder, Eat's footer
+  opens Log food for Lunch, an egg logged under Lunch, water on and carbs off, then read from the account as a second
+  phone would: `showWater=true showCarbs=false showFat=true`; Pink Dark captures. Captures
+  `docs/evidence/screenshots/coach-tabs-0*.png`, recording `docs/evidence/recordings/coach-train-eat.mp4` (60 s).
+  Earlier attempts failed in the harness (a second surface conversion; the journey's own scrolling), fixed in the
+  journey. `journey_plan_test` (default run) passed both phases after one retry (the first lost the emulator before
+  attaching: "Service has disappeared").
+- `journey_companion_test` was updated for the new keys but not rerun (long recording journey).
+
+**Not verified:** a physical phone; VoiceOver/TalkBack by ear; the hosted API, which lacks `profile.tracking-display`
+until `main` is deployed (it already declares `water.entries`).

@@ -60,7 +60,7 @@ class TrainScreen extends ConsumerWidget {
         // stay at the top where they are always reached.
         if (coachOn) ...[
           const SizedBox(height: 14),
-          TabCoach(key: const Key('train-coach'), say: _coachSay(context, ref, view), onAvatarTap: () => openAskGoHard(context, ask)),
+          TabCoach(key: const Key('train-coach'), id: 'train', say: _coachSay(context, ref, view), onAvatarTap: () => openAskGoHard(context, ask)),
         ],
         const SizedBox(height: 20),
         // The section that was chosen fades in; the one left is simply gone, so nothing is shown twice.

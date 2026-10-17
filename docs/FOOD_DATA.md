@@ -224,9 +224,31 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
 - Display unit: Me › Units › Water, millilitres (mL, L) or US fluid ounces (1 fl oz = 29.5735295625 mL), set on this
   phone like °C/°F. Quick additions are 100 / 250 / 500 mL or 4 / 8 / 16 fl oz. An amount is converted to mL once
   (three decimals) when it is entered; totals are exact sums of the stored mL and are rounded only when shown.
-- Water is off until turned on in Customize tracking (per account, on this phone, with carbs and fat shown or
-  hidden); hiding it changes nothing stored. It is offered only where the server declares `water.entries`, so nothing
-  is queued that an older server could never accept.
+- Water is off until turned on in Customize tracking, with carbs and fat shown or hidden; hiding changes nothing
+  stored (entries, goals and logged values stay). It is offered only where the server declares `water.entries`, so
+  nothing is queued that an older server could never accept.
+
+### What is shown follows the account (17 Oct 2026)
+
+The three display choices are on the account where the server declares `profile.tracking-display` (migration
+`AddTrackingDisplay`, additive: three nullable columns on `Users`).
+
+- Profile: `showWater`, `showCarbs`, `showFat`, each `true`, `false` or `null` (never chosen on the account; nothing
+  is invented for it). `profile.update` sends all three together when the choice changes; left out or `null` = kept,
+  so an older app that renames the account or sets goals cannot erase them, and an explicit `false` is a choice. The
+  same revision check and conflict review as any profile change (a stale offline edit becomes a conflict to keep or
+  discard, never a silent overwrite).
+- On the phone (`water.dart`): each field is the account's value when the profile has one (it also holds an edit
+  made offline until it is sent, and the sync engine never replaces a record with a change waiting), else the choice
+  made on this phone (`TrackingPrefsStore`, per account, kept as before), else the defaults (water off, carbs and fat
+  on). A change applies at once, is kept on the phone and goes through the outbox.
+- Migration: a choice made on this phone while the account could not keep it is sent once, when the account has
+  none (`displayMigrationProvider`, kept alive by the shell). A fresh install has no choice of its own, so it shows the
+  account's and sends nothing; an account that already has a choice keeps it.
+- Unknown capabilities count as "no" here (unlike elsewhere): no server is sent fields it did not declare. The water
+  unit (mL / fl oz) stays a phone setting, like °C/°F.
+- Covered by `tracking_sync_test` (two phones with real Drift files and the fake account; offline through a restart;
+  a stale revision; the one-time upload; omitted fields; another account) and `WaterTests.Tracking_display_*`.
 - The water goal is edited in the same goals form as calories and protein, and only sent while that form shows it.
 
 ## Compatibility gate

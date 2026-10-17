@@ -39,12 +39,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged. Your daily goals are set from the summary here, on Today or in Me.'));
 
   /// What the coach says on Eat: fixed words chosen from the account's own settings, never from the AI. Water is
-  /// mentioned only where it is shown (turned on, and the server keeps it).
-  static CoachSay _say(BuildContext context, WidgetRef ref, {required Profile? profile, required bool water}) {
+  /// mentioned only where it is shown (turned on, and the server keeps it). Words only: Log food and the goals link
+  /// are right below it in the summary, so the bubble repeats neither.
+  static CoachSay _say({required Profile? profile, required bool water}) {
     final hasGoal = profile != null && (profile.calorieGoal != null || profile.proteinGoal != null || profile.waterGoalMl != null);
-    final text = water ? 'Log a meal or some water, and keep an eye on your daily goals.' : hasGoal ? 'Log a meal and see how it adds up against your daily goals.' : 'Log a meal or set your daily goals.';
-    return CoachSay(text,
-        guide: hasGoal || profile == null ? null : (label: 'Set daily goals', key: const Key('eat-coach-goals'), onPressed: () => showGoalsSheet(context, ref)));
+    final what = water ? 'Log a meal or some water' : 'Log a meal';
+    return CoachSay(hasGoal ? '$what and see how the day adds up against your goals.' : '$what, or set your daily goals.');
   }
 
   /// The portion as it was saved, then the macros that are known, then how the record stands with the account.
@@ -112,7 +112,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                           child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
                         ),
                       if (coachOn)
-                        TabCoach(key: const Key('eat-coach'), say: _say(context, ref, profile: profile, water: display.water),
+                        TabCoach(key: const Key('eat-coach'), id: 'eat', say: _say(profile: profile, water: display.water),
                             avatarLabel: 'Help with your food journal, from ${guide.label}', onAvatarTap: () => _help(context)),
                     ]),
             ),

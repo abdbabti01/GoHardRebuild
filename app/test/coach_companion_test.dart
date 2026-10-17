@@ -404,7 +404,7 @@ void main() {
       await tester.tap(find.byKey(const Key('nav-eat')));
       await _frames(tester, 2500);
       final eat = find.byKey(const Key('eat-coach'));
-      expect(find.descendant(of: eat, matching: find.textContaining('Log a meal or set your daily goals.', findRichText: true)), findsOneWidget);
+      expect(find.descendant(of: eat, matching: find.textContaining('Log a meal, or set your daily goals.', findRichText: true)), findsOneWidget);
       expect(find.byKey(const Key('coach-help-eat')), findsNothing);
       expect(find.descendant(of: eat, matching: find.byKey(const Key('coach-say-ask'))), findsNothing, reason: 'no AI offered for food');
       expect(find.textContaining('water', findRichText: true), findsNothing, reason: 'water is off');
@@ -412,6 +412,26 @@ void main() {
       await _frames(tester, 800);
       expect(find.byKey(const Key('coach-help-sheet')), findsOneWidget, reason: 'the guide opens the built-in food help');
       expect(recorder.paths.where((p) => p.contains('coach')), isEmpty, reason: 'opening Train and Eat never asks the AI');
+    });
+
+    testWidgets('scrolled out of the page and back, the tab coach is simply there: the entrance is not played again', (tester) async {
+      await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: _day, food: [foodEntry('f1', _day, 'Lunch', 'Rice', '1 bowl', calories: 400)])))!,
+        coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())),
+        transportProvider.overrideWithValue(_Recorder()),
+      ], size: const Size(390, 640), settle: false);
+      await tester.tap(find.byKey(const Key('nav-eat')));
+      await _frames(tester, 2500);
+      final coach = find.byKey(const Key('eat-coach'));
+      expect(coach, findsOneWidget);
+      await tester.drag(find.byKey(const Key('log-food')), const Offset(0, -2500));
+      await _frames(tester, 600);
+      expect(coach, findsNothing, reason: 'out of the lazy list, so built again on the way back');
+      await tester.drag(find.byKey(const Key('eat-add-lunch')), const Offset(0, 2500));
+      await tester.pump();
+      await tester.pump();
+      final face = tester.state<CoachCompanionState>(find.descendant(of: coach, matching: find.byType(CoachCompanion)));
+      expect(face.pose.value.slide, 1, reason: 'settled at once, no second peek');
     });
 
     testWidgets('a plan in progress in the builder: Train offers to continue it, opens the builder on it and discards nothing', (tester) async {

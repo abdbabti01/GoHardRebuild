@@ -628,11 +628,14 @@ Future<void> showCoachHelpSheet(BuildContext context, {required String title, re
 /// Leon or Leona on Train and Eat (docs/COACH.md › Companion › Train and Eat): Today's bust and mouth-attached bubble,
 /// peeking in from the right edge under the tab's title, saying one short thing about the section in view, with at most
 /// one main action ([CoachSay.primary]). Shown while Me › Appearance › Show coach on Train and Eat is on; there is no
-/// close button. It peeks in once for as long as the tab is alive (the shell keeps tabs built), the first time the tab
-/// is really in view; a new message or a rebuild changes the words, never replays the entrance. The portrait is the
+/// close button. It peeks in once per tab ([id]) for the signed-in session, the first time the tab is really in view;
+/// a new message, a rebuild or scrolling it out of the page's lazy list and back changes nothing but the words. The portrait is the
 /// page's help entry ([onAvatarTap], named by [avatarLabel]). Opening the tab never asks the AI.
-class TabCoach extends StatefulWidget {
-  const TabCoach({super.key, required this.say, required this.onAvatarTap, this.avatarLabel});
+class TabCoach extends ConsumerStatefulWidget {
+  const TabCoach({super.key, required this.id, required this.say, required this.onAvatarTap, this.avatarLabel});
+
+  /// The tab ('train', 'eat'): its entrance is played once per session.
+  final String id;
   final CoachSay say;
   final VoidCallback onAvatarTap;
   final String? avatarLabel;
@@ -644,11 +647,29 @@ class TabCoach extends StatefulWidget {
   }
 
   @override
-  State<TabCoach> createState() => _TabCoachState();
+  ConsumerState<TabCoach> createState() => _TabCoachState();
 }
 
-class _TabCoachState extends State<TabCoach> {
+/// The tabs whose coach has already peeked in, for the signed-in account; another sign-in starts afresh.
+class TabsGreeted extends Notifier<Set<String>> {
+  @override
+  Set<String> build() {
+    ref.watch(ownerProvider);
+    return const {};
+  }
+
+  void add(String id) {
+    if (!state.contains(id)) state = {...state, id};
+  }
+}
+
+final tabsGreetedProvider = NotifierProvider<TabsGreeted, Set<String>>(TabsGreeted.new);
+
+class _TabCoachState extends ConsumerState<TabCoach> {
   int _ack = 0;
+
+  /// Decided once for this widget: a coach rebuilt after scrolling back is simply there.
+  late final bool _greet = !ref.read(tabsGreetedProvider).contains(widget.id);
 
   @override
   Widget build(BuildContext context) => CoachSpeech(
@@ -656,7 +677,10 @@ class _TabCoachState extends State<TabCoach> {
         portrait: TabCoach.slot(context),
         frame: RigFrame.edge,
         bleed: context.inset,
-        greet: true,
+        greet: _greet,
+        onGreeted: () {
+          if (mounted) ref.read(tabsGreetedProvider.notifier).add(widget.id); // called after the frame
+        },
         ack: _ack,
         onAsk: () => setState(() => _ack++),
         avatarLabel: widget.avatarLabel,

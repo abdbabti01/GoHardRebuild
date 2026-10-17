@@ -77,6 +77,8 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
     expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.text('750 mL')), findsOneWidget, reason: 'Eat shows the same day\'s water');
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.textContaining('water', findRichText: true)), findsOneWidget, reason: 'the coach mentions water once it is shown');
     expect(tester.takeException(), isNull);
   });
 
