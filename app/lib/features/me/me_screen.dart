@@ -16,7 +16,8 @@ import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 // Stand-in for the weather module until it is merged; the lead swaps this for '../weather/weather.dart'.
-import '../nutrition/nutrition_surface.dart';
+import '../nutrition/nutrition_tools.dart';
+import '../nutrition/water.dart';
 import '../weather/weather.dart';
 import 'account_repository.dart';
 import 'permissions_screen.dart';
@@ -85,6 +86,18 @@ class MeScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 4),
           Text('For the weather on Today. Set on this phone.', style: context.caption),
+          const SizedBox(height: 16),
+          Text('Water', style: context.label),
+          for (final u in VolumeUnit.values)
+            ChoiceTile<VolumeUnit>(
+              key: Key('unit-water-${u.name}'), value: u, groupValue: ref.read(volumeUnitProvider), title: u == VolumeUnit.ml ? 'Millilitres (mL, L)' : 'US fluid ounces (fl oz)',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                ref.read(trackingPrefsProvider.notifier).setUnit(chosen);
+              },
+            ),
+          const SizedBox(height: 4),
+          Text('For water you log. Stored in millilitres, so changing this never changes an amount. Fluid ounces are a volume, not a weight. Set on this phone.', style: context.caption),
         ]));
 
     // What is true about the account right now, in a word and a sentence. "Saved" is said only when nothing is
@@ -146,10 +159,8 @@ class MeScreen extends ConsumerWidget {
             GroupRow(
               key: const Key('me-goals'), icon: Icons.restaurant_outlined, title: 'Nutrition goals',
               // Only a goal the person set is shown; nothing is suggested in its place.
-              subtitle: profile.calorieGoal == null && profile.proteinGoal == null ? 'None set' : 'Daily goals you set',
-              value: profile.calorieGoal == null && profile.proteinGoal == null
-                  ? null
-                  : [if (profile.calorieGoal != null) '${formatKcal(profile.calorieGoal!)} kcal', if (profile.proteinGoal != null) '${profile.proteinGoal} g protein'].join(' · '),
+              subtitle: goalsSummary(profile, ref.watch(volumeUnitProvider), water: ref.watch(nutritionDisplayProvider).water) == null ? 'None set' : 'Daily goals you set',
+              value: goalsSummary(profile, ref.watch(volumeUnitProvider), water: ref.watch(nutritionDisplayProvider).water),
               onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
             ),
         ]),
@@ -621,47 +632,10 @@ class NutritionGoalsScreen extends ConsumerStatefulWidget {
 }
 
 class _NutritionGoalsScreenState extends ConsumerState<NutritionGoalsScreen> {
-  late final _calories = TextEditingController(text: widget.profile.calorieGoal?.toString() ?? '');
-  late final _protein = TextEditingController(text: widget.profile.proteinGoal?.toString() ?? '');
-  String? _error;
-
-  @override
-  void dispose() {
-    _calories.dispose();
-    _protein.dispose();
-    super.dispose();
-  }
-
-  /// Blank is "no goal". Anything else has to be a whole number.
-  static int? _whole(String raw, String what) {
-    if (raw.trim().isEmpty) return null;
-    final v = parsePositiveInt(raw);
-    if (v == null) throw AuthFailure('$what is a whole number, or left blank for no goal.');
-    return v;
-  }
-
-  Future<void> _save() async {
-    try {
-      // The newest profile on this phone, so a goal change never carries an older name or unit with it.
-      final current = ref.read(profileProvider).value ?? widget.profile;
-      await ref.read(profileRepositoryProvider).setGoals(current, calorieGoal: _whole(_calories.text, 'A calorie goal'), proteinGoal: _whole(_protein.text, 'A protein goal'));
-      if (mounted) Navigator.pop(context);
-    } on AuthFailure catch (e) {
-      setState(() => _error = e.message);
-    } on LocalSaveFailure {
-      setState(() => _error = 'Your goals could not be saved on this phone. What you typed is still here.');
-    }
-  }
-
   @override
   Widget build(BuildContext context) => AppPage(
         title: 'Nutrition goals',
         actions: const [CoachHelpEntry(id: 'me.goals', label: 'Help with nutrition goals')],
-        bottom: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-          PrimaryButton('Save goals', key: const Key('goal-save'), onPressed: _save),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        ]),
         children: [
           const CoachSpot(
             id: 'me.goals', introduce: true, padding: EdgeInsets.only(bottom: 16),
@@ -671,19 +645,14 @@ class _NutritionGoalsScreenState extends ConsumerState<NutritionGoalsScreen> {
           PhotoPanel(
             photo: 'assets/images/nutrition-cover.webp',
             content: (context) => [
-              Text('Set your own daily targets. Either may be left blank.', style: context.sansStyle(18, weight: FontWeight.w600)),
+              Text('Set your own daily targets. Any of them may be left blank.', style: context.sansStyle(18, weight: FontWeight.w600)),
               const SizedBox(height: 6),
-              Text('Optional. Today and Eat show your progress toward a goal once you set one.', style: context.sansStyle(14.5, color: context.c.secondary)),
+              Text('They repeat every day until you change them. Today and Eat show your progress once you set one.', style: context.sansStyle(14.5, color: context.c.secondary)),
             ],
           ),
           const SizedBox(height: 20),
-          TextField(key: const Key('goal-calories'), controller: _calories, keyboardType: TextInputType.number, textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Daily calories', suffixText: 'kcal', hintText: 'No goal', helperText: '500 to 10,000. Leave blank for no calorie goal.')),
-          const SizedBox(height: 14),
-          TextField(key: const Key('goal-protein'), controller: _protein, keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Daily protein', suffixText: 'g', hintText: 'No goal', helperText: '10 to 500. Leave blank for no protein goal.')),
-          const SizedBox(height: 16),
-          Text('GoHard does not suggest a goal. If you are unsure what suits you, a dietitian or doctor can help.', style: context.caption),
+          // The same form Today and Eat open in a sheet: one set of goals, one validation.
+          GoalsEditor(profile: widget.profile, onSaved: () => Navigator.pop(context)),
         ],
       );
 }

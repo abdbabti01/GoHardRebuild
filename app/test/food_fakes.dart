@@ -123,11 +123,17 @@ CommonFoodCatalog shippedCatalog() => CommonFoodCatalog.parse(File('assets/data/
 
 class RecordingProfiles implements ProfileRepository {
   final goals = <(int?, int?)>[];
+  /// Water goals sent, only when the form showed the field (withWater).
+  final waterGoals = <int?>[];
 
   @override
-  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal}) async {
+  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal, bool withWater = false, int? waterGoalMl}) async {
     ProfileRepository.validateGoals(calorieGoal, proteinGoal);
     goals.add((calorieGoal, proteinGoal));
+    if (withWater) {
+      ProfileRepository.validateWaterGoal(waterGoalMl);
+      waterGoals.add(waterGoalMl);
+    }
     return _receipt;
   }
 

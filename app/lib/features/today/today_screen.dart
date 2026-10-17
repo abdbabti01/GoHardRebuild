@@ -18,6 +18,8 @@ import '../coach/coach_contract.dart';
 import '../coach/coach_prefs.dart';
 import '../nutrition/food_form.dart';
 import '../nutrition/nutrition_surface.dart';
+import '../nutrition/nutrition_tools.dart';
+import '../nutrition/water.dart';
 import '../plans/builder/plan_builder_screen.dart';
 import '../plans/plan_actions.dart';
 import '../plans/plan_progress.dart';
@@ -808,6 +810,7 @@ class _NutritionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = snapshot;
     final profile = ref.watch(profileProvider).value;
+    final display = ref.watch(nutritionDisplayProvider);
     final goals = NutritionSummary.goalsText(profile?.calorieGoal, profile?.proteinGoal);
     final logged = !failed && s != null && s.food.isNotEmpty;
     void openEat() => ref.read(shellProvider.notifier).switchTab(2);
@@ -832,6 +835,9 @@ class _NutritionCard extends ConsumerWidget {
       photo: _Photos.nutrition, photoAlignment: const Alignment(0.7, 0),
       action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(appContext(context), dayKey: day)),
       quiet: QuietLink('Journal', key: const Key('today-open-eat'), said: 'Food journal', onPressed: openEat),
+      // Under the figures, quieter than them: the day's water when it is tracked, then the goals (set or edit, also
+      // with nothing logged) and Customize tracking. Sheets open in the app's own look.
+      below: [if (display.water) WaterRow(key: const Key('today-water'), day: day), const NutritionTools(keyPrefix: 'today')],
     );
   }
 }

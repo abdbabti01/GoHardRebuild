@@ -87,7 +87,7 @@ void main() {
     await pumpApp(tester, const [], home: Scaffold(body: SingleChildScrollView(child: NutritionSurface(entries: entries, coverage: NutrientCoverage.calculate(entries)))));
     expect(find.text('Known totals'), findsOneWidget);
     expect(find.text('510'), findsOneWidget);
-    expect(find.text('25 g'), findsOneWidget);
+    expect(find.text('25'), findsOneWidget, reason: 'protein, as on Today: the figure and "g protein"');
     expect(find.text('—'), findsOneWidget, reason: 'carbs are unknown for every food');
     expect(find.text('0 g'), findsOneWidget, reason: 'an entered zero is a known zero');
 

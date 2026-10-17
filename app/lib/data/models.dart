@@ -22,6 +22,8 @@ double? _d(Object? v) => (v as num?)?.toDouble();
 abstract final class Kinds {
   static const profile = 'profile', context = 'context', plan = 'plan', workout = 'workout', set = 'set', food = 'food';
   static const run = 'run', metric = 'metric', proposal = 'proposal', catalog = 'catalog', savedFood = 'saved_food';
+  /// Water the owner logged (features/nutrition/water.dart).
+  static const water = 'water';
   /// The owner's private exercises; referenced from prescriptions as `custom:<id>`.
   static const customExercise = 'custom_exercise';
   // Local-only kinds: never dispatched. `planBuilder` is the plan being built or edited ("new", or a plan's ID).
@@ -259,6 +261,8 @@ extension type Profile(Json j) {
   /// Optional daily goals. Null = none set; the app never suggests one.
   int? get calorieGoal => j['calorieGoal'] as int?;
   int? get proteinGoal => j['proteinGoal'] as int?;
+  /// Optional daily water goal in millilitres; null = none (never suggested).
+  int? get waterGoalMl => j['waterGoalMl'] as int?;
   int get revision => j['revision'] as int? ?? 0;
 }
 

@@ -765,8 +765,8 @@ void main() {
       await surface(tester, [entry('a', calories: 1400, protein: 62)]);
       expect(find.byType(ProgressRail), findsNothing);
       await surface(tester, [entry('a', calories: 1400, protein: 62)], proteinGoal: 140);
-      expect(find.byKey(const Key('goal-calories-progress')), findsNothing);
-      expect(find.byKey(const Key('goal-protein-progress')), findsOneWidget);
+      expect(find.byKey(const Key('eat-goal-calories')), findsNothing);
+      expect(find.byKey(const Key('eat-goal-protein')), findsOneWidget);
       expect(find.text('Protein 62 of 140 g · 78 g left'), findsOneWidget);
     });
 
@@ -781,7 +781,7 @@ void main() {
 
       await surface(tester, [entry('a')], calorieGoal: 2200);
       expect(find.text('No calorie value entered yet · goal 2,200 kcal'), findsOneWidget);
-      expect(find.byType(ProgressRing), findsNothing, reason: 'an unknown total is not an empty ring');
+      expect(find.text('—'), findsWidgets, reason: 'an unknown total is a dash, as on Today; the words say no value was entered');
       await surface(tester, const [], calorieGoal: 2200, proteinGoal: 140);
       expect(find.text('Your daily goal: 2,200 kcal · 140 g protein'), findsOneWidget);
       expect(find.byType(ProgressRail), findsNothing, reason: 'nothing logged is not zero eaten');
@@ -791,10 +791,10 @@ void main() {
       final handle = tester.ensureSemantics();
       await surface(tester, [entry('a', calories: 2500, protein: 150)], calorieGoal: 2200, proteinGoal: 140);
       expect(find.text('2,500 of 2,200 kcal · 300 kcal over'), findsOneWidget);
-      expect(find.text('114%'), findsOneWidget, reason: "the ring's centre gives the real share");
-      final ring = tester.getSemantics(find.byKey(const Key('goal-calories-progress')));
-      expect((ring.label, ring.value), ('Calorie goal: 2,500 of 2,200 kcal · 300 kcal over', '100 percent'), reason: 'the ring stops at full');
-      expect(tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(const Key('goal-protein-progress')), matching: find.byType(LinearProgressIndicator))).value, 1.0);
+      expect(find.text('114%'), findsOneWidget, reason: 'the share beside the bar is the real one');
+      double bar(String key) => tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(LinearProgressIndicator))).value!;
+      expect(bar('eat-goal-calories'), 1.0, reason: 'the bar stops at full');
+      expect(bar('eat-goal-protein'), 1.0);
       handle.dispose();
     });
 

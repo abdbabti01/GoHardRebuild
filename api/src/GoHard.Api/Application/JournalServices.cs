@@ -76,6 +76,53 @@ public sealed class FoodService(GoHardDb db)
             .OrderBy(f => f.CreatedAtUtc).ToListAsync(ct)).Select(ToDto).ToList();
 }
 
+/// <summary>Water the person logs on purpose, in canonical millilitres. Never counted from foods.</summary>
+public sealed class WaterService(GoHardDb db)
+{
+    public static WaterEntryDto ToDto(WaterEntry w) => new(w.Id, w.DayKey, w.VolumeMl, w.Revision, w.DeletedAtUtc != null);
+
+    private static bool Valid(decimal ml) => ml is > 0 and <= 5000 && decimal.Truncate(ml * 1000) == ml * 1000;   // at most 3 decimals
+
+    public async Task<Outcome<WaterEntryDto>> CreateAsync(Guid userId, WaterCreateRequest r, CancellationToken ct)
+    {
+        if (r.EntryId == Guid.Empty || !Valid(r.VolumeMl)) return Outcome.Rejected<WaterEntryDto>(Ack.Invalid);
+        if (await db.WaterEntries.AnyAsync(w => w.Id == r.EntryId, ct)) return Outcome.Conflict<WaterEntryDto>("DUPLICATE_ID");
+        var entry = new WaterEntry { Id = r.EntryId, UserId = userId, DayKey = r.DayKey, VolumeMl = r.VolumeMl, CreatedAtUtc = DateTime.UtcNow };
+        db.WaterEntries.Add(entry);
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(entry.Revision, ToDto(entry));
+    }
+
+    public async Task<Outcome<WaterEntryDto>> UpdateAsync(Guid userId, Guid id, WaterUpdateRequest r, CancellationToken ct)
+    {
+        var entry = await db.WaterEntries.FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId, ct);
+        if (entry is null) return Outcome.NotFound<WaterEntryDto>();
+        if (!Valid(r.VolumeMl)) return Outcome.Rejected<WaterEntryDto>(Ack.Invalid);
+        if (entry.DeletedAtUtc != null) return Outcome.Conflict("ENTRY_DELETED", entry.Revision, ToDto(entry));
+        if (entry.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, entry.Revision, ToDto(entry));
+        (entry.DayKey, entry.VolumeMl) = (r.DayKey, r.VolumeMl);
+        entry.Revision++;
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(entry.Revision, ToDto(entry));
+    }
+
+    public async Task<Outcome<WaterEntryDto>> DeleteAsync(Guid userId, Guid id, RevisionCommand r, CancellationToken ct)
+    {
+        var entry = await db.WaterEntries.FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId, ct);
+        if (entry is null) return Outcome.NotFound<WaterEntryDto>();
+        if (entry.DeletedAtUtc != null) return Outcome.Conflict("ENTRY_DELETED", entry.Revision, ToDto(entry));
+        if (entry.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, entry.Revision, ToDto(entry));
+        entry.DeletedAtUtc = DateTime.UtcNow;
+        entry.Revision++;
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(entry.Revision, ToDto(entry));
+    }
+
+    public async Task<List<WaterEntryDto>> ListAsync(Guid userId, DateOnly? day, CancellationToken ct) =>
+        (await db.WaterEntries.AsNoTracking().Where(w => w.UserId == userId && (day == null || (w.DayKey == day && w.DeletedAtUtc == null)))
+            .OrderBy(w => w.CreatedAtUtc).ToListAsync(ct)).Select(ToDto).ToList();
+}
+
 /// <summary>Reusable foods and favourites. Owned, revision-checked, and never a record of anything eaten.</summary>
 public sealed class SavedFoodService(GoHardDb db)
 {
@@ -187,13 +234,14 @@ public sealed class AccountService(GoHardDb db)
         var name = (r.DisplayName ?? "").Trim();
         if (name.Length is 0 or > 80 || r.Appearance is not ("dark" or "light" or "system") || r.LoadUnit is not ("kg" or "lb") ||
             (r.ReminderLocalTime is not null && !TimeOnly.TryParseExact(r.ReminderLocalTime, "HH:mm", out _)) ||
-            r.CalorieGoal.Value is < 500 or > 10000 || r.ProteinGoal.Value is < 10 or > 500)
+            r.CalorieGoal.Value is < 500 or > 10000 || r.ProteinGoal.Value is < 10 or > 500 || r.WaterGoalMl.Value is < 100 or > 10000)
             return Outcome.Rejected<ProfileDto>(Ack.Invalid);
         if (user.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, user.Revision, AuthService.ToProfile(user));
         (user.DisplayName, user.Appearance, user.LoadUnit, user.RemindersEnabled, user.ReminderLocalTime) =
             (name, r.Appearance, r.LoadUnit, r.RemindersEnabled, r.ReminderLocalTime);
         // A client that predates goals does not send them, and so cannot erase them.
-        (user.CalorieGoal, user.ProteinGoalG) = (r.CalorieGoal.OrKeep(user.CalorieGoal), r.ProteinGoal.OrKeep(user.ProteinGoalG));
+        (user.CalorieGoal, user.ProteinGoalG, user.WaterGoalMl) =
+            (r.CalorieGoal.OrKeep(user.CalorieGoal), r.ProteinGoal.OrKeep(user.ProteinGoalG), r.WaterGoalMl.OrKeep(user.WaterGoalMl));
         user.Revision++;
         await db.SaveChangesAsync(ct);
         return Outcome.Accepted(user.Revision, AuthService.ToProfile(user));

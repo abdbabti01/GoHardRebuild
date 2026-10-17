@@ -101,7 +101,7 @@ void main() {
     // The approved panels: serif names and figures, the button row under the words (docs/DESIGN.md › Today panels).
     expect(w, inInclusiveRange(290, 340), reason: 'workout, in progress with a planned total and its ring');
     expect(r, inInclusiveRange(230, 280), reason: 'run, open with a distance and a time, stacked in the compact tile');
-    expect(n, inInclusiveRange(280, 330), reason: 'nutrition, two goals and the missing-values line');
+    expect(n, inInclusiveRange(330, 380), reason: 'nutrition, two goals, the missing-values line, and the goals / Customize tracking line');
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
     debugPrint('header region $header');
@@ -123,7 +123,7 @@ void main() {
     // Taller than the mockup's due panel (about 183): the 52 px button and the plan-week line are kept on purpose.
     expect(quiet.$1, inInclusiveRange(240, 275));
     expect(quiet.$2, inInclusiveRange(160, 195), reason: 'no run: the label, the title, one line and the button');
-    expect(quiet.$3, inInclusiveRange(195, 235));
+    expect(quiet.$3, inInclusiveRange(255, 295), reason: 'empty day: the words, Log food, and the Set daily goals / Customize tracking line');
     // With the guide's bubble the three sections and the nutrition label start on the first screen; Log food is a
     // short scroll away (it was on the first screen before the bubble: a deliberate trade-off, docs/COACH.md).
     expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 36, lessThan(navTop), reason: 'all three sections start on the first screen');
@@ -500,7 +500,8 @@ void main() {
       final box = tester.getSize(photo(module));
       final panel = tester.getSize(find.byKey(Key('today-module-$module')));
       expect(box.width, lessThan(0.65 * panel.width), reason: 'the trailing side of its panel, not the whole panel');
-      expect(box.height, panel.height, reason: 'the full height of its panel');
+      // Nutrition has its goals line (and water, when tracked) under the photograph, where it fades out.
+      expect(box.height, module == 'nutrition' ? lessThan(panel.height) : panel.height, reason: 'the full height of its panel, or of its upper part');
       final image = tester.widget<Image>(find.descendant(of: photo(module), matching: find.byType(Image)));
       expect(image.fit, BoxFit.cover);
       final decoded = (image.image as ResizeImage).width!;

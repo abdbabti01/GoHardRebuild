@@ -112,6 +112,11 @@ public sealed record SavedFoodDto(Guid Id, JsonElement Item, bool IsFavourite, i
 /// <param name="ExpectedRevision">0 creates the food; otherwise the revision being replaced.</param>
 public sealed record SavedFoodPutRequest(Guid OperationId, int ExpectedRevision, JsonElement Item, bool IsFavourite);
 
+/// <param name="VolumeMl">Canonical millilitres, above 0 and at most 5,000 per entry, up to 3 decimals.</param>
+public sealed record WaterEntryDto(Guid Id, DateOnly DayKey, decimal VolumeMl, int Revision, bool IsDeleted);
+public sealed record WaterCreateRequest(Guid OperationId, Guid EntryId, DateOnly DayKey, decimal VolumeMl);
+public sealed record WaterUpdateRequest(Guid OperationId, int ExpectedRevision, DateOnly DayKey, decimal VolumeMl);
+
 public sealed record RunDto(Guid Id, DateOnly DayKey, DateTime StartedAtUtc, DateTime? FinishedAtUtc, int? ActiveDurationSeconds,
     decimal? DistanceMeters, int Revision, bool IsDeleted);
 public sealed record RunStartRequest(Guid OperationId, Guid RunId, DateOnly DayKey, DateTime StartedAtUtc);
@@ -121,10 +126,12 @@ public sealed record BodyMetricRequest(Guid OperationId, Guid MetricId, DateOnly
 
 /// <param name="CalorieGoal">Left out: the stored goal is kept. Null: it is cleared. A number: it is set (500 to 10,000 kcal).</param>
 /// <param name="ProteinGoal">Same three cases, 10 to 500 g.</param>
+/// <param name="WaterGoalMl">Same three cases, 100 to 10,000 mL.</param>
 public sealed record ProfileUpdateRequest(Guid OperationId, int ExpectedRevision, string DisplayName, string Appearance, string LoadUnit,
     bool RemindersEnabled, string? ReminderLocalTime,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt CalorieGoal = default,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt ProteinGoal = default);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt ProteinGoal = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt WaterGoalMl = default);
 public sealed record DeleteAccountRequest(string Password);
 
 public sealed record ProposalMove(Guid OccasionId, DateOnly From, DateOnly To);
@@ -140,4 +147,4 @@ public sealed record ProposalResult(ProposalDto Proposal, PlanContextDto? Contex
 public sealed record CatalogExerciseDto(string Key, string Name, string Category, string Equipment, bool IsTimed);
 public sealed record SnapshotDto(ProfileDto Profile, PlanContextDto Context, List<WorkoutDto> Workouts, List<FoodEntryDto> FoodEntries,
     List<RunDto> Runs, List<BodyMetricDto> BodyMetrics, List<ProposalDto> Proposals, List<CatalogExerciseDto> Catalog, DateTime ServerTimeUtc, List<SavedFoodDto>? SavedFoods = null,
-    List<CustomExerciseDto>? CustomExercises = null);
+    List<CustomExerciseDto>? CustomExercises = null, List<WaterEntryDto>? WaterEntries = null);

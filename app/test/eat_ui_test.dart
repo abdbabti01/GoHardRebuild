@@ -127,13 +127,13 @@ void main() {
     expect(find.text('Totals'), findsOneWidget);
     expect(find.text('1,020 of 2,200 kcal · 1,180 kcal left'), findsOneWidget);
     expect(find.text('Protein 68 of 60 g · 8 g over'), findsOneWidget, reason: 'the words give the real total');
-    expect(rail(tester, 'goal-protein-progress'), 1.0, reason: 'the bar stops at full');
-    expect(tester.widget<ProgressRing>(find.byKey(const Key('goal-calories-progress'))).value, closeTo(1020 / 2200, 0.001));
-    expect(find.byType(ProgressRing), findsOneWidget, reason: 'one calorie ring, and no second measure for calories');
+    expect(rail(tester, 'eat-goal-protein'), 1.0, reason: 'the bar stops at full');
+    expect(rail(tester, 'eat-goal-calories'), closeTo(1020 / 2200, 0.001));
+    expect(find.byType(ProgressRing), findsNothing, reason: 'one bar per goal, as on Today; no second measure for calories');
     expect(find.text('46%'), findsOneWidget);
     expect(find.text('106 g'), findsOneWidget, reason: 'carbs: a known total, no goal invented for it');
     expect(find.text('32 g'), findsOneWidget, reason: 'fat likewise');
-    expect(find.byType(ProgressRail).hitTestable(), findsOneWidget, reason: 'a bar for protein, none for carbs or fat');
+    expect(find.byType(ProgressRail).hitTestable(), findsNWidgets(2), reason: 'a bar for each goal that was set (calories, protein), none for carbs or fat');
 
     // Complete totals, no goal: nothing to be left of.
     await pumpApp(tester, await fixture(tester), size: const Size(390, 1500));

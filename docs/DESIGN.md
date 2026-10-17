@@ -244,6 +244,31 @@ uses the same dumbbells. No asset was added.
   control); its tagline is our own words.
 - The plan week selector wraps all weeks (any length), rather than the board's fixed two rows of four.
 
+### Goals, water and Customize tracking (17 October 2026)
+
+- **Daily goals from Today and Eat.** The Nutrition summary on both ends with one quiet line: "Set daily goals" while
+  no goal is set (also on a day with nothing logged), "Edit goals" once one is, and a labelled tune icon,
+  "Customize tracking". Goals open a compact sheet in the app's own look (`showGoalsSheet`, opened from `appContext`)
+  with the same `GoalsEditor` Me › Nutrition goals uses: one form, one validation, one save path
+  (`ProfileRepository.setGoals`), fields empty unless a goal is saved, nothing suggested. The sheet says the goals
+  repeat every day. Today, Eat and Me all read the one profile, so a save shows everywhere at once.
+- **Water** (off until turned on; data in docs/FOOD_DATA.md › Water). A compact line under the figures: a droplet,
+  the day's amount, "of 2 L" and a thin bar only when a goal is set (full at the goal, the words keep the real
+  amount), and an add button. It opens the water sheet: the day's total in the serif, three quick amounts in the
+  chosen unit, another amount, Add, Undo in the message bar, and the day's entries, each tappable to correct and
+  with a remove button, plus "Set a water goal" / "Edit water goal" (the same goals form, now with water).
+- **Customize tracking.** A short sheet of switches: Water, Carbs, Fat. Calories and protein always stay. Hiding is
+  presentation only; it is kept per account on this phone, like the coach preferences. Water is offered only where
+  the server declares `water.entries`.
+- **Eat's summary** is now the same compact composition as Today's Nutrition panel (calories in the serif and
+  protein, each with its goal bar, the deep Log food beside the full-height bowl), with Eat's own extra lines under
+  it: what is left or over, carbs and fat (when shown), the missing-values note, water, then the goals line. The
+  separate calorie ring is gone: one bar per goal, as on Today.
+- **Meal icons**: one outlined Material family on the same tile: Breakfast `wb_twilight` (sunrise), Lunch
+  `light_mode` (sun), Dinner `dark_mode` (moon), Snack `cookie` (Material Icons has no apple fruit; `Icons.apple` is
+  the brand logo).
+- **Train's icon** in the navigation bar lies flat (the Material dumbbell rotated 45°), as in the boards.
+
 ## Train
 
 The calm wash (`QuietBackground`, `GoColors.wash` fading into the page) behind the date and serif "Train"; no

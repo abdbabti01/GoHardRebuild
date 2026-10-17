@@ -81,7 +81,7 @@ class ProfileRepository {
   final SyncEngine _sync;
   final String _owner;
 
-  static const calorieGoalRange = (500, 10000), proteinGoalRange = (10, 500);
+  static const calorieGoalRange = (500, 10000), proteinGoalRange = (10, 500), waterGoalRangeMl = (100, 10000);
 
   /// Goals are whole numbers the person chose. Null means no goal; nothing is ever suggested in its place.
   static void validateGoals(int? calories, int? protein) {
@@ -89,11 +89,17 @@ class ProfileRepository {
     if (protein != null && (protein < proteinGoalRange.$1 || protein > proteinGoalRange.$2)) throw const AuthFailure('A protein goal is a whole number from 10 to 500 grams, or left blank.');
   }
 
+  static void validateWaterGoal(int? ml) {
+    if (ml != null && (ml < waterGoalRangeMl.$1 || ml > waterGoalRangeMl.$2)) throw const AuthFailure('A water goal is from 100 mL to 10 L (about 3.4 to 338 fl oz), or left blank.');
+  }
+
   /// Sets both goals; null clears one. The clearing is sent as an explicit null, which is what tells the server
   /// "remove it" from "an older app that does not know about goals".
-  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal}) {
+  /// [waterGoalMl] travels only when [withWater]: a form that does not show it never touches the stored one.
+  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal, bool withWater = false, int? waterGoalMl}) {
     validateGoals(calorieGoal, proteinGoal);
-    return update(current, goals: {'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal});
+    if (withWater) validateWaterGoal(waterGoalMl);
+    return update(current, goals: {'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal, if (withWater) 'waterGoalMl': waterGoalMl});
   }
 
   Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) {

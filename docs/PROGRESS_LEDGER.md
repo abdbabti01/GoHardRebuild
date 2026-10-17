@@ -1376,3 +1376,57 @@ integration pass (tests, renders, device, docs).
 **Not verified:** a physical iPhone or Android phone (smoothness, brightness comfort, battery), VoiceOver/TalkBack by
 ear, System mode following the phone's setting on a device (rendered and tested in widget tests), the keyboard over
 every form (seen on food search and set entry).
+
+## 17 October 2026 — daily goals from Today, optional water, Customize tracking, visual corrections (branch `feature/nutrition-goals-water`, from `feature/appwide-design` at `5b24cb8`)
+
+| Change | Where |
+|---|---|
+| Water entries on the account: table `WaterEntries` (migration `AddWaterTracking`, additive), `water.create/update/delete` commands, `GET /water-entries?date=`, `waterEntries` in the snapshot, `waterGoalMl` on the profile (kept when left out), capability `water.entries` | `api/src/GoHard.Api` (`Persistence/Entities.cs`, `GoHardDb.cs`, `Application/JournalServices.cs` `WaterService`, `Contracts.cs`, `AuthService.cs`, `Endpoints.cs`), `api/tests/.../WaterTests.cs` |
+| Water on the phone: record kind `water`, `WaterRepository` through the outbox, `waterProvider` per day, US fl oz / mL display unit (Me › Units), per-account display choices (`TrackingPrefsStore`, off by default), capability-gated | `app/lib/features/nutrition/water.dart`, `data/models.dart`, `data/sync.dart`, `app/providers.dart`, `main.dart`, `features/me/me_screen.dart`, `sync_review_screen.dart` |
+| Goals from Today and Eat: one `GoalsEditor` for Me's page and the new sheet; "Set daily goals" / "Edit goals" and Customize tracking under both nutrition summaries; the water line and sheet; the Customize tracking sheet | `app/lib/features/nutrition/nutrition_tools.dart`, `today/today_screen.dart`, `nutrition/eat_screen.dart`, `me/me_screen.dart`, `me/account_repository.dart` (`setGoals(withWater, waterGoalMl)`, `validateWaterGoal`) |
+| Eat's summary: the same compact composition as Today's (full-height bowl), its own extra lines below; carbs and fat follow Customize tracking | `nutrition/nutrition_surface.dart` |
+| Meal icons sunrise / sun / moon / cookie; Train's navigation icon lies flat | `nutrition/eat_screen.dart`, `shell/home_shell.dart` |
+| A two-phase device journey (not in the default run) | `integration_test/journey_water_test.dart`, `scripts/test-android.ps1` (phases and network switching) |
+
+**Decisions.** Display choices (water / carbs / fat) are kept per account on this phone, like the coach preferences:
+they are presentation, and a second phone starts with water off until it is turned on there (the entries and the goal
+are on the account and appear as soon as it is). Water is offered only when the server declares `water.entries`, so an
+older server can never be sent a command it would refuse. The water goal travels only from a form that shows it, so
+Today's goals sheet without water never clears it. On Eat the calorie ring became a bar, as on Today, so both screens
+draw goals the same way; Eat keeps its "what is left or over" words. An unknown total with a goal keeps Today's
+existing rule (a dash, the words, a bar at 0).
+
+**Checks run** (proportionate):
+- `flutter analyze` (lib, test, integration_test): clean. `dotnet build api -c Release`: clean (the Debug build was
+  locked by the running dev API at the time; it built after that process was restarted).
+- API: `dotnet test api -c Release --filter WaterTests|FoodDataTests|WorkoutAndFoodTests|FoundationTests`: 30 passed,
+  including two new water tests (idempotent retry, payload mismatch, duplicate id, ranges, update/delete revisions,
+  another account 404 and no snapshot leak, erasure with the account; goal set / kept when omitted / cleared / range).
+- App, new: `water_test` (real Drift file and the fake authority: offline add through restart, a lost response retried
+  byte-identically with one entry on the server, the logged day kept after a late sync; correction and removal by
+  revision; another account sees nothing; pulled entries grouped by day, a new day at zero; fl oz conversion and exact
+  totals) and `water_ui_test` (off until turned on, hide and show keep the day's water and goal on Today and Eat; goals
+  from Today in a Dark sheet, empty fields, saved through the one profile path; quick additions in fl oz, Undo, invalid
+  amount refused).
+- App, existing: today_ui, eat_ui, food_ui, me_ui, widget, theme, data_layer: passing after updating expectations tied
+  to the old Eat ring and the new heights (Today's nutrition panel is taller by its goals line).
+- Renders: all states and six looks; a large-text defect found and fixed (the goals link broke letter by letter at 2×
+  text on 320 px).
+- Device (`emulator-5554`, Pixel 7 image, debug build, local API migrated with `AddWaterTracking`):
+  `journey_water_test` passed both phases. Phase 1: goals set from Today's sheet (empty fields, keyboard open) and read
+  back on Eat and Me; water turned on; 250 + 330 mL logged, the 330 corrected to 300 and then removed; a 2 L goal set
+  from the water sheet; offline, 500 mL saved on the phone. Phase 2, a new process back online: 750 mL read back, the
+  queue drained ("Everything is saved to your account"), a pull from the account showed exactly two entries (no
+  duplicate), the keyboard over the water sheet, hide and show kept the total. Captures
+  `docs/evidence/screenshots/water-0*.png`; recording `docs/evidence/recordings/goals-water.mp4` (from the short
+  `journey_water_demo_test`). Before/after renders in `docs/evidence/goals-water/`.
+- Found on the device and fixed, each with a regression test in `water_ui_test`: the "Correct this amount" dialog
+  used its text field after disposing it (it closed with an exception); the water line showed "0 mL" while the day's
+  entries were still being read after a restart (it now shows nothing until they are known).
+- Harness, not the app: two attempts hung before the test attached (adb restarts and a cold emulator boot cleared
+  it), one lost the emulator after phase 1; the journey now waits for the goals link to be enabled (it is disabled for
+  a few seconds after sign-up until the account's profile arrives) and closes sheets by popping their route.
+
+**Not verified:** a physical phone; VoiceOver/TalkBack by ear; the hosted API, which gets the migration only when
+`main` is deployed (until then the capability is absent there and water stays hidden; goals work as before). The
+installed IPA talks to the hosted API, so water will not appear in it until that deployment.

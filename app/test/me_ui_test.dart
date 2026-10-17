@@ -20,7 +20,7 @@ const _day = '2026-10-11';
 class _Profiles implements ProfileRepository {
   final units = <String?>[];
   @override
-  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal}) => throw UnimplementedError();
+  Future<Receipt> setGoals(Profile current, {required int? calorieGoal, required int? proteinGoal, bool withWater = false, int? waterGoalMl}) => throw UnimplementedError();
   @override
   Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) async {
     units.add(loadUnit);

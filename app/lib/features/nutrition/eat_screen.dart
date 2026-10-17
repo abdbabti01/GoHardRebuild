@@ -13,6 +13,8 @@ import '../coach/coach_bubble.dart';
 import 'food_form.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
+import 'nutrition_tools.dart';
+import 'water.dart';
 
 /// The dated food journal: the day's overview, one Log food action, then Breakfast, Lunch, Dinner and Snack,
 /// built only from food the user logged as eaten. Each entry is its own row with the name, portion and values
@@ -27,7 +29,9 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// Null = follow the shared "today"; a picked day stays put when midnight passes.
   String? _picked;
 
-  static const _icons = {'Breakfast': Icons.egg_alt_outlined, 'Lunch': Icons.lunch_dining_outlined, 'Dinner': Icons.dinner_dining_outlined, 'Snack': Icons.cookie_outlined};
+  /// One family for the meals, the time of day they belong to: sunrise, sun, moon, and a snack. Outlined Material icons
+  /// on the same tile, with the meal's name beside them.
+  static const _icons = {'Breakfast': Icons.wb_twilight_outlined, 'Lunch': Icons.light_mode_outlined, 'Dinner': Icons.dark_mode_outlined, 'Snack': Icons.cookie_outlined};
 
   /// The portion as it was saved, then the macros that are known, then how the record stands with the account.
   static String _detail(Stored<FoodEntry> r) {
@@ -58,6 +62,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final live = [for (final r in rows.value ?? const <Stored<FoodEntry>>[]) if (!r.value.isDeleted) r];
     final entries = [for (final r in live) r.value];
     final profile = ref.watch(profileProvider).value;
+    final display = ref.watch(nutritionDisplayProvider);
     final c = context.c;
 
     // With very large text the decorative tile gives its room to the words.
@@ -81,7 +86,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                 CoachHelpButton(
                   key: const Key('coach-help-eat'), semanticLabel: 'Help with your food journal',
                   onPressed: () => showCoachHelpSheet(context, title: 'Your food journal', say: const CoachSay(
-                      'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged, and your goals are set in Me › Nutrition goals.')),
+                      'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged. Your daily goals are set from the summary here, on Today or in Me.')),
                 ),
                 IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
                 IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
@@ -105,6 +110,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                 // The day's summary as a photo panel, with the one general Log food in it.
                 NutritionSurface(
                   entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, pending: live.any((r) => r.isPending),
+                  showCarbs: display.carbs, showFat: display.fat,
+                  footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
                   action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
                 ),
                 const SizedBox(height: 28),
