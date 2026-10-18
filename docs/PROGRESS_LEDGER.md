@@ -1622,3 +1622,7 @@ permission screens, Core Motion prompts, speech heard by ear, ducking with music
 headphones, lock-screen speech and vibration, battery), iOS beyond CI compilation, TalkBack/VoiceOver by ear, the
 hosted API with this build (no API change is needed). `flutter_tts` applies the Kotlin Gradle plugin: Flutter warns a
 future release will refuse that until the plugin migrates.
+- CI `ci` run 84 on `46c5503`: passed. Unsigned IPA `ios-unsigned-ipa` run 32 on `46c5503` (branch
+  `feature/steps-intervals-audio-records`, build number 32, hosted API): passed; artifact `GoHard-Dev-unsigned-ipa`
+  (`GoHard-Dev-unsigned-32.ipa`). It compiles the Core Motion bridge and `flutter_tts`; nothing ran on an iPhone.
+  `main` and Railway are unchanged.
