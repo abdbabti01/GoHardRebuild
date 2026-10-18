@@ -1721,3 +1721,6 @@ Walk and Steps tiles (including Start) while it shows; it can be swiped away.
 
 **Not verified:** a physical phone (photo crop on other phone sizes, VoiceOver/TalkBack, real Health Connect / Core
 Motion counts), iOS beyond CI compilation. Recipes / multi-food saved meals remain out of scope (unchanged).
+- CI: run 89 on `6477eab` failed at `flutter analyze` (an unused import left in `move_render_test`); fixed in the test
+  only (`f5daa33`); CI run 90 on `f5daa33`: **passed**. Unsigned IPA run 34 on `6477eab`, build number 34, artifact
+  `GoHard-Dev-unsigned-ipa`: passed; `f5daa33` changes no app code. `main` and Railway unchanged.
