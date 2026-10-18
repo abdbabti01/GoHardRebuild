@@ -26,6 +26,7 @@ import 'account_repository.dart';
 import 'permissions_screen.dart';
 import 'reminders.dart';
 import 'sync_review_screen.dart';
+import '../coach/media_manager.dart' show ManageExerciseVideosScreen, mediaAccessProvider;
 
 /// Workout reminders on or off (Me, setup). Notification permission is asked for only here, when they are turned on.
 Future<void> setReminders(BuildContext context, WidgetRef ref, Profile profile, bool on) async {
@@ -234,6 +235,14 @@ class MeScreen extends ConsumerWidget {
           ],
         ]),
 
+        // Only for the account the server says may manage shared videos; everyone else never sees it.
+        if (ref.watch(mediaAccessProvider).value?.canManage ?? false) ...[
+          const _Group('GoHard owner'),
+          GroupCard(children: [
+            GroupRow(key: const Key('me-manage-videos'), icon: Icons.video_library_outlined, title: 'Manage exercise videos',
+                subtitle: 'Shared demonstrations for everyone using GoHard', onTap: () => push(context, const ManageExerciseVideosScreen())),
+          ]),
+        ],
         const _Group('Account'),
         GroupCard(children: [
           // The same words as Today's notice. Tapping the row opens the review, or asks the account again.

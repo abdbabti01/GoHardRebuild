@@ -322,3 +322,85 @@ public class Proposal
     public int Revision { get; set; } = 1;
     public DateTime CreatedAtUtc { get; set; }
 }
+
+// ---- Owner-published exercise demonstrations (docs/OWNER_EXERCISE_VIDEOS.md). Global reference data managed by the
+// one configured owner; not owned rows, never in a person's sync snapshot.
+
+/// <summary>One upload for one catalogue key, from upload to publication. The row is also the durable processing job
+/// (Status queued/processing, leased by one worker at a time).</summary>
+public class MediaDraft
+{
+    public Guid Id { get; set; }
+    public string CatalogKey { get; set; } = "";
+    /// <summary>awaiting_upload | queued | processing | ready | failed | published | cancelled</summary>
+    public string Status { get; set; } = "awaiting_upload";
+    public string Variant { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Creator { get; set; } = "";
+    /// <summary>original (the owner's own footage) | licensed (someone else's, under LicenceName)</summary>
+    public string RightsKind { get; set; } = "original";
+    public string? LicenceName { get; set; }
+    public string? LicenceUrl { get; set; }
+    public string? SourceUrl { get; set; }
+    public string RightsNotice { get; set; } = "";
+    public bool RightsConfirmed { get; set; }
+    public string ContentType { get; set; } = "";
+    public long DeclaredBytes { get; set; }
+    // Private staging objects. Never exposed in the public catalogue.
+    public string OriginalKey { get; set; } = "";
+    public long? OriginalBytes { get; set; }
+    public DateTime UploadExpiresAtUtc { get; set; }
+    public string? ProcessedKey { get; set; }
+    public string? PosterKey { get; set; }
+    public long? Bytes { get; set; }
+    public string? Sha256 { get; set; }
+    public double? DurationSeconds { get; set; }
+    public int? Width { get; set; }
+    public int? Height { get; set; }
+    /// <summary>A short code safe to show the owner (PROBE_FAILED, TOO_LONG…); never tool output or a URL.</summary>
+    public string? Error { get; set; }
+    public int Attempts { get; set; }
+    public DateTime? LeaseUntilUtc { get; set; }
+    public Guid? LeaseOwner { get; set; }
+    public Guid? PublishedVersionId { get; set; }
+    public bool OriginalDeleted { get; set; }
+    public Guid CreatedBy { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
+    public DateTime? PublishedAtUtc { get; set; }
+}
+
+/// <summary>An immutable published demonstration. At most one per key is active; the public objects are never overwritten.</summary>
+public class MediaVersion
+{
+    public Guid Id { get; set; }
+    public string CatalogKey { get; set; } = "";
+    public Guid DraftId { get; set; }
+    public bool IsActive { get; set; }
+    public string ClipKey { get; set; } = "";
+    public string PosterKey { get; set; } = "";
+    public long Bytes { get; set; }
+    public string Sha256 { get; set; } = "";
+    public double DurationSeconds { get; set; }
+    public int Width { get; set; }
+    public int Height { get; set; }
+    public string Variant { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Creator { get; set; } = "";
+    public string RightsKind { get; set; } = "original";
+    public string? LicenceName { get; set; }
+    public string? LicenceUrl { get; set; }
+    public string? SourceUrl { get; set; }
+    public string RightsNotice { get; set; } = "";
+    public DateTime PublishedAtUtc { get; set; }
+    public DateTime? WithdrawnAtUtc { get; set; }
+}
+
+/// <summary>The single row whose Revision is the public media catalogue's version (its ETag).</summary>
+public class MediaCatalogState
+{
+    public int Id { get; set; }
+    public int Revision { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
+}

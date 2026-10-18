@@ -11,6 +11,7 @@ import 'coach_avatar.dart';
 import 'coach_bubble.dart';
 import 'exercise_demo.dart';
 import 'exercise_media.dart';
+import 'media_manager.dart' show ManageExerciseVideoScreen, mediaAccessProvider;
 import 'guide.dart';
 
 /// The Quick guide sheets: reviewed bundled text, shown at once and offline. "Ask GoHard" is a separate, explicit
@@ -177,9 +178,13 @@ Widget _demoCredit(BuildContext context, ExerciseMedia m) => Padding(
         const SizedBox(height: 4),
         Text(m.credit.attribution, style: context.sansStyle(14.5, weight: FontWeight.w500)),
         Text('Shows: ${m.variant}', style: context.caption),
-        Text('Changes: ${m.changes}', style: context.caption),
-        Text('Licence: ${m.credit.licenceUrl}', style: context.caption),
-        Text('Source: ${m.sourcePage}', style: context.caption),
+        // Original footage carries its rights notice; someone else's keeps its licence and source.
+        if (m.credit.original) Text(m.credit.notice ?? 'Original footage.', style: context.caption)
+        else ...[
+          if (m.changes.isNotEmpty) Text('Changes: ${m.changes}', style: context.caption),
+          if (m.credit.licenceUrl != null) Text('Licence: ${m.credit.licenceUrl}', style: context.caption),
+        ],
+        if (m.sourcePage != null) Text('Source: ${m.sourcePage}', style: context.caption),
       ]),
     );
 
@@ -237,6 +242,13 @@ class _ExerciseInfo extends ConsumerWidget {
       if (info != null) _sources(context, guide!.sourcesFor({...info.sources, ...?term?.sources}.toList())),
       if (sourced != null) _techniqueSources(context, sourced.sources),
       if (media != null) _demoCredit(context, media),
+      // The owner's quiet way in; nobody else sees it.
+      if (!custom && (ref.watch(mediaAccessProvider).value?.canManage ?? false))
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(key: const Key('exercise-manage-demo'), icon: const Icon(Icons.video_settings_outlined, size: 18),
+              label: const Text('Manage demonstration'), onPressed: () => push(context, ManageExerciseVideoScreen(catalogKey: key))),
+        ),
       const SizedBox(height: 16),
       if (onAsk != null)
         SecondaryButton('Ask about this exercise', key: const Key('exercise-info-ask'), leading: const CoachAvatar(size: 24), onPressed: () {

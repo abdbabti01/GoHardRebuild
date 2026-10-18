@@ -33,7 +33,7 @@ class _Coach implements Transport {
   bool offline = false;
 
   @override
-  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) async {
+  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer, Map<String, String>? headers}) async {
     if (path != '/coach/ask') return const ApiResponse(404, null);
     final request = jsonDecode(jsonEncode(data)) as Json;
     asks.add(request);

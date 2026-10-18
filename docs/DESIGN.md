@@ -414,6 +414,21 @@ Plan / Progress kept in `shellProvider`.
   phone's Reduce Motion). The pictures are static PNGs: nothing blinks, talks, walks, waves or "thinks", and no
   haptic fires for a hint.
 
+### Owner exercise videos (19 October 2026, docs/OWNER_EXERCISE_VIDEOS.md)
+
+- Me gains a "GoHard owner" group with **Manage exercise videos** only for the account the server names; nobody else
+  sees a trace of it. The exercise sheet's owner-only **Manage demonstration** is a quiet text button after the credits.
+- The manager is an ordinary AppPage: serif title, a caption saying publishing reaches everyone, the coach's one-time
+  line (CoachSpot, hint policy), one filled **Upload video**, a search field and ListRows whose subtitle is the status in
+  words (No owner video / Draft / Processing / Ready to preview / Published / Failed, plus "bundled demonstration shown").
+- An exercise's page separates **What everyone sees now** (a Panel: the published owner video with Unpublish, or the
+  bundled credit, or none) from the **Owner video / Replacement** being prepared. Upload shows real bytes sent on the
+  app's ProgressRail with Cancel; Processing is a small indeterminate spinner with words (no invented percentage); Ready
+  shows the processed clip in the existing player (no Download for a private preview) and one filled **Publish**, which
+  asks before it reaches everyone. Errors are StatusLines in plain words with Try again.
+- Details are ordinary TextFields, a switch for someone else's footage (licence, links) and a checkbox for the rights;
+  Material rounded icons only. No new tokens: Light/Dark/accents and large text use the existing components.
+
 ## Eat
 
 The calm wash behind the date, the serif "Eat" and previous / next day; no scene, no weather. One card: the calorie

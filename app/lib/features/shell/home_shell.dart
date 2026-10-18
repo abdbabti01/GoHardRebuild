@@ -16,6 +16,7 @@ import '../today/today_screen.dart';
 import '../plans/train_screen.dart';
 import '../weather/weather.dart' show todaySceneProvider;
 import '../../core/widgets.dart';
+import '../coach/exercise_media.dart' show remoteMediaProvider;
 
 enum TrainView { workouts, plan, progress }
 
@@ -32,7 +33,11 @@ class ShellController extends Notifier<ShellState> {
     ref.watch(ownerProvider); // a different signed-in owner always starts on Today, with no navigation state carried over
     return const ShellState();
   }
-  void switchTab(int tab, {TrainView? trainView}) => state = ShellState(tab: tab, trainView: trainView ?? state.trainView);
+  void switchTab(int tab, {TrainView? trainView}) {
+    state = ShellState(tab: tab, trainView: trainView ?? state.trainView);
+    // Train is where demonstrations are used: a quiet catalogue check (at most every five minutes).
+    if (tab == 1) ref.read(remoteMediaProvider.notifier).refresh();
+  }
   void selectTrainView(TrainView view) => state = ShellState(tab: state.tab, trainView: view);
 }
 
@@ -44,6 +49,8 @@ class HomeShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Keeps the owner-video catalogue alive for the session, so it refreshes on foreground (docs/OWNER_EXERCISE_VIDEOS.md).
+    ref.listen(remoteMediaProvider, (_, _) {});
     final shell = ref.watch(shellProvider);
     final issues = ref.watch(issuesProvider).value ?? const [];
     ref.watch(displayMigrationProvider); // a display choice made here before the account could keep it goes up once

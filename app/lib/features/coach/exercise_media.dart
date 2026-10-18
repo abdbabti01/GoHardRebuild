@@ -5,12 +5,16 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../app/providers.dart' show apiProvider, ownerProvider;
+import '../../core/compatibility.dart';
 import '../../data/models.dart';
+import '../../data/session.dart';
 
 /// Exercise demonstrations (docs/EXERCISE_DEMOS.md): the reviewed, bundled manifest (assets/data/exercise-media.json,
 /// built by scripts/build-exercise-demos.mjs) and the phone's own store of downloaded clips. Public educational media
@@ -20,10 +24,14 @@ import '../../data/models.dart';
 const maxClipBytes = 20 * 1024 * 1024;
 const demoCacheBytes = 100 * 1024 * 1024;
 
+/// Who made a demonstration and on what terms. Footage the owner made is [original]: it has a rights notice and no
+/// outside licence; someone else's keeps its creator, licence and source.
 @immutable
 class DemoCredit {
-  const DemoCredit({required this.creator, required this.licence, required this.licenceUrl, required this.attribution});
-  final String creator, licence, licenceUrl, attribution;
+  const DemoCredit({required this.creator, required this.attribution, this.licence, this.licenceUrl, this.original = false, this.notice});
+  final String creator, attribution;
+  final String? licence, licenceUrl, notice;
+  final bool original;
 }
 
 @immutable
@@ -40,15 +48,25 @@ class DemoVideo {
   String get fileName => '$sha256${p.extension(url.path).toLowerCase()}';
 }
 
-/// One reviewed demonstration for one catalogue key: a clip (with a bundled poster) or a still (the poster itself).
+/// One reviewed demonstration for one catalogue key: a clip (with a poster) or a still (the poster itself). The poster
+/// is a bundled asset, or for an owner-published video an HTTPS URL on the approved media origin ([remotePoster]).
 @immutable
 class ExerciseMedia {
   const ExerciseMedia({required this.catalogKey, required this.poster, required this.variant, required this.credit, required this.changes,
-      required this.sourcePage, required this.providerName, this.video});
-  final String catalogKey, poster, variant, changes, sourcePage, providerName;
+      required this.providerName, this.sourcePage, this.video, this.versionId, this.allowDownload = true});
+  final String catalogKey, poster, variant, changes, providerName;
+  final String? sourcePage;
   final DemoCredit credit;
   final DemoVideo? video;
+
+  /// The published version this came from (owner videos only).
+  final String? versionId;
+
+  /// False for a private preview: it is never saved on the phone.
+  final bool allowDownload;
   bool get isVideo => video != null;
+  bool get remotePoster => !poster.startsWith('assets/');
+  bool get isOwnerVideo => versionId != null;
 }
 
 @immutable
@@ -146,6 +164,18 @@ class ExerciseMediaCatalog {
     );
   }
 
+  ExerciseMediaCatalog._merged(ExerciseMediaCatalog base, Map<String, ExerciseMedia> remote)
+      : version = base.version,
+        media = {...base.media, ...remote},
+        technique = base.technique,
+        techniqueReviewNote = base.techniqueReviewNote,
+        rejected = base.rejected;
+
+  /// This catalogue with the owner's published videos over it, key by key. A key the owner has not published (or has
+  /// withdrawn) keeps its bundled demonstration; nothing is matched by name.
+  ExerciseMediaCatalog withRemote(RemoteMediaCatalog? remote) =>
+      remote == null || remote.entries.isEmpty ? this : ExerciseMediaCatalog._merged(this, remote.entries);
+
   final int version;
   final Map<String, ExerciseMedia> media;
   final Map<String, TechniqueGuide> technique;
@@ -157,7 +187,174 @@ class ExerciseMediaCatalog {
   TechniqueGuide? techniqueFor(String? catalogKey) => catalogKey == null || catalogKey.startsWith('custom:') ? null : technique[catalogKey];
 }
 
-final exerciseMediaProvider = FutureProvider<ExerciseMediaCatalog>((ref) async => ExerciseMediaCatalog.parse(await rootBundle.loadString('assets/data/exercise-media.json')));
+final bundledMediaProvider = FutureProvider<ExerciseMediaCatalog>((ref) async => ExerciseMediaCatalog.parse(await rootBundle.loadString('assets/data/exercise-media.json')));
+
+/// What the app shows: the bundled library with the owner's published videos over it (docs/OWNER_EXERCISE_VIDEOS.md).
+final exerciseMediaProvider = FutureProvider<ExerciseMediaCatalog>((ref) async {
+  final remote = ref.watch(remoteMediaProvider);
+  return (await ref.watch(bundledMediaProvider.future)).withRemote(remote);
+});
+
+// ------------------------------------------------------------------ owner-published videos from the API
+
+/// The API's published demonstrations, after validation: every URL must be on the media origin the server names, over
+/// HTTPS (plain HTTP only for a local development origin in a debug build), within the clip limit, with a real hash.
+class RemoteMediaCatalog {
+  const RemoteMediaCatalog({required this.revision, required this.origin, required this.entries});
+  final int revision;
+  final String origin;
+  final Map<String, ExerciseMedia> entries;
+
+  static bool _localDev(Uri u) => kDebugMode && u.scheme == 'http' && const {'10.0.2.2', 'localhost', '127.0.0.1'}.contains(u.host);
+
+  static RemoteMediaCatalog parse(Json j) {
+    final origin = Uri.tryParse(j['mediaOrigin'] as String? ?? '');
+    final entries = <String, ExerciseMedia>{};
+    final trusted = origin != null && origin.host.isNotEmpty && (origin.scheme == 'https' || _localDev(origin));
+    for (final raw in j['entries'] as List? ?? const []) {
+      try {
+        final e = raw as Json;
+        Uri onOrigin(String k) {
+          final u = Uri.parse(e[k] as String);
+          if (!trusted || u.scheme != origin.scheme || u.host != origin.host || u.port != origin.port || !u.path.startsWith(origin.path)) {
+            throw const FormatException('not on the approved media origin');
+          }
+          return u;
+        }
+
+        final key = e['catalogKey'] as String;
+        final bytes = e['bytes'] as int, sha = e['sha256'] as String;
+        if (key.startsWith('custom:') || bytes <= 0 || bytes > maxClipBytes || !RegExp(r'^[0-9a-f]{64}$').hasMatch(sha)) throw const FormatException('invalid');
+        final original = e['rightsKind'] == 'original';
+        final creator = e['creator'] as String, licence = e['licenceName'] as String?;
+        if (!original && (licence == null || licence.isEmpty)) throw const FormatException('licensed footage without its licence');
+        entries[key] = ExerciseMedia(
+          catalogKey: key, poster: onOrigin('posterUrl').toString(), variant: e['variant'] as String, providerName: 'GoHard',
+          versionId: e['id'] as String, sourcePage: e['sourceUrl'] as String?,
+          changes: e['rightsNotice'] as String? ?? '',
+          video: DemoVideo(url: onOrigin('clipUrl'), bytes: bytes, sha256: sha, durationSeconds: (e['durationSeconds'] as num).toDouble(),
+              width: e['width'] as int, height: e['height'] as int),
+          credit: DemoCredit(
+            creator: creator, original: original, licence: licence, licenceUrl: e['licenceUrl'] as String?, notice: e['rightsNotice'] as String?,
+            attribution: original ? 'Original footage by $creator' : 'Video by $creator, $licence',
+          ),
+        );
+      } on Object catch (error) {
+        debugPrint('exercise media catalogue: left out an entry ($error)');
+      }
+    }
+    return RemoteMediaCatalog(revision: j['revision'] as int? ?? 0, origin: origin?.toString() ?? '', entries: entries);
+  }
+}
+
+/// How the remote catalogue is fetched and remembered; replaced in tests.
+abstract interface class RemoteMediaSource {
+  /// GET /exercise-media/catalog with If-None-Match. Null on 304; throws on anything else that is not a catalogue.
+  Future<({Json body, String? etag})?> fetch(String? etag);
+  Future<String?> readCache();
+  Future<void> writeCache(String json);
+}
+
+/// The last good owner catalogue, kept on the phone across restarts. Refreshed quietly on foreground and Train entry
+/// when older than five minutes, and at once after the owner publishes; a failed refresh never erases it.
+class RemoteMedia extends Notifier<RemoteMediaCatalog?> {
+  static const minAge = Duration(minutes: 5);
+  DateTime? _checkedAt;
+  String? _etag;
+  Future<void>? _inflight, _loaded;
+
+  RemoteMediaSource? get _source => ref.read(remoteMediaSourceProvider);
+
+  @override
+  RemoteMediaCatalog? build() {
+    _loaded = _load();
+    final life = AppLifecycleListener(onResume: refresh);
+    ref.onDispose(life.dispose);
+    // Asked once a server that has the catalogue is known (sign-in, capabilities), then on foreground and Train.
+    ref.listen(remoteMediaSourceProvider, (_, next) {
+      if (next != null) refresh();
+    }, fireImmediately: true);
+    return null;
+  }
+
+  Future<void> _load() async {
+    final source = _source;
+    if (source == null) return;
+    try {
+      final cached = await source.readCache();
+      if (cached == null) return;
+      final j = jsonDecode(cached) as Json;
+      _etag = j['etag'] as String?;
+      _checkedAt = DateTime.tryParse(j['checkedAt'] as String? ?? '');
+      if (state == null) state = RemoteMediaCatalog.parse(j['body'] as Json);
+    } on Object {
+      // An unreadable cache is simply not used; the next refresh replaces it.
+    }
+  }
+
+  /// Asks the API for changes unless it was asked within [minAge] ([force] skips that). At most one request at a time.
+  Future<void> refresh({bool force = false}) => _inflight ??= _refresh(force).whenComplete(() => _inflight = null);
+
+  Future<void> _refresh(bool force) async {
+    await _loaded;
+    final source = _source;
+    final now = ref.read(nowProvider)();
+    if (source == null || (!force && _checkedAt != null && now.difference(_checkedAt!) < minAge)) return;
+    try {
+      final r = await source.fetch(state == null ? null : _etag);
+      _checkedAt = now;
+      if (r != null) {
+        _etag = r.etag;
+        state = RemoteMediaCatalog.parse(r.body);
+        await source.writeCache(jsonEncode({'etag': r.etag, 'checkedAt': now.toIso8601String(), 'body': r.body}));
+        // Downloads of withdrawn or replaced owner videos go (never one that is playing).
+        final base = ref.read(bundledMediaProvider).value;
+        if (base != null) await ref.read(demoStoreProvider).retireExcept({for (final m in base.withRemote(state).media.values) ?m.video?.sha256});
+      }
+    } on Object {
+      // Offline, an old server, a bad answer: the last good catalogue stays.
+    }
+  }
+}
+
+final nowProvider = Provider<DateTime Function()>((_) => DateTime.now);
+/// The API, for a signed-in account on a server that declares the catalogue; none otherwise (an older server keeps
+/// the bundled library and is never asked).
+final remoteMediaSourceProvider = Provider<RemoteMediaSource?>((ref) {
+  final owner = ref.watch(ownerProvider);
+  final caps = ref.watch(compatibilityProvider).capabilities;
+  if (owner == null || caps == null || !caps.contains('exercises.media-catalog')) return null;
+  return _ApiMediaSource(ref.watch(apiProvider));
+});
+
+class _ApiMediaSource implements RemoteMediaSource {
+  _ApiMediaSource(this._api);
+  final Api _api;
+
+  @override
+  Future<({Json body, String? etag})?> fetch(String? etag) async {
+    final r = await _api.send('GET', '/exercise-media/catalog', headers: {'If-None-Match': ?etag});
+    if (r.status == 304) return null;
+    if (!r.ok || r.data is! Map) throw StateError('catalogue ${r.status}');
+    return (body: r.data as Json, etag: r.etag);
+  }
+
+  Future<File> _file() async => File(p.join((await getApplicationSupportDirectory()).path, 'exercise-media-catalog.json'));
+  @override
+  Future<String?> readCache() async {
+    final f = await _file();
+    return await f.exists() ? f.readAsString() : null;
+  }
+
+  @override
+  Future<void> writeCache(String json) async {
+    final f = await _file();
+    final tmp = File('${f.path}.tmp');
+    await tmp.writeAsString(json);
+    await tmp.rename(f.path);
+  }
+}
+final remoteMediaProvider = NotifierProvider<RemoteMedia, RemoteMediaCatalog?>(RemoteMedia.new);
 
 // ------------------------------------------------------------------ downloads on this phone
 
@@ -345,6 +542,24 @@ class DemoStore extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     super.dispose();
+  }
+
+  /// Deletes saved clips that no longer belong to any demonstration (a withdrawn or replaced owner video), except one
+  /// that is playing: it goes on a later pass.
+  Future<void> retireExcept(Set<String> keep) async {
+    final Directory d;
+    try {
+      d = await _root();
+    } on Object {
+      return;
+    }
+    final gone = [for (final sha in _index!.keys) if (!keep.contains(sha) && !_playing.containsKey(sha)) sha];
+    if (gone.isEmpty) return;
+    for (final sha in gone) {
+      await _delete(File(p.join(d.path, _index!.remove(sha)!.file)));
+    }
+    await _write(d);
+    _notify();
   }
 
   int get usedBytes => _index?.values.fold<int>(0, (s, e) => s + e.bytes) ?? 0;

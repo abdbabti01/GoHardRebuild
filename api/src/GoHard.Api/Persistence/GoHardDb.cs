@@ -22,6 +22,9 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<RouteChunk> RouteChunks => Set<RouteChunk>();
     public DbSet<BodyMetric> BodyMetrics => Set<BodyMetric>();
     public DbSet<Proposal> Proposals => Set<Proposal>();
+    public DbSet<MediaDraft> MediaDrafts => Set<MediaDraft>();
+    public DbSet<MediaVersion> MediaVersions => Set<MediaVersion>();
+    public DbSet<MediaCatalogState> MediaCatalogStates => Set<MediaCatalogState>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -103,6 +106,25 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         Owned<BodyMetric>(b, x => x.UserId).Property(x => x.WeightKg).HasPrecision(6, 2);
         b.Entity<BodyMetric>().Property(x => x.BodyFatPercent).HasPrecision(5, 2);
         Owned<Proposal>(b, x => x.UserId).HasOne<Plan>().WithMany().HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Cascade);
+
+        // Owner-published demonstrations: reference data, not owned by an account (an owner leaving does not erase
+        // what everyone sees). One active version per key, enforced by the database.
+        b.Entity<MediaDraft>(e =>
+        {
+            e.Property(x => x.CatalogKey).HasMaxLength(64);
+            e.Property(x => x.Status).HasMaxLength(16);
+            e.Property(x => x.RightsKind).HasMaxLength(16);
+            e.Property(x => x.Revision).IsConcurrencyToken();
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.CatalogKey);
+        });
+        b.Entity<MediaVersion>(e =>
+        {
+            e.Property(x => x.CatalogKey).HasMaxLength(64);
+            e.HasIndex(x => x.CatalogKey).IsUnique().HasFilter("\"IsActive\"").HasDatabaseName("IX_MediaVersions_ActiveKey");
+            e.HasIndex(x => x.DraftId).IsUnique();
+        });
+        b.Entity<MediaCatalogState>().HasData(new MediaCatalogState { Id = 1, Revision = 0, UpdatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, DateTimeKind.Utc) });
     }
 
     /// <summary>Every owned row is indexed by owner and erased with the account.</summary>

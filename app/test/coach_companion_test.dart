@@ -36,7 +36,7 @@ final _plan = blockPlan(start: '2026-09-21', recorded: 8);
 class _Recorder implements Transport {
   final paths = <String>[];
   @override
-  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) async {
+  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer, Map<String, String>? headers}) async {
     paths.add(path);
     return const ApiResponse(503, null);
   }

@@ -1795,3 +1795,36 @@ docs/EXERCISE_DEMOS_COVERAGE.md.
   wording, full-speed smoothness, battery; no qualified coach has reviewed clips or text.
 - CI run 95 on `4bd3f6a`: **passed** (api, app). Unsigned IPA run 36 on `4bd3f6a`, artifact `GoHard-Dev-unsigned-ipa`
   (19.8 MB): **passed**. `main` and Railway unchanged.
+
+## 19 Oct 2026 — Owner exercise videos (`feature/owner-exercise-videos`, from `feature/exercise-demonstrations` 783bc9a)
+
+The configured owner manages shared demonstrations from the phone (Me › Manage exercise videos; Manage demonstration in
+exercise details): upload → server conversion → preview → explicit Publish; replace, unpublish, delete drafts. Design,
+setup, costs and limits: docs/OWNER_EXERCISE_VIDEOS.md.
+
+- API: `GOHARD_ExerciseMedia__*`; owner = configured user ID against the verified token (404 to everyone else; missing or
+  invalid config = nobody); migration `AddExerciseMedia` (MediaDrafts as the durable job, immutable MediaVersions with one
+  active per key, catalogue revision as ETag); S3 boundary (R2 / local stand-in) with presigned PUT/GET, never logged or
+  stored; DB-leased FFmpeg worker (SKIP LOCKED, bounded attempts, cleanup); `GET /exercise-media/catalog` with 304;
+  capabilities `exercises.media-catalog`, `exercises.media-manage`. Dockerfile adds Ubuntu 24.04 FFmpeg 6.1.1 (658 MB image).
+- App: remote catalogue merged over the bundled library by exact key, ETag, persisted, refreshed on foreground/Train
+  (≥ 5 min) and after publishing; approved-origin HTTPS URLs only; remote posters; original-footage credit; withdrawn
+  downloads retired; the manager screens; image_picker 1.2.3 (system picker; NSPhotoLibraryUsageDescription added).
+- Tests: API 202 passed (13 new: owner-only access incl. forged fields and invalid config, real-size completion checks,
+  expired uploads, duplicate completion, concurrent claims, expired leases, bounded retries, private drafts, idempotent
+  publish, ETag/304, atomic replacement, stale conflicts, unpublish fallback, licensed credits, cleanup). App: full suite
+  583 passed before the new files; `owner_media_test` 8 and `exercise_demo_test` 17 passed on the final code; renders
+  `owner_media_render_test` (Blue Light, Pink Dark, 320 px at 2×) in docs/evidence/design/owner-videos-*.
+- Real round trip (scripts/media-roundtrip.mjs, the API's Linux image, SeaweedFS standing in for R2): wger clip 79 (19.7 MiB
+  HEVC Main 10 HLG / Dolby Vision 8.4, 1080p60) → 2.22 MiB H.264 High yuv420p BT.709 720p30, faststart, video only, in
+  20 s; tone mapping checked by eye; preview and public range requests 206; SHA-256 of the public download matches;
+  unsigned staging read 403; unpublish. Found and fixed on the way: unsigned/chunked S3 payloads over HTTP, a store
+  started open by a PowerShell argument split (now verified private).
+- Device: `journey_owner_videos_test` (new, not default; two accounts; SIMULATED picking via GOHARD_TEST_PICK_FILE)
+  **passed** on emulator-5554 against that stack: owner upload → Processing → preview (0.5×, full screen) → Publish;
+  viewer (ordinary account, no manager) saw Demo on Face pull, played the owner video, and in a workout kept 15 kg × 12
+  and the running clock; owner replaced and unpublished (fallback shown). Earlier attempts failed on test lookups (lazy
+  rows, an ambiguous Publish button, prefilled switches from earlier runs) and one driver attach loss; fixed in the
+  journey. After the passing run, one small UI change: Try again is offered only for processing failures (widget-tested).
+- **Not verified:** real R2 and the hosted API (no credentials used), Cache-Control on R2 copies, real iPhone picking and
+  HDR appearance, uploads interrupted by iOS, music/VoiceOver. `main` and Railway unchanged.

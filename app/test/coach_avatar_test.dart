@@ -74,7 +74,7 @@ class _Page extends StatelessWidget {
 class _RecordingTransport implements Transport {
   final calls = <String>[];
   @override
-  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) {
+  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer, Map<String, String>? headers}) {
     calls.add('$method $path');
     throw const TransportFailure('no network in this test');
   }

@@ -203,6 +203,252 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("FoodEntries");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.MediaCatalogState", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MediaCatalogStates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Revision = 0,
+                            UpdatedAtUtc = new DateTime(2026, 10, 18, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.MediaDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("Bytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CatalogKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Creator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("DeclaredBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<double?>("DurationSeconds")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("LeaseOwner")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LeaseUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LicenceName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LicenceUrl")
+                        .HasColumnType("text");
+
+                    b.Property<long?>("OriginalBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("OriginalDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OriginalKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PosterKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProcessedKey")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PublishedVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("RightsConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RightsKind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("RightsNotice")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sha256")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UploadExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Variant")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogKey");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("MediaDrafts");
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.MediaVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Bytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CatalogKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ClipKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Creator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("DurationSeconds")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LicenceName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LicenceUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PosterKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("PublishedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RightsKind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RightsNotice")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Variant")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("WithdrawnAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MediaVersions_ActiveKey")
+                        .HasFilter("\"IsActive\"");
+
+                    b.HasIndex("DraftId")
+                        .IsUnique();
+
+                    b.ToTable("MediaVersions");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.Occasion", b =>
                 {
                     b.Property<Guid>("Id")

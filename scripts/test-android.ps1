@@ -162,8 +162,21 @@ try {
         $shots = Join-Path $AppDir "build\journey-shots\$journey-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         New-Item -ItemType Directory -Force $shots | Out-Null
         $env:GOHARD_SHOT_DIR = $shots
-        if ($journey -eq 'journey_demo_test') {
-            # The demonstration journey's markers: host captures (adb screencap, so the native video surface is in them,
+        [string[]]$ownerDefines = @()
+        if ($journey -eq 'journey_owner_videos_test') {
+            # Owner videos: the local owner (scripts\start-media-local.ps1 -LocalOwner) and the clip the SIMULATED picker hands
+            # the app. wger clip 79, Face pull, Goulart, CC BY-SA 4.0 (docs/OWNER_EXERCISE_VIDEOS.md › Local verification).
+            $ownerFile = Join-Path $Root 'build\media-local\owner.json'
+            $clip = Join-Path $Root 'build\media-local\owner-test-clip.mov'
+            if (-not (Test-Path $ownerFile)) { Fail 'Run scripts\start-media-local.ps1 -LocalOwner first.' }
+            if (-not (Test-Path $clip)) { Invoke-WebRequest -UseBasicParsing 'https://wger.de/media/exercise-video/222/eea93fcc-6a3c-4783-8f70-0234c791a001.MOV' -OutFile $clip }
+            & $Adb -s $device push $clip /data/local/tmp/owner-demo.mov | Out-Null
+            & $Adb -s $device shell chmod 644 /data/local/tmp/owner-demo.mov
+            $owner = [IO.File]::ReadAllText($ownerFile) | ConvertFrom-Json
+            $ownerDefines = @("--dart-define=GOHARD_OWNER_EMAIL=$($owner.email)", "--dart-define=GOHARD_OWNER_PASSWORD=$($owner.password)", '--dart-define=GOHARD_TEST_PICK_FILE=/data/local/tmp/owner-demo.mov')
+        }
+        if ($journey -in 'journey_demo_test', 'journey_owner_videos_test') {
+            # The demonstration journeys' markers: host captures (adb screencap, so the native video surface is in them,
             # saved as this journey's evidence), the screen recording, Home and back, and the network off and on.
             & $Adb -s $device shell svc wifi enable
             & $Adb -s $device shell svc data enable
@@ -209,7 +222,7 @@ try {
                 # journey_move_test reads its phase from what phase 1 left on the phone, so both phases are one build and
                 # phase 2 needs no reinstall (the emulator has no room for a second copy of the app).
                 [string[]]$phaseDefine = if ($journey -in 'journey_move_test', 'journey_demo_test') { @() } else { "--dart-define=GOHARD_PHASE=$phase" }
-                flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase $phaseDefine $simSteps $keep
+                flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase $phaseDefine $simSteps $ownerDefines $keep
                 if ($LASTEXITCODE -ne 0) { Fail "The native journey '$journey'$(if ($phase) { " (phase $phase)" }) failed." }
                 if ($phase -eq '1') {
                     & $Adb -s $device shell am force-stop $appId
@@ -267,7 +280,7 @@ try {
                 Stop-Job $feeder; Remove-Job $feeder
                 if ($journey -eq 'journey_runwalk_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
-                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_demo_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
+                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_demo_test', 'journey_owner_videos_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

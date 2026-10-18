@@ -25,6 +25,26 @@ final demoPlayerFactoryProvider = Provider<DemoPlayerFactory>((_) => (video, sav
 /// How long a clip may take to start before the sheet says it is unavailable.
 const demoStartTimeout = Duration(seconds: 20);
 
+/// A demonstration's poster: the bundled picture, or an owner video's poster from the approved media origin. Offline
+/// or failing, it is a plain static panel, never a broken image.
+class DemoPoster extends StatelessWidget {
+  const DemoPoster(this.media, {super.key, this.fit = BoxFit.contain, this.width, this.height, this.cacheWidth, this.semanticLabel});
+  final ExerciseMedia media;
+  final BoxFit fit;
+  final double? width, height;
+  final int? cacheWidth;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget fallback(BuildContext context, Object _, StackTrace? _) => SizedBox(
+        width: width, height: height, child: ColoredBox(color: context.c.sunken, child: Center(child: Icon(Icons.play_circle_outline_rounded, color: context.c.secondary))));
+    return media.remotePoster
+        ? Image.network(media.poster, fit: fit, width: width, height: height, cacheWidth: cacheWidth, semanticLabel: semanticLabel, errorBuilder: fallback)
+        : Image.asset(media.poster, fit: fit, width: width, height: height, cacheWidth: cacheWidth, semanticLabel: semanticLabel, errorBuilder: fallback);
+  }
+}
+
 String _mb(int bytes) => '${(bytes / 1000000).toStringAsFixed(1)} MB';
 
 /// The media area for [media]: the player for a clip, the illustration for a still, or the plain "no demonstration"
@@ -58,7 +78,7 @@ class ExerciseDemoMedia extends StatelessWidget {
         _Frame(
           key: const Key('demo-still'),
           color: Colors.white,
-          child: Semantics(image: true, label: 'Illustration of ${m.variant}', child: Image.asset(m.poster, fit: BoxFit.contain)),
+          child: Semantics(image: true, label: 'Illustration of ${m.variant}', child: DemoPoster(m)),
         ),
         const SizedBox(height: 6),
         Text('Illustration: start and finish positions. No video for this exercise yet.', style: context.caption),
@@ -302,7 +322,7 @@ class _DemoPlayerState extends ConsumerState<_DemoPlayer> {
   Widget build(BuildContext context) {
     final c = _c;
     final m = widget.media;
-    final poster = Image.asset(m.poster, fit: BoxFit.contain, semanticLabel: 'Still from the demonstration');
+    final poster = DemoPoster(m, semanticLabel: 'Still from the demonstration');
     final Widget area = switch (_phase) {
       _Phase.ready when c != null && c.value.isInitialized =>
         Semantics(label: 'Demonstration video, muted', child: AspectRatio(aspectRatio: c.value.aspectRatio, child: VideoPlayer(c))),
@@ -342,7 +362,7 @@ class _DemoPlayerState extends ConsumerState<_DemoPlayer> {
         Align(alignment: Alignment.centerLeft, child: TextButton.icon(key: const Key('demo-retry'), onPressed: _play, icon: const Icon(Icons.refresh_rounded, size: 18), label: const Text('Retry'))),
       ],
       if (_phase == _Phase.ready) Text('Muted. It repeats until you pause it.', style: context.caption),
-      _downloadLine(context),
+      if (m.allowDownload) _downloadLine(context),
     ]);
   }
 }

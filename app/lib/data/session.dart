@@ -95,9 +95,12 @@ class SessionManager {
 }
 
 class ApiResponse {
-  const ApiResponse(this.status, this.data);
+  const ApiResponse(this.status, this.data, {this.etag});
   final int status;
   final dynamic data;
+
+  /// The response's ETag, for a conditional request next time (If-None-Match).
+  final String? etag;
   bool get ok => status >= 200 && status < 300;
 
   /// A command acknowledgement can arrive with 200, 409 or 422; what matters is the body.
@@ -113,7 +116,7 @@ class TransportFailure implements Exception {
 }
 
 abstract interface class Transport {
-  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer});
+  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer, Map<String, String>? headers});
 }
 
 class DioTransport implements Transport {
@@ -129,11 +132,11 @@ class DioTransport implements Transport {
   final Dio _dio;
 
   @override
-  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) async {
+  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer, Map<String, String>? headers}) async {
     try {
       final r = await _dio.request<dynamic>(path,
-          data: data, options: Options(method: method, headers: {if (bearer != null) 'Authorization': 'Bearer $bearer'}));
-      return ApiResponse(r.statusCode ?? 0, r.data);
+          data: data, options: Options(method: method, headers: {...?headers, if (bearer != null) 'Authorization': 'Bearer $bearer'}));
+      return ApiResponse(r.statusCode ?? 0, r.data, etag: r.headers.value('etag'));
     } on DioException catch (e) {
       throw TransportFailure(e.type.name);
     }
@@ -147,15 +150,15 @@ class Api {
   final SessionManager _sessions;
   Future<bool>? _refreshing;
 
-  Future<ApiResponse> send(String method, String path, {Object? data, bool auth = true}) async {
+  Future<ApiResponse> send(String method, String path, {Object? data, bool auth = true, Map<String, String>? headers}) async {
     final s = _sessions.current;
-    if (!auth || s == null) return _transport.send(method, path, data: data);
-    var r = await _transport.send(method, path, data: data, bearer: s.accessToken);
+    if (!auth || s == null) return _transport.send(method, path, data: data, headers: headers);
+    var r = await _transport.send(method, path, data: data, bearer: s.accessToken, headers: headers);
     if (r.status != 401) return r;
     if (!await (_refreshing ??= _refresh(s).whenComplete(() => _refreshing = null))) return r;
     final next = _sessions.current;
     if (next == null || next.epoch != s.epoch) return r;
-    return _transport.send(method, path, data: data, bearer: next.accessToken);
+    return _transport.send(method, path, data: data, bearer: next.accessToken, headers: headers);
   }
 
   Future<bool> _refresh(Session s) async {

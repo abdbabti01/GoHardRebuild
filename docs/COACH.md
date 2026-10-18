@@ -307,6 +307,13 @@ it, so the row says when it is asked. It never asks, offers Open phone Settings,
 Today background are app preferences in Me. Android reports a location refused once the same as never asked, so that
 row says "Not asked yet, or not allowed".
 
+### Owner exercise videos (19 Oct 2026)
+
+On the owner's manager only, the guide says once (CoachSpot `owner.videos`, introduce, hint policy): "Choose an exercise,
+upload a short clear clip, check the preview, then publish. Nothing reaches anyone until you press Publish." Choosing a
+file, uploading, previewing or publishing makes no AI call; the coach never publishes, judges rights or rates technique.
+Viewers see no change: the sheet's avatar-led Ask about this exercise is as before.
+
 ### The coach on every tab
 
 The same selected guide everywhere: Today (the companion and its bubble), Train and Eat (below), workout and run

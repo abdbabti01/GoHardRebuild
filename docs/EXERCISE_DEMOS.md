@@ -2,7 +2,8 @@
 
 Added 18 October 2026 on `feature/exercise-demonstrations`, from `GoHard_Exercise_Demonstrations`. One shared exercise
 sheet shows a real person doing the movement where a reviewed clip exists, a reviewed illustration where only that
-exists, and plainly says so where nothing does. Row by row coverage: [EXERCISE_DEMOS_COVERAGE.md](EXERCISE_DEMOS_COVERAGE.md).
+exists, and plainly says so where nothing does. Row by row coverage: [EXERCISE_DEMOS_COVERAGE.md](EXERCISE_DEMOS_COVERAGE.md). Since 19 Oct 2026 the owner can publish videos over this
+library from the phone: [OWNER_EXERCISE_VIDEOS.md](OWNER_EXERCISE_VIDEOS.md).
 
 ## Coverage (50 built-in catalogue keys)
 

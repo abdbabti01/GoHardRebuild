@@ -32,7 +32,8 @@ public static class GoHardEndpoints
         .AddWeather(config)
         .AddCoach(config)
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<WaterService>()
-        .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>();
+        .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>()
+        .AddExerciseMedia(config);
 
     /// <summary>Ownership always comes from the validated token, never from a client-supplied user ID.</summary>
     private static Guid UserId(this ClaimsPrincipal p) => Guid.Parse(p.FindFirstValue("sub")!);
@@ -52,12 +53,15 @@ public static class GoHardEndpoints
     {
         var api = app.MapGroup("/api/v1");
         // minimumClientContract rises only for a change an older app cannot live with. Added optional fields are not one.
-        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach) => Results.Ok(new
+        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach, Application.ExerciseMedia.MediaOptions media) => Results.Ok(new
         {
             contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 1),
             capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
                 .Concat(weather.Enabled ? [WeatherRegistration.Capability] : [])
-                .Concat(coach.Enabled ? [CoachService.Capability] : []).ToArray(),
+                .Concat(coach.Enabled ? [CoachService.Capability] : [])
+                // Management is declared only where it can work (an owner and storage configured); who the owner is is never said.
+                .Concat([Application.ExerciseMedia.MediaService.CatalogCapability])
+                .Concat(media.StorageConfigured && media.Owner is not null ? [Application.ExerciseMedia.MediaService.ManageCapability] : []).ToArray(),
         }));
 
         var auth = api.MapGroup("/auth").RequireRateLimiting("auth");
@@ -208,6 +212,8 @@ public static class GoHardEndpoints
                 _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
             };
         });
+
+        me.MapMediaEndpoints();
 
         // Supporting activities
         me.MapPost("/runs", (RunStartRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>

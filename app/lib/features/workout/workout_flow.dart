@@ -7,7 +7,8 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
-import '../coach/exercise_media.dart' show exerciseMediaProvider;
+import '../coach/exercise_demo.dart' show DemoPoster;
+import '../coach/exercise_media.dart' show ExerciseMedia, exerciseMediaProvider;
 import '../coach/guide_sheets.dart' show showExerciseDetails;
 import '../plans/plan_repository.dart';
 import 'workout_repository.dart';
@@ -200,7 +201,7 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
           key: Key('exercise-${e.key}'), title: e.name,
           subtitle: [e.category, if (e.equipment.isNotEmpty) e.equipment, if (e.isTimed) 'timed', if (e.isCustom) 'Your exercise'].join(' · '),
           leading: switch (demos?.forKey(e.key)) {
-            final m? => _Thumb(m.poster),
+            final m? => _Thumb(m),
             null => null,
           },
           trailing: e.isCustom ? null : _preview(e, demos?.forKey(e.key)?.isVideo ?? false),
@@ -217,14 +218,13 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
 
 /// A small static picture of a reviewed demonstration (its bundled poster), decoded at its own size.
 class _Thumb extends StatelessWidget {
-  const _Thumb(this.asset);
-  final String asset;
+  const _Thumb(this.media);
+  final ExerciseMedia media;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6),
-          child: Image.asset(asset, width: 56, height: 40, fit: BoxFit.cover,
-              cacheWidth: (56 * MediaQuery.devicePixelRatioOf(context)).ceil(), errorBuilder: (_, _, _) => const SizedBox(width: 56, height: 40)),
+          child: DemoPoster(media, width: 56, height: 40, fit: BoxFit.cover, cacheWidth: (56 * MediaQuery.devicePixelRatioOf(context)).ceil()),
         ),
       );
 }

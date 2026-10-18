@@ -61,7 +61,7 @@ class FakeServer implements Transport {
       ApiResponse(status == 'accepted' ? 200 : status == 'conflict' ? 409 : 422, {'operationId': op, 'status': status, 'revision': revision, 'data': data, 'code': code});
 
   @override
-  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) async {
+  Future<ApiResponse> send(String method, String path, {Object? data, String? bearer, Map<String, String>? headers}) async {
     final body = jsonEncode(data);
     calls.add((method: method, path: path, body: body, bearer: bearer));
     if (offline) throw const TransportFailure('offline');
