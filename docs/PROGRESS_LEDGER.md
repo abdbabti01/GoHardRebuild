@@ -1724,3 +1724,41 @@ Motion counts), iOS beyond CI compilation. Recipes / multi-food saved meals rema
 - CI: run 89 on `6477eab` failed at `flutter analyze` (an unused import left in `move_render_test`); fixed in the test
   only (`f5daa33`); CI run 90 on `f5daa33`: **passed**. Unsigned IPA run 34 on `6477eab`, build number 34, artifact
   `GoHard-Dev-unsigned-ipa`: passed; `f5daa33` changes no app code. `main` and Railway unchanged.
+
+## 18 October 2026 (Today option 2) — photo-header Run / Walk and Steps tiles, inline water Undo (same branch, from `4b704fa`)
+
+From `GoHard_Today_Option_2_Polish/CLAUDE_PROMPT.md`; target `references/approved-today-option-2.png`, BEFORE =
+`references/current-iphone-before.jpeg` (IPA 34) and the earlier device captures (copied to
+`docs/evidence/today-option-2/before-device-*`).
+
+| Change | Where |
+|---|---|
+| Run / Walk and Steps as two separate photo-header tiles (`_HeaderTile`: short photograph strip with the label on its pale side, content, one action at the bottom), equal height side by side, stacked at > 1.3× text or < 350 px; `_Module(fill)`, `_Cells` and `PanelSurface(fill)` removed | `today_screen.dart`, `core/widgets.dart` |
+| Run / Walk: check + "Walk/Run completed" / "today"; distance the main figure, time under it; no Distance/Time labels or second title; **Start new** (full width) opens Ready; open states keep **Resume**; empty keeps **Start** | `today_screen.dart` (`_TileState`, `_RunCardState`) |
+| Steps: label in the header, footprints icon, count, goal and bar only with a goal, source and "Updated <time>" on their own lines (locale clock format, non-breaking); **Set a goal** / **Edit goal** open the shared Steps sheet | `today_screen.dart` (`_StepsCardState`) |
+| Water Undo inline: for 5 s it takes Other amount's place ("Undo 250 mL"), removes exactly that entry, then Other amount returns; no SnackBar over the tiles; announced to screen readers | `nutrition_tools.dart` (`lastWaterProvider`, `WaterRow`, `addWater`) |
+
+No backend change.
+
+**Found and fixed.** In dark themes the Run / Walk figure and time were near-white on the pale tile (styled from the
+page, not the tile): they now take the tile's `PanelTheme`. "Start new" and "Run completed" wrapped in a 174 px tile:
+the button is full tile width and the paddings are 14–16 px. A full-width header strip can only crop the photograph
+vertically, which put the label on the runner's shoe: the photograph now takes the strip's trailing 72 %.
+
+**Checks (focused).** `flutter analyze`: clean. `water_ui`, `today_ui`, `move_ui`, `widget`, `coach_companion`,
+`motion`, `eat_ui`: 112 passed, after updating expectations of the old layout (Distance/Time labels, "Run finished
+today", Start after a finished run, the Undo bar, the source · time line, the photo's share of the tile). New checks:
+inline Undo removes that entry, keeps the line's height, no SnackBar, goes away after 5 s; Start new opens Ready;
+"Updated" is in the phone's clock format and cannot wrap before AM/PM; Set a goal opens the Steps sheet and sets no
+goal; Edit goal with a goal; the header photo is the bundled footprints asset; the strip stays at 2× text. Renders
+(widgets, not a phone): `docs/evidence/today-option-2/` and `docs/evidence/design/six-themes-today-steps.png`,
+`state-large-text-320-today-steps.png`. Device journeys updated for the new wording ("Run completed", "Start new").
+Device (`emulator-5554`, API 36, debug, local API, SIMULATED steps): `journey_today_water_test`, updated for the inline
+Undo and Set a goal, **passed** (one earlier attempt passed its tests but lost the driver while copying captures:
+"Service has disappeared"). Today's header tiles in Blue Light and Pink Dark; Set a goal opens the Steps sheet and
+leaves no goal; +250 mL → Undo 250 mL in the water line → 0 mL; another drink kept with Undo shown (Start not covered or
+moved), Other amount back after 5 s; Other amount 330 → 580 mL; Eat History; Train › Run / Walk history. After:
+`docs/evidence/screenshots/thw-02, 03, 08`; before: `docs/evidence/today-option-2/before-device-thw-02, 03, 08`.
+
+**Not verified:** a physical phone (photo crops on other sizes, VoiceOver/TalkBack wording, real Health Connect / Core
+Motion counts), iOS beyond CI compilation.

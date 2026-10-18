@@ -116,6 +116,19 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    testWidgets('Set a goal opens the Steps sheet and sets nothing by itself', (tester) async {
+      final store = MovePrefsStore(MemorySecretStore())..value = const MovePrefs(steps: {'one'});
+      final c = await pumpApp(tester, await _fixture(tester, FoodFakes(), steps: SimulatedStepSource(state: StepAccess.allowed, dailyTotal: 3480), move: store), size: const Size(390, 1600));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('today-steps-goal')), findsNothing, reason: 'no goal, no "of" and no bar');
+      await tester.tap(find.byKey(const Key('today-steps-goal-link')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('steps-goal')), findsOneWidget, reason: 'the shared Steps sheet');
+      expect(c.read(stepGoalProvider), isNull, reason: 'no default goal');
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('with the coach off the tile is still there with its own Enable; hiding it changes nothing else', (tester) async {
       final c = await pumpApp(tester, await _fixture(tester, FoodFakes(), coach: false, steps: SimulatedStepSource(state: StepAccess.allowed)), size: const Size(390, 1600));
       await tester.pumpAndSettle();
@@ -133,7 +146,11 @@ void main() {
       await today(tester, SimulatedStepSource(state: StepAccess.allowed, dailyTotal: 3480));
       expect(value(tester), '3,480');
       expect(find.text('of 6,000'), findsOneWidget, reason: 'the goal, with its bar, only because a goal is set');
-      expect(find.textContaining('This phone (simulated) · '), findsOneWidget, reason: 'where and when it was read');
+      expect(find.text('This phone (simulated)'), findsOneWidget, reason: 'where it was read, on its own line');
+      final updated = tester.widget<Text>(find.textContaining('Updated')).data!;
+      expect(updated, matches(RegExp(r'^Updated\u00a0\d{1,2}:\d{2}(\u00a0(AM|PM))?$')), reason: 'when, in the phone\'s clock format, never wrapping before AM/PM');
+      expect(find.byKey(const Key('today-photo-steps')), findsOneWidget, reason: 'the footprints photograph heads the tile');
+      expect(find.text('Edit goal'), findsOneWidget, reason: 'a goal is set: it can be changed');
       await tester.pumpWidget(const SizedBox());
 
       await today(tester, SimulatedStepSource(state: StepAccess.allowed, dailyTotal: 0));

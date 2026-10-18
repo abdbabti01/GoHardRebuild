@@ -808,11 +808,8 @@ class PanelPhoto extends StatelessWidget {
 /// the words, so text sits on the tint or the faintest part of the fade. [below] is a full-width part under the
 /// photograph, where it fades out downward too.
 class PanelSurface extends StatelessWidget {
-  const PanelSurface({super.key, required this.child, this.photo, this.below = const [], this.padding = const EdgeInsets.fromLTRB(18, 16, 16, 16), this.fill = false});
+  const PanelSurface({super.key, required this.child, this.photo, this.below = const [], this.padding = const EdgeInsets.fromLTRB(18, 16, 16, 16)});
   final Widget child;
-
-  /// Fills a height given from outside (two tiles side by side made equal): the photograph runs the full height.
-  final bool fill;
   final Widget? photo;
   final List<Widget> below;
   final EdgeInsets padding;
@@ -849,7 +846,7 @@ class PanelSurface extends StatelessWidget {
               if (picture != null) Positioned.fill(child: Align(alignment: Alignment.centerRight, child: FractionallySizedBox(widthFactor: photoShare, child: picture))),
               Padding(padding: below.isEmpty ? padding : padding.copyWith(bottom: 10), child: child),
             ]);
-            return fill ? Expanded(child: stack) : stack;
+            return stack;
           }(),
           if (below.isNotEmpty)
             Padding(padding: EdgeInsets.fromLTRB(padding.left, 0, padding.right, 12), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: below)),

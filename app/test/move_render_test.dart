@@ -222,6 +222,17 @@ final _water2 = <String, (Accent, ThemeMode, Size, double, Future<void> Function
   }),
 };
 
+/// GoHard_Today_Option_2_Polish, in docs/evidence/today-option-2: the photo-header tiles with a walk completed today
+/// and steps against a goal (the approved mockup's state), steps without a goal and off, and 320 px at twice the text.
+final _option2 = <String, (Accent, ThemeMode, Size, double, MovePrefs)>{
+  'today-blue-light': (Accent.blue, ThemeMode.light, const Size(390, 844), 1, const MovePrefs(steps: {'one'}, stepGoals: {'one': 8000})),
+  'today-blue-light-full': (Accent.blue, ThemeMode.light, const Size(390, 1500), 1, const MovePrefs(steps: {'one'}, stepGoals: {'one': 8000})),
+  'today-blue-dark-full': (Accent.blue, ThemeMode.dark, const Size(390, 1500), 1, const MovePrefs(steps: {'one'}, stepGoals: {'one': 8000})),
+  'today-pink-dark-no-goal': (Accent.pink, ThemeMode.dark, const Size(390, 1500), 1, const MovePrefs(steps: {'one'})),
+  'today-green-light-steps-off': (Accent.green, ThemeMode.light, const Size(390, 1500), 1, const MovePrefs()),
+  'today-large-text-320': (Accent.blue, ThemeMode.light, const Size(320, 3400), 2, const MovePrefs(steps: {'one'}, stepGoals: {'one': 8000})),
+};
+
 final _ux = <String, (Widget, MovePrefs, bool, Size, double)>{
   'today-first-use': (const HomeShell(), const MovePrefs(), true, const Size(390, 844), 1),
   'today-first-use-coach-off': (const HomeShell(), const MovePrefs(), false, const Size(390, 844), 1),
@@ -237,6 +248,20 @@ final _ux = <String, (Widget, MovePrefs, bool, Size, double)>{
 
 void main() {
   if (_enabled) {
+    for (final MapEntry(key: name, value: (accent, mode, size, scale, prefs)) in _option2.entries) {
+      testWidgets('option 2 $name', (tester) async {
+        await pumpApp(tester, await _fixture(tester, accent, mode, prefs: prefs, water: true), size: size, textScale: scale, insets: phoneInsets, settle: false);
+        await _settle(tester);
+        final image = await _capture(tester);
+        expect(tester.takeException(), isNull);
+        await tester.runAsync(() async {
+          final file = File('../docs/evidence/today-option-2/$name.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
+        });
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
     for (final MapEntry(key: name, value: (accent, mode, size, scale, reach)) in _water2.entries) {
       testWidgets('water $name', (tester) async {
         await pumpApp(tester, await _fixture(tester, accent, mode, prefs: const MovePrefs(steps: {'one'}), runs: const [], water: true),

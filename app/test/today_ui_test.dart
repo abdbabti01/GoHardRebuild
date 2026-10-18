@@ -371,7 +371,8 @@ void main() {
   group('run / walk', () {
     testWidgets('one Start on a day without a run or walk; no target, percentage or route is made up', (tester) async {
       await pumpApp(tester, await fixture(tester));
-      expect(find.text('Run / Walk'), findsOneWidget);
+      expect(find.text('RUN / WALK'), findsOneWidget, reason: 'the label once, in the photo header; no second title');
+      expect(find.byKey(const Key('today-photo-run')), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
       expect(find.text('No run or walk today'), findsOneWidget);
       expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one entry point');
@@ -394,20 +395,29 @@ void main() {
 
     testWidgets('a run finished today shows its saved distance and time, and is not repeated below', (tester) async {
       await pumpApp(tester, await fixture(tester, runs: [run('r0', day, open: false)]));
-      expect(find.text('Run finished today'), findsOneWidget);
-      expect(find.text('Distance'), findsOneWidget);
-      expect(find.text('5.00 km'), findsOneWidget);
-      expect(find.text('Time'), findsOneWidget);
+      expect(find.text('Run completed'), findsOneWidget);
+      expect(find.text('today'), findsOneWidget, reason: '"today" is the quieter second line');
+      expect(find.text('Distance'), findsNothing, reason: 'no field labels: distance is the figure, time supports it');
+      expect(find.text('Time'), findsNothing);
+      expect(tester.widget<Text>(find.byKey(const Key('today-run-figure'))).data, '5.00 km');
       expect(find.text('30 min'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Start new'), findsOneWidget);
+      // Start new opens Ready for a new activity.
+      await tester.ensureVisible(find.byKey(const Key('today-run')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('today-run')));
+      await tester.pumpAndSettle();
+      expect(find.byType(RunWalkScreen), findsOneWidget);
+      expect(find.byKey(const Key('runwalk-ready')), findsOneWidget, reason: 'Ready, for a new activity');
+      await tester.pumpWidget(const SizedBox());
 
       // A walk says it is a walk.
       await pumpApp(tester, await fixture(tester, runs: [{...run('w0', day, open: false), 'activityType': 'walk'}]));
-      expect(find.text('Walk finished today'), findsOneWidget);
+      expect(find.text('Walk completed'), findsOneWidget);
       expect(find.text('RECORDED TODAY'), findsNothing, reason: 'a single run is said once, on its module');
 
       await pumpApp(tester, await fixture(tester, runs: [run('r0', day, open: false, meters: null)]));
-      expect(find.text('Distance'), findsNothing, reason: 'a distance that was not recorded is not shown as zero');
+      expect(find.byKey(const Key('today-run-figure')), findsNothing, reason: 'a distance that was not recorded is not shown as zero');
       expect(find.text('30 min'), findsOneWidget);
     });
 
@@ -419,8 +429,8 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Resume'), findsOneWidget);
       expect(find.text('Run in progress'), findsOneWidget);
       expect(find.text('Started Sat, Oct 10'), findsOneWidget);
-      expect(find.text('Distance'), findsNothing, reason: 'no distance is claimed before one was measured');
-      expect(find.text('Time'), findsNothing, reason: 'no recorder holds it yet, so no time is guessed');
+      expect(find.byKey(const Key('today-run-figure')), findsNothing, reason: 'no distance is claimed before one was measured');
+      expect(find.textContaining(' min'), findsNothing, reason: 'no recorder holds it yet, so no time is guessed');
       expect(find.text('5.00 km'), findsNothing, reason: 'the finished run does not lend its values to the open one');
       expect(find.widgetWithText(FilledButton, 'Start'), findsNothing, reason: 'an open run is never started twice');
       expect(find.byKey(const Key('today-run')), findsOneWidget, reason: 'one way into the open run, not two');
@@ -429,9 +439,7 @@ void main() {
       // The same run held by the recorder, paused, with its active time and measured distance.
       await pumpApp(tester, await fixture(tester, runs: [run('r1', '2026-10-10')], runtime: {'r1': pausedRun}));
       expect(find.text('Run paused'), findsOneWidget);
-      expect(find.text('Distance'), findsOneWidget);
-      expect(find.text('5.20 km'), findsOneWidget);
-      expect(find.text('Time'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('today-run-figure'))).data, '5.20 km');
       expect(find.text('31 min'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Resume'), findsOneWidget);
 
@@ -535,9 +543,15 @@ void main() {
     for (final module in ['workout', 'run', 'nutrition', 'steps']) {
       final box = tester.getSize(photo(module));
       final panel = tester.getSize(find.byKey(Key(module == 'steps' ? 'today-steps' : 'today-module-$module')));
-      expect(box.width, lessThan(0.65 * panel.width), reason: 'the trailing side of its panel, not the whole panel');
-      // Nutrition has its goals line (and water, when tracked) under the photograph, where it fades out.
-      expect(box.height, module == 'nutrition' ? lessThanOrEqualTo(panel.height) : panel.height, reason: 'the full height of its panel, or of its upper part');
+      if (module == 'run' || module == 'steps') {
+        // Option 2: a short header strip across the tile, its words on the calm tint below.
+        expect(box.width, closeTo(0.72 * panel.width, 1), reason: 'the header strip\'s trailing side, the label on the tint');
+        expect(box.height, lessThan(0.45 * panel.height), reason: 'a short strip, not a background');
+      } else {
+        expect(box.width, lessThan(0.65 * panel.width), reason: 'the trailing side of its panel, not the whole panel');
+        // Nutrition has its goals line (and water, when tracked) under the photograph, where it fades out.
+        expect(box.height, module == 'nutrition' ? lessThanOrEqualTo(panel.height) : panel.height, reason: 'the full height of its panel, or of its upper part');
+      }
       if (module == 'steps') {
         expect(((tester.widget<Image>(find.descendant(of: photo(module), matching: find.byType(Image))).image as ResizeImage).imageProvider as AssetImage).assetName,
             'assets/images/steps-footprints.jpg', reason: 'the supplied footprints photograph, not another one');
@@ -560,7 +574,7 @@ void main() {
         size: const Size(320, 3600), textScale: 2);
     expect(tester.takeException(), isNull);
     expect(photo('workout'), findsNothing);
-    expect(photo('run'), findsNothing);
+    expect(photo('run'), findsOneWidget, reason: 'the short header strip stays: the words are below it, not over it');
     for (final text in ['of 18 sets', '5.20 km', '510', 'Some nutrition values are missing', 'Resume workout', 'Resume', 'Log food']) {
       expect(find.text(text), findsOneWidget, reason: '$text is still there, not hidden to save space');
     }

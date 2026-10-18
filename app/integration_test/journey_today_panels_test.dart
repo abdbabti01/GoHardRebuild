@@ -119,7 +119,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('runwalk-save')), what: 'the save review');
     await j.tapKey('runwalk-save');
     await j.tapKey('activity-done');
-    await j.waitFor(find.widgetWithText(FilledButton, 'Start'), what: 'Start again once saved');
+    await j.waitFor(find.widgetWithText(FilledButton, 'Start new'), what: 'Start new once saved');
 
     // --- History is the Run / Walk history.
     await j.tapKey('nav-train');

@@ -67,16 +67,21 @@ void main() {
     await tester.tap(quick);
     await tester.pump();
     expect(repo.adds, hasLength(2), reason: 'a second drink is a second entry');
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('Undo'));
+    // Undo is in the water line, in Other amount's place: the line keeps its height and nothing is covered.
+    final row = find.byKey(const Key('today-water'));
+    final height = tester.getSize(row).height;
+    expect(find.descendant(of: row, matching: find.byKey(const Key('water-other'))), findsNothing);
+    expect(find.byType(SnackBar), findsNothing, reason: 'no bar over the page');
+    await tester.tap(find.descendant(of: row, matching: find.byKey(const Key('water-undo'))));
     await tester.pump();
     expect(repo.removed, [repo.ids.last], reason: 'Undo removes the entry just added, not an amount from the total');
+    expect(find.descendant(of: row, matching: find.byKey(const Key('water-other'))), findsOneWidget);
     await tester.tap(quick);
     await tester.pump();
-    await tester.pump(const Duration(seconds: 1)); // the bar finishes coming in, then its 5 s run
+    expect(tester.getSize(row).height, height, reason: 'Undo appearing does not move the tiles below');
     await tester.pump(const Duration(seconds: 6));
-    await tester.pumpAndSettle();
-    expect(find.text('Undo'), findsNothing, reason: 'the Undo bar does not stay');
+    expect(find.byKey(const Key('water-undo')), findsNothing, reason: 'Undo goes away by itself');
+    expect(find.descendant(of: row, matching: find.byKey(const Key('water-other'))), findsOneWidget);
 
     // An ounce household gets an ounce drink, stored as what it is.
     container.read(trackingPrefsProvider.notifier).setUnit(VolumeUnit.flOz);
@@ -84,6 +89,7 @@ void main() {
     await tester.tap(quick);
     await tester.pump();
     expect(repo.adds.last, (_day, 236.588), reason: '+8 fl oz shown and 8 fl oz stored, converted once');
+    await tester.pump(const Duration(seconds: 6)); // Undo gives Other amount its place back
 
     // Other amount: one field and Add water.
     await tester.tap(find.descendant(of: find.byKey(const Key('today-water')), matching: find.byKey(const Key('water-other'))));
@@ -93,6 +99,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.adds.last.$2, closeTo(354.882, 0.001));
     expect(find.byKey(const Key('water-other-amount')), findsNothing, reason: 'the sheet closes once added');
+    await tester.pump(const Duration(seconds: 6));
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -124,6 +131,7 @@ void main() {
     await tester.tap(find.byKey(const Key('eat-back-to-today')));
     await tester.pumpAndSettle();
     expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.byKey(const Key('water-quick-add'))), findsOneWidget);
+    await tester.pump(const Duration(seconds: 6));
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -324,7 +332,7 @@ void main() {
     await tester.tap(find.byKey(const Key('water-add-8')));
     await tester.pumpAndSettle();
     expect(repo.adds.single, (_day, 236.588), reason: '8 US fluid ounces, stored once in millilitres');
-    expect(find.text('Undo'), findsOneWidget);
+    expect(find.byKey(const Key('water-undo')), findsOneWidget, reason: 'Undo is offered in the water line');
 
     await tester.enterText(find.byKey(const Key('water-custom')), '0');
     await tester.tap(find.byKey(const Key('water-add-custom')));
@@ -332,5 +340,6 @@ void main() {
     expect(find.text('Enter an amount above zero.'), findsOneWidget);
     expect(repo.adds, hasLength(1), reason: 'nothing invalid is saved');
     expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 6));
   });
 }

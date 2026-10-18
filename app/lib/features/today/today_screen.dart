@@ -365,10 +365,7 @@ typedef _Status = (String label, IconData icon, Tone tone);
 /// the content. With large text the photograph gives its room to the words, and the button and link wrap.
 class _Module extends StatelessWidget {
   const _Module({super.key, required this.label, this.showLabel = true, this.status, this.head = const [], this.body = const [], this.footer, this.photo, this.photoAlignment = Alignment.center,
-      required this.action, this.quiet, this.below = const [], this.fill = false});
-
-  /// Side by side with another tile at an equal height: the action sits at the bottom, the photograph full height.
-  final bool fill;
+      required this.action, this.quiet, this.below = const []});
 
   /// The overline, and always the panel's heading for a screen reader. The workout panel does not show it: its badge
   /// and its name say what it is, as in the approved design.
@@ -397,11 +394,8 @@ class _Module extends StatelessWidget {
     return PanelSurface(
       photo: pictured ? PanelPhoto(photo!, key: Key('today-photo-${label.toLowerCase().split(' ').first}'), alignment: photoAlignment) : null,
       below: below,
-      fill: fill,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min, children: [
-        // Paired tiles are narrow: their words may reach further over the photograph's faded side.
-        FractionallySizedBox(widthFactor: !pictured ? 1 : fill ? 0.85 : PanelSurface.wordsShare, alignment: Alignment.centerLeft, child: words),
-        if (fill) const Spacer(),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        FractionallySizedBox(widthFactor: pictured ? PanelSurface.wordsShare : 1, alignment: Alignment.centerLeft, child: words),
         const SizedBox(height: 14),
         Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [action, ?quiet]),
       ]),
@@ -712,30 +706,6 @@ class _OpenWorkout extends ConsumerWidget {
 
 /// "5.20 km"
 
-/// Labelled values of a run ("Distance", "Time"). Only ever built from values that were saved.
-class _Cells extends StatelessWidget {
-  const _Cells(this.cells);
-  final List<(String label, String value)> cells;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 4),
-        // Side by side with a thin rule between them; they wrap rather than squeeze.
-        child: Wrap(runSpacing: 6, children: [
-          for (final (i, (label, value)) in cells.indexed)
-            Container(
-              padding: EdgeInsets.only(left: i == 0 ? 0 : 12, right: i == cells.length - 1 ? 0 : 12),
-              decoration: i == 0 ? null : BoxDecoration(border: Border(left: BorderSide(color: context.c.divider))),
-              child: MergeSemantics(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text(label, style: context.caption),
-                  Text(value, style: context.titleStyle(22)),
-                ]),
-              ),
-            ),
-        ]),
-      );
-}
 
 /// Today's one way into Run / Walk (docs/RUN_WALK.md), on every kind of day. An open activity is read from the
 /// saved records, whatever day it began, and taken over by the one recorder, so it is resumed (never started twice)
@@ -779,52 +749,61 @@ class _RunCardState extends ConsumerState<_RunCard> {
     }
 
     String time(int seconds) => seconds < 60 ? 'Under 1 min' : durationText(seconds);
-    final _Status? status;
-    final String? note;
-    var cells = const <(String, String)>[];
     final unit = ref.watch(devicePrefsProvider.select((p) => p.distance));
+    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
+    final pair = widget.steps && !stacked;
+    // What the tile shows, from the real state: an open activity (the recorder's numbers), the last one finished today
+    // (its saved numbers, as before), or nothing yet. Distance is the main figure when measured; time supports it.
+    final List<Widget> body;
+    final String action;
+    // Styled inside the tile (under its PanelTheme), not by the page: a Builder takes the tile's colours.
+    Widget figure(String text) => Builder(
+          builder: (context) => Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(text, key: const Key('today-run-figure'), style: context.pageTitleStyle(34))),
+          ),
+        );
+    Widget support(String text) => Builder(builder: (context) => Text(text, style: context.sansStyle(16, color: context.c.secondary)));
     if (open != null) {
-      // The recorder's active time and the distance measured so far. Without them the card says only what is open.
       final a = owned?.analysis;
       final now = ref.read(clockProvider).utcNow().millisecondsSinceEpoch;
-      cells = [
-        if (a != null && (a.measured || a.hasLegacy)) ('Distance', unit.distance(a.distance + a.legacyDistance)),
-        if (a != null) ('Time', time(a.activeMs(now) ~/ 1000)),
-      ];
       final noun = activityTitle(open.activityType);
-      status = switch (owned?.state) {
-        RecState.paused || RecState.autoPaused => ('$noun paused', Icons.pause_circle_outline, Tone.accent),
+      final (String words, IconData icon, Tone tone) = switch (owned?.state) {
+        RecState.paused || RecState.autoPaused => ('$noun paused', Icons.pause_rounded, Tone.neutral),
         RecState.interrupted => ('$noun interrupted', Icons.warning_amber_rounded, Tone.warning),
-        RecState.review => ('$noun not saved yet', Icons.edit_note, Tone.accent),
-        _ => ('$noun in progress', Icons.timelapse, Tone.accent),
+        RecState.review => ('$noun not saved yet', Icons.edit_note, Tone.neutral),
+        _ => ('$noun in progress', Icons.timelapse, Tone.neutral),
       };
-      note = open.dayKey == widget.today ? (cells.isEmpty ? 'Started today' : null) : 'Started ${shortDate(open.dayKey)}';
+      body = [
+        _TileState(icon, words, tone: tone, sub: open.dayKey == widget.today ? null : 'Started ${shortDate(open.dayKey)}'),
+        if (a != null && (a.measured || a.hasLegacy)) figure(unit.distance(a.distance + a.legacyDistance)),
+        if (a != null) support(time(a.activeMs(now) ~/ 1000)) else if (open.dayKey == widget.today) Padding(padding: const EdgeInsets.only(top: 6), child: support('Started today')),
+      ];
+      action = 'Resume';
     } else if (widget.finishedToday.isNotEmpty) {
       final last = widget.finishedToday.last;
       final t = last.movingSeconds ?? last.activeDurationSeconds;
-      cells = [if (last.distanceMeters != null) ('Distance', unit.distance(last.distanceMeters)), if (t != null) ('Time', time(t))];
-      status = ('${activityTitle(last.activityType)} finished today', Icons.check, Tone.neutral);
-      note = null;
+      body = [
+        _TileState(Icons.check_rounded, '${activityTitle(last.activityType)} completed', sub: 'today'),
+        if (last.distanceMeters != null) figure(unit.distance(last.distanceMeters)),
+        if (t != null) Padding(padding: EdgeInsets.only(top: last.distanceMeters == null ? 8 : 0), child: support(time(t))),
+      ];
+      action = 'Start new';
     } else {
-      status = null;
-      note = 'No run or walk today';
+      body = [support('No run or walk today')];
+      action = 'Start';
     }
-    // The tile is built under the panel theme. Its one action is Start / Resume; the full history is in Train.
+    // Its one action: Start, Resume (the same activity) or Start new; the full history is in Train.
     final app = context;
-    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
-    final pair = widget.steps && !stacked;
     final tile = PanelTheme(
       child: Builder(
-        builder: (context) => _Module(
-          key: const Key('today-module-run'), label: 'Run / Walk', status: status, fill: pair,
-          head: [Padding(padding: const EdgeInsets.only(top: 6), child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Run / Walk', style: context.pageTitleStyle(30))))],
-          body: [
-            if (note != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note, style: context.sansStyle(14.5, color: context.c.secondary))),
-            if (cells.isNotEmpty) _Cells(cells),
-          ],
-          // The near shoe and the far leg, at the tile's trailing side.
-          photo: _Photos.run, photoAlignment: const Alignment(0.6, 0),
-          action: PrimaryButton(open == null ? 'Start' : 'Resume', key: const Key('today-run'), leading: const GoIcon(GoGlyph.play, size: 20), expand: false, onPressed: () => openRunWalk(app, ref)),
+        builder: (context) => _HeaderTile(
+          key: const Key('today-module-run'), label: 'Run / Walk', fill: pair,
+          // The near shoe on the path, at the strip's trailing side.
+          photo: _Photos.run, photoAlignment: const Alignment(1, 0.35),
+          body: body,
+          // Full tile width, as in the approved mockup, so "Start new" stays on one line.
+          action: PrimaryButton(action, key: const Key('today-run'), leading: const GoIcon(GoGlyph.play, size: 18), onPressed: () => openRunWalk(app, ref)),
         ),
       ),
     );
@@ -834,6 +813,90 @@ class _RunCardState extends ConsumerState<_RunCard> {
     if (stacked) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [tile, const SizedBox(height: 10), const _StepsCard()]);
     return IntrinsicHeight(
       child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: tile), const SizedBox(width: 10), const Expanded(child: _StepsCard(fill: true))]),
+    );
+  }
+}
+
+/// Run / Walk and Steps on Today (the selected "option 2", docs/DESIGN.md › Today option 2): a short photographic header
+/// strip with the section's label on its pale side, then the tile's figures on the calm panel tint, then one action at
+/// the bottom. Two tiles side by side are made the same height ([fill]); the header has a fixed height and the content
+/// grows, so large text is never clipped. Built under [PanelTheme], like the other Today panels.
+class _HeaderTile extends StatelessWidget {
+  const _HeaderTile({super.key, required this.label, required this.photo, required this.photoAlignment, required this.body, this.action, this.fill = false});
+  final String label, photo;
+  final Alignment photoAlignment;
+  final List<Widget> body;
+  final Widget? action;
+  final bool fill;
+
+  static const header = 78.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final radius = BorderRadius.circular(Radii.panel);
+    final large = MediaQuery.textScalerOf(context).scale(10) > 13;
+    return Container(
+      decoration: BoxDecoration(color: c.page, borderRadius: radius, boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 6))]),
+      foregroundDecoration: BoxDecoration(borderRadius: radius, border: Border.all(color: c.text.withValues(alpha: 0.08))),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min, children: [
+          SizedBox(
+            height: large ? header + 10 : header,
+            child: Stack(fit: StackFit.expand, children: [
+              // The photograph takes the strip's trailing side; the label's side is the panel tint, blending into it.
+              FractionallySizedBox(
+                alignment: Alignment.centerRight, widthFactor: 0.72,
+                child: PanelPhoto(photo, key: Key('today-photo-${label.toLowerCase().split(' ').first}'), alignment: photoAlignment),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [c.page, c.page, c.page.withValues(alpha: 0.55), c.page.withValues(alpha: 0)], stops: const [0, 0.28, 0.45, 0.7]),
+                ),
+              ),
+              Positioned(left: 16, top: 14, right: 12, child: Semantics(header: true, child: Overline(label))),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 14, 0),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: body),
+          ),
+          if (fill) const Spacer(),
+          if (action != null) Padding(padding: const EdgeInsets.fromLTRB(14, 12, 14, 14), child: Align(alignment: Alignment.centerLeft, child: action)) else const SizedBox(height: 14),
+        ]),
+      ),
+    );
+  }
+}
+
+/// A compact state line in a tile: a small icon in a soft circle, the words, and an optional quieter second line.
+class _TileState extends StatelessWidget {
+  const _TileState(this.icon, this.text, {this.sub, this.tone = Tone.neutral});
+  final IconData icon;
+  final String text;
+  final String? sub;
+  final Tone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final ink = tone == Tone.warning ? c.warning : c.text;
+    return MergeSemantics(
+      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Container(
+          width: 26, height: 26, alignment: Alignment.center,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: c.accentSoft),
+          child: Icon(icon, size: 16, color: ink),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text(text, style: context.sansStyle(14, weight: FontWeight.w600, color: ink)),
+            if (sub != null) Text(sub!, style: context.sansStyle(14, color: c.secondary)),
+          ]),
+        ),
+      ]),
     );
   }
 }
@@ -871,8 +934,6 @@ class _StepsCardState extends ConsumerState<_StepsCard> with WidgetsBindingObser
     if (s == AppLifecycleState.resumed && ref.read(stepsEnabledProvider)) ref.read(dailyStepsProvider.notifier).refresh();
   }
 
-  static String _at(DateTime t) => '${t.hour % 12 == 0 ? 12 : t.hour % 12}:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'AM' : 'PM'}';
-
   @override
   Widget build(BuildContext context) {
     final on = ref.watch(stepsEnabledProvider);
@@ -886,44 +947,48 @@ class _StepsCardState extends ConsumerState<_StepsCard> with WidgetsBindingObser
     final goal = ref.watch(stepGoalProvider);
     final src = ref.read(stepSourceProvider);
     final app = appContext(context);
+    // The read time in the phone's own clock format ("12:19 PM", "12:19"), kept on one line with its word.
+    String at(DateTime t) => MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(t), alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context)).replaceAll(' ', '\u00a0').replaceAll('\u202f', '\u00a0');
     Widget button(String label, Key key, VoidCallback onPressed) => PrimaryButton(label, key: key, expand: false, onPressed: onPressed);
-    // (headline, detail, action): the headline is a real count only when there is one.
-    final (String head, String detail, Widget? action) = switch (d) {
-      DailyOff() => ('Track your steps', 'Count with your phone.', button('Enable', const Key('today-steps-enable'), () => enableSteps(ref))),
-      DailyLoading() => ('…', 'Reading steps', null),
+    // The goal is set and changed in the Steps sheet; never set here, never a default.
+    Widget goalLink(String label) => QuietLink(label, key: const Key('today-steps-goal-link'), said: label == 'Set a goal' ? 'Set a steps goal' : 'Edit steps goal', onPressed: () => showStepsSheet(app));
+    // (headline, lines under it, action): the headline is a real count only when there is one.
+    final (String head, List<String> lines, Widget? action) = switch (d) {
+      DailyOff() => ('Track your steps', const ['Count with your phone.'], button('Enable', const Key('today-steps-enable'), () => enableSteps(ref))),
+      DailyLoading() => ('…', const ['Reading steps'], null),
       DailyValue(:final steps, :final source, at: final t, :final recorded) => recorded
-          ? (formatSteps(steps), '$source · ${_at(t)}', null)
-          : ('—', 'No steps recorded today ($source)', null),
-      DailyNotAllowed(:final blocked) => ('—', blocked ? 'Access is off. Allow it in Settings.' : 'Allow access to see today\'s steps.',
+          ? (formatSteps(steps), [source, 'Updated\u00a0${at(t)}'], goalLink(goal == null ? 'Set a goal' : 'Edit goal'))
+          : ('—', ['No steps recorded today', source], goalLink(goal == null ? 'Set a goal' : 'Edit goal')),
+      DailyNotAllowed(:final blocked) => ('—', [blocked ? 'Access is off. Allow it in Settings.' : 'Allow access to see today\'s steps.'],
           blocked ? button('Settings', const Key('today-steps-settings'), () => src.openSettings()) : button('Allow', const Key('today-steps-allow'), () => enableSteps(ref))),
-      DailyUnavailable(:final why) => ('—', why, null),
-      DailyFailed() => ('—', 'Could not read steps just now.', button('Try again', const Key('today-steps-retry'), () => ref.read(dailyStepsProvider.notifier).refresh())),
+      DailyUnavailable(:final why) => ('—', [why], null),
+      DailyFailed() => ('—', const ['Could not read steps just now.'], button('Try again', const Key('today-steps-retry'), () => ref.read(dailyStepsProvider.notifier).refresh())),
     };
     final count = d is DailyValue && d.recorded;
     final progress = count && goal != null ? (d.steps / goal).clamp(0.0, 1.0) : null;
-    final said = d is DailyOff ? 'Steps. Track your steps: count with your phone.' : 'Steps today: ${head == '—' || head == '…' ? 'not known' : head}. $detail';
+    final said = d is DailyOff ? 'Steps. Track your steps: count with your phone.' : 'Steps today: ${head == '—' || head == '…' ? 'not known' : head}. ${lines.join('. ')}';
     final tile = PanelTheme(
       child: Builder(
-        builder: (context) => _Module(
+        builder: (context) => _HeaderTile(
           key: const Key('today-steps'), label: 'Steps', fill: widget.fill,
-          // Tread impressions at the tile's trailing side, fading into the tint behind the words.
-          photo: _Photos.steps, photoAlignment: const Alignment(0.7, 0.2),
-          head: [
-            Padding(padding: const EdgeInsets.only(top: 6), child: GoIcon(GoGlyph.steps, size: 28, color: context.c.accent)),
-            const SizedBox(height: 4),
-            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
-                child: Text(head, key: const Key('today-steps-value'), style: count ? context.pageTitleStyle(30) : context.pageTitleStyle(d is DailyOff ? 22 : 30))),
-          ],
+          // The strip shows the nearest tread impressions (the right half of the photograph).
+          photo: _Photos.steps, photoAlignment: const Alignment(0.8, 0.55),
           body: [
-            // The count first, then the goal and its bar (only when a goal is set), then where and when it was read.
+            GoIcon(GoGlyph.steps, size: 26, color: context.c.accent),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+                  child: Text(head, key: const Key('today-steps-value'), style: context.pageTitleStyle(d is DailyOff ? 24 : 34))),
+            ),
+            // The goal and its bar only when a goal is set; then where and when it was read, each on its own line.
             if (progress != null) ...[
-              Text('of ${formatSteps(goal!)}', key: const Key('today-steps-goal'), style: context.sansStyle(14.5, color: context.c.secondary)),
+              Text('of ${formatSteps(goal!)}', key: const Key('today-steps-goal'), style: context.sansStyle(15, color: context.c.secondary)),
               Padding(padding: const EdgeInsets.only(top: 4, bottom: 4), child: ProgressRail(progress, label: 'Steps goal')),
             ],
-            Text(detail, style: context.sansStyle(14.5, color: context.c.secondary)),
-            if (src.simulated && on) Text('Simulated steps (test build)', style: context.caption),
+            for (final line in lines) Text(line, style: context.sansStyle(15, color: context.c.secondary)),
+            if (src.simulated && on) Text('Simulated (test build)', style: context.caption),
           ],
-          action: action ?? const SizedBox.shrink(),
+          action: action,
         ),
       ),
     );

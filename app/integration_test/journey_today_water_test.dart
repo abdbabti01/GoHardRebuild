@@ -51,25 +51,32 @@ void main() {
     await j.shot('thw-01-today-blue-light');
     await j.reveal(find.byKey(const Key('today-steps')));
     await j.shot('thw-02-today-tiles-blue-light');
+    // Option 2: no goal yet, so Set a goal; it opens the shared Steps sheet and sets nothing.
+    await j.tapKey('today-steps-goal-link');
+    await j.waitFor(find.byKey(const Key('steps-goal')), what: 'the Steps sheet from Set a goal');
+    Navigator.of(tester.element(find.byKey(const Key('steps-goal')))).pop();
+    await j.settle(4);
+    expect(find.text('Set a goal'), findsOneWidget, reason: 'opening the sheet sets no goal');
 
     // One tap, one drink; Undo takes exactly that one away; Other amount for a custom one.
     final quick = find.descendant(of: find.byKey(const Key('today-water')), matching: find.byKey(const Key('water-quick-add')));
     await j.tap(quick);
     await j.waitFor(find.descendant(of: find.byKey(const Key('today-water')), matching: find.text('250 mL')), what: '250 mL logged at once (no goal set: the amount alone)');
-    // Undo at once (the bar lasts 5 s; a capture on the device takes longer than that).
-    await tester.tap(find.text('Undo'));
+    // Undo is in the water line, in Other amount's place, for 5 s: tapped at once (a capture takes longer).
+    await tester.tap(find.descendant(of: find.byKey(const Key('today-water')), matching: find.byKey(const Key('water-undo'))));
     await j.waitFor(find.descendant(of: find.byKey(const Key('today-water')), matching: find.text('0 mL')), what: 'the drink undone');
-    // Another drink, kept, captured with its Undo bar.
+    // Another drink, kept, captured with its inline Undo.
     await tester.tap(quick);
     await j.settle(2);
     await j.shot('thw-03-water-added-undo');
     await j.waitFor(find.descendant(of: find.byKey(const Key('today-water')), matching: find.text('250 mL')), what: 'the second drink');
+    await watch(6500); // Undo gives Other amount its place back by itself
+    expect(find.byKey(const Key('water-undo')), findsNothing, reason: 'Undo does not stay');
     await j.tap(find.descendant(of: find.byKey(const Key('today-water')), matching: find.byKey(const Key('water-other'))));
     await j.type('water-other-amount', '330');
     await j.tapKey('water-other-add');
     await j.waitFor(find.descendant(of: find.byKey(const Key('today-water')), matching: find.text('580 mL')), what: 'a custom amount (250 + 330)');
-    await watch(6500); // the Undo bar goes away by itself
-    expect(find.text('Undo'), findsNothing, reason: 'Undo does not stay');
+    await watch(6500);
 
     // Yesterday, from Eat's day arrow: Other amount logs on the day shown.
     await j.tapKey('nav-eat');

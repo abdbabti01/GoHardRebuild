@@ -161,7 +161,7 @@ void main() {
     await j.reveal(find.byKey(const Key('chart-pace')));
     await shot('runwalk-14-charts');
     await j.tapKey('activity-done');
-    await waitText('Walk finished today');
+    await waitText('Walk completed');
     await j.tapKey('nav-train');
     await j.tapKey('train-run-history');
     await j.waitFor(find.text('History'), what: 'history');
@@ -207,7 +207,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('activity-done')), what: 'the saved run');
     await shot('runwalk-18-run-saved');
     await j.tapKey('activity-done');
-    await waitText('Run finished today');
+    await waitText('Run completed');
     final all = (await j.snapshot(token))['runs'] as List;
     expect(all.length, lessThanOrEqualTo(2), reason: 'no duplicate activities');
     await binding.convertFlutterSurfaceToImage(); // the first call in this process (phase 2 never called it)

@@ -202,7 +202,35 @@ mockup's due panel is about 183: the 52 px button and the plan-week line are kep
 and quinoa bowl, a runner's shoes on a riverside path) but are not the mockup's pictures, which are wet, rainy
 variants; those were not supplied as files, so they are not used. Each is decoded for the box it is drawn in.
 
+### Today option 2: photo-header tiles (18 October 2026, from `GoHard_Today_Option_2_Polish`)
+
+The approved `references/approved-today-option-2.png` (a mockup; its numbers and weather are illustrative). Run / Walk
+and Steps are two separate tiles (`_HeaderTile` in `today_screen.dart`), equal width and height side by side, stacked
+at large text (> 1.3×) or below 350 px:
+
+- A short photographic header (78 px, 88 at large text). The photograph takes the strip's trailing 72 % and blends into
+  the tile's pale tint, so the label (an overline: RUN / WALK, STEPS) sits on the pale side, once, with no second title.
+  The runner photograph (`run-cover.webp`) is aligned to its shoe; Steps uses the bundled
+  `assets/images/steps-footprints.jpg`, aligned to the tread impressions. Below it: the content, then one action at the
+  bottom; the tile's text takes its colours from the tile (`PanelTheme`), so it reads in dark themes too.
+- Run / Walk, completed today: a small check and "Walk completed" / "Run completed" with "today" quieter under it; the
+  distance as the main figure (when recorded), the time under it; no Distance / Time labels; **Start new** (full tile
+  width) opens Ready. Open: the state (in progress, paused, interrupted, not saved yet; "Started <date>" when begun on
+  another day) and **Resume** the same activity. Nothing yet: "No run or walk today", **Start**. No History on Today.
+- Steps: the footprints icon, the count, "of N" and its bar only with a goal, then the source and "Updated <time>" on
+  their own lines (the phone's clock format, non-breaking, so AM/PM never wraps alone). **Set a goal** without a goal,
+  **Edit goal** with one; both open the shared Steps sheet and set nothing. Off, loading, not allowed, unavailable,
+  failed: as before. Opening Today asks the phone for nothing.
+- Water: **+250 mL / +8 fl oz** and **Other amount** as before. Undo is now inline: for 5 s after a drink it takes Other
+  amount's place in the water line ("Undo 250 mL"), so nothing covers or moves Start or the tiles; screen readers hear
+  "Added 250 mL of water. Undo available."
+- Renders: `docs/evidence/today-option-2/` (Blue Light at 390 × 844 and full height, Blue Dark, Pink Dark without a goal,
+  Green Light with Steps off, 320 px at 2×) and `docs/evidence/design/six-themes-today-steps.png`; device before/after:
+  `docs/evidence/today-option-2/before-device-*` and `docs/evidence/screenshots/thw-02, 03, 08`.
+
 ### Matching tiles, history in Train and Eat, one-tap water (18 October 2026, from `GoHard_Today_History_Water_Corrections`)
+
+Superseded on the same day by Today option 2 above (the photo-header tiles and the inline Undo).
 
 - Run / Walk and Steps side by side are the same width and the same height (the taller one's content sets it, through
   `IntrinsicHeight`; `PanelSurface(fill:)` runs the photograph the full height and puts the action at the bottom),

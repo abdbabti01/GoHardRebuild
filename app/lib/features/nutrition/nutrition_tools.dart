@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
@@ -170,6 +173,7 @@ class WaterRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final unit = ref.watch(volumeUnitProvider);
     final today = ref.watch(todayKeyProvider) == day;
+    final last = ref.watch(lastWaterProvider.select((w) => w != null && w.day == day ? w : null));
     final rows = ref.watch(waterProvider(day));
     // Until the day's entries are read nothing is claimed: an amount not yet known is not zero.
     final total = rows.hasValue ? waterTotal([for (final r in rows.value!) r.value]) : null;
@@ -186,7 +190,12 @@ class WaterRow extends ConsumerWidget {
           icon: const Icon(Icons.water_drop_outlined, size: 18),
           label: Text('+${unit.amount(quick)} ${unit.short}', semanticsLabel: 'Add ${unit.amount(quick)} ${unit == VolumeUnit.ml ? 'millilitres' : 'fluid ounces'} of water'),
         ),
-      TextButton(key: const Key('water-other'), onPressed: () => showOtherWaterSheet(context, ref, day), child: const Text('Other amount')),
+      // For 5 s after a drink is added, Undo takes Other amount's place: the line keeps its height and nothing moves.
+      if (last != null)
+        TextButton.icon(key: const Key('water-undo'), onPressed: () => ref.read(lastWaterProvider.notifier).undo(),
+            icon: const Icon(Icons.undo, size: 18), label: Text('Undo ${unit.format(last.ml)}', semanticsLabel: 'Undo adding ${unit.format(last.ml)} of water'))
+      else
+        TextButton(key: const Key('water-other'), onPressed: () => showOtherWaterSheet(context, ref, day), child: const Text('Other amount')),
     ]);
     return Semantics(
       container: true,
@@ -234,6 +243,8 @@ Future<bool> addWater(BuildContext context, WidgetRef ref, String day, double ml
   final unit = ref.read(volumeUnitProvider);
   final container = ProviderScope.containerOf(context, listen: false);
   final messenger = ScaffoldMessenger.of(appContext(context));
+  final view = View.maybeOf(context);
+  final direction = Directionality.of(context);
   final id = SyncEngine.newId();
   try {
     await repo.add(day, ml, id: id);
@@ -244,22 +255,50 @@ Future<bool> addWater(BuildContext context, WidgetRef ref, String day, double ml
     messenger.showSnackBar(const SnackBar(content: Text('That could not be saved on this phone. Nothing was added.'), duration: Duration(seconds: 3)));
     return false;
   }
+  // Undo is offered in the water line itself (not a bar over the page), for a few seconds.
+  container.read(lastWaterProvider.notifier).set((id: id, day: day, owner: owner, ml: roundMl(ml), repo: repo));
   final today = container.read(todayKeyProvider) == day;
-  messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      key: Key('water-added-$id'),
-      content: Text('Added ${unit.format(roundMl(ml))} of water${today ? '' : ' on ${longDate(day)}'}.'),
-      duration: const Duration(seconds: 5), persist: false, behavior: SnackBarBehavior.floating,
-      action: SnackBarAction(label: 'Undo', onPressed: () {
-        if (container.read(ownerProvider) != owner) return; // another account now: not theirs to undo
-        final entry = container.read(waterProvider(day)).value?.where((r) => r.value.id == id).firstOrNull?.value
-            ?? WaterEntry({'id': id, 'dayKey': day, 'volumeMl': roundMl(ml), 'isDeleted': false});
-        if (!entry.isDeleted) repo.remove(entry).ignore();
-      }),
-    ));
+  if (view != null) {
+    SemanticsService.sendAnnouncement(view, 'Added ${unit.format(roundMl(ml))} of water${today ? '' : ' on ${longDate(day)}'}. Undo available.', direction);
+  }
   return true;
 }
+
+/// The drink just added, for the water line's Undo: exactly that entry, on its day, for its account, for 5 seconds.
+typedef LastWater = ({String id, String day, String? owner, double ml, WaterRepository repo});
+
+class LastWaterController extends Notifier<LastWater?> {
+  Timer? _timer;
+  static const showFor = Duration(seconds: 5);
+
+  @override
+  LastWater? build() {
+    ref.watch(ownerProvider); // another account: nothing to undo
+    ref.onDispose(() => _timer?.cancel());
+    return null;
+  }
+
+  void set(LastWater w) {
+    _timer?.cancel();
+    state = w;
+    _timer = Timer(showFor, () {
+      if (ref.mounted && state?.id == w.id) state = null;
+    });
+  }
+
+  /// Removes exactly the entry just added (through the outbox: it waits for the add when that is not sent yet).
+  void undo() {
+    final w = state;
+    if (w == null || ref.read(ownerProvider) != w.owner) return;
+    _timer?.cancel();
+    state = null;
+    final entry = ref.read(waterProvider(w.day)).value?.where((r) => r.value.id == w.id).firstOrNull?.value
+        ?? WaterEntry({'id': w.id, 'dayKey': w.day, 'volumeMl': w.ml, 'isDeleted': false});
+    if (!entry.isDeleted) w.repo.remove(entry).ignore();
+  }
+}
+
+final lastWaterProvider = NotifierProvider<LastWaterController, LastWater?>(LastWaterController.new);
 
 /// Other amount: one field in the chosen unit and Add water, for [day].
 Future<void> showOtherWaterSheet(BuildContext context, WidgetRef ref, String day) =>

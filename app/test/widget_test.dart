@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Resume workout'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Log food'), 200, scrollable: scroll);
     expect(find.text('Some nutrition values are missing'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Run / Walk'), -200, scrollable: scroll);
+    await tester.scrollUntilVisible(find.text('RUN / WALK'), -200, scrollable: scroll);
     for (final tab in ['train', 'eat', 'me']) {
       await tester.tap(find.byKey(Key('nav-$tab')));
       await tester.pumpAndSettle();

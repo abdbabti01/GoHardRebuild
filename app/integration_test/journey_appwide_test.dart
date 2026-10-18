@@ -135,7 +135,7 @@ void main() {
     await j.settle(6);
     await j.shot('appwide-17-run');
     await j.finishAndSaveActivity();
-    await j.waitFor(find.widgetWithText(FilledButton, 'Start'), what: 'Start once saved');
+    await j.waitFor(find.widgetWithText(FilledButton, 'Start new'), what: 'Start once saved');
 
     // --- Me, Appearance, Ask GoHard.
     await j.tapKey('nav-me');

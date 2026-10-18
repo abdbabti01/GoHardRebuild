@@ -70,7 +70,7 @@ void main() {
     await j.tapKey('today-run');
     await j.waitFor(find.byKey(const Key('runwalk-resume')), what: 'the same run, interrupted');
     await j.finishAndSaveActivity();
-    await j.waitFor(find.widgetWithText(FilledButton, 'Start'), what: 'Today once that run is saved');
+    await j.waitFor(find.widgetWithText(FilledButton, 'Start new'), what: 'Today once that run is saved');
     await j.tapKey('today-resume');
     await j.reveal(find.byKey(const Key('set-row-0')));
     await j.waitFor(find.byKey(const Key('set-row-0')), what: 'the set recorded before the process ended');

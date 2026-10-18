@@ -167,7 +167,7 @@ void main() {
     await waitFor(tester, find.byKey(const Key('runwalk-finish')), what: 'the same run');
     expect(km(), greaterThanOrEqualTo(measured), reason: 'the distance measured before leaving is kept');
     await j.finishAndSaveActivity();
-    await waitFor(tester, find.text('Run finished today'), what: 'Today with the saved run');
+    await waitFor(tester, find.text('Run completed'), what: 'Today with the saved run');
     await waitFor(tester, find.textContaining(' km'), what: 'the finished run with its measured distance on Today');
     await binding.takeScreenshot('52-today-run-with-distance');
 
