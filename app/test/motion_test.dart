@@ -143,7 +143,8 @@ void main() {
       await _tap(tester, 'train-plan');
       await _tap(tester, 'nav-me');
       expect(find.descendant(of: find.byKey(const Key('me-motion')), matching: find.text('Device')), findsOneWidget);
-      await tester.ensureVisible(find.byKey(const Key('me-motion')));
+      await Scrollable.ensureVisible(tester.element(find.byKey(const Key('me-motion'))), alignment: 0.5); // clear of the floating bar
+      await tester.pumpAndSettle();
       await _tap(tester, 'me-motion');
 
       await _tap(tester, 'motion-reduced');
@@ -269,7 +270,9 @@ void main() {
       expect(tester.getTopLeft(find.byKey(const Key('nav-today'))).dx, greaterThanOrEqualTo(GoNavigationBar.margin));
       expect(tester.getTopRight(find.byKey(const Key('nav-me'))).dx, lessThanOrEqualTo(390 - GoNavigationBar.margin));
       // A secondary page has back navigation and no second copy of the bar.
-      await tester.ensureVisible(find.byKey(const Key('me-motion')));
+      // Mid-screen, clear of the floating bar (Me grew an Activity & tracking group above it).
+      await Scrollable.ensureVisible(tester.element(find.byKey(const Key('me-motion'))), alignment: 0.5);
+      await tester.pumpAndSettle();
       await _tap(tester, 'me-motion');
       expect(find.byType(BackButton), findsOneWidget);
       expect(find.byType(GoNavigationBar).hitTestable(), findsNothing);
