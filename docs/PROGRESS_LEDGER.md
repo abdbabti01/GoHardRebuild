@@ -1554,3 +1554,71 @@ street level. (5) `DevicePrefs` gained three fields; the stored value stays read
 iOS anything beyond CI compilation (background location, Maps SDK, permission prompts), the hosted API (needs `main`
 deployed), Google Cloud key restrictions and billing (no console access), `journey_today_panels_test` and
 `journey_appwide_test` (updated, not rerun), TalkBack/VoiceOver by ear.
+
+## 18 October 2026 — steps, intervals, voice and alerts, personal bests, saved-foods guidance (branch `feature/steps-intervals-audio-records`, from `feature/run-walk` = `main` at `ff65c88`)
+
+From `GoHard_Steps_Intervals_Audio_Records_Coach_Claude_Prompt.md`. Design and contracts: docs/RUN_WALK.md › Steps,
+› Intervals, › Voice and alerts, › Personal bests; docs/COACH.md › Saved foods, › Run / Walk.
+
+**Discrepancy reported, decided by the user.** The prompt's item 5 assumed existing "saved meals" and "recipes". None
+exist on any branch, worktree or handoff (searched 18 Oct 2026): only saved foods (Favourites, My foods). The user chose
+guidance to the existing saved foods; nothing was rebuilt or invented.
+
+| Change | Where |
+|---|---|
+| Steps: native adapter (Android `TYPE_STEP_COUNTER` + Health Connect `StepsRecord` aggregate, steps read only; iOS `CMPedometer` live + history), recording tally over recorded time only (batches split at pause boundaries ≤ 10 s, counter resets, partial vs measured vs not counted vs unknown), opt-in per account in Customize tracking with an optional goal, Today row with source and time, nothing daily stored or synced | `steps.dart`, `move_prefs.dart`, `move_widgets.dart`, `recorder.dart`, `track_math.dart` (`recordingShare`), `MainActivity.kt`, `AppDelegate.swift`, manifest, `build.gradle.kts` (minSdk 26, `connect-client` 1.1.0), `Info.plist` |
+| Intervals: plan + editable preset (NHS Couch to 5K week 1), setup sheet with to-scale preview and total, saved setup, phase from the recorder's active clock (pure), Skip phase, Intervals finished → Continue freely / Finish and review, auto-pause off during intervals (preference kept), timeline in details | `intervals.dart`, `move_widgets.dart`, `recorder.dart`, `run_walk_screens.dart`, `activity_detail.dart` |
+| One announcer: structured cues with keys (no repeats), priority, coalescing, stale drop, cancel on pause/finish/discard/account change, no replay after restart (first look primes), coach line in the page, native TTS (`flutter_tts` 4.2.5, MIT) with ducking, installed-voice choice + preview, vibration (Android also locked), countdown ticks; iOS background `audio` for speech only | `announcer.dart`, `move_widgets.dart` (`CoachLine`, voice sheet), `run_walk_screens.dart`, `Info.plist` |
+| Personal bests: fastest continuous stretch by elapsed time inside one segment (`metrics.efforts`), longest GPS distance, Run and Walk separate, typed/corrected/legacy excluded, projected (edits/deletes/type changes at once, no double awards), celebrated once from the save path only when there was something to beat; History row → list, Train › Progress, badge on details | `records.dart`, `recorder.dart`, `activity_history.dart`, `activity_detail.dart`, `train_screen.dart` |
+| Saved foods on Eat: once-per-stage hint (only while Eat is really in view), shortcut to Add food on Favourites / My foods for the day shown (nothing logged), help explains the two lists | `eat_screen.dart`, `log_food_screen.dart` (`scope`) |
+| Robustness found on the way | `recorder.dart` `_drain` no longer touches a disposed recorder (seen once at the end of a device journey) |
+
+No API change: `metrics` is an opaque object (≤ 4,000 characters; skips capped at 100) and edits merge into it, so
+older apps keep the new fields and the hosted server needs no migration or capability. Route entries were deliberately
+left unchanged (an older app would fail on an unknown entry type).
+
+**Found and fixed during verification.** (1) The announcer read a provider while being disposed (recorder tests).
+(2) Steps: a long stretch across Pause marked every paused walk "partial"; now only when more than 10 steps are left
+out (a calibration constant, marked). (3) The coach's interval button on Ready and the long plan summary pushed Start
+off a 390 × 844 screen; the coach now says words only. (4) Large text at 320 px broke the phase name and Pause/Finish
+letter by letter; Skip phase moves under the phase and the buttons stack. (5) A merged phase + distance message cut
+"0.5 km" to "0" (split on the first dot), found on the emulator; fixed and unit-tested. (6) Eat's saved-foods hint was
+used up while Eat was built off screen behind Today (tabs stay built); it is now chosen only while Eat is the tab in
+view (regression check in `move_ui_test`). (7) The steps goal field's controller was created lazily in `dispose`.
+(8) The daily-steps poll now lives with the row that shows it.
+
+**Checks run.**
+- `flutter analyze`: clean. Full `flutter test` once after the shared changes (recorder, Today, Eat, Train): 552
+  passed, after 3 Run / Walk UI tests were adjusted for the longer Ready page and the new rows; then the affected suites
+  again after each later fix. New: `move_logic_test` (20: intervals, steps, cues, records; SYNTHETIC readings and GPS),
+  `run_walk_extras_test` (5: recorder on a real Drift file with a restart, steps across pause and a counter reset,
+  phase kept, no replay, saved metrics; announcer priority, staleness, cancel, voice off), `move_ui_test` (5).
+- Renders (`move_render_test`, gated): six themes of Ready with intervals, Recording (Stats and Map) with the phase bar,
+  coach line and steps, the interval setup, details with intervals and bests, Today's steps row; 320 px at 2× text for
+  Ready, Recording and Today: `docs/evidence/design/six-themes-{runwalk-ready-intervals,runwalk-recording-intervals,runwalk-recording-map,interval-setup,activity-intervals-best,today-steps}.png`, `state-large-text-320-*.png`.
+- Android debug build with the Kotlin adapter and Health Connect: built.
+- Device (`emulator-5554`, Pixel 7 image, Android 16 / API 36, debug build, local API; **SIMULATED GPS** through the
+  test location provider at about 3.5 m/s, **SIMULATED steps** via `GOHARD_SIM_STEPS`, labelled on screen; the emulator
+  has no step counter): `journey_move_test` (new, two phases, not default) **passed**. Phase 1: Customize tracking ›
+  Steps on with a goal; Today's steps row with its source and time; a favourite marked from Add food (nothing logged);
+  back on Eat the coach offered it once and Open Favourites opened Add food on Favourites, nothing logged; a short free
+  run saved; interval setup cut to 2 × (15 s run, 15 s walk); Voice on, updates every 0.5 km; the walk prompt on screen,
+  Pause froze the phase's time left, Skip phase → "Final round. Run for 15 seconds.", Intervals finished → Continue
+  freely, "0.5 km completed. Active time … Avg. moving pace … /km."; left recording; force-stop **and an emulator
+  reboot**. Phase 2: "Run interrupted", Resume, Finish, Save; "Your longest run so far, 0.50 km." once with the badge;
+  History › Personal bests; Eat in the new process kept its usual words (hint not repeated) and its help opened
+  Favourites. Captures `docs/evidence/screenshots/move-01…15`. The emulator's text-to-speech received the phrases but
+  nobody listened: speech, ducking and vibration were **not** checked by ear or hand.
+  Runner changes: this journey reads its phase from the phone (both phases one build, so phase 2 needs no reinstall:
+  the emulator's 6 GB partition had no room for a second 197 MB copy) and the emulator restarts between the phases.
+  The emulator's low-storage reserve was lowered (`settings put global sys_storage_threshold_percentage 2`,
+  `sys_storage_threshold_max_bytes 157286400`): an emulator setting, not the app. Earlier attempts failed on: the
+  `GOHARD_SIM_STEPS` argument splatting, a leftover test GPS provider, the same `log-food` key on Today and Eat, a
+  sheet filled by the keyboard, the coach header scrolled out of the lazy list, "Service has disappeared" (three times,
+  retried), storage (four times), the "0.5 km" merge bug (app, fixed) and the off-screen hint (app, fixed).
+
+**Not verified:** a physical phone (step accuracy against counted steps, Health Connect with real data and its
+permission screens, Core Motion prompts, speech heard by ear, ducking with music and restoring it, calls, Bluetooth
+headphones, lock-screen speech and vibration, battery), iOS beyond CI compilation, TalkBack/VoiceOver by ear, the
+hosted API with this build (no API change is needed). `flutter_tts` applies the Kotlin Gradle plugin: Flutter warns a
+future release will refuse that until the plugin migrates.

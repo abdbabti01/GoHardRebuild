@@ -13,6 +13,8 @@ import '../../data/models.dart';
 import '../../core/device_prefs.dart';
 import '../activity/activity_detail.dart';
 import '../activity/activity_history.dart';
+import '../activity/move_prefs.dart' show stepsEnabledProvider;
+import '../activity/move_widgets.dart' show StepsTodayRow;
 import '../activity/recorder.dart';
 import '../activity/run_walk_screens.dart';
 import '../coach/coach_bubble.dart';
@@ -92,6 +94,8 @@ class TodayScreen extends ConsumerWidget {
                 gap,
                 // The compact tile under the panel theme and History beside it on the scene.
                 _RunCard(today: day, finishedToday: finishedRuns),
+                // Optional, near Run / Walk: today's steps from the phone's own history, once turned on.
+                if (ref.watch(stepsEnabledProvider)) ...[const SizedBox(height: 8), StepsTodayRow(onOpenSettings: () => showTrackingSheet(context))],
                 // What was actually recorded today. Absent when there is nothing to show.
                 if (snapshot != null && (snapshot.recordedToday.isNotEmpty || finishedRuns.length > 1)) ...[gap, PanelTheme(child: PanelSurface(child: _ActivitySection(snapshot, finishedRuns)))],
               ]),

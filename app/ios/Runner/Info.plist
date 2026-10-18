@@ -11,9 +11,12 @@
 		<key>RouteRecording</key>
 		<string>Precise location is needed to measure the route and distance of this run or walk.</string>
 	</dict>
+	<key>NSMotionUsageDescription</key>
+	<string>GoHard counts your steps during a run or walk, and shows today's steps from this iPhone, when you turn Steps on. Today's steps stay on this phone; the steps of a run or walk are saved with it.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
+		<string>audio</string>
 	</array>
 	<key>GMSApiKey</key>
 	<string>$(GOOGLE_MAPS_API_KEY)</string>

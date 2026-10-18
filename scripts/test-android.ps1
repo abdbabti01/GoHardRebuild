@@ -33,10 +33,28 @@ try {
         & $Adb -s $device uninstall $appId 2>$null | Out-Null
         $feeder = $null
         $gpsFeed = $null
+        # journey_move_test: SIMULATED steps (the emulator has no step counter), labelled on screen.
+        [string[]]$simSteps = if ($journey -eq 'journey_move_test') { '--dart-define=GOHARD_SIM_STEPS=true' } else { @() }
+        if ($journey -eq 'journey_move_test') {
+            if ($device -notmatch '^emulator-') { Fail 'journey_move_test simulates GPS positions and so needs an emulator.' }
+            # SIMULATED GPS: a run north at about 3.5 m/s, one position a second, through Android's test location provider.
+            & $Adb -s $device shell appops set com.android.shell android:mock_location allow
+            try { & $Adb -s $device shell cmd location providers add-test-provider gps 2>$null | Out-Null } catch { }   # left over from an earlier run: fine
+            & $Adb -s $device shell cmd location providers set-test-provider-enabled gps true | Out-Null
+            $gpsFeed = Start-Job -ArgumentList $Adb, $device -ScriptBlock {
+                param($adb, $device)
+                for ($i = 1; $i -le 1800; $i++) {
+                    $lat = [string]::Format([cultureinfo]::InvariantCulture, '{0:F7}', 46.8000 + $i * 0.0000314)
+                    & $adb -s $device shell cmd location providers set-test-provider-location gps --location "$lat,-71.2200" --accuracy 5 | Out-Null
+                    Start-Sleep -Milliseconds 1000
+                }
+            }
+        }
         # A test cannot tap system permission dialogs, so for these journeys the app is installed first and the permissions granted.
         $location = 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'
         $grants = @{
             journey_device_test = @('POST_NOTIFICATIONS') + $location; journey_food_test = @('CAMERA'); journey_runwalk_test = @('POST_NOTIFICATIONS') + $location
+            journey_move_test = @('POST_NOTIFICATIONS') + $location
             # These start a run or walk on the way (Run / Walk asks for location when Start is pressed).
             journey_coldstart_test = $location; journey_today_panels_test = $location; journey_appwide_test = $location
         }[$journey]
@@ -45,7 +63,7 @@ try {
             # Only the device's ABI: the all-ABI debug APK (with Google Maps) no longer fits the emulator's free space twice over.
             $abi = (& $Adb -s $device shell getprop ro.product.cpu.abi).Trim()
             $platform = @{ 'x86_64' = 'android-x64'; 'arm64-v8a' = 'android-arm64'; 'armeabi-v7a' = 'android-arm' }[$abi]
-            flutter build apk --debug --target-platform $platform --dart-define=GOHARD_API_BASE=$ApiBase | Out-Null
+            flutter build apk --debug --target-platform $platform --dart-define=GOHARD_API_BASE=$ApiBase $simSteps | Out-Null
             if ($LASTEXITCODE -ne 0) { Fail 'The debug build failed.' }
             & $Adb -s $device install -r 'build\app\outputs\flutter-apk\app-debug.apk' | Out-Null
             foreach ($p in $grants) { & $Adb -s $device shell pm grant $appId "android.permission.$p" }
@@ -149,11 +167,14 @@ try {
             # The cold-start journey runs twice on one install. The Flutter tool uninstalls the app when a run ends,
             # which would wipe what the first run saved, so the first run leaves the app in place and its process is
             # killed here instead. The second run is then a new process that can only show what was saved on the device.
-            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test') { '1', '2' } else { @('') }
+            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test', 'journey_move_test') { '1', '2' } else { @('') }
             foreach ($phase in $phases) {
                 if ($phase) { Step "  phase $phase of 2$(if ($phase -eq '2') { ' (new process, same install)' })" }
                 $keep = if ($phase -eq '1') { '--keep-app-running' } else { '--no-keep-app-running' }
-                flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase --dart-define=GOHARD_PHASE=$phase $keep
+                # journey_move_test reads its phase from what phase 1 left on the phone, so both phases are one build and
+                # phase 2 needs no reinstall (the emulator has no room for a second copy of the app).
+                [string[]]$phaseDefine = if ($journey -eq 'journey_move_test') { @() } else { "--dart-define=GOHARD_PHASE=$phase" }
+                flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase $phaseDefine $simSteps $keep
                 if ($LASTEXITCODE -ne 0) { Fail "The native journey '$journey'$(if ($phase) { " (phase $phase)" }) failed." }
                 if ($phase -eq '1') {
                     & $Adb -s $device shell am force-stop $appId
@@ -162,6 +183,15 @@ try {
                     if (& $Adb -s $device shell pidof $appId) { Fail 'The app process is still running after force-stop, so the next phase would not be a cold start.' }
                     if (-not ((& $Adb -s $device shell pm list packages $appId) -match [regex]::Escape($appId))) { Fail 'The app is no longer installed after phase 1, so its saved data is gone.' }
                     Write-Host '    app process ended (force-stop); the install and its data are kept' -ForegroundColor DarkGray
+                    if ($journey -eq 'journey_move_test') {
+                        # The phone restarts between the phases: it frees the emulator's storage for phase 2's install, and
+                        # the recording must come back Interrupted after a real restart.
+                        & $Adb -s $device reboot
+                        & $Adb -s $device wait-for-device
+                        for ($w = 0; $w -lt 60 -and (& $Adb -s $device shell getprop sys.boot_completed).Trim() -ne '1'; $w++) { Start-Sleep -Seconds 3 }
+                        & $Adb forward --remove-all
+                        Write-Host '    the emulator restarted between the phases' -ForegroundColor DarkGray
+                    }
                 }
             }
             # Only a journey that passed publishes evidence. Each capture is copied over the tracked one and read

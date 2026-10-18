@@ -16,8 +16,13 @@ import '../../core/widgets.dart';
 import '../../data/db.dart' show Rec;
 import '../../data/models.dart';
 import '../../data/sync.dart' show LocalSaveFailure;
+import '../coach/coach_bubble.dart';
 import 'gpx.dart';
+import 'intervals.dart';
+import 'recorder.dart' show recordCueProvider;
+import 'records.dart';
 import 'route_map.dart';
+import 'steps.dart';
 import 'run_walk_screens.dart' show StatFigure, activityNoun, activityTitle;
 import 'track_math.dart';
 
@@ -107,7 +112,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         child: ListView(padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 28), children: [
           Heading(activityName(run), size: 36, serif: true),
           const SizedBox(height: 4),
-          Text('${activityWhen(run)} · ${activityTitle(run.activityType)}', style: context.sansStyle(16, color: context.c.secondary)),
+          Text('${activityWhen(run)} · ${activityTitle(run.activityType)}${run.metrics['intervals'] != null ? ' · Intervals' : ''}', style: context.sansStyle(16, color: context.c.secondary)),
+          ..._records(run),
           const SizedBox(height: 14),
           if (analysis.isLoading)
             const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()))
@@ -165,6 +171,30 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
+  /// The personal bests this activity holds now (derived, so an edit or a deletion elsewhere is reflected), and the
+  /// coach's one calm word about a record this save just set.
+  List<Widget> _records(Run run) {
+    final runs =[for (final r in ref.watch(runsProvider).value ?? const <Stored<Run>>[]) r.value];
+    final bests = personalBests(runs);
+    final held = [for (final b in bests.by.values) if (b.run.id == run.id && (bests.qualifying[b.benchmark.id] ?? 0) >= 2) b];
+    final cue = ref.watch(recordCueProvider);
+    return [
+      if (held.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Wrap(spacing: 8, runSpacing: 6, children: [
+            for (final b in held)
+              StatusPill('Personal best · ${b.benchmark.label}${b.benchmark.longest ? '' : ' ${b.benchmark.type}'}', key: Key('activity-best-${b.benchmark.id}'), icon: Icons.emoji_events_outlined, tone: Tone.accent),
+          ]),
+        ),
+      if (widget.justSaved && cue != null && cue.runId == run.id)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: CoachSpeaker(key: const Key('activity-record-coach'), say: CoachSay(cue.text), introduce: true, onClose: () => ref.read(recordCueProvider.notifier).played()),
+        ),
+    ];
+  }
+
   List<Widget> _overview(BuildContext context, Stored<Run> stored, TrackAnalysis? a, DistanceUnit unit) {
     final run = stored.value;
     final m = run.metrics;
@@ -187,6 +217,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
     final rows = <(String, String)>[
       ('Active time', clockText(run.activeDurationSeconds ?? 0)),
+      ('Steps', stepsText(m)),
       if (speed != null) ('Avg. speed', unit.speed(speed)),
       if (m['elevationLossMeters'] != null) ('Elevation loss', unit.elevation((m['elevationLossMeters'] as num).toDouble())),
       if (run.distanceSource == 'corrected' && m['gpsDistanceMeters'] != null) ('Measured by GPS', unit.distance((m['gpsDistanceMeters'] as num).toDouble())),
@@ -202,6 +233,31 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       if (run.metrics['routeState'] == 'partial')
         const Padding(padding: EdgeInsets.only(bottom: 10), child: StatusLine(Icons.info_outline, 'Part of this route was not recorded. Distance and pace cover only what GPS measured.')),
       GroupCard(children: [for (final (k, v) in rows) GroupRow(title: k, value: v)]),
+      ..._intervals(context, run),
+    ];
+  }
+
+  /// The phase timeline of an interval session: one activity, its phases as recorded (a skipped phase is marked).
+  List<Widget> _intervals(BuildContext context, Run run) {
+    final iv = run.metrics['intervals'] as Map?;
+    final plan = IntervalPlan.fromJson(iv?['plan']);
+    if (plan == null) return const [];
+    final skips = [for (final v in (iv?['skips'] as List? ?? const [])) if (v is num) v.toInt()];
+    final tl = IntervalClock.timeline(plan, skips, (run.activeDurationSeconds ?? 0) * 1000);
+    final runs = tl.where((p) => p.phase.kind == PhaseKind.run && !p.skipped).length;
+    return [
+      const SizedBox(height: 16),
+      Text('Intervals', style: context.sansStyle(16, weight: FontWeight.w600)),
+      Text('${plan.reps} × run ${phaseClock(plan.run)}, walk ${phaseClock(plan.walk)} · $runs of ${plan.reps} runs completed', style: context.caption),
+      const SizedBox(height: 8),
+      GroupCard(key: const Key('activity-intervals'), children: [
+        for (final p in tl)
+          GroupRow(
+            title: '${p.phase.label}${p.phase.round == null ? '' : ' ${p.phase.round}'}', icon: p.phase.kind == PhaseKind.run ? Icons.directions_run : Icons.directions_walk,
+            tone: p.phase.kind == PhaseKind.run ? Tone.accent : Tone.neutral,
+            subtitle: p.skipped ? 'Ended early (planned ${phaseClock(p.phase.seconds)})' : null, value: phaseClock(p.seconds),
+          ),
+      ]),
     ];
   }
 

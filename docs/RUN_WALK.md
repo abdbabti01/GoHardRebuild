@@ -6,8 +6,9 @@ GPX export. The approved look is "Focus Dial" (`GoHard_Run_Walk_Focus_Dial/refer
 illustrative; every value on screen comes from the device or from stored data.
 
 Out of scope (not built, not promised): public feeds, leaderboards, competitive segments, route planning or
-navigation, Strava, wearables and health platforms, heart rate, steps, cadence, VO2 max, calories, personal records,
-offline map downloads, snapping to roads.
+navigation, Strava, wearables and health platforms (beyond the one Health Connect step read below), heart rate,
+cadence, VO2 max, calories, offline map downloads, snapping to roads. Since 18 Oct 2026: steps, intervals, voice and
+alerts, personal bests (sections below).
 
 ## Code map
 
@@ -22,7 +23,13 @@ offline map downloads, snapping to roads.
 | Screens: Ready, Recording, Save review, Saved details, History | `features/activity/run_walk_screens.dart`, `activity_detail.dart`, `activity_history.dart` |
 | API | `Persistence/Entities.cs` (`Run`, `RouteChunk`), `Application/JournalServices.cs` (`ActivityService`), `Endpoints.cs`, migration `AddRunRoutes` |
 | Native | Android `MainActivity.kt` (channel `gohard/maps`), `build.gradle.kts` (key placeholder), manifest; iOS `AppDelegate.swift`, `Info.plist`, `Podfile`, `Flutter/*.xcconfig` |
-| Tests | `test/track_math_test.dart` (GPS fixtures), `test/run_walk_recorder_test.dart` (recorder + sync on a real database), `test/run_walk_ui_test.dart`, `api/tests/.../RunRouteTests.cs`, `integration_test/journey_runwalk_test.dart` |
+| Steps (native adapter, activity tally, daily total) | `features/activity/steps.dart`; Android `MainActivity.kt` (channel `gohard/steps`, event channel `gohard/steps/live`); iOS `AppDelegate.swift` (`StepsBridge`) |
+| Intervals (plan, position from the active clock, timeline) | `features/activity/intervals.dart` |
+| Voice and alerts (cues from a recording, the one announcer, speech) | `features/activity/announcer.dart` |
+| Personal bests (fastest stretches, projection, new records) | `features/activity/records.dart` |
+| Run / Walk choices on this phone (voice, updates, intervals, steps, goal) | `features/activity/move_prefs.dart` (store `gohard.rebuild.move`) |
+| Shared widgets (interval setup, phase bar, coach line, voice sheet, bests, steps row/settings) | `features/activity/move_widgets.dart` |
+| Tests | `test/move_logic_test.dart` (intervals, steps, cues, records), `test/run_walk_extras_test.dart` (recorder + announcer on a real database), `test/move_ui_test.dart`, `test/move_render_test.dart` (renders, gated), `test/track_math_test.dart` (GPS fixtures), `test/run_walk_recorder_test.dart` (recorder + sync on a real database), `test/run_walk_ui_test.dart`, `api/tests/.../RunRouteTests.cs`, `integration_test/journey_runwalk_test.dart` |
 
 ## Activity record
 
@@ -34,7 +41,7 @@ The existing `run` record (kind `run`, `/runs`) is the activity, Run or Walk; th
 | `title`, `notes` | Editable. Title defaults to "Morning/Afternoon/Evening/Night run/walk" from the local start time. |
 | `activeDurationSeconds` | Active time (unchanged meaning, see Metrics). |
 | `distanceMeters` | The distance the activity reports: GPS-measured, or the person's correction, or typed (manual). |
-| `metrics` | Derived summary for lists and other devices, recomputable from the route: `elapsedSeconds`, `movingSeconds`, `gpsDistanceMeters`, `elevationGainMeters`, `elevationLossMeters`, `distanceSource` (`gps` · `corrected` · `manual` · `none`), `routeState` (`none` · `recorded` · `partial`), `pointCount`, `gaps`, `interrupted`. |
+| `metrics` | Derived summary for lists and other devices, recomputable from the route: `elapsedSeconds`, `movingSeconds`, `gpsDistanceMeters`, `elevationGainMeters`, `elevationLossMeters`, `distanceSource` (`gps` · `corrected` · `manual` · `none`), `routeState` (`none` · `recorded` · `partial`), `pointCount`, `gaps`, `interrupted`. Since 18 Oct 2026, all optional: `stepsState` (`off` · `denied` · `unavailable` · `measured` · `partial`) and `steps` (only when measured or partial), `intervals` (`{plan, skips}`, at most 100 skips, so `metrics` stays under the API's 4,000 characters), `efforts` (`{"1000": s, "5000": s}`, fastest stretches). |
 
 Legacy records (no `activityType`, no `metrics`) keep their real time and distance, show as Run and say
 **Route not recorded**. Nothing is fabricated for them.
@@ -159,6 +166,150 @@ resume. Manual pause is never auto-resumed. Same rules for Run and Walk; `autopa
 
 **Units.** Stored canonical; shown in km or miles (Me › Units, device preference, default km): distance km/mi,
 pace min/km or min/mi, speed km/h or mph, elevation m or ft.
+
+## Steps
+
+Measured by the phone's motion hardware only: never estimated from GPS distance, pace or a stride length, and a
+pedometer distance never replaces the GPS distance or its provenance.
+
+**Turning on.** Customize tracking › **Steps** (off by default, per account, on this phone). Turning it on asks for
+Motion & Fitness (iOS) or Physical activity (Android, `ACTIVITY_RECOGNITION`), and on Android Health Connect's
+step read (`android.permission.health.READ_STEPS`) for the daily total. Run / Walk records normally whatever the
+answers; Ready says when steps cannot be counted and offers the fix (allow, or open Settings).
+
+**During a Run / Walk** (`StepTally`). Readings of the cumulative counter (Android `TYPE_STEP_COUNTER`, steps since
+the phone started, each with the time of the steps even when delivered late in a batch; iOS `CMPedometer.startUpdates`,
+steps since the updates began, plus a 0 reading at that moment) are received for the whole open recording, pauses
+included. Each reading's increase over the previous one is counted by how much of that stretch was recorded
+(`TrackAnalysis.recordingShare`, the recording windows): wholly recorded, all; wholly paused or interrupted, none; a
+stretch across a pause boundary of at most 10 s is split by time; a longer one is left out, and the count is marked
+**partial** when that leaves out more than 10 steps (a long stretch with a step or two is standing still around Pause
+or Resume). A counter that goes backwards (the phone restarted) starts a new baseline and, when that cost recorded
+time, marks the count partial; a sensor error marks it partial. A walk/recovery phase of an interval session is
+recording time. The tally is checkpointed with the recorder state; after a restart (Interrupted) or after Finish →
+Resume the next reading is a new baseline, so nothing during the gap is counted and nothing is counted twice.
+
+| `stepsState` | Shown |
+|---|---|
+| `measured` | the number (0 is a real zero: the sensor was counting) |
+| `partial` | the number, "(part of the time)" |
+| `denied` / `unavailable` / `off` | "Not counted: motion access is off" / "… no step sensor" / "Not counted" |
+| absent (saved before steps existed) | "Not recorded": unknown, never 0 |
+
+Steps of an activity sync with it (inside `metrics`; no server change: the API keeps `metrics` as given, so older
+apps and servers keep the fields; an edit merges into the existing metrics).
+
+**Daily total** (Today, under Run / Walk, only when on). One authoritative source per platform, never added to
+anything: iOS `CMPedometer.queryPedometerData` from local midnight ("This iPhone": steps this iPhone counted, about
+7 days kept); Android Health Connect's aggregate `StepsRecord.COUNT_TOTAL` from local midnight ("Health Connect": it
+resolves overlapping sources such as the phone, a watch and fitness apps). Recorded activity steps are never added to
+it (the day's total already includes them), and two phones are never summed. When Health Connect has no step data at
+all for the day, it says so instead of showing 0. Read when shown, on return to the foreground and every 5 minutes
+while shown; local midnight is worked out on every read (midnight, a time-zone change and a restart start the right
+day). The source and the time of the read are shown; an optional goal is the person's own number (no default, no
+target implied). Daily totals stay on the phone: never stored, synced, logged or sent to the AI. Phone-only counts
+miss walking without the phone (said in Customize tracking).
+
+Android: minSdk 26 (Health Connect's client); Health Connect is part of Android 14+, an app before; without it the row
+says daily steps need Health Connect. iOS: no HealthKit, no entitlement: Motion & Fitness works with a free Apple ID
+and Sideloadly (`NSMotionUsageDescription`).
+
+## Intervals
+
+Optional, from Ready (**Intervals** row under Start; one tap on Start still records a free Run / Walk). Setup:
+warm-up walk (0–30 min), Run and Walk/recover (15 s–60 min each), repeats (1–30), cool-down walk (0–30 min); the
+starting point is week 1 of the NHS Couch to 5K plan (5 min walk, then 60 s run / 90 s walk × 8, then a 5 min walk),
+editable. The preview draws the phases to scale and gives the programmed active time. The setup is kept on the phone
+and reused (Ready says "Intervals on" with it); "Turn intervals off" keeps it for later.
+
+An interval session is **one activity** of the type chosen (Run or Walk), never changed by its phases. Its plan and
+skips are in the recorder state (checkpointed at once on Skip) and saved in `metrics.intervals`. The position is a pure
+function `IntervalClock.at(plan, skips, activeMs)` of the recorder's active clock: pausing freezes it, an interruption
+is not active time, and a rebuild, a tab change or a restart cannot move it. **Skip phase** ends the current phase at
+that active time. Phase changes never pause, finish or log anything.
+
+Recording shows the phase, its time left (the last three seconds large), the round ("Round 3 of 8"), the phase strip
+and the next phase, under the dial (compact in the Map view), with Active time on the dial as before. After the last
+phase: "Intervals finished" with **Continue freely** (recording goes on without prompts) or **Finish and review**;
+the GPS recording never finishes by itself.
+
+Auto-pause does not run during an interval session (walking to recover is not a pause); the person's Auto-pause
+choice is kept for free runs and walks and Ready says so.
+
+The details screen lists the phases as recorded (active seconds; "Ended early" for a skipped or unfinished one) and
+how many runs were completed.
+
+## Voice and alerts
+
+One announcer (`Announcer` in `announcer.dart`) for everything said during a recording and after a save. Cues are
+structured local events with a stable key (`<activity>:phase:<n>`, `<activity>:dist:<n>`, `<activity>:time:<n>`,
+`<activity>:intervals:done`, `record:<activity>`); a key is said once.
+
+* **Where they come from.** The recorder samples its own active clock every second while recording
+  (`recordingCues`, pure). The first look after a start, a restart or taking an activity over only notes where it
+  stands, so nothing due earlier is said: no replay on resume, no backlog after an interruption. The screen's 1 s
+  redraw plays no part.
+* **Words.** Phase prompts: "Warm up: walk for 5 minutes." · "Run for 2 minutes." · "Walk and recover for 1 minute."
+  · "Final round. Run for 1 minute." · "Intervals finished. Continue freely, or finish and review." Updates, by distance
+  (every 0.5, 1 or 2 km/mi) or active time (every 5, 10 or 15 min): distance, **active time** and **average moving
+  pace** (named as such; spoken only once the pipeline has an honest pace, never as a made-up number), in the unit
+  chosen in Me. A personal best after a save (below).
+* **Policy.** Priority: phase prompt (3) > personal best (2) > update (1). A higher one cuts a lower one being spoken;
+  a lower one waits, and is dropped if it would be more than 8 s late. A phase change and an update due at the same
+  moment are one message, phase first. Pause, Finish, Discard, an account change and turning voice off stop speech
+  and drop what was queued.
+* **Presentation.** On screen always: the coach line under the dial (the guide's portrait when Show coach on Train
+  and Eat is on, the words alone otherwise; read by screen readers as it changes), never over the map or controls.
+  Spoken only when **Voice updates** is on (Ready › Voice and alerts, or the speaker button while recording; off by
+  default; never on account creation or opening Today). Vibration at a phase change when **Vibrate at interval
+  changes** is on and Haptics is not Off; a tick for each of the last 3 seconds with **Countdown**.
+* **Voice.** The phone's own text-to-speech (`flutter_tts`: AVSpeechSynthesizer / Android TextToSpeech), no network,
+  no AI, no cloud voice, no microphone. The person may pick an installed voice in the app's language, or the phone's
+  own; a chosen voice that is no longer installed falls back to the phone's own and says so. Leon speaks a little
+  lower, Leona a little higher (pitch), so the coach sounds the same every time. **Preview voice** says a short hello.
+  The portrait does not lip-sync.
+* **Audio.** Other audio is lowered while speaking and restored after: iOS shared session `playback` with
+  `duckOthers` + `interruptSpokenAudioAndMixWithOthers`, deactivated with notify-others after each utterance; Android
+  navigation-guidance audio attributes and transient may-duck focus, abandoned after. Music is not stopped. Calls and
+  other interruptions are handled by the system (an utterance during a call may be dropped).
+* **Background and lock screen.** Recording keeps running in the background as before; speech continues there
+  (iOS: `UIBackgroundModes` gains `audio`, used only while speaking, no silent keep-alive; Android: the location
+  foreground service keeps the process). Vibration with the screen locked: Android yes (system vibrator); iPhone only
+  while GoHard is in front (Apple limits background vibration). No extra notification is posted: the Android
+  recording notification stays as it was, and there is no avatar on the lock screen. A process killed by the system
+  or force-quit records and says nothing; on reopening it is Interrupted (as before) and nothing is replayed.
+
+## Personal bests
+
+Projected, never stored as awards (`personalBests` in `records.dart`) from every saved activity on this phone (the
+account snapshot is pulled whole, so the history is all or nothing; nothing is called a best before it is read).
+Run and Walk are separate:
+
+| Run | Walk |
+|---|---|
+| Longest run · Fastest 1 km · Fastest 5 km | Longest walk · Fastest 1 km |
+
+* Longest uses the GPS-measured distance (`gpsDistanceMeters`). A fastest time is the quickest continuous stretch of
+  that distance in counted GPS distance inside one recording segment, timed by **elapsed** time from its start to
+  its end (`bestEfforts`, worked out at save and kept in `metrics.efforts`): a pause, auto-pause, interruption or
+  GPS gap ends a segment, so a stretch never spans one and nothing is interpolated through missing GPS; only the
+  start is placed inside the one counted step it falls in. Not the whole activity's average.
+* Only saved activities whose distance GPS measured (`distanceSource = gps`, not legacy): typed, corrected and
+  before-routes activities never count. Activities saved before 18 Oct 2026 have no `efforts`: they count for
+  longest only, and the list says how many were not checked for times.
+* Canonical metres and seconds: changing km/mi cannot change a record. Ties go to the earlier activity. An edit,
+  a type change or a deletion changes the projection at once; saving or syncing again cannot award twice.
+* Shown: History › **Personal bests** (one row, opening the list), Train › Progress (under the history, once
+  something is saved), and on an activity's details ("Personal best · Fastest 1 km run") once at least two activities
+  qualified in that category.
+* **Celebration.** Only from a save's own success path (`Recorder._celebrate`, in memory), against the activities
+  before it, and only when there was one to beat (a first walk is not a "best"): "Your longest walk so far, 4.00 km."
+  The Saved screen's coach says it once (a bubble with Close; still under Reduce Motion) and the announcer speaks it
+  when Voice is on.
+
+**Auto-pause and records.** The documented auto-pause limitation (the ~10 m that confirms a resume is not counted;
+the segment starts at the resume) means a stretch never spans an auto-pause; a benchmark after one is timed only from
+the resume on. No correction was needed for records; no record crosses an auto-pause.
 
 ## Location, background and permissions
 

@@ -14,6 +14,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Steps (docs/RUN_WALK.md › Steps), only after the person turns them on: the step counter during a run or walk
+         (Physical activity), and the day's step total read from Health Connect (steps only, read only). -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+    <uses-permission android:name="android.permission.health.READ_STEPS"/>
+    <!-- Interval changes (docs/RUN_WALK.md › Intervals), when the person keeps Vibrate on. -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:label="GoHard"
         android:allowBackup="false"
@@ -40,7 +46,22 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Health Connect shows why GoHard reads steps from here (Android 13 and earlier). -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+            </intent-filter>
         </activity>
+        <!-- The same, on Android 14 and later. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+            </intent-filter>
+        </activity-alias>
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
@@ -62,6 +83,8 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- Health Connect on Android 13 and earlier, where it is an app. -->
+        <package android:name="com.google.android.apps.healthdata"/>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

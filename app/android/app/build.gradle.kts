@@ -29,7 +29,8 @@ android {
         applicationId = "com.gohard.rebuild"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // 26: Health Connect's client library (daily steps, docs/RUN_WALK.md › Steps) needs Android 8.0 or later.
+        minSdk = maxOf(26, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
@@ -65,4 +66,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Daily steps only: one aggregate read of StepsRecord (docs/RUN_WALK.md › Steps).
+    implementation("androidx.health.connect:connect-client:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }

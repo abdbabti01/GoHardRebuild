@@ -10,6 +10,7 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import 'activity_detail.dart';
+import 'move_widgets.dart' show PersonalBestsLink;
 import 'route_map.dart';
 import 'run_walk_screens.dart';
 import 'track_math.dart';
@@ -77,6 +78,8 @@ class _ActivityHistoryScreenState extends ConsumerState<ActivityHistoryScreen> {
           const SizedBox(width: 10),
           Expanded(child: _Totals(key: const Key('history-month'), label: 'This month', runs: saved.where(inMonth).toList(), unit: unit)),
         ]),
+        const SizedBox(height: 16),
+        PersonalBestsLink(types: _filter == _Filter.all ? const ['run', 'walk'] : [_filter.name]),
         const SizedBox(height: 16),
       ],
       if (saved.isEmpty)

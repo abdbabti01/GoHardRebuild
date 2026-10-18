@@ -1,0 +1,200 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/data/models.dart';
+import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/activity/activity_detail.dart';
+import 'package:gohard_rebuild/features/activity/announcer.dart';
+import 'package:gohard_rebuild/features/activity/intervals.dart';
+import 'package:gohard_rebuild/features/activity/location_source.dart';
+import 'package:gohard_rebuild/features/activity/move_prefs.dart';
+import 'package:gohard_rebuild/features/activity/move_widgets.dart';
+import 'package:gohard_rebuild/features/activity/recorder.dart';
+import 'package:gohard_rebuild/features/activity/run_walk_screens.dart';
+import 'package:gohard_rebuild/features/activity/steps.dart';
+import 'package:gohard_rebuild/features/activity/track_math.dart';
+import 'package:gohard_rebuild/features/shell/home_shell.dart';
+
+import 'food_fakes.dart';
+import 'ui_support.dart';
+
+/// Renders of the steps, intervals, coach-line and personal-best screens (docs/RUN_WALK.md) in all six themes and at a
+/// narrow width with large text, for design review:
+///
+///   flutter test test/move_render_test.dart --dart-define=GOHARD_RENDER=true
+///
+/// Without the flag it does nothing. Recorder states, GPS and steps are SIMULATED fixtures; these are renders of the
+/// Flutter widgets, not captures from a phone (the map is the drawn route: no map key in a widget test).
+const _enabled = bool.fromEnvironment('GOHARD_RENDER');
+const _out = '../docs/evidence/design';
+const _day = '2026-10-11';
+const _plan = IntervalPlan.preset;
+
+class _Rec extends Recorder {
+  _Rec(this.view);
+  final RecorderView view;
+  @override
+  RecorderView build() => view;
+  @override
+  Future<void> adopt(Run run) async {}
+}
+
+class _Saying extends Announcer {
+  @override
+  Cue? build() => const Cue('Walk and recover for 1 minute 30 seconds.', key: 'r', priority: Cue.phase);
+}
+
+TrackAnalysis _route(int seconds, int startMs) {
+  final a = TrackAnalysis()..add(TrackEntry(seq: 0, type: EntryType.start, segment: 0, t: startMs));
+  for (var i = 1; i <= seconds; i++) {
+    a.add(TrackEntry(seq: i, type: EntryType.fix, segment: 0, t: startMs + i * 1000, lat: 46.8 + i * 2.2 / 111320, lon: -71.2 + (i % 400) * 0.000004, acc: 5, speed: 2.2));
+  }
+  return a;
+}
+
+Json _saved(String id, String day, {required double meters, required double k1, bool intervals = false}) => {
+      'id': id, 'dayKey': day, 'startedAtUtc': '${day}T07:00:00Z', 'finishedAtUtc': '${day}T07:40:00Z', 'activeDurationSeconds': 1800, 'distanceMeters': meters,
+      'isDeleted': false, 'activityType': 'run', 'title': intervals ? 'Morning intervals' : 'Morning run',
+      'metrics': {
+        'distanceSource': 'gps', 'gpsDistanceMeters': meters, 'movingSeconds': 1700, 'elapsedSeconds': 1900, 'routeState': 'recorded', 'pointCount': 1500, 'gaps': 0,
+        'interrupted': 0, 'stepsState': 'measured', 'steps': 4210, 'efforts': {'1000': k1},
+        if (intervals) 'intervals': {'plan': _plan.toJson(), 'skips': [700000]},
+      },
+    };
+
+Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {RecorderView? view, bool saying = false}) async {
+  final store = AppearanceStore(MemorySecretStore())
+    ..accent = accent
+    ..mode = mode;
+  final move = MovePrefsStore(MemorySecretStore())..value = const MovePrefs(voice: true, intervals: true, plan: _plan, steps: {'one'}, stepGoals: {'one': 8000});
+  return [
+    ...(await tester.runAsync(() => overridesFor(day: _day, appearance: store, runs: [
+          _saved('a1', '2026-10-04', meters: 4100, k1: 352),
+          _saved('a2', _day, meters: 5250, k1: 338, intervals: true),
+        ])))!,
+    ...FoodFakes().overrides,
+    movePrefsStoreProvider.overrideWithValue(move),
+    stepSourceProvider.overrideWithValue(SimulatedStepSource(state: StepAccess.allowed, dailyTotal: 6342)),
+    locationSourceProvider.overrideWithValue(SimulatedLocationSource(const [(46.8, -71.2, 5.0, null)])),
+    if (view != null) recorderProvider.overrideWith(() => _Rec(view)),
+    if (saying) announcerProvider.overrideWith(_Saying.new),
+  ];
+}
+
+RecorderView _recording() {
+  final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+  // 9 min 20 s in: round 2's walk of the preset (warm-up 5:00, run 1:00, walk 1:30 …).
+  final start = now - 560000;
+  return RecorderView(
+    state: RecState.recording, run: Run({'id': 'open', 'dayKey': _day, 'startedAtUtc': DateTime.fromMillisecondsSinceEpoch(start, isUtc: true).toIso8601String(), 'activityType': 'run', 'isDeleted': false}),
+    analysis: _route(559, start), gpsOn: true, plan: _plan, steps: StepTally(steps: 1184), stepsState: 'measured',
+    last: Reading(lat: 46.8 + 559 * 2.2 / 111320, lon: -71.2, acc: 5, at: DateTime.now().toUtc()),
+  );
+}
+
+Future<void> _fonts() async {
+  final inter = FontLoader('Inter');
+  for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+    inter.addFont(File('assets/fonts/Inter-$w.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)));
+  }
+  await inter.load();
+  await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+  final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+  await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+}
+
+Future<void> _settle(WidgetTester tester) async {
+  for (var i = 0; i < 40 && tester.binding.hasScheduledFrame; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
+Future<ui.Image> _capture(WidgetTester tester) async {
+  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 250)));
+  await _settle(tester);
+  return (await tester.runAsync(() => tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot'))).toImage(pixelRatio: 2)))!;
+}
+
+Future<void> _save(WidgetTester tester, ui.Image image, String name) => tester.runAsync(() async {
+      final file = File('$_out/$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
+    });
+
+Future<ui.Image> _sheet(WidgetTester tester, Map<String, ui.Image> shots) async {
+  final images = shots.values.toList();
+  final w = images.first.width, h = images.first.height;
+  const gap = 36, label = 64;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder)..drawColor(const Color(0xFFDADCE0), BlendMode.src);
+  for (final (i, entry) in shots.entries.indexed) {
+    final x = (gap + (i % 3) * (w + gap)).toDouble(), y = (gap + (i ~/ 3) * (h + gap + label)).toDouble();
+    (TextPainter(text: TextSpan(text: entry.key, style: const TextStyle(fontFamily: 'Inter', fontSize: 36, fontWeight: FontWeight.w700, color: Color(0xFF121417))), textDirection: TextDirection.ltr)..layout())
+        .paint(canvas, Offset(x, y));
+    canvas.drawImage(entry.value, Offset(x, y + label), Paint());
+  }
+  return (await tester.runAsync(() => recorder.endRecording().toImage(gap + 3 * (w + gap), gap + 2 * (h + gap + label))))!;
+}
+
+/// Each screen: how it is reached, its recorder state and whether the coach is mid-sentence.
+final _screens = <String, (Widget, RecorderView? Function(), bool, Future<void> Function(WidgetTester))>{
+  'runwalk-ready-intervals': (const RunWalkScreen(), () => null, false, (_) async {}),
+  'runwalk-recording-intervals': (const RunWalkScreen(), _recording, true, (_) async {}),
+  'runwalk-recording-map': (const RunWalkScreen(), _recording, true, (t) async {
+    await t.tap(find.byKey(const Key('runwalk-view-true')));
+    await t.pump(const Duration(milliseconds: 300));
+  }),
+  'activity-intervals-best': (const ActivityDetailScreen(runId: 'a2'), () => null, false, (_) async {}),
+  'today-steps': (const SizedBox(), () => null, false, (t) async {
+    await t.dragUntilVisible(find.byKey(const Key('today-steps')), find.byKey(const Key('today-module-run')), const Offset(0, -200));
+  }),
+  'interval-setup': (Builder(builder: (c) => Scaffold(body: Center(child: TextButton(onPressed: () => showIntervalSetup(c), child: const Text('open'))))), () => null, false, (t) async {
+    await t.tap(find.text('open'));
+    await t.pump(const Duration(milliseconds: 500));
+  }),
+};
+
+void main() {
+  if (!_enabled) {
+    test('move renders (run with --dart-define=GOHARD_RENDER=true)', () {});
+    return;
+  }
+  setUpAll(_fonts);
+
+  for (final MapEntry(key: name, value: (home, view, saying, reach)) in _screens.entries) {
+    testWidgets('six themes: $name', (tester) async {
+      final shots = <String, ui.Image>{};
+      for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+        for (final accent in Accent.values) {
+          await pumpApp(tester, await _fixture(tester, accent, mode, view: view(), saying: saying), home: home is SizedBox ? const HomeShell() : home, insets: phoneInsets, settle: false);
+          await _settle(tester);
+          await reach(tester);
+          shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = await _capture(tester);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        }
+      }
+      await _save(tester, await _sheet(tester, shots), 'six-themes-$name');
+    });
+  }
+
+  for (final name in ['runwalk-ready-intervals', 'runwalk-recording-intervals', 'today-steps']) {
+    testWidgets('narrow large text: $name', (tester) async {
+      final (home, view, saying, reach) = _screens[name]!;
+      await pumpApp(tester, await _fixture(tester, Accent.blue, ThemeMode.light, view: view(), saying: saying),
+          home: home is SizedBox ? const HomeShell() : home, size: const Size(320, 1400), textScale: 2, insets: phoneInsets, settle: false);
+      await _settle(tester);
+      await reach(tester);
+      await _save(tester, await _capture(tester), 'state-large-text-320-$name');
+      expect(tester.takeException(), isNull, reason: 'no overflow at twice the text size on a 320 px phone');
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+}

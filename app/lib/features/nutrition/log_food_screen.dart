@@ -28,7 +28,10 @@ enum FoodScope { search, recent, favourites, mine }
 /// The day is carried into the form, and so is the meal, which can be changed here first. What was typed, the
 /// list and category chosen and the scroll position are still here on return.
 class LogFoodScreen extends ConsumerStatefulWidget {
-  const LogFoodScreen({super.key, required this.dayKey, required this.meal});
+  const LogFoodScreen({super.key, required this.dayKey, required this.meal, this.scope = FoodScope.search});
+
+  /// The list it opens on (Eat's coach opens Favourites or My foods directly).
+  final FoodScope scope;
 
   /// `meal` is where the meal selector starts; the user can change it before choosing a food.
   final String dayKey, meal;
@@ -45,7 +48,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
   final _query = TextEditingController();
   final _scroll = ScrollController();
   late String _meal = meals.contains(widget.meal) ? widget.meal : meals.first;
-  FoodScope _scope = FoodScope.search;
+  late FoodScope _scope = widget.scope;
 
   /// Null is "All". A category only ever filters foods the catalog classifies.
   String? _category;

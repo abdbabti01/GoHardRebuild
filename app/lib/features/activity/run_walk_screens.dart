@@ -16,9 +16,13 @@ import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 import 'activity_detail.dart';
 import 'activity_history.dart';
+import 'announcer.dart' show announcerProvider;
 import 'location_source.dart';
+import 'move_prefs.dart';
+import 'move_widgets.dart';
 import 'recorder.dart';
 import 'route_map.dart';
+import 'steps.dart';
 
 /// Run / Walk (docs/RUN_WALK.md), the approved "Focus Dial": Ready → Recording (Stats / Map) → Save review → Saved.
 /// The same screens serve both activities; only the words change.
@@ -138,7 +142,8 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
       // The preview stream ends first, so the recording stream is the only one (and runs as a foreground service).
       await _preview?.cancel();
       _preview = null;
-      await ref.read(recorderProvider.notifier).start(type, timerOnly: timerOnly);
+      final move = ref.read(movePrefsProvider);
+      await ref.read(recorderProvider.notifier).start(type, timerOnly: timerOnly, plan: move.intervals ? move.plan : null);
     } on LocalSaveFailure {
       if (mounted) setState(() => _error = 'The ${activityNoun(type)} could not be started on this phone. Nothing was recorded.');
     } finally {
@@ -149,6 +154,8 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final prefs = ref.watch(devicePrefsProvider);
+    final move = ref.watch(movePrefsProvider);
+    final intervals = move.intervals && move.plan != null;
     final type = prefs.activity;
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
     final here = _here;
@@ -164,7 +171,10 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
             const SizedBox(height: 8),
             TabCoach(
               key: const Key('runwalk-coach'), id: 'runwalk', avatarLabel: 'Help with Run / Walk',
-              say: const CoachSay('Choose your pace. Start when you\'re ready.'),
+              say: intervals
+                  ? const CoachSay('Intervals are set. Start when you\'re ready.')
+                  // Words only, so Start stays in view; Intervals is the row under Start.
+                  : const CoachSay('Want to alternate running and walking? Set up intervals below Start.'),
               onAvatarTap: () => _help(context),
             ),
           ],
@@ -186,16 +196,29 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
           _GpsCard(access: _access, here: here, onAction: _gpsAction),
           const SizedBox(height: 14),
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-          PrimaryButton('Start ${activityNoun(type)}', key: const Key('runwalk-start'), icon: Icons.play_arrow_rounded, busy: _starting, onPressed: () => _start(type)),
+          PrimaryButton(intervals ? 'Start ${activityNoun(type)} intervals' : 'Start ${activityNoun(type)}', key: const Key('runwalk-start'), icon: Icons.play_arrow_rounded, busy: _starting, onPressed: () => _start(type)),
           const SizedBox(height: 10),
           Rule(),
-          SwitchListTile(
-            key: const Key('runwalk-autopause'), contentPadding: EdgeInsets.zero, value: prefs.autoPause,
-            secondary: const Icon(Icons.settings_outlined),
-            title: Text('Auto-pause ${prefs.autoPause ? 'On' : 'Off'}'),
-            subtitle: Text('Pauses when you stop for a while and resumes when you move on.', style: context.caption),
-            onChanged: (on) => ref.read(devicePrefsProvider.notifier).setAutoPause(on),
+          ListTile(
+            key: const Key('runwalk-intervals'), contentPadding: EdgeInsets.zero, leading: const Icon(Icons.repeat_rounded),
+            title: Text(intervals ? 'Intervals on' : 'Intervals off'),
+            subtitle: Text(intervals ? '${planSummary(move.plan!)} · ${clockText(move.plan!.totalSeconds)}' : 'Alternate running and walking, in one activity.', style: context.caption),
+            trailing: const Icon(Icons.chevron_right), onTap: () => showIntervalSetup(context),
           ),
+          ListTile(
+            key: const Key('runwalk-voice'), contentPadding: EdgeInsets.zero, leading: Icon(move.voice ? Icons.volume_up_outlined : Icons.volume_off_outlined),
+            title: const Text('Voice and alerts'), subtitle: Text(voiceSummary(move, prefs.distance), style: context.caption),
+            trailing: const Icon(Icons.chevron_right), onTap: () => showVoiceSheet(context),
+          ),
+          SwitchListTile(
+            key: const Key('runwalk-autopause'), contentPadding: EdgeInsets.zero, value: prefs.autoPause && !intervals,
+            secondary: const Icon(Icons.settings_outlined),
+            title: Text('Auto-pause ${prefs.autoPause && !intervals ? 'On' : 'Off'}'),
+            subtitle: Text(intervals ? 'Off for intervals: walking to recover is not a pause. Your choice for other runs and walks is kept.' : 'Pauses when you stop for a while and resumes when you move on.',
+                style: context.caption),
+            onChanged: intervals ? null : (on) => ref.read(devicePrefsProvider.notifier).setAutoPause(on),
+          ),
+          if (ref.watch(stepsEnabledProvider)) const _StepsNote(),
           if (_source.simulated) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.science_outlined, 'Simulated GPS (test build)', tone: Tone.warning)),
         ]),
       ),
@@ -219,7 +242,41 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
 
 void _help(BuildContext context) => showCoachHelpSheet(context, title: 'Run / Walk', say: const CoachSay(
     'Choose Run or Walk, then Start. GoHard records your route while the screen is locked or another app is open, '
-    'and saves it on this phone first. Pause any time; Finish lets you review before saving.'));
+    'and saves it on this phone first. Pause any time; Finish lets you review before saving. Intervals alternate running '
+    'and walking in one activity; with Voice and alerts on, I say each change aloud.'));
+
+/// On Ready, only when steps are on but cannot be counted: why, and the way to fix it.
+class _StepsNote extends ConsumerStatefulWidget {
+  const _StepsNote();
+  @override
+  ConsumerState<_StepsNote> createState() => _StepsNoteState();
+}
+
+class _StepsNoteState extends ConsumerState<_StepsNote> {
+  late Future<StepAccess> _access = ref.read(stepSourceProvider).access();
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<StepAccess>(
+        future: _access,
+        builder: (context, snap) => switch (snap.data) {
+          StepAccess.notAllowed => Pressable(
+              onTap: () async {
+                await ref.read(stepSourceProvider).request();
+                setState(() => _access = ref.read(stepSourceProvider).access());
+              },
+              semanticLabel: 'Steps are not counted yet. Allow motion access.',
+              child: const StatusLine(Icons.directions_walk, 'Steps are not counted yet. Tap to allow motion access.', tone: Tone.warning),
+            ),
+          StepAccess.blocked => Pressable(
+              onTap: () => ref.read(stepSourceProvider).openSettings(),
+              semanticLabel: 'Steps are not counted: motion access is off. Open Settings.',
+              child: const StatusLine(Icons.directions_walk, 'Steps are not counted: motion access is off. Tap to open Settings.', tone: Tone.warning),
+            ),
+          StepAccess.unavailable => const StatusLine(Icons.directions_walk, 'This phone cannot count steps. Everything else is recorded.'),
+          _ => ref.read(stepSourceProvider).simulated ? const StatusLine(Icons.science_outlined, 'Simulated steps (test build)', tone: Tone.warning) : const SizedBox.shrink(),
+        },
+      );
+}
 
 class _GpsCard extends StatelessWidget {
   const _GpsCard({required this.access, required this.here, required this.onAction});
@@ -314,6 +371,9 @@ class _RecordingState extends ConsumerState<_Recording> {
     final paused = rec.state == RecState.paused || rec.state == RecState.autoPaused;
     final interrupted = rec.state == RecState.interrupted;
     final noun = activityNoun(run.activityType);
+    final steps = rec.stepsState == 'measured' || rec.stepsState == 'partial' ? rec.steps?.steps : null;
+    final phases = rec.plan != null && !rec.free;
+    final voice = ref.watch(movePrefsProvider.select((p) => p.voice));
 
     final status = switch (rec.state) {
       RecState.paused => const StatusPill('Paused', icon: Icons.pause_circle_outline, tone: Tone.accent),
@@ -329,19 +389,22 @@ class _RecordingState extends ConsumerState<_Recording> {
     );
     final gps = _GpsChip(rec: rec);
 
+    // Twice the text or a narrow phone: the two buttons one above the other, so their words never break.
+    final stack = MediaQuery.textScalerOf(context).scale(10) > 15 || MediaQuery.sizeOf(context).width < 340;
     final controls = interrupted
         ? Row(children: [
             Expanded(child: SecondaryButton('Finish', key: const Key('runwalk-finish'), icon: Icons.stop_rounded, onPressed: _acting ? null : () => _act(ref.read(recorderProvider.notifier).finish))),
             const SizedBox(width: 12),
             Expanded(child: PrimaryButton('Resume', key: const Key('runwalk-resume'), icon: Icons.play_arrow_rounded, onPressed: _acting ? null : () => _act(ref.read(recorderProvider.notifier).resume))),
           ])
-        : Row(children: [
-            Expanded(
+        : Flex(direction: stack ? Axis.vertical : Axis.horizontal, mainAxisSize: MainAxisSize.min, crossAxisAlignment: stack ? CrossAxisAlignment.stretch : CrossAxisAlignment.center, children: [
+            _Slot(
+              stack: stack,
               child: SecondaryButton(paused ? 'Resume' : 'Pause', key: Key(paused ? 'runwalk-resume' : 'runwalk-pause'), icon: paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
                   onPressed: _acting ? null : () => _act(paused ? ref.read(recorderProvider.notifier).resume : ref.read(recorderProvider.notifier).pause)),
             ),
-            const SizedBox(width: 12),
-            Expanded(child: PrimaryButton('Finish', key: const Key('runwalk-finish'), icon: Icons.stop_rounded, onPressed: _acting ? null : () => _act(ref.read(recorderProvider.notifier).finish))),
+            const SizedBox(width: 12, height: 8),
+            _Slot(stack: stack, child: PrimaryButton('Finish', key: const Key('runwalk-finish'), icon: Icons.stop_rounded, onPressed: _acting ? null : () => _act(ref.read(recorderProvider.notifier).finish))),
           ]);
 
     final notes = <Widget>[
@@ -359,6 +422,14 @@ class _RecordingState extends ConsumerState<_Recording> {
 
     return Scaffold(
       appBar: AppBar(actions: [
+        IconButton(
+          key: const Key('runwalk-voice-toggle'), tooltip: voice ? 'Voice updates on. Turn off' : 'Voice updates off. Turn on',
+          icon: Icon(voice ? Icons.volume_up_outlined : Icons.volume_off_outlined),
+          onPressed: () {
+            if (voice) ref.read(announcerProvider.notifier).cancel();
+            ref.read(movePrefsProvider.notifier).update((p) => p.copy(voice: !voice));
+          },
+        ),
         CoachHelpButton(key: const Key('coach-help-run'), semanticLabel: 'Help with recording a $noun', onPressed: () => _help(context)),
         const SizedBox(width: 8),
       ]),
@@ -382,7 +453,9 @@ class _RecordingState extends ConsumerState<_Recording> {
                 ? Padding(
                     padding: EdgeInsets.symmetric(horizontal: context.inset),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      _CompactStats(active: active, distance: distance, pace: pace, unit: unit),
+                      _CompactStats(active: active, distance: distance, pace: pace, unit: unit, steps: steps),
+                      if (phases) ...[const SizedBox(height: 8), IntervalBar(rec: rec, nowMs: now, compact: true)],
+                      const CoachLine(),
                       const SizedBox(height: 10),
                       Expanded(child: Stack(children: [Positioned.fill(child: map), Positioned(left: 10, top: 10, child: gps)])),
                       for (final n in notes) Padding(padding: const EdgeInsets.only(top: 8), child: n),
@@ -390,9 +463,17 @@ class _RecordingState extends ConsumerState<_Recording> {
                   )
                 : LayoutBuilder(
                     builder: (context, box) => ListView(padding: EdgeInsets.symmetric(horizontal: context.inset), children: [
-                      Center(child: _Dial(seconds: active, size: (box.maxWidth * 0.62).clamp(170.0, 300.0).toDouble(), paused: paused || interrupted)),
+                      Center(child: _Dial(seconds: active, size: (box.maxWidth * (phases ? 0.52 : 0.62)).clamp(160.0, 300.0).toDouble(), paused: paused || interrupted)),
+                      if (phases) ...[const SizedBox(height: 12), IntervalBar(rec: rec, nowMs: now)],
+                      const CoachLine(),
                       const SizedBox(height: 16),
-                      _Figures(distance: distance, pace: pace, unit: unit),
+                      _Figures(
+                        distance: distance, pace: pace, unit: unit,
+                        steps: rec.stepsState == 'off'
+                            ? null
+                            : StatFigure(steps == null ? '—' : formatSteps(steps), null, rec.stepsState == 'partial' ? 'Steps (partly)' : steps == null ? 'Steps not counted' : 'Steps',
+                                key: const Key('runwalk-steps'), size: 26),
+                      ),
                       const SizedBox(height: 14),
                       for (final n in notes) Padding(padding: const EdgeInsets.only(bottom: 8), child: n),
                       SizedBox(
@@ -407,6 +488,14 @@ class _RecordingState extends ConsumerState<_Recording> {
       ),
     );
   }
+}
+
+class _Slot extends StatelessWidget {
+  const _Slot({required this.stack, required this.child});
+  final bool stack;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => stack ? child : Expanded(child: child);
 }
 
 /// The approved pale dial: active time in the serif, clearly labelled. The rim is a frame, not progress.
@@ -466,29 +555,34 @@ class StatFigure extends StatelessWidget {
 String _paceUnit(DistanceUnit u) => '/${u.label}';
 
 class _Figures extends StatelessWidget {
-  const _Figures({required this.distance, required this.pace, required this.unit});
+  const _Figures({required this.distance, required this.pace, required this.unit, this.steps});
   final double? distance, pace;
   final DistanceUnit unit;
+
+  /// Steps, in the same row when they are counted (smaller: distance and pace lead).
+  final Widget? steps;
 
   @override
   Widget build(BuildContext context) {
     final d = StatFigure(distance == null ? '—' : unit.number(distance!), unit.label, 'Distance', key: const Key('runwalk-distance'));
     final p = StatFigure(unit.paceNumber(pace), _paceUnit(unit), 'Avg. moving pace', key: const Key('runwalk-pace'));
     if (MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 340) {
-      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [d, const SizedBox(height: 10), p]);
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [d, const SizedBox(height: 10), p, if (steps != null) ...[const SizedBox(height: 10), steps!]]);
     }
     return IntrinsicHeight(
       child: Row(children: [
-        Expanded(child: d),
-        VerticalDivider(color: context.c.divider, width: 24),
-        Expanded(child: p),
+        Expanded(flex: 4, child: d),
+        VerticalDivider(color: context.c.divider, width: 20),
+        Expanded(flex: 4, child: p),
+        if (steps != null) ...[VerticalDivider(color: context.c.divider, width: 20), Expanded(flex: 3, child: steps!)],
       ]),
     );
   }
 }
 
 class _CompactStats extends StatelessWidget {
-  const _CompactStats({required this.active, required this.distance, required this.pace, required this.unit});
+  const _CompactStats({required this.active, required this.distance, required this.pace, required this.unit, this.steps});
+  final int? steps;
   final int active;
   final double? distance, pace;
   final DistanceUnit unit;
@@ -504,6 +598,7 @@ class _CompactStats extends StatelessWidget {
               StatFigure(clockText(active), null, 'Active time', size: 24, said: 'Active time ${durationText(active)}'),
               StatFigure(distance == null ? '—' : unit.number(distance!), unit.label, 'Distance', size: 24),
               StatFigure(unit.paceNumber(pace), _paceUnit(unit), 'Avg. moving pace', size: 24),
+              if (steps != null) StatFigure(formatSteps(steps!), null, 'Steps', size: 24),
             ]),
           ),
         ),
@@ -635,6 +730,7 @@ class _ReviewState extends ConsumerState<_Review> {
           StatFigure(clockText(s.metrics['movingSeconds'] as int), null, 'Moving time', said: 'Moving time ${durationText(s.metrics['movingSeconds'] as int)}'),
           StatFigure(clockText(s.activeSeconds), null, 'Active time', said: 'Active time ${durationText(s.activeSeconds)}'),
           StatFigure(unit.paceNumber(a.avgMovingPace(unit.meters)), _paceUnit(unit), 'Avg. moving pace'),
+          if (rec.stepsState != 'off') StatFigure(rec.steps == null ? '—' : formatSteps(rec.steps!.steps), null, rec.stepsState == 'partial' ? 'Steps (part of the time)' : rec.steps == null ? 'Steps not counted' : 'Steps'),
         ]),
         const SizedBox(height: 18),
         TextField(key: const Key('runwalk-title'), controller: _title, maxLength: 80, decoration: const InputDecoration(labelText: 'Title')),

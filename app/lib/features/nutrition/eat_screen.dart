@@ -11,7 +11,10 @@ import '../../data/models.dart';
 import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
+import '../shell/home_shell.dart' show shellProvider;
 import 'food_form.dart';
+import 'food_repository.dart' show SavedFood;
+import 'log_food_screen.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
 import 'nutrition_tools.dart';
@@ -35,8 +38,46 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   static const _icons = {'Breakfast': Icons.wb_twilight_outlined, 'Lunch': Icons.light_mode_outlined, 'Dinner': Icons.dark_mode_outlined, 'Snack': Icons.cookie_outlined};
 
   /// Built-in help with the journal. Ask GoHard answers training questions, so nothing here offers to ask it about food.
-  static void _help(BuildContext context) => showCoachHelpSheet(context, title: 'Your food journal', say: const CoachSay(
-      'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged. Your daily goals are set from the summary here, on Today or in Me.'));
+  /// It explains the saved foods and opens them, on request, at any time.
+  static void _help(BuildContext context, String day) => showCoachHelpSheet(context, title: 'Your food journal', say: CoachSay(
+      'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged. Your daily goals are set from the summary here, on Today or in Me. '
+      'Foods you eat again are saved in Add food: Favourites are foods you starred on their amount page; My foods are foods you wrote or corrected yourself. '
+      'Choosing one only opens its amount: nothing is logged until you confirm it.',
+      guide: (label: 'Open Favourites', key: const Key('eat-help-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))));
+
+  /// The meal a saved-food shortcut starts on, from the time of day; it can be changed in Add food before choosing.
+  static String _mealNow(DateTime t) => t.hour < 11 ? 'Breakfast' : t.hour < 16 ? 'Lunch' : t.hour < 21 ? 'Dinner' : 'Snack';
+
+  /// Add food opened on Favourites or My foods, for [day]. A shortcut, never a log: the amount is still reviewed and confirmed.
+  static Future<void> openSavedFoods(BuildContext context, {required String day, required FoodScope scope}) =>
+      push(context, LogFoodScreen(dayKey: day, meal: _mealNow(DateTime.now()), scope: scope));
+
+  /// The one saved-foods hint the coach gives (docs/COACH.md › Train and Eat › Saved foods): to an account with none,
+  /// how foods are kept for next time; to one with some, the way to them. Each is shown once (Coaching hints govern
+  /// it, Show coaching hints again brings it back) and kept for this screen's life, so the words never change under
+  /// the reader; afterwards the usual words, and the help keeps the shortcut.
+  String? _hint;
+
+  CoachSay? _hintSay(String day, List<SavedFood> saved, {required bool logged}) {
+    final owner = ref.read(ownerProvider);
+    if (owner == null || !ref.read(savedFoodsProvider).hasValue) return null;
+    final has = saved.any((s) => s.isFavourite || s.isMine);
+    // Tabs stay built off screen: a hint is chosen (and used up) only while Eat is the tab in view and its page current.
+    final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true);
+    // A first visit is about logging a meal at all; saving one for next time is worth saying once food is logged.
+    if (_hint == null && inView && (has || logged)) {
+      final id = has ? 'eat.saved.shortcut' : 'eat.saved.new';
+      _hint = ref.read(coachPrefsProvider).mayIntroduce(owner, id) ? id : '';
+      if (_hint!.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
+    }
+    if (_hint == 'eat.saved.new') return const CoachSay('Eat the same foods often? Tap the star on a food\'s amount page and it waits under Favourites in Add food.');
+    if (_hint != 'eat.saved.shortcut') return null;
+    final fav = saved.any((s) => s.isFavourite);
+    return CoachSay(fav ? 'Your favourite foods are one tap away. Pick one, check the amount, then log it.' : 'Foods you saved are in My foods. Pick one, check the amount, then log it.',
+        guide: fav
+            ? (label: 'Open Favourites', key: const Key('eat-coach-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))
+            : (label: 'Open My foods', key: const Key('eat-coach-mine'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.mine)));
+  }
 
   /// What the coach says on Eat: fixed words chosen from the account's own settings, never from the AI. Water is
   /// mentioned only where it is shown (turned on, and the server keeps it). Words only: Log food and the goals link
@@ -99,7 +140,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
               title: 'Eat', overline: longDate(day),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                 // Help with the journal from the same guide: its small avatar here only while the speaking coach is off.
-                if (!coachOn) CoachHelpButton(key: const Key('coach-help-eat'), semanticLabel: 'Help with your food journal', onPressed: () => _help(context)),
+                if (!coachOn) CoachHelpButton(key: const Key('coach-help-eat'), semanticLabel: 'Help with your food journal', onPressed: () => _help(context, day)),
                 IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
                 IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
               ]),
@@ -112,8 +153,10 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                           child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
                         ),
                       if (coachOn)
-                        TabCoach(key: const Key('eat-coach'), id: 'eat', say: _say(profile: profile, water: display.water),
-                            avatarLabel: 'Help with your food journal, from ${guide.label}', onAvatarTap: () => _help(context)),
+                        TabCoach(key: const Key('eat-coach'), id: 'eat',
+                            say: _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
+                                _say(profile: profile, water: display.water),
+                            avatarLabel: 'Help with your food journal, from ${guide.label}', onAvatarTap: () => _help(context, day)),
                     ]),
             ),
           ),

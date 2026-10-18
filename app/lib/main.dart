@@ -10,6 +10,7 @@ import 'core/compatibility.dart';
 import 'core/device_prefs.dart';
 import 'data/db.dart';
 import 'data/session.dart';
+import 'features/activity/move_prefs.dart';
 import 'features/coach/coach_prefs.dart';
 import 'features/nutrition/water.dart';
 import 'features/weather/weather.dart';
@@ -40,6 +41,9 @@ Future<void> main() async {
   await coachPrefs.restore();
   final trackingPrefs = TrackingPrefsStore(const SecureSecretStore());
   await trackingPrefs.restore();
+  // Run / Walk voice, intervals and steps choices.
+  final movePrefs = MovePrefsStore(const SecureSecretStore());
+  await movePrefs.restore();
   // A confirmed "this build is too old" survives a restart, including one with no connection.
   final compatibility = CompatibilityStore(const SecureSecretStore());
   await compatibility.restore();
@@ -49,6 +53,7 @@ Future<void> main() async {
     retry: (_, _) => null,
     overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance),
       devicePrefsStoreProvider.overrideWithValue(devicePrefs), coachPrefsStoreProvider.overrideWithValue(coachPrefs), trackingPrefsStoreProvider.overrideWithValue(trackingPrefs),
+      movePrefsStoreProvider.overrideWithValue(movePrefs),
       compatibilityStoreProvider.overrideWithValue(compatibility), weatherPrefs],
     child: const GoHardApp(),
   ));

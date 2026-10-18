@@ -136,12 +136,14 @@ class TrackAnalysis {
     if (recording) return;
     recording = true;
     openSince = t;
+    _windows.add((t, null));
     _break();
   }
 
   void _close(int t) {
     if (!recording) return;
     closedActiveMs += max(0, t - openSince!);
+    _windows.last = (_windows.last.$1, t);
     recording = false;
     openSince = null;
     _break();
@@ -246,6 +248,21 @@ class TrackAnalysis {
   }
 
   // ------------------------------------------------------------------ derived values
+
+  /// The recording intervals (start or resume → pause, interruption or finish; open while recording).
+  final _windows = <(int, int?)>[];
+
+  /// The share of [from, to] that was recorded (paused and interrupted stretches excluded). For an instant, 1 when it
+  /// was recorded and 0 when not. Used to count steps that arrive in batches, possibly after a pause began.
+  double recordingShare(int from, int to) {
+    if (to <= from) return _windows.any((w) => w.$1 <= from && (w.$2 == null || from <= w.$2!)) ? 1 : 0;
+    var inside = 0;
+    for (final (a, b) in _windows) {
+      final lo = max(a, from), hi = min(b ?? to, to);
+      if (hi > lo) inside += hi - lo;
+    }
+    return inside / (to - from);
+  }
 
   int activeMs(int nowMs) => closedActiveMs + (recording && openSince != null ? max(0, nowMs - openSince!) : 0);
   int? elapsedMs(int nowMs) => startT == null ? null : max(0, (finishT ?? nowMs) - startT!);

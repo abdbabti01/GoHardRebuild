@@ -72,10 +72,13 @@ void main() {
     await tester.dragUntilVisible(find.text('Auto-pause Off'), find.byKey(const Key('runwalk-gps')), const Offset(0, -200));
     expect(find.text('Auto-pause Off'), findsOneWidget);
     expect(find.byKey(const Key('map-fit')), findsNothing, reason: 'no route before recording, so nothing to fit');
+    expect(find.text('Intervals off'), findsOneWidget, reason: 'intervals are optional; one tap still starts a free run');
+    expect(find.text('Voice off'), findsOneWidget, reason: 'the coach speaks only once the person turns voice on');
+    expect(find.text('Simulated GPS (test build)'), findsOneWidget, reason: 'simulated location is labelled');
+    await tester.dragUntilVisible(find.byKey(const Key('activity-type-walk')), find.byKey(const Key('runwalk-gps')), const Offset(0, 200));
     await tester.tap(find.byKey(const Key('activity-type-walk')));
     await tester.pump();
     expect(find.text('Start walk'), findsOneWidget, reason: 'the same screen, with the walk words');
-    expect(find.text('Simulated GPS (test build)'), findsOneWidget, reason: 'simulated location is labelled');
     await tester.pumpWidget(const SizedBox());
   });
 

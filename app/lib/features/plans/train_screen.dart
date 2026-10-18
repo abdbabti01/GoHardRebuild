@@ -9,6 +9,7 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../activity/activity_history.dart';
+import '../activity/move_widgets.dart' show PersonalBestsCard;
 import '../activity/run_walk_screens.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_contract.dart';
@@ -709,6 +710,8 @@ class _ProgressView extends ConsumerWidget {
       Text('Best recorded set of the first and the latest session. Loads are stored in kilograms and shown in ${unit == LoadUnit.kg ? 'kilograms' : 'pounds'}.', style: context.caption),
       _between,
       const _HistoryCard(),
+      // Run / Walk personal bests, once something is saved: the same projection History shows.
+      if ((ref.watch(runsProvider).value ?? const []).any((r) => !r.value.isDeleted && !r.value.isOpen)) ...[_between, const PersonalBestsCard()],
     ]);
   }
 }

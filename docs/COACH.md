@@ -335,6 +335,29 @@ What it says is fixed words chosen from the real state (`train_screen.dart` `_co
 | Train › Progress | what is recorded, or that it appears once a workout is finished | Ask me ("Your progress") |
 | Eat | "Log a meal, or set your daily goals." (with goals: "… and see how the day adds up against your goals"; with water shown: "Log a meal or some water…") | None: Log food and the goals link are right below it in the summary. No Ask me: Ask GoHard answers training questions only |
 
+| Eat, saved-foods hint (18 Oct 2026; once each, Coaching hints govern it) | with food logged and nothing saved: "Eat the same foods often? Tap the star on a food's amount page and it waits under Favourites in Add food." · with favourites: "Your favourite foods are one tap away. Pick one, check the amount, then log it." (only My foods: "Foods you saved are in My foods. …") | **Open Favourites** / **Open My foods** (a guide action, not a primary button) → the existing Add food, on that list, for the day shown in Eat, the meal from the time of day (changeable there) |
+
+#### Saved foods (18 Oct 2026)
+
+GoHard has no "saved meals" or "recipes" (checked on every branch, worktree and handoff on 18 Oct 2026). What exists
+and is guided to: **Favourites** (any found food starred on its amount page) and **My foods** (foods the person wrote
+or corrected), both lists in Add food. Eat's coach gives one saved-foods hint per stage (`eat.saved.new`, then
+`eat.saved.shortcut`), chosen once for the screen's life and marked seen as it is shown; a first visit with nothing
+logged keeps "Log a meal". Show coaching hints again brings them back; Coaching hints off hides them. The Eat help
+(the bust, or the small avatar when the coach is off) explains the two lists and always offers Open Favourites. A
+hint, the shortcut or the help never logs food: choosing a food opens its amount page, and only its own confirm logs
+it; old journal entries are never rewritten. Food names and values are never read aloud.
+
+#### Run / Walk (18 Oct 2026)
+
+Ready: "Want to alternate running and walking? Set up intervals below Start." (or "Intervals are set. Start when
+you're ready."); words only, so Start stays in view. While recording, the coach speaks through the **coach line**
+under the dial (docs/RUN_WALK.md › Voice and alerts): the guide's small portrait and the words of the last
+announcement (phase changes, updates), in the page, never over the map or the controls; without the portrait when
+Show coach on Train and Eat is off. Spoken aloud only with Voice updates on, in a voice on the phone (no AI, no
+network), Leon a little lower and Leona a little higher. After a save that sets a personal best, the Saved screen's
+coach says it once ("Your longest walk so far, 4.00 km."), from the save itself, never from a sync or a restart.
+
 No score, trend, readiness or form judgement is ever said. On Train the bust opens Ask GoHard about the section in view
 (the plan's title, "Starting a plan", "Your progress", "Your training"); on Eat it opens the built-in journal help.
 Water is mentioned only when it is shown (turned on, and the server declares `water.entries`).
