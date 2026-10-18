@@ -1674,3 +1674,8 @@ tiles are not forced to equal height.
 
 **Not verified:** a physical phone (Ready's fit on other phone sizes and with system font sizes, VoiceOver/TalkBack,
 an Android voice in airplane mode, Motion & Fitness and Health Connect prompts), iOS beyond CI compilation.
+- CI: run 86 on `970743e` **failed** in `motion_test` (2 tests tapped Me rows that the new Activity & tracking group
+  had pushed under the floating bar; not in the focused set). Fixed in the test only (`0c6c68b`); CI run 87 on
+  `0c6c68b`: **passed** (full suite + API). Unsigned IPA `ios-unsigned-ipa` run 33 on `970743e`, build number 33,
+  artifact `GoHard-Dev-unsigned-ipa` (`GoHard-Dev-unsigned-33.ipa`): passed; `0c6c68b` changes no app code, so this IPA
+  is the app at the final commit. `main` and Railway unchanged.
