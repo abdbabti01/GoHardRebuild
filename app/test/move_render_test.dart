@@ -21,7 +21,6 @@ import 'package:gohard_rebuild/features/activity/run_walk_screens.dart';
 import 'package:gohard_rebuild/features/activity/steps.dart';
 import 'package:gohard_rebuild/features/activity/track_math.dart';
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
-import 'package:gohard_rebuild/features/nutrition/nutrition_history.dart';
 import 'package:gohard_rebuild/features/nutrition/water.dart';
 import 'package:gohard_rebuild/app/providers.dart' show waterProvider, waterEntriesProvider;
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
