@@ -21,6 +21,9 @@ import 'package:gohard_rebuild/features/activity/run_walk_screens.dart';
 import 'package:gohard_rebuild/features/activity/steps.dart';
 import 'package:gohard_rebuild/features/activity/track_math.dart';
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
+import 'package:gohard_rebuild/features/nutrition/nutrition_history.dart';
+import 'package:gohard_rebuild/features/nutrition/water.dart';
+import 'package:gohard_rebuild/app/providers.dart' show waterProvider, waterEntriesProvider;
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 
 import 'food_fakes.dart';
@@ -70,7 +73,8 @@ Json _saved(String id, String day, {required double meters, required double k1, 
       },
     };
 
-Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {RecorderView? view, bool saying = false, MovePrefs? prefs, bool coach = true, List<Json>? runs}) async {
+Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode,
+    {RecorderView? view, bool saying = false, MovePrefs? prefs, bool coach = true, List<Json>? runs, bool water = false}) async {
   final store = AppearanceStore(MemorySecretStore())
     ..accent = accent
     ..mode = mode;
@@ -81,7 +85,16 @@ Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mo
     ...(await tester.runAsync(() => overridesFor(day: _day, appearance: store, runs: runs ?? [
           _saved('a1', '2026-10-04', meters: 4100, k1: 352),
           _saved('a2', _day, meters: 5250, k1: 338, intervals: true),
-        ])))!,
+        ],
+        // The supplied screenshot's state: a workout due, nothing logged today, water tracked against a 2,000 mL goal;
+        // earlier days with food and water for History.
+        plans: water ? [blockPlan(start: '2026-09-21', recorded: 8)] : const [], primaryPlanId: water ? 'p1' : null,
+        profile: water ? const {'waterGoalMl': 2000, 'showWater': true} : const {},
+        food: water ? [foodEntry('h1', '2026-10-10', 'Dinner', 'Salmon and rice', '1 plate', calories: 640, protein: 42), foodEntry('h2', '2026-10-09', 'Lunch', 'Soup', '1 bowl')] : const [])))!,
+    if (water) ...[
+      waterProvider.overrideWith((ref, d) => Stream.value([for (final w in _water) if (w['dayKey'] == d) stored(WaterEntry(w), Kinds.water, w['id'] as String, w)])),
+      waterEntriesProvider.overrideWith((ref) => Stream.value([for (final w in _water) stored(WaterEntry(w), Kinds.water, w['id'] as String, w)])),
+    ],
     coachPrefsStoreProvider.overrideWithValue(coachStore),
     ...FoodFakes().overrides,
     movePrefsStoreProvider.overrideWithValue(move),
@@ -168,6 +181,48 @@ final _screens = <String, (Widget, RecorderView? Function(), bool, Future<void> 
 /// Before/after states of the Steps and Ready corrections (GoHard_Steps_RunWalk_UX_Corrections), at a 390 × 844 phone with
 /// its notch and home-indicator insets, written as `ux-<GOHARD_RENDER_TAG>-<state>.png` in docs/evidence/ux-corrections.
 const _tag = String.fromEnvironment('GOHARD_RENDER_TAG', defaultValue: 'after');
+const _water = [
+  {'id': 'w1', 'dayKey': '2026-10-10', 'volumeMl': 1500.0, 'revision': 1, 'isDeleted': false},
+  {'id': 'w2', 'dayKey': '2026-10-09', 'volumeMl': 750.0, 'revision': 1, 'isDeleted': false},
+];
+
+/// After states of GoHard_Today_History_Water_Corrections, in docs/evidence/today-history-water: Today as in the supplied
+/// screenshot (390 × 844, notch and home indicator) in Blue Light and Pink Dark, Eat's History and an earlier day,
+/// Train's Workouts, and 320 px at twice the text.
+final _water2 = <String, (Accent, ThemeMode, Size, double, Future<void> Function(WidgetTester))>{
+  'today-blue-light': (Accent.blue, ThemeMode.light, const Size(390, 844), 1, (_) async {}),
+  'today-blue-light-scrolled': (Accent.blue, ThemeMode.light, const Size(390, 844), 1, (t) async {
+    await t.drag(find.byType(Scrollable).first, const Offset(0, -420));
+    await t.pump(const Duration(milliseconds: 400));
+  }),
+  'today-pink-dark-full': (Accent.pink, ThemeMode.dark, const Size(390, 1500), 1, (_) async {}),
+  'today-blue-light-full': (Accent.blue, ThemeMode.light, const Size(390, 1500), 1, (_) async {}),
+  'today-large-text-320': (Accent.blue, ThemeMode.light, const Size(320, 3400), 2, (_) async {}),
+  'eat-today-green-dark': (Accent.green, ThemeMode.dark, const Size(390, 1300), 1, (t) async {
+    await t.tap(find.byKey(const Key('nav-eat')));
+    await t.pump(const Duration(milliseconds: 600));
+  }),
+  'eat-history-blue-light': (Accent.blue, ThemeMode.light, const Size(390, 1100), 1, (t) async {
+    await t.tap(find.byKey(const Key('nav-eat')));
+    await t.pump(const Duration(milliseconds: 600));
+    await t.tap(find.byKey(const Key('eat-history')));
+    await t.pump(const Duration(milliseconds: 600));
+  }),
+  'eat-earlier-day-blue-light': (Accent.blue, ThemeMode.light, const Size(390, 1100), 1, (t) async {
+    await t.tap(find.byKey(const Key('nav-eat')));
+    await t.pump(const Duration(milliseconds: 600));
+    await t.tap(find.byKey(const Key('eat-history')));
+    await t.pump(const Duration(milliseconds: 600));
+    await _settle(t);
+    await t.tap(find.byKey(const Key('history-day-2026-10-10')));
+    await t.pump(const Duration(milliseconds: 600));
+  }),
+  'train-workouts-pink-dark': (Accent.pink, ThemeMode.dark, const Size(390, 1100), 1, (t) async {
+    await t.tap(find.byKey(const Key('nav-train')));
+    await t.pump(const Duration(milliseconds: 600));
+  }),
+};
+
 final _ux = <String, (Widget, MovePrefs, bool, Size, double)>{
   'today-first-use': (const HomeShell(), const MovePrefs(), true, const Size(390, 844), 1),
   'today-first-use-coach-off': (const HomeShell(), const MovePrefs(), false, const Size(390, 844), 1),
@@ -183,6 +238,23 @@ final _ux = <String, (Widget, MovePrefs, bool, Size, double)>{
 
 void main() {
   if (_enabled) {
+    for (final MapEntry(key: name, value: (accent, mode, size, scale, reach)) in _water2.entries) {
+      testWidgets('water $name', (tester) async {
+        await pumpApp(tester, await _fixture(tester, accent, mode, prefs: const MovePrefs(steps: {'one'}), runs: const [], water: true),
+            size: size, textScale: scale, insets: phoneInsets, settle: false);
+        await _settle(tester);
+        await reach(tester);
+        await _settle(tester);
+        final image = await _capture(tester);
+        expect(tester.takeException(), isNull);
+        await tester.runAsync(() async {
+          final file = File('../docs/evidence/today-history-water/$name.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
+        });
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
     for (final MapEntry(key: name, value: (home, prefs, coach, size, scale)) in _ux.entries) {
       testWidgets('ux $_tag: $name', (tester) async {
         await pumpApp(tester, await _fixture(tester, Accent.green, ThemeMode.dark, prefs: prefs, coach: coach, runs: const []),

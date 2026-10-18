@@ -53,8 +53,9 @@ void main() {
       await account.writeAsString(j.email);
 
       // Steps: off until turned on, then today's total with its source.
-      expect(find.byKey(const Key('today-steps')), findsNothing, reason: 'steps are opt-in');
-      await j.tapKey('today-customize');
+      await j.reveal(find.byKey(const Key('today-steps')));
+      expect(find.text('Track your steps'), findsOneWidget, reason: 'steps are offered, off until turned on');
+      await j.tapKey('today-steps');
       await j.tapKey('track-steps');
       await j.waitFor(find.byKey(const Key('steps-goal')), what: 'the steps goal field');
       await j.type('steps-goal', '8000');
@@ -159,7 +160,8 @@ void main() {
     await j.shot('move-11-saved-intervals-steps');
     await j.tapKey('activity-done');
 
-    await j.tapKey('today-run-history');
+    await j.tapKey('nav-train');
+    await j.tapKey('train-run-history');
     await j.waitFor(find.byKey(const Key('history-bests')), what: 'personal bests in History');
     await j.tapKey('history-bests');
     await j.waitFor(find.byKey(const Key('best-run.longest')), what: 'the bests list');

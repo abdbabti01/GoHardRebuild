@@ -124,8 +124,10 @@ void main() {
     debugPrint('module heights, full state: workout $w, run $r, nutrition $n');
     // The approved panels: serif names and figures, the button row under the words (docs/DESIGN.md › Today panels).
     expect(w, inInclusiveRange(290, 340), reason: 'workout, in progress with a planned total and its ring');
-    expect(r, inInclusiveRange(230, 280), reason: 'run, open with a distance and a time, stacked in the compact tile');
-    expect(n, inInclusiveRange(330, 380), reason: 'nutrition, two goals, the missing-values line, and the goals / Customize tracking line');
+    // Run / Walk and Steps side by side, the same height: the taller one's content sets it (here the open run).
+    expect(height(tester, 'run'), tester.getSize(find.byKey(const Key('today-steps'))).height, reason: 'the two tiles match');
+    expect(r, inInclusiveRange(230, 400), reason: 'run, open with a distance and a time, in the half-width tile (test font)');
+    expect(n, inInclusiveRange(280, 340), reason: 'nutrition, two goals and the missing-values line; goals and Customize tracking are in Eat');
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
     debugPrint('header region $header');
@@ -146,8 +148,8 @@ void main() {
     debugPrint('module heights, quiet state: workout ${quiet.$1}, run ${quiet.$2}, nutrition ${quiet.$3}');
     // Taller than the mockup's due panel (about 183): the 52 px button and the plan-week line are kept on purpose.
     expect(quiet.$1, inInclusiveRange(240, 275));
-    expect(quiet.$2, inInclusiveRange(160, 195), reason: 'no run: the label, the title, one line and the button');
-    expect(quiet.$3, inInclusiveRange(255, 295), reason: 'empty day: the words, Log food, and the Set daily goals / Customize tracking line');
+    expect(quiet.$2, inInclusiveRange(160, 320), reason: 'no run: the label, the title, one line and the button, as tall as Steps beside it (test font)');
+    expect(quiet.$3, inInclusiveRange(180, 260), reason: 'empty day: the words and Log food; no goals or Customize tracking line on Today');
     // With the guide's bubble the three sections and the nutrition label start on the first screen; Log food is a
     // short scroll away (it was on the first screen before the bubble: a deliberate trade-off, docs/COACH.md).
     expect(tester.getTopLeft(find.byKey(const Key('today-module-nutrition'))).dy + 36, lessThan(navTop), reason: 'all three sections start on the first screen');
@@ -174,8 +176,7 @@ void main() {
     expect(tester.getSize(find.byKey(const Key('today-module-run'))).width, lessThan(0.7 * tester.getSize(find.byKey(const Key('today-module-workout'))).width),
         reason: 'run is the compact tile, with Steps beside it');
     expect(tester.getTopLeft(find.byKey(const Key('today-steps'))).dx, greaterThan(tester.getTopRight(find.byKey(const Key('today-module-run'))).dx));
-    expect(tester.getTopLeft(find.byKey(const Key('today-run-history'))).dy, greaterThan(tester.getBottomLeft(find.byKey(const Key('today-module-run'))).dy),
-        reason: 'History stays reachable, under the two tiles');
+    expect(find.byKey(const Key('today-run-history')), findsNothing, reason: 'Run / Walk history is in Train; Today offers Start or Resume');
     expect(find.descendant(of: find.byType(TodayScreen), matching: find.byType(BackdropFilter)), findsNothing);
 
     // Scrolled to the end: the scene has not moved, and the last control clears the floating bar.
@@ -381,9 +382,12 @@ void main() {
       expect(find.descendant(of: module, matching: find.textContaining('%')), findsNothing);
       expect(find.descendant(of: module, matching: find.byType(LinearProgressIndicator)), findsNothing);
 
-      await tester.ensureVisible(find.byKey(const Key('today-run-history')));
+      // History is in Train › Workouts, beside starting a run or walk.
+      await tester.tap(find.byKey(const Key('nav-train')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('today-run-history')));
+      await tester.ensureVisible(find.byKey(const Key('train-run-history')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('train-run-history')));
       await tester.pumpAndSettle();
       expect(find.byType(ActivityHistoryScreen), findsOneWidget, reason: 'Run / Walk history');
     });
@@ -528,12 +532,16 @@ void main() {
     final handle = tester.ensureSemantics();
     final open = openWorkout(plan, 'o3-3', day: day, recordedSets: 6);
     await pumpApp(tester, await fixture(tester, plans: [plan], workouts: [open.workout], sets: open.sets, food: food));
-    for (final module in ['workout', 'run', 'nutrition']) {
+    for (final module in ['workout', 'run', 'nutrition', 'steps']) {
       final box = tester.getSize(photo(module));
-      final panel = tester.getSize(find.byKey(Key('today-module-$module')));
+      final panel = tester.getSize(find.byKey(Key(module == 'steps' ? 'today-steps' : 'today-module-$module')));
       expect(box.width, lessThan(0.65 * panel.width), reason: 'the trailing side of its panel, not the whole panel');
       // Nutrition has its goals line (and water, when tracked) under the photograph, where it fades out.
-      expect(box.height, module == 'nutrition' ? lessThan(panel.height) : panel.height, reason: 'the full height of its panel, or of its upper part');
+      expect(box.height, module == 'nutrition' ? lessThanOrEqualTo(panel.height) : panel.height, reason: 'the full height of its panel, or of its upper part');
+      if (module == 'steps') {
+        expect(((tester.widget<Image>(find.descendant(of: photo(module), matching: find.byType(Image))).image as ResizeImage).imageProvider as AssetImage).assetName,
+            'assets/images/steps-footprints.jpg', reason: 'the supplied footprints photograph, not another one');
+      }
       final image = tester.widget<Image>(find.descendant(of: photo(module), matching: find.byType(Image)));
       expect(image.fit, BoxFit.cover);
       final decoded = (image.image as ResizeImage).width!;
@@ -566,10 +574,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
-    // A narrow phone at normal text keeps its photographs; the Run tile takes the width, with History under it.
+    // A narrow phone at normal text keeps its photographs; Run / Walk and Steps stack, full width.
     await pumpApp(tester, await fixture(tester, plans: [plan]), size: const Size(320, 800));
     expect(photo('workout'), findsOneWidget);
-    expect(tester.getTopLeft(find.byKey(const Key('today-run-history'))).dy, greaterThan(tester.getBottomLeft(find.byKey(const Key('today-module-run'))).dy));
+    expect(tester.getTopLeft(find.byKey(const Key('today-steps'))).dy, greaterThan(tester.getBottomLeft(find.byKey(const Key('today-module-run'))).dy));
     expect(tester.takeException(), isNull);
   });
 

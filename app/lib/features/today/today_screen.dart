@@ -12,7 +12,6 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../core/device_prefs.dart';
 import '../activity/activity_detail.dart';
-import '../activity/activity_history.dart';
 import '../../core/go_icon.dart';
 import '../activity/move_prefs.dart' show stepGoalProvider, stepsEnabledProvider, stepsOnTodayProvider;
 import '../activity/steps.dart';
@@ -45,6 +44,10 @@ import 'today_greeting.dart';
 /// route, not a meal anyone logged. Screen readers never hear about them, and a missing file leaves a plain panel.
 abstract final class _Photos {
   static const workout = 'assets/images/workout-hero.webp', run = 'assets/images/run-cover.webp', nutrition = 'assets/images/nutrition-cover.webp';
+
+  /// GoHard_Today_History_Water_Corrections/assets/steps-footprints.png (a generated photograph supplied with the
+  /// handoff; ASSETS.md there), resized to 960 px.
+  static const steps = 'assets/images/steps-footprints.jpg';
 }
 
 /// Today: the date and a greeting, then three panels of one family, in this order: the workout and nutrition at the
@@ -362,7 +365,10 @@ typedef _Status = (String label, IconData icon, Tone tone);
 /// the content. With large text the photograph gives its room to the words, and the button and link wrap.
 class _Module extends StatelessWidget {
   const _Module({super.key, required this.label, this.showLabel = true, this.status, this.head = const [], this.body = const [], this.footer, this.photo, this.photoAlignment = Alignment.center,
-      required this.action, this.quiet, this.below = const []});
+      required this.action, this.quiet, this.below = const [], this.fill = false});
+
+  /// Side by side with another tile at an equal height: the action sits at the bottom, the photograph full height.
+  final bool fill;
 
   /// The overline, and always the panel's heading for a screen reader. The workout panel does not show it: its badge
   /// and its name say what it is, as in the approved design.
@@ -387,16 +393,18 @@ class _Module extends StatelessWidget {
       if (s != null) StatusPill(s.$1, icon: s.$2, tone: s.$3),
     ]);
     final words = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [labelRow, ...head, ...body, ?footer]);
+    // A fraction of the width, not a LayoutBuilder, so two tiles can be measured and made the same height.
     return PanelSurface(
       photo: pictured ? PanelPhoto(photo!, key: Key('today-photo-${label.toLowerCase().split(' ').first}'), alignment: photoAlignment) : null,
       below: below,
-      child: LayoutBuilder(
-        builder: (context, box) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          ConstrainedBox(constraints: BoxConstraints(maxWidth: pictured ? box.maxWidth * PanelSurface.wordsShare : box.maxWidth), child: words),
-          const SizedBox(height: 14),
-          Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [action, ?quiet]),
-        ]),
-      ),
+      fill: fill,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min, children: [
+        // Paired tiles are narrow: their words may reach further over the photograph's faded side.
+        FractionallySizedBox(widthFactor: !pictured ? 1 : fill ? 0.85 : PanelSurface.wordsShare, alignment: Alignment.centerLeft, child: words),
+        if (fill) const Spacer(),
+        const SizedBox(height: 14),
+        Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [action, ?quiet]),
+      ]),
     );
   }
 }
@@ -801,13 +809,14 @@ class _RunCardState extends ConsumerState<_RunCard> {
       status = null;
       note = 'No run or walk today';
     }
-    // The tile is built under the panel theme; History sits on the scene beside it, in the header's sky colours on a
-    // scrim so it reads over any weather.
+    // The tile is built under the panel theme. Its one action is Start / Resume; the full history is in Train.
     final app = context;
+    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
+    final pair = widget.steps && !stacked;
     final tile = PanelTheme(
       child: Builder(
         builder: (context) => _Module(
-          key: const Key('today-module-run'), label: 'Run / Walk', status: status,
+          key: const Key('today-module-run'), label: 'Run / Walk', status: status, fill: pair,
           head: [Padding(padding: const EdgeInsets.only(top: 6), child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Run / Walk', style: context.pageTitleStyle(30))))],
           body: [
             if (note != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note, style: context.sansStyle(14.5, color: context.c.secondary))),
@@ -819,27 +828,13 @@ class _RunCardState extends ConsumerState<_RunCard> {
         ),
       ),
     );
-    final history = Theme(
-      data: _skyTheme(context, ref),
-      child: Builder(
-        builder: (context) => QuietLink('History', key: const Key('today-run-history'), said: 'Run and walk history', onPressed: () => push(context, const ActivityHistoryScreen()),
-            background: context.c.scrim),
-      ),
+    if (!widget.steps) return tile;
+    // Side by side at ordinary sizes, the same width and height (the taller one's content sets it); one above the other
+    // with large text or on a narrow phone, never clipped or shrunk to match.
+    if (stacked) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [tile, const SizedBox(height: 10), const _StepsCard()]);
+    return IntrinsicHeight(
+      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: tile), const SizedBox(width: 10), const Expanded(child: _StepsCard(fill: true))]),
     );
-    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
-    if (widget.steps) {
-      // Side by side at ordinary sizes, one above the other with large text or on a narrow phone.
-      final steps = const _StepsCard();
-      final pair = stacked
-          ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [tile, const SizedBox(height: 10), steps])
-          : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: tile), const SizedBox(width: 10), Expanded(child: steps)]);
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [pair, const SizedBox(height: 6), Align(alignment: Alignment.centerLeft, child: history)]);
-    }
-    // Large text or a narrow phone: the tile takes the width and History goes under it.
-    if (stacked) {
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [tile, const SizedBox(height: 8), Align(alignment: Alignment.centerLeft, child: history)]);
-    }
-    return Row(children: [Expanded(flex: 64, child: tile), Expanded(flex: 36, child: Center(child: history))]);
   }
 }
 
@@ -848,7 +843,8 @@ class _RunCardState extends ConsumerState<_RunCard> {
 /// and a distinct line for loading, not allowed, unavailable, failed and no data. Tapping it opens the Steps sheet.
 /// Opening Today asks the phone for nothing.
 class _StepsCard extends ConsumerStatefulWidget {
-  const _StepsCard();
+  const _StepsCard({this.fill = false});
+  final bool fill;
   @override
   ConsumerState<_StepsCard> createState() => _StepsCardState();
 }
@@ -896,7 +892,7 @@ class _StepsCardState extends ConsumerState<_StepsCard> with WidgetsBindingObser
       DailyOff() => ('Track your steps', 'Count with your phone.', button('Enable', const Key('today-steps-enable'), () => enableSteps(ref))),
       DailyLoading() => ('…', 'Reading steps', null),
       DailyValue(:final steps, :final source, at: final t, :final recorded) => recorded
-          ? (formatSteps(steps), '${goal == null ? '' : 'of ${formatSteps(goal)} · '}$source · ${_at(t)}', null)
+          ? (formatSteps(steps), '$source · ${_at(t)}', null)
           : ('—', 'No steps recorded today ($source)', null),
       DailyNotAllowed(:final blocked) => ('—', blocked ? 'Access is off. Allow it in Settings.' : 'Allow access to see today\'s steps.',
           blocked ? button('Settings', const Key('today-steps-settings'), () => src.openSettings()) : button('Allow', const Key('today-steps-allow'), () => enableSteps(ref))),
@@ -909,7 +905,9 @@ class _StepsCardState extends ConsumerState<_StepsCard> with WidgetsBindingObser
     final tile = PanelTheme(
       child: Builder(
         builder: (context) => _Module(
-          key: const Key('today-steps'), label: 'Steps',
+          key: const Key('today-steps'), label: 'Steps', fill: widget.fill,
+          // Tread impressions at the tile's trailing side, fading into the tint behind the words.
+          photo: _Photos.steps, photoAlignment: const Alignment(0.7, 0.2),
           head: [
             Padding(padding: const EdgeInsets.only(top: 6), child: GoIcon(GoGlyph.steps, size: 28, color: context.c.accent)),
             const SizedBox(height: 4),
@@ -917,8 +915,12 @@ class _StepsCardState extends ConsumerState<_StepsCard> with WidgetsBindingObser
                 child: Text(head, key: const Key('today-steps-value'), style: count ? context.pageTitleStyle(30) : context.pageTitleStyle(d is DailyOff ? 22 : 30))),
           ],
           body: [
+            // The count first, then the goal and its bar (only when a goal is set), then where and when it was read.
+            if (progress != null) ...[
+              Text('of ${formatSteps(goal!)}', key: const Key('today-steps-goal'), style: context.sansStyle(14.5, color: context.c.secondary)),
+              Padding(padding: const EdgeInsets.only(top: 4, bottom: 4), child: ProgressRail(progress, label: 'Steps goal')),
+            ],
             Text(detail, style: context.sansStyle(14.5, color: context.c.secondary)),
-            if (progress != null) Padding(padding: const EdgeInsets.only(top: 6), child: ProgressRail(progress, label: 'Steps goal')),
             if (src.simulated && on) Text('Simulated steps (test build)', style: context.caption),
           ],
           action: action ?? const SizedBox.shrink(),
@@ -970,7 +972,8 @@ class _NutritionCard extends ConsumerWidget {
       quiet: QuietLink('Journal', key: const Key('today-open-eat'), said: 'Food journal', onPressed: openEat),
       // Under the figures, quieter than them: the day's water when it is tracked, then Customize tracking. Goals are
       // shown here as progress only; they are set and edited in Eat. Sheets open in the app's own look.
-      below: [if (display.water) WaterRow(key: const Key('today-water'), day: day), const NutritionTools(keyPrefix: 'today', goals: false)],
+      // Today's water when it is tracked. Goals and Customize tracking belong to Eat.
+      below: [if (display.water) WaterRow(key: const Key('today-water'), day: day)],
     );
   }
 }

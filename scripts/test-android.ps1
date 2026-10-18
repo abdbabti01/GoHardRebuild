@@ -34,7 +34,7 @@ try {
         $feeder = $null
         $gpsFeed = $null
         # journey_move_test: SIMULATED steps (the emulator has no step counter), labelled on screen.
-        [string[]]$simSteps = if ($journey -in 'journey_move_test', 'journey_ux_test') { '--dart-define=GOHARD_SIM_STEPS=true' } else { @() }
+        [string[]]$simSteps = if ($journey -in 'journey_move_test', 'journey_ux_test', 'journey_today_water_test') { '--dart-define=GOHARD_SIM_STEPS=true' } else { @() }
         if ($journey -in 'journey_move_test', 'journey_ux_test') {
             if ($device -notmatch '^emulator-') { Fail 'journey_move_test simulates GPS positions and so needs an emulator.' }
             # SIMULATED GPS: a run north at about 3.5 m/s, one position a second, through Android's test location provider.

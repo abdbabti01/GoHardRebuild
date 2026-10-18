@@ -110,8 +110,8 @@ void main() {
     await j.startActivity();
     await back();
     await j.waitFor(find.widgetWithText(FilledButton, 'Resume'), what: 'the open run on Today');
-    await j.reveal(find.byKey(const Key('today-run-history')));
-    await tester.ensureVisible(find.byKey(const Key('today-run-history')));
+    await j.reveal(find.byKey(const Key('today-module-run')));
+    await tester.ensureVisible(find.byKey(const Key('today-module-run')));
     await j.shot('today-panels-05-run-open-green-dark');
     await j.tapKey('today-run');
     await j.waitFor(find.byKey(const Key('runwalk-finish')), what: 'the same run');
@@ -122,7 +122,8 @@ void main() {
     await j.waitFor(find.widgetWithText(FilledButton, 'Start'), what: 'Start again once saved');
 
     // --- History is the Run / Walk history.
-    await j.tapKey('today-run-history');
+    await j.tapKey('nav-train');
+    await j.tapKey('train-run-history');
     await j.waitFor(find.text('History'), what: 'Run / Walk history');
     await back();
 
@@ -162,11 +163,15 @@ void main() {
     await watch(1800);
     await tester.tap(find.byKey(const Key('nav-today')));
     await watch(1500);
-    await tester.ensureVisible(find.byKey(const Key('today-run-history')));
+    await tester.tap(find.byKey(const Key('nav-train')));
+    await watch(1200);
+    await tester.ensureVisible(find.byKey(const Key('train-run-history')));
     await watch(800);
-    await tester.tap(find.byKey(const Key('today-run-history')));
+    await tester.tap(find.byKey(const Key('train-run-history')));
     await watch(2000);
     await tester.pageBack();
+    await watch(1500);
+    await tester.tap(find.byKey(const Key('nav-today')));
     await watch(1500);
     await tester.drag(list, const Offset(0, 1000));
     await watch(6000); // the guide's eyes and the sky, at rest

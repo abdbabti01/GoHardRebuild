@@ -123,7 +123,8 @@ void main() {
       c.read(movePrefsProvider.notifier).setStepsOnToday('one', false);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('today-steps')), findsNothing);
-      expect(find.byKey(const Key('today-run-history')), findsOneWidget, reason: 'History stays reachable');
+      expect(find.byKey(const Key('today-run-history')), findsNothing, reason: 'Run / Walk history is in Train, not on Today');
+      expect(find.byKey(const Key('today-module-run')), findsOneWidget);
       expect(c.read(stepsEnabledProvider), isFalse);
       await tester.pumpWidget(const SizedBox());
     });
@@ -131,7 +132,8 @@ void main() {
     testWidgets('a total says its source and goal; a genuine zero, not allowed and unavailable read differently', (tester) async {
       await today(tester, SimulatedStepSource(state: StepAccess.allowed, dailyTotal: 3480));
       expect(value(tester), '3,480');
-      expect(find.textContaining('of 6,000 · This phone (simulated)'), findsOneWidget);
+      expect(find.text('of 6,000'), findsOneWidget, reason: 'the goal, with its bar, only because a goal is set');
+      expect(find.textContaining('This phone (simulated) · '), findsOneWidget, reason: 'where and when it was read');
       await tester.pumpWidget(const SizedBox());
 
       await today(tester, SimulatedStepSource(state: StepAccess.allowed, dailyTotal: 0));

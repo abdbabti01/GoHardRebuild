@@ -48,16 +48,19 @@ void main() {
       await j.settle(4);
     }
 
+    // Customize tracking is in Eat (with the goals); the water line shows on Today and Eat.
     Future<void> setWater(bool on) async {
+      await j.tapKey('nav-eat');
       // A tap while the keyboard is still leaving can land before the page settles: tap until the sheet is up.
       for (var i = 0; i < 4 && find.byKey(const Key('track-water')).evaluate().isEmpty; i++) {
-        await j.tapKey('today-customize');
+        await j.tapKey('eat-customize');
         await j.settle(6);
       }
       await j.waitFor(find.byKey(const Key('track-water')));
       if (tester.widget<SwitchListTile>(find.byKey(const Key('track-water'))).value != on) await j.tapKey('track-water');
       await j.settle(2);
       await closeSheet();
+      await j.tapKey('nav-today');
     }
 
     String waterTotal() => tester.widget<Text>(find.byKey(const Key('water-total')).first).data!;
@@ -192,7 +195,9 @@ void main() {
     await watch(1800);
     await closeSheet();
     await watch(1500);
-    await j.tap(find.byKey(const Key('today-customize')));
+    await j.tap(find.byKey(const Key('nav-eat')));
+    await watch(1500);
+    await j.tap(find.byKey(const Key('eat-customize')));
     await watch(1500);
     await j.tap(find.byKey(const Key('track-carbs')));
     await watch(1200);

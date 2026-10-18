@@ -26,6 +26,10 @@ enum VolumeUnit {
   /// The three quick additions, in this unit: round numbers people pour.
   List<double> get quick => this == ml ? const [100, 250, 500] : const [4, 8, 16];
 
+  /// One ordinary drink, logged with one tap: 250 mL or 8 fl oz (236.588 mL stored, what 8 fl oz is). Shown and stored
+  /// as the same amount, converted once by [toMl]. A convenience, not a recommendation.
+  double get everyday => quick[1];
+
   /// Millilitres for an amount typed or tapped in this unit, kept to three decimals.
   double toMl(double amount) => roundMl(this == ml ? amount : amount * mlPerFlOz);
 

@@ -202,9 +202,23 @@ mockup's due panel is about 183: the 52 px button and the plan-week line are kep
 and quinoa bowl, a runner's shoes on a riverside path) but are not the mockup's pictures, which are wet, rainy
 variants; those were not supplied as files, so they are not used. Each is decoded for the box it is drawn in.
 
+### Matching tiles, history in Train and Eat, one-tap water (18 October 2026, from `GoHard_Today_History_Water_Corrections`)
+
+- Run / Walk and Steps side by side are the same width and the same height (the taller one's content sets it, through
+  `IntrinsicHeight`; `PanelSurface(fill:)` runs the photograph the full height and puts the action at the bottom),
+  stacked at large text or below 350 px. Steps has its own photograph, `assets/images/steps-footprints.jpg` (from the
+  handoff's `assets/steps-footprints.png`: a generated photograph supplied with the handoff, per its ASSETS.md; resized to
+  960 × 640, JPEG 82), through the same `PanelPhoto` fade into the theme's tint. In a paired tile the words may use 85 %
+  of the width over the photograph's faded side.
+- Today has no Run / Walk History link: the tile's one action is Start / Resume. **Run / Walk history** is in Train ›
+  Workouts, beside Run / Walk. Nutrition history is **History** in Eat, under the date.
+- The Nutrition panel on Today: the words, Log food, Journal, and (when water is tracked) the water line with **+250 mL**
+  and **Other amount**; no goals link and no sliders icon (both in Eat, Customize tracking now labelled).
+- Renders: `docs/evidence/today-history-water/`; device captures `docs/evidence/screenshots/thw-01…08`.
+
 ### Steps beside Run / Walk, and Ready's order (18 October 2026, from `GoHard_Steps_RunWalk_UX_Corrections`)
 
-Today: Workout, Nutrition, then **Run / Walk and Steps side by side** (stacked at large text or below 350 px), Run /
+Today: Workout, Nutrition, then **Run / Walk and Steps side by side** (stacked at large text or below 350 px; Run / Walk history moved to Train on 18 Oct, below), Run /
 Walk History under them. Steps is shown before it is turned on ("Track your steps", Enable) so it can be found; it is
 not in Nutrition's Customize tracking any more. Ready follows the approved "option 1" board: every setting above Start,
 Start last in its own bar. The Run / Walk and Steps controls use the supplied SVG glyphs through `GoIcon`, tinted by

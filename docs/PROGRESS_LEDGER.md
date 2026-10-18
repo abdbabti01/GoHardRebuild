@@ -1679,3 +1679,45 @@ an Android voice in airplane mode, Motion & Fitness and Health Connect prompts),
   `0c6c68b`: **passed** (full suite + API). Unsigned IPA `ios-unsigned-ipa` run 33 on `970743e`, build number 33,
   artifact `GoHard-Dev-unsigned-ipa` (`GoHard-Dev-unsigned-33.ipa`): passed; `0c6c68b` changes no app code, so this IPA
   is the app at the final commit. `main` and Railway unchanged.
+
+## 18 October 2026 (Today, history, water) — matching tiles, history in Train and Eat, one-tap water (same branch, from `ab073c3`)
+
+From `GoHard_Today_History_Water_Corrections/CLAUDE_PROMPT.md`; BEFORE = the supplied iPhone screenshot
+`references/current-iphone-problems.jpeg` (IPA 33).
+
+| Change | Where |
+|---|---|
+| Run / Walk and Steps: equal width and height side by side (`IntrinsicHeight`; `_Module` without its `LayoutBuilder`, `PanelSurface(fill)`: photo full height, action at the bottom), stacked at large text / narrow; Steps gets the supplied photograph (resized JPEG, provenance in DESIGN.md) with its icon kept; the goal line and bar only with a goal, then source · time | `today_screen.dart`, `core/widgets.dart`, `assets/images/steps-footprints.jpg`, `pubspec` (already registered folder) |
+| Today: no Run / Walk History link; Nutrition without the goals / sliders line | `today_screen.dart` |
+| Train › Workouts: **Run / Walk history** beside Run / Walk (moved up from the bottom History card, not duplicated) | `train_screen.dart` |
+| Eat: **History** under the date (calendar + days with entries; opens the day, Back to today); labelled **Customize tracking**; earlier days are not set against today's goals; a one-time coach line "Your past meals and water are in History." once earlier days exist | `nutrition_history.dart`, `eat_screen.dart`, `nutrition_tools.dart`, `providers.dart` (`waterEntriesProvider`) |
+| Water: **+250 mL / +8 fl oz** in one tap with a 5 s Undo of that entry, **Other amount** sheet, the line opens details; quick add only on today | `nutrition_tools.dart` (`WaterRow`, `addWater`, `_OtherWater`), `water.dart` (`everyday`) |
+
+No backend change: water's add/remove commands and their idempotency and revision rules are reused as they were.
+
+**Found and fixed.** Eat's header with History beside the arrows overflowed 93 px at 2× text on 320 px: History moved
+under the date. The calendar marked the phone's real date as today instead of the app's day (`currentDate`). An
+earlier day showed today's water goal as its bar: past days' goals were never kept, so no goal comparison on them (food
+and water). Undo bars used to stay until dismissed (a SnackBar with an action persists by default): 5 s, one at a time.
+
+**Checks (focused).** `flutter analyze`: clean. Affected suites together (Today, water, water model, Eat, Train,
+move, widget, food, tracking sync, motion, coach, Run / Walk UI, Me, Today states, theme): all passed after updating
+expectations that described the old layout (Today's History link, Customize tracking on Today, the water plus opening
+the sheet, tile heights now equal, tests tapping a shared `log-food` key, a header row that grew). New: one tap → one
+entry → Undo removes that id → bar gone after 5 s; +8 fl oz stored as 236.588 mL; Other amount; History lists an earlier
+day with its water, opens it dated, Other amount logs on that day, Back to today; tiles equal; the Steps image is the
+supplied asset. Renders (widgets, not a phone): `docs/evidence/today-history-water/` (Today Blue Light and Pink Dark
+at 390 × 844 and full height, 320 px at 2×, Eat today, History, an earlier day, Train). Device (`emulator-5554`, API 36,
+debug, local API, SIMULATED steps): `journey_today_water_test` (new, not default) **passed**: water on in Eat; Today
++250 mL → 250 mL at once; Undo → 0 mL; another +250 (kept, captured with its Undo bar); Other amount 330 → 580 mL; the
+Undo bar gone by itself; yesterday from Eat's arrow, Other amount 500 there; History lists yesterday "· 500 mL water",
+opens it dated; Back to today; Train › Run / Walk history; Blue Light and Pink Dark. Captures
+`docs/evidence/screenshots/thw-01…08`. Earlier attempts: three "Service has disappeared" attach failures and one
+emulator without network after a reboot (emulator restarted), and three journey expectations (a total without a goal
+reads "250 mL"; Undo tapped after a slow capture; the history page of a new account has no bests row).
+
+**Known limit.** The 5 s Undo bar floats above the navigation bar and can briefly cover the lower edge of the Run /
+Walk and Steps tiles (including Start) while it shows; it can be swiped away.
+
+**Not verified:** a physical phone (photo crop on other phone sizes, VoiceOver/TalkBack, real Health Connect / Core
+Motion counts), iOS beyond CI compilation. Recipes / multi-food saved meals remain out of scope (unchanged).

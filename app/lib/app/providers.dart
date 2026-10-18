@@ -109,6 +109,9 @@ final runtimesProvider = StreamProvider<List<Stored<Json>>>((ref) => _rows(ref, 
 final foodProvider = StreamProvider.family<List<Stored<FoodEntry>>, String>((ref, dayKey) => _rows(ref, Kinds.food, FoodEntry.new, dayKey: dayKey));
 /// One day's water entries, deleted ones included (the readers leave them out), on the day they were logged.
 final waterProvider = StreamProvider.family<List<Stored<WaterEntry>>, String>((ref, dayKey) => _rows(ref, Kinds.water, WaterEntry.new, dayKey: dayKey));
+
+/// Every water entry of the account on this phone (Eat › History).
+final waterEntriesProvider = StreamProvider<List<Stored<WaterEntry>>>((ref) => _rows(ref, Kinds.water, WaterEntry.new));
 /// Every food entry of the owner, for "recent": the journal itself is the history of what was eaten.
 final foodJournalProvider = StreamProvider<List<Stored<FoodEntry>>>((ref) => _rows(ref, Kinds.food, FoodEntry.new));
 final savedFoodsProvider = StreamProvider<List<Stored<SavedFood>>>((ref) => _rows(ref, Kinds.savedFood, SavedFood.new));

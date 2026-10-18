@@ -155,7 +155,8 @@ Future<void> _open(WidgetTester tester, String screen) async {
     case 'run':
       await tap('today-run');
     case 'run-history':
-      await tap('today-run-history');
+      await tap('nav-train');
+      await tap('train-run-history');
     case 'log-food' || 'food-results' || 'food-preview' || 'food-preview-unknown' || 'scan':
       await tap('nav-eat');
       await tap('log-food');

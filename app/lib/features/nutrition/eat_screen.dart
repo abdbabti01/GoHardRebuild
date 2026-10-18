@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/clock.dart';
 import '../../core/format.dart';
+import '../../core/go_icon.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -15,6 +16,7 @@ import '../shell/home_shell.dart' show shellProvider;
 import 'food_form.dart';
 import 'food_repository.dart' show SavedFood;
 import 'log_food_screen.dart';
+import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
 import 'nutrition_tools.dart';
@@ -45,6 +47,17 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       'Choosing one only opens its amount: nothing is logged until you confirm it.',
       guide: (label: 'Open Favourites', key: const Key('eat-help-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))));
 
+  /// Whether anything was logged on a day before today (food on this phone).
+  bool get _pastDays {
+    final today = ref.read(todayKeyProvider);
+    return (ref.read(foodJournalProvider).value ?? const []).any((r) => !r.value.isDeleted && r.value.dayKey.compareTo(today) < 0);
+  }
+
+  Future<void> _openHistory(String day, String today) async {
+    final chosen = await push<String>(context, NutritionHistoryScreen(selected: day));
+    if (chosen != null && mounted) setState(() => _picked = chosen == today ? null : chosen);
+  }
+
   /// The meal a saved-food shortcut starts on, from the time of day; it can be changed in Add food before choosing.
   static String _mealNow(DateTime t) => t.hour < 11 ? 'Breakfast' : t.hour < 16 ? 'Lunch' : t.hour < 21 ? 'Dinner' : 'Snack';
 
@@ -70,6 +83,15 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       _hint = ref.read(coachPrefsProvider).mayIntroduce(owner, id) ? id : '';
       if (_hint!.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
     }
+    // Once there are earlier days, History is introduced once (after the saved-foods hint has had its turn).
+    if (_hint == '' && inView && _pastDays) {
+      const id = 'eat.history';
+      if (ref.read(coachPrefsProvider).mayIntroduce(owner, id)) {
+        _hint = id;
+        WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
+      }
+    }
+    if (_hint == 'eat.history') return const CoachSay('Your past meals and water are in History.');
     if (_hint == 'eat.saved.new') return const CoachSay('Eat the same foods often? Tap the star on a food\'s amount page and it waits under Favourites in Add food.');
     if (_hint != 'eat.saved.shortcut') return null;
     final fav = saved.any((s) => s.isFavourite);
@@ -144,14 +166,14 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                 IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
                 IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
               ]),
-              below: day == today && !coachOn
-                  ? null
-                  : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      if (day != today)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
-                        ),
+              below: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      // Under the date, named: History (a calendar and the days with entries; the arrows stay for a day
+                      // either side) and, on an earlier day, Back to today. They wrap rather than squeeze.
+                      Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                        TextButton.icon(key: const Key('eat-history'), onPressed: () => _openHistory(day, today), icon: const GoIcon(GoGlyph.history, size: 20), label: const Text('History')),
+                        if (day != today)
+                          TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
+                      ]),
                       if (coachOn)
                         TabCoach(key: const Key('eat-coach'), id: 'eat',
                             say: _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
@@ -170,7 +192,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
               else ...[
                 // The day's summary as a photo panel, with the one general Log food in it.
                 NutritionSurface(
-                  entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, pending: live.any((r) => r.isPending),
+                  entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: day == today ? profile?.calorieGoal : null, proteinGoal: day == today ? profile?.proteinGoal : null, pending: live.any((r) => r.isPending),
                   showCarbs: display.carbs, showFat: display.fat,
                   footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
                   action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),

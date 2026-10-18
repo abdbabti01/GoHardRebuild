@@ -229,6 +229,28 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
   stored (entries, goals and logged values stay). It is offered only where the server declares `water.entries`, so
   nothing is queued that an older server could never accept.
 
+### One tap for a drink, and History (18 Oct 2026, GoHard_Today_History_Water_Corrections)
+
+- **Quick add.** On Today and on today's Eat, under the water line: **+250 mL** (or **+8 fl oz** in fluid ounces,
+  `VolumeUnit.everyday`). One tap logs exactly that amount on today, at once, through `WaterRepository.add` (one entry,
+  its own id, local first; a retry reuses its operation). The amount on the button is the amount stored: 8 fl oz is
+  236.588 mL, converted once by `toMl`. A second tap is a second drink. A convenience, not a recommendation; no goal is
+  set or changed.
+- **Undo** (`addWater` in `nutrition_tools.dart`): a bar for 5 seconds, one at a time, that removes exactly the entry
+  just added (`WaterRepository.remove`, its revision dependency waits for the add when that has not been sent yet), never
+  a numeric decrease. It does nothing once another account is signed in, and acts on the day the entry was logged on.
+- **Other amount**: one field in the chosen unit and **Add water** (same validation: above zero, at most 5 L per entry),
+  for the day shown. On an earlier day in Eat only Other amount is offered (the one-tap drink is for today).
+- **Water details**: tapping the water line opens the day's entries with correction and removal (unchanged).
+- **History** (Eat, under the date, `nutrition_history.dart`): a calendar to pick any day, and the days with food or
+  water on this phone, newest first, each with its count of foods, its calories (known totals labelled "known",
+  "calories unknown" when no food had a value) and its water. Choosing a day shows it in Eat, dated, with Back to today;
+  Add food and Other amount keep that day. Read from the same local records as Eat (`foodJournalProvider`,
+  `waterEntriesProvider`); no copy, no new model.
+- **Goals on earlier days**: goals of past days were never stored, so an earlier day is not set against today's goals
+  (no goal bars or percentages on it, food or water); only today is.
+- Goals and **Customize tracking** are in Eat only (a labelled action); Today shows the water line and its actions.
+
 ### What is shown follows the account (17 Oct 2026)
 
 The three display choices are on the account where the server declares `profile.tracking-display` (migration

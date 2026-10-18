@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
+import '../../core/go_icon.dart';
 import '../activity/activity_history.dart';
 import '../activity/move_widgets.dart' show PersonalBestsCard;
 import '../activity/run_walk_screens.dart';
@@ -136,7 +137,6 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GroupCard(children: [
         GroupRow(key: Key(runs ? 'train-history' : 'progress-history'), icon: Icons.history, title: 'Workout history', subtitle: 'Every workout you recorded', onTap: () => push(context, const WorkoutHistoryScreen())),
-        if (runs) GroupRow(key: const Key('train-run-history'), icon: Icons.directions_run, title: 'Run / Walk history', subtitle: 'Every run and walk you recorded', onTap: () => push(context, const ActivityHistoryScreen())),
       ]);
 }
 
@@ -164,6 +164,9 @@ class _WorkoutsView extends ConsumerWidget {
         GroupRow(key: const Key('start-manual'), icon: Icons.add, title: 'Start a manual workout', subtitle: 'Train without a plan. It never ticks off a planned workout.',
             onTap: () => startManualWorkout(context, ref)),
         GroupRow(key: const Key('train-start-run'), icon: Icons.directions_run, title: 'Run / Walk', subtitle: 'Record a run or a walk outdoors, with its route', onTap: () => openRunWalk(context, ref)),
+        // Run / Walk's history lives here, beside starting one (Today offers only Start / Resume).
+        GroupRow(key: const Key('train-run-history'), leading: const GoIcon(GoGlyph.history), title: 'Run / Walk history', subtitle: 'Every run and walk, routes and personal bests',
+            onTap: () => push(context, const ActivityHistoryScreen())),
       ]),
       _between,
       const SectionHeader('Recent'),

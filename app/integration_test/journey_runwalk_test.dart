@@ -162,7 +162,8 @@ void main() {
     await shot('runwalk-14-charts');
     await j.tapKey('activity-done');
     await waitText('Walk finished today');
-    await j.tapKey('today-run-history');
+    await j.tapKey('nav-train');
+    await j.tapKey('train-run-history');
     await j.waitFor(find.text('History'), what: 'history');
     await shot('runwalk-15-history');
     await tester.pageBack();

@@ -19,10 +19,12 @@ const _day = '2026-10-11';
 /// Records what the water sheet asks to save; the day's entries come from [entries].
 class _Water implements WaterRepository {
   final adds = <(String, double)>[];
+  final ids = <String?>[];
   final removed = <String>[];
   @override
   Future<Receipt> add(String dayKey, double ml, {String? id}) async {
     adds.add((dayKey, WaterRepository.validate(ml)));
+    ids.add(id);
     return const Receipt('op', 'pending');
   }
 
@@ -46,22 +48,103 @@ Future<List<Override>> _fixture(WidgetTester tester, {List<Json> water = const [
           appearance: AppearanceStore(MemorySecretStore())..mode = ThemeMode.dark)))!,
       waterProvider.overrideWith((ref, d) => waterStream ?? Stream.value([for (final w in water) if (w['dayKey'] == d) stored(WaterEntry(w), Kinds.water, w['id'] as String, w)])),
       waterRepositoryProvider.overrideWithValue(repo ?? _Water()),
+      waterEntriesProvider.overrideWith((ref) => Stream.value([for (final w in water) stored(WaterEntry(w), Kinds.water, w['id'] as String, w)])),
       profileRepositoryProvider.overrideWithValue(profiles ?? RecordingProfiles()),
     ];
 
 void main() {
+  testWidgets('one tap logs one ordinary drink on today, at once; Undo removes exactly that entry; the bar goes away by itself', (tester) async {
+    final repo = _Water();
+    final container = await pumpApp(tester, await _fixture(tester, repo: repo, water: [_entry('a', 500)], profile: {'waterGoalMl': 2000}), size: const Size(390, 1400));
+    container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
+    await tester.pumpAndSettle();
+    final quick = find.descendant(of: find.byKey(const Key('today-water')), matching: find.byKey(const Key('water-quick-add')));
+    expect(find.descendant(of: quick, matching: find.text('+250 mL')), findsOneWidget, reason: 'the amount is on the button');
+    await tester.tap(quick);
+    await tester.pump();
+    expect(repo.adds, [(_day, 250.0)], reason: 'one tap, one entry, no sheet');
+    expect(find.byType(BottomSheet), findsNothing);
+    await tester.tap(quick);
+    await tester.pump();
+    expect(repo.adds, hasLength(2), reason: 'a second drink is a second entry');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    expect(repo.removed, [repo.ids.last], reason: 'Undo removes the entry just added, not an amount from the total');
+    await tester.tap(quick);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1)); // the bar finishes coming in, then its 5 s run
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(find.text('Undo'), findsNothing, reason: 'the Undo bar does not stay');
+
+    // An ounce household gets an ounce drink, stored as what it is.
+    container.read(trackingPrefsProvider.notifier).setUnit(VolumeUnit.flOz);
+    await tester.pumpAndSettle();
+    await tester.tap(quick);
+    await tester.pump();
+    expect(repo.adds.last, (_day, 236.588), reason: '+8 fl oz shown and 8 fl oz stored, converted once');
+
+    // Other amount: one field and Add water.
+    await tester.tap(find.descendant(of: find.byKey(const Key('today-water')), matching: find.byKey(const Key('water-other'))));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('water-other-amount')), '12');
+    await tester.tap(find.byKey(const Key('water-other-add')));
+    await tester.pumpAndSettle();
+    expect(repo.adds.last.$2, closeTo(354.882, 0.001));
+    expect(find.byKey(const Key('water-other-amount')), findsNothing, reason: 'the sheet closes once added');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Eat › History: named, lists the days with entries, and opens an earlier day with its own water, dated; Back to today', (tester) async {
+    final repo = _Water();
+    final container = await pumpApp(tester, await _fixture(tester, repo: repo, water: [_entry('a', 500), _entry('old', 900, day: '2026-10-10')]), size: const Size(390, 1400));
+    container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    final history = find.byKey(const Key('eat-history'));
+    expect(find.descendant(of: history, matching: find.text('History')), findsOneWidget, reason: 'a labelled action, not only arrows');
+    await tester.tap(history);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history-calendar')), findsOneWidget);
+    final old = find.byKey(const Key('history-day-2026-10-10'));
+    expect(find.descendant(of: old, matching: find.text('900 mL water')), findsOneWidget, reason: 'the day\'s real water, from its entries');
+    await tester.tap(old);
+    await tester.pumpAndSettle();
+    expect(find.text('Saturday, October 10'), findsOneWidget, reason: 'the date is unmistakable');
+    expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.text('900 mL')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.byKey(const Key('water-quick-add'))), findsNothing, reason: 'the one-tap drink is for today');
+    await tester.tap(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.byKey(const Key('water-other'))));
+    await tester.pumpAndSettle();
+    expect(find.text('For Saturday, October 10'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('water-other-amount')), '200');
+    await tester.tap(find.byKey(const Key('water-other-add')));
+    await tester.pumpAndSettle();
+    expect(repo.adds.last, ('2026-10-10', 200.0), reason: 'logged on the day being viewed, not today');
+    await tester.tap(find.byKey(const Key('eat-back-to-today')));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.byKey(const Key('water-quick-add'))), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('water is off until turned on; hiding and showing it keeps the day\'s water and its goal, on Today and Eat', (tester) async {
     await pumpApp(tester, await _fixture(tester, water: [_entry('a', 500), _entry('b', 250), _entry('old', 900, day: '2026-10-10')], profile: {'waterGoalMl': 2000}),
         size: const Size(390, 1400));
     expect(find.byKey(const Key('today-water')), findsNothing, reason: 'water tracking starts off');
 
+    // Customize tracking is in Eat (with the goals); Today shows the result.
     Future<void> setWater(bool on) async {
-      await tester.tap(find.byKey(const Key('today-customize')));
+      await tester.tap(find.byKey(const Key('nav-eat')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('eat-customize')));
+      await tester.tap(find.byKey(const Key('eat-customize')));
       await tester.pumpAndSettle();
       final toggle = find.byKey(const Key('track-water'));
       if (tester.widget<SwitchListTile>(toggle).value != on) await tester.tap(toggle);
       await tester.pumpAndSettle();
       Navigator.of(tester.element(find.byKey(const Key('track-water')))).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('nav-today')));
       await tester.pumpAndSettle();
     }
 
@@ -108,8 +191,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('today-goals')), findsNothing);
     expect(find.descendant(of: find.byKey(const Key('today-module-nutrition')), matching: find.textContaining('goals')), findsNothing, reason: 'no Set or Edit goals on Today');
-    expect(find.byKey(const Key('today-customize')), findsOneWidget, reason: 'what is shown can still be chosen');
-    await tester.tap(find.byKey(const Key('water-quick-add')).first);
+    expect(find.byKey(const Key('today-customize')), findsNothing, reason: 'Customize tracking is in Eat, with the goals');
+    await tester.tap(find.descendant(of: find.byKey(const Key('today-water')), matching: find.byKey(const Key('water-row'))));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('water-goal')), findsNothing, reason: 'the water sheet logs, corrects and removes; it does not edit goals');
     expect(find.byKey(const Key('water-add-250')), findsOneWidget);
@@ -215,7 +298,7 @@ void main() {
     final container = await pumpApp(tester, await _fixture(tester, repo: repo, water: [_entry('a', 330)]), size: const Size(390, 1400));
     container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('water-quick-add')).first);
+    await tester.tap(find.byKey(const Key('water-row')).first);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('water-entry-a')));
     await tester.pumpAndSettle();
@@ -235,9 +318,9 @@ void main() {
       ..setUnit(VolumeUnit.flOz);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('water-quick-add')).first);
+    await tester.tap(find.byKey(const Key('water-row')).first);
     await tester.pumpAndSettle();
-    expect(find.text('+8 fl oz'), findsOneWidget, reason: 'quick additions follow the unit');
+    expect(find.descendant(of: find.byKey(const Key('water-add-8')), matching: find.text('+8 fl oz')), findsOneWidget, reason: 'quick additions follow the unit');
     await tester.tap(find.byKey(const Key('water-add-8')));
     await tester.pumpAndSettle();
     expect(repo.adds.single, (_day, 236.588), reason: '8 US fluid ounces, stored once in millilitres');

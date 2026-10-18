@@ -159,7 +159,9 @@ Future<void> showGoalsSheet(BuildContext context, WidgetRef ref) async {
 
 /// The day's water under the nutrition figures, drawn like their goal bars: a droplet, "750 / 2,000 mL" and a bar with
 /// the real share when a goal is saved (the bar full at the goal, the words and the share keep the real amount above
-/// it); without a goal just the amount, with no bar or percentage. An add button. Opens [showWaterSheet].
+/// it); without a goal just the amount, with no bar or percentage. The row opens the day's water details
+/// ([showWaterSheet]: its entries, corrections, removals). Under it, on today: one labelled tap for an ordinary drink
+/// ([VolumeUnit.everyday], logged at once, with Undo) and Other amount; on an earlier day, Other amount for that day.
 class WaterRow extends ConsumerWidget {
   const WaterRow({super.key, required this.day});
   final String day;
@@ -167,17 +169,29 @@ class WaterRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unit = ref.watch(volumeUnitProvider);
+    final today = ref.watch(todayKeyProvider) == day;
     final rows = ref.watch(waterProvider(day));
     // Until the day's entries are read nothing is claimed: an amount not yet known is not zero.
     final total = rows.hasValue ? waterTotal([for (final r in rows.value!) r.value]) : null;
-    final goal = ref.watch(profileProvider).value?.waterGoalMl;
+    // Only today is set against the goal: earlier days' goals were not kept, so today's is not used to judge them.
+    final goal = today ? ref.watch(profileProvider).value?.waterGoalMl : null;
     final c = context.c;
     final said = total == null ? 'Water, loading' : 'Water ${unit.format(total)}${goal == null ? '' : ' of ${unit.format(goal.toDouble())}, ${(total / goal * 100).round()} percent'}';
+    final quick = unit.everyday;
+    final actions = Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+      if (today)
+        FilledButton.tonalIcon(
+          key: const Key('water-quick-add'), onPressed: () => addWater(context, ref, day, unit.toMl(quick)),
+          style: FilledButton.styleFrom(minimumSize: const Size(0, Targets.minimum), padding: const EdgeInsets.symmetric(horizontal: 14)),
+          icon: const Icon(Icons.water_drop_outlined, size: 18),
+          label: Text('+${unit.amount(quick)} ${unit.short}', semanticsLabel: 'Add ${unit.amount(quick)} ${unit == VolumeUnit.ml ? 'millilitres' : 'fluid ounces'} of water'),
+        ),
+      TextButton(key: const Key('water-other'), onPressed: () => showOtherWaterSheet(context, ref, day), child: const Text('Other amount')),
+    ]);
     return Semantics(
       container: true,
-      child: Row(children: [
-        Expanded(
-          child: InkWell(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        InkWell(
             key: const Key('water-row'),
             borderRadius: BorderRadius.circular(Radii.field),
             onTap: () => showWaterSheet(context, ref, day),
@@ -186,7 +200,7 @@ class WaterRow extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Semantics(
-                  button: true, label: said, hint: 'Opens water for this day', excludeSemantics: true,
+                  button: true, label: said, hint: 'Opens water details for this day', excludeSemantics: true,
                   child: Row(children: [
                     Icon(Icons.water_drop_outlined, size: 22, color: c.accent),
                     const SizedBox(width: 10),
@@ -199,15 +213,102 @@ class WaterRow extends ConsumerWidget {
                         if (goal != null && total != null) Padding(padding: const EdgeInsets.only(top: 6), child: WaterGoalBar(total: total, goal: goal.toDouble())),
                       ]),
                     ),
+                    Icon(Icons.chevron_right, color: c.secondary),
                   ]),
                 ),
               ),
             ),
-          ),
         ),
-        IconButton(key: const Key('water-quick-add'), tooltip: 'Add water', icon: const Icon(Icons.add_circle_outline), color: c.accent, onPressed: () => showWaterSheet(context, ref, day)),
+        Padding(padding: const EdgeInsets.only(left: 28), child: actions),
       ]),
     );
+  }
+}
+
+/// Logs [ml] on [day] at once, as one entry, and offers Undo of exactly that entry for a few seconds (a bar that goes
+/// away by itself, one at a time). Undo removes that entry through the outbox (it waits for the add when that has not
+/// been sent yet), never subtracts from a total, and does nothing once another account is signed in.
+Future<bool> addWater(BuildContext context, WidgetRef ref, String day, double ml) async {
+  final repo = ref.read(waterRepositoryProvider);
+  final owner = ref.read(ownerProvider);
+  final unit = ref.read(volumeUnitProvider);
+  final container = ProviderScope.containerOf(context, listen: false);
+  final messenger = ScaffoldMessenger.of(appContext(context));
+  final id = SyncEngine.newId();
+  try {
+    await repo.add(day, ml, id: id);
+  } on InvalidWater catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(e.message), duration: const Duration(seconds: 3)));
+    return false;
+  } on LocalSaveFailure {
+    messenger.showSnackBar(const SnackBar(content: Text('That could not be saved on this phone. Nothing was added.'), duration: Duration(seconds: 3)));
+    return false;
+  }
+  final today = container.read(todayKeyProvider) == day;
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(
+      key: Key('water-added-$id'),
+      content: Text('Added ${unit.format(roundMl(ml))} of water${today ? '' : ' on ${longDate(day)}'}.'),
+      duration: const Duration(seconds: 5), persist: false, behavior: SnackBarBehavior.floating,
+      action: SnackBarAction(label: 'Undo', onPressed: () {
+        if (container.read(ownerProvider) != owner) return; // another account now: not theirs to undo
+        final entry = container.read(waterProvider(day)).value?.where((r) => r.value.id == id).firstOrNull?.value
+            ?? WaterEntry({'id': id, 'dayKey': day, 'volumeMl': roundMl(ml), 'isDeleted': false});
+        if (!entry.isDeleted) repo.remove(entry).ignore();
+      }),
+    ));
+  return true;
+}
+
+/// Other amount: one field in the chosen unit and Add water, for [day].
+Future<void> showOtherWaterSheet(BuildContext context, WidgetRef ref, String day) =>
+    showGoSheet<void>(appContext(context), title: 'Add water', builder: (sheet) => _OtherWater(day: day));
+
+class _OtherWater extends ConsumerStatefulWidget {
+  const _OtherWater({required this.day});
+  final String day;
+  @override
+  ConsumerState<_OtherWater> createState() => _OtherWaterState();
+}
+
+class _OtherWaterState extends ConsumerState<_OtherWater> {
+  final _field = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final unit = ref.read(volumeUnitProvider);
+    final v = parseNonNegative(_field.text.replaceAll(RegExp(r'[,\s]'), ''));
+    if (v == null || v <= 0) return setState(() => _error = 'Enter an amount above zero.');
+    try {
+      WaterRepository.validate(unit.toMl(v));
+    } on InvalidWater catch (e) {
+      return setState(() => _error = e.message);
+    }
+    final nav = Navigator.of(context);
+    if (await addWater(context, ref, widget.day, unit.toMl(v))) nav.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = ref.watch(volumeUnitProvider);
+    final today = ref.watch(todayKeyProvider) == widget.day;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+      if (!today) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('For ${longDate(widget.day)}', style: context.caption)),
+      TextField(
+        key: const Key('water-other-amount'), controller: _field, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textInputAction: TextInputAction.done, onSubmitted: (_) => _submit(),
+        decoration: InputDecoration(labelText: 'Amount', suffixText: unit.short, errorText: _error),
+      ),
+      const SizedBox(height: 12),
+      PrimaryButton('Add water', key: const Key('water-other-add'), onPressed: _submit),
+    ]);
   }
 }
 
@@ -249,27 +350,14 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
   }
 
   Future<void> _add(double ml) async {
-    final repo = ref.read(waterRepositoryProvider);
-    final unit = ref.read(volumeUnitProvider);
-    final messenger = ScaffoldMessenger.of(context);
-    final id = SyncEngine.newId();
     try {
-      await repo.add(widget.day, ml, id: id);
+      WaterRepository.validate(ml);
+    } on InvalidWater catch (e) {
+      return setState(() => _error = e.message);
+    }
+    if (await addWater(context, ref, widget.day, ml)) {
       setState(() => _error = null);
       _custom.clear();
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text('Added ${unit.format(roundMl(ml))} of water.'),
-          action: SnackBarAction(label: 'Undo', onPressed: () {
-            final entry = ref.read(waterProvider(widget.day)).value?.where((r) => r.value.id == id).firstOrNull;
-            if (entry != null) repo.remove(entry.value).ignore();
-          }),
-        ));
-    } on InvalidWater catch (e) {
-      setState(() => _error = e.message);
-    } on LocalSaveFailure {
-      setState(() => _error = 'That could not be saved on this phone. Nothing was added.');
     }
   }
 
@@ -296,8 +384,9 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
     final unit = ref.watch(volumeUnitProvider);
     final entries = [for (final r in ref.watch(waterProvider(widget.day)).value ?? const <Stored<WaterEntry>>[]) if (!r.value.isDeleted) r];
     final total = waterTotal([for (final r in entries) r.value]);
-    final goal = ref.watch(profileProvider).value?.waterGoalMl;
     final today = ref.watch(todayKeyProvider);
+    // Earlier days' goals were not kept: only today is set against the goal.
+    final goal = widget.day == today ? ref.watch(profileProvider).value?.waterGoalMl : null;
     final c = context.c;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
       Text(widget.day == today ? 'Today' : longDate(widget.day), style: context.caption),
@@ -434,17 +523,12 @@ class NutritionTools extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = ref.watch(profileProvider).value;
     final hasGoal = p != null && (p.calorieGoal != null || p.proteinGoal != null || p.waterGoalMl != null);
-    // One line: the goals link, and Customize tracking as a quiet labelled icon at the end.
-    return Row(children: [
-      // The link takes all the room the icon does not, so large text wraps by words, never by letters.
-      Expanded(
-        child: !goals ? const SizedBox.shrink() : Align(
-          alignment: Alignment.centerLeft,
-          child: QuietLink(hasGoal ? 'Edit goals' : 'Set daily goals', key: Key('$keyPrefix-goals'), said: hasGoal ? 'Edit daily goals' : 'Set daily goals',
-              onPressed: p == null ? null : () => showGoalsSheet(context, ref)),
-        ),
-      ),
-      IconButton(key: Key('$keyPrefix-customize'), tooltip: 'Customize tracking', icon: const Icon(Icons.tune), onPressed: () => showTrackingSheet(context)),
+    // The goals link, then Customize tracking with its name (not an unexplained icon); they wrap by words.
+    return Wrap(spacing: 4, runSpacing: 0, crossAxisAlignment: WrapCrossAlignment.center, children: [
+      if (goals)
+        QuietLink(hasGoal ? 'Edit goals' : 'Set daily goals', key: Key('$keyPrefix-goals'), said: hasGoal ? 'Edit daily goals' : 'Set daily goals',
+            onPressed: p == null ? null : () => showGoalsSheet(context, ref)),
+      TextButton.icon(key: Key('$keyPrefix-customize'), onPressed: () => showTrackingSheet(context), icon: const Icon(Icons.tune, size: 20), label: const Text('Customize tracking')),
     ]);
   }
 }

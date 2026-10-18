@@ -10,6 +10,7 @@ import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
+import 'package:gohard_rebuild/features/nutrition/eat_screen.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
 import 'package:gohard_rebuild/features/coach/coach_bubble.dart';
 import 'package:gohard_rebuild/features/coach/coach_client.dart';
@@ -424,7 +425,7 @@ void main() {
       await _frames(tester, 2500);
       final coach = find.byKey(const Key('eat-coach'));
       expect(coach, findsOneWidget);
-      await tester.drag(find.byKey(const Key('log-food')), const Offset(0, -2500));
+      await tester.drag(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first, const Offset(0, -2500));
       await _frames(tester, 600);
       expect(coach, findsNothing, reason: 'out of the lazy list, so built again on the way back');
       await tester.drag(find.byKey(const Key('eat-add-lunch')), const Offset(0, 2500));
