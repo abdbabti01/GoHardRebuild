@@ -20,6 +20,7 @@ import 'package:gohard_rebuild/features/activity/recorder.dart';
 import 'package:gohard_rebuild/features/activity/run_walk_screens.dart';
 import 'package:gohard_rebuild/features/activity/steps.dart';
 import 'package:gohard_rebuild/features/activity/track_math.dart';
+import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 
 import 'food_fakes.dart';
@@ -69,16 +70,19 @@ Json _saved(String id, String day, {required double meters, required double k1, 
       },
     };
 
-Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {RecorderView? view, bool saying = false}) async {
+Future<List<Override>> _fixture(WidgetTester tester, Accent accent, ThemeMode mode, {RecorderView? view, bool saying = false, MovePrefs? prefs, bool coach = true, List<Json>? runs}) async {
   final store = AppearanceStore(MemorySecretStore())
     ..accent = accent
     ..mode = mode;
-  final move = MovePrefsStore(MemorySecretStore())..value = const MovePrefs(voice: true, intervals: true, plan: _plan, steps: {'one'}, stepGoals: {'one': 8000});
+  final move = MovePrefsStore(MemorySecretStore())..value = prefs ?? const MovePrefs(voice: true, intervals: true, plan: _plan, steps: {'one'}, stepGoals: {'one': 8000});
+  // A returning account (greeted on an earlier day), so Today's one-time Steps introduction can show.
+  final coachStore = CoachPrefsStore(MemorySecretStore())..value = CoachPrefs(onTabs: coach, onToday: coach, greeted: 'one|2026-10-10');
   return [
-    ...(await tester.runAsync(() => overridesFor(day: _day, appearance: store, runs: [
+    ...(await tester.runAsync(() => overridesFor(day: _day, appearance: store, runs: runs ?? [
           _saved('a1', '2026-10-04', meters: 4100, k1: 352),
           _saved('a2', _day, meters: 5250, k1: 338, intervals: true),
         ])))!,
+    coachPrefsStoreProvider.overrideWithValue(coachStore),
     ...FoodFakes().overrides,
     movePrefsStoreProvider.overrideWithValue(move),
     stepSourceProvider.overrideWithValue(SimulatedStepSource(state: StepAccess.allowed, dailyTotal: 6342)),
@@ -161,7 +165,39 @@ final _screens = <String, (Widget, RecorderView? Function(), bool, Future<void> 
   }),
 };
 
+/// Before/after states of the Steps and Ready corrections (GoHard_Steps_RunWalk_UX_Corrections), at a 390 × 844 phone with
+/// its notch and home-indicator insets, written as `ux-<GOHARD_RENDER_TAG>-<state>.png` in docs/evidence/ux-corrections.
+const _tag = String.fromEnvironment('GOHARD_RENDER_TAG', defaultValue: 'after');
+final _ux = <String, (Widget, MovePrefs, bool, Size, double)>{
+  'today-first-use': (const HomeShell(), const MovePrefs(), true, const Size(390, 844), 1),
+  'today-first-use-coach-off': (const HomeShell(), const MovePrefs(), false, const Size(390, 844), 1),
+  'today-steps-on': (const HomeShell(), const MovePrefs(steps: {'one'}, stepGoals: {'one': 8000}), true, const Size(390, 844), 1),
+  'today-first-use-full': (const HomeShell(), const MovePrefs(), true, const Size(390, 1500), 1),
+  'today-steps-on-full': (const HomeShell(), const MovePrefs(steps: {'one'}, stepGoals: {'one': 8000}), false, const Size(390, 1500), 1),
+  'today-large-text-320': (const HomeShell(), const MovePrefs(), true, const Size(320, 3200), 2),
+  'ready-default': (const RunWalkScreen(), const MovePrefs(), true, const Size(390, 844), 1),
+  'ready-default-coach-off': (const RunWalkScreen(), const MovePrefs(), false, const Size(390, 844), 1),
+  'ready-configured': (const RunWalkScreen(), const MovePrefs(voice: true, intervals: true, plan: _plan, steps: {'one'}), true, const Size(390, 844), 1),
+  'ready-large-text-320': (const RunWalkScreen(), const MovePrefs(), true, const Size(320, 640), 2),
+};
+
 void main() {
+  if (_enabled) {
+    for (final MapEntry(key: name, value: (home, prefs, coach, size, scale)) in _ux.entries) {
+      testWidgets('ux $_tag: $name', (tester) async {
+        await pumpApp(tester, await _fixture(tester, Accent.green, ThemeMode.dark, prefs: prefs, coach: coach, runs: const []),
+            home: home, size: size, textScale: scale, insets: phoneInsets, settle: false);
+        await _settle(tester);
+        final image = await _capture(tester);
+        await tester.runAsync(() async {
+          final file = File('../docs/evidence/ux-corrections/ux-$_tag-$name.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
+        });
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
+  }
   if (!_enabled) {
     test('move renders (run with --dart-define=GOHARD_RENDER=true)', () {});
     return;

@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/device_prefs.dart';
 import '../../core/format.dart';
+import '../../core/go_icon.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -17,6 +19,8 @@ import '../coach/coach_prefs.dart';
 import 'activity_detail.dart';
 import 'activity_history.dart';
 import 'announcer.dart' show announcerProvider;
+import 'intervals.dart';
+import 'steps_ui.dart';
 import 'location_source.dart';
 import 'move_prefs.dart';
 import 'move_widgets.dart';
@@ -78,6 +82,9 @@ class _Ready extends ConsumerStatefulWidget {
 class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
   GpsAccess? _access;
   Reading? _here;
+
+  /// The same position for the expanded map, so it follows while it is open (one preview stream, never a second).
+  final _position = ValueNotifier<Reading?>(null);
   StreamSubscription<Reading>? _preview;
   bool _starting = false;
   String? _error;
@@ -93,6 +100,7 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _preview?.cancel();
+    _position.dispose();
     super.dispose();
   }
 
@@ -111,7 +119,9 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
     if (access == GpsAccess.allowed) {
       // Foreground only, while Ready is on screen: the dot and its accuracy. It stops when Ready closes or Start is pressed.
       _preview ??= _source.watch(recording: false).listen((r) {
-        if (mounted) setState(() => _here = r);
+        if (!mounted) return;
+        setState(() => _here = r);
+        _position.value = r;
       }, onError: (Object _) {});
     } else {
       await _preview?.cancel();
@@ -159,71 +169,113 @@ class _ReadyState extends ConsumerState<_Ready> with WidgetsBindingObserver {
     final type = prefs.activity;
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
     final here = _here;
+    final voiceValue = !move.voice
+        ? 'Off'
+        : switch (move.updates) {
+            UpdateMode.off => 'On',
+            UpdateMode.distance => 'On · every ${move.everyDistance == move.everyDistance.roundToDouble() ? move.everyDistance.round() : move.everyDistance} ${prefs.distance.label}',
+            UpdateMode.time => 'On · every ${move.everyMinutes} min',
+          };
+    final media = MediaQuery.of(context);
+    // The map takes what is left of a phone's real height (status bar, home indicator, app bar and the Start bar taken
+    // off) once everything else on Ready is in view; a short phone or large text scrolls instead of shrinking controls.
+    // ponytail: the rest of Ready's height is a measured constant (move_ui_test checks the fit with real insets), not a
+    // layout pass; re-measure it when Ready's rows change.
+    final usable = media.size.height - media.padding.top - media.padding.bottom - 48 - 76 - (_source.simulated ? 32 : 0);
+    final mapHeight = (usable - (coachOn ? 500 : 460) * media.textScaler.scale(1).clamp(1.0, 1.3)).clamp(110.0, 320.0);
     return Scaffold(
-      appBar: AppBar(actions: [
-        TextButton.icon(key: const Key('runwalk-history'), onPressed: () => push(context, const ActivityHistoryScreen()), icon: const Icon(Icons.history), label: const Text('History')),
-        const SizedBox(width: 8),
-      ]),
+      appBar: AppBar(
+        toolbarHeight: 48,
+        leading: Navigator.of(context).canPop()
+            ? IconButton(key: const Key('runwalk-back'), tooltip: 'Back', onPressed: () => Navigator.of(context).maybePop(), icon: GoIcon(GoGlyph.back, color: context.c.text))
+            : null,
+        actions: [
+          TextButton.icon(key: const Key('runwalk-history'), onPressed: () => push(context, const ActivityHistoryScreen()), icon: const GoIcon(GoGlyph.history, size: 22), label: const Text('History')),
+          const SizedBox(width: 8),
+        ],
+      ),
+      // Start is always the last thing and always reachable; nothing is set below it.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(context.inset, 8, context.inset, 10),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
+            PrimaryButton(intervals ? 'Start ${activityNoun(type)} intervals' : 'Start ${activityNoun(type)}', key: const Key('runwalk-start'),
+                leading: const GoIcon(GoGlyph.play, size: 20), busy: _starting, onPressed: () => _start(type)),
+          ]),
+        ),
+      ),
       body: SafeArea(
-        child: ListView(padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 24), children: [
-          Heading('Run / Walk', size: 36, serif: true),
-          if (coachOn) ...[
-            const SizedBox(height: 8),
-            TabCoach(
-              key: const Key('runwalk-coach'), id: 'runwalk', avatarLabel: 'Help with Run / Walk',
-              say: intervals
-                  ? const CoachSay('Intervals are set. Start when you\'re ready.')
-                  // Words only, so Start stays in view; Intervals is the row under Start.
-                  : const CoachSay('Want to alternate running and walking? Set up intervals below Start.'),
-              onAvatarTap: () => _help(context),
-            ),
-          ],
-          const SizedBox(height: 16),
+        bottom: false,
+        child: ListView(padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 12), children: [
+          // The title with the guide beside it, its bubble under the title (words only, so the setup stays in view).
+          if (coachOn)
+            Stack(children: [
+              Heading('Run / Walk', size: 36, serif: true),
+              Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: TabCoach(
+                  key: const Key('runwalk-coach'), id: 'runwalk', avatarLabel: 'Help with Run / Walk',
+                  say: intervals ? const CoachSay('Intervals are set. Start when you\'re ready.') : const CoachSay('Choose your setup. Start when ready.'),
+                  onAvatarTap: () => _help(context),
+                ),
+              ),
+            ])
+          else
+            Heading('Run / Walk', size: 36, serif: true),
+          const SizedBox(height: 10),
           Segmented<String>(
             keyPrefix: 'activity-type', values: const ['run', 'walk'], selected: type, label: activityTitle,
             onChanged: (t) => ref.read(devicePrefsProvider.notifier).setActivity(t),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           SizedBox(
-            height: (MediaQuery.sizeOf(context).height * 0.4).clamp(220.0, 420.0),
+            height: mapHeight,
             child: RouteMap(
-              key: const Key('runwalk-ready-map'), segments: const [], controls: true,
+              key: const Key('runwalk-ready-map'), segments: const [], controls: true, zoomButtons: true,
               here: here == null ? null : (lat: here.lat, lon: here.lon, acc: here.acc), live: true,
+              onExpand: () => push(context, _ReadyMap(position: _position)),
               semanticLabel: here == null ? 'Map, no position yet' : 'Map showing your current position',
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _GpsCard(access: _access, here: here, onAction: _gpsAction),
-          const SizedBox(height: 14),
-          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-          PrimaryButton(intervals ? 'Start ${activityNoun(type)} intervals' : 'Start ${activityNoun(type)}', key: const Key('runwalk-start'), icon: Icons.play_arrow_rounded, busy: _starting, onPressed: () => _start(type)),
+          if (_source.simulated) Padding(padding: const EdgeInsets.only(top: 6), child: StatusLine(Icons.science_outlined, 'Simulated GPS (test build)', tone: Tone.warning)),
           const SizedBox(height: 10),
-          Rule(),
-          ListTile(
-            key: const Key('runwalk-intervals'), contentPadding: EdgeInsets.zero, leading: const Icon(Icons.repeat_rounded),
-            title: Text(intervals ? 'Intervals on' : 'Intervals off'),
-            subtitle: Text(intervals ? '${planSummary(move.plan!)} · ${clockText(move.plan!.totalSeconds)}' : 'Alternate running and walking, in one activity.', style: context.caption),
-            trailing: const Icon(Icons.chevron_right), onTap: () => showIntervalSetup(context),
-          ),
-          ListTile(
-            key: const Key('runwalk-voice'), contentPadding: EdgeInsets.zero, leading: Icon(move.voice ? Icons.volume_up_outlined : Icons.volume_off_outlined),
-            title: const Text('Voice and alerts'), subtitle: Text(voiceSummary(move, prefs.distance), style: context.caption),
-            trailing: const Icon(Icons.chevron_right), onTap: () => showVoiceSheet(context),
-          ),
-          SwitchListTile(
-            key: const Key('runwalk-autopause'), contentPadding: EdgeInsets.zero, value: prefs.autoPause && !intervals,
-            secondary: const Icon(Icons.settings_outlined),
-            title: Text('Auto-pause ${prefs.autoPause && !intervals ? 'On' : 'Off'}'),
-            subtitle: Text(intervals ? 'Off for intervals: walking to recover is not a pause. Your choice for other runs and walks is kept.' : 'Pauses when you stop for a while and resumes when you move on.',
-                style: context.caption),
-            onChanged: intervals ? null : (on) => ref.read(devicePrefsProvider.notifier).setAutoPause(on),
-          ),
-          if (ref.watch(stepsEnabledProvider)) const _StepsNote(),
-          if (_source.simulated) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.science_outlined, 'Simulated GPS (test build)', tone: Tone.warning)),
+          SetupGroup(key: const Key('runwalk-setup'), title: 'Your setup', children: [
+            SetupRow(key: const Key('runwalk-intervals'), glyph: GoGlyph.intervals, label: 'Intervals', value: intervals ? planShort(move.plan!) : 'Off', onTap: () => showIntervalSetup(context)),
+            SetupRow(key: const Key('runwalk-voice'), glyph: GoGlyph.voice, label: 'Voice and alerts', value: voiceValue, divider: true, onTap: () => showVoiceSheet(context)),
+            SetupRow(
+              key: const Key('runwalk-autopause'), glyph: GoGlyph.autoPause, label: 'Auto-pause', divider: true,
+              value: intervals ? 'Not used with intervals' : prefs.autoPause ? 'On' : 'Off', onTap: () => _autoPause(context),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          const StepsSetupRow(),
         ]),
       ),
     );
   }
+
+  /// Auto-pause's own sheet: the switch and what it does. While intervals are set it is not used, and the choice for
+  /// free runs and walks is kept as it is.
+  void _autoPause(BuildContext context) => showGoSheet<void>(context, title: 'Auto-pause', builder: (_) => Consumer(
+        builder: (context, ref, _) {
+          final on = ref.watch(devicePrefsProvider.select((p) => p.autoPause));
+          final intervals = ref.watch(movePrefsProvider.select((m) => m.intervals && m.plan != null));
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+            SwitchListTile(
+              key: const Key('autopause-switch'), contentPadding: EdgeInsets.zero, value: on,
+              title: Text('Auto-pause', style: context.sansStyle(16, weight: FontWeight.w600)),
+              subtitle: Text('Pauses when you stop for a while and resumes when you move on.', style: context.caption),
+              onChanged: (v) => ref.read(devicePrefsProvider.notifier).setAutoPause(v),
+            ),
+            if (intervals)
+              const StatusLine(Icons.info_outline, 'Not used with intervals: walking to recover is not a pause. This choice applies to your free runs and walks.'),
+          ]);
+        },
+      ));
 
   Future<void> _gpsAction() async {
     switch (_access) {
@@ -245,36 +297,33 @@ void _help(BuildContext context) => showCoachHelpSheet(context, title: 'Run / Wa
     'and saves it on this phone first. Pause any time; Finish lets you review before saving. Intervals alternate running '
     'and walking in one activity; with Voice and alerts on, I say each change aloud.'));
 
-/// On Ready, only when steps are on but cannot be counted: why, and the way to fix it.
-class _StepsNote extends ConsumerStatefulWidget {
-  const _StepsNote();
-  @override
-  ConsumerState<_StepsNote> createState() => _StepsNoteState();
+/// "Run 1 min · Walk 90 s · × 8": the setup row's summary.
+String planShort(IntervalPlan p) {
+  String d(int s) => s % 60 == 0 ? '${s ~/ 60} min' : s < 120 ? '$s s' : phaseClock(s);
+  return 'Run ${d(p.run)} · Walk ${d(p.walk)} · × ${p.reps}';
 }
 
-class _StepsNoteState extends ConsumerState<_StepsNote> {
-  late Future<StepAccess> _access = ref.read(stepSourceProvider).access();
+/// Ready's map, larger, with the same position: Expand map. Opening it starts nothing.
+class _ReadyMap extends StatelessWidget {
+  const _ReadyMap({required this.position});
+  final ValueListenable<Reading?> position;
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<StepAccess>(
-        future: _access,
-        builder: (context, snap) => switch (snap.data) {
-          StepAccess.notAllowed => Pressable(
-              onTap: () async {
-                await ref.read(stepSourceProvider).request();
-                setState(() => _access = ref.read(stepSourceProvider).access());
-              },
-              semanticLabel: 'Steps are not counted yet. Allow motion access.',
-              child: const StatusLine(Icons.directions_walk, 'Steps are not counted yet. Tap to allow motion access.', tone: Tone.warning),
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Map')),
+        body: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 12),
+            child: ValueListenableBuilder<Reading?>(
+              valueListenable: position,
+              builder: (context, here, _) => RouteMap(
+                key: const Key('runwalk-ready-map-full'), segments: const [], controls: true, zoomButtons: true, live: true,
+                here: here == null ? null : (lat: here.lat, lon: here.lon, acc: here.acc),
+                semanticLabel: here == null ? 'Map, no position yet' : 'Map showing your current position',
+              ),
             ),
-          StepAccess.blocked => Pressable(
-              onTap: () => ref.read(stepSourceProvider).openSettings(),
-              semanticLabel: 'Steps are not counted: motion access is off. Open Settings.',
-              child: const StatusLine(Icons.directions_walk, 'Steps are not counted: motion access is off. Tap to open Settings.', tone: Tone.warning),
-            ),
-          StepAccess.unavailable => const StatusLine(Icons.directions_walk, 'This phone cannot count steps. Everything else is recorded.'),
-          _ => ref.read(stepSourceProvider).simulated ? const StatusLine(Icons.science_outlined, 'Simulated steps (test build)', tone: Tone.warning) : const SizedBox.shrink(),
-        },
+          ),
+        ),
       );
 }
 
@@ -298,20 +347,23 @@ class _GpsCard extends StatelessWidget {
       GpsAccess.allowed => (Icons.location_on, acc! <= 25 ? 'GPS ready' : 'GPS signal weak',
           '${acc <= 10 ? 'Good signal' : acc <= 25 ? 'Fair signal' : 'Weak signal'} · ±${acc.round()} m accuracy', null, acc <= 25 ? Tone.success : Tone.warning),
     };
+    // One compact line ("GPS ready · ±5 m"), the reason under it only when something is needed.
+    final ready = access == GpsAccess.allowed && acc != null;
     final card = Container(
       key: const Key('runwalk-gps'),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      constraints: const BoxConstraints(minHeight: Targets.minimum),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(Radii.tile), border: Border.all(color: context.c.divider)),
       child: Row(children: [
-        Icon(icon, color: tone == Tone.success ? context.c.accent : tone == Tone.warning ? context.c.warning : context.c.secondary, size: 28),
+        Icon(icon, color: tone == Tone.success ? context.c.accent : tone == Tone.warning ? context.c.warning : context.c.secondary, size: 22),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: context.sansStyle(16.5, weight: FontWeight.w600)),
-            Text(detail, style: context.caption),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text(ready ? '$title · ±${acc.round()} m' : title, style: context.sansStyle(16, weight: FontWeight.w600)),
+            if (!ready) Text(detail, style: context.caption),
           ]),
         ),
-        if (action != null) ...[const SizedBox(width: 8), Icon(Icons.chevron_right, color: context.c.secondary)],
+        if (action != null) ...[const SizedBox(width: 8), GoIcon(GoGlyph.chevronRight, size: 20, color: context.c.secondary)],
       ]),
     );
     return action == null
@@ -384,7 +436,6 @@ class _RecordingState extends ConsumerState<_Recording> {
     final map = RouteMap(
       key: Key(_mapView ? 'runwalk-map-full' : 'runwalk-map-preview'), segments: a.segments, here: here, live: true, controls: true, zoomButtons: _mapView,
       onExpand: _mapView ? null : () => setState(() => _mapView = true),
-      overlayPadding: EdgeInsets.only(bottom: _mapView ? 0 : 44),
       semanticLabel: 'Route so far${distance == null ? '' : ', ${unit.distance(distance)}'}',
     );
     final gps = _GpsChip(rec: rec);
@@ -478,7 +529,7 @@ class _RecordingState extends ConsumerState<_Recording> {
                       for (final n in notes) Padding(padding: const EdgeInsets.only(bottom: 8), child: n),
                       SizedBox(
                         height: (box.maxHeight * 0.42).clamp(200.0, 360.0).toDouble(),
-                        child: Stack(children: [Positioned.fill(child: map), Positioned(left: 10, bottom: 10, child: gps)]),
+                        child: Stack(children: [Positioned.fill(child: map), Positioned(left: 10, top: 10, child: gps)]),
                       ),
                     ]),
                   ),

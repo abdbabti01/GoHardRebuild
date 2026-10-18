@@ -8,7 +8,6 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart' show LocalSaveFailure, SyncEngine;
-import '../activity/move_widgets.dart' show StepsSettings;
 import '../me/account_repository.dart';
 import 'nutrition_surface.dart' show formatKcal;
 import 'water.dart';
@@ -416,11 +415,6 @@ class _TrackingSheet extends ConsumerWidget {
       toggle('track-carbs', 'Carbs', 'The carbohydrate total in Eat', d.carbs, (v) => raw.copy(carbs: v)),
       toggle('track-fat', 'Fat', 'The fat total in Eat', d.fat, (v) => raw.copy(fat: v)),
       if (ref.watch(displaySyncProvider)) Padding(padding: const EdgeInsets.only(top: 4), child: Text('These choices follow your account to your other phones.', style: context.caption)),
-      const SizedBox(height: 10),
-      const Rule(),
-      const SizedBox(height: 4),
-      // A choice for this phone, unlike the ones above: steps come from its own motion hardware.
-      const StepsSettings(),
     ]);
   }
 }

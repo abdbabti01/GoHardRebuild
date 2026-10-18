@@ -65,16 +65,17 @@ void main() {
     await pumpApp(tester, await _overrides(tester), home: const RunWalkScreen(), settle: false);
     await tester.pump(const Duration(milliseconds: 1500));
     expect(find.text('Run / Walk'), findsOneWidget);
-    expect(find.text('GPS ready'), findsOneWidget);
-    expect(find.text('Good signal · ±5 m accuracy'), findsOneWidget);
+    expect(find.text('GPS ready · ±5 m'), findsOneWidget, reason: 'the real accuracy, never a fixed "ready"');
     expect(find.text('Start run'), findsOneWidget);
-    // The page scrolls from anywhere but the map, which keeps its own gestures.
-    await tester.dragUntilVisible(find.text('Auto-pause Off'), find.byKey(const Key('runwalk-gps')), const Offset(0, -200));
-    expect(find.text('Auto-pause Off'), findsOneWidget);
     expect(find.byKey(const Key('map-fit')), findsNothing, reason: 'no route before recording, so nothing to fit');
-    expect(find.text('Intervals off'), findsOneWidget, reason: 'intervals are optional; one tap still starts a free run');
-    expect(find.text('Voice off'), findsOneWidget, reason: 'the coach speaks only once the person turns voice on');
     expect(find.text('Simulated GPS (test build)'), findsOneWidget, reason: 'simulated location is labelled');
+    // The page scrolls from anywhere but the map, which keeps its own gestures; Start stays in its bar.
+    await tester.dragUntilVisible(find.byKey(const Key('runwalk-steps-row')), find.byKey(const Key('runwalk-gps')), const Offset(0, -200));
+    for (final (row, state) in [('runwalk-intervals', 'Off'), ('runwalk-voice', 'Off'), ('runwalk-autopause', 'Off')]) {
+      expect(find.descendant(of: find.byKey(Key(row)), matching: find.text(state)), findsOneWidget,
+          reason: '$row: intervals optional (one tap still starts a free run), voice only once turned on, auto-pause off');
+    }
+    expect(find.text('Steps off'), findsOneWidget);
     await tester.dragUntilVisible(find.byKey(const Key('activity-type-walk')), find.byKey(const Key('runwalk-gps')), const Offset(0, 200));
     await tester.tap(find.byKey(const Key('activity-type-walk')));
     await tester.pump();
@@ -94,6 +95,8 @@ void main() {
     expect(find.byKey(const Key('map-zoom-in')), findsNothing, reason: 'the preview stays uncluttered');
     expect(find.byKey(const Key('map-expand')), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const Key('map-expand')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('map-expand')));
     await tester.pump();
     expect(find.byKey(const Key('runwalk-map-full')), findsOneWidget);

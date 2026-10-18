@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/go_icon.dart';
 import '../../core/appearance.dart';
 import '../../core/compatibility.dart';
 import '../../core/config.dart';
@@ -11,6 +12,8 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../activity/move_prefs.dart' show stepsEnabledProvider;
+import '../activity/steps_ui.dart' show showStepsSheet;
 import '../activity/activity_screens.dart';
 import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
@@ -176,6 +179,17 @@ class MeScreen extends ConsumerWidget {
               value: goalsSummary(profile, ref.watch(volumeUnitProvider), water: ref.watch(nutritionDisplayProvider).water),
               onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
             ),
+        ]),
+
+        // Steps' one set of controls, the same sheet Today's tile and Run / Walk open (docs/RUN_WALK.md › Steps).
+        const _Group('Activity & tracking'),
+        GroupCard(children: [
+          GroupRow(
+            key: const Key('me-steps'), leading: const GoIcon(GoGlyph.steps), title: 'Steps',
+            subtitle: ref.watch(stepsEnabledProvider) ? 'Counted with this phone' : 'Off · counted with your phone when on',
+            value: ref.watch(stepsEnabledProvider) ? 'On' : 'Off',
+            onTap: () => showStepsSheet(context),
+          ),
         ]),
 
         const _Group('Preferences'),

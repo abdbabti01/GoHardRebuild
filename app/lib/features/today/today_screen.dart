@@ -13,8 +13,10 @@ import '../../data/models.dart';
 import '../../core/device_prefs.dart';
 import '../activity/activity_detail.dart';
 import '../activity/activity_history.dart';
-import '../activity/move_prefs.dart' show stepsEnabledProvider;
-import '../activity/move_widgets.dart' show StepsTodayRow;
+import '../../core/go_icon.dart';
+import '../activity/move_prefs.dart' show stepGoalProvider, stepsEnabledProvider, stepsOnTodayProvider;
+import '../activity/steps.dart';
+import '../activity/steps_ui.dart';
 import '../activity/recorder.dart';
 import '../activity/run_walk_screens.dart';
 import '../coach/coach_bubble.dart';
@@ -92,10 +94,8 @@ class TodayScreen extends ConsumerWidget {
                   ]),
                 ),
                 gap,
-                // The compact tile under the panel theme and History beside it on the scene.
-                _RunCard(today: day, finishedToday: finishedRuns),
-                // Optional, near Run / Walk: today's steps from the phone's own history, once turned on.
-                if (ref.watch(stepsEnabledProvider)) ...[const SizedBox(height: 8), StepsTodayRow(onOpenSettings: () => showTrackingSheet(context))],
+                // Run / Walk and, beside it, Steps (shown before it is turned on: that is how it is found); History under them.
+                _RunCard(today: day, finishedToday: finishedRuns, steps: ref.watch(stepsOnTodayProvider)),
                 // What was actually recorded today. Absent when there is nothing to show.
                 if (snapshot != null && (snapshot.recordedToday.isNotEmpty || finishedRuns.length > 1)) ...[gap, PanelTheme(child: PanelSurface(child: _ActivitySection(snapshot, finishedRuns)))],
               ]),
@@ -137,6 +137,10 @@ class _Header extends ConsumerStatefulWidget {
 class _HeaderState extends ConsumerState<_Header> {
   int _ack = 0;
 
+  /// Whether the guide introduces Steps instead of today's line: once (Coaching hints govern it), while steps are off and
+  /// their tile is shown, decided the first time Today is really in view and kept for this header's life.
+  bool? _stepsIntro;
+
   /// The guide's portrait at this width: smaller on narrow phones, never gone (it is Today's way into Ask GoHard).
   /// Large text makes the bubble taller, not the guide absent.
   static Size _slot(BuildContext context) {
@@ -169,6 +173,14 @@ class _HeaderState extends ConsumerState<_Header> {
     final busy = (ref.watch(dailySnapshotProvider)?.inProgress.isNotEmpty ?? false) || (ref.watch(runsProvider).value ?? const []).any((r) => r.value.isOpen);
     final greeting = _greeting(context, ref, justSaved: justSaved);
     const ask = CoachContext(label: 'Your training');
+    final inView = ref.watch(shellProvider.select((s) => s.tab == 0)) && (ModalRoute.isCurrentOf(context) ?? true);
+    if (_stepsIntro == null && slot != null && inView && owner.isNotEmpty && !busy && !justSaved) {
+      // Not on the account's first day (that greeting is about the plan): from a day after an earlier greeting.
+      final returning = coach.greeted != null && coach.greeted!.startsWith('$owner|') && coach.greeted != CoachPrefs.dayKey(owner, day);
+      _stepsIntro = returning && !ref.read(stepsEnabledProvider) && ref.read(stepsOnTodayProvider) && coach.mayIntroduce(owner, 'today.steps');
+      if (_stepsIntro!) WidgetsBinding.instance.addPostFrameCallback((_) => prefs.markSeen(owner, 'today.steps'));
+    }
+    final intro = _stepsIntro == true && !ref.watch(stepsEnabledProvider);
     return Theme(
       key: const Key('today-header'),
       // The header's text and scrim follow the sky (see [_skyTheme]).
@@ -185,7 +197,10 @@ class _HeaderState extends ConsumerState<_Header> {
               else
                 CoachSpeech(
                   key: const Key('today-coach'),
-                  say: CoachSay(greeting.line ?? 'Need a hand with today?', title: greeting.title, ask: ask),
+                  say: intro
+                      ? CoachSay('Want to track your daily movement? Enable steps here.', title: greeting.title,
+                          guide: (label: 'Enable steps', key: const Key('today-coach-steps'), onPressed: () => showStepsSheet(context)))
+                      : CoachSay(greeting.line ?? 'Need a hand with today?', title: greeting.title, ask: ask),
                   portrait: slot, frame: RigFrame.edge, bleed: context.inset,
                   greet: !busy && coach.mayGreet(owner, day), ack: _ack,
                   onGreeted: () => prefs.markGreeted(owner, day), // after the frame, so not through ref
@@ -719,9 +734,12 @@ class _Cells extends StatelessWidget {
 /// also after the app was closed. Distance and time are the recorder's or the saved ones: there is no target and no
 /// percentage. The photograph is decoration, not a map.
 class _RunCard extends ConsumerStatefulWidget {
-  const _RunCard({required this.today, required this.finishedToday});
+  const _RunCard({required this.today, required this.finishedToday, this.steps = false});
   final String today;
   final List<Run> finishedToday;
+
+  /// The Steps tile sits beside this one; History then goes under the two.
+  final bool steps;
   @override
   ConsumerState<_RunCard> createState() => _RunCardState();
 }
@@ -797,7 +815,7 @@ class _RunCardState extends ConsumerState<_RunCard> {
           ],
           // The near shoe and the far leg, at the tile's trailing side.
           photo: _Photos.run, photoAlignment: const Alignment(0.6, 0),
-          action: PrimaryButton(open == null ? 'Start' : 'Resume', key: const Key('today-run'), icon: Icons.play_arrow_rounded, expand: false, onPressed: () => openRunWalk(app, ref)),
+          action: PrimaryButton(open == null ? 'Start' : 'Resume', key: const Key('today-run'), leading: const GoIcon(GoGlyph.play, size: 20), expand: false, onPressed: () => openRunWalk(app, ref)),
         ),
       ),
     );
@@ -808,11 +826,106 @@ class _RunCardState extends ConsumerState<_RunCard> {
             background: context.c.scrim),
       ),
     );
+    final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
+    if (widget.steps) {
+      // Side by side at ordinary sizes, one above the other with large text or on a narrow phone.
+      final steps = const _StepsCard();
+      final pair = stacked
+          ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [tile, const SizedBox(height: 10), steps])
+          : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: tile), const SizedBox(width: 10), Expanded(child: steps)]);
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [pair, const SizedBox(height: 6), Align(alignment: Alignment.centerLeft, child: history)]);
+    }
     // Large text or a narrow phone: the tile takes the width and History goes under it.
-    if (MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350) {
+    if (stacked) {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [tile, const SizedBox(height: 8), Align(alignment: Alignment.centerLeft, child: history)]);
     }
     return Row(children: [Expanded(flex: 64, child: tile), Expanded(flex: 36, child: Center(child: history))]);
+  }
+}
+
+/// Steps beside Run / Walk (docs/RUN_WALK.md › Steps › Where it is). Before steps are on it offers them ("Track your
+/// steps", Enable); after, the day's real count, its source and when it was read, a goal bar only when a goal is set,
+/// and a distinct line for loading, not allowed, unavailable, failed and no data. Tapping it opens the Steps sheet.
+/// Opening Today asks the phone for nothing.
+class _StepsCard extends ConsumerStatefulWidget {
+  const _StepsCard();
+  @override
+  ConsumerState<_StepsCard> createState() => _StepsCardState();
+}
+
+class _StepsCardState extends ConsumerState<_StepsCard> with WidgetsBindingObserver {
+  /// Fresh while shown and on; nothing is read while it is not.
+  Timer? _fresh;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _fresh?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed && ref.read(stepsEnabledProvider)) ref.read(dailyStepsProvider.notifier).refresh();
+  }
+
+  static String _at(DateTime t) => '${t.hour % 12 == 0 ? 12 : t.hour % 12}:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'AM' : 'PM'}';
+
+  @override
+  Widget build(BuildContext context) {
+    final on = ref.watch(stepsEnabledProvider);
+    if (on) {
+      _fresh ??= Timer.periodic(const Duration(minutes: 5), (_) => ref.read(dailyStepsProvider.notifier).refresh());
+    } else {
+      _fresh?.cancel();
+      _fresh = null;
+    }
+    final d = on ? ref.watch(dailyStepsProvider) : const DailyOff();
+    final goal = ref.watch(stepGoalProvider);
+    final src = ref.read(stepSourceProvider);
+    final app = appContext(context);
+    Widget button(String label, Key key, VoidCallback onPressed) => PrimaryButton(label, key: key, expand: false, onPressed: onPressed);
+    // (headline, detail, action): the headline is a real count only when there is one.
+    final (String head, String detail, Widget? action) = switch (d) {
+      DailyOff() => ('Track your steps', 'Count with your phone.', button('Enable', const Key('today-steps-enable'), () => enableSteps(ref))),
+      DailyLoading() => ('…', 'Reading steps', null),
+      DailyValue(:final steps, :final source, at: final t, :final recorded) => recorded
+          ? (formatSteps(steps), '${goal == null ? '' : 'of ${formatSteps(goal)} · '}$source · ${_at(t)}', null)
+          : ('—', 'No steps recorded today ($source)', null),
+      DailyNotAllowed(:final blocked) => ('—', blocked ? 'Access is off. Allow it in Settings.' : 'Allow access to see today\'s steps.',
+          blocked ? button('Settings', const Key('today-steps-settings'), () => src.openSettings()) : button('Allow', const Key('today-steps-allow'), () => enableSteps(ref))),
+      DailyUnavailable(:final why) => ('—', why, null),
+      DailyFailed() => ('—', 'Could not read steps just now.', button('Try again', const Key('today-steps-retry'), () => ref.read(dailyStepsProvider.notifier).refresh())),
+    };
+    final count = d is DailyValue && d.recorded;
+    final progress = count && goal != null ? (d.steps / goal).clamp(0.0, 1.0) : null;
+    final said = d is DailyOff ? 'Steps. Track your steps: count with your phone.' : 'Steps today: ${head == '—' || head == '…' ? 'not known' : head}. $detail';
+    final tile = PanelTheme(
+      child: Builder(
+        builder: (context) => _Module(
+          key: const Key('today-steps'), label: 'Steps',
+          head: [
+            Padding(padding: const EdgeInsets.only(top: 6), child: GoIcon(GoGlyph.steps, size: 28, color: context.c.accent)),
+            const SizedBox(height: 4),
+            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+                child: Text(head, key: const Key('today-steps-value'), style: count ? context.pageTitleStyle(30) : context.pageTitleStyle(d is DailyOff ? 22 : 30))),
+          ],
+          body: [
+            Text(detail, style: context.sansStyle(14.5, color: context.c.secondary)),
+            if (progress != null) Padding(padding: const EdgeInsets.only(top: 6), child: ProgressRail(progress, label: 'Steps goal')),
+            if (src.simulated && on) Text('Simulated steps (test build)', style: context.caption),
+          ],
+          action: action ?? const SizedBox.shrink(),
+        ),
+      ),
+    );
+    return Pressable(onTap: () => showStepsSheet(app), semanticLabel: '$said Opens Steps.', child: tile);
   }
 }
 

@@ -84,14 +84,16 @@ class TtsVoiceOut implements VoiceOut {
   }
 
   @override
-  Future<List<VoiceOption>> voices() async {
-    final raw = await (await _ready()).getVoices;
-    return [
-      for (final v in (raw as List? ?? const []))
-        if (v is Map && v['name'] is String && v['locale'] is String) (name: v['name'] as String, locale: v['locale'] as String),
-    ];
-  }
+  Future<List<VoiceOption>> voices() async => offlineVoices(await (await _ready()).getVoices);
 }
+
+/// The installed voices that speak without a connection. Android marks a voice that needs the network
+/// (`network_required: "1"`); those are never offered, so an update is never silent for want of signal. iOS voices are
+/// on the phone and carry no such flag.
+List<VoiceOption> offlineVoices(Object? raw) => [
+      for (final v in (raw as List? ?? const []))
+        if (v is Map && v['name'] is String && v['locale'] is String && '${v['network_required']}' != '1') (name: v['name'] as String, locale: v['locale'] as String),
+    ];
 
 final voiceOutProvider = Provider<VoiceOut>((ref) => TtsVoiceOut());
 
@@ -105,6 +107,9 @@ class Announcer extends Notifier<Cue?> {
   DateTime? _queuedAt;
   Timer? _hide;
   int _epoch = 0;
+
+  /// The offline-capable voices, read once.
+  List<VoiceOption>? _offline;
 
   /// How long words stay on screen.
   static const showFor = Duration(seconds: 10);
@@ -174,7 +179,16 @@ class Announcer extends Notifier<Cue?> {
     final epoch = ++_epoch;
     _speaking = c;
     final p = ref.read(movePrefsProvider);
-    final voice = p.voiceName == null || p.voiceLocale == null ? null : (name: p.voiceName!, locale: p.voiceLocale!);
+    var voice = p.voiceName == null || p.voiceLocale == null ? null : (name: p.voiceName!, locale: p.voiceLocale!);
+    // Only a voice that speaks offline; one chosen earlier that is gone or needs a connection gives way to the phone's own.
+    if (voice != null) {
+      try {
+        _offline ??= await _voice.voices();
+      } on Object {
+        _offline = const [];
+      }
+      if (!_offline!.contains(voice)) voice = null;
+    }
     try {
       await _voice.speak(c.spoken ?? c.text, voice: voice, pitch: coachPitch(ref.read(coachPrefsProvider).guide));
     } on Object {

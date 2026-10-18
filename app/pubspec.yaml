@@ -15,6 +15,7 @@ dependencies:
   flutter_local_notifications: ^22.3.1
   flutter_riverpod: ^3.4.3
   flutter_secure_storage: ^11.2.0
+  flutter_svg: ^2.3.0
   flutter_timezone: ^5.1.1
   flutter_tts: ^4.2.5
   geolocator: ^14.1.1
@@ -43,6 +44,7 @@ flutter:
     - assets/data/
     - assets/scenes/
     - assets/coach/
+    - assets/icons/
   fonts:
     - family: Inter
       fonts:

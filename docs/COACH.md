@@ -348,13 +348,19 @@ logged keeps "Log a meal". Show coaching hints again brings them back; Coaching 
 hint, the shortcut or the help never logs food: choosing a food opens its amount page, and only its own confirm logs
 it; old journal entries are never rewritten. Food names and values are never read aloud.
 
-#### Run / Walk (18 Oct 2026)
+#### Run / Walk and Steps (18 Oct 2026; corrected the same day)
 
-Ready: "Want to alternate running and walking? Set up intervals below Start." (or "Intervals are set. Start when
-you're ready."); words only, so Start stays in view. While recording, the coach speaks through the **coach line**
-under the dial (docs/RUN_WALK.md › Voice and alerts): the guide's small portrait and the words of the last
-announcement (phase changes, updates), in the page, never over the map or the controls; without the portrait when
-Show coach on Train and Eat is off. Spoken aloud only with Voice updates on, in a voice on the phone (no AI, no
+Ready: "Choose your setup. Start when ready." (or "Intervals are set. Start when you're ready."); words only, so the
+setup and Start stay in view. While recording, the coach speaks through the **coach line** under the dial
+(docs/RUN_WALK.md › Voice and alerts): Leon or Leona's animated bust with the bubble from the mouth (the same rig and
+bubble as Today, compact), the words of the last announcement, a nod at each new one; in the page, never over the map
+or the controls; the words alone when Show coach on Train and Eat is off.
+
+Today introduces Steps once (`today.steps`, Coaching hints govern it): "Want to track your daily movement? Enable
+steps here." with **Enable steps**, which opens the Steps sheet. Only while steps are off and their tile is shown, not
+on the account's first day (that greeting is about the plan: an earlier day's greeting must be on record), decided the
+first time Today is really in view; it reads no health data and asks the AI nothing. With the coach off, the tile's
+own Enable is there. Spoken aloud only with Voice updates on, in a voice on the phone (no AI, no
 network), Leon a little lower and Leona a little higher. After a save that sets a personal best, the Saved screen's
 coach says it once ("Your longest walk so far, 4.00 km."), from the save itself, never from a sync or a restart.
 

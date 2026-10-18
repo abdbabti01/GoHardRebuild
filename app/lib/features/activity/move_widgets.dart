@@ -10,7 +10,8 @@ import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
-import '../coach/coach_avatar.dart';
+import '../coach/coach_bubble.dart' show CoachSay, CoachSpeech;
+import '../coach/coach_rig.dart' show RigFrame;
 import '../coach/coach_prefs.dart';
 import 'activity_detail.dart';
 import 'announcer.dart';
@@ -18,7 +19,6 @@ import 'intervals.dart';
 import 'move_prefs.dart';
 import 'recorder.dart';
 import 'records.dart';
-import 'steps.dart';
 
 /// Run / Walk pieces shared by Ready, Recording, History, Today and Customize tracking: interval setup, voice and
 /// alerts, the phase bar, the coach's line during a recording, personal bests and steps.
@@ -208,7 +208,12 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
             return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               DropdownButtonFormField<VoiceOption?>(
                 key: const Key('voice-choice'), isExpanded: true, initialValue: chosen,
-                decoration: InputDecoration(labelText: 'Voice', helperText: missing ? 'The voice chosen before is not installed now: the phone\'s own voice is used.' : null, helperMaxLines: 2),
+                decoration: InputDecoration(labelText: 'Voice', helperText: missing
+                        ? 'The voice chosen before is not installed or needs a connection: the phone\'s own voice is used.'
+                        : snap.hasData && all.isEmpty
+                            ? 'No voice for this language that works offline is installed: the phone\'s own voice is used.'
+                            : 'Only voices that work without a connection are listed.',
+                    helperMaxLines: 3),
                 items: [
                   const DropdownMenuItem<VoiceOption?>(value: null, child: Text("The phone's own voice")),
                   for (final v in all.take(40)) DropdownMenuItem<VoiceOption?>(value: v, child: Text('${v.name} (${v.locale})', overflow: TextOverflow.ellipsis)),
@@ -323,6 +328,23 @@ class CoachLine extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cue = ref.watch(announcerProvider);
     final face = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
+    if (cue != null && face) {
+      // The real guide speaking: Leon or Leona's bust (the same rig as Today) with the bubble from the mouth, compact,
+      // in the page. One widget for the whole recording, so a new message changes the words and the guide nods; it
+      // never re-enters. Reduce Motion is the rig's own. Read once by screen readers as each message arrives.
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Semantics(
+          liveRegion: true, container: true, label: cue.text,
+          child: ExcludeSemantics(
+            child: CoachSpeech(
+              key: const Key('runwalk-coach-line'), say: CoachSay(cue.text), portrait: const Size(58, 72), frame: RigFrame.edge, bleed: context.inset,
+              ack: cue.key.hashCode,
+            ),
+          ),
+        ),
+      );
+    }
     final child = cue == null
         ? const SizedBox(key: ValueKey('none'), width: double.infinity)
         : Padding(
@@ -334,7 +356,6 @@ class CoachLine extends ConsumerWidget {
               label: cue.text,
               child: ExcludeSemantics(
                 child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                  if (face) ...[const CoachAvatar(size: 38), const SizedBox(width: 8)],
                   Expanded(
                     child: Container(
                       key: const Key('runwalk-coach-line'),
@@ -424,144 +445,4 @@ class PersonalBestsScreen extends StatelessWidget {
   final List<String> types;
   @override
   Widget build(BuildContext context) => AppPage(title: 'Personal bests', children: [PersonalBestsCard(types: types)]);
-}
-
-// ---------------------------------------------------------------------------- steps
-
-/// Turning steps on asks for motion access (and, on Android, Health Connect's step read for the daily total). Run /
-/// Walk works whatever the answer; the screens say what was not allowed.
-Future<void> enableSteps(WidgetRef ref) async {
-  final owner = ref.read(ownerProvider);
-  if (owner == null) return;
-  final src = ref.read(stepSourceProvider);
-  ref.read(movePrefsProvider.notifier).setSteps(owner, true);
-  await src.request();
-  await src.dailyRequest();
-  await ref.read(dailyStepsProvider.notifier).refresh();
-}
-
-/// Steps in Customize tracking: the switch, the optional goal, and what stays where.
-class StepsSettings extends ConsumerStatefulWidget {
-  const StepsSettings({super.key});
-  @override
-  ConsumerState<StepsSettings> createState() => _StepsSettingsState();
-}
-
-class _StepsSettingsState extends ConsumerState<StepsSettings> {
-  late final TextEditingController _goal;
-
-  @override
-  void initState() {
-    super.initState();
-    _goal = TextEditingController(text: ref.read(stepGoalProvider)?.toString() ?? '');
-  }
-
-  @override
-  void dispose() {
-    _goal.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final on = ref.watch(stepsEnabledProvider);
-    final owner = ref.watch(ownerProvider);
-    final src = ref.watch(stepSourceProvider);
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-      SwitchListTile(
-        key: const Key('track-steps'), contentPadding: EdgeInsets.zero, value: on,
-        title: Text('Steps', style: context.sansStyle(16, weight: FontWeight.w600)),
-        subtitle: Text('Counted by this phone during a run or walk, and today\'s total on Today. Walking without your phone is not counted.', style: context.caption),
-        onChanged: owner == null ? null : (v) => v ? enableSteps(ref) : ref.read(movePrefsProvider.notifier).setSteps(owner, false),
-      ),
-      if (on) ...[
-        TextField(
-          key: const Key('steps-goal'), controller: _goal, keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Daily steps goal (optional)', helperText: 'Your own number. Leave it blank for none.'),
-          onChanged: (t) => ref.read(movePrefsProvider.notifier).setStepGoal(owner!, int.tryParse(t.trim().replaceAll(',', ''))),
-        ),
-        const SizedBox(height: 8),
-        Text("Today's total is read from ${src.dailySource} and stays on this phone: it is never sent to your account. "
-            'The steps of a run or walk are saved with it and sync with your account.', style: context.caption),
-      ],
-    ]);
-  }
-}
-
-/// Today's steps, near Run / Walk, when turned on: one compact row with its source and when it was read. Loading,
-/// not allowed, unavailable and a real zero each read differently.
-class StepsTodayRow extends ConsumerStatefulWidget {
-  const StepsTodayRow({super.key, required this.onOpenSettings});
-  final VoidCallback onOpenSettings;
-  @override
-  ConsumerState<StepsTodayRow> createState() => _StepsTodayRowState();
-}
-
-class _StepsTodayRowState extends ConsumerState<StepsTodayRow> with WidgetsBindingObserver {
-  /// Fresh while shown; nothing is read while it is not.
-  late final Timer _fresh;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _fresh = Timer.periodic(const Duration(minutes: 5), (_) => ref.read(dailyStepsProvider.notifier).refresh());
-  }
-
-  @override
-  void dispose() {
-    _fresh.cancel();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState s) {
-    if (s == AppLifecycleState.resumed) ref.read(dailyStepsProvider.notifier).refresh();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final d = ref.watch(dailyStepsProvider);
-    final goal = ref.watch(stepGoalProvider);
-    final src = ref.read(stepSourceProvider);
-    String at(DateTime t) => '${t.hour % 12 == 0 ? 12 : t.hour % 12}:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'AM' : 'PM'}';
-    final (String value, String detail, VoidCallback? tap) = switch (d) {
-      DailyOff() => ('', '', null),
-      DailyLoading() => ('…', 'Reading steps', null),
-      DailyUnavailable(:final why) => ('—', why, widget.onOpenSettings),
-      DailyNotAllowed(:final blocked) => ('—', blocked ? 'Motion access is off. Allow it in Settings.' : 'Allow motion access to see today\'s steps.',
-          blocked ? () => src.openSettings() : () => enableSteps(ref)),
-      DailyFailed() => ('—', 'Could not read steps just now', () => ref.read(dailyStepsProvider.notifier).refresh()),
-      DailyValue(:final steps, :final source, at: final t, :final recorded) => recorded
-          ? (formatSteps(steps), '${goal == null ? '' : 'of ${formatSteps(goal)} · '}$source · ${at(t)}', widget.onOpenSettings)
-          : ('—', 'No steps recorded on this phone today ($source)', widget.onOpenSettings),
-    };
-    if (d is DailyOff) return const SizedBox.shrink();
-    final panel = GoColors.panelOf(context.c);
-    final progress = d is DailyValue && d.recorded && goal != null ? (d.steps / goal).clamp(0.0, 1.0) : null;
-    final row = Container(
-      key: const Key('today-steps'),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: panel.page, borderRadius: BorderRadius.circular(Radii.tile)),
-      child: PanelTheme(
-        child: Builder(
-          builder: (context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-            Row(children: [
-              Icon(Icons.directions_walk, color: context.c.accent),
-              const SizedBox(width: 10),
-              Text('Steps today', style: context.sansStyle(15.5, weight: FontWeight.w600)),
-              const SizedBox(width: 10),
-              Expanded(child: Text(value, key: const Key('today-steps-value'), textAlign: TextAlign.end, style: context.titleStyle(20))),
-            ]),
-            Text(detail, style: context.caption),
-            if (progress != null) Padding(padding: const EdgeInsets.only(top: 6), child: ProgressRail(progress, label: 'Steps goal')),
-            if (src.simulated) Text('Simulated steps (test build)', style: context.caption),
-          ]),
-        ),
-      ),
-    );
-    final said = 'Steps today: ${value == '—' || value == '…' ? 'not known' : value}. $detail';
-    return tap == null ? Semantics(container: true, label: said, child: ExcludeSemantics(child: row)) : Pressable(onTap: tap, semanticLabel: said, child: row);
-  }
 }

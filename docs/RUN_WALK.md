@@ -172,10 +172,25 @@ pace min/km or min/mi, speed km/h or mph, elevation m or ft.
 Measured by the phone's motion hardware only: never estimated from GPS distance, pace or a stride length, and a
 pedometer distance never replaces the GPS distance or its provenance.
 
-**Turning on.** Customize tracking › **Steps** (off by default, per account, on this phone). Turning it on asks for
-Motion & Fitness (iOS) or Physical activity (Android, `ACTIVITY_RECOGNITION`), and on Android Health Connect's
-step read (`android.permission.health.READ_STEPS`) for the daily total. Run / Walk records normally whatever the
-answers; Ready says when steps cannot be counted and offers the fix (allow, or open Settings).
+**Where it is (18 Oct 2026, from GoHard_Steps_RunWalk_UX_Corrections).** One set of controls, the Steps sheet
+(`steps_ui.dart` `showStepsSheet`: Count steps, the access state and its fix, the optional goal, **Show Steps on
+Today**, what stays where), opened from three places backed by the same preferences: Today's **Steps** tile beside
+Run / Walk, Me › **Activity & tracking › Steps**, and the **Steps** row on Run / Walk Ready. It is no longer in
+Nutrition's Customize tracking. Choices made before the move (steps on, the goal) are kept: the store is the same.
+
+**Turning on.** Off by default, per account, on this phone. **Enable** (Today's tile, Ready's row, the sheet's switch,
+or the Today coach's one-time "Enable steps") asks for Motion & Fitness (iOS) or Physical activity (Android,
+`ACTIVITY_RECOGNITION`), and on Android Health Connect's step read (`android.permission.health.READ_STEPS`) for the
+daily total. Opening Today, Ready, Me or the sheet asks for nothing. After a refusal the fix is offered (Allow while
+the phone will still ask; Settings once it will not), never a repeated prompt. Run / Walk records normally whatever the
+answers.
+
+**Today's tile.** Shown before steps are on, unless the person hides it (Show Steps on Today: display only, counting
+and access unchanged): "Track your steps / Count with your phone." and Enable, no number and no bar. Once on: the
+real count, the source and the time it was read; the goal bar only with a goal; distinct words for loading, access
+not allowed (Allow), access off (Settings), not available, could not be read (Try again) and no step data today. Beside
+the Run / Walk tile at ordinary sizes, stacked under it at large text or below 350 px; Run / Walk History under the
+two. Tapping it opens the sheet.
 
 **During a Run / Walk** (`StepTally`). Readings of the cumulative counter (Android `TYPE_STEP_COUNTER`, steps since
 the phone started, each with the time of the steps even when delivered late in a batch; iOS `CMPedometer.startUpdates`,
@@ -216,7 +231,7 @@ and Sideloadly (`NSMotionUsageDescription`).
 
 ## Intervals
 
-Optional, from Ready (**Intervals** row under Start; one tap on Start still records a free Run / Walk). Setup:
+Optional, from Ready (**Intervals** in "Your setup", above Start; one tap on Start still records a free Run / Walk). Setup:
 warm-up walk (0–30 min), Run and Walk/recover (15 s–60 min each), repeats (1–30), cool-down walk (0–30 min); the
 starting point is week 1 of the NHS Couch to 5K plan (5 min walk, then 60 s run / 90 s walk × 8, then a 5 min walk),
 editable. The preview draws the phases to scale and gives the programmed active time. The setup is kept on the phone
@@ -258,14 +273,18 @@ structured local events with a stable key (`<activity>:phase:<n>`, `<activity>:d
   a lower one waits, and is dropped if it would be more than 8 s late. A phase change and an update due at the same
   moment are one message, phase first. Pause, Finish, Discard, an account change and turning voice off stop speech
   and drop what was queued.
-* **Presentation.** On screen always: the coach line under the dial (the guide's portrait when Show coach on Train
-  and Eat is on, the words alone otherwise; read by screen readers as it changes), never over the map or controls.
+* **Presentation.** On screen always: the coach line under the dial: Leon or Leona's animated bust with the bubble
+  from the mouth (the same rig as Today, compact; it nods at a new message and never re-enters) when Show coach on
+  Train and Eat is on, the words alone otherwise; read by screen readers as it changes; never over the map or controls.
   Spoken only when **Voice updates** is on (Ready › Voice and alerts, or the speaker button while recording; off by
   default; never on account creation or opening Today). Vibration at a phase change when **Vibrate at interval
   changes** is on and Haptics is not Off; a tick for each of the last 3 seconds with **Countdown**.
 * **Voice.** The phone's own text-to-speech (`flutter_tts`: AVSpeechSynthesizer / Android TextToSpeech), no network,
   no AI, no cloud voice, no microphone. The person may pick an installed voice in the app's language, or the phone's
-  own; a chosen voice that is no longer installed falls back to the phone's own and says so. Leon speaks a little
+  own. Only voices that work offline are offered: Android marks a voice that needs the network (`network_required`)
+  and those are never listed or used (`offlineVoices`); a chosen voice that is gone or needs a connection falls back
+  to the phone's own, and the sheet says so (also when no offline voice exists for the language). Whether the phone's
+  own default voice is offline is the phone's setting (Settings › Text-to-speech); see the airplane-mode check below. Leon speaks a little
   lower, Leona a little higher (pitch), so the coach sounds the same every time. **Preview voice** says a short hello.
   The portrait does not lip-sync.
 * **Audio.** Other audio is lowered while speaking and restored after: iOS shared session `playback` with
@@ -310,6 +329,27 @@ Run and Walk are separate:
 **Auto-pause and records.** The documented auto-pause limitation (the ~10 m that confirms a resume is not counted;
 the segment starts at the resume) means a stretch never spans an auto-pause; a benchmark after one is timed only from
 the resume on. No correction was needed for records; no record crosses an auto-pause.
+
+## Ready (18 Oct 2026, the approved "option 1" board)
+
+From the top: Back and History; the title with Leon / Leona and the bubble beside it (words only: "Choose your setup.
+Start when ready."); Run / Walk; a compact map (zoom −/+ top right, Expand map bottom right, recenter bottom left,
+Google's notices moved right of it); GPS in one line ("GPS ready · ±5 m", or what is needed and its action); **Your
+setup**: Intervals, Voice and alerts, Auto-pause; the **Steps** row (Steps off + Enable, Steps on, or what access
+needs); then **Start**, in a bar of its own at the bottom with the safe area under it. Nothing is set below Start.
+
+Each setup row is one tap target: the supplied glyph, the label, its real state ("Run 1 min · Walk 90 s · × 8",
+"On · every 1 km", "Off", "Not used with intervals") and a chevron; it opens the existing editor (Auto-pause now has its
+own small sheet with the switch). At large text or below 340 px the state and any action go under the label. The map
+takes the height left on a phone once the rest is in view (measured: a 390 × 844 phone with its 47 px notch and 34 px
+home indicator shows every row and Start without scrolling, coach on or off, `move_ui_test`); a short phone or large
+text scrolls the page, from anywhere but the map, with Start staying put. Expand map opens a larger map following the
+same position (Ready's one preview stream; nothing starts).
+
+**Icons.** The supplied glyphs (`app/assets/icons`, from GoHard_Steps_RunWalk_UX_Corrections/icons: intervals,
+voice, auto-pause, steps footprints, history, back, chevron, recenter, expand map, plus, minus, play), drawn by one
+`GoIcon` (`core/go_icon.dart`, `flutter_svg`) in the theme's colour (`currentColor`), for these Run / Walk and Steps
+controls only: Ready, the map buttons (also while recording and on details), Today's Start and Steps, Me › Steps.
 
 ## Location, background and permissions
 

@@ -1626,3 +1626,51 @@ future release will refuse that until the plugin migrates.
   `feature/steps-intervals-audio-records`, build number 32, hosted API): passed; artifact `GoHard-Dev-unsigned-ipa`
   (`GoHard-Dev-unsigned-32.ipa`). It compiles the Core Motion bridge and `flutter_tts`; nothing ran on an iPhone.
   `main` and Railway are unchanged.
+
+## 18 October 2026 (corrections) — Steps discovery, Run / Walk Ready order, shared icons (same branch, from `9d39cd4`)
+
+From `GoHard_Steps_RunWalk_UX_Corrections/CLAUDE_PROMPT.md`, the selected board `references/approved-ready-option-1.png`.
+
+| Change | Where |
+|---|---|
+| The supplied 12 SVG glyphs as assets, one `GoIcon` tinted from the theme (`flutter_svg` 2.3.0, MIT), used on Ready, the map buttons, Today's Start and Steps, Me › Steps; buttons and group rows take a glyph in the icon's place | `assets/icons`, `core/go_icon.dart`, `core/widgets.dart`, `route_map.dart` |
+| Steps' one sheet (Count steps, access state and fix, goal, Show Steps on Today), opened from Today's tile, Me › Activity & tracking › Steps and Ready's row; removed from Nutrition's Customize tracking; existing choices kept (same store; `stepsHidden` added, display only) | `steps_ui.dart`, `move_prefs.dart`, `today_screen.dart`, `me_screen.dart`, `nutrition_tools.dart` |
+| Today: Steps tile beside Run / Walk, shown before steps are on (Enable, no number or bar), every state distinct; History under the pair; the coach introduces Steps once from the account's second day | `today_screen.dart` |
+| Ready in the approved order, Start in a bar of its own, every setting above it; "Your setup" rows with real states, Auto-pause's own sheet, the Steps row; compact one-line GPS; map controls as on the board; Expand map follows the same position | `run_walk_screens.dart`, `steps_ui.dart`, `route_map.dart` |
+| Recording: the animated guide with the mouth bubble replaces the small static portrait in the coach line | `move_widgets.dart` |
+| Voices: only offline voices offered or used (Android `network_required`); explained when none | `announcer.dart`, `move_widgets.dart` |
+
+No backend, migration, entitlement or new health integration. Saved meals / recipes remain absent (reported 18 Oct; the
+user chose guidance to Favourites and My foods); nothing here touches food.
+
+**Found and fixed.** The two tiles in `IntrinsicHeight` (a panel's `LayoutBuilder` cannot report intrinsics): a plain
+row. Setup rows broke words at 2× text on 320 px: the state goes under the label there. The coach-off layout constant
+left the Steps row 13 px under Start (caught by the inset test). A brand-new account's first Today showed the Steps
+invitation instead of the plan's greeting: now from the second day only.
+
+**Checks run (focused, no full suite: the earlier full run passed and these changes are UI and wiring).**
+- `flutter analyze`: clean. 13 affected suites together, 217 passed: `move_ui_test` (new: Ready's fit at 390 × 844
+  with 47/34 px insets, coach on and off; setup summaries and auto-pause kept apart from intervals; 320 px at 2× text
+  reached by scrolling without overflow; one sheet from Today and Me; no permission request by opening Today, a sheet
+  or Me; Enable asks once; choices saved before the move kept; tile and Enable with the coach off; hiding the tile
+  changes nothing else; network-only voices left out), `run_walk_ui_test`, `today_ui_test`, `me_ui_test` (three
+  expectations updated for the new layout: History under the pair, a fourth filled button "Enable", Me rows scrolled
+  into view before tapping), `water_ui`, `widget`, `coach_companion`, `eat_ui`, `food_ui`, `move_logic`,
+  `run_walk_extras`, `theme`, `today_states`.
+- Renders (Flutter widgets, not a phone; map drawn without a key): before/after at 390 × 844 with the notch insets,
+  coach on and off, first use and steps on, Ready default/configured, 320 px at 2× text:
+  `docs/evidence/ux-corrections/ux-{before,after}-*.png`; six themes: `docs/evidence/design/six-themes-*.png`.
+- Device (`emulator-5554`, API 36, debug, local API; SIMULATED steps and GPS): `journey_ux_test` (new, not default)
+  **passed**: Today's Steps tile → Enable → the simulated count with its source; Ready with every row and Start in view
+  and above Start; intervals, voice and auto-pause set from their rows, summaries read back ("Run 1 min · Walk 90 s ·
+  × 8", "On · every 1 km", "Not used with intervals"); Start, Pause, Resume of the same activity; Discard. Captures
+  `docs/evidence/screenshots/ux-01…05`. In `ux-04` the map shows the whole region: the journey's scroll-into-view drag
+  started on the map, which (as designed) leaves Follow; the first try failed only because the emulator had no network
+  right after a reboot. The simulated step source allows at once, so the refusal path is covered by `move_ui_test` only.
+
+**Unavoidable differences from the board.** No footprint photograph on the Steps tile (none supplied; the panel is
+plain); the board's map is a satellite image (the app uses the Google map or, without a key, its drawn route); the
+tiles are not forced to equal height.
+
+**Not verified:** a physical phone (Ready's fit on other phone sizes and with system font sizes, VoiceOver/TalkBack,
+an Android voice in airplane mode, Motion & Fitness and Health Connect prompts), iOS beyond CI compilation.

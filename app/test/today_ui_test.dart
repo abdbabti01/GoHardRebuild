@@ -172,8 +172,10 @@ void main() {
     expect(tops.first, greaterThan(lines.bottom), reason: 'the panels start below the header');
     expect(tops, orderedEquals([...tops]..sort()), reason: 'workout first, nutrition second, run third');
     expect(tester.getSize(find.byKey(const Key('today-module-run'))).width, lessThan(0.7 * tester.getSize(find.byKey(const Key('today-module-workout'))).width),
-        reason: 'run is the compact tile, with History beside it');
-    expect(tester.getTopLeft(find.byKey(const Key('today-run-history'))).dx, greaterThan(tester.getTopRight(find.byKey(const Key('today-module-run'))).dx));
+        reason: 'run is the compact tile, with Steps beside it');
+    expect(tester.getTopLeft(find.byKey(const Key('today-steps'))).dx, greaterThan(tester.getTopRight(find.byKey(const Key('today-module-run'))).dx));
+    expect(tester.getTopLeft(find.byKey(const Key('today-run-history'))).dy, greaterThan(tester.getBottomLeft(find.byKey(const Key('today-module-run'))).dy),
+        reason: 'History stays reachable, under the two tiles');
     expect(find.descendant(of: find.byType(TodayScreen), matching: find.byType(BackdropFilter)), findsNothing);
 
     // Scrolled to the end: the scene has not moved, and the last control clears the floating bar.
@@ -219,7 +221,7 @@ void main() {
         expect(find.text(gone), findsNothing, reason: '$gone belongs to the workout sheet, Train or Me');
       }
       expect(find.textContaining('sets recorded'), findsNothing, reason: 'nothing was recorded for a workout that has not started');
-      expect(find.byType(FilledButton), findsNWidgets(3), reason: 'one filled button per panel: Start workout, Log food, Start');
+      expect(find.byType(FilledButton), findsNWidgets(4), reason: 'one filled button per panel: Start workout, Log food, Start, and Enable on Steps');
       expect(find.byKey(const Key('today-start')).hitTestable(), findsOneWidget, reason: 'still due after an unrelated manual workout');
       expect(find.text('Completed'), findsNothing);
       // The manual workout is its own record, in its own words.

@@ -202,6 +202,15 @@ mockup's due panel is about 183: the 52 px button and the plan-week line are kep
 and quinoa bowl, a runner's shoes on a riverside path) but are not the mockup's pictures, which are wet, rainy
 variants; those were not supplied as files, so they are not used. Each is decoded for the box it is drawn in.
 
+### Steps beside Run / Walk, and Ready's order (18 October 2026, from `GoHard_Steps_RunWalk_UX_Corrections`)
+
+Today: Workout, Nutrition, then **Run / Walk and Steps side by side** (stacked at large text or below 350 px), Run /
+Walk History under them. Steps is shown before it is turned on ("Track your steps", Enable) so it can be found; it is
+not in Nutrition's Customize tracking any more. Ready follows the approved "option 1" board: every setting above Start,
+Start last in its own bar. The Run / Walk and Steps controls use the supplied SVG glyphs through `GoIcon`, tinted by
+the theme; the rest of the app keeps its Material icons. Details: docs/RUN_WALK.md › Ready, › Steps › Where it is.
+Before/after renders at 390 × 844 with the notch insets: `docs/evidence/ux-corrections/ux-{before,after}-*.png`.
+
 ## App-wide panels (16 October 2026, from `GoHard_Appwide_UI_Handoff`)
 
 The Today photo panels are the language of the whole app. The boards (`GoHard_Appwide_UI_Handoff/references/`) are

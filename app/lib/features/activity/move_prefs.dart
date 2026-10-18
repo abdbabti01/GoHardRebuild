@@ -16,7 +16,7 @@ enum UpdateMode { off, distance, time }
 class MovePrefs {
   const MovePrefs({
     this.voice = false, this.updates = UpdateMode.distance, this.everyDistance = 1, this.everyMinutes = 5, this.vibrate = true, this.countdown = true,
-    this.voiceName, this.voiceLocale, this.plan, this.intervals = false, this.steps = const {}, this.stepGoals = const {},
+    this.voiceName, this.voiceLocale, this.plan, this.intervals = false, this.steps = const {}, this.stepGoals = const {}, this.stepsHidden = const {},
   });
 
   /// Spoken announcements (phase changes, updates, personal bests) in the phone's own voice. Off by default.
@@ -41,20 +41,24 @@ class MovePrefs {
   final Set<String> steps;
   final Map<String, int> stepGoals;
 
+  /// Accounts that chose not to show the Steps tile on Today. A display choice only: counting and permission stay as
+  /// they are.
+  final Set<String> stepsHidden;
+
   static const distanceChoices = [0.5, 1.0, 2.0], minuteChoices = [5, 10, 15];
 
   MovePrefs copy({bool? voice, UpdateMode? updates, double? everyDistance, int? everyMinutes, bool? vibrate, bool? countdown,
-          (String?, String?)? voiceChoice, IntervalPlan? plan, bool? intervals, Set<String>? steps, Map<String, int>? stepGoals}) =>
+          (String?, String?)? voiceChoice, IntervalPlan? plan, bool? intervals, Set<String>? steps, Map<String, int>? stepGoals, Set<String>? stepsHidden}) =>
       MovePrefs(
         voice: voice ?? this.voice, updates: updates ?? this.updates, everyDistance: everyDistance ?? this.everyDistance, everyMinutes: everyMinutes ?? this.everyMinutes,
         vibrate: vibrate ?? this.vibrate, countdown: countdown ?? this.countdown, voiceName: voiceChoice == null ? voiceName : voiceChoice.$1,
         voiceLocale: voiceChoice == null ? voiceLocale : voiceChoice.$2, plan: plan ?? this.plan, intervals: intervals ?? this.intervals,
-        steps: steps ?? this.steps, stepGoals: stepGoals ?? this.stepGoals,
+        steps: steps ?? this.steps, stepGoals: stepGoals ?? this.stepGoals, stepsHidden: stepsHidden ?? this.stepsHidden,
       );
 
   Map<String, dynamic> toJson() => {
         'voice': voice, 'updates': updates.name, 'everyDistance': everyDistance, 'everyMinutes': everyMinutes, 'vibrate': vibrate, 'countdown': countdown,
-        'voiceName': voiceName, 'voiceLocale': voiceLocale, 'plan': plan?.toJson(), 'intervals': intervals, 'steps': [...steps], 'stepGoals': stepGoals,
+        'voiceName': voiceName, 'voiceLocale': voiceLocale, 'plan': plan?.toJson(), 'intervals': intervals, 'steps': [...steps], 'stepGoals': stepGoals, 'stepsHidden': [...stepsHidden],
       };
 
   static MovePrefs fromJson(Map<String, dynamic> j) {
@@ -67,6 +71,7 @@ class MovePrefs {
       plan: IntervalPlan.fromJson(j['plan']), intervals: j['intervals'] == true && IntervalPlan.fromJson(j['plan']) != null,
       steps: {...(j['steps'] as List? ?? const []).whereType<String>()},
       stepGoals: {for (final e in ((j['stepGoals'] as Map?) ?? const {}).entries) if (e.value is int && (e.value as int) > 0) e.key.toString(): e.value as int},
+      stepsHidden: {...(j['stepsHidden'] as List? ?? const []).whereType<String>()},
     );
   }
 
@@ -110,6 +115,7 @@ class MovePrefsController extends Notifier<MovePrefs> {
   void update(MovePrefs Function(MovePrefs) f) => set(f(state));
 
   void setSteps(String owner, bool on) => update((p) => p.copy(steps: on ? {...p.steps, owner} : ({...p.steps}..remove(owner))));
+  void setStepsOnToday(String owner, bool show) => update((p) => p.copy(stepsHidden: show ? ({...p.stepsHidden}..remove(owner)) : {...p.stepsHidden, owner}));
   void setStepGoal(String owner, int? goal) => update((p) => p.copy(stepGoals: goal == null || goal <= 0 ? ({...p.stepGoals}..remove(owner)) : {...p.stepGoals, owner: goal}));
 }
 
@@ -119,6 +125,13 @@ final movePrefsProvider = NotifierProvider<MovePrefsController, MovePrefs>(MoveP
 final stepsEnabledProvider = Provider<bool>((ref) {
   final owner = ref.watch(ownerProvider);
   return owner != null && ref.watch(movePrefsProvider.select((p) => p.steps.contains(owner)));
+});
+
+/// Whether Today shows the Steps tile for the signed-in account: shown unless hidden, whether or not steps are on (off
+/// is when Today offers to turn them on).
+final stepsOnTodayProvider = Provider<bool>((ref) {
+  final owner = ref.watch(ownerProvider);
+  return owner != null && !ref.watch(movePrefsProvider.select((p) => p.stepsHidden.contains(owner)));
 });
 
 final stepGoalProvider = Provider<int?>((ref) {

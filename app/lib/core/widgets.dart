@@ -63,11 +63,14 @@ class _ScaledButtonState extends State<_ScaledButton> {
 /// [busy] shows a spinner and ignores taps; a null [onPressed] is the disabled state. [destructive] fills it with the
 /// error colour for an action that erases something (the label still has to say what it does).
 class PrimaryButton extends StatelessWidget {
-  const PrimaryButton(this.label, {super.key, required this.onPressed, this.busy = false, this.expand = true, this.icon, this.destructive = false});
+  const PrimaryButton(this.label, {super.key, required this.onPressed, this.busy = false, this.expand = true, this.icon, this.destructive = false, this.leading});
   final String label;
   final VoidCallback? onPressed;
   final bool busy, expand, destructive;
   final IconData? icon;
+
+  /// A widget in the icon's place (a supplied glyph, core/go_icon.dart).
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -75,9 +78,9 @@ class PrimaryButton extends StatelessWidget {
         ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: context.c.secondary, semanticsLabel: 'Working'))
         : Text(label, textAlign: TextAlign.center);
     final style = destructive ? FilledButton.styleFrom(backgroundColor: context.c.error, foregroundColor: context.c.page) : null;
-    final button = _ScaledButton((states) => icon == null || busy
+    final button = _ScaledButton((states) => (icon == null && leading == null) || busy
         ? FilledButton(onPressed: busy ? null : onPressed, style: style, statesController: states, child: child)
-        : FilledButton.icon(onPressed: onPressed, style: style, statesController: states, icon: Icon(icon, size: 22), label: child));
+        : FilledButton.icon(onPressed: onPressed, style: style, statesController: states, icon: leading ?? Icon(icon, size: 22), label: child));
     return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
@@ -608,10 +611,13 @@ class GroupCard extends StatelessWidget {
 ///
 ///     GroupRow(icon: Icons.palette_outlined, title: 'Appearance', value: 'Blue · System', onTap: openAppearance)
 class GroupRow extends StatelessWidget {
-  const GroupRow({super.key, required this.title, this.subtitle, this.icon, this.tone = Tone.accent, this.value, this.trailing, this.onTap, this.destructive = false});
+  const GroupRow({super.key, required this.title, this.subtitle, this.icon, this.tone = Tone.accent, this.value, this.trailing, this.onTap, this.destructive = false, this.leading});
   final String title;
   final String? subtitle, value;
   final IconData? icon;
+
+  /// In [icon]'s place: a tile around a supplied glyph (core/go_icon.dart), the same size.
+  final Widget? leading;
   final Tone tone;
   final Widget? trailing;
   final VoidCallback? onTap;
@@ -626,6 +632,16 @@ class GroupRow extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: roomy ? 16 : 12, vertical: 12),
         child: Row(children: [
           if (icon != null && roomy) ...[IconTile(icon!, tone: destructive ? Tone.error : tone), const SizedBox(width: 14)],
+          if (icon == null && leading != null && roomy) ...[
+            ExcludeSemantics(
+              child: Container(
+                width: 40, height: 40, alignment: Alignment.center,
+                decoration: BoxDecoration(color: context.c.accentSoft, borderRadius: BorderRadius.circular(12)),
+                child: IconTheme(data: IconThemeData(color: context.c.accent, size: 22), child: leading!),
+              ),
+            ),
+            const SizedBox(width: 14),
+          ],
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
               // The value shares the title's line while both fit, and drops under it when they do not.

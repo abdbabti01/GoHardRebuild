@@ -195,6 +195,19 @@ void main() {
           ..mode = mode;
         await _openMe(tester, (await tester.runAsync(() => overridesFor(day: _day, appearance: store, calorieGoal: 2200, proteinGoal: 140, pending: 2,
             issues: accent == Accent.green ? [_issue('f1')] : const [], profile: {'remindersEnabled': true, 'reminderLocalTime': '07:30'})))!, size: const Size(390, 1700));
+        // Me's list builds lazily: bring a row into view from wherever the list is, up or down.
+        Future<void> reveal(Finder f) async {
+          final list = find.descendant(of: find.byType(MeScreen), matching: find.byType(Scrollable)).first;
+          for (final step in [300.0, -300.0]) {
+            try {
+              await tester.scrollUntilVisible(f, step, scrollable: list, maxScrolls: 20);
+              return;
+            } on StateError {
+              // Not that way.
+            }
+          }
+        }
+
         Future<void> check(String what) async {
           final reason = '${accent.name} ${mode.name}: $what';
           await expectLater(tester, meetsGuideline(textContrastGuideline), reason: reason);
@@ -207,12 +220,16 @@ void main() {
         expect(tester.getSemantics(_in('me-reminders', find.byType(Switch))), isSemantics(label: 'Workout reminders\nOn days with a planned workout. None while your plan is paused.', hasToggledState: true, isToggled: true, hasTapAction: true, hasEnabledState: true, isEnabled: true, hasFocusAction: true, isFocusable: true),
             reason: 'the switch is announced with what it switches');
         for (final key in ['me-motion', 'me-appearance', 'me-delete-account', 'me-edit-name']) {
+          await reveal(find.byKey(Key(key)));
+          await tester.pumpAndSettle();
           await tester.tap(find.byKey(Key(key)));
           await tester.pumpAndSettle();
           await check(key);
           await tester.pageBack();
           await tester.pumpAndSettle();
         }
+        await reveal(find.byKey(const Key('me-units')));
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('me-units')));
         await tester.pumpAndSettle();
         await check('units sheet');

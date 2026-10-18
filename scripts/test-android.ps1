@@ -34,8 +34,8 @@ try {
         $feeder = $null
         $gpsFeed = $null
         # journey_move_test: SIMULATED steps (the emulator has no step counter), labelled on screen.
-        [string[]]$simSteps = if ($journey -eq 'journey_move_test') { '--dart-define=GOHARD_SIM_STEPS=true' } else { @() }
-        if ($journey -eq 'journey_move_test') {
+        [string[]]$simSteps = if ($journey -in 'journey_move_test', 'journey_ux_test') { '--dart-define=GOHARD_SIM_STEPS=true' } else { @() }
+        if ($journey -in 'journey_move_test', 'journey_ux_test') {
             if ($device -notmatch '^emulator-') { Fail 'journey_move_test simulates GPS positions and so needs an emulator.' }
             # SIMULATED GPS: a run north at about 3.5 m/s, one position a second, through Android's test location provider.
             & $Adb -s $device shell appops set com.android.shell android:mock_location allow
@@ -54,7 +54,7 @@ try {
         $location = 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'
         $grants = @{
             journey_device_test = @('POST_NOTIFICATIONS') + $location; journey_food_test = @('CAMERA'); journey_runwalk_test = @('POST_NOTIFICATIONS') + $location
-            journey_move_test = @('POST_NOTIFICATIONS') + $location
+            journey_move_test = @('POST_NOTIFICATIONS') + $location; journey_ux_test = @('POST_NOTIFICATIONS') + $location
             # These start a run or walk on the way (Run / Walk asks for location when Start is pressed).
             journey_coldstart_test = $location; journey_today_panels_test = $location; journey_appwide_test = $location
         }[$journey]
@@ -183,7 +183,7 @@ try {
                     if (& $Adb -s $device shell pidof $appId) { Fail 'The app process is still running after force-stop, so the next phase would not be a cold start.' }
                     if (-not ((& $Adb -s $device shell pm list packages $appId) -match [regex]::Escape($appId))) { Fail 'The app is no longer installed after phase 1, so its saved data is gone.' }
                     Write-Host '    app process ended (force-stop); the install and its data are kept' -ForegroundColor DarkGray
-                    if ($journey -eq 'journey_move_test') {
+                    if ($journey -in 'journey_move_test', 'journey_ux_test') {
                         # The phone restarts between the phases: it frees the emulator's storage for phase 2's install, and
                         # the recording must come back Interrupted after a real restart.
                         & $Adb -s $device reboot
