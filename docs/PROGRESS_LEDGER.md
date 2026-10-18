@@ -1793,3 +1793,5 @@ docs/EXERCISE_DEMOS_COVERAGE.md.
   standalone phase 2 that could not work after a failed run had uninstalled the app.
 - **Not verified:** iPhone decoding of the QuickTime clips, music coexistence and TTS on real phones, VoiceOver/TalkBack
   wording, full-speed smoothness, battery; no qualified coach has reviewed clips or text.
+- CI run 95 on `4bd3f6a`: **passed** (api, app). Unsigned IPA run 36 on `4bd3f6a`, artifact `GoHard-Dev-unsigned-ipa`
+  (19.8 MB): **passed**. `main` and Railway unchanged.
