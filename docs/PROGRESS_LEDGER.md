@@ -1762,3 +1762,5 @@ moved), Other amount back after 5 s; Other amount 330 → 580 mL; Eat History; T
 
 **Not verified:** a physical phone (photo crops on other sizes, VoiceOver/TalkBack wording, real Health Connect / Core
 Motion counts), iOS beyond CI compilation.
+- CI run 92 on `59904a6`: **passed**. Unsigned IPA run 35 on `59904a6`, build number 35, artifact
+  `GoHard-Dev-unsigned-ipa`: passed. `main` and Railway unchanged.
