@@ -7,6 +7,8 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../coach/exercise_media.dart' show exerciseMediaProvider;
+import '../coach/guide_sheets.dart' show showExerciseDetails;
 import '../plans/plan_repository.dart';
 import 'workout_repository.dart';
 import 'workout_screen.dart';
@@ -158,9 +160,20 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
         ),
       ]);
 
+  /// Opens the exercise sheet over the picker to look, not to choose: the search, filters, scroll position and the
+  /// list stay as they were, and closing it chooses nothing.
+  Widget _preview(CatalogExercise e, bool video) {
+    void open() => showExerciseDetails(context, exercise: (catalogKey: e.key, name: e.name, isTimed: e.isTimed));
+    return video
+        ? TextButton.icon(key: Key('exercise-demo-${e.key}'), onPressed: open, icon: const Icon(Icons.play_circle_outline_rounded, size: 20), label: const Text('Demo'))
+        : IconButton(key: Key('exercise-about-${e.key}'), tooltip: 'About ${e.name}', icon: const Icon(Icons.info_outline, size: 20), onPressed: open);
+  }
+
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(exerciseChoicesProvider);
+    // Bundled and read once; nothing is fetched to show the list.
+    final demos = ref.watch(exerciseMediaProvider).value;
     final catalogEmpty = !all.any((e) => !e.isCustom);
     final muscles = {for (final e in all) e.category}.toList()..sort();
     final equipment = {for (final e in all) if (e.equipment.isNotEmpty) e.equipment}.toList()..sort();
@@ -186,6 +199,11 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
         ListRow(
           key: Key('exercise-${e.key}'), title: e.name,
           subtitle: [e.category, if (e.equipment.isNotEmpty) e.equipment, if (e.isTimed) 'timed', if (e.isCustom) 'Your exercise'].join(' · '),
+          leading: switch (demos?.forKey(e.key)) {
+            final m? => _Thumb(m.poster),
+            null => null,
+          },
+          trailing: e.isCustom ? null : _preview(e, demos?.forKey(e.key)?.isVideo ?? false),
           onTap: () => Navigator.pop(context, e),
         ),
       ListRow(
@@ -195,6 +213,20 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
       ),
     ]);
   }
+}
+
+/// A small static picture of a reviewed demonstration (its bundled poster), decoded at its own size.
+class _Thumb extends StatelessWidget {
+  const _Thumb(this.asset);
+  final String asset;
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Image.asset(asset, width: 56, height: 40, fit: BoxFit.cover,
+              cacheWidth: (56 * MediaQuery.devicePixelRatioOf(context)).ceil(), errorBuilder: (_, _, _) => const SizedBox(width: 56, height: 40)),
+        ),
+      );
 }
 
 class _CustomExerciseForm extends ConsumerStatefulWidget {

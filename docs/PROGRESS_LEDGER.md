@@ -1764,3 +1764,32 @@ moved), Other amount back after 5 s; Other amount 330 → 580 mL; Eat History; T
 Motion counts), iOS beyond CI compilation.
 - CI run 92 on `59904a6`: **passed**. Unsigned IPA run 35 on `59904a6`, build number 35, artifact
   `GoHard-Dev-unsigned-ipa`: passed. `main` and Railway unchanged.
+
+## 18 Oct 2026 — Exercise demonstrations (`feature/exercise-demonstrations`, from `GoHard_Exercise_Demonstrations`)
+
+Branched from `feature/steps-intervals-audio-records` at c586864 (Today option 2 and inline water Undo kept). One shared
+exercise sheet (`showExerciseDetails`; `showExerciseInfo` is its wrapper) with a real-person clip, an illustration or an
+honest "No demonstration for this exercise yet", reached from the picker (Demo / About, never selects), the builder and
+prescription editor (Watch demonstration over the form) and the workout (Watch demo in the exercise panel, the selected
+movement's own key). Details, sources and limits: docs/EXERCISE_DEMOS.md; row-by-row coverage:
+docs/EXERCISE_DEMOS_COVERAGE.md.
+
+- Media audit of all 50 keys against wger's live API v2 (78 clips, 383 images, per-asset licences). **Video 5 · still 7
+  · written only 38.** Clips: wger, "Goulart", CC BY-SA 4.0, H.264, streamed or downloaded unchanged, 35.07 MiB in all.
+  Stills: Everkinetic, CC BY-SA 3.0. Excluded: 10-bit HEVC/Dolby Vision clips (14 also over the 20 MiB cap), images with
+  another company's copyright notice, commercial-looking or stock uploads, no-author and AI-marked images, uncertain
+  variants (leg curl, chin-up, bench dip). Decision needed: hosting for H.264 transcodes would add ~15 clips.
+- Technique text (Setup/Movement/Common mistakes) for 4 keys from ACE Exercise Library pages, checked 18 Oct 2026;
+  not reviewed by a qualified coach. docs/COACH_SOURCES.md updated.
+- `video_player` 2.14.1 (muted, mixWithOthers), `crypto`; app-side manifest, no API or database change. Downloads: app
+  support storage, exact size + SHA-256, atomic, deduplicated, ≤ 20 MiB per clip, 100 MiB LRU, never the playing clip.
+- Tests: `flutter analyze` clean; `exercise_demo_test` (17), `plan_builder_ui_test` (32, with the new Watch
+  demonstration draft test), `train_plan_ui_test`, `train_ui_test`, `coach_guide_test`, `coach_ask_test`,
+  `plan_builder_test`: 163 passed. Renders `demo_render_test` (GOHARD_RENDER): Blue Light, Pink Dark, 320 px at 2×.
+- Device: `journey_demo_test` (new, two phases, not in the default run) **passed** on emulator-5554 against the local API
+  with the real clip, phase 2 offline after force-stop. Defect found on the device and fixed before the passing run: the
+  poster was drawn at the Play button's size (now fills its frame; a widget test checks it). Earlier attempts: test
+  waits on lazily built rows (fixed), two driver attach hangs ("taking an unusually long time to connect"), and a
+  standalone phase 2 that could not work after a failed run had uninstalled the app.
+- **Not verified:** iPhone decoding of the QuickTime clips, music coexistence and TTS on real phones, VoiceOver/TalkBack
+  wording, full-speed smoothness, battery; no qualified coach has reviewed clips or text.

@@ -162,18 +162,53 @@ try {
         $shots = Join-Path $AppDir "build\journey-shots\$journey-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         New-Item -ItemType Directory -Force $shots | Out-Null
         $env:GOHARD_SHOT_DIR = $shots
+        if ($journey -eq 'journey_demo_test') {
+            # The demonstration journey's markers: host captures (adb screencap, so the native video surface is in them,
+            # saved as this journey's evidence), the screen recording, Home and back, and the network off and on.
+            & $Adb -s $device shell svc wifi enable
+            & $Adb -s $device shell svc data enable
+            & $Adb -s $device logcat -c
+            $feeder = Start-Job -ArgumentList $Adb, $device, $shots, $appId -ScriptBlock {
+                param($adb, $device, $out, $appId)
+                & $adb -s $device logcat -s flutter:I | ForEach-Object {
+                    if ($_ -match 'GOHARD_SHOT:([\w-]+)') {
+                        & $adb -s $device shell screencap -p "/sdcard/$($Matches[1]).png"
+                        & $adb -s $device pull "/sdcard/$($Matches[1]).png" (Join-Path $out "$($Matches[1]).png") | Out-Null
+                        & $adb -s $device shell rm "/sdcard/$($Matches[1]).png" | Out-Null
+                    } elseif ($_ -match 'GOHARD_REC:start:([\w-]+)') {
+                        Start-Process -FilePath $adb -ArgumentList '-s', $device, 'shell', 'screenrecord', '--time-limit', '170', "/sdcard/$($Matches[1]).mp4" -WindowStyle Hidden
+                        Set-Content (Join-Path $out 'recording.txt') $Matches[1]
+                    } elseif ($_ -match 'GOHARD_REC:stop') {
+                        Start-Sleep -Seconds 2   # screenrecord drops its last second: pad
+                        & $adb -s $device shell pkill -INT screenrecord
+                        Start-Sleep -Seconds 3
+                        $name = Get-Content (Join-Path $out 'recording.txt')
+                        & $adb -s $device pull "/sdcard/$name.mp4" (Join-Path $out "$name.mp4") | Out-Null
+                        & $adb -s $device shell rm "/sdcard/$name.mp4" | Out-Null
+                    } elseif ($_ -match 'GOHARD_BG:home') {
+                        & $adb -s $device shell input keyevent KEYCODE_HOME
+                        Start-Sleep -Seconds 5
+                        & $adb -s $device shell am start -n "$appId/com.gohard.gohard_rebuild.MainActivity" | Out-Null
+                    } elseif ($_ -match 'GOHARD_NET:(off|on)') {
+                        $state = if ($Matches[1] -eq 'off') { 'disable' } else { 'enable' }
+                        & $adb -s $device shell svc wifi $state
+                        & $adb -s $device shell svc data $state
+                    }
+                }
+            }
+        }
         try {
             Step "Native journey '$journey' on $device against $ApiBase"
             # The cold-start journey runs twice on one install. The Flutter tool uninstalls the app when a run ends,
             # which would wipe what the first run saved, so the first run leaves the app in place and its process is
             # killed here instead. The second run is then a new process that can only show what was saved on the device.
-            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test', 'journey_move_test') { '1', '2' } else { @('') }
+            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test', 'journey_move_test', 'journey_demo_test') { '1', '2' } else { @('') }
             foreach ($phase in $phases) {
                 if ($phase) { Step "  phase $phase of 2$(if ($phase -eq '2') { ' (new process, same install)' })" }
                 $keep = if ($phase -eq '1') { '--keep-app-running' } else { '--no-keep-app-running' }
                 # journey_move_test reads its phase from what phase 1 left on the phone, so both phases are one build and
                 # phase 2 needs no reinstall (the emulator has no room for a second copy of the app).
-                [string[]]$phaseDefine = if ($journey -eq 'journey_move_test') { @() } else { "--dart-define=GOHARD_PHASE=$phase" }
+                [string[]]$phaseDefine = if ($journey -in 'journey_move_test', 'journey_demo_test') { @() } else { "--dart-define=GOHARD_PHASE=$phase" }
                 flutter drive --driver=test_driver/integration_test.dart --target=integration_test/$journey.dart -d $device --dart-define=GOHARD_API_BASE=$ApiBase $phaseDefine $simSteps $keep
                 if ($LASTEXITCODE -ne 0) { Fail "The native journey '$journey'$(if ($phase) { " (phase $phase)" }) failed." }
                 if ($phase -eq '1') {
@@ -211,6 +246,10 @@ try {
                 if (-not $copied) { Fail "The screenshot $($shot.Name) could not be written to docs\evidence\screenshots (still locked after 20 seconds). The fresh capture is in $shots." }
             }
             Write-Host "    $($captured.Count) fresh screenshots from '$journey' copied to docs\evidence\screenshots" -ForegroundColor DarkGray
+            foreach ($f in @(Get-ChildItem $shots -Filter *.mp4)) {
+                Copy-Item $f.FullName (Join-Path $Root "docs\evidence\recordings\$($f.Name)") -Force
+                Write-Host "    recording $($f.Name) copied to docs\evidence\recordings" -ForegroundColor DarkGray
+            }
             if ($journey -eq 'journey_runwalk_test') {
                 Start-Sleep -Seconds 4   # the last host capture
                 foreach ($f in Get-ChildItem $runShots -Include *.png, *.mp4, *.txt -Recurse) {
@@ -228,7 +267,7 @@ try {
                 Stop-Job $feeder; Remove-Job $feeder
                 if ($journey -eq 'journey_runwalk_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
-                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
+                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_demo_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

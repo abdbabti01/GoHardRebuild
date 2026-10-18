@@ -10,6 +10,7 @@ import '../../../data/models.dart';
 import '../../../data/sync.dart';
 import '../../coach/coach_bubble.dart';
 import '../../coach/coach_contract.dart';
+import '../../coach/exercise_media.dart' show exerciseMediaProvider;
 import '../../coach/guide_sheets.dart';
 import '../../workout/workout_flow.dart';
 import '../plan_draft.dart';
@@ -89,13 +90,17 @@ class _NameFormState extends State<_NameForm> {
 
 typedef _Rx = ({int? sets, int? repsMin, int? repsMax, int? seconds, int? rest, double? loadKg, String? notes});
 
-Future<_Rx?> _editPrescription(BuildContext context, Prescription e, LoadUnit unit, {CoachSay? help}) =>
-    showGoSheet<_Rx>(context, title: e.name, builder: (_) => _RxForm(e: e, unit: unit, help: help));
+Future<_Rx?> _editPrescription(BuildContext context, Prescription e, LoadUnit unit, {CoachSay? help, ({bool video, VoidCallback open})? guide}) =>
+    showGoSheet<_Rx>(context, title: e.name, builder: (_) => _RxForm(e: e, unit: unit, help: help, guide: guide));
 
 class _RxForm extends StatefulWidget {
-  const _RxForm({required this.e, required this.unit, this.help});
+  const _RxForm({required this.e, required this.unit, this.help, this.guide});
   final Prescription e;
   final LoadUnit unit;
+
+  /// The exercise sheet (demonstration and guide), opened OVER this form: what was typed stays in the fields and
+  /// nothing is saved by opening it.
+  final ({bool video, VoidCallback open})? guide;
 
   /// What the coach says here when asked: its help entry sits above the fields, and nothing appears by itself in a form.
   final CoachSay? help;
@@ -164,6 +169,18 @@ class _RxFormState extends State<_RxForm> {
           const Align(alignment: Alignment.centerRight, child: CoachHelpEntry(id: 'exercise.prescription', label: 'Help with sets, reps and this exercise')),
           CoachSpot(id: 'exercise.prescription', say: help, padding: const EdgeInsets.only(top: 4, bottom: 12)),
         ],
+        if (widget.guide case final g?)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TextButton.icon(
+                key: const Key('rx-demo'), onPressed: g.open,
+                icon: Icon(g.video ? Icons.play_circle_outline_rounded : Icons.info_outline_rounded, size: 20),
+                label: Text(g.video ? 'Watch demonstration' : 'How to do it'),
+              ),
+            ),
+          ),
         _field('rx-sets', 'Sets', _sets, error: _errors['sets']),
         if (e.isTimed)
           _field('rx-seconds', 'Time per set (seconds)', _secs, error: _errors['secs'])
@@ -199,6 +216,8 @@ class ExerciseListEditor extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unit = ref.watch(loadUnitProvider);
+    final demos = ref.watch(exerciseMediaProvider).value;
+    bool video(Prescription e) => demos?.forKey(e.catalogKey)?.isVideo ?? false;
     final w = draft.workout(workoutId)!;
     final list = w.exercises;
     final wi = index;
@@ -212,7 +231,8 @@ class ExerciseListEditor extends ConsumerWidget {
     Future<void> edit(Prescription e) async {
       final rx = await _editPrescription(context, e, unit,
           help: CoachSay('Questions about sets, reps or this movement?',
-              onAsk: () => askAbout(e), guide: (label: 'About this exercise', key: const Key('coach-exercise-info'), onPressed: () => about(e))));
+              onAsk: () => askAbout(e), guide: (label: 'About this exercise', key: const Key('coach-exercise-info'), onPressed: () => about(e))),
+          guide: (video: video(e), open: () => about(e)));
       if (rx == null) return;
       change((d) => d.setPrescription(workoutId, e.occurrenceKey,
           sets: rx.sets, repsMin: rx.repsMin, repsMax: rx.repsMax, seconds: rx.seconds, restSeconds: rx.rest, targetLoadKg: rx.loadKg, notes: rx.notes), edits: true);
@@ -258,7 +278,9 @@ class ExerciseListEditor extends ConsumerWidget {
                 ),
               ),
             ),
-            IconButton(key: Key('exercise-info-$wi-$ei'), tooltip: 'About ${e.name}', icon: const Icon(Icons.info_outline, size: 20), onPressed: () => about(e)),
+            IconButton(
+                key: Key('exercise-info-$wi-$ei'), tooltip: video(e) ? 'Demonstration and guide for ${e.name}' : 'About ${e.name}',
+                icon: Icon(video(e) ? Icons.play_circle_outline_rounded : Icons.info_outline, size: 20), onPressed: () => about(e)),
             IconButton(key: Key('exercise-up-$wi-$ei'), tooltip: 'Move ${e.name} up', icon: const Icon(Icons.arrow_upward, size: 20),
                 onPressed: ei == 0 ? null : () => change((d) => d.moveExercise(workoutId, e.occurrenceKey, -1), edits: true)),
             IconButton(key: Key('exercise-down-$wi-$ei'), tooltip: 'Move ${e.name} down', icon: const Icon(Icons.arrow_downward, size: 20),

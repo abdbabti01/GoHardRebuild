@@ -382,7 +382,24 @@ Plan / Progress kept in `shellProvider`.
   tied to their answers) with Use this starting plan, Compare splits and Why this suggestion?, and at most two
   alternatives. Quick-guide sheets are labelled "Quick guide · built in" and never look like a chat answer.
 - **Exercise info** is an "About <name>" icon button on each exercise row, opening a sheet (muscles, equipment, role,
-  cues, benefits, limitations, alternatives, the prescription in `3 × 8–12` notation).
+  cues, benefits, limitations, alternatives, the prescription in `3 × 8–12` notation). Since 18 Oct 2026 it is the one
+  exercise sheet with the demonstration (`docs/EXERCISE_DEMOS.md`), reached from the picker, the builder and the workout.
+
+### Exercise demonstrations (18 October 2026, from `GoHard_Exercise_Demonstrations`)
+
+- The media area sits under muscles and equipment: a bounded box (16:9 of the clip's own shape, at most ~40 % of the
+  screen, never cropped: `BoxFit.contain` on black for clips, on white for illustrations) in the theme's field radius
+  with the divider edge. Its one control before Play is a round 64 px Play on a dark scrim.
+- Controls under it are the app's own: Material rounded icons (play, pause, replay, fullscreen) at 48 px targets and the
+  `Segmented` control for 0.5× / 1×; captions in Inter. No emoji, no icon pack, no gestures needed.
+- "How to do it" is a 19 px title (`titleStyle`, Inter) with Setup / Movement / Common mistakes as the usual section
+  labels and bullets. Credits and sources are captions at the end, the media credit apart from the text's sources.
+- Picker rows with a clip get a 56 × 40 static thumbnail (the poster, decoded at its size) and a quiet "Demo" text
+  button; other built-in rows an (i). In the workout the action is a text button in the exercise panel's action row,
+  under the name, below the panel's words and never competing with Complete set.
+- Full screen is a black page with the same controls on a surface panel; it leaves orientation and system bars alone.
+- Light/Dark/accents need no new tokens: everything uses `c.sunken`, `c.divider`, `c.text`, `c.secondary` and the
+  existing buttons; the panel action takes the panel's dark ink (`PanelTheme`).
 - **Leon and Leona**: the compact avatar sits in a 48 px `CoachHelpButton` beside the builder's progress bar (Structure:
   "Ask GoHard about this split", with the one-time "Need help choosing a split?" hint; Workouts: "…about this workout").
   The full figure appears only in Ask GoHard's empty state, at 120 px, when the text is not enlarged and the screen is

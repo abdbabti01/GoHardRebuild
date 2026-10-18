@@ -70,9 +70,27 @@ were read for anything specific, unsafe or overstated:
 
 Custom exercises (`custom:<id>`) are unchanged: no entry, "Added by you", no claims.
 
+## Exercise-specific technique text (18 Oct 2026, docs/EXERCISE_DEMOS.md)
+
+The demonstration sheet's **How to do it** for four exercises (Setup, Movement, Common mistakes) is written by the
+developer from one exercise-specific page each, read on 18 Oct 2026, paraphrased (not copied). It is stored in
+`app/assets/data/exercise-media.json` (`technique`, `techniqueSources`), not in `coach-guide.json`, and the sheet names
+the source beside it. **Source-checked, not reviewed by a qualified coach.**
+
+| Key | Source | What it supports | Note |
+|---|---|---|---|
+| bench-press | ACE Exercise Library, Chest Press (barbell), https://www.acefitness.org/resources/everyone/exercise-library/5/chest-press/ | Grip slightly wider than shoulders; feet and hips pressed down; lower to the chest with elbows out; stop with elbows just below the bench; press straight up | The page lists no common mistakes, so none are shown |
+| incline-dumbbell-press | ACE, Incline Chest Press, …/exercise-library/25/incline-chest-press/ | Bench 45–60°; shoulders down and back; contact points; press over the eyes; lower to the upper chest, slightly wide, elbows under wrists; no bouncing, no low-back arch, neutral wrists | The existing general cue says "a low incline"; the sourced Setup states the source's 45–60° instead of silently changing the cue |
+| dumbbell-bench-press | ACE, Chest Press (dumbbells), …/exercise-library/19/chest-press/ | Flat bench, feet on the floor; shoulders down and back; press to eye level; lower to mid-chest; no bouncing, arching or bent wrists | |
+| overhead-triceps-extension | ACE, Triceps Extension, …/exercise-library/74/triceps-extension/ | Both hands on one dumbbell; brace; upper arms still; lower behind the head to about 90° or until the upper arms move; avoid the head | ACE stands in a split stance; the clip is seated, which the text says |
+
+The other 46 exercises' cues are shown under "How to do it" as "General cues, not yet checked against a technique
+source". wger's community exercise descriptions were read but not used as technique sources (uneven, one machine
+translated).
+
 ## Still uncertain
 
-- All 50 exercises' cues and muscle lists: general descriptions only; need a qualified coach's review or an authoritative technique source (e.g. NSCA, when accessible).
+- 46 of the 50 exercises' cues, and all muscle lists: general descriptions only; need a qualified coach's review or an authoritative technique source (e.g. NSCA, when accessible). The four above are source-checked but not professionally reviewed.
 - Ramos-Campo 2024 and both Schoenfeld papers: checked from abstracts only (full text paywalled).
 - 2009 rest/2–10% figures are older guidance; the 2026 stand does not restate them, so the guide presents them as "2009 suggested", next to the 2026 findings.
 - `docs/TRAINING_PLANS.md` (not owned by this audit) still describes rest times from memory; worth aligning.

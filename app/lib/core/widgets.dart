@@ -549,10 +549,13 @@ class Rule extends StatelessWidget {
 
 /// A flat tappable row with a quiet separator below it.
 class ListRow extends StatelessWidget {
-  const ListRow({super.key, required this.title, this.subtitle, this.icon, this.trailing, this.onTap, this.divider = true});
+  const ListRow({super.key, required this.title, this.subtitle, this.icon, this.leading, this.trailing, this.onTap, this.divider = true});
   final String title;
   final String? subtitle;
   final IconData? icon;
+
+  /// Instead of [icon]: a small picture before the words (a static exercise thumbnail).
+  final Widget? leading;
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool divider;
@@ -566,7 +569,7 @@ class ListRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Row(children: [
-                if (icon != null) ...[Icon(icon, size: 24, color: context.c.text), const SizedBox(width: 14)],
+                if (leading != null) ...[leading!, const SizedBox(width: 12)] else if (icon != null) ...[Icon(icon, size: 24, color: context.c.text), const SizedBox(width: 14)],
                 Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                   Text(title, style: context.sansStyle(16, weight: FontWeight.w500)),

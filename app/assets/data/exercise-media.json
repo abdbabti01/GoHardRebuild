@@ -1,0 +1,475 @@
+{
+  "version": 1,
+  "reviewed": "2026-10-18",
+  "reviewNote": "Mappings chosen by the developer after watching each clip (frames at 10, 35, 60 and 85 %) and looking at each still. Not reviewed by a qualified coach.",
+  "allowedHosts": [
+    "wger.de"
+  ],
+  "maxClipBytes": 20971520,
+  "media": [
+    {
+      "catalogKey": "barbell-curl",
+      "kind": "still",
+      "status": "approved",
+      "poster": "assets/demos/barbell-curl.jpg",
+      "variant": "Standing barbell curl, underhand shoulder-width grip: start and top position.",
+      "rationale": "Same equipment and movement.",
+      "provider": {
+        "name": "wger",
+        "exerciseId": 91,
+        "mediaId": "27+28",
+        "page": "https://wger.de/en/exercise/91/view-base",
+        "retrieved": "2026-10-18",
+        "originals": [
+          "https://wger.de/media/exercise-images/74/Bicep-curls-1.png",
+          "https://wger.de/media/exercise-images/74/Bicep-curls-2.png"
+        ]
+      },
+      "credit": {
+        "creator": "Everkinetic",
+        "licence": "CC BY-SA 3.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attribution": "Illustrations by Everkinetic, via wger.de, CC BY-SA 3.0"
+      },
+      "changes": "The provider's 400 px thumbnails of the start and finish positions, placed side by side on white (640 x 320), JPEG.",
+      "download": false
+    },
+    {
+      "catalogKey": "bench-press",
+      "kind": "video",
+      "status": "approved",
+      "poster": "assets/demos/bench-press.jpg",
+      "variant": "Barbell bench press on a flat bench in a press station, medium-wide overhand grip; filmed from the side.",
+      "rationale": "Same lift and equipment as the catalogue entry (barbell, flat bench). Clip 22 chosen over 21 (several angles) and 23 (close overhead view) because the whole body, bar and bench stay in frame.",
+      "video": {
+        "url": "https://wger.de/media/exercise-video/73/255b3509-e454-48a6-bf66-c7ca482be21a.MOV",
+        "bytes": 1422312,
+        "sha256": "d731f05f7eed78571d9f622fe99223b4139de190d029c1c82b48d13d9454017b",
+        "codec": "H.264",
+        "container": "QuickTime (.mov)",
+        "durationSeconds": 20.78,
+        "width": 640,
+        "height": 352
+      },
+      "provider": {
+        "name": "wger",
+        "exerciseId": 73,
+        "mediaId": 22,
+        "page": "https://wger.de/en/exercise/73/view-base",
+        "retrieved": "2026-10-18"
+      },
+      "credit": {
+        "creator": "Goulart",
+        "licence": "CC BY-SA 4.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Video by Goulart, via wger.de, CC BY-SA 4.0"
+      },
+      "changes": "Played and saved exactly as published (no transcoding or cropping). Poster: one frame at 35 % of the clip, scaled to 640 px wide, JPEG.",
+      "download": true
+    },
+    {
+      "catalogKey": "biceps-curl",
+      "kind": "still",
+      "status": "approved",
+      "poster": "assets/demos/biceps-curl.jpg",
+      "variant": "Standing curl with two dumbbells, palms forward at the top: start and top position.",
+      "rationale": "Same equipment and movement.",
+      "provider": {
+        "name": "wger",
+        "exerciseId": 92,
+        "mediaId": "23+24",
+        "page": "https://wger.de/en/exercise/92/view-base",
+        "retrieved": "2026-10-18",
+        "originals": [
+          "https://wger.de/media/exercise-images/81/Biceps-curl-1.png",
+          "https://wger.de/media/exercise-images/81/Biceps-curl-2.png"
+        ]
+      },
+      "credit": {
+        "creator": "Everkinetic",
+        "licence": "CC BY-SA 3.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attribution": "Illustrations by Everkinetic, via wger.de, CC BY-SA 3.0"
+      },
+      "changes": "The provider's 400 px thumbnails of the start and finish positions, placed side by side on white (640 x 320), JPEG.",
+      "download": false
+    },
+    {
+      "catalogKey": "dip",
+      "kind": "video",
+      "status": "approved",
+      "poster": "assets/demos/dip.jpg",
+      "variant": "Bodyweight dips on parallel bars with a slight forward lean; filmed from the side and front.",
+      "rationale": "The catalogue entry is the parallel-bar dip (coach guide equipment 'Parallel bars'), not the bench dip. Clip 65 chosen over 64 (head out of frame at the top) and 66 (from behind).",
+      "video": {
+        "url": "https://wger.de/media/exercise-video/194/7a6987aa-138d-41e4-8842-5c3e3d970bd9.MOV",
+        "bytes": 8340144,
+        "sha256": "70d306b3c036ffd7d0d2373d9c781442d996e710b490a1560381cb85b53917b3",
+        "codec": "H.264",
+        "container": "QuickTime (.mov)",
+        "durationSeconds": 16.37,
+        "width": 1920,
+        "height": 1080
+      },
+      "provider": {
+        "name": "wger",
+        "exerciseId": 194,
+        "mediaId": 65,
+        "page": "https://wger.de/en/exercise/194/view-base",
+        "retrieved": "2026-10-18"
+      },
+      "credit": {
+        "creator": "Goulart",
+        "licence": "CC BY-SA 4.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Video by Goulart, via wger.de, CC BY-SA 4.0"
+      },
+      "changes": "Played and saved exactly as published (no transcoding or cropping). Poster: one frame at 10 % of the clip, scaled to 640 px wide, JPEG.",
+      "download": true
+    },
+    {
+      "catalogKey": "dumbbell-bench-press",
+      "kind": "video",
+      "status": "approved",
+      "poster": "assets/demos/dumbbell-bench-press.jpg",
+      "variant": "Two dumbbells on a flat bench, palms forward; filmed from the side, both dumbbells visible.",
+      "rationale": "Same equipment and movement as the catalogue entry. Clip 20 chosen over 17 because both arms are in view.",
+      "video": {
+        "url": "https://wger.de/media/exercise-video/75/c9cbd391-1e22-4014-8794-04630c80665f.MOV",
+        "bytes": 4576193,
+        "sha256": "d740856c3927ad1b89217c9b4d57df5202ff2dc0603991bd95d7823b5e63dde3",
+        "codec": "H.264",
+        "container": "QuickTime (.mov)",
+        "durationSeconds": 11.28,
+        "width": 1920,
+        "height": 1080
+      },
+      "provider": {
+        "name": "wger",
+        "exerciseId": 75,
+        "mediaId": 20,
+        "page": "https://wger.de/en/exercise/75/view-base",
+        "retrieved": "2026-10-18"
+      },
+      "credit": {
+        "creator": "Goulart",
+        "licence": "CC BY-SA 4.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Video by Goulart, via wger.de, CC BY-SA 4.0"
+      },
+      "changes": "Played and saved exactly as published (no transcoding or cropping). Poster: one frame at 10 % of the clip, scaled to 640 px wide, JPEG.",
+      "download": true
+    },
+    {
+      "catalogKey": "dumbbell-shoulder-press",
+      "kind": "still",
+      "status": "approved",
+      "poster": "assets/demos/dumbbell-shoulder-press.jpg",
+      "variant": "SEATED dumbbell press on a bench with a back support: dumbbells at the shoulders and overhead.",
+      "rationale": "The coach guide allows seated or standing; this shows seated.",
+      "provider": {
+        "name": "wger",
+        "exerciseId": 567,
+        "mediaId": "173+174",
+        "page": "https://wger.de/en/exercise/567/view-base",
+        "retrieved": "2026-10-18",
+        "originals": [
+          "https://wger.de/media/exercise-images/123/dumbbell-shoulder-press-large-1.png",
+          "https://wger.de/media/exercise-images/123/dumbbell-shoulder-press-large-2.png"
+        ]
+      },
+      "credit": {
+        "creator": "Everkinetic",
+        "licence": "CC BY-SA 3.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attribution": "Illustrations by Everkinetic, via wger.de, CC BY-SA 3.0"
+      },
+      "changes": "The provider's 400 px thumbnails of the start and finish positions, placed side by side on white (640 x 320), JPEG.",
+      "download": false
+    },
+    {
+      "catalogKey": "hammer-curl",
+      "kind": "still",
+      "status": "approved",
+      "poster": "assets/demos/hammer-curl.jpg",
+      "variant": "Standing dumbbell curl with palms facing each other: start and top position.",
+      "rationale": "Same equipment, grip and movement.",
+      "provider": {
+        "name": "wger",
+        "exerciseId": 272,
+        "mediaId": "47+48",
+        "page": "https://wger.de/en/exercise/272/view-base",
+        "retrieved": "2026-10-18",
+        "originals": [
+          "https://wger.de/media/exercise-images/86/Bicep-hammer-curl-1.png",
+          "https://wger.de/media/exercise-images/86/Bicep-hammer-curl-2.png"
+        ]
+      },
+      "credit": {
+        "creator": "Everkinetic",
+        "licence": "CC BY-SA 3.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attribution": "Illustrations by Everkinetic, via wger.de, CC BY-SA 3.0"
+      },
+      "changes": "The provider's 400 px thumbnails of the start and finish positions, placed side by side on white (640 x 320), JPEG.",
+      "download": false
+    },
+    {
+      "catalogKey": "incline-dumbbell-press",
+      "kind": "video",
+      "status": "approved",
+      "poster": "assets/demos/incline-dumbbell-press.jpg",
+      "variant": "Two dumbbells on an incline bench, palms forward; filmed from the side, then from the front.",
+      "rationale": "Same equipment and movement as the catalogue entry (dumbbells, incline bench).",
+      "video": {
+        "url": "https://wger.de/media/exercise-video/537/b9c937e9-daeb-42a9-be8e-7a77e368478c.MOV",
+        "bytes": 10602354,
+        "sha256": "4861d89988c8e8886435e62064aedd68c04484f0c4646270d182307025c3a162",
+        "codec": "H.264",
+        "container": "QuickTime (.mov)",
+        "durationSeconds": 27.49,
+        "width": 1920,
+        "height": 1080
+      },
+      "provider": {
+        "name": "wger",
+        "exerciseId": 537,
+        "mediaId": 24,
+        "page": "https://wger.de/en/exercise/537/view-base",
+        "retrieved": "2026-10-18"
+      },
+      "credit": {
+        "creator": "Goulart",
+        "licence": "CC BY-SA 4.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Video by Goulart, via wger.de, CC BY-SA 4.0"
+      },
+      "changes": "Played and saved exactly as published (no transcoding or cropping). Poster: one frame at 10 % of the clip, scaled to 640 px wide, JPEG.",
+      "download": true
+    },
+    {
+      "catalogKey": "lateral-raise",
+      "kind": "still",
+      "status": "approved",
+      "poster": "assets/demos/lateral-raise.jpg",
+      "variant": "Standing dumbbell raise out to the sides to shoulder height: start and top position.",
+      "rationale": "Same equipment and movement.",
+      "provider": {
+        "name": "wger",
+        "exerciseId": 348,
+        "mediaId": "177+178",
+        "page": "https://wger.de/en/exercise/348/view-base",
+        "retrieved": "2026-10-18",
+        "originals": [
+          "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
+          "https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-1.png"
+        ]
+      },
+      "credit": {
+        "creator": "Everkinetic",
+        "licence": "CC BY-SA 3.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attribution": "Illustrations by Everkinetic, via wger.de, CC BY-SA 3.0"
+      },
+      "changes": "The provider's 400 px thumbnails of the start and finish positions, placed side by side on white (640 x 320), JPEG.",
+      "download": false
+    },
+    {
+      "catalogKey": "overhead-triceps-extension",
+      "kind": "video",
+      "status": "approved",
+      "poster": "assets/demos/overhead-triceps-extension.jpg",
+      "variant": "One dumbbell held in both hands, lowered behind the head; SEATED on a bench with an upright back support. Side, back and front views.",
+      "rationale": "The catalogue entry is one dumbbell overhead with both hands (coach guide: 'Hold one dumbbell overhead with both hands'); it does not fix seated or standing. The clip is seated, which the sheet states.",
+      "video": {
+        "url": "https://wger.de/media/exercise-video/211/85f6eb25-a76c-409e-9af9-497794ac0dfb.MOV",
+        "bytes": 11837332,
+        "sha256": "3ca3071ca6e4d19e6aac1197b22977932d527c7661a2cacb0652b6d976bc80ff",
+        "codec": "H.264",
+        "container": "QuickTime (.mov)",
+        "durationSeconds": 32.02,
+        "width": 1920,
+        "height": 1080
+      },
+      "provider": {
+        "name": "wger",
+        "exerciseId": 211,
+        "mediaId": 57,
+        "page": "https://wger.de/en/exercise/211/view-base",
+        "retrieved": "2026-10-18"
+      },
+      "credit": {
+        "creator": "Goulart",
+        "licence": "CC BY-SA 4.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Video by Goulart, via wger.de, CC BY-SA 4.0"
+      },
+      "changes": "Played and saved exactly as published (no transcoding or cropping). Poster: one frame at 10 % of the clip, scaled to 640 px wide, JPEG.",
+      "download": true
+    },
+    {
+      "catalogKey": "seated-cable-row",
+      "kind": "still",
+      "status": "approved",
+      "poster": "assets/demos/seated-cable-row.jpg",
+      "variant": "Seated low-pulley row with a close-grip handle, feet on the foot plate: arms straight and handle at the waist.",
+      "rationale": "Same equipment and movement.",
+      "provider": {
+        "name": "wger",
+        "exerciseId": 394,
+        "mediaId": "143+144",
+        "page": "https://wger.de/en/exercise/394/view-base",
+        "retrieved": "2026-10-18",
+        "originals": [
+          "https://wger.de/media/exercise-images/143/Cable-seated-rows-2.png",
+          "https://wger.de/media/exercise-images/143/Cable-seated-rows-1.png"
+        ]
+      },
+      "credit": {
+        "creator": "Everkinetic",
+        "licence": "CC BY-SA 3.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attribution": "Illustrations by Everkinetic, via wger.de, CC BY-SA 3.0"
+      },
+      "changes": "The provider's 400 px thumbnails of the start and finish positions, placed side by side on white (640 x 320), JPEG.",
+      "download": false
+    },
+    {
+      "catalogKey": "walking-lunge",
+      "kind": "still",
+      "status": "approved",
+      "poster": "assets/demos/walking-lunge.jpg",
+      "variant": "Lunge holding two dumbbells: standing and the bottom of a step.",
+      "rationale": "Same movement with the catalogue's dumbbells. A still cannot show the walking step; the sheet says it is two positions.",
+      "provider": {
+        "name": "wger",
+        "exerciseId": 206,
+        "mediaId": "121+122",
+        "page": "https://wger.de/en/exercise/206/view-base",
+        "retrieved": "2026-10-18",
+        "originals": [
+          "https://wger.de/media/exercise-images/113/Walking-lunges-1.png",
+          "https://wger.de/media/exercise-images/113/Walking-lunges-2.png"
+        ]
+      },
+      "credit": {
+        "creator": "Everkinetic",
+        "licence": "CC BY-SA 3.0",
+        "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attribution": "Illustrations by Everkinetic, via wger.de, CC BY-SA 3.0"
+      },
+      "changes": "The provider's 400 px thumbnails of the start and finish positions, placed side by side on white (640 x 320), JPEG.",
+      "download": false
+    }
+  ],
+  "techniqueReviewNote": "Written by the developer from the exercise-specific source named with it, checked on the date shown. Not reviewed by a qualified coach.",
+  "techniqueSources": [
+    {
+      "id": "ace-chest-press-barbell",
+      "title": "Chest Press (barbell)",
+      "publisher": "American Council on Exercise, Exercise Library",
+      "url": "https://www.acefitness.org/resources/everyone/exercise-library/5/chest-press/",
+      "checked": "2026-10-18"
+    },
+    {
+      "id": "ace-incline-chest-press",
+      "title": "Incline Chest Press (dumbbells)",
+      "publisher": "American Council on Exercise, Exercise Library",
+      "url": "https://www.acefitness.org/resources/everyone/exercise-library/25/incline-chest-press/",
+      "checked": "2026-10-18"
+    },
+    {
+      "id": "ace-chest-press-dumbbell",
+      "title": "Chest Press (dumbbells)",
+      "publisher": "American Council on Exercise, Exercise Library",
+      "url": "https://www.acefitness.org/resources/everyone/exercise-library/19/chest-press/",
+      "checked": "2026-10-18"
+    },
+    {
+      "id": "ace-triceps-extension",
+      "title": "Triceps Extension (one dumbbell overhead)",
+      "publisher": "American Council on Exercise, Exercise Library",
+      "url": "https://www.acefitness.org/resources/everyone/exercise-library/74/triceps-extension/",
+      "checked": "2026-10-18"
+    }
+  ],
+  "technique": [
+    {
+      "catalogKey": "bench-press",
+      "sources": [
+        "ace-chest-press-barbell"
+      ],
+      "setup": [
+        "Lie on your back on a flat bench and hold the bar with your hands slightly wider than your shoulders.",
+        "Press your feet into the floor and your hips into the bench as you lift the bar off the rack."
+      ],
+      "movement": [
+        "Lower the bar slowly to your chest, letting your elbows bend out to the sides.",
+        "Stop when your elbows are just below the level of the bench.",
+        "Press your feet into the floor and push the bar straight back up."
+      ],
+      "mistakes": []
+    },
+    {
+      "catalogKey": "incline-dumbbell-press",
+      "sources": [
+        "ace-incline-chest-press"
+      ],
+      "setup": [
+        "Lie back on an incline bench (the source describes 45 to 60 degrees) with your feet firmly on the floor or a raised platform.",
+        "Pull your shoulders down and back against the bench. Keep your head, shoulders, hips and feet in contact throughout.",
+        "Press the dumbbells up over your eyes with straight arms, palms facing forward and wrists straight."
+      ],
+      "movement": [
+        "Breathe in and lower the dumbbells slowly towards your upper chest, slightly wide towards your armpits, elbows under your wrists.",
+        "Breathe out and press back up until your arms are straight."
+      ],
+      "mistakes": [
+        "Bouncing the dumbbells off your chest.",
+        "Arching your lower back, or lifting your head, hips or feet.",
+        "Letting your wrists bend back or forward."
+      ]
+    },
+    {
+      "catalogKey": "dumbbell-bench-press",
+      "sources": [
+        "ace-chest-press-dumbbell"
+      ],
+      "setup": [
+        "Lie on your back on a flat bench with your feet firmly on the floor.",
+        "Pull your shoulders down and back against the bench.",
+        "Press the dumbbells up to about eye level with straight arms, palms facing forward and wrists straight."
+      ],
+      "movement": [
+        "Breathe in and lower the dumbbells slowly towards the middle of your chest.",
+        "Breathe out and press back up until your arms are straight."
+      ],
+      "mistakes": [
+        "Bouncing the dumbbells off your chest.",
+        "Arching your lower back, or lifting your head, hips or feet.",
+        "Letting your wrists bend back or forward."
+      ]
+    },
+    {
+      "catalogKey": "overhead-triceps-extension",
+      "sources": [
+        "ace-triceps-extension"
+      ],
+      "setup": [
+        "Hold one dumbbell with both hands around the handle. The source stands in a split stance; the demonstration sits on a bench with a back support.",
+        "Brace your middle, pull your shoulders down and back, and keep your head in line with your spine.",
+        "Press the dumbbell overhead until your arms are upright, elbows pointing forward and not locked."
+      ],
+      "movement": [
+        "Breathe in and let the dumbbell lower slowly behind your head without moving your upper arms.",
+        "Stop when your elbows reach about a right angle, or when your upper arms start to move back.",
+        "Breathe out and straighten your arms again."
+      ],
+      "mistakes": [
+        "Letting your upper arms drift forwards or back.",
+        "Touching the back of your head with the dumbbell.",
+        "Moving your head, body or feet during the set."
+      ]
+    }
+  ]
+}

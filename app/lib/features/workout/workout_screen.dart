@@ -14,6 +14,8 @@ import '../coach/coach_avatar.dart' show CoachHelpButton;
 import '../coach/coach_bubble.dart';
 import '../coach/coach_contract.dart';
 import '../coach/coach_prefs.dart' show workoutSavedProvider;
+import '../coach/exercise_media.dart' show exerciseMediaProvider;
+import '../coach/guide_sheets.dart' show showExerciseDetails;
 import '../plans/plan_progress.dart';
 import 'progress.dart';
 import 'result_rules.dart';
@@ -389,6 +391,21 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> with WidgetsBindi
                     if (selected.substitutedForKey != null)
                       Padding(padding: const EdgeInsets.only(top: 4), child: Text('Recorded as ${selected.name}, in place of the planned movement.', style: context.caption)),
                   ],
+                  // The exercise actually selected (after a replacement, the new one): its own guide and demonstration
+                  // over the screen. Nothing here pauses, records, selects or resets; typed values stay in their fields.
+                  actions: (context) {
+                    final video = ref.watch(exerciseMediaProvider).value?.forKey(selected.catalogKey)?.isVideo ?? false;
+                    return [
+                      TextButton.icon(
+                        key: const Key('workout-demo'),
+                        icon: Icon(video ? Icons.play_circle_outline_rounded : Icons.info_outline_rounded, size: 20),
+                        label: Text(video ? 'Watch demo' : 'How to do it'),
+                        onPressed: () => showExerciseDetails(appContext(context),
+                            exercise: (catalogKey: selected.catalogKey, name: selected.name, isTimed: selected.isTimed), prescription: Prescription(selected.j),
+                            onAsk: () => openAskGoHard(this.context, CoachContext(label: selected.name, focus: CoachFocus.exercise, catalogKey: selected.catalogKey))),
+                      ),
+                    ];
+                  },
                 ),
                 const SizedBox(height: 10),
                 // The plan's target and the user's own last performance, apart: the target is the user's aim and is never

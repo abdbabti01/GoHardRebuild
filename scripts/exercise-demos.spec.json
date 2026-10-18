@@ -1,0 +1,109 @@
+{
+  "reviewed": "2026-10-18",
+  "reviewNote": "Mappings chosen by the developer after watching each clip (frames at 10, 35, 60 and 85 %) and looking at each still. Not reviewed by a qualified coach.",
+  "videos": [
+    { "catalogKey": "bench-press", "wgerExercise": 73, "wgerVideo": 22, "posterAt": 0.35,
+      "variant": "Barbell bench press on a flat bench in a press station, medium-wide overhand grip; filmed from the side.",
+      "rationale": "Same lift and equipment as the catalogue entry (barbell, flat bench). Clip 22 chosen over 21 (several angles) and 23 (close overhead view) because the whole body, bar and bench stay in frame." },
+    { "catalogKey": "incline-dumbbell-press", "wgerExercise": 537, "wgerVideo": 24, "posterAt": 0.1,
+      "variant": "Two dumbbells on an incline bench, palms forward; filmed from the side, then from the front.",
+      "rationale": "Same equipment and movement as the catalogue entry (dumbbells, incline bench)." },
+    { "catalogKey": "dumbbell-bench-press", "wgerExercise": 75, "wgerVideo": 20, "posterAt": 0.1,
+      "variant": "Two dumbbells on a flat bench, palms forward; filmed from the side, both dumbbells visible.",
+      "rationale": "Same equipment and movement as the catalogue entry. Clip 20 chosen over 17 because both arms are in view." },
+    { "catalogKey": "overhead-triceps-extension", "wgerExercise": 211, "wgerVideo": 57, "posterAt": 0.1,
+      "variant": "One dumbbell held in both hands, lowered behind the head; SEATED on a bench with an upright back support. Side, back and front views.",
+      "rationale": "The catalogue entry is one dumbbell overhead with both hands (coach guide: 'Hold one dumbbell overhead with both hands'); it does not fix seated or standing. The clip is seated, which the sheet states." },
+    { "catalogKey": "dip", "wgerExercise": 194, "wgerVideo": 65, "posterAt": 0.1,
+      "variant": "Bodyweight dips on parallel bars with a slight forward lean; filmed from the side and front.",
+      "rationale": "The catalogue entry is the parallel-bar dip (coach guide equipment 'Parallel bars'), not the bench dip. Clip 65 chosen over 64 (head out of frame at the top) and 66 (from behind)." }
+  ],
+  "stills": [
+    { "catalogKey": "barbell-curl", "wgerExercise": 91, "wgerImages": [27, 28], "variant": "Standing barbell curl, underhand shoulder-width grip: start and top position.", "rationale": "Same equipment and movement." },
+    { "catalogKey": "biceps-curl", "wgerExercise": 92, "wgerImages": [23, 24], "variant": "Standing curl with two dumbbells, palms forward at the top: start and top position.", "rationale": "Same equipment and movement." },
+    { "catalogKey": "hammer-curl", "wgerExercise": 272, "wgerImages": [47, 48], "variant": "Standing dumbbell curl with palms facing each other: start and top position.", "rationale": "Same equipment, grip and movement." },
+    { "catalogKey": "lateral-raise", "wgerExercise": 348, "wgerImages": [177, 178], "variant": "Standing dumbbell raise out to the sides to shoulder height: start and top position.", "rationale": "Same equipment and movement." },
+    { "catalogKey": "seated-cable-row", "wgerExercise": 394, "wgerImages": [143, 144], "variant": "Seated low-pulley row with a close-grip handle, feet on the foot plate: arms straight and handle at the waist.", "rationale": "Same equipment and movement." },
+    { "catalogKey": "walking-lunge", "wgerExercise": 206, "wgerImages": [121, 122], "variant": "Lunge holding two dumbbells: standing and the bottom of a step.", "rationale": "Same movement with the catalogue's dumbbells. A still cannot show the walking step; the sheet says it is two positions." },
+    { "catalogKey": "dumbbell-shoulder-press", "wgerExercise": 567, "wgerImages": [173, 174], "variant": "SEATED dumbbell press on a bench with a back support: dumbbells at the shoulders and overhead.", "rationale": "The coach guide allows seated or standing; this shows seated." }
+  ],
+  "gaps": {
+    "back-squat": "No wger clip. The two images (615, 616, uploader 'Workout Guru') look like a commercial illustration set; provenance not established, so excluded.",
+    "barbell-row": "No wger clip. Everkinetic images 84/90 are filed as a 'rear delt row' (a different variant of the bent-over row); not mapped.",
+    "deadlift": "No wger clip. The one image (332) is a photo of a dumbbell deadlift (wrong equipment) of uncertain provenance.",
+    "overhead-press": "No clip of the standing barbell press. Everkinetic 171/172 show it seated (a different variant); image 647 looks commercial. Not mapped.",
+    "lat-pulldown": "No wger clip and no image of the standard wide-grip pulldown.",
+    "romanian-deadlift": "wger clips 2, 3, 4 match but are 36-373 MiB 10-bit HEVC (Dolby Vision) with the index at the end of the file: over the 20 MiB per-clip limit and not reliably decodable on Android. The only image (715) is marked AI-generated.",
+    "leg-press": "wger clips 44-46 match but are 55-333 MiB 10-bit HEVC: over the limit. Image 573 has no recorded author.",
+    "dumbbell-row": "No wger clip. Image 419 carries a '(c) HOIST Fitness Systems' notice and 410 looks commercial: excluded.",
+    "seated-cable-row": "Video: wger clip 1 ('Rowing seated, narrow grip') is 32.7 MiB 10-bit HEVC, over the limit. Still-only coverage from Everkinetic.",
+    "goblet-squat": "No wger clip. Images 328/329 look like magazine stock photos; provenance not established.",
+    "walking-lunge": "Video: wger clip 33 is 22.7 MiB 10-bit HEVC, over the limit. Still-only coverage from Everkinetic.",
+    "leg-curl": "The catalogue entry is generic (lying, seated or standing machine). wger has all three as 30-69 MiB HEVC clips (over the limit) and Everkinetic stills of each; mapping one variant would redefine the entry, so it is left unmapped.",
+    "dumbbell-shoulder-press": "Video: wger clip 12 is 59.9 MiB 10-bit HEVC, over the limit. Still-only coverage from Everkinetic.",
+    "lateral-raise": "Video: wger clip 6 is 41.8 MiB 10-bit HEVC, over the limit. Still-only coverage from Everkinetic.",
+    "biceps-curl": "Video: wger clip 48 is 30.3 MiB 10-bit HEVC, over the limit. Still-only coverage from Everkinetic.",
+    "triceps-pushdown": "wger's cable triceps clips (55, 56) are OVERHEAD cable extensions, not pushdowns. Pushdown images: 415 carries a '(c) HOIST' notice, 649 looks commercial, 805 has no author. Not mapped.",
+    "pull-up": "wger clip 71 is 54.5 MiB 10-bit HEVC, over the limit. Image 323 provenance not established.",
+    "push-up": "No wger clip. Image 524 appears AI-generated although not marked; excluded.",
+    "plank": "No wger clip. Images 346-354 (uploader 'utkb') provenance not established.",
+    "side-plank": "No wger clip or image.",
+    "hanging-leg-raise": "No wger clip; the only image (678) is marked AI-generated.",
+    "farmer-carry": "No wger clip or image.",
+    "calf-raise": "wger clips 14/15 are 26-29 MiB 10-bit HEVC, over the limit. Images 437-439 show dumbbells (not a machine) and look commercial.",
+    "single-leg-calf-raise": "No wger clip or suitable image.",
+    "leg-extension": "No wger clip. Image 386 looks like a commercial muscle chart; 569 has no author.",
+    "hip-thrust": "wger clips 72/73 are 83-150 MiB 10-bit HEVC, over the limit. No non-AI barbell image.",
+    "glute-bridge": "No wger clip. Image 712 has no recorded author.",
+    "single-leg-glute-bridge": "No wger clip or image.",
+    "bulgarian-split-squat": "No wger clip. Images 383/597 look like commercial muscle charts.",
+    "bodyweight-squat": "No wger clip; no suitable image.",
+    "reverse-lunge": "No wger clip. Images 335/336 look like stock photos.",
+    "dumbbell-romanian-deadlift": "No wger clip. Image 590 looks like a commercial muscle chart.",
+    "cable-fly": "No wger clip. Everkinetic 119/120 show a cable fly lying on an incline bench (a different variant); 462 looks commercial.",
+    "dumbbell-fly": "No wger clip. Images 212/213 (uploader 'cshep442') are in the Everkinetic style but were not uploaded as Everkinetic; provenance not established.",
+    "feet-elevated-push-up": "No wger clip. Image 357 looks like a commercial muscle chart.",
+    "chin-up": "No wger clip. Everkinetic 73/75 are drawn from behind and the grip direction (palms towards you) cannot be confirmed.",
+    "inverted-row": "No wger clip. Image 428 looks like a commercial muscle chart.",
+    "dumbbell-pullover": "No wger clip; the only image (682) is marked AI-generated.",
+    "face-pull": "wger clips 78/79 match, but they are 10-bit HEVC Dolby Vision with the index at the end (78 is also over 20 MiB): not reliably decodable on Android. Images: none suitable.",
+    "rear-delt-fly": "wger clips 7-10 ('Bent-over lateral raises') are 10-bit HEVC Dolby Vision, 12.8-21.9 MiB: not reliably decodable on Android. Images 214/218/219 (uploader 'cshep442') provenance not established.",
+    "pike-push-up": "No wger clip; the only image (697) is marked AI-generated.",
+    "barbell-curl": "Video: wger clip 49 is 21.6 MiB 10-bit HEVC, over the limit. Still-only coverage from Everkinetic.",
+    "hammer-curl": "Video: wger clip 51 is 28.8 MiB 10-bit HEVC, over the limit. Still-only coverage from Everkinetic.",
+    "bench-dip": "No wger clip of the bench dip. Everkinetic 35/36 show the feet on a second bench, a harder variant than the guide's; not mapped.",
+    "dead-bug": "No wger clip or image."
+  },
+  "techniqueSources": [
+    { "id": "ace-chest-press-barbell", "title": "Chest Press (barbell)", "publisher": "American Council on Exercise, Exercise Library", "url": "https://www.acefitness.org/resources/everyone/exercise-library/5/chest-press/", "checked": "2026-10-18" },
+    { "id": "ace-incline-chest-press", "title": "Incline Chest Press (dumbbells)", "publisher": "American Council on Exercise, Exercise Library", "url": "https://www.acefitness.org/resources/everyone/exercise-library/25/incline-chest-press/", "checked": "2026-10-18" },
+    { "id": "ace-chest-press-dumbbell", "title": "Chest Press (dumbbells)", "publisher": "American Council on Exercise, Exercise Library", "url": "https://www.acefitness.org/resources/everyone/exercise-library/19/chest-press/", "checked": "2026-10-18" },
+    { "id": "ace-triceps-extension", "title": "Triceps Extension (one dumbbell overhead)", "publisher": "American Council on Exercise, Exercise Library", "url": "https://www.acefitness.org/resources/everyone/exercise-library/74/triceps-extension/", "checked": "2026-10-18" }
+  ],
+  "technique": {
+    "bench-press": {
+      "sources": ["ace-chest-press-barbell"],
+      "setup": ["Lie on your back on a flat bench and hold the bar with your hands slightly wider than your shoulders.", "Press your feet into the floor and your hips into the bench as you lift the bar off the rack."],
+      "movement": ["Lower the bar slowly to your chest, letting your elbows bend out to the sides.", "Stop when your elbows are just below the level of the bench.", "Press your feet into the floor and push the bar straight back up."],
+      "mistakes": []
+    },
+    "incline-dumbbell-press": {
+      "sources": ["ace-incline-chest-press"],
+      "setup": ["Lie back on an incline bench (the source describes 45 to 60 degrees) with your feet firmly on the floor or a raised platform.", "Pull your shoulders down and back against the bench. Keep your head, shoulders, hips and feet in contact throughout.", "Press the dumbbells up over your eyes with straight arms, palms facing forward and wrists straight."],
+      "movement": ["Breathe in and lower the dumbbells slowly towards your upper chest, slightly wide towards your armpits, elbows under your wrists.", "Breathe out and press back up until your arms are straight."],
+      "mistakes": ["Bouncing the dumbbells off your chest.", "Arching your lower back, or lifting your head, hips or feet.", "Letting your wrists bend back or forward."]
+    },
+    "dumbbell-bench-press": {
+      "sources": ["ace-chest-press-dumbbell"],
+      "setup": ["Lie on your back on a flat bench with your feet firmly on the floor.", "Pull your shoulders down and back against the bench.", "Press the dumbbells up to about eye level with straight arms, palms facing forward and wrists straight."],
+      "movement": ["Breathe in and lower the dumbbells slowly towards the middle of your chest.", "Breathe out and press back up until your arms are straight."],
+      "mistakes": ["Bouncing the dumbbells off your chest.", "Arching your lower back, or lifting your head, hips or feet.", "Letting your wrists bend back or forward."]
+    },
+    "overhead-triceps-extension": {
+      "sources": ["ace-triceps-extension"],
+      "setup": ["Hold one dumbbell with both hands around the handle. The source stands in a split stance; the demonstration sits on a bench with a back support.", "Brace your middle, pull your shoulders down and back, and keep your head in line with your spine.", "Press the dumbbell overhead until your arms are upright, elbows pointing forward and not locked."],
+      "movement": ["Breathe in and let the dumbbell lower slowly behind your head without moving your upper arms.", "Stop when your elbows reach about a right angle, or when your upper arms start to move back.", "Breathe out and straighten your arms again."],
+      "mistakes": ["Letting your upper arms drift forwards or back.", "Touching the back of your head with the dumbbell.", "Moving your head, body or feet during the set."]
+    }
+  }
+}
