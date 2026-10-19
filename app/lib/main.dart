@@ -17,7 +17,10 @@ import 'features/weather/weather.dart';
 
 class SecureSecretStore implements SecretStore {
   const SecureSecretStore();
-  static const _storage = FlutterSecureStorage();
+  // After the first unlock since the phone started, not only while it is unlocked: GoHard keeps syncing during a run with
+  // the screen locked, and a refresh token rotated then must be saved, or the next start finds only the revoked one.
+  // Still this phone's encrypted keychain; reads fall back to items saved under the previous setting.
+  static const _storage = FlutterSecureStorage(iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock));
   @override
   Future<String?> read(String key) => _storage.read(key: key);
   @override

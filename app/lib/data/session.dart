@@ -82,11 +82,30 @@ class SessionManager {
     if (_current?.epoch != from.epoch) return; // the account changed while the refresh was in flight
     _current = Session(ownerId: from.ownerId, email: from.email, accessToken: auth['accessToken'] as String,
         refreshToken: auth['refreshToken'] as String, epoch: from.epoch);
-    await _store.write(_key, jsonEncode(_current!.toJson()));
+    _unsaved = true;
+    await persistIfNeeded();
+  }
+
+  // The server has already revoked the previous refresh token, so the new pair is the only one that works. If it cannot
+  // be saved now (the iOS keychain refuses while the phone is locked), the session goes on from memory and the pair is
+  // saved at the next chance: losing it would mean "sign in again" at the next start.
+  bool _unsaved = false;
+
+  /// Saves a rotated pair that could not be saved before. Called after each rotation and when the app comes back.
+  Future<void> persistIfNeeded() async {
+    final s = _current;
+    if (!_unsaved || s == null) return;
+    try {
+      await _store.write(_key, jsonEncode(s.toJson()));
+      if (identical(_current, s)) _unsaved = false;
+    } on Object {
+      // Kept in memory; tried again later.
+    }
   }
 
   Future<void> signOut({String? reason}) async {
     _current = null;
+    _unsaved = false;
     _epoch++;
     notice = reason;
     await _store.delete(_key);
@@ -152,7 +171,17 @@ class Api {
     if (!auth || s == null) return _transport.send(method, path, data: data);
     var r = await _transport.send(method, path, data: data, bearer: s.accessToken);
     if (r.status != 401) return r;
-    if (!await (_refreshing ??= _refresh(s).whenComplete(() => _refreshing = null))) return r;
+    final now = _sessions.current;
+    // Another account since this was sent: its answer belongs to nobody now. Nothing is refreshed or retried for it.
+    if (now == null || now.epoch != s.epoch) return r;
+    // Only refresh when no other request already did since this one was sent. A 401 that arrives late, after another
+    // request rotated the tokens, would otherwise present the refresh token the server has just revoked, and its
+    // rejection would sign out a session that is perfectly valid.
+    if (now.accessToken == s.accessToken) {
+      if (!await (_refreshing ??= _refresh(now).whenComplete(() => _refreshing = null))) return r;
+    } else if (_refreshing case final inFlight?) {
+      if (!await inFlight) return r;
+    }
     final next = _sessions.current;
     if (next == null || next.epoch != s.epoch) return r;
     return _transport.send(method, path, data: data, bearer: next.accessToken);
@@ -164,8 +193,10 @@ class Api {
       await _sessions.rotated(s, r.data as Json);
       return _sessions.current?.epoch == s.epoch;
     }
-    // Expired sign-in pauses protected sync. It never deletes entered training, food or pending work.
-    if (r.status == 401 && _sessions.current?.epoch == s.epoch) {
+    // Expired sign-in pauses protected sync. It never deletes entered training, food or pending work. Only a rejection
+    // of the refresh token the session still holds counts; server errors, rate limits and timeouts decide nothing.
+    final now = _sessions.current;
+    if (r.status == 401 && now != null && now.epoch == s.epoch && now.refreshToken == s.refreshToken) {
       await _sessions.signOut(reason: 'Your sign-in expired. Sign in again to keep syncing; everything saved on this phone is still here.');
     }
     return false;

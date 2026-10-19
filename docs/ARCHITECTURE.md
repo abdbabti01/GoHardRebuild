@@ -36,7 +36,12 @@ with HTTP 200 / 409 / 422.
 
 **Ownership** always comes from the validated token (`sub`), never from a client-supplied ID. A token stops working
 the moment its account is deleted (security-stamp check on every request). Passwords use ASP.NET Core Identity's
-`PasswordHasher`; refresh tokens are stored hashed and rotate on use.
+`PasswordHasher`; refresh tokens are stored hashed and rotate on use (single use: a replayed one is rejected). Access tokens
+last 30 minutes, refresh tokens 60 days (appsettings.json; the hosted service sets only the signing key). On the phone
+(`Api` in data/session.dart) a 401 refreshes only if no other request rotated the tokens since it was sent (otherwise it
+retries with the current token); only a rejection of the refresh token the session still holds signs out; a rotated pair
+that cannot be saved is kept in memory and saved on the next foreground; the keychain is "after first unlock" so a
+rotation during a locked-screen run can be saved (docs/PROGRESS_LEDGER.md, 19 Oct 2026).
 
 **Readiness**: `SchemaReadinessService` reads migration history and table names only and reports
 `Ready / PendingMigration / UnknownHistory / SchemaDrift / Unreachable`. Not ready ⇒ `/health/ready` and all `/api`

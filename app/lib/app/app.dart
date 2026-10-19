@@ -46,6 +46,8 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // A token rotation the locked keychain refused while in the background is saved now, before anything else.
+      unawaited(ref.read(sessionsProvider).persistIfNeeded());
       ref.read(dateServiceProvider).refresh();
       ref.invalidate(reminderSyncProvider); // the phone's zone may have changed: re-time future reminders, never the plan's dates
       _check();

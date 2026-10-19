@@ -1764,3 +1764,32 @@ moved), Other amount back after 5 s; Other amount 330 → 580 mL; Eat History; T
 Motion counts), iOS beyond CI compilation.
 - CI run 92 on `59904a6`: **passed**. Unsigned IPA run 35 on `59904a6`, build number 35, artifact
   `GoHard-Dev-unsigned-ipa`: passed. `main` and Railway unchanged.
+
+## 19 Oct 2026 — Unexpected "Your sign-in expired" sign-outs (`fix/auth-sign-out`, from `main` c586864)
+
+Lifetimes: access 30 min, refresh 60 days, single-use rotation (repository defaults in appsettings.json; the hosted
+service is configured only with `GOHARD_Auth__SigningKey`, per RELEASE_AND_ROLLBACK.md; Railway itself was not read).
+The notice is shown in one place only: `Api._refresh` when `POST /auth/refresh` answers 401 and the session epoch still
+matches, i.e. when the phone presents a refresh token the server no longer accepts (already used, expired, or revoked).
+
+- **Confirmed defect 1 (reproduced, fixed):** request A sent with an expired access token; request B gets 401, refreshes
+  R1 → R2 (R1 revoked) and finishes; A's 401 arrives after that, `_refreshing` is clear, so A refreshed again with the
+  revoked R1 it had captured, got 401, and signed out the valid session (rotation keeps the epoch). Happens whenever two
+  authenticated requests overlap after the 30-minute access token expired: resume (sync, pull, weather, coach) and the
+  45-second poll while the app is open. `session_refresh_test` reproduced it on the unchanged code (signed out) and
+  passes with the fix: a 401 refreshes only if nobody rotated since it was sent, otherwise it retries with the current
+  token; a delayed 401 for a previous account refreshes nothing; a refresh 401 signs out only if it rejected the refresh
+  token the session still holds.
+- **Confirmed defect 2 (reproduced as code behaviour, fixed):** if saving the rotated pair failed, the request threw
+  and the revoked token stayed on disk, to be restored at the next start (→ the notice). The iOS keychain items were
+  "when unlocked" (flutter_secure_storage default) while GoHard syncs in the background during a locked-screen run.
+  Now the pair stays in memory and is saved on the next foreground, and keychain items are "after first unlock"
+  (the plugin reads items saved under the old setting and moves them on the next write).
+- **Not fixed, remaining risk:** a refresh the server accepts whose response never reaches the phone (iOS suspends the
+  app mid-request, connection drops) leaves the phone with the revoked token; the next refresh is rejected by design
+  (FoundationTests: a replayed refresh token is 401). Closing it needs a server decision: a short reuse grace window for
+  a just-rotated token. Not implemented.
+- Checks: `session_refresh_test` 7 (incident, silent refresh, shared refresh, delayed 401 across accounts, offline/503/
+  500/429 keep the session, genuine revocation still signs out keeping the phone's data, unsaved rotation recovered
+  after restart); `data_layer_test`, `coach_ask_test`, `me_ui_test`, `widget_test`, `tracking_sync_test`: 69 passed.
+  No API code changed. Not observed on a real iPhone.
