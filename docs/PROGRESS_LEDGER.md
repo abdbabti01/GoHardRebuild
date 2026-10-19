@@ -1849,3 +1849,5 @@ matches, i.e. when the phone presents a refresh token the server no longer accep
   same install): Resume → the same workout with its one set and the typed 50; Finish → "Finished partially".
   Captures `docs/evidence/screenshots/wp-01…05`, recording `docs/evidence/recordings/wp-recording.mp4` (Start →
   compare/copy → record → history → leave/return). Not checked on an iPhone.
+- CI run 105 on `21202e5`: **passed** (api, app). Unsigned IPA run 39 on `21202e5`, artifact `GoHard-Dev-unsigned-ipa`:
+  **passed**. `main`, Railway and Cloudflare unchanged by this feature; owner-video branch untouched.
