@@ -34,6 +34,9 @@ public class RefreshToken
     public string TokenHash { get; set; } = "";
     public DateTime ExpiresAtUtc { get; set; }
     public DateTime? RevokedAtUtc { get; set; }
+    /// <summary>Set when revoked by rotation (not by logout): the row that replaced it. Marks the immediate predecessor that
+    /// may recover its unused replacement within the recovery window (AuthService.RefreshAsync).</summary>
+    public Guid? ReplacedById { get; set; }
 }
 
 /// <summary>Terminal record of one owner-scoped command. Retained so a lost response can be replayed.</summary>

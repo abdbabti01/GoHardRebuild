@@ -1795,3 +1795,22 @@ matches, i.e. when the phone presents a refresh token the server no longer accep
   No API code changed. Not observed on a real iPhone.
 - CI run 100 on `69dd1c5`: **passed**. Unsigned IPA run 38 on `69dd1c5`, artifact `GoHard-Dev-unsigned-ipa`: **passed**.
   `main`, Railway and Cloudflare unchanged; `feature/owner-exercise-videos` untouched.
+
+## 19 Oct 2026 — Lost refresh responses (`fix/auth-sign-out`, approved narrowly bounded recovery)
+
+- **Reproduced:** `RefreshRecoveryTests.a_lost_refresh_response…` on the unchanged API: refresh R1 accepted (R1 → R2), the
+  answer discarded, the retry with R1 → 401. On the phone (`session_refresh_test`, strict server): a lost answer is an
+  ordinary offline failure, R1 kept, nothing decided; the next request refreshes with R1 → 401 → "Your sign-in expired".
+  The real client retries on its next authenticated request: a sync retry (5–120 s back-off), the 45-second poll while
+  open, or the next resume.
+- **Recovery (server only, migration `AddRefreshTokenReplacement`: nullable `RefreshTokens.ReplacedById`):** the
+  replacement is derived (HMAC under a key from the signing key), so the server returns the SAME replacement to the
+  immediate predecessor within `Auth:RefreshRecoverySeconds` (default 300) from the rotation while it is unused; retries
+  never extend it; rotation is atomic (conditional update in a transaction). See docs/ARCHITECTURE.md › Refresh recovery.
+- Tests: `RefreshRecoveryTests` 7 (lost response + repeated retries, 8 concurrent refreshes → one chain, window counted
+  from the rotation and not extended, older token rejected, logout/expiry/deleted account final, account isolation,
+  window 0 off) and `FoundationTests` (rotation check restated) 16 passed; `session_refresh_test` 9 passed (both lost-
+  response variants plus the existing delayed-401 and secure-storage cases). No client code changed: IPA 38 is
+  compatible (it already retries with the previous token).
+- Deploy needs: the migration (the existing pre-deploy `migrate` applies it); optional `GOHARD_Auth__RefreshRecoverySeconds`.
+  Rotations made before the migration are not recoverable. Not deployed; `main`, Railway, Cloudflare unchanged.

@@ -43,6 +43,18 @@ retries with the current token); only a rejection of the refresh token the sessi
 that cannot be saved is kept in memory and saved on the next foreground; the keychain is "after first unlock" so a
 rotation during a locked-screen run can be saved (docs/PROGRESS_LEDGER.md, 19 Oct 2026).
 
+**Refresh recovery** (`Auth:RefreshRecoverySeconds`, default 300; 0 turns it off). A rotated refresh token's replacement
+is HMAC(server-only key derived from the signing key, previous token), so only hashes are stored and every instance and
+restart derives the same value. If the phone presents the immediately previous token (revoked by rotation, not by
+logout) within the window counted from that rotation, and the replacement is unused, unexpired and of the same account,
+it receives that same replacement and a new access token: no new chain. Anything else is rejected as before: unknown,
+expired, logged out, two rotations back, replacement already used, deleted account, after the window. Rotation is a
+conditional update inside a transaction, so concurrent refreshes converge on the one replacement.
+Trade-off: within the window, someone who holds the previous token as well as the phone could obtain the replacement,
+but only while the phone has not yet used it. Limit: the phone retries on its next request (sync retry 5–120 s, the
+45-second poll while open, the next resume); a lost response followed by a suspension longer than the window still
+ends in "Sign in again".
+
 **Readiness**: `SchemaReadinessService` reads migration history and table names only and reports
 `Ready / PendingMigration / UnknownHistory / SchemaDrift / Unreachable`. Not ready ⇒ `/health/ready` and all `/api`
 return 503. There is no startup migration, history stamping, date rewrite, repair or background reaper.

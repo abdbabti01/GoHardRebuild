@@ -111,11 +111,16 @@ public class FoundationTests(PostgresFixture pg)
         var login = await anonymous.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(me.Email.ToUpperInvariant(), a.Password));
         var tokens = (await login.Content.ReadFromJsonAsync<AuthResponse>(Account.Json))!;
 
-        // Refresh rotates: the old refresh token stops working.
+        // Refresh rotates. A replay right after (a lost response) gets the same replacement, never a second chain
+        // (RefreshRecoveryTests); once the replacement is used, the old refresh token stops working.
         var refreshed = await anonymous.PostAsJsonAsync("/api/v1/auth/refresh", new RefreshRequest(tokens.RefreshToken));
         Assert.Equal(HttpStatusCode.OK, refreshed.StatusCode);
+        var replacement = (await refreshed.Content.ReadFromJsonAsync<AuthResponse>(Account.Json))!.RefreshToken;
         var replay = await anonymous.PostAsJsonAsync("/api/v1/auth/refresh", new RefreshRequest(tokens.RefreshToken));
-        Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
+        Assert.Equal(replacement, (await replay.Content.ReadFromJsonAsync<AuthResponse>(Account.Json))!.RefreshToken);
+        Assert.Equal(HttpStatusCode.OK, (await anonymous.PostAsJsonAsync("/api/v1/auth/refresh", new RefreshRequest(replacement))).StatusCode);
+        var spent = await anonymous.PostAsJsonAsync("/api/v1/auth/refresh", new RefreshRequest(tokens.RefreshToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, spent.StatusCode);
 
         var duplicate = await anonymous.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest(me.Email, "another password", "Copy"));
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);

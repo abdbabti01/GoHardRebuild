@@ -22,6 +22,13 @@ class TokenServer implements Transport {
   /// What the server answers to a refresh: normally the rotation; a test may replace it (a 503, a lost response…).
   ApiResponse? Function()? refreshOverride;
 
+  /// The next refresh is ACCEPTED (the token rotates on the server) but its response never reaches the phone.
+  bool loseNextRefreshResponse = false;
+
+  /// The API's recovery (AuthService): the immediate predecessor of an unused replacement gets that same replacement.
+  bool recovery = false;
+  final successor = <String, String>{};
+
   @override
   Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) async {
     requests.add((path: path, bearer: bearer));
@@ -34,16 +41,28 @@ class TokenServer implements Transport {
       if (override != null) {
         answer = override;
       } else if (refresh[token] != true) {
-        answer = const ApiResponse(401, {'code': 'INVALID_REFRESH_TOKEN'});
+        final next = successor[token];
+        if (recovery && next != null && refresh[next] == true) {
+          issued++;
+          valid.add('A$issued');
+          answer = ApiResponse(200, {'accessToken': 'A$issued', 'refreshToken': next, 'profile': {'userId': 'u1', 'email': 'u1@example.test'}});
+        } else {
+          answer = const ApiResponse(401, {'code': 'INVALID_REFRESH_TOKEN'});
+        }
       } else {
         refresh[token] = false;
         issued++;
         valid.add('A$issued');
         refresh['R$issued'] = true;
+        successor[token] = 'R$issued';
         answer = ApiResponse(200, {'accessToken': 'A$issued', 'refreshToken': 'R$issued', 'profile': {'userId': 'u1', 'email': 'u1@example.test'}});
       }
     } else {
       answer = valid.contains(bearer) ? ApiResponse(200, {'path': path}) : const ApiResponse(401, null);
+    }
+    if (path == '/auth/refresh' && loseNextRefreshResponse && answer.ok) {
+      loseNextRefreshResponse = false;
+      throw const TransportFailure('connectionError'); // processed by the server; the answer is lost on the way
     }
     final wait = held[path];
     if (wait != null) await wait.future;
@@ -146,6 +165,30 @@ void main() {
       expect((await api.send('GET', '/sync/snapshot')).status, 200);
     }
   });
+
+  for (final recovery in [false, true]) {
+    test('a refresh accepted by the server whose response is lost: the phone keeps the old token and retries with it '
+        '(${recovery ? 'recovered by the server' : 'strict server: signed out'})', () async {
+      final (sessions, api, server, store) = await _signedIn();
+      server.recovery = recovery;
+      server.expireAll();
+      server.loseNextRefreshResponse = true;
+      await expectLater(api.send('GET', '/sync/snapshot'), throwsA(isA<TransportFailure>()), reason: 'the caller sees an ordinary offline failure');
+      expect((sessions.current?.refreshToken, sessions.notice), ('R1', null), reason: 'nothing decided on a lost answer');
+      expect(server.refresh['R1'], isFalse, reason: 'but the server did rotate R1');
+      // The next request (the 45 s poll, a sync retry, the next resume) refreshes with the token the phone still has.
+      final r = await api.send('GET', '/sync/snapshot');
+      expect(server.requests.where((q) => q.path == '/auth/refresh').length, 2);
+      if (recovery) {
+        expect(r.status, 200);
+        expect((sessions.current!.refreshToken, sessions.notice), ('R2', null), reason: 'the replacement the server had already issued');
+        expect(await store.read('gohard.rebuild.session'), contains('R2'));
+      } else {
+        expect(sessions.current, isNull);
+        expect(sessions.notice, contains('Your sign-in expired'));
+      }
+    });
+  }
 
   test('a genuinely expired or revoked sign-in still asks to sign in again, keeping what is on the phone', () async {
     final (sessions, api, server, store) = await _signedIn();

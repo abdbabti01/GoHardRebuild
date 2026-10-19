@@ -431,6 +431,9 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("ReplacedById")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("RevokedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
