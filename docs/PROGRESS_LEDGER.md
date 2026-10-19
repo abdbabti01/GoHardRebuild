@@ -1828,3 +1828,5 @@ setup, costs and limits: docs/OWNER_EXERCISE_VIDEOS.md.
   journey. After the passing run, one small UI change: Try again is offered only for processing failures (widget-tested).
 - **Not verified:** real R2 and the hosted API (no credentials used), Cache-Control on R2 copies, real iPhone picking and
   HDR appearance, uploads interrupted by iOS, music/VoiceOver. `main` and Railway unchanged.
+- CI run 97 on `f55f1bb`: **passed** (api, app). Unsigned IPA run 37 on `f55f1bb`, artifact `GoHard-Dev-unsigned-ipa`
+  (19.9 MB): **passed**. `main` and Railway unchanged; no R2 resource or hosted variable was created.
