@@ -1793,3 +1793,5 @@ matches, i.e. when the phone presents a refresh token the server no longer accep
   500/429 keep the session, genuine revocation still signs out keeping the phone's data, unsaved rotation recovered
   after restart); `data_layer_test`, `coach_ask_test`, `me_ui_test`, `widget_test`, `tracking_sync_test`: 69 passed.
   No API code changed. Not observed on a real iPhone.
+- CI run 100 on `69dd1c5`: **passed**. Unsigned IPA run 38 on `69dd1c5`, artifact `GoHard-Dev-unsigned-ipa`: **passed**.
+  `main`, Railway and Cloudflare unchanged; `feature/owner-exercise-videos` untouched.
