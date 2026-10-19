@@ -1885,3 +1885,6 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   regression check) and the journey was run again.
 - **Not verified:** a physical phone; the hosted API (goals need `main` deployed with the migration; until then the app
   shows goals as unavailable there).
+- CI run 107 on `b059564`: app job failed (`run_walk_recorder_test`, above); CI run 108 on `57154fb`: **passed** (api,
+  app). Unsigned IPA run 40 on `57154fb`, artifact `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway, Cloudflare
+  and the owner-video branch unchanged. The local owner-video API container was paused for the journey and restarted.
