@@ -1830,3 +1830,5 @@ setup, costs and limits: docs/OWNER_EXERCISE_VIDEOS.md.
   HDR appearance, uploads interrupted by iOS, music/VoiceOver. `main` and Railway unchanged.
 - CI run 97 on `f55f1bb`: **passed** (api, app). Unsigned IPA run 37 on `f55f1bb`, artifact `GoHard-Dev-unsigned-ipa`
   (19.9 MB): **passed**. `main` and Railway unchanged; no R2 resource or hosted variable was created.
+- Status: **implemented and locally verified; real R2 setup and hosted verification deferred** (by the user, 19 Oct 2026).
+  Resume with docs/OWNER_EXERCISE_VIDEOS.md › Setup. No further IPA needed until app code changes.

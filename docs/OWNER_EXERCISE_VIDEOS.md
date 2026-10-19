@@ -1,5 +1,8 @@
 # Owner exercise videos
 
+**Status (19 Oct 2026): implemented and locally verified; real R2 setup and hosted verification deferred.** Code on
+`feature/owner-exercise-videos` (f55f1bb; CI 97 and unsigned IPA 37 passed). To activate, follow Setup below.
+
 Added 18–19 October 2026 on `feature/owner-exercise-videos`. The app's owner uploads demonstrations from the phone
 (Me › Manage exercise videos), the server converts them, and after an explicit **Publish** everyone using GoHard sees
 them on that exercise, without a new app build. Builds on [EXERCISE_DEMOS.md](EXERCISE_DEMOS.md) (the bundled library
