@@ -27,6 +27,8 @@ abstract final class Kinds {
   static const water = 'water';
   /// The owner's private exercises; referenced from prescriptions as `custom:<id>`.
   static const customExercise = 'custom_exercise';
+  /// Weekly activity targets, one record per effective Monday (id = that Monday's day key). docs/PROGRESS.md.
+  static const weeklyGoal = 'weekly_goal';
   // Local-only kinds: never dispatched. `planBuilder` is the plan being built or edited ("new", or a plan's ID).
   static const runtime = 'runtime', setupDraft = 'setup_draft', planBuilder = 'plan_builder';
   /// Provider foods this owner has looked at, kept so they can be found again without a connection.
@@ -270,6 +272,16 @@ extension type Profile(Json j) {
   bool? get showCarbs => j['showCarbs'] as bool?;
   bool? get showFat => j['showFat'] as bool?;
   int get revision => j['revision'] as int? ?? 0;
+}
+
+/// Weekly activity targets effective from [weekStart] (a Monday) until a later record. Null = no target; both null
+/// = goals cleared from that week. Never suggested by the app.
+extension type WeeklyGoal(Json j) {
+  String get weekStart => j['weekStart'] as String;
+  int? get workoutsTarget => j['workoutsTarget'] as int?;
+  int? get runWalkTarget => j['runWalkTarget'] as int?;
+  int get revision => j['revision'] as int? ?? 0;
+  bool get isEmpty => workoutsTarget == null && runWalkTarget == null;
 }
 
 /// A Run or Walk (docs/RUN_WALK.md). Records from before Run / Walk have no type and are runs.

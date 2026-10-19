@@ -406,6 +406,25 @@ help is the one coach treatment). Android back closes the panel. Preview → rec
   result keeps one coach treatment (no duplicate avatars); the overview's scheduled entry is a compact row, not a photo
   panel, so the open workout keeps the only photograph.
 
+### Progress (19 Oct 2026, from `GoHard_Progress_Claude_Handoff`; rules in `docs/PROGRESS.md`)
+
+Train › Progress opens on **this week** in the pale photo panel (overline "This week", serif "Your weekly rhythm", the
+date range in figures, Set weekly goals / Edit goals as the panel's quiet link) with Workouts and Run / Walk under the
+photograph: an outlined icon, the label, "n of target" (or "n recorded" with no bar) and a 10 px rail capped at full.
+Then **Strength trends** (up to two recently recorded exercises: name, latest result in the serif, date, a small chart;
+See all → a searchable list), **Am I following my plan?** (unchanged figures, "View your plan"), **Last week's recap**
+(a pale card with a calendar icon), then the quieter consistency bars, recent workouts, Workout history and personal
+bests. The goal form is a sheet: one sentence ("These are weekly activity targets. Your training plan stays the same."),
+two numeric fields with helper text, Save goals.
+
+The **exercise trend** page: the photo panel (equipment · category, name, Latest recorded, the result, its date),
+4 weeks / 12 weeks / All as the section control, rep chips when there are several, the chart card ("Top set load ·
+8 reps", "Recorded sessions only", the change in a recessed badge), the session rows (date, time when two share a day,
+result) and a link to every session and set. The **recap**: previous/next among completed weeks, the photo panel ("Your
+week, recorded", counts, distance, active time), Your weekly targets (check + "reached" in words) or "No goals were set
+for this week.", Strength highlight, the guide with the recorded counts (Show coach on Train and Eat), and the week's
+sessions. Every accent and mode come from the theme (no fixed green); large text drops the photographs and wraps rows.
+
 ### Today's training states, guide and coach (15 Oct 2026; `docs/TRAINING_PLANS.md` › Today, `docs/COACH.md`)
 
 - **Today's Workout module** says what the plan says about today and nothing else: the occurrence's own name with

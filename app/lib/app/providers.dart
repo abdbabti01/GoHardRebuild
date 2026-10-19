@@ -24,6 +24,8 @@ import '../features/nutrition/nutrient_coverage.dart';
 import '../features/nutrition/water.dart';
 import '../features/plans/plan_draft.dart';
 import '../features/plans/plan_repository.dart';
+import '../features/progress/goal_repository.dart';
+import '../features/progress/trends.dart';
 import '../features/today/daily.dart';
 import '../features/workout/progress.dart';
 import '../features/workout/workout_repository.dart';
@@ -42,7 +44,18 @@ final syncProvider = Provider<SyncEngine>((ref) {
   final engine = SyncEngine(ref.watch(dbProvider), ref.watch(apiProvider), ref.watch(sessionsProvider));
   // Read at the moment of use: a build the server no longer accepts sends and pulls nothing, and keeps its outbox.
   engine.isBlocked = () => ref.read(compatibilityProvider).blocked;
-  engine.mayDispatch = (cmd) => RunRepository.serverTakes(cmd, ref.read(compatibilityProvider).capabilities);
+  engine.mayDispatch = (cmd) {
+    final capabilities = ref.read(compatibilityProvider).capabilities;
+    final ok = RunRepository.serverTakes(cmd, capabilities) && GoalRepository.serverTakes(cmd, capabilities);
+    // Held only because the server has not answered yet (the app started offline): ask again (one check at a time),
+    // and send once an answer arrives. No answer leaves it waiting, with no retry loop.
+    if (!ok && capabilities == null) {
+      ref.read(compatibilityProvider.notifier).check().then((_) {
+        if (ref.mounted && ref.read(compatibilityProvider).capabilities != null) engine.kick();
+      }).ignore();
+    }
+    return ok;
+  };
   ref.onDispose(engine.dispose);
   return engine;
 });
@@ -119,6 +132,8 @@ final savedFoodsProvider = StreamProvider<List<Stored<SavedFood>>>((ref) => _row
 final seenFoodsProvider = StreamProvider<List<FoodItem>>((ref) => _rows(ref, Kinds.foodCache, (j) => j).map((rows) =>
     [for (final r in [...rows]..sort((a, b) => (b.value['cachedAtUtc'] as String).compareTo(a.value['cachedAtUtc'] as String))) FoodItem(r.value['item'] as Json)]));
 final runsProvider = StreamProvider<List<Stored<Run>>>((ref) => _rows(ref, Kinds.run, Run.new));
+/// Weekly activity targets, one record per effective Monday (features/progress/weekly.dart).
+final weeklyGoalsProvider = StreamProvider<List<Stored<WeeklyGoal>>>((ref) => _rows(ref, Kinds.weeklyGoal, WeeklyGoal.new));
 final metricsProvider = StreamProvider<List<Stored<BodyMetric>>>((ref) => _rows(ref, Kinds.metric, BodyMetric.new));
 final proposalsProvider = StreamProvider<List<Stored<Proposal>>>((ref) => _rows(ref, Kinds.proposal, Proposal.new));
 final catalogProvider = StreamProvider<List<CatalogExercise>>((ref) =>
@@ -194,6 +209,7 @@ final profileRepositoryProvider = Provider((ref) => _owned(ref, ProfileRepositor
 final workoutRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => WorkoutRepository(s, o, ref.watch(clockProvider))));
 final activityRepositoryProvider = Provider((ref) => _owned(ref, ActivityRepository.new));
 final trackStoreProvider = Provider((ref) => TrackStore(ref.watch(dbProvider)));
+final goalRepositoryProvider = Provider((ref) => _owned(ref, GoalRepository.new));
 final runRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => RunRepository(s, o, ref.watch(trackStoreProvider), ref.watch(apiProvider))));
 
 // ---------------------------------------------------------------------------- shared projections
@@ -257,6 +273,13 @@ final dailySnapshotProvider = Provider<DailySnapshot?>((ref) {
 
 final progressProvider = Provider<TrainingProgress>((ref) => TrainingProgressProjection.build(
     today: ref.watch(todayKeyProvider), primary: ref.watch(primaryPlanProvider), workouts: ref.watch(workoutListProvider), sets: ref.watch(trustedSetsProvider)));
+
+/// Every exercise with recorded evidence, grouped once per change of the records (never per widget build).
+final trendIndexProvider = Provider<TrendIndex>((ref) => TrendIndex.build(workouts: ref.watch(workoutListProvider), sets: ref.watch(trustedSetsProvider)));
+
+/// Whether weekly goals can be saved to the account: true/false once the server has answered, null while unknown
+/// (a save then waits in the outbox until the answer allows it).
+final weeklyGoalsSupportedProvider = Provider<bool?>((ref) => ref.watch(compatibilityProvider).capabilities?.contains(GoalRepository.capability));
 
 /// The everyday foods bundled with the app, read once. It is the same for every account and needs no connection.
 /// Read as bytes: `loadString` would decode a file this size on another isolate, for nothing.

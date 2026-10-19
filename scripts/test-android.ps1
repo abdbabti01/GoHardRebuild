@@ -11,6 +11,8 @@
   journey_plan_test       plan builder in two runs on one install: a template plan customised and activated offline
                           with a set recorded, a new process recovers them; rescheduling, a future edit, a resumed
                           own-plan draft as a rotation replacing the first plan, skip
+  journey_progress_test   weekly goals, an exercise trend and last week's recap in two runs on one install: a goal saved
+                          offline survives a new process and reaches the account; last week keeps its own goal (not default)
   journey_food_test       goals, search, amount, log, reuse, barcode, manual fallback, restart. Needs the API started
                           with start-api.ps1 -FoodFixtures (recorded provider responses, not the live providers)
 .PARAMETER Only
@@ -162,8 +164,9 @@ try {
         $shots = Join-Path $AppDir "build\journey-shots\$journey-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         New-Item -ItemType Directory -Force $shots | Out-Null
         $env:GOHARD_SHOT_DIR = $shots
-        if ($journey -eq 'journey_workout_panel_test') {
+        if ($journey -in 'journey_workout_panel_test', 'journey_progress_test') {
             # The journey prints GOHARD_REC:start:<name> / GOHARD_REC:stop; this records the screen in between.
+            # journey_progress_test also prints GOHARD_NET:off / on, which switches Wi-Fi and mobile data to match.
             & $Adb -s $device logcat -c
             $feeder = Start-Job -ArgumentList $Adb, $device, $shots -ScriptBlock {
                 param($adb, $device, $out)
@@ -176,6 +179,10 @@ try {
                         Start-Sleep -Seconds 3
                         $name = Get-Content (Join-Path $out 'recording.txt')
                         & $adb -s $device pull "/sdcard/$name.mp4" (Join-Path $out "$name.mp4") | Out-Null
+                    } elseif ($_ -match 'GOHARD_NET:(off|on)') {
+                        $state = if ($Matches[1] -eq 'off') { 'disable' } else { 'enable' }
+                        & $adb -s $device shell svc wifi $state
+                        & $adb -s $device shell svc data $state
                     }
                 }
             }
@@ -185,7 +192,7 @@ try {
             # The cold-start journey runs twice on one install. The Flutter tool uninstalls the app when a run ends,
             # which would wipe what the first run saved, so the first run leaves the app in place and its process is
             # killed here instead. The second run is then a new process that can only show what was saved on the device.
-            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test', 'journey_move_test', 'journey_workout_panel_test') { '1', '2' } else { @('') }
+            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test', 'journey_move_test', 'journey_workout_panel_test', 'journey_progress_test') { '1', '2' } else { @('') }
             foreach ($phase in $phases) {
                 if ($phase) { Step "  phase $phase of 2$(if ($phase -eq '2') { ' (new process, same install)' })" }
                 $keep = if ($phase -eq '1') { '--keep-app-running' } else { '--no-keep-app-running' }
@@ -247,7 +254,7 @@ try {
                 Stop-Job $feeder; Remove-Job $feeder
                 if ($journey -eq 'journey_runwalk_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
-                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
+                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_progress_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

@@ -30,12 +30,15 @@ String describeRecord(String kind, Json j, LoadUnit unit) => switch (kind) {
       Kinds.run => 'Run · ${shortDate(j['dayKey'] as String)}',
       // Water is described in millilitres, the stored amount, whatever display unit is chosen.
       Kinds.water => (j['isDeleted'] as bool? ?? false) ? 'Removed' : 'Water · ${VolumeUnit.ml.format((j['volumeMl'] as num).toDouble())} · ${shortDate(j['dayKey'] as String)}',
+      Kinds.weeklyGoal => 'Weekly goals from ${shortDate(j['weekStart'] as String)}: '
+          '${j['workoutsTarget'] == null ? 'no workout target' : '${j['workoutsTarget']} workouts'} · '
+          '${j['runWalkTarget'] == null ? 'no Run / Walk target' : '${j['runWalkTarget']} runs or walks'}',
       _ => kind,
     };
 
 const _titles = {
   Kinds.set: 'Recorded set', Kinds.food: 'Food entry', Kinds.workout: 'Workout', Kinds.context: 'Primary plan change', Kinds.plan: 'Plan schedule change',
-  Kinds.profile: 'Profile', Kinds.run: 'Run', Kinds.metric: 'Body measurement', Kinds.proposal: 'Suggested change', Kinds.savedFood: 'Saved food', Kinds.water: 'Water entry',
+  Kinds.profile: 'Profile', Kinds.run: 'Run', Kinds.metric: 'Body measurement', Kinds.proposal: 'Suggested change', Kinds.savedFood: 'Saved food', Kinds.water: 'Water entry', Kinds.weeklyGoal: 'Weekly goals',
 };
 
 String _reason(String? code) => switch (code) {
@@ -104,11 +107,13 @@ class _Issue extends ConsumerWidget {
                 Text(describeRecord(rec.kind, server, unit), style: context.sansStyle(15, weight: FontWeight.w600)),
               ],
               const SizedBox(height: 14),
-              if (rec.syncState == 'conflict' && server != null && (rec.kind == Kinds.set || rec.kind == Kinds.food)) ...[
+              if (rec.syncState == 'conflict' && server != null && (rec.kind == Kinds.set || rec.kind == Kinds.food || rec.kind == Kinds.weeklyGoal)) ...[
                 PrimaryButton('Keep the version on this phone', key: Key('issue-keep-${rec.id}'), onPressed: () => act(
-                    (cmd) => rec.kind == Kinds.set
-                        ? ref.read(workoutRepositoryProvider).keepLocalSet(cmd.operationId, WorkoutSet(local))
-                        : ref.read(foodRepositoryProvider).keepLocal(cmd.operationId, FoodEntry(local)),
+                    (cmd) => switch (rec.kind) {
+                          Kinds.set => ref.read(workoutRepositoryProvider).keepLocalSet(cmd.operationId, WorkoutSet(local)),
+                          Kinds.weeklyGoal => ref.read(goalRepositoryProvider).keepLocal(cmd.operationId, WeeklyGoal(local)),
+                          _ => ref.read(foodRepositoryProvider).keepLocal(cmd.operationId, FoodEntry(local)),
+                        },
                     'Kept your version. The account\'s version is retained as the alternative.')),
                 const SizedBox(height: 8),
               ],

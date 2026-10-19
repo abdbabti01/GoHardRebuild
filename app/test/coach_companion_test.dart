@@ -392,7 +392,7 @@ void main() {
       await _frames(tester, 100);
       expect(identical(face(), first), isTrue, reason: 'the same guide, not a new entrance');
       expect(face().pose.value.slide, closeTo(1, 0.02));
-      expect(find.descendant(of: coach, matching: find.textContaining('once you finish a workout', findRichText: true)), findsOneWidget);
+      expect(find.descendant(of: coach, matching: find.textContaining('Nothing recorded yet this week. Set weekly goals below', findRichText: true)), findsOneWidget);
       await tester.tap(find.byKey(const Key('train-plan')));
       await _frames(tester, 300);
 

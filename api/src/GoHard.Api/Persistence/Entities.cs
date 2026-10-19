@@ -297,6 +297,21 @@ public class RouteChunk
     public DateTime CreatedAtUtc { get; set; }
 }
 
+/// <summary>
+/// Weekly activity targets the person chose, effective from the Monday <see cref="WeekStart"/> until a later record
+/// (docs/PROGRESS.md › Weekly goals). One row per owner and week; a later edit never rewrites an earlier week's row.
+/// Both null = goals explicitly cleared from that week. Independent of plans: nothing here schedules anything.
+/// </summary>
+public class WeeklyGoal
+{
+    public Guid UserId { get; set; }
+    public DateOnly WeekStart { get; set; }
+    public int? WorkoutsTarget { get; set; }
+    public int? RunWalkTarget { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime UpdatedAtUtc { get; set; }
+}
+
 public class BodyMetric
 {
     public Guid Id { get; set; }

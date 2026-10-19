@@ -158,6 +158,15 @@ public sealed record ProfileUpdateRequest(Guid OperationId, int ExpectedRevision
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? ShowFat = null);
 public sealed record DeleteAccountRequest(string Password);
 
+/// <summary>Weekly activity targets effective from <paramref name="WeekStart"/> (a Monday) until a later record. Null = no target.</summary>
+public sealed record WeeklyGoalDto(DateOnly WeekStart, int? WorkoutsTarget, int? RunWalkTarget, int Revision);
+/// <param name="ExpectedRevision">0 creates that week's record; otherwise the revision being replaced.</param>
+/// <param name="WorkoutsTarget">Left out: the stored value is kept (null on a new record). Null: no target. A number: 1 to 21.</param>
+/// <param name="RunWalkTarget">Same three cases.</param>
+public sealed record WeeklyGoalPutRequest(Guid OperationId, int ExpectedRevision,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt WorkoutsTarget = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt RunWalkTarget = default);
+
 public sealed record ProposalMove(Guid OccasionId, DateOnly From, DateOnly To);
 public sealed record ProposalChange(List<ProposalMove> Moves, string? FromCatalogKey, string? ToCatalogKey, string? ToName, List<Guid> AffectedOccasionIds);
 /// <param name="Kind">schedule | substitution</param>
@@ -171,4 +180,4 @@ public sealed record ProposalResult(ProposalDto Proposal, PlanContextDto? Contex
 public sealed record CatalogExerciseDto(string Key, string Name, string Category, string Equipment, bool IsTimed);
 public sealed record SnapshotDto(ProfileDto Profile, PlanContextDto Context, List<WorkoutDto> Workouts, List<FoodEntryDto> FoodEntries,
     List<RunDto> Runs, List<BodyMetricDto> BodyMetrics, List<ProposalDto> Proposals, List<CatalogExerciseDto> Catalog, DateTime ServerTimeUtc, List<SavedFoodDto>? SavedFoods = null,
-    List<CustomExerciseDto>? CustomExercises = null, List<WaterEntryDto>? WaterEntries = null);
+    List<CustomExerciseDto>? CustomExercises = null, List<WaterEntryDto>? WaterEntries = null, List<WeeklyGoalDto>? WeeklyGoals = null);

@@ -44,7 +44,7 @@ Json authFor(String owner) => {
 class FakeServer implements Transport {
   final calls = <({String method, String path, String body, String? bearer})>[];
   final operations = <String, (String body, ApiResponse response)>{};
-  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{};
+  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{}, weeklyGoals = <String, Json>{};
 
   /// The account's profile as this authority holds it. A field a request leaves out is kept, as on the real server.
   Json profile = {...authFor('owner-from-server')['profile'] as Json};
@@ -80,6 +80,7 @@ class FakeServer implements Transport {
         'profile': profile, 'context': {'contextRevision': 1, 'primaryPlanId': null, 'plans': []},
         'workouts': [for (final w in workouts.values) {...w, 'exercises': [for (final e in w['exercises'] as List) {...e as Json, 'sets': [for (final s in sets.values) if (s['exerciseId'] == e['id']) s]}]}],
         'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': [], 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(), 'waterEntries': water.values.toList(),
+        'weeklyGoals': weeklyGoals.values.toList(),
       });
     }
     if (path == '/capabilities') return ApiResponse(200, capabilities);
@@ -150,6 +151,16 @@ class FakeServer implements Transport {
         return _ack(op, 'accepted', next['revision'] as int, Map.of(next));
       case ['saved-foods', final id, 'delete']:
         return _revisioned(savedFoods, id, d, op, (r) => r['isDeleted'] = true);
+      case ['weekly-goals', final week] when method == 'PUT':
+        final row = weeklyGoals[week];
+        if ((row?['revision'] ?? 0) != d['expectedRevision']) return _ack(op, 'conflict', (row?['revision'] as int?) ?? 0, row == null ? null : Map.of(row), 'REVISION_CONFLICT');
+        final next = {
+          'weekStart': week,
+          for (final k in ['workoutsTarget', 'runWalkTarget']) k: d.containsKey(k) ? d[k] : row?[k], // left out: kept
+          'revision': ((row?['revision'] as int?) ?? 0) + 1,
+        };
+        weeklyGoals[week] = next;
+        return _ack(op, 'accepted', next['revision'] as int, Map.of(next));
       case ['me'] when method == 'PUT':
         if (profile['revision'] != d['expectedRevision']) return _ack(op, 'conflict', profile['revision'] as int, profile, 'REVISION_CONFLICT');
         profile = {...profile, ...d, 'revision': (profile['revision'] as int) + 1}..remove('operationId')..remove('expectedRevision');

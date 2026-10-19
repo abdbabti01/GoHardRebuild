@@ -21,6 +21,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<Run> Runs => Set<Run>();
     public DbSet<RouteChunk> RouteChunks => Set<RouteChunk>();
     public DbSet<BodyMetric> BodyMetrics => Set<BodyMetric>();
+    public DbSet<WeeklyGoal> WeeklyGoals => Set<WeeklyGoal>();
     public DbSet<Proposal> Proposals => Set<Proposal>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -102,6 +103,9 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         b.Entity<RouteChunk>().HasOne<Run>().WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.Cascade);
         Owned<BodyMetric>(b, x => x.UserId).Property(x => x.WeightKg).HasPrecision(6, 2);
         b.Entity<BodyMetric>().Property(x => x.BodyFatPercent).HasPrecision(5, 2);
+        // One effective record per owner and week: a retry or a second phone cannot create a competing one.
+        Owned<WeeklyGoal>(b, x => x.UserId).HasKey(x => new { x.UserId, x.WeekStart });
+        b.Entity<WeeklyGoal>().Property(x => x.Revision).IsConcurrencyToken();
         Owned<Proposal>(b, x => x.UserId).HasOne<Plan>().WithMany().HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Cascade);
     }
 

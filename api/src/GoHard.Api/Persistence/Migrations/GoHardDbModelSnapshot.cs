@@ -715,6 +715,32 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("WaterEntries");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.WeeklyGoal", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("WeekStart")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RunWalkTarget")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("WorkoutsTarget")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "WeekStart");
+
+                    b.ToTable("WeeklyGoals");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.Workout", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1021,6 +1047,15 @@ namespace GoHard.Api.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.WaterEntry", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.WeeklyGoal", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()

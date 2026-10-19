@@ -71,6 +71,7 @@ List<ServerRec> recordsFromAck(String kind, dynamic data, String owner) {
     'metric' => [_simple(Kinds.metric, j)],
     'savedfood' => [_simple(Kinds.savedFood, j)],
     'customexercise' => [_simple(Kinds.customExercise, j)],
+    'weeklygoal' => [_simple(Kinds.weeklyGoal, j, idField: 'weekStart')],
     'profile' => [_simple(Kinds.profile, j, idField: 'userId')],
     'plan' => kind == 'plan.draft' ? (j['context'] is Map ? _context(j['context'] as Json, owner) : const []) : _context(j, owner),
     'proposal' => kind == 'proposal.create'
@@ -95,6 +96,8 @@ List<ServerRec> recordsFromSnapshot(Json s, String owner) => [
       for (final c in s['customExercises'] as List? ?? const []) _simple(Kinds.customExercise, c as Json),
       // Absent on a server from before water tracking.
       for (final w in s['waterEntries'] as List? ?? const []) _simple(Kinds.water, w as Json),
+      // Absent on a server from before weekly goals.
+      for (final g in s['weeklyGoals'] as List? ?? const []) _simple(Kinds.weeklyGoal, g as Json, idField: 'weekStart'),
     ];
 
 /// Local-first persistence and synchronization.

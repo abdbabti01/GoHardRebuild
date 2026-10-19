@@ -1851,3 +1851,35 @@ matches, i.e. when the phone presents a refresh token the server no longer accep
   compare/copy → record → history → leave/return). Not checked on an iPhone.
 - CI run 105 on `21202e5`: **passed** (api, app). Unsigned IPA run 39 on `21202e5`, artifact `GoHard-Dev-unsigned-ipa`:
   **passed**. `main`, Railway and Cloudflare unchanged by this feature; owner-video branch untouched.
+
+## 19 Oct 2026 — Progress: weekly goals, exercise trends, weekly recap (`feature/training-progress`)
+
+Built on `feature/workout-workspace` (`717f3f7`, not merged to `main`). Handoff `GoHard_Progress_Claude_Handoff`. Rules:
+docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
+- **API:** `WeeklyGoal` (key owner + Monday), `PUT /weekly-goals/{monday}` (revision-checked, 1–21 or null, omitted
+  fields kept, Monday only, not ahead of the server's week), snapshot `weeklyGoals`, capability `goals.weekly`,
+  migration `AddWeeklyGoals` (one new table, purely additive; erased with the account by cascade).
+- **App:** `features/progress/` (weekly projection, trend index, goal repository, Progress view, goal sheet, trend
+  pages, recap), `Kinds.weeklyGoal`, ack/snapshot mapping, conflict review (keep mine / use the account's), dispatch
+  gate. The gate now also re-asks for capabilities when a command is held only because they are unknown (found by
+  the journey: after an offline start, a held goal stayed queued after reconnecting; the same applied to Walk/route
+  commands). Train's coach line on Progress is a fact from the weekly projection; the old Exercise history list is
+  replaced by Strength trends.
+- **Tests:** `progress_test` (10), `goal_sync_test` (3, real Drift file + fake authority), `progress_ui_test` (6, incl.
+  320 px 2×, three looks, no coach request); updated `coach_companion_test` (new Progress line); `train_ui_test`,
+  `coach_companion_test`, `food_test`, `data_layer_test`, `me_ui_test`, `projection_test`: passed. API
+  `WeeklyGoalTests` + capabilities test: passed (Testcontainers PostgreSQL). Migration also applied to a disposable
+  local database (`migrate seed-catalog`: Ready, 9 migrations), dropped afterwards; `gohard_rebuild_dev` untouched.
+  Render: `six themes: train-progress` (fixture).
+- **Native (Android emulator Pixel_7, branch API on a disposable database, new account):** `test-android.ps1 -Only
+  journey_progress_test`, two phases, **passed**. SEEDED through the API (titles say "Seeded"): last week's goals 3/2,
+  two bench sessions (88.5, 93 kg × 8), an older one (85), a walk (3.10 km). Recorded in the app: a bench session
+  95 × 8. Progress 1 of 3 / 0 of 2 (inherited); trend Top set load · 8 reps with every session, a row opened the real
+  session; recap 2 of 3, 1 of 2, highlight 88.5 → 93; offline goal change to 4/1 shown as pending. Phase 2 (new
+  process, still offline): 1 of 4 pending; back online: account holds this week 4/1 (revision 1) and last week 3/2
+  unchanged; the recap still says 2 of 3. Captures `docs/evidence/screenshots/progress-01…05`, recording
+  `docs/evidence/recordings/progress-flow.mp4`. The first two runs failed on a test bug (an API read while offline)
+  and on the capability gate above; the recap's figures were drawn in page colours on the pale panel (fixed, with a
+  regression check) and the journey was run again.
+- **Not verified:** a physical phone; the hosted API (goals need `main` deployed with the migration; until then the app
+  shows goals as unavailable there).

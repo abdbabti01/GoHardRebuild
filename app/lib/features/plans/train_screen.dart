@@ -5,22 +5,20 @@ import '../../app/providers.dart';
 import '../../core/clock.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
-import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../core/go_icon.dart';
 import '../activity/activity_history.dart';
-import '../activity/move_widgets.dart' show PersonalBestsCard;
 import '../activity/run_walk_screens.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_contract.dart';
 import '../coach/coach_prefs.dart';
+import '../progress/progress_view.dart';
 import '../shell/home_shell.dart';
 import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import '../workout/workout_panel.dart';
-import '../workout/workout_screen.dart';
 import 'builder/plan_builder_screen.dart';
 import 'plan_actions.dart';
 import 'plan_draft.dart';
@@ -86,7 +84,7 @@ class TrainScreen extends ConsumerWidget {
           child: switch (view) {
             TrainView.workouts => inPanel ? const WorkoutPanel() : const _WorkoutsView(),
             TrainView.plan => const _PlanView(),
-            TrainView.progress => const _ProgressView(),
+            TrainView.progress => const ProgressView(),
           },
         ),
       ],
@@ -139,8 +137,8 @@ CoachSay _coachSay(BuildContext context, WidgetRef ref, TrainView view) {
               : 'Record a workout of your own here. A plan can schedule them for you.',
           ask: const CoachContext(label: 'Your training'));
     case TrainView.progress:
-      return CoachSay(workouts.any((w) => !w.isOpen) ? 'This is what you\'ve recorded so far. Ask me about any of it.' : 'What you record shows up here once you finish a workout.',
-          ask: const CoachContext(label: 'Your progress'));
+      // One fact from the shared weekly projection, or how to set a goal. Nothing is asked of the AI.
+      return CoachSay(progressCoachLine(ref.watch(currentWeekProvider), goalsSupported: ref.watch(weeklyGoalsSupportedProvider)), ask: const CoachContext(label: 'Your progress'));
   }
 }
 
@@ -639,121 +637,5 @@ class _OccasionRow extends ConsumerWidget {
         child: row,
       ),
     );
-  }
-}
-
-class _ProgressView extends ConsumerWidget {
-  const _ProgressView();
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final p = ref.watch(progressProvider);
-    final unit = ref.watch(loadUnitProvider);
-    final primary = ref.watch(primaryPlanProvider);
-    // History is offered in every state, including an account with nothing recorded yet.
-    if (!p.hasEvidence && p.dueOccasions == 0) {
-      return _section([
-        EmptyState('No training recorded yet', 'Progress is built only from workouts you actually record. There is nothing to chart until then.',
-            action: SecondaryButton('Start a manual workout', onPressed: () => startManualWorkout(context, ref))),
-        _gap,
-        const _HistoryCard(),
-      ]);
-    }
-    final most = p.weeks.fold<int>(1, (m, w) => w.$2 > m ? w.$2 : m);
-    final thisWeek = p.weeks.last.$2;
-    final recent = ([for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted && !w.isOpen) w]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc))).take(3).toList();
-    return _section([
-      // Only what was recorded: training days this week and the total, with their periods. Nothing is inferred.
-      Semantics(
-        container: true,
-        label: 'Training progress. $thisWeek training ${thisWeek == 1 ? 'day' : 'days'} this week. ${p.sessions} ${p.sessions == 1 ? 'workout' : 'workouts'} recorded in total.',
-        child: ExcludeSemantics(
-          child: PhotoPanel(
-            key: const Key('train-progress-panel'),
-            photo: 'assets/images/workout-hero.webp',
-            photoAlignment: const Alignment(1, 0.6),
-            content: (context) => [
-              Row(children: [
-                Icon(Icons.bar_chart_rounded, size: 18, color: context.c.secondary),
-                const SizedBox(width: 6),
-                const Flexible(child: Overline('Training progress')),
-              ]),
-              const SizedBox(height: 6),
-              Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
-                Text('$thisWeek', style: context.pageTitleStyle(40)),
-                Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('training ${thisWeek == 1 ? 'day' : 'days'} this week', style: context.sansStyle(15, color: context.c.secondary))),
-              ]),
-              Text('${p.sessions} ${p.sessions == 1 ? 'workout' : 'workouts'} recorded in total', style: context.numStyle(15, weight: FontWeight.w500)),
-            ],
-          ),
-        ),
-      ),
-      _between,
-      const SectionHeader('Am I following my plan?'),
-      _gap,
-      Panel(
-        child: primary == null
-            ? Text('You have no primary plan right now. Manual training still counts as training below.', style: context.caption)
-            : p.dueOccasions == 0
-                ? Text('No planned workout has come due yet.', style: context.caption)
-                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('${p.recorded} of ${p.dueOccasions} due workouts recorded', style: context.numStyle(17)),
-                    const SizedBox(height: 10),
-                    ProgressRail(p.recorded / p.dueOccasions, label: 'Due workouts recorded'),
-                    const SizedBox(height: 10),
-                    Text('${p.full} completed · ${p.partial} partial · ${p.skipped} skipped · ${p.missed} missed', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
-                  ]),
-      ),
-      _between,
-      const SectionHeader('Am I consistent?'),
-      _gap,
-      Panel(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Days with recorded training in each of the last 8 weeks. ${p.sessions} session${p.sessions == 1 ? '' : 's'} in total.', style: context.caption),
-          const SizedBox(height: 14),
-          Semantics(
-            label: 'Training days per week, oldest first: ${p.weeks.map((w) => w.$2).join(', ')}',
-            child: ExcludeSemantics(
-              child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                for (final w in p.weeks)
-                  Expanded(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text('${w.$2}', style: context.numStyle(13)),
-                      const SizedBox(height: 2),
-                      Container(height: 6 + 58 * w.$2 / most, margin: const EdgeInsets.symmetric(horizontal: 5), decoration: BoxDecoration(color: w.$2 == 0 ? context.c.outline : context.c.accent, borderRadius: BorderRadius.circular(4))),
-                      const SizedBox(height: 6),
-                      FittedBox(fit: BoxFit.scaleDown, child: Text('${parseDayKey(w.$1).month}/${parseDayKey(w.$1).day}', style: context.numStyle(12.5, color: context.c.secondary, weight: FontWeight.w400))),
-                    ]),
-                  ),
-              ]),
-            ),
-          ),
-        ]),
-      ),
-      if (recent.isNotEmpty) ...[
-        _between,
-        const SectionHeader('Recent workouts'),
-        _gap,
-        GroupCard(children: [for (final w in recent) WorkoutRow(w, grouped: true)]),
-      ],
-      _between,
-      const SectionHeader('Exercise history'),
-      _gap,
-      if (p.insights.isEmpty)
-        Panel(child: Text('Not enough comparable records yet. This needs the same movement recorded in at least two sessions.', style: context.caption))
-      else
-        GroupCard(children: [
-          for (final i in p.insights)
-            GroupRow(
-              title: i.name,
-              subtitle: '${shortDate(i.firstDay)}: ${setText(i.first, unit)}  →  ${shortDate(i.latestDay)}: ${setText(i.latest, unit)} · ${i.sessions} sessions',
-            ),
-        ]),
-      _gap,
-      Text('Best recorded set of the first and the latest session. Loads are stored in kilograms and shown in ${unit == LoadUnit.kg ? 'kilograms' : 'pounds'}.', style: context.caption),
-      _between,
-      const _HistoryCard(),
-      // Run / Walk personal bests, once something is saved: the same projection History shows.
-      if ((ref.watch(runsProvider).value ?? const []).any((r) => !r.value.isDeleted && !r.value.isOpen)) ...[_between, const PersonalBestsCard()],
-    ]);
   }
 }
