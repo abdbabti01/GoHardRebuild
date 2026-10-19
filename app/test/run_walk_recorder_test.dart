@@ -139,6 +139,9 @@ void main() {
     h.server.offline = false;
     await c.read(syncProvider).flush();
     expect(h.server.callsTo('/runs'), isEmpty);
+    // The held walk asked the server what it supports; that answer (no walks yet) arrives first.
+    await c.read(compatibilityProvider.notifier).check();
+    expect(h.server.callsTo('/runs'), isEmpty, reason: 'the answer did not include walks');
 
     // It says so: everything goes, once, in order.
     h.server.capabilities = _caps;

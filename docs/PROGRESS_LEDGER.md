@@ -1867,7 +1867,9 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   replaced by Strength trends.
 - **Tests:** `progress_test` (10), `goal_sync_test` (3, real Drift file + fake authority), `progress_ui_test` (6, incl.
   320 px 2×, three looks, no coach request); updated `coach_companion_test` (new Progress line); `train_ui_test`,
-  `coach_companion_test`, `food_test`, `data_layer_test`, `me_ui_test`, `projection_test`: passed. API
+  `coach_companion_test`, `food_test`, `data_layer_test`, `me_ui_test`, `projection_test`: passed. CI run 107 found
+  `run_walk_recorder_test` racing the new capability re-check (its server switch landed while that check was in flight);
+  the test now waits for that answer first. API
   `WeeklyGoalTests` + capabilities test: passed (Testcontainers PostgreSQL). Migration also applied to a disposable
   local database (`migrate seed-catalog`: Ready, 9 migrations), dropped afterwards; `gohard_rebuild_dev` untouched.
   Render: `six themes: train-progress` (fixture).
