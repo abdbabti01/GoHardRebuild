@@ -9,28 +9,42 @@ bool countsAsTraining(Workout w) =>
 
 /// The sets an earlier session recorded for the same movement in the same position.
 class PreviousPerformance {
-  const PreviousPerformance(this.dayKey, this.sets);
-  final String dayKey;
+  const PreviousPerformance(this.workout, this.sets);
+  final Workout workout;
   final List<WorkoutSet> sets;
+  String get dayKey => workout.dayKey;
 }
 
-/// Previous performance by identity: same catalog movement and the same occurrence ordinal within the
-/// workout, from the most recent earlier session that counts as training. A movement without a catalog
-/// identity has no history; names are never used to guess.
+/// Every earlier session of one movement, newest first: the same catalog identity (a private custom exercise's
+/// `custom:<id>` included) at the same occurrence ordinal ([ordinal]: 0 for its first appearance in a workout, 1 for
+/// its second), in workouts that count as training and started before [beforeUtc], with their performed sets in the
+/// order recorded. A movement without an identity has no history; names are never used to guess. The one policy
+/// both the preview (anchored at now) and the recorder (anchored at the session's start) read.
+List<PreviousPerformance> exerciseHistory({required String? catalogKey, required int ordinal, required DateTime beforeUtc, String? excludeId,
+    required List<Workout> workouts, required List<WorkoutSet> sets}) {
+  if (catalogKey == null || ordinal < 0) return const [];
+  final earlier = [
+    for (final w in workouts)
+      if (w.id != excludeId && countsAsTraining(w) && DateTime.parse(w.startedAtUtc).isBefore(beforeUtc)) w,
+  ]..sort((a, b) => DateTime.parse(b.startedAtUtc).compareTo(DateTime.parse(a.startedAtUtc)));
+  return [
+    for (final w in earlier)
+      if (w.exercises.where((e) => e.catalogKey == catalogKey).elementAtOrNull(ordinal) case final same?)
+        if ([for (final s in sets) if (s.exerciseId == same.id && !s.isDeleted) s]..sort((a, b) => a.performedAtUtc.compareTo(b.performedAtUtc)) case final performed when performed.isNotEmpty)
+          PreviousPerformance(w, performed),
+  ];
+}
+
+/// Which appearance of its movement [index] is within [keys] (a workout's or a prescription's catalog keys, in order).
+int occurrenceOf(List<String?> keys, int index) => keys.take(index).where((k) => k == keys[index]).length;
+
+/// The most recent earlier session of this exercise in the current workout, by [exerciseHistory].
 PreviousPerformance? previousPerformance(Workout current, WorkoutExercise exercise, List<Workout> workouts, List<WorkoutSet> sets) {
-  final key = exercise.catalogKey;
-  if (key == null) return null;
-  int ordinalOf(Workout w, String exerciseId) => w.exercises.where((e) => e.catalogKey == key).toList().indexWhere((e) => e.id == exerciseId);
-  final ordinal = ordinalOf(current, exercise.id);
-  final earlier = workouts.where((w) => w.id != current.id && countsAsTraining(w) && w.startedAtUtc.compareTo(current.startedAtUtc) < 0).toList()
-    ..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
-  for (final w in earlier) {
-    final same = w.exercises.where((e) => e.catalogKey == key).toList();
-    if (ordinal < 0 || ordinal >= same.length) continue;
-    final performed = sets.where((s) => s.exerciseId == same[ordinal].id && !s.isDeleted).toList()..sort((a, b) => a.performedAtUtc.compareTo(b.performedAtUtc));
-    if (performed.isNotEmpty) return PreviousPerformance(w.dayKey, performed);
-  }
-  return null;
+  final keys = [for (final e in current.exercises) e.catalogKey];
+  final i = current.exercises.indexWhere((e) => e.id == exercise.id);
+  if (i < 0) return null;
+  return exerciseHistory(catalogKey: exercise.catalogKey, ordinal: occurrenceOf(keys, i), beforeUtc: DateTime.parse(current.startedAtUtc), excludeId: current.id, workouts: workouts, sets: sets)
+      .firstOrNull;
 }
 
 class ExerciseInsight {

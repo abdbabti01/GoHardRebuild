@@ -107,12 +107,12 @@ void main() {
     await tapKey(tester, 'nav-today');
     await waitFor(tester, find.byKey(const Key('today-start')), what: 'today\'s due workout');
     await shot(tester, '05-today-workout-due');
-    // The title opens the workout's details; the button underneath stays the one main action.
+    // Details opens the workout's preview in Train › Workouts; the button on Today stays the one main action.
     await tapKey(tester, 'today-details');
-    await waitFor(tester, find.byKey(const Key('occasion-start')), what: 'the workout details');
+    await waitFor(tester, find.byKey(const Key('preview-start')), what: 'the workout preview');
     await shot(tester, '05b-today-workout-details');
-    await tester.tapAt(const Offset(20, 60)); // close the sheet
-    await settle(tester, 4);
+    await tapKey(tester, 'workout-all');
+    await tapKey(tester, 'nav-today');
 
     // --- All four tabs; Train keeps its selected section.
     await tapKey(tester, 'nav-train');
@@ -161,6 +161,7 @@ void main() {
     await waitFor(tester, find.text('Finished partially'));
     await shot(tester, '11-result-partial');
     await tapKey(tester, 'result-done');
+    await tapKey(tester, 'nav-today');
     await waitFor(tester, find.text('Partly completed'));
     expect(find.byKey(const Key('today-start')), findsNothing, reason: 'the recorded occasion is not offered again');
     await shot(tester, '12-today-done');

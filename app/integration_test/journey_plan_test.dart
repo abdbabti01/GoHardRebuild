@@ -80,7 +80,7 @@ void main() {
       await j.tapKey('complete-set');
       await j.reveal(find.byKey(const Key('set-row-0')));
       await j.waitFor(find.byKey(const Key('set-row-0')));
-      await tester.pageBack(); // the workout stays open; nothing finishes it
+      await j.tapKey('nav-today'); // the workout stays open in Train; nothing finishes it
       await j.waitFor(find.byKey(const Key('today-resume')), what: 'the open workout on Today');
       await j.shot('p07-before-process-ends');
       return;
@@ -181,10 +181,12 @@ void main() {
     await j.tapKey('nav-today');
     await j.waitFor(find.text('Push day'), what: 'the rotation\'s first workout due today');
     await j.shot('p13-today-rotation-due');
-    await j.tapKey('today-details');
+    await j.tapKey('today-details'); // the preview in Train; Skip is in its More options sheet
+    await j.tapKey('preview-options');
     await j.tapKey('occasion-skip');
     await j.confirmWith('Skip this workout');
     await j.closeSheet();
+    await j.tapKey('nav-today');
     await j.waitFor(find.text('Skipped today'), what: 'the skipped workout kept on Today');
     expect(find.text('Push day'), findsOneWidget);
     expect(find.textContaining('Next in your rotation: Pull day'), findsOneWidget);

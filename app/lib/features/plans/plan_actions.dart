@@ -54,6 +54,16 @@ Future<void> pausePlanFlow(BuildContext context, WidgetRef ref, Plan plan) async
   await runPlanDecision(context, () => ref.read(planRepositoryProvider).pause(plan, today: ref.read(todayKeyProvider)), saved: 'Plan paused.');
 }
 
+/// Whether [o] can be started now, by the same rules as the occurrence sheet's Start: an active plan, the occurrence
+/// still eligible (not skipped, recorded or open), and for a rotation only its next workout.
+bool canStartOccasion(Plan plan, Occasion o, String today, List<Workout> workouts) {
+  if (!plan.isActive || o.isSkipped || openWorkoutFor(o, workouts) != null || o.resultWorkoutId != null) return false;
+  if (workouts.any((w) => !w.isDeleted && w.occasionId == o.id && !w.isOpen && w.qualifiedOccasion)) return false;
+  if (!o.isVirtual && !(scheduleOf(plan, workouts).where((s) => s.id == o.id).firstOrNull?.isEligible ?? false)) return false;
+  if (!plan.isRotating) return true;
+  return rotationOf(plan, planOccasions(plan, today, workouts), workouts)?.next?.id == o.id;
+}
+
 /// One planned occurrence, read from the same projection as Train and Today (a rotation's projected next workout
 /// included): its prescription and the actions that are honestly available for its state. Nothing here completes
 /// a workout. Starting, resuming and opening a record close the sheet and then continue from [host], the page

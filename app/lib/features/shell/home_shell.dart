@@ -19,21 +19,42 @@ import '../../core/widgets.dart';
 
 enum TrainView { workouts, plan, progress }
 
-class ShellState {
-  const ShellState({this.tab = 0, this.trainView = TrainView.workouts});
-  final int tab;
-  final TrainView trainView;
+/// The workout shown in Train › Workouts' panel: a planned occurrence before it is started ([planId] and [occasionId],
+/// nothing created), or an actual workout by its ID (recording, saved for later or finished). Choosing one is never
+/// a Start: it only says what the panel shows.
+class WorkoutFocus {
+  const WorkoutFocus.preview(String this.planId, String this.occasionId) : workoutId = null;
+  const WorkoutFocus.session(String this.workoutId) : planId = null, occasionId = null;
+  final String? planId, occasionId, workoutId;
+  @override
+  bool operator ==(Object other) => other is WorkoutFocus && other.planId == planId && other.occasionId == occasionId && other.workoutId == workoutId;
+  @override
+  int get hashCode => Object.hash(planId, occasionId, workoutId);
 }
 
-/// Current destination and the retained Train section. Visiting another tab never resets the Train view.
+class ShellState {
+  const ShellState({this.tab = 0, this.trainView = TrainView.workouts, this.workout});
+  final int tab;
+  final TrainView trainView;
+  final WorkoutFocus? workout;
+}
+
+/// Current destination, the retained Train section and the workout open in its panel. Visiting another tab or
+/// section never resets either, and never pauses, parks, finishes or starts a workout.
 class ShellController extends Notifier<ShellState> {
   @override
   ShellState build() {
     ref.watch(ownerProvider); // a different signed-in owner always starts on Today, with no navigation state carried over
     return const ShellState();
   }
-  void switchTab(int tab, {TrainView? trainView}) => state = ShellState(tab: tab, trainView: trainView ?? state.trainView);
-  void selectTrainView(TrainView view) => state = ShellState(tab: state.tab, trainView: view);
+  void switchTab(int tab, {TrainView? trainView}) => state = ShellState(tab: tab, trainView: trainView ?? state.trainView, workout: state.workout);
+  void selectTrainView(TrainView view) => state = ShellState(tab: state.tab, trainView: view, workout: state.workout);
+
+  /// Train › Workouts with [focus] in its panel.
+  void openWorkout(WorkoutFocus focus) => state = ShellState(tab: 1, trainView: TrainView.workouts, workout: focus);
+
+  /// Back to the Workouts overview. The workout itself is left exactly as it is.
+  void closeWorkout() => state = ShellState(tab: state.tab, trainView: state.trainView);
 }
 
 final shellProvider = NotifierProvider<ShellController, ShellState>(ShellController.new);

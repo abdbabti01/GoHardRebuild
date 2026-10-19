@@ -48,6 +48,15 @@ class WorkoutRepository {
 
   Future<void> saveRuntime(String workoutId, WorkoutRuntime runtime) => _sync.putLocal(_owner, LocalWrite(Kinds.runtime, workoutId, runtime.j));
 
+  /// Saves one exercise's typed entry into the stored runtime and changes nothing else, so a draft saved as the
+  /// panel closes can never undo a park, resume or finish made meanwhile. Nothing is written for a workout that has
+  /// no runtime any more (finished or removed).
+  // ponytail: read-then-write, not one transaction; both run on the one local database in order, add a transaction if a second isolate ever writes runtimes.
+  Future<void> saveDraft(String workoutId, String exerciseId, EntryDraft draft) async {
+    final r = await runtime(workoutId);
+    if (r != null) await saveRuntime(workoutId, r.withDraft(exerciseId, draft));
+  }
+
   /// The single foreground workout: open and not saved for later.
   Future<Workout?> foreground() async {
     for (final w in (await _workouts()).where((w) => w.isOpen)) {

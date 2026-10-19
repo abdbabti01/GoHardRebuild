@@ -31,9 +31,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final row = (ref.watch(workoutsProvider).value ?? const <Stored<Workout>>[]).where((r) => r.value.id == workoutId).firstOrNull;
     if (row == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final w = row.value;
-    final unit = ref.watch(loadUnitProvider);
-    final sets = [for (final r in ref.watch(setsProvider(workoutId)).value ?? const <Stored<WorkoutSet>>[]) if (!r.value.isDeleted) r.value]
-      ..sort((a, b) => a.performedAtUtc.compareTo(b.performedAtUtc));
+    final sets = _setsOf(ref, workoutId);
 
     return AppPage(
       title: justFinished ? WorkoutResultRules.label(w.outcome) : w.title,
@@ -52,6 +50,20 @@ class WorkoutDetailScreen extends ConsumerWidget {
       ],
       children: [
         if (justFinished) Text(w.title, style: context.sansStyle(16, weight: FontWeight.w600)),
+        ..._facts(context, ref, row, sets),
+      ],
+    );
+  }
+}
+
+List<WorkoutSet> _setsOf(WidgetRef ref, String workoutId) =>
+    [for (final r in ref.watch(setsProvider(workoutId)).value ?? const <Stored<WorkoutSet>>[]) if (!r.value.isDeleted) r.value]..sort((a, b) => a.performedAtUtc.compareTo(b.performedAtUtc));
+
+/// What a workout recorded: when, where it came from, its honest outcome and every set per movement.
+List<Widget> _facts(BuildContext context, WidgetRef ref, Stored<Workout> row, List<WorkoutSet> sets) {
+  final w = row.value;
+  final unit = ref.watch(loadUnitProvider);
+  return [
         Text('${longDate(w.dayKey)}${w.isManual ? ' · manual' : ''}', style: context.caption),
         // Which plan and session this came from, read from the plan as it is now (it may since have been edited,
         // archived or closed); the recorded exercises below are this workout's own and never change with the plan.
@@ -61,7 +73,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         StatusLine(w.isOpen ? Icons.timelapse : w.outcome == WorkoutResultRules.noData ? Icons.remove_circle_outline : Icons.check_circle_outline,
-            '${WorkoutResultRules.label(w.outcome)}. ${outcomeExplanation(w)}'),
+            '${WorkoutResultRules.label(w.outcome)}. ${WorkoutDetailScreen.outcomeExplanation(w)}'),
         if (row.isPending) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.phone_iphone, 'Saved on this phone · sync pending')),
         if (row.needsReview) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, 'Saved on this phone; needs your review before it can sync.', tone: Tone.warning)),
         const SizedBox(height: 16),
@@ -93,8 +105,28 @@ class WorkoutDetailScreen extends ConsumerWidget {
           const Rule(),
         ],
         if (w.exercises.isEmpty) const EmptyState('Nothing recorded', 'This workout has no movements.'),
-      ],
-    );
+  ];
+}
+
+/// The finished state of Train › Workouts' panel: the saved result under its real outcome label, then Done (back to
+/// the overview, like All workouts). It only shows; nothing here changes the workout.
+class WorkoutResultView extends ConsumerWidget {
+  const WorkoutResultView({super.key, required this.workoutId, required this.onDone});
+  final String workoutId;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final row = (ref.watch(workoutsProvider).value ?? const <Stored<Workout>>[]).where((r) => r.value.id == workoutId).firstOrNull;
+    if (row == null) return const SizedBox.shrink();
+    return Column(key: const Key('workout-result'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Align(alignment: Alignment.centerLeft, child: AllWorkoutsLink(onPressed: onDone)),
+      Heading(WorkoutResultRules.label(row.value.outcome), size: 28, serif: true),
+      Text(row.value.title, style: context.sansStyle(16, weight: FontWeight.w600)),
+      ..._facts(context, ref, row, _setsOf(ref, workoutId)),
+      const SizedBox(height: 20),
+      PrimaryButton('Done', key: const Key('result-done'), onPressed: onDone),
+    ]);
   }
 }
 

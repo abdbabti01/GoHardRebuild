@@ -234,13 +234,20 @@ void main() {
       expect(find.widgetWithText(TextButton, 'Details'), findsOneWidget);
     });
 
-    testWidgets('Details opens the workout sheet in the app\'s own look, not the panel\'s pale tint', (tester) async {
+    testWidgets('Details opens that workout in Train › Workouts in the app\'s own look; its sheet stays one tap away', (tester) async {
       final store = AppearanceStore(MemorySecretStore())
         ..accent = Accent.green
         ..mode = ThemeMode.dark;
       await pumpApp(tester, await fixture(tester, plans: [plan], more: [appearanceStoreProvider.overrideWithValue(store)]));
       expect(Theme.of(tester.element(find.byKey(const Key('today-details')))).brightness, Brightness.light, reason: 'the panel itself is pale');
       await tester.tap(find.byKey(const Key('today-details')));
+      await tester.pumpAndSettle();
+      final preview = find.byKey(const Key('workout-preview'));
+      expect(preview, findsOneWidget, reason: 'straight to the workout, not the overview or a sheet');
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(Theme.of(tester.element(preview)).brightness, Brightness.dark, reason: 'the page keeps the app\'s Dark look');
+      await tester.ensureVisible(find.byKey(const Key('preview-options')));
+      await tester.tap(find.byKey(const Key('preview-options')));
       await tester.pumpAndSettle();
       final sheet = find.byType(BottomSheet);
       expect(sheet, findsOneWidget);

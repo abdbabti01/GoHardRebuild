@@ -1815,3 +1815,37 @@ matches, i.e. when the phone presents a refresh token the server no longer accep
 - Deploy needs: the migration (the existing pre-deploy `migrate` applies it); optional `GOHARD_Auth__RefreshRecoverySeconds`.
   Rotations made before the migration are not recoverable. Not deployed; `main`, Railway, Cloudflare unchanged.
 - CI run 102 on `13d1443`: **passed** (api, app). Server-only change: no new IPA; IPA 38 (`69dd1c5`) stays the app build.
+
+## 19 Oct 2026 — One workout panel in Train › Workouts (`feature/workout-workspace`, from `GoHard_Workout_Workspace`)
+
+- **Built:** preview, recording and result are three states of one panel in Train › Workouts, chosen by
+  `ShellState.workout` (plan + occasion before Start, workout ID after). Today › Details opens the preview directly
+  (nothing created) or the open workout as it is; Start/Resume (Today, preview, occurrence sheet, Train, the
+  foreground dialog) and manual starts all end in the panel by ID, one at a time, and an occurrence with an open
+  workout resumes it rather than starting another. The recorder (`WorkoutRecorder`, from `WorkoutScreen`) keeps every
+  action and adds Last time · date (Set / Last time / Today), Use last values (fills only, asks before replacing
+  typed values, never records), All sessions (read-only, newest first, real outcomes) and "Record set". Workouts
+  gains "Scheduled today" from Today's projection. Design: docs/DESIGN.md › Workout panel.
+- **Last time:** `exerciseHistory` in `progress.dart` (the existing `previousPerformance` policy generalised: identity
+  + occurrence ordinal, counted training only, before the anchor, newest by start time, sets in recorded order, all
+  of them). Preview anchors at now; recording at the session's start.
+- **State:** drafts are written draft-only (`WorkoutRepository.saveDraft`) so a park/resume made elsewhere is never
+  undone; the recorder adopts runtime changes from `runtimesProvider`. No API, migration or dependency change.
+- **Tests:** `workout_panel_test` (history policy incl. same-day sessions, repeated and custom exercises, no identity;
+  Last time's loading/unreadable/none/timed/bodyweight; a real local database through the shell: Details creates no
+  workout or command, rapid Start makes one, Use last values asks/fills/records nothing, Record set stores kilograms
+  from a pounds entry, history, tab switch, leaving and reopening keep the typed entry and rest deadline, Today's
+  Resume keeps the same ID). Updated: `today_ui_test` (Details → preview, sheet via More options),
+  `train_plan_ui_test` (target vs last time). Affected suites: today_ui, train_ui, train_plan_ui, projection: passed.
+- Renders (`render_test`, GOHARD_RENDER): `state-workout-*` (preview blue light, pink dark; recording green light,
+  blue dark with a typed entry; history sheet; result) and `state-large-text-workout-*-320` (2× text; the table stacks).
+- Journeys whose workout steps used the old back gesture now switch tabs instead (appwide, captures, coach, coldstart,
+  plan, today_panels, journey_test); only `journey_workout_panel_test` was run natively for this change.
+- **Native (Android emulator Pixel_7, local API, new account):** `test-android.ps1 -Only journey_workout_panel_test`,
+  two phases, **passed**. Phase 1: Details → preview with no workout; a manual session of the plan's first exercise
+  through the same panel (result, Done); Details → last time 40 kg × 10, 42.5 kg × 8; Start; Use last values asked
+  before replacing 45 and filled 40 × 10 with nothing recorded; Record set; All sessions and About above the panel and
+  back; a typed 50 kept across Today ↔ Train, All workouts (one open workout) and Today's Resume. Phase 2 (new process,
+  same install): Resume → the same workout with its one set and the typed 50; Finish → "Finished partially".
+  Captures `docs/evidence/screenshots/wp-01…05`, recording `docs/evidence/recordings/wp-recording.mp4` (Start →
+  compare/copy → record → history → leave/return). Not checked on an iPhone.

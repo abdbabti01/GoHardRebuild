@@ -40,7 +40,7 @@ void main() {
     await j.tapKey('complete-set');
     await j.reveal(find.byKey(const Key('set-row-1')));
     await j.waitFor(find.byKey(const Key('set-row-1')));
-    await tester.pageBack();
+    await j.tapKey('nav-today');
     await j.settle(4);
     await j.waitFor(find.byKey(const Key('today-resume')), what: 'the open workout on Today');
 

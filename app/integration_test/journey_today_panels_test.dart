@@ -95,7 +95,7 @@ void main() {
     await j.tapKey('complete-set');
     await j.waitFor(find.byKey(const Key('rest-clock')));
     await j.tapKey('rest-skip');
-    await back();
+    await j.tapKey('nav-today');
     await j.waitFor(find.byKey(const Key('today-resume')), what: 'Resume on Today');
     expect(find.text('In progress'), findsWidgets);
     await top();
@@ -131,7 +131,7 @@ void main() {
     await j.tapKey('today-resume');
     await j.waitFor(find.byKey(const Key('complete-set')), what: 'the resumed workout');
     expect(find.textContaining('1 of'), findsWidgets, reason: 'the same workout, with its recorded set');
-    await back();
+    await j.tapKey('nav-today');
 
     // --- The other accents and modes.
     for (final (accent, mode) in const [('blue', 'light'), ('pink', 'dark'), ('green', 'light'), ('blue', 'dark'), ('pink', 'light')]) {
@@ -155,7 +155,7 @@ void main() {
     await watch(1800);
     await tester.tap(find.byKey(const Key('today-details')));
     await watch(2200);
-    Navigator.of(tester.element(find.byType(BottomSheet).last)).pop();
+    await tester.tap(find.byKey(const Key('nav-today')));
     await watch(1500);
     await tester.drag(list, const Offset(0, -300));
     await watch(1200);

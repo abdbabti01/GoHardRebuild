@@ -366,7 +366,45 @@ Plan / Progress kept in `shellProvider`.
   week" and "step p of L", never a percentage. Manage holds Edit plan, Pause, Duplicate, Review/finish and Create a
   different plan; a saved plan's page holds Archive.
 - **Workout screen**: "Target 60 kg" (the plan's) and "Last time 57.5 kg × 8" (the record) are two separate lines;
-  the target never fills the entry.
+  the target never fills the entry. (Since 19 Oct 2026 this is the recording state of the workout panel, below.)
+
+### Workout panel (19 Oct 2026, from `GoHard_Workout_Workspace`)
+
+One panel in Train › Workouts with three states for one workout: **preview** (a planned occurrence, nothing created),
+**recording** (an actual workout ID) and **result** (that workout finished). What it shows is `ShellState.workout`
+(`WorkoutFocus.preview(planId, occasionId)` or `WorkoutFocus.session(workoutId)`); showing is never a start, and
+leaving, switching tabs or sections never pauses, parks, finishes or starts anything. Workouts stays selected; the
+header is compact (the section control, "‹ All workouts", no large "Train" title, no tab coach: the recorder's own
+help is the one coach treatment). Android back closes the panel. Preview → recording is a quick fade (`Motion.quick`).
+
+- **Entry points.** Today › Details: a due/resolved occurrence opens its preview; an occurrence with an open workout
+  opens that workout as it is (paused or saved for later stays so). Start (Today, preview, occurrence sheet) and Resume
+  (Today, Train, the foreground dialog's "Resume it") go through `workout_flow.dart` (one start or resume at a time;
+  an occurrence that already has an open workout resumes it) and end in the panel by ID. A manual workout keeps its
+  setup page and the foreground decision, then the same panel. Workouts adds "Scheduled today" from Today's own
+  projection (`dailySnapshotProvider`) for due occurrences without an open workout; an open workout's Details opens the
+  panel. Move, skip and "edit this one" stay in the occurrence sheet, behind the preview's "More options".
+- **Preview.** The pale photo panel (state pill, plan context, exercise count and planned sets, Start only when
+  `canStartOccasion` allows, "View what was recorded" when there is a result), then numbered exercise rows; one is
+  expanded (prescription sentence, target, notes, About, last time). More than five rows show four and "See all N".
+- **Recording.** Everything the recorder had (pause, rest, menu, substitutions, set edit/delete, Undo, save for later,
+  finish) plus **Last time · date**: a Set / Last time / Today table from `exerciseHistory`, every previous set in
+  recorded order, today's recorded sets ticked and labelled "Recorded", the next row "Next · not recorded yet"; with
+  large text each set stacks. "Set N · not recorded yet" over the existing fields; **Use last values** fills only that
+  entry from the matching previous set (in today's unit), asks before replacing typed values, never records or starts
+  rest, and is absent when there is no matching set. The action is "Record set" ("Record another set" past the target).
+  "All sessions" opens a read-only sheet, newest first, with each session's real outcome. A workout saved for later
+  opened by Details is shown read-only with "Resume workout" (the foreground rules).
+- **Last time** (`features/workout/progress.dart`): same catalog identity (custom `custom:<id>` included, free text
+  never), same occurrence ordinal, workouts that count as training, started before the anchor (the session's start;
+  "now" in the preview), newest by start time. Loading, unreadable, no identity and "No previous session recorded."
+  are separate texts.
+- **State.** Typed entries are saved as drafts (`WorkoutRepository.saveDraft`, which writes only the draft so a park or
+  resume made elsewhere is never undone) and restored when the panel opens again; the recorder adopts runtime changes
+  made elsewhere (`runtimesProvider`). A finished workout shows its result with Done (back to the overview).
+- Deviations from the references: Demo is the existing "About" sheet (exercise demonstrations are not on `main`); the
+  result keeps one coach treatment (no duplicate avatars); the overview's scheduled entry is a compact row, not a photo
+  panel, so the open workout keeps the only photograph.
 
 ### Today's training states, guide and coach (15 Oct 2026; `docs/TRAINING_PLANS.md` › Today, `docs/COACH.md`)
 

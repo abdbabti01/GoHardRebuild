@@ -97,7 +97,7 @@ void main() {
     await j.tapKey('rest-skip');
     await j.settle(4);
     await j.shot('appwide-10-workout-next-set');
-    await back();
+    await j.tapKey('nav-today');
     await j.waitFor(find.byKey(const Key('today-resume')), what: 'Resume on Today');
 
     // --- Food: search, the amount form (choosing never logs), then logged.

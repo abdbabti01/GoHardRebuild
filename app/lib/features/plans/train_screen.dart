@@ -19,6 +19,7 @@ import '../shell/home_shell.dart';
 import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
+import '../workout/workout_panel.dart';
 import '../workout/workout_screen.dart';
 import 'builder/plan_builder_screen.dart';
 import 'plan_actions.dart';
@@ -37,6 +38,9 @@ class TrainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(shellProvider.select((s) => s.trainView));
+    // A workout in Workouts' panel: a compact header (the sections only), and back closes the panel, not the app.
+    final inPanel = view == TrainView.workouts && ref.watch(shellProvider.select((s) => s.workout)) != null;
+    final onTrain = ref.watch(shellProvider.select((s) => s.tab)) == 1;
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
     final noPlan = ref.watch(primaryPlanProvider) == null;
     // Ask GoHard about the section in view: the primary plan on Plan, recorded training on Progress.
@@ -46,14 +50,22 @@ class TrainScreen extends ConsumerWidget {
       TrainView.progress => const CoachContext(label: 'Your progress'),
       TrainView.workouts => const CoachContext(label: 'Your training'),
     };
-    return ListView(
+    return PopScope(
+      canPop: !(inPanel && onTrain),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) ref.read(shellProvider.notifier).closeWorkout();
+      },
+      child: ListView(
       // On the calm wash the shell lays behind Train; room for the floating bar at the end.
-      padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 28 + MediaQuery.paddingOf(context).bottom),
+      padding: EdgeInsets.fromLTRB(context.inset, inPanel ? MediaQuery.paddingOf(context).top + 12 : TabHeader.topInset(context), context.inset, 28 + MediaQuery.paddingOf(context).bottom),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
         // The guide's face is Ask GoHard's way in on Train: the speaking bust (Show coach on Train and Eat), or, with
         // that off, its small avatar beside the title. Never both.
-        TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: coachOn ? null : CoachAskLauncher(ask: ask)),
-        const SizedBox(height: 16),
+        if (!inPanel) ...[
+          TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: coachOn ? null : CoachAskLauncher(ask: ask)),
+          const SizedBox(height: 16),
+        ],
         Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',
           label: (v) => '${v.name[0].toUpperCase()}${v.name.substring(1)}',
@@ -61,18 +73,24 @@ class TrainScreen extends ConsumerWidget {
         ),
         // Under the sections, speaking about the one chosen: with large text its words can run long, and the sections
         // stay at the top where they are always reached.
-        if (coachOn) ...[
+        // One coach treatment at a time: inside a workout, its own help instead.
+        if (coachOn && !inPanel) ...[
           const SizedBox(height: 14),
           TabCoach(key: const Key('train-coach'), id: 'train', say: _coachSay(context, ref, view), onAvatarTap: () => openAskGoHard(context, ask)),
         ],
-        const SizedBox(height: 20),
+        SizedBox(height: inPanel ? 6 : 20),
         // The section that was chosen fades in; the one left is simply gone, so nothing is shown twice.
         AnimatedSwitcher(
           duration: context.motion(Motion.quick), reverseDuration: Duration.zero, switchInCurve: Motion.curve,
           layoutBuilder: (current, _) => current ?? const SizedBox.shrink(),
-          child: switch (view) { TrainView.workouts => const _WorkoutsView(), TrainView.plan => const _PlanView(), TrainView.progress => const _ProgressView() },
+          child: switch (view) {
+            TrainView.workouts => inPanel ? const WorkoutPanel() : const _WorkoutsView(),
+            TrainView.plan => const _PlanView(),
+            TrainView.progress => const _ProgressView(),
+          },
         ),
       ],
+      ),
     );
   }
 }
@@ -148,7 +166,28 @@ class _WorkoutsView extends ConsumerWidget {
     final open = all.where((w) => w.isOpen).toList(), done = all.where((w) => !w.isOpen).toList();
     final parked = ref.watch(parkedIdsProvider);
     final sets = ref.watch(trustedSetsProvider);
+    // Today's planned workouts still to start, from Today's own projection; one already open is shown below instead.
+    final snapshot = ref.watch(dailySnapshotProvider);
+    final scheduled = switch (snapshot?.training) {
+      PlannedToday(:final plan, :final occasions) => [
+          for (final o in occasions)
+            if (openWorkoutFor(o, all) == null && statusOf(o, plan, snapshot!.dayKey, all) == OccasionStatus.due) (plan, o),
+        ],
+      _ => const <(Plan, Occasion)>[],
+    };
     return _section([
+      if (scheduled.isNotEmpty) ...[
+        const SectionHeader('Scheduled today'),
+        _gap,
+        GroupCard(children: [
+          for (final (plan, o) in scheduled)
+            GroupRow(
+              key: Key('train-scheduled-${o.id}'), icon: Icons.fitness_center, title: o.title, subtitle: 'Due today · ${_plannedSummary(o.prescription)}',
+              onTap: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.preview(plan.id, o.id)),
+            ),
+        ]),
+        const SizedBox(height: 20),
+      ],
       if (open.isNotEmpty) ...[
         const SectionHeader('Open workouts'),
         _gap,
@@ -211,7 +250,7 @@ class _OpenPanel extends ConsumerWidget {
         parked
             ? TextButton(key: Key('train-resume-${w.id}'), onPressed: resume, child: const Text('Resume'))
             : PrimaryButton('Resume', key: Key('train-resume-${w.id}'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume),
-        QuietLink('Details', said: 'Details of ${w.title}', onPressed: () => push(context, WorkoutDetailScreen(workoutId: w.id))),
+        QuietLink('Details', key: Key('train-details-${w.id}'), said: 'Details of ${w.title}', onPressed: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.session(w.id))),
       ],
     );
   }

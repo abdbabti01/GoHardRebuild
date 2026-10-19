@@ -162,12 +162,30 @@ try {
         $shots = Join-Path $AppDir "build\journey-shots\$journey-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         New-Item -ItemType Directory -Force $shots | Out-Null
         $env:GOHARD_SHOT_DIR = $shots
+        if ($journey -eq 'journey_workout_panel_test') {
+            # The journey prints GOHARD_REC:start:<name> / GOHARD_REC:stop; this records the screen in between.
+            & $Adb -s $device logcat -c
+            $feeder = Start-Job -ArgumentList $Adb, $device, $shots -ScriptBlock {
+                param($adb, $device, $out)
+                & $adb -s $device logcat -s flutter:I | ForEach-Object {
+                    if ($_ -match 'GOHARD_REC:start:([\w-]+)') {
+                        Start-Process -FilePath $adb -ArgumentList '-s', $device, 'shell', 'screenrecord', '--time-limit', '170', "/sdcard/$($Matches[1]).mp4" -WindowStyle Hidden
+                        Set-Content (Join-Path $out 'recording.txt') $Matches[1]
+                    } elseif ($_ -match 'GOHARD_REC:stop') {
+                        & $adb -s $device shell pkill -INT screenrecord
+                        Start-Sleep -Seconds 3
+                        $name = Get-Content (Join-Path $out 'recording.txt')
+                        & $adb -s $device pull "/sdcard/$name.mp4" (Join-Path $out "$name.mp4") | Out-Null
+                    }
+                }
+            }
+        }
         try {
             Step "Native journey '$journey' on $device against $ApiBase"
             # The cold-start journey runs twice on one install. The Flutter tool uninstalls the app when a run ends,
             # which would wipe what the first run saved, so the first run leaves the app in place and its process is
             # killed here instead. The second run is then a new process that can only show what was saved on the device.
-            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test', 'journey_move_test') { '1', '2' } else { @('') }
+            $phases = if ($journey -in 'journey_coldstart_test', 'journey_plan_test', 'journey_water_test', 'journey_runwalk_test', 'journey_move_test', 'journey_workout_panel_test') { '1', '2' } else { @('') }
             foreach ($phase in $phases) {
                 if ($phase) { Step "  phase $phase of 2$(if ($phase -eq '2') { ' (new process, same install)' })" }
                 $keep = if ($phase -eq '1') { '--keep-app-running' } else { '--no-keep-app-running' }
@@ -211,6 +229,7 @@ try {
                 if (-not $copied) { Fail "The screenshot $($shot.Name) could not be written to docs\evidence\screenshots (still locked after 20 seconds). The fresh capture is in $shots." }
             }
             Write-Host "    $($captured.Count) fresh screenshots from '$journey' copied to docs\evidence\screenshots" -ForegroundColor DarkGray
+            foreach ($f in Get-ChildItem $shots -Filter *.mp4) { Copy-Item $f.FullName (Join-Path $Root "docs\evidence\recordings\$($f.Name)") -Force }
             if ($journey -eq 'journey_runwalk_test') {
                 Start-Sleep -Seconds 4   # the last host capture
                 foreach ($f in Get-ChildItem $runShots -Include *.png, *.mp4, *.txt -Recurse) {

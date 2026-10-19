@@ -7,15 +7,18 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../plans/plan_projection.dart';
 import '../plans/plan_repository.dart';
+import '../shell/home_shell.dart';
 import 'workout_repository.dart';
-import 'workout_screen.dart';
 
 /// Every way of starting or resuming a workout goes through here, so the one-foreground-workout rule and
-/// its explicit choice are applied the same everywhere. Nothing in this file finishes a workout.
+/// its explicit choice are applied the same everywhere, and each ends in the same panel in Train › Workouts.
+/// Nothing in this file finishes a workout.
 
-/// Returns true when the requested workout may come to the foreground.
-Future<bool> _clearForeground(BuildContext context, WidgetRef ref, String? wantedId) async {
+/// Returns true when the requested workout may come to the foreground. Choosing "Resume it" shows that workout
+/// in the panel instead and returns false.
+Future<bool> ensureForeground(BuildContext context, WidgetRef ref, String? wantedId) async {
   final repo = ref.read(workoutRepositoryProvider);
   final decision = await repo.requestForeground(wantedId);
   if (decision is! ForegroundBusy || !context.mounted) return true;
@@ -35,7 +38,7 @@ Future<bool> _clearForeground(BuildContext context, WidgetRef ref, String? wante
   );
   if (!context.mounted) return false;
   if (choice == 'resume') {
-    await push(context, WorkoutScreen(workoutId: current.id));
+    openWorkoutPanel(context, ref, current.id);
     return false;
   }
   if (choice == 'park') {
@@ -45,35 +48,57 @@ Future<bool> _clearForeground(BuildContext context, WidgetRef ref, String? wante
   return false;
 }
 
-Future<void> resumeWorkout(BuildContext context, WidgetRef ref, Workout workout) async {
-  if (!await _clearForeground(context, ref, workout.id) || !context.mounted) return;
-  await ref.read(workoutRepositoryProvider).bringToForeground(workout.id);
-  if (context.mounted) await push(context, WorkoutScreen(workoutId: workout.id));
+/// Shows an actual workout in Train › Workouts' panel, closing any page or sheet above the tabs. Only showing: the
+/// workout's state is whatever its own rules made it.
+void openWorkoutPanel(BuildContext context, WidgetRef ref, String workoutId) {
+  final shell = ref.read(shellProvider.notifier);
+  Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
+  shell.openWorkout(WorkoutFocus.session(workoutId));
 }
 
-/// Start means started: the actual workout exists with its frozen prescription and running clock before
-/// the screen opens. There is no second Start.
-Future<void> startPlannedWorkout(BuildContext context, WidgetRef ref, Plan plan, Occasion occasion) async {
-  if (!await _clearForeground(context, ref, null) || !context.mounted) return;
+// One start or resume at a time: a second tap while the first is still deciding or saving does nothing, so a rapid
+// double tap can never create two workouts.
+bool _busy = false;
+Future<void> _once(BuildContext context, WidgetRef ref, Future<String?> Function() run) async {
+  if (_busy) return;
+  _busy = true;
+  final owner = ref.read(ownerProvider);
   try {
-    final workout = await ref.read(workoutRepositoryProvider).startPlanned(plan, occasion, ref.read(todayKeyProvider));
-    if (context.mounted) await push(context, WorkoutScreen(workoutId: workout.id));
+    final id = await run();
+    // A late answer for an account that has since signed out shows nothing.
+    if (id != null && context.mounted && ref.read(ownerProvider) == owner) openWorkoutPanel(context, ref, id);
   } on LocalSaveFailure {
     if (context.mounted) toast(context, 'The workout could not be started on this phone. Nothing was recorded. Try again.');
+  } finally {
+    _busy = false;
   }
+}
+
+/// Explicit Resume: the foreground rules, then the same workout ID in the panel.
+Future<void> resumeWorkout(BuildContext context, WidgetRef ref, Workout workout) => _once(context, ref, () async {
+      if (!await ensureForeground(context, ref, workout.id) || !context.mounted) return null;
+      await ref.read(workoutRepositoryProvider).bringToForeground(workout.id);
+      return workout.id;
+    });
+
+/// Start means started: the actual workout exists with its frozen prescription and running clock before the panel
+/// shows it. There is no second Start: an occurrence that already has an open workout resumes that one instead.
+Future<void> startPlannedWorkout(BuildContext context, WidgetRef ref, Plan plan, Occasion occasion) async {
+  if (openWorkoutFor(occasion, ref.read(workoutListProvider)) case final open?) return resumeWorkout(context, ref, open);
+  return _once(context, ref, () async {
+    if (!await ensureForeground(context, ref, null) || !context.mounted) return null;
+    return (await ref.read(workoutRepositoryProvider).startPlanned(plan, occasion, ref.read(todayKeyProvider))).id;
+  });
 }
 
 /// Manual training: name it, pick movements, start. Needs no plan and works offline.
 Future<void> startManualWorkout(BuildContext context, WidgetRef ref) async {
   final picked = await push<(String, List<CatalogExercise>)>(context, const ManualWorkoutSetup());
   if (picked == null || !context.mounted) return;
-  if (!await _clearForeground(context, ref, null) || !context.mounted) return;
-  try {
-    final workout = await ref.read(workoutRepositoryProvider).startManual(picked.$1, picked.$2, ref.read(todayKeyProvider));
-    if (context.mounted) await push(context, WorkoutScreen(workoutId: workout.id));
-  } on LocalSaveFailure {
-    if (context.mounted) toast(context, 'The workout could not be started on this phone. Nothing was recorded. Try again.');
-  }
+  return _once(context, ref, () async {
+    if (!await ensureForeground(context, ref, null) || !context.mounted) return null;
+    return (await ref.read(workoutRepositoryProvider).startManual(picked.$1, picked.$2, ref.read(todayKeyProvider))).id;
+  });
 }
 
 /// Lowercase, with hyphens, slashes and repeated spaces folded, so "Push-up", "push up" and "PUSH  UP" match.

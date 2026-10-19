@@ -442,6 +442,9 @@ class _TrainingSection extends ConsumerWidget {
             ? 'Next in your rotation: ${next.title}${(plan.schedule?.trainingDays ?? const []).isEmpty ? '' : ' · ${when(next)}'}.'
             : 'Next: ${next.title} · ${when(next)}.';
     void openPlan() => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
+    // Details is the workout itself in Train › Workouts: its preview before Start (nothing is created), the open workout
+    // as it is (paused or saved for later stays so), or what was recorded.
+    void preview(Plan plan, Occasion o) => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.preview(plan.id, o.id));
     // The workout's name in the serif, as the approved design has it; a long name wraps.
     Widget title(String text) => Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: context.pageTitleStyle(36)));
     Widget line(String text, {double top = 4}) => Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: context.sansStyle(15, color: c.secondary)));
@@ -503,7 +506,7 @@ class _TrainingSection extends ConsumerWidget {
           else if (sets.recorded > 0)
             Padding(padding: const EdgeInsets.only(top: 8), child: Text('${_count(sets.recorded, 'set')} recorded', style: context.numStyle(16))),
         ],
-        onDetails: () => showOccasionSheet(app, ref, plan, occasion),
+        onDetails: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.session(w.id)),
         action: parked
             ? SecondaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume)
             : PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume),
@@ -529,7 +532,7 @@ class _TrainingSection extends ConsumerWidget {
           line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}'),
           line('$where${minutes == null ? '' : ' · $minutes min planned'}', top: 2),
         ],
-        onDetails: () => showOccasionSheet(app, ref, plan, occasion),
+        onDetails: () => preview(plan, occasion),
         action: quietStart
             ? SecondaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, expand: false, onPressed: start)
             : PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, expand: false, onPressed: start),
@@ -548,7 +551,7 @@ class _TrainingSection extends ConsumerWidget {
       return plain(
         status: _todayStatus(s), name: o.title,
         text: '$what ${blockDone ? 'That was the last workout of this block.' : nextText(plan, next)}',
-        onDetails: () => showOccasionSheet(app, ref, plan, o),
+        onDetails: () => preview(plan, o),
         quiet: undo
             ? TextButton(
                 key: const Key('today-undo-skip'),
@@ -584,7 +587,7 @@ class _TrainingSection extends ConsumerWidget {
                   for (final o in others)
                     GroupRow(
                         key: Key('today-also-${o.id}'), icon: Icons.fitness_center, tone: Tone.neutral, title: o.title,
-                        subtitle: 'Also today · ${_todayStatus(status[o.id]!).$1}', onTap: () => showOccasionSheet(app, ref, plan, o)),
+                        subtitle: 'Also today · ${_todayStatus(status[o.id]!).$1}', onTap: () => preview(plan, o)),
                 ]),
               if (missed.isNotEmpty)
                 Align(

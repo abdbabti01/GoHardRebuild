@@ -102,7 +102,7 @@ void main() {
     await j.tapKey('manual-start');
     await j.waitFor(find.text('Arms'), what: 'the manual workout');
     await j.settle(4);
-    await tester.pageBack();
+    await j.tapKey('nav-today');
     await j.settle(6);
     await j.waitFor(find.byKey(const Key('today-resume')), what: 'the manual workout\'s own Resume');
     expect(find.text('Planned rest day'), findsOneWidget, reason: 'the rest day is still the plan\'s fact');

@@ -33,8 +33,7 @@ void main() {
       await j.tapKey('complete-set');
       await j.reveal(find.byKey(const Key('set-row-0')));
       await j.waitFor(find.byKey(const Key('set-row-0')), what: 'the recorded set');
-      await tester.pageBack(); // leaves the workout open; nothing finishes it
-      await j.tapKey('nav-today');
+      await j.tapKey('nav-today'); // leaves the workout open in Train; nothing finishes it
       await j.waitFor(find.byKey(const Key('today-resume')), what: 'the open workout on Today');
 
       await j.tapKey('log-food');

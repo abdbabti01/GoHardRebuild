@@ -7,10 +7,17 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/data/db.dart';
+import 'package:gohard_rebuild/data/sync.dart';
+import 'package:gohard_rebuild/features/shell/home_shell.dart';
+import 'package:gohard_rebuild/features/workout/workout_repository.dart';
+import 'package:gohard_rebuild/features/workout/workout_runtime.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/models.dart';
@@ -20,6 +27,7 @@ import 'package:gohard_rebuild/features/coach/coach_bubble.dart';
 import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'food_fakes.dart';
+import 'support.dart';
 import 'ui_support.dart';
 import 'weather_fakes.dart';
 
@@ -123,6 +131,28 @@ final List<Json> _finishedSets = [
     {'id': 'ds$i', 'exerciseId': exercise, 'workoutId': 'w-done', 'reps': reps, 'loadKg': load, 'performedAtUtc': '2026-10-09T16:${10 + i}:00Z', 'isDeleted': false},
 ];
 
+/// The workout panel's recorder over the fixture's records: a running clock with a rest under way, and nothing saved.
+class _QuietWorkouts extends WorkoutRepository {
+  _QuietWorkouts(SyncEngine sync) : super(sync, 'one', FakeClock(DateTime.utc(2026, 10, 11, 16)));
+  @override
+  Future<WorkoutRuntime?> runtime(String workoutId) async => WorkoutRuntime.started(DateTime.utc(2026, 10, 11, 15, 32)).withRest(DateTime.now().toUtc(), 90, 'x');
+  @override
+  Future<void> saveRuntime(String workoutId, WorkoutRuntime runtime) async {}
+  @override
+  Future<ForegroundDecision> requestForeground(String? workoutId) async => ForegroundReady();
+  @override
+  Future<void> bringToForeground(String workoutId) async {}
+}
+
+List<Override> _quietWorkouts() {
+  final db = AppDb(NativeDatabase.memory());
+  final sessions = SessionManager(MemorySecretStore());
+  return [workoutRepositoryProvider.overrideWithValue(_QuietWorkouts(SyncEngine(db, Api(FakeServer()..offline = true, sessions), sessions)))];
+}
+
+Future<List<Override>> _workoutPanel(WidgetTester t, Accent accent, ThemeMode mode, {bool inProgress = false}) async =>
+    [...await _fixture(t, accent, mode, inProgress: inProgress, extraWorkouts: [_finished], extraSets: _finishedSets), ..._quietWorkouts()];
+
 Future<void> _open(WidgetTester tester, String screen) async {
   Future<void> tap(String key) async {
     await tester.tap(find.byKey(Key(key)));
@@ -150,6 +180,22 @@ Future<void> _open(WidgetTester tester, String screen) async {
       await tester.ensureVisible(find.byKey(Key(key)));
       await tester.pumpAndSettle();
       await tap(key);
+    case 'workout-preview':
+      await tap('today-details');
+    case 'workout-recording':
+      // Today's Resume opens the panel; a typed, unsaved entry for the next set.
+      await tap('today-resume');
+      await tester.enterText(find.descendant(of: find.byKey(const Key('set-load')), matching: find.byType(TextField)), '62.5');
+      await tester.pump();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+    case 'workout-history':
+      await tap('today-resume');
+      await tester.ensureVisible(find.byKey(const Key('all-sessions')));
+      await tap('all-sessions');
+    case 'workout-result':
+      ProviderScope.containerOf(tester.element(find.byType(HomeShell))).read(shellProvider.notifier).openWorkout(const WorkoutFocus.session('w-done'));
+      await tester.pumpAndSettle();
     case 'eat':
       await tap('nav-eat');
     case 'run':
@@ -435,6 +481,15 @@ void main() {
     'large-text-log-food-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'log-food', const Size(320, 2400), 2),
     'large-text-food-preview-320': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-preview', const Size(320, 3200), 2),
     'large-text-eat-goals-320': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'eat', const Size(320, 2600), 2),
+    // The workout panel in Train › Workouts: preview, recording beside last time, the history sheet and the result.
+    'workout-preview-blue-light': ((t) => _workoutPanel(t, Accent.blue, ThemeMode.light), 'workout-preview', const Size(390, 1700), 1),
+    'workout-preview-pink-dark': ((t) => _workoutPanel(t, Accent.pink, ThemeMode.dark), 'workout-preview', const Size(390, 1700), 1),
+    'workout-recording-green-light': ((t) => _workoutPanel(t, Accent.green, ThemeMode.light, inProgress: true), 'workout-recording', const Size(390, 2300), 1),
+    'workout-recording-blue-dark': ((t) => _workoutPanel(t, Accent.blue, ThemeMode.dark, inProgress: true), 'workout-recording', const Size(390, 2300), 1),
+    'workout-history-sheet-pink-light': ((t) => _workoutPanel(t, Accent.pink, ThemeMode.light, inProgress: true), 'workout-history', const Size(390, 844), 1),
+    'workout-result-green-dark': ((t) => _workoutPanel(t, Accent.green, ThemeMode.dark), 'workout-result', const Size(390, 1300), 1),
+    'large-text-workout-preview-320': ((t) => _workoutPanel(t, Accent.blue, ThemeMode.light), 'workout-preview', const Size(320, 3600), 2),
+    'large-text-workout-recording-320': ((t) => _workoutPanel(t, Accent.pink, ThemeMode.dark, inProgress: true), 'workout-recording', const Size(320, 4800), 2),
     'new-account-today': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'today', const Size(390, 844), 1),
     'new-account-plan': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-plan', const Size(390, 844), 1),
     'new-account-eat': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'eat', const Size(390, 1000), 1),
