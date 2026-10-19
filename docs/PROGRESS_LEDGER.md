@@ -1814,3 +1814,4 @@ matches, i.e. when the phone presents a refresh token the server no longer accep
   compatible (it already retries with the previous token).
 - Deploy needs: the migration (the existing pre-deploy `migrate` applies it); optional `GOHARD_Auth__RefreshRecoverySeconds`.
   Rotations made before the migration are not recoverable. Not deployed; `main`, Railway, Cloudflare unchanged.
+- CI run 102 on `13d1443`: **passed** (api, app). Server-only change: no new IPA; IPA 38 (`69dd1c5`) stays the app build.
