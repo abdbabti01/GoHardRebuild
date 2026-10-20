@@ -1916,3 +1916,5 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   run failed on a test assumption (a manual workout shows no target line). The media API container was stopped for
   the run and restarted.
 - **Not verified:** a physical iPhone.
+- CI run 111 on `18588e7`: **passed** (api, app). Unsigned IPA run 41 on `fix/workout-exercise-switch` (`18588e7`),
+  artifact `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway and the owner-video branch unchanged.
