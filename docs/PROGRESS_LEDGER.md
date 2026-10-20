@@ -1988,3 +1988,5 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   precise); one passing run had wrong capture steps and was rerun.
 - **Not verified:** a physical iPhone (chart feel, VoiceOver, keyboard). Observed, unchanged: Eat's water line on an
   earlier day with no water still reads "0 mL" (existing behaviour, outside this change).
+- CI run 118 on `011c0c4`: **passed** (api, app). Unsigned IPA run 44 on `feature/nutrition-trends` (`011c0c4`), artifact
+  `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway, Cloudflare and the video branches unchanged.
