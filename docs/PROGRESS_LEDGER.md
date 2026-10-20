@@ -1950,3 +1950,5 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   stopped for the run and restarted.
 - **Not verified:** a physical iPhone (keyboard Done, VoiceOver, scrolling); the hosted API (not deployed: until
   `main` with the migration is deployed there, circumferences and corrections wait in the outbox and the app says so).
+- CI run 115 on `71a3e29`: **passed** (api, app). Unsigned IPA run 42 on `feature/body-progress` (`71a3e29`), artifact
+  `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway, Cloudflare and the video branches unchanged.
