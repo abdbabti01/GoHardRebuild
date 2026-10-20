@@ -8,6 +8,7 @@ Internal QA preparation only. Nothing here deploys, publishes to a store, or tou
 |---|---|
 | `20261011011030_Initial` | users, refresh tokens, operations, training contexts, plans, occasions, workouts, exercises, sets, food entries, exercise catalog |
 | `20261011011041_AddActivitiesAndProposals` | runs, body metrics, proposals (additive only) |
+| `20261020200446_AddExerciseIncrements` | new table `ExerciseIncrements` (owner + exercise key, nullable `IncrementKg` numeric(9,5), revision), cascade-deleted with the account; additive only (docs/PROGRESSION.md) |
 | `20261012172306_AddFoodDiscoveryAndGoals` | `Users.CalorieGoal`, `Users.ProteinGoalG` (nullable), `FoodEntries.SourceJson` (nullable jsonb), new table `SavedFoods` (additive only; no existing row is rewritten) |
 
 - Apply: `dotnet run --project api\src\GoHard.Api -- migrate` (what `scripts\setup.ps1` does). It prints the readiness
@@ -48,6 +49,9 @@ that test; never drop or rewrite `commands.payload` / `commands.outbound`.
   (`entered`) and drops the stored source, which is what such an edit is.
 - **Newer app, older server.** The app hides Nutrition goals when the server does not declare
   `profile.nutrition-goals`, treats a missing `savedFoods` list as empty, and shows search or barcode as not set up.
+- **Next targets** (docs/PROGRESSION.md) use the existing `targetLoadKg` and `plan.revise`: nothing new on the server.
+  **Weight increments** need `AddExerciseIncrements` and the capability `exercises.load-increment`; against a server
+  without it the phone keeps the command pending (never sent), and older apps never send one, so they cannot erase it.
 - Operation records are kept indefinitely, so any retry of an old command is still answered with its original
   acknowledgement. Do not prune them without defining the supported offline-retry window first.
 

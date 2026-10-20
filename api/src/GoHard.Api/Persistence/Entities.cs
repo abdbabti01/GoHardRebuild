@@ -312,6 +312,19 @@ public class WeeklyGoal
     public DateTime UpdatedAtUtc { get; set; }
 }
 
+/// <summary>
+/// The load step the person confirmed for one exercise identity (catalogue key or `custom:<id>`), in kilograms. Null =
+/// explicitly cleared. Never preselected; only sizes a suggested next target (docs/PROGRESSION.md).
+/// </summary>
+public class ExerciseIncrement
+{
+    public Guid UserId { get; set; }
+    public string ExerciseKey { get; set; } = "";
+    public decimal? IncrementKg { get; set; }
+    public int Revision { get; set; } = 1;
+    public DateTime UpdatedAtUtc { get; set; }
+}
+
 /// <summary>One body check-in (docs/BODY_PROGRESS.md): every measurement optional, at least one present.</summary>
 public class BodyMetric
 {

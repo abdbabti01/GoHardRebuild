@@ -292,7 +292,7 @@ class PlanRepository {
   /// Save changes to an existing plan from the draft's effective date on (a draft plan is rebuilt in full). Recorded,
   /// skipped, in-progress and earlier occurrences, and occurrences edited on their own, keep their content and dates;
   /// finished workouts are never touched. The local result is computed by the same rules the account applies.
-  Future<Receipt> revise(Plan plan, PlanDraft draft, {required List<Workout> workouts, required String today}) async {
+  Future<Receipt> revise(Plan plan, PlanDraft draft, {required List<Workout> workouts, required String today, bool keepBuilderDraft = false}) async {
     final errors = draft.errors;
     if (errors.isNotEmpty) throw ScheduleRefused(errors);
     if (!plan.isDraft && !draft.isUsable) throw const ScheduleRefused([PlanRules.notUsable]);
@@ -338,8 +338,26 @@ class PlanRepository {
           'expectedPlanRevision': _planRev(plan.id), 'effectiveDate': effective, 'title': p['title'], 'startDate': draft.startDate,
           'durationWeeks': weeks, 'timeBudgetMinutes': p['timeBudgetMinutes'], 'workouts': workoutsJson, 'schedule': schedule,
         });
-    await discardBuilderDraft(draft.draftId);
+    if (!keepBuilderDraft) await discardBuilderDraft(draft.draftId);
     return receipt;
+  }
+
+  /// The next target of one exercise of one plan workout (docs/PROGRESSION.md): the definition's own sets, reps and
+  /// optional load (kg; null = no load target), saved through `plan.revise` from today. Occurrences already started,
+  /// recorded, skipped or edited on their own, and every workout and set, keep what they have; a rotation does not
+  /// move. Returns null when the plan already holds these values (a second tap changes nothing). A plan edit open in
+  /// the builder is kept; it will be told the plan changed since it was opened.
+  Future<Receipt?> setNextTarget(Plan plan, {required String workoutId, required String occurrenceKey, required double? loadKg,
+      required int? sets, required int? repsMin, required int? repsMax, required List<Workout> workouts, required String today}) {
+    if (!plan.isBuilt || !(plan.isActive || plan.isPaused)) throw const ScheduleRefused(['PLAN_NOT_ACTIVE']);
+    final draft = PlanDraft.fromPlan(plan, duplicate: false, today: today);
+    final e = draft.workout(workoutId)?.exercises.where((x) => x.occurrenceKey == occurrenceKey).firstOrNull;
+    if (e == null) throw const ScheduleRefused(['TARGET_CONTEXT_CHANGED']);
+    final load = loadKg == null ? null : (loadKg * 1000).roundToDouble() / 1000;
+    if (e.targetLoadKg == load && e.targetSets == sets && e.targetRepsMin == repsMin && e.targetRepsMax == repsMax) return Future.value();
+    draft.setPrescription(workoutId, occurrenceKey, sets: sets, repsMin: repsMin, repsMax: repsMax, seconds: e.targetDurationSeconds,
+        restSeconds: e.restSeconds, targetLoadKg: load, notes: e.notes);
+    return revise(plan, draft, workouts: workouts, today: today, keepBuilderDraft: true);
   }
 
   /// This workout only: one pending occurrence of a fixed-weekday plan gets its own name and exercises. Later

@@ -186,6 +186,8 @@ abstract final class PlanRules {
         'EXERCISE_NAME_INVALID' => 'Give the exercise a name of up to 80 characters.',
         'PLAN_CHANGED_SINCE_EDIT' => 'This plan changed after you started editing it. Start again from the plan as it is now.',
         'PLAN_NOT_ACTIVE' => 'This plan is closed. Duplicate it to train with it again.',
+        'TARGET_CONTEXT_CHANGED' => 'This exercise is no longer in that plan workout, so its target was not changed. Review the plan instead.',
+        'TARGET_CHANGED_SINCE' => 'This target was changed again since then, so the earlier one was not restored. Edit it instead.',
         _ => 'That change could not be applied ($code).',
       };
 }

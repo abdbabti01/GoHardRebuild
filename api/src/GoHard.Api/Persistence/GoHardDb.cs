@@ -22,6 +22,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<RouteChunk> RouteChunks => Set<RouteChunk>();
     public DbSet<BodyMetric> BodyMetrics => Set<BodyMetric>();
     public DbSet<WeeklyGoal> WeeklyGoals => Set<WeeklyGoal>();
+    public DbSet<ExerciseIncrement> ExerciseIncrements => Set<ExerciseIncrement>();
     public DbSet<Proposal> Proposals => Set<Proposal>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -113,6 +114,14 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         // One effective record per owner and week: a retry or a second phone cannot create a competing one.
         Owned<WeeklyGoal>(b, x => x.UserId).HasKey(x => new { x.UserId, x.WeekStart });
         b.Entity<WeeklyGoal>().Property(x => x.Revision).IsConcurrencyToken();
+        // One increment per owner and exercise identity.
+        Owned<ExerciseIncrement>(b, x => x.UserId).HasKey(x => new { x.UserId, x.ExerciseKey });
+        b.Entity<ExerciseIncrement>(e =>
+        {
+            e.Property(x => x.ExerciseKey).HasMaxLength(80);
+            e.Property(x => x.IncrementKg).HasPrecision(9, 5);
+            e.Property(x => x.Revision).IsConcurrencyToken();
+        });
         Owned<Proposal>(b, x => x.UserId).HasOne<Plan>().WithMany().HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Cascade);
     }
 

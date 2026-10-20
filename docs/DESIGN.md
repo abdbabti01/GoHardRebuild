@@ -406,6 +406,29 @@ help is the one coach treatment). Android back closes the panel. Preview → rec
   result keeps one coach treatment (no duplicate avatars); the overview's scheduled entry is a compact row, not a photo
   panel, so the open workout keeps the only photograph.
 
+### Next targets (20 Oct 2026, workout progression; rules and storage in `docs/PROGRESSION.md`)
+
+An addition to the workout panel, never a second recording flow. Target (the aim), Last time (history) and Today
+(recorded sets only) stay three separate things; nothing in it records a set.
+
+- **Recording.** Under the exercise's heading: the tile is now **Target in this workout** (frozen at Start), then a
+  quiet line **Next target · 195 lb** with *Review* (*Review suggestion* when one is waiting), or **No next weight
+  target** with *Set a target*. Shown only for a planned exercise still in its plan workout. It opens a sheet; the
+  recorder underneath keeps its selection, entry, sets, rest and clock.
+- **Next time** (the result after Finish, and the next occurrence's preview): a section header with the coach's help
+  entry, the selected guide's inline `CoachSpot` (one fact, *How progression works*; introduced once per account), one
+  pale panel card (Overline workout, serif exercise name, serif *Current target* / *Proposed* figures, sets and range,
+  one factual sentence, a deep *Review next target* button and *Keep current target*), and a plain row per further
+  exercise. No stacked cards or repeated coaches.
+- **Review next target** (sheet): workout · plan, serif exercise, current target, reason, last sessions, suggested
+  weight, editable Weight / Sets / Reps from–to, the increment link, the scope line, a deep *Use 195 lb from next
+  session* and *Keep current target*. Accepted: a success line, *Edit next target*, *Restore previous target (…)*, Done.
+- **Choose your weight increment** (sheet): unit chips (none preselected), Another step, the convention explained.
+- Deviations from the approved mockup: the mockup's generated lion is replaced by the app's Leon/Leona; the coach sits
+  inline in the section (a `CoachSpot`), not over the card; its numbers (a 10/9/8 previous session) are illustrative
+  and would not qualify under the rule, so the evidence uses complete sessions; the recorder shows the next target as a
+  line under today's target rather than a second tile, to keep the entry fields and Record set where they were.
+
 ### Progress (19 Oct 2026, from `GoHard_Progress_Claude_Handoff`; rules in `docs/PROGRESS.md`)
 
 Train › Progress opens on **this week** in the pale photo panel (overline "This week", serif "Your weekly rhythm", the

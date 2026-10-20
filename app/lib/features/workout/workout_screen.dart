@@ -17,6 +17,7 @@ import '../coach/coach_prefs.dart' show workoutSavedProvider;
 import '../coach/guide_sheets.dart' show showExerciseInfo;
 import '../plans/plan_progress.dart';
 import '../shell/home_shell.dart';
+import 'next_target.dart';
 import 'progress.dart';
 import 'result_rules.dart';
 import 'workout_detail_screen.dart';
@@ -515,10 +516,13 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           ],
         )),
         // The plan's target is the user's aim: never put in the fields or counted as a set, and apart from last time.
+        // It is the one frozen into this workout at Start; a next target changes the plan, never this workout.
         if (selected.targetLoadKg != null) ...[
           const SizedBox(height: 10),
-          _Tile(icon: Icons.flag_outlined, label: 'Target', value: formatLoad(selected.targetLoadKg, unit), valueKey: const Key('workout-target-load')),
+          _Tile(icon: Icons.flag_outlined, label: 'Target in this workout', value: formatLoad(selected.targetLoadKg, unit), valueKey: const Key('workout-target-load')),
         ],
+        if (definitionOf(ref, workout) case final def? when selected.isPrescribed && selected.occurrenceKey != null)
+          NextTargetLine(slotKey: (planId: workout.planId!, workoutId: def, occurrenceKey: selected.occurrenceKey!)),
         if ((selected.notes ?? '').trim().isNotEmpty)
           Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.sticky_note_2_outlined, selected.notes!.trim())),
         const SizedBox(height: 16),

@@ -373,7 +373,7 @@ void main() {
     await tester.pump();
     // The plan's target and last time apart, never merged: a labelled tile, then the dated Set / Last time / Today table.
     expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '60 kg');
-    expect(find.text('Target'), findsOneWidget);
+    expect(find.text('Target in this workout'), findsOneWidget);
     expect(find.text('Last time · Fri, Oct 9'), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('compare-0-last')), matching: find.text('57.5 kg × 8')), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Next · not recorded yet')), findsOneWidget);

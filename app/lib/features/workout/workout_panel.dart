@@ -13,6 +13,7 @@ import '../plans/plan_progress.dart';
 import '../plans/week_widgets.dart' show OccasionPill;
 import '../shell/home_shell.dart';
 import '../today/daily.dart';
+import 'next_target.dart';
 import 'progress.dart';
 import 'workout_flow.dart';
 import 'workout_screen.dart';
@@ -124,6 +125,8 @@ class _WorkoutPreviewState extends ConsumerState<WorkoutPreview> {
           QuietLink('More options', key: const Key('preview-options'), said: 'Move, skip or edit this workout', onPressed: () => showOccasionSheet(appContext(context), ref, plan, o)),
         ],
       ),
+      // Suggestions stay reachable here after the result is gone. An occurrence edited on its own keeps its content.
+      if (o.workoutId != null && !o.isCustomised) NextTimeSection(planId: plan.id, workoutId: o.workoutId!),
       const SizedBox(height: 22),
       const SectionHeader('Exercises'),
       const SizedBox(height: 10),
@@ -133,6 +136,7 @@ class _WorkoutPreviewState extends ConsumerState<WorkoutPreview> {
           for (final (i, e) in visible)
             _PreviewRow(
               index: i, exercise: e, expanded: _expanded == i, unit: unit, workoutName: o.title,
+              slotKey: o.workoutId == null || o.isCustomised ? null : (planId: plan.id, workoutId: o.workoutId!, occurrenceKey: e.occurrenceKey),
               history: exerciseHistory(catalogKey: e.catalogKey, ordinal: occurrenceOf(keys, i), beforeUtc: now, workouts: workouts, sets: ref.watch(trustedSetsProvider)),
               status: historyStatus(ref, e.catalogKey),
               onTap: () => setState(() => _expanded = _expanded == i ? null : i),
@@ -160,7 +164,7 @@ class _WorkoutPreviewState extends ConsumerState<WorkoutPreview> {
 /// One exercise of the preview: collapsed, its number, name and prescription; expanded, also the plan's words for it,
 /// the user's target and notes, About, and last time.
 class _PreviewRow extends StatelessWidget {
-  const _PreviewRow({required this.index, required this.exercise, required this.expanded, required this.unit, required this.workoutName, required this.history, required this.status, required this.onTap});
+  const _PreviewRow({required this.index, required this.exercise, required this.expanded, required this.unit, required this.workoutName, required this.history, required this.status, required this.onTap, this.slotKey});
   final int index;
   final Prescription exercise;
   final bool expanded;
@@ -169,6 +173,9 @@ class _PreviewRow extends StatelessWidget {
   final List<PreviousPerformance> history;
   final HistoryStatus status;
   final VoidCallback onTap;
+
+  /// Where this exercise's target lives in the plan, when it can be reviewed from here.
+  final TargetKey? slotKey;
 
   @override
   Widget build(BuildContext context) {
@@ -205,10 +212,12 @@ class _PreviewRow extends StatelessWidget {
             // The user's own target, not a record and not the last performance.
             if (e.targetLoadKg != null) Text('Target ${formatLoad(e.targetLoadKg, unit)}', style: context.numStyle(14, color: c.secondary, weight: FontWeight.w500)),
             if ((e.notes ?? '').trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: StatusLine(Icons.sticky_note_2_outlined, e.notes!.trim())),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: QuietLink('About', key: Key('preview-demo-$index'), said: 'About ${e.name}', onPressed: () => showExerciseInfo(appContext(context), exercise: e, workoutName: workoutName)),
-            ),
+            Wrap(children: [
+              QuietLink('About', key: Key('preview-demo-$index'), said: 'About ${e.name}', onPressed: () => showExerciseInfo(appContext(context), exercise: e, workoutName: workoutName)),
+              if (slotKey != null)
+                QuietLink(e.targetLoadKg == null ? 'Set a target' : 'Review target', key: Key('preview-target-$index'), said: 'Target for ${e.name}',
+                    onPressed: () => showTargetReview(appContext(context), slotKey!)),
+            ]),
             LastTime(history: history, status: status, unit: unit, compare: false, onAll: () => showExerciseHistory(context, name: e.name, history: history, unit: unit)),
           ]),
         ),

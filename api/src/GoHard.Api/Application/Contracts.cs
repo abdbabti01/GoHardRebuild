@@ -196,6 +196,12 @@ public sealed record WeeklyGoalPutRequest(Guid OperationId, int ExpectedRevision
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt WorkoutsTarget = default,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] OptionalInt RunWalkTarget = default);
 
+/// <summary>The load step for one exercise identity in kilograms (docs/PROGRESSION.md). Null = cleared.</summary>
+public sealed record ExerciseIncrementDto(string ExerciseKey, decimal? IncrementKg, int Revision);
+/// <param name="ExpectedRevision">0 creates the record; otherwise the revision being replaced.</param>
+/// <param name="IncrementKg">Null clears it; otherwise above 0 and at most 50 kg, up to 5 decimals.</param>
+public sealed record ExerciseIncrementPutRequest(Guid OperationId, int ExpectedRevision, decimal? IncrementKg);
+
 public sealed record ProposalMove(Guid OccasionId, DateOnly From, DateOnly To);
 public sealed record ProposalChange(List<ProposalMove> Moves, string? FromCatalogKey, string? ToCatalogKey, string? ToName, List<Guid> AffectedOccasionIds);
 /// <param name="Kind">schedule | substitution</param>
@@ -209,4 +215,5 @@ public sealed record ProposalResult(ProposalDto Proposal, PlanContextDto? Contex
 public sealed record CatalogExerciseDto(string Key, string Name, string Category, string Equipment, bool IsTimed);
 public sealed record SnapshotDto(ProfileDto Profile, PlanContextDto Context, List<WorkoutDto> Workouts, List<FoodEntryDto> FoodEntries,
     List<RunDto> Runs, List<BodyMetricDto> BodyMetrics, List<ProposalDto> Proposals, List<CatalogExerciseDto> Catalog, DateTime ServerTimeUtc, List<SavedFoodDto>? SavedFoods = null,
-    List<CustomExerciseDto>? CustomExercises = null, List<WaterEntryDto>? WaterEntries = null, List<WeeklyGoalDto>? WeeklyGoals = null);
+    List<CustomExerciseDto>? CustomExercises = null, List<WaterEntryDto>? WaterEntries = null, List<WeeklyGoalDto>? WeeklyGoals = null,
+    List<ExerciseIncrementDto>? ExerciseIncrements = null);

@@ -154,6 +154,31 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("CustomExercises");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.ExerciseIncrement", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ExerciseKey")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<decimal?>("IncrementKg")
+                        .HasPrecision(9, 5)
+                        .HasColumnType("numeric(9,5)");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "ExerciseKey");
+
+                    b.ToTable("ExerciseIncrements");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.FoodEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -957,6 +982,15 @@ namespace GoHard.Api.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.CustomExercise", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.ExerciseIncrement", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()

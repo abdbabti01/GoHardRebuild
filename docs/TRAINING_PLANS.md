@@ -82,7 +82,7 @@ recorded before them keeps its semantic hash.
   "catalogKey": "bench-press",    // catalog key | "custom:<uuid>" (owned custom exercise) | null (ad hoc name, no history link)
   "name": "Bench press", "isTimed": false,
   "targetSets": 3, "targetRepsMin": 8, "targetRepsMax": 12, "targetDurationSeconds": null, "restSeconds": 90,
-  "targetLoadKg": 60.0,           // † optional target the user set. Never filled in by the app
+  "targetLoadKg": 60.0,           // † optional target the user set or accepted (docs/PROGRESSION.md). Never filled in by the app
   "notes": "Pause at the bottom" }// †
 
 // WorkoutDefinition

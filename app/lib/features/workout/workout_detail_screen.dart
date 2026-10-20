@@ -7,6 +7,7 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../plans/plan_progress.dart';
+import 'next_target.dart';
 import 'result_rules.dart';
 import 'workout_flow.dart';
 import 'workout_screen.dart';
@@ -124,6 +125,8 @@ class WorkoutResultView extends ConsumerWidget {
       Heading(WorkoutResultRules.label(row.value.outcome), size: 28, serif: true),
       Text(row.value.title, style: context.sansStyle(16, weight: FontWeight.w600)),
       ..._facts(context, ref, row, _setsOf(ref, workoutId)),
+      // Optional next targets this saved workout supports. It is already saved; nothing here changes it.
+      if (definitionOf(ref, row.value) case final def? when !row.value.isOpen) NextTimeSection(planId: row.value.planId!, workoutId: def, source: row.value.id),
       const SizedBox(height: 20),
       PrimaryButton('Done', key: const Key('result-done'), onPressed: onDone),
     ]);

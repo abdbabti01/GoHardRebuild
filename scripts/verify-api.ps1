@@ -121,6 +121,19 @@ if ($capabilities -contains 'food.saved') {
         'one saved food; the journal is unchanged'
     }
 }
+if ($capabilities -contains 'exercises.load-increment') {
+    Check 'Weight increment: saved once under a retry, revision-checked, cleared only on purpose' {
+        $op = [Guid]::NewGuid()
+        $set = Api PUT '/api/v1/exercise-increments/bench-press' @{ operationId = $op; expectedRevision = 0; incrementKg = 2.5 } $token
+        $retry = Api PUT '/api/v1/exercise-increments/bench-press' @{ operationId = $op; expectedRevision = 0; incrementKg = 2.5 } $token
+        if ($set.status -ne 'accepted' -or $retry.revision -ne $set.revision) { throw 'not saved, or the retry was applied twice' }
+        $stale = try { Api PUT '/api/v1/exercise-increments/bench-press' @{ operationId = [Guid]::NewGuid(); expectedRevision = 0; incrementKg = 5 } $token } catch { if ((Status $_) -ne 409) { throw }; 'conflict' }
+        if ($stale -ne 'conflict') { throw 'a stale revision was accepted' }
+        Api PUT '/api/v1/exercise-increments/bench-press' @{ operationId = [Guid]::NewGuid(); expectedRevision = $set.revision; incrementKg = $null } $token | Out-Null
+        if ($null -ne (@((Api GET '/api/v1/sync/snapshot' $null $token).exerciseIncrements) | Where-Object exerciseKey -eq 'bench-press').incrementKg) { throw 'not cleared' }
+        'saved, retried once, stale refused, cleared'
+    }
+} else { Write-Host '  SKIP  Weight increments - this server does not declare exercises.load-increment (deploy needed)' -ForegroundColor Yellow }
 if ($capabilities -contains 'runs.routes') {
     Check 'Run / Walk: a walk, its route in a chunk retried once, completed, read back and erased with the walk' {
         $id = [Guid]::NewGuid(); $at = [DateTime]::UtcNow.AddMinutes(-20).ToString('o')

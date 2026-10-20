@@ -29,6 +29,8 @@ abstract final class Kinds {
   static const customExercise = 'custom_exercise';
   /// Weekly activity targets, one record per effective Monday (id = that Monday's day key). docs/PROGRESS.md.
   static const weeklyGoal = 'weekly_goal';
+  /// The load step the owner confirmed for one exercise identity (id = catalogue key or `custom:<id>`). docs/PROGRESSION.md.
+  static const exerciseIncrement = 'exercise_increment';
   // Local-only kinds: never dispatched. `planBuilder` is the plan being built or edited ("new", or a plan's ID).
   static const runtime = 'runtime', setupDraft = 'setup_draft', planBuilder = 'plan_builder';
   /// Provider foods this owner has looked at, kept so they can be found again without a connection.
@@ -37,6 +39,9 @@ abstract final class Kinds {
   static const restDay = 'rest_day';
   /// This owner's Ask GoHard conversation and unsent question. Local only.
   static const coachChat = 'coach_chat';
+  /// Next-target history for one plan exercise (id = `planId|workoutId|occurrenceKey`): the suggestion kept as it is,
+  /// and the target before an accepted one. Local only (docs/PROGRESSION.md).
+  static const progression = 'progression';
 }
 
 extension type Prescription(Json j) {
@@ -282,6 +287,13 @@ extension type WeeklyGoal(Json j) {
   int? get runWalkTarget => j['runWalkTarget'] as int?;
   int get revision => j['revision'] as int? ?? 0;
   bool get isEmpty => workoutsTarget == null && runWalkTarget == null;
+}
+
+/// The load step for one exercise identity, in kilograms; null = cleared. Never preselected (docs/PROGRESSION.md).
+extension type ExerciseIncrement(Json j) {
+  String get exerciseKey => j['exerciseKey'] as String;
+  double? get incrementKg => _d(j['incrementKg']);
+  int get revision => j['revision'] as int? ?? 0;
 }
 
 /// A Run or Walk (docs/RUN_WALK.md). Records from before Run / Walk have no type and are runs.

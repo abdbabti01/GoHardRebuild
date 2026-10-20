@@ -36,7 +36,7 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     List<Json> food = const [], bool foodFails = false, AppearanceStore? appearance, String profileAppearance = 'dark',
     int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const [], List<Json> runs = const [],
     int pending = 0, List<Rec> issues = const [], Json profile = const {}, bool profileLoaded = true, bool liveWorkouts = false,
-    List<Json> weeklyGoals = const [], bool liveGoals = false, List<Json> bodyMetrics = const [], List<String> pendingMetrics = const [], bool liveMetrics = false}) async {
+    List<Json> weeklyGoals = const [], bool liveGoals = false, List<Json> bodyMetrics = const [], List<String> pendingMetrics = const [], bool liveMetrics = false, bool livePlans = false}) async {
   final sessions = SessionManager(MemorySecretStore());
   await sessions.signIn(authFor('one'));
   List<Stored<WorkoutSet>> setRows(String? workoutId) => [for (final s in sets) if (workoutId == null || s['workoutId'] == workoutId) stored(WorkoutSet(s), Kinds.set, s['id'] as String, s)];
@@ -49,7 +49,8 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     savedFoodsProvider.overrideWith((ref) => Stream.value([for (final f in savedFoods) stored(SavedFood(f), Kinds.savedFood, f['id'] as String, f)])),
     seenFoodsProvider.overrideWith((ref) => Stream.value([for (final f in seenFoods) FoodItem(f)])),
     contextRowProvider.overrideWith((ref) => Stream.value(stored(TrainingCtx({'contextRevision': 1, 'primaryPlanId': primaryPlanId}), Kinds.context, 'one', {}))),
-    plansProvider.overrideWith((ref) => Stream.value([for (final p in plans) stored(Plan(p), Kinds.plan, p['id'] as String, p)])),
+    // [livePlans]: plans come from the real local database the test provides instead.
+    if (!livePlans) plansProvider.overrideWith((ref) => Stream.value([for (final p in plans) stored(Plan(p), Kinds.plan, p['id'] as String, p)])),
     // [liveWorkouts]: workouts, sets and runtimes come from the real local database the test provides instead.
     if (!liveWorkouts) ...[
       workoutsProvider.overrideWith((ref) => Stream.value([for (final w in workouts) stored(Workout(w), Kinds.workout, w['id'] as String, w)])),

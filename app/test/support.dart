@@ -44,7 +44,10 @@ Json authFor(String owner) => {
 class FakeServer implements Transport {
   final calls = <({String method, String path, String body, String? bearer})>[];
   final operations = <String, (String body, ApiResponse response)>{};
-  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{}, weeklyGoals = <String, Json>{}, bodyMetrics = <String, Json>{};
+  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{}, weeklyGoals = <String, Json>{}, bodyMetrics = <String, Json>{}, exerciseIncrements = <String, Json>{};
+
+  /// The next plan edit is refused as if the plan had been changed on another phone first.
+  bool planChangedElsewhere = false;
 
   /// The account's profile as this authority holds it. A field a request leaves out is kept, as on the real server.
   Json profile = {...authFor('owner-from-server')['profile'] as Json};
@@ -80,7 +83,7 @@ class FakeServer implements Transport {
         'profile': profile, 'context': {'contextRevision': 1, 'primaryPlanId': null, 'plans': []},
         'workouts': [for (final w in workouts.values) {...w, 'exercises': [for (final e in w['exercises'] as List) {...e as Json, 'sets': [for (final s in sets.values) if (s['exerciseId'] == e['id']) s]}]}],
         'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': bodyMetrics.values.toList(), 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(), 'waterEntries': water.values.toList(),
-        'weeklyGoals': weeklyGoals.values.toList(),
+        'weeklyGoals': weeklyGoals.values.toList(), 'exerciseIncrements': exerciseIncrements.values.toList(),
       });
     }
     if (path == '/capabilities') return ApiResponse(200, capabilities);
@@ -171,6 +174,15 @@ class FakeServer implements Transport {
         };
         weeklyGoals[week] = next;
         return _ack(op, 'accepted', next['revision'] as int, Map.of(next));
+      case ['exercise-increments', final key] when method == 'PUT':
+        final k = Uri.decodeComponent(key), row = exerciseIncrements[k];
+        if ((row?['revision'] ?? 0) != d['expectedRevision']) return _ack(op, 'conflict', (row?['revision'] as int?) ?? 0, row == null ? null : Map.of(row), 'REVISION_CONFLICT');
+        final next = {'exerciseKey': k, 'incrementKg': d['incrementKg'], 'revision': ((row?['revision'] as int?) ?? 0) + 1};
+        exerciseIncrements[k] = next;
+        return _ack(op, 'accepted', next['revision'] as int, Map.of(next));
+      case ['plans', _] when method == 'PUT' && planChangedElsewhere:
+        planChangedElsewhere = false;
+        return _ack(op, 'conflict', 9, null, 'REVISION_CONFLICT');
       case ['me'] when method == 'PUT':
         if (profile['revision'] != d['expectedRevision']) return _ack(op, 'conflict', profile['revision'] as int, profile, 'REVISION_CONFLICT');
         profile = {...profile, ...d, 'revision': (profile['revision'] as int) + 1}..remove('operationId')..remove('expectedRevision');

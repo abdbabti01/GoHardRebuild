@@ -21,7 +21,7 @@ public static class GoHardEndpoints
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
         "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes", WeeklyGoalService.Capability,
-        ActivityService.MeasurementsCapability,
+        ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability,
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -33,7 +33,8 @@ public static class GoHardEndpoints
         .AddWeather(config)
         .AddCoach(config)
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<WaterService>()
-        .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>().AddScoped<WeeklyGoalService>();
+        .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>().AddScoped<WeeklyGoalService>()
+        .AddScoped<ExerciseIncrementService>();
 
     /// <summary>Ownership always comes from the validated token, never from a client-supplied user ID.</summary>
     private static Guid UserId(this ClaimsPrincipal p) => Guid.Parse(p.FindFirstValue("sub")!);
@@ -83,7 +84,7 @@ public static class GoHardEndpoints
             await s.DeleteOwnAccountAsync(u.UserId(), r.Password, ct) ? Results.NoContent() : Results.Json(new AuthError("WRONG_PASSWORD"), statusCode: 400));
 
         me.MapGet("/sync/snapshot", async (ClaimsPrincipal u, GoHardDb db, PlanService plans, WorkoutService workouts, FoodService food,
-            ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, WaterService water, WeeklyGoalService goals, CancellationToken ct) =>
+            ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, WaterService water, WeeklyGoalService goals, ExerciseIncrementService increments, CancellationToken ct) =>
         {
             var id = u.UserId();
             return Results.Ok(new SnapshotDto(
@@ -94,7 +95,7 @@ public static class GoHardEndpoints
                 await proposals.ListAsync(id, ct),
                 await db.CatalogExercises.AsNoTracking().OrderBy(c => c.Name).Select(c => new CatalogExerciseDto(c.Key, c.Name, c.Category, c.Equipment, c.IsTimed)).ToListAsync(ct),
                 DateTime.UtcNow, await saved.ListAsync(id, ct), await custom.ListAsync(id, ct),
-                await water.ListAsync(id, null, ct), await goals.ListAsync(id, ct)));
+                await water.ListAsync(id, null, ct), await goals.ListAsync(id, ct), await increments.ListAsync(id, ct)));
         });
 
         // Plans
@@ -173,6 +174,10 @@ public static class GoHardEndpoints
         // Weekly activity targets, one record per effective Monday (docs/PROGRESS.md)
         me.MapPut("/weekly-goals/{weekStart}", (DateOnly weekStart, WeeklyGoalPutRequest r, ClaimsPrincipal u, CommandRunner run, WeeklyGoalService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "weeklygoal.put", new { weekStart, r }, () => s.PutAsync(u.UserId(), weekStart, r, ct), ct));
+
+        // The load step for one exercise identity (docs/PROGRESSION.md)
+        me.MapPut("/exercise-increments/{key}", (string key, ExerciseIncrementPutRequest r, ClaimsPrincipal u, CommandRunner run, ExerciseIncrementService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "exerciseincrement.put", new { key, r }, () => s.PutAsync(u.UserId(), key, r, ct), ct));
 
         // Reusable foods and favourites
         me.MapPut("/saved-foods/{id:guid}", (Guid id, SavedFoodPutRequest r, ClaimsPrincipal u, CommandRunner run, SavedFoodService s, CancellationToken ct) =>

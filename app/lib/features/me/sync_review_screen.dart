@@ -36,6 +36,7 @@ String describeRecord(String kind, Json j, LoadUnit unit) => switch (kind) {
       Kinds.weeklyGoal => 'Weekly goals from ${shortDate(j['weekStart'] as String)}: '
           '${j['workoutsTarget'] == null ? 'no workout target' : '${j['workoutsTarget']} workouts'} · '
           '${j['runWalkTarget'] == null ? 'no Run / Walk target' : '${j['runWalkTarget']} runs or walks'}',
+      Kinds.exerciseIncrement => ExerciseIncrement(j).incrementKg == null ? 'No weight increment' : 'Weight increment ${formatLoad(ExerciseIncrement(j).incrementKg, unit)}',
       // Circumferences in centimetres, the stored unit; weight in the lifting unit.
       Kinds.metric => (j['isDeleted'] as bool? ?? false)
           ? 'Removed'
@@ -44,8 +45,9 @@ String describeRecord(String kind, Json j, LoadUnit unit) => switch (kind) {
     };
 
 const _titles = {
-  Kinds.set: 'Recorded set', Kinds.food: 'Food entry', Kinds.workout: 'Workout', Kinds.context: 'Primary plan change', Kinds.plan: 'Plan schedule change',
+  Kinds.set: 'Recorded set', Kinds.food: 'Food entry', Kinds.workout: 'Workout', Kinds.context: 'Primary plan change', Kinds.plan: 'Plan change',
   Kinds.profile: 'Profile', Kinds.run: 'Run', Kinds.metric: 'Body measurement', Kinds.proposal: 'Suggested change', Kinds.savedFood: 'Saved food', Kinds.water: 'Water entry', Kinds.weeklyGoal: 'Weekly goals',
+  Kinds.exerciseIncrement: 'Weight increment',
 };
 
 String _reason(String? code) => switch (code) {
@@ -114,13 +116,14 @@ class _Issue extends ConsumerWidget {
                 Text(describeRecord(rec.kind, server, unit), style: context.sansStyle(15, weight: FontWeight.w600)),
               ],
               const SizedBox(height: 14),
-              if (rec.syncState == 'conflict' && server != null && (rec.kind == Kinds.set || rec.kind == Kinds.food || rec.kind == Kinds.weeklyGoal ||
+              if (rec.syncState == 'conflict' && server != null && (rec.kind == Kinds.set || rec.kind == Kinds.food || rec.kind == Kinds.weeklyGoal || rec.kind == Kinds.exerciseIncrement ||
                   (rec.kind == Kinds.metric && !BodyMetric(local).isDeleted && ref.watch(compatibilityProvider).supports(BodyRepository.capability)))) ...[
                 PrimaryButton('Keep the version on this phone', key: Key('issue-keep-${rec.id}'), onPressed: () => act(
                     (cmd) => switch (rec.kind) {
                           Kinds.set => ref.read(workoutRepositoryProvider).keepLocalSet(cmd.operationId, WorkoutSet(local)),
                           Kinds.weeklyGoal => ref.read(goalRepositoryProvider).keepLocal(cmd.operationId, WeeklyGoal(local)),
                           Kinds.metric => ref.read(bodyRepositoryProvider).keepLocal(cmd.operationId, BodyMetric(local)),
+                          Kinds.exerciseIncrement => ref.read(progressionRepositoryProvider).keepLocal(cmd.operationId, ExerciseIncrement(local)),
                           _ => ref.read(foodRepositoryProvider).keepLocal(cmd.operationId, FoodEntry(local)),
                         },
                     'Kept your version. The account\'s version is retained as the alternative.')),

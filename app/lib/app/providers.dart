@@ -29,6 +29,7 @@ import '../features/progress/goal_repository.dart';
 import '../features/progress/trends.dart';
 import '../features/today/daily.dart';
 import '../features/workout/progress.dart';
+import '../features/workout/progression_repository.dart';
 import '../features/workout/workout_repository.dart';
 import '../features/workout/workout_runtime.dart';
 
@@ -47,7 +48,8 @@ final syncProvider = Provider<SyncEngine>((ref) {
   engine.isBlocked = () => ref.read(compatibilityProvider).blocked;
   engine.mayDispatch = (cmd) {
     final capabilities = ref.read(compatibilityProvider).capabilities;
-    final ok = RunRepository.serverTakes(cmd, capabilities) && GoalRepository.serverTakes(cmd, capabilities) && BodyRepository.serverTakes(cmd, capabilities);
+    final ok = RunRepository.serverTakes(cmd, capabilities) && GoalRepository.serverTakes(cmd, capabilities) && BodyRepository.serverTakes(cmd, capabilities) &&
+        ProgressionRepository.serverTakes(cmd, capabilities);
     // Held only because the server has not answered yet (the app started offline): ask again (one check at a time),
     // and send once an answer arrives. No answer leaves it waiting, with no retry loop.
     if (!ok && capabilities == null) {
@@ -135,6 +137,10 @@ final seenFoodsProvider = StreamProvider<List<FoodItem>>((ref) => _rows(ref, Kin
 final runsProvider = StreamProvider<List<Stored<Run>>>((ref) => _rows(ref, Kinds.run, Run.new));
 /// Weekly activity targets, one record per effective Monday (features/progress/weekly.dart).
 final weeklyGoalsProvider = StreamProvider<List<Stored<WeeklyGoal>>>((ref) => _rows(ref, Kinds.weeklyGoal, WeeklyGoal.new));
+/// Equipment increments by exercise key, and this phone's next-target history (features/workout/progression_repository.dart).
+final incrementsProvider = StreamProvider<Map<String, Stored<ExerciseIncrement>>>((ref) =>
+    _rows(ref, Kinds.exerciseIncrement, ExerciseIncrement.new).map((l) => {for (final r in l) r.value.exerciseKey: r}));
+final progressionNotesProvider = StreamProvider<Map<String, Json>>((ref) => _rows(ref, Kinds.progression, (j) => j).map((l) => {for (final r in l) r.rec.id: r.value}));
 final metricsProvider = StreamProvider<List<Stored<BodyMetric>>>((ref) => _rows(ref, Kinds.metric, BodyMetric.new));
 final proposalsProvider = StreamProvider<List<Stored<Proposal>>>((ref) => _rows(ref, Kinds.proposal, Proposal.new));
 final catalogProvider = StreamProvider<List<CatalogExercise>>((ref) =>
@@ -211,6 +217,7 @@ final workoutRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => Workou
 final bodyRepositoryProvider = Provider((ref) => _owned(ref, BodyRepository.new));
 final trackStoreProvider = Provider((ref) => TrackStore(ref.watch(dbProvider)));
 final goalRepositoryProvider = Provider((ref) => _owned(ref, GoalRepository.new));
+final progressionRepositoryProvider = Provider((ref) => _owned(ref, ProgressionRepository.new));
 final runRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => RunRepository(s, o, ref.watch(trackStoreProvider), ref.watch(apiProvider))));
 
 // ---------------------------------------------------------------------------- shared projections
