@@ -1997,3 +1997,48 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   (wording only). CI run 120 on `c5ddc93`: **passed**. Unsigned IPA run 45 on `feature/nutrition-trends`
   (`c5ddc93`), artifact `GoHard-Dev-unsigned-ipa`: **passed**. **Not verified:** a physical iPhone. `main` and
   Railway unchanged.
+
+## 20 Oct 2026 — Workout progression (`feature/workout-progression`, from `main` 4871cc2)
+
+- **Base:** `main` 4871cc2 (exercise-switch fix, body progress, nutrition trends). Rules, storage and compatibility:
+  docs/PROGRESSION.md; design: docs/DESIGN.md › Next targets. The approved three-screen mockup was not on this machine;
+  the work follows its written description (workspace panel, Next time after Finish, review sheet).
+- **Built:** deterministic, offline next-target rules (`progression.dart`: the two newest comparable sessions of the
+  same plan workout, same exercise identity and occurrence, all planned sets at the target with reps at the top of the
+  range, one user-chosen increment, 5% product guard, reason codes; never further back, never down, never sets/reps).
+  Accepted targets are the plan definition's existing `targetLoadKg`, saved with the existing revision-checked
+  `plan.revise` (`PlanRepository.setNextTarget`; same values queue nothing; an open builder edit is kept). UI: a
+  *Next target* line under *Target in this workout* in the recorder, a *Next time* section after Finish and in the next
+  preview (one pale card, rows for the rest, the selected Leon/Leona inline), the review sheet with Restore, the
+  increment sheet, *How progression works*. **Server change:** `ExerciseIncrements` table (migration
+  `AddExerciseIncrements`, additive), `PUT /exercise-increments/{key}`, snapshot list, capability
+  `exercises.load-increment`; the phone holds increment commands from a server without it.
+- **Tests:** `progression_test` (8), `progression_sync_test` (3, real Drift file: offline confirmation through
+  restart, one command per confirmation and byte-identical retries, the next matching start freezes the accepted target,
+  open and finished workouts and other workouts unchanged, plan revision conflict kept for review, increments per
+  account / second phone / conflict / older-server gate), `progression_ui_test` (2: preview + Keep current save
+  nothing and hide the same suggestion; a double tap saves once; selected exercise ID from the runtime, typed entry and
+  workout survive; only Record set records; 320 px at 2× text), `train_plan_ui_test` (label updated). One full
+  `flutter test` run: 641 passed, 1 failed (that label, then fixed and rerun green); the progression files were rerun
+  after the last code change: 13 passed. `flutter analyze`: no issues. API: `ExerciseIncrementTests` added; full suite
+  **199 passed**. `verify-api.ps1` against the branch API: every check passed, including the new increment check.
+- **Renders** (fixtures, not captures; `progression_render_test`, gated): six themes of Next time, review, increment
+  and help, and 320 px at 2× text, in docs/evidence/progression. They found the review filling before the profile
+  and increments had loaded (kg and the current target instead of lb and the suggestion) and cut-off rep labels at
+  large text (fixed: the form follows the records until the person types; fields stack with large text).
+- **Native (Pixel_7, branch API on free port 5137 with a disposable database `gohard_prog_journey`, migrated then
+  dropped; the owner-video container on 5131 was left running):** `test-android.ps1 -Only journey_progression_test
+  -ApiBase http://10.0.2.2:5137` (not default) **passed** both phases, twice; the second run is on the committed code.
+  Phase 1: a SEEDED plan ("Seeded upper plan", Upper body A, bench press 80 kg 3 × 6–8) and two complete sessions made
+  through the app's own repositories; the preview offered *Choose your weight increment* (no load invented); 2.5 kg
+  chosen; 80 → 82.5 kg reviewed and kept as it is (plan unchanged, suggestion hidden); the workout started, 85 typed,
+  the next target accepted from the recorder with Wi-Fi and data off; same workout, Bench press still the selected
+  panel, 85 still typed, no set; today's target 80 kg, next 82.5 kg; three sets recorded and finished offline. Phase 2
+  (new process): 82.5 kg still on the phone; online, it reached the account; the three finished workouts keep 80 kg;
+  the next matching session started with 82.5 kg. Real captures `prog-01…08` in docs/evidence/screenshots (the green
+  boxes are the emulator's TalkBack focus).
+- **Not verified:** a physical iPhone (feel, VoiceOver, keyboard over the review sheet). **Hosted:** increments need
+  this migration deployed (Railway deploys `main`); until then they wait on the phone, targets sync already.
+- CI run 123 on `b44efb0`: **passed**. Unsigned IPA run 46 on `feature/workout-progression` (`b44efb0`), artifact
+  `GoHard-Dev-unsigned-ipa`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39496397224). `main`,
+  Railway, Cloudflare and the exercise-video branches unchanged; not merged.
