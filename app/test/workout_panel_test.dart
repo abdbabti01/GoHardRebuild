@@ -17,6 +17,7 @@ import 'package:gohard_rebuild/features/workout/workout_screen.dart';
 
 import 'support.dart';
 import 'ui_support.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 // The one workout panel in Train › Workouts (docs/DESIGN.md › Workout panel): Details shows a planned workout without
 // creating anything, Start makes one workout and records into it beside last time, and leaving or switching keeps
@@ -96,7 +97,7 @@ void main() {
   });
 
   testWidgets('Last time says loading, unreadable, no identity and no history apart; timed and bodyweight sets keep their own words', (tester) async {
-    Future<void> show(LastTime w) => tester.pumpWidget(MaterialApp(theme: goTheme(Accent.values.first, Brightness.light), home: Scaffold(body: SingleChildScrollView(child: w))));
+    Future<void> show(LastTime w) => tester.pumpWidget(MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, theme: goTheme(Accent.values.first, Brightness.light), home: Scaffold(body: SingleChildScrollView(child: w))));
     String? empty() => tester.widget<Text>(find.byKey(const Key('last-time-empty'))).data;
     await show(LastTime(history: const [], status: HistoryStatus.loading, unit: LoadUnit.kg, onAll: () {}));
     expect(empty(), 'Reading your previous sessions…');

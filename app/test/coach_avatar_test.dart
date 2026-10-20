@@ -17,6 +17,7 @@ import 'package:gohard_rebuild/features/me/me_screen.dart';
 
 import 'support.dart';
 import 'ui_support.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 const _hint = 'Not sure how many days to train? Let\'s compare your options.';
 const _id = 'split-intro';
@@ -281,7 +282,7 @@ void main() {
     final sessions = await _signedIn(tester);
     await tester.pumpWidget(ProviderScope(
       overrides: [sessionsProvider.overrideWithValue(sessions), coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore()))],
-      child: MaterialApp(
+      child: MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
         theme: goTheme(Accent.blue, Brightness.light),
         initialRoute: '/top',
         routes: {'/': (_) => const _Page(), '/top': (_) => const Scaffold(body: Text('On top'))},

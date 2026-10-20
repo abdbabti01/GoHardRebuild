@@ -3,29 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/session.dart';
+import 'language.dart';
 import 'units.dart';
 
 /// Motion: follow the phone's Reduce Motion setting, or always reduce in this app.
-enum MotionPref {
-  device('Device'),
-  reduced('Reduced');
-
-  const MotionPref(this.label);
-  final String label;
-}
+enum MotionPref { device, reduced }
 
 /// Haptics: whatever the phone allows, or none from this app.
-enum HapticsPref {
-  device('Device'),
-  off('Off');
-
-  const HapticsPref(this.label);
-  final String label;
-}
+enum HapticsPref { device, off }
 
 @immutable
 class DevicePrefs {
-  const DevicePrefs({this.motion = MotionPref.device, this.haptics = HapticsPref.device, this.distance = DistanceUnit.km, this.activity = 'run', this.autoPause = false});
+  const DevicePrefs({this.motion = MotionPref.device, this.haptics = HapticsPref.device, this.distance = DistanceUnit.km, this.activity = 'run', this.autoPause = false, this.language = AppLanguage.system});
   final MotionPref motion;
   final HapticsPref haptics;
 
@@ -34,14 +23,17 @@ class DevicePrefs {
   final String activity;
   final bool autoPause;
 
+  /// The app's language on this phone (core/language.dart). Not part of the account.
+  final AppLanguage language;
+
   @override
   bool operator ==(Object other) =>
-      other is DevicePrefs && other.motion == motion && other.haptics == haptics && other.distance == distance && other.activity == activity && other.autoPause == autoPause;
+      other is DevicePrefs && other.motion == motion && other.haptics == haptics && other.distance == distance && other.activity == activity && other.autoPause == autoPause && other.language == language;
   @override
-  int get hashCode => Object.hash(motion, haptics, distance, activity, autoPause);
+  int get hashCode => Object.hash(motion, haptics, distance, activity, autoPause, language);
 }
 
-/// Motion, haptics and Run / Walk choices kept on this device, in the same platform store as the session and the
+/// Motion, haptics, language and Run / Walk choices kept on this device, in the same platform store as the session and the
 /// appearance. They are read before the first frame. They are choices for this phone, so they are never part of the account.
 class DevicePrefsStore {
   DevicePrefsStore(this._store);
@@ -53,6 +45,7 @@ class DevicePrefsStore {
   DistanceUnit distance = DistanceUnit.km;
   String activity = 'run';
   bool autoPause = false;
+  AppLanguage language = AppLanguage.system;
 
   Future<void> restore() async {
     try {
@@ -62,13 +55,14 @@ class DevicePrefsStore {
       if (parts.length > 2) distance = DistanceUnit.values.asNameMap()[parts[2]] ?? DistanceUnit.km;
       if (parts.length > 3) activity = parts[3] == 'walk' ? 'walk' : 'run';
       if (parts.length > 4) autoPause = parts[4] == 'on';
+      if (parts.length > 5) language = AppLanguage.parse(parts[5]);
     } on Object {
       // An unreadable preference is not worth failing startup for; the defaults apply.
     }
   }
 
-  DevicePrefs get value => DevicePrefs(motion: motion, haptics: haptics, distance: distance, activity: activity, autoPause: autoPause);
-  Future<void> save() => _store.write(_key, '${motion.name}|${haptics.name}|${distance.name}|$activity|${autoPause ? 'on' : 'off'}');
+  DevicePrefs get value => DevicePrefs(motion: motion, haptics: haptics, distance: distance, activity: activity, autoPause: autoPause, language: language);
+  Future<void> save() => _store.write(_key, '${motion.name}|${haptics.name}|${distance.name}|$activity|${autoPause ? 'on' : 'off'}|${language.id}');
 }
 
 /// Overridden at startup with the restored store. Left alone (tests), it is an empty in-memory one.
@@ -89,6 +83,7 @@ class DevicePrefsController extends Notifier<DevicePrefs> {
   void setDistance(DistanceUnit unit) => _apply(() => _saved.distance = unit);
   void setActivity(String type) => _apply(() => _saved.activity = type);
   void setAutoPause(bool on) => _apply(() => _saved.autoPause = on);
+  void setLanguage(AppLanguage language) => _apply(() => _saved.language = language);
 
   void _apply(void Function() change) {
     change();

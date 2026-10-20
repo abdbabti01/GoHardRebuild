@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 import 'package:gohard_rebuild/features/weather/weather.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 /// Renders the real photograph under every scene treatment in all six looks, with the header's own scrim
 /// (GoColors.scrim, which TabHeader(onBackdrop: true) paints solid behind its lines) over the band the date, title
@@ -45,7 +46,7 @@ void main() {
           final look = spec(k).isWeather ? goTheme(accent, spec(k).dark ? Brightness.dark : Brightness.light) : theme;
           final colors = look.extension<GoColors>()!;
           final icons = look.appBarTheme.systemOverlayStyle!.statusBarIconBrightness == Brightness.light ? Colors.white : Colors.black;
-          await tester.pumpWidget(MaterialApp(
+          await tester.pumpWidget(MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
               theme: theme,
               home: MediaQuery(
                   data: const MediaQueryData(size: Size(390, height + 0.0), padding: EdgeInsets.only(top: status + 0.0)),

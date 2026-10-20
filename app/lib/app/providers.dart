@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/clock.dart';
 import '../core/compatibility.dart';
 import '../core/config.dart';
+import '../core/language.dart';
 import '../core/units.dart';
 import '../data/db.dart';
 import '../data/models.dart';
@@ -156,8 +157,18 @@ final exerciseChoicesProvider = Provider<List<CatalogExercise>>((ref) => [
       ...ref.watch(catalogProvider).value ?? const <CatalogExercise>[],
     ]);
 
-/// The bundled starter templates (same for every account, no connection needed).
-final planTemplatesProvider = FutureProvider<PlanTemplates>((ref) async => PlanTemplates.parse(await rootBundle.loadString('assets/data/plan-templates.json')));
+/// The bundled starter templates (same for every account, no connection needed), with their labels in the app's
+/// language: `plan-templates.<fr|ar>.json` are the same templates with only their wording translated (checked by
+/// test/localization_assets_test.dart). A plan made from one keeps the wording it was made with.
+final planTemplatesProvider = FutureProvider<PlanTemplates>((ref) async {
+  final lang = ref.watch(appLocaleProvider).languageCode;
+  try {
+    if (lang != 'en') return PlanTemplates.parse(await rootBundle.loadString('assets/data/plan-templates.$lang.json'));
+  } on Object {
+    // No translated copy: the English one.
+  }
+  return PlanTemplates.parse(await rootBundle.loadString('assets/data/plan-templates.json'));
+});
 
 /// Records that cannot converge without a decision. Ordinary pending upload is not an issue.
 final issuesProvider = StreamProvider<List<Rec>>((ref) {

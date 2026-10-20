@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'app/app.dart';
 import 'app/providers.dart';
 import 'core/appearance.dart';
+import 'core/catalog_names.dart';
 import 'core/compatibility.dart';
 import 'core/device_prefs.dart';
 import 'data/db.dart';
@@ -55,12 +56,14 @@ Future<void> main() async {
   await compatibility.restore();
   // The Today background choice and the last weather answer, so Today opens with the scene it had.
   final weatherPrefs = await restoreWeatherPrefs(const SecureSecretStore());
+  // French and Arabic exercise names, so the first frame already names exercises in the chosen language.
+  final exerciseNames = await ExerciseNames.load();
   runApp(ProviderScope(
     retry: (_, _) => null,
     overrides: [dbProvider.overrideWithValue(db), sessionsProvider.overrideWithValue(sessions), appearanceStoreProvider.overrideWithValue(appearance),
       devicePrefsStoreProvider.overrideWithValue(devicePrefs), coachPrefsStoreProvider.overrideWithValue(coachPrefs), trackingPrefsStoreProvider.overrideWithValue(trackingPrefs),
       movePrefsStoreProvider.overrideWithValue(movePrefs), bodyPrefsStoreProvider.overrideWithValue(bodyPrefs),
-      compatibilityStoreProvider.overrideWithValue(compatibility), weatherPrefs],
+      compatibilityStoreProvider.overrideWithValue(compatibility), weatherPrefs, exerciseNamesProvider.overrideWithValue(exerciseNames)],
     child: const GoHardApp(),
   ));
 }

@@ -4,12 +4,10 @@ import 'package:flutter/services.dart';
 /// Daily Rhythm design tokens: restrained warm surfaces in light, layered charcoal-plum in dark, warm foregrounds and
 /// one chosen accent for interactive selection. Every screen reads colours from here; nothing is patched per screen.
 enum Accent {
-  blue('Blue'),
-  green('Green'),
-  pink('Pink');
+  blue,
+  green,
+  pink;
 
-  const Accent(this.label);
-  final String label;
   static Accent parse(String? name) => values.asNameMap()[name] ?? blue;
 }
 
@@ -132,6 +130,13 @@ class GoColors extends ThemeExtension<GoColors> {
 
 const sans = 'Inter';
 
+/// After Inter: Arabic letters (Inter has none) in IBM Plex Sans Arabic, bundled, so Arabic never depends on the
+/// phone's own fallback. Latin text in every language stays in Inter.
+const sansFallback = ['IBM Plex Sans Arabic', 'Arial', 'sans-serif'];
+
+/// Arabic page titles: Noto Naskh Arabic, the calm Naskh counterpart of the serif (docs/LOCALIZATION.md).
+const serifFallback = ['Noto Naskh Arabic', 'Georgia', 'serif'];
+
 /// The one serif, for page titles only (the four tabs, Add food, Appearance and other page titles), always through
 /// [GoContext.pageTitleStyle]. Controls, body, labels and figures stay in [sans].
 const serif = 'DM Serif Display';
@@ -181,12 +186,16 @@ extension GoContext on BuildContext {
   /// Reduce Motion: state still changes, it just does not travel.
   Duration motion(Duration d) => reduceMotion ? Duration.zero : d;
 
-  TextStyle sansStyle(double size, {Color? color, FontWeight weight = FontWeight.w400, double? spacing}) =>
-      TextStyle(fontFamily: sans, fontFamilyFallback: const ['Arial', 'sans-serif'], fontSize: size, height: 1.35, fontWeight: weight, color: color ?? c.text, letterSpacing: spacing);
+  /// Arabic is joined script: it gets more line height for its marks and never any letter spacing.
+  bool get _arabic => Localizations.maybeLocaleOf(this)?.languageCode == 'ar';
+
+  TextStyle sansStyle(double size, {Color? color, FontWeight weight = FontWeight.w400, double? spacing}) => TextStyle(
+      fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: size, height: _arabic ? 1.55 : 1.35, fontWeight: weight, color: color ?? c.text,
+      letterSpacing: _arabic ? null : spacing);
 
   /// Headings and large numbers: bold, tight, with figures that do not jiggle as values change.
   TextStyle titleStyle(double size, {Color? color, FontWeight weight = FontWeight.w700}) =>
-      sansStyle(display(size), color: color, weight: weight, spacing: size >= 24 ? -0.6 : -0.2).copyWith(height: 1.15, fontFeatures: const [FontFeature.tabularFigures()]);
+      sansStyle(display(size), color: color, weight: weight, spacing: size >= 24 ? -0.6 : -0.2).copyWith(height: _arabic ? 1.4 : 1.15, fontFeatures: const [FontFeature.tabularFigures()]);
 
   /// A changing value at reading size ("82.4 kg", "1,480 kcal"): digits keep one width, so nothing shifts as it
   /// updates. For large figures use [titleStyle], which is tabular too.
@@ -195,8 +204,8 @@ extension GoContext on BuildContext {
   /// A page title in the serif ("Today", "Me", "Appearance"): 30 to 44 px, display-scaled on narrow phones. Figures
   /// never use it; a number stays in [titleStyle] or [numStyle].
   TextStyle pageTitleStyle(double size, {Color? color}) => TextStyle(
-      fontFamily: serif, fontFamilyFallback: const ['Georgia', 'serif'], fontSize: display(size), height: 1.1, fontWeight: FontWeight.w400,
-      color: color ?? c.text, letterSpacing: size >= 34 ? -0.4 : -0.2);
+      fontFamily: serif, fontFamilyFallback: serifFallback, fontSize: display(_arabic ? size * 0.86 : size), height: _arabic ? 1.45 : 1.1, fontWeight: FontWeight.w400,
+      color: color ?? c.text, letterSpacing: _arabic ? null : (size >= 34 ? -0.4 : -0.2));
 
   TextStyle get body => sansStyle(16);
   TextStyle get caption => sansStyle(13.5, color: c.secondary);
@@ -215,7 +224,7 @@ ThemeData goThemeOf(GoColors c, Brightness brightness) {
       error: c.error, onError: c.page, surface: c.page, onSurface: c.text, onSurfaceVariant: c.secondary,
       surfaceContainerLowest: c.page, surfaceContainerLow: c.surface, surfaceContainer: c.surface, surfaceContainerHigh: c.surface, surfaceContainerHighest: c.sunken,
       outline: c.outline, outlineVariant: c.divider, surfaceTint: Colors.transparent, scrim: Colors.black);
-  final base = ThemeData(brightness: brightness, colorScheme: scheme, useMaterial3: true, fontFamily: sans, scaffoldBackgroundColor: c.page);
+  final base = ThemeData(brightness: brightness, colorScheme: scheme, useMaterial3: true, fontFamily: sans, fontFamilyFallback: sansFallback, scaffoldBackgroundColor: c.page);
   // System bars follow the page, so there is no bright strip above or below a dark screen.
   final bars = SystemUiOverlayStyle(
       statusBarColor: Colors.transparent, statusBarBrightness: brightness, statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
@@ -226,10 +235,10 @@ ThemeData goThemeOf(GoColors c, Brightness brightness) {
   final button = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile));
   return base.copyWith(
     extensions: [c],
-    textTheme: base.textTheme.apply(bodyColor: c.text, displayColor: c.text, fontFamily: sans),
+    textTheme: base.textTheme.apply(bodyColor: c.text, displayColor: c.text, fontFamily: sans, fontFamilyFallback: sansFallback),
     dividerTheme: DividerThemeData(color: c.divider, thickness: 1, space: 1),
     appBarTheme: AppBarTheme(backgroundColor: c.page, foregroundColor: c.text, elevation: 0, scrolledUnderElevation: 0, centerTitle: false, systemOverlayStyle: bars,
-        titleTextStyle: TextStyle(fontFamily: sans, fontSize: 17, fontWeight: FontWeight.w600, color: c.text)),
+        titleTextStyle: TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 17, fontWeight: FontWeight.w600, color: c.text)),
     inputDecorationTheme: InputDecorationTheme(
       filled: true, fillColor: c.surface, contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       labelStyle: TextStyle(color: c.secondary, fontSize: 16), floatingLabelStyle: TextStyle(color: c.text), hintStyle: TextStyle(color: c.secondary),
@@ -243,30 +252,30 @@ ThemeData goThemeOf(GoColors c, Brightness brightness) {
             backgroundColor: c.accentDeep, foregroundColor: c.onAccentDeep, disabledBackgroundColor: c.sunken, disabledForegroundColor: c.secondary,
             minimumSize: const Size(64, Targets.primary), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: dark ? button.copyWith(side: BorderSide(color: c.accent.withValues(alpha: 0.55))) : button,
-            textStyle: const TextStyle(fontFamily: sans, fontSize: 16.5, fontWeight: FontWeight.w600))),
+            textStyle: const TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 16.5, fontWeight: FontWeight.w600))),
     outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
             foregroundColor: c.text, backgroundColor: c.surface, side: BorderSide(color: c.outline), minimumSize: const Size(64, Targets.primary),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), shape: button,
-            textStyle: const TextStyle(fontFamily: sans, fontSize: 16.5, fontWeight: FontWeight.w600))),
+            textStyle: const TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 16.5, fontWeight: FontWeight.w600))),
     textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
             foregroundColor: c.accent, minimumSize: const Size(Targets.minimum, Targets.minimum), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            textStyle: const TextStyle(fontFamily: sans, fontSize: 15.5, fontWeight: FontWeight.w600))),
+            textStyle: const TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 15.5, fontWeight: FontWeight.w600))),
     iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(foregroundColor: c.text, minimumSize: const Size(Targets.minimum, Targets.minimum))),
     dialogTheme: DialogThemeData(
         backgroundColor: c.surface, surfaceTintColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel)),
-        titleTextStyle: TextStyle(fontFamily: sans, fontSize: 20, fontWeight: FontWeight.w700, color: c.text, letterSpacing: -0.2),
-        contentTextStyle: TextStyle(fontFamily: sans, fontSize: 15.5, height: 1.4, color: c.text)),
+        titleTextStyle: TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 20, fontWeight: FontWeight.w700, color: c.text, letterSpacing: -0.2),
+        contentTextStyle: TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 15.5, height: 1.4, color: c.text)),
     bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: c.surface, surfaceTintColor: Colors.transparent, showDragHandle: true, dragHandleColor: c.outline,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)))),
     popupMenuTheme: PopupMenuThemeData(color: c.surface, surfaceTintColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile)),
-        textStyle: TextStyle(fontFamily: sans, fontSize: 16, color: c.text)),
+        textStyle: TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 16, color: c.text)),
     // The message bar is a neutral inverse surface, so it reads the same under every accent.
     snackBarTheme: SnackBarThemeData(
         backgroundColor: dark ? const Color(0xFFE8EAED) : const Color(0xFF23262B),
-        contentTextStyle: TextStyle(fontFamily: sans, fontSize: 15, color: dark ? const Color(0xFF121417) : const Color(0xFFF3F4F6)),
+        contentTextStyle: TextStyle(fontFamily: sans, fontFamilyFallback: sansFallback, fontSize: 15, color: dark ? const Color(0xFF121417) : const Color(0xFFF3F4F6)),
         actionTextColor: dark ? const Color(0xFF0A4FA3) : const Color(0xFF9CCBFF), behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.tile))),
     radioTheme: RadioThemeData(fillColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? c.accent : c.outline)),

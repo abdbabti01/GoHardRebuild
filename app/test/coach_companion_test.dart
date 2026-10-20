@@ -22,6 +22,7 @@ import 'package:gohard_rebuild/features/plans/plan_draft.dart';
 import 'package:gohard_rebuild/features/plans/train_screen.dart' show builderDraftProvider;
 
 import 'ui_support.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 /// The Today companion (docs/COACH.md › Companion): when it greets, that it never replays, that it stays until Show
 /// coach on Today is turned off (no close button; an old "hidden for today" is ignored), the guide as Ask GoHard's
@@ -243,7 +244,7 @@ void main() {
       final ack = ValueNotifier(0);
       await tester.pumpWidget(ProviderScope(
         overrides: [rigImageProvider.overrideWith((ref, g) async => null)],
-        child: MaterialApp(theme: goTheme(Accent.blue, Brightness.light), home: ValueListenableBuilder(valueListenable: ack, builder: (_, n, _) => Center(child: CoachCompanion(guide: CoachGuide.leon, size: const Size(92, 114), ack: n)))),
+        child: MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, theme: goTheme(Accent.blue, Brightness.light), home: ValueListenableBuilder(valueListenable: ack, builder: (_, n, _) => Center(child: CoachCompanion(guide: CoachGuide.leon, size: const Size(92, 114), ack: n)))),
       ));
       await _frames(tester, 4000);
       for (var i = 0; i < 5; i++) {

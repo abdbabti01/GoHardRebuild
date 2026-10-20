@@ -18,6 +18,7 @@ import 'package:gohard_rebuild/features/nutrition/food_repository.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 
 import 'support.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 /// Widget-test plumbing: the real shell and screens over fixed owner-scoped streams. No database or network.
 /// Everything here is test fixture data; none of it ships in the app.
@@ -91,7 +92,7 @@ Future<ProviderContainer> pumpApp(WidgetTester tester, List<Override> overrides,
     container: container,
     child: Consumer(builder: (context, ref, _) {
       final a = ref.watch(appearanceProvider);
-      return MaterialApp(
+      return MaterialApp(locale: ref.watch(appLocaleProvider), localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
         debugShowCheckedModeBanner: false,
         theme: goTheme(a.accent, Brightness.light), darkTheme: goTheme(a.accent, Brightness.dark), themeMode: a.mode,
         builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)), child: DevicePrefsScope(child: CompatibilityGate(child: child!))),

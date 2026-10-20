@@ -30,6 +30,7 @@ import 'food_fakes.dart';
 import 'support.dart';
 import 'ui_support.dart';
 import 'weather_fakes.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 /// Renders the real screens with the app's real fonts and photograph into PNG files for design review:
 ///
@@ -277,7 +278,7 @@ void main() {
         final theme = goTheme(accent, mode == ThemeMode.light ? Brightness.light : Brightness.dark);
         // The boundary wraps the whole app: the hint is drawn in the navigator's overlay, above the page.
         await tester.pumpWidget(RepaintBoundary(key: const Key('shot'), child: ProviderScope(
-          child: MaterialApp(
+          child: MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
             debugShowCheckedModeBanner: false,
             theme: theme,
             home: Scaffold(
@@ -339,7 +340,7 @@ void main() {
       final rows = [for (final f in weatherFamilies) [for (final l in ['day', 'night', 'neutral']) '$f-$l'], ['dusk']];
       final shots = <String, ui.Image>{};
       for (final key in rows.expand((r) => r)) {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
             debugShowCheckedModeBanner: false,
             theme: theme,
             home: Material(color: c.page, child: RepaintBoundary(key: const Key('shot'), child: scene(key, key.replaceAll('-', ' '))))));
@@ -375,7 +376,7 @@ void main() {
     const rows = ['rain-day', 'snow-night', 'cloudy-day', 'partly-day', 'fog-day', 'storm-night'];
     final shots = <List<ui.Image>>[];
     for (final key in rows) {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
           debugShowCheckedModeBanner: false,
           theme: goTheme(Accent.blue, Brightness.light),
           home: RepaintBoundary(key: const Key('shot'), child: SizedBox.fromSize(size: cell, child: SceneBackdrop(spec: _spec(key))))));

@@ -8,6 +8,7 @@ import '../core/appearance.dart';
 import '../core/compatibility.dart';
 import '../core/config.dart';
 import '../core/device_prefs.dart';
+import '../core/language.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
 import '../features/auth/auth_screen.dart';
@@ -54,6 +55,10 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
     }
   }
 
+  /// The phone's language list changed: System follows it at once; an explicit choice is unaffected.
+  @override
+  void didChangeLocales(List<Locale>? locales) => ref.read(deviceLocalesProvider.notifier).refresh();
+
   /// Start and resume only: first whether this build is still accepted, then the account. A check that gets no
   /// answer changes nothing, so being offline works exactly as before.
   Future<void> _check() async {
@@ -77,8 +82,17 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
     final accent = appearance.accent;
     // Reduce Motion, from the phone or from Me > Motion & haptics, also removes the cross-fade between looks.
     final still = ref.watch(devicePrefsProvider).motion == MotionPref.reduced || (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+    // One resolved language for the whole app (core/language.dart). A change redraws the text where it is: the
+    // navigator, routes, forms, workouts and runs are the same objects before and after.
+    final locale = ref.watch(appLocaleProvider);
+    ref.listen(appLocaleProvider, (before, after) {
+      if (before != after) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? rebuildAllText(context as Element) : null);
+    });
     return MaterialApp(
       title: 'GoHard',
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       debugShowCheckedModeBanner: false,
       // System mode follows the phone as it changes; the accent stays. Increased Contrast gets its own variants.
       theme: goTheme(accent, Brightness.light),

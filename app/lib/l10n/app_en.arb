@@ -1,0 +1,198 @@
+{
+  "@@locale": "en",
+  "languageSystem": "System",
+  "@languageSystem": {
+    "description": "Language choice that follows the phone's own language list."
+  },
+  "languageSystemResolved": "Phone language: {language}",
+  "@languageSystemResolved": {
+    "description": "Supporting text under the System language choice, naming the language the app resolved to.",
+    "placeholders": {
+      "language": {
+        "type": "String",
+        "example": "Français"
+      }
+    }
+  },
+  "languageTitle": "Language",
+  "@languageTitle": {
+    "description": "Me row and sheet title for the app language."
+  },
+  "languageFootnote": "Kept on this phone only. GoHard's own text changes; your notes, food names and exercise names you typed stay as written.",
+  "@languageFootnote": {
+    "description": "Explanation under the language choices."
+  },
+  "navToday": "Today",
+  "@navToday": {
+    "description": "Bottom navigation tab and page title: the day overview."
+  },
+  "navTrain": "Train",
+  "@navTrain": {
+    "description": "Bottom navigation tab and page title: workouts, plan and progress."
+  },
+  "navEat": "Eat",
+  "@navEat": {
+    "description": "Bottom navigation tab and page title: food and water."
+  },
+  "navMe": "Me",
+  "@navMe": {
+    "description": "Bottom navigation tab and page title: profile and settings."
+  },
+  "actionCancel": "Cancel",
+  "@actionCancel": {
+    "description": "Dismisses a dialog or sheet without doing anything."
+  },
+  "busyWorking": "Working",
+  "@busyWorking": {
+    "description": "Screen-reader label for a busy spinner on a button."
+  },
+  "percentValue": "{percent} percent",
+  "@percentValue": {
+    "description": "Screen-reader value of a progress indicator.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "motionDevice": "Device",
+  "@motionDevice": {
+    "description": "Motion preference: follow the phone's Reduce Motion setting."
+  },
+  "motionReduced": "Reduced",
+  "@motionReduced": {
+    "description": "Motion preference: always reduce motion in this app."
+  },
+  "hapticsDevice": "Device",
+  "@hapticsDevice": {
+    "description": "Haptics preference: whatever the phone allows."
+  },
+  "hapticsOff": "Off",
+  "@hapticsOff": {
+    "description": "Haptics preference: no touch feedback from this app."
+  },
+  "durationSeconds": "{seconds} s",
+  "@durationSeconds": {
+    "description": "A duration under a minute, abbreviated.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} min",
+  "@durationMinutes": {
+    "description": "A duration in whole minutes, abbreviated.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours} h {minutes} min",
+  "@durationHoursMinutes": {
+    "description": "A duration of an hour or more, abbreviated.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "valueUnknown": "—",
+  "@valueUnknown": {
+    "description": "Shown where a value is not known (never zero)."
+  },
+  "unitKg": "kg",
+  "@unitKg": {
+    "description": "Kilograms, abbreviated, after a load."
+  },
+  "unitLb": "lb",
+  "@unitLb": {
+    "description": "Pounds, abbreviated, after a load."
+  },
+  "unitKm": "km",
+  "@unitKm": {
+    "description": "Kilometres, abbreviated."
+  },
+  "unitMi": "mi",
+  "@unitMi": {
+    "description": "Miles, abbreviated."
+  },
+  "unitKmPerHour": "km/h",
+  "@unitKmPerHour": {
+    "description": "Speed in kilometres per hour, abbreviated."
+  },
+  "unitMph": "mph",
+  "@unitMph": {
+    "description": "Speed in miles per hour, abbreviated."
+  },
+  "unitMetre": "m",
+  "@unitMetre": {
+    "description": "Metres (elevation), abbreviated."
+  },
+  "unitFoot": "ft",
+  "@unitFoot": {
+    "description": "Feet (elevation), abbreviated."
+  },
+  "paceValue": "{pace} /{unit}",
+  "@paceValue": {
+    "description": "A pace: minutes:seconds per distance unit.",
+    "placeholders": {
+      "pace": {
+        "type": "String",
+        "example": "5:30"
+      },
+      "unit": {
+        "type": "String",
+        "example": "km"
+      }
+    }
+  },
+  "actionSave": "Save",
+  "@actionSave": {
+    "description": "Generic button: keep the changes made in a form."
+  },
+  "actionDone": "Done",
+  "@actionDone": {
+    "description": "Generic button: close a sheet after finishing."
+  },
+  "actionDelete": "Delete",
+  "@actionDelete": {
+    "description": "Generic destructive button: erase the item."
+  },
+  "actionClose": "Close",
+  "@actionClose": {
+    "description": "Generic button: close without changes."
+  },
+  "actionEdit": "Edit",
+  "@actionEdit": {
+    "description": "Generic button: change the item."
+  },
+  "actionTryAgain": "Try again",
+  "@actionTryAgain": {
+    "description": "Generic button after a failure."
+  },
+  "actionContinue": "Continue",
+  "@actionContinue": {
+    "description": "Generic button: go on to the next step."
+  },
+  "actionRemove": "Remove",
+  "@actionRemove": {
+    "description": "Generic button: take an item out of a list (not erase history)."
+  },
+  "actionOk": "OK",
+  "@actionOk": {
+    "description": "Generic acknowledgement button."
+  },
+  "errorGeneric": "Something went wrong. Nothing was lost; try again.",
+  "@errorGeneric": {
+    "description": "Fallback message for an unexpected error; never shows raw server details."
+  },
+  "brandName": "GoHard",
+  "@brandName": {
+    "description": "The app brand name. Never translated."
+  }
+}

@@ -5,13 +5,14 @@ import 'package:gohard_rebuild/features/weather/backdrop.dart' show SkyMotion;
 import 'package:gohard_rebuild/features/weather/scene_art.dart';
 import 'package:gohard_rebuild/features/weather/sky_painter.dart';
 import 'package:gohard_rebuild/features/weather/weather.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 /// The moving layer of a weather sky, driven directly (in the app it appears once the photograph has decoded):
 /// it moves only while it may, and stops for Reduce Motion, a hidden tab, a page on top and the app in the background.
 void main() {
   Sky sky(String key) => sceneArt[key]!.sky!;
 
-  Widget host({required Sky of, bool animate = true, bool reduce = false}) => MaterialApp(
+  Widget host({required Sky of, bool animate = true, bool reduce = false}) => MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
         theme: goTheme(Accent.blue, Brightness.dark),
         home: Builder(
           builder: (context) => MediaQuery(
@@ -66,7 +67,7 @@ void main() {
 
   testWidgets('a page pushed over Today stops the sky until it is closed', (tester) async {
     final nav = GlobalKey<NavigatorState>();
-    await tester.pumpWidget(MaterialApp(navigatorKey: nav, home: SizedBox(width: 390, height: 280, child: SkyMotion(sky: sky('cloudy-day')))));
+    await tester.pumpWidget(MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, navigatorKey: nav, home: SizedBox(width: 390, height: 280, child: SkyMotion(sky: sky('cloudy-day')))));
     await tester.pump(const Duration(milliseconds: 300));
     nav.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('on top'))));
     await tester.pumpAndSettle(); // settles: the sky underneath no longer schedules frames

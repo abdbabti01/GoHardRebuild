@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/features/weather/weather.dart';
+import 'package:gohard_rebuild/core/language.dart';
 
 /// "Distinct" measured, not asserted: every scene key is rendered at Today's header size (390 x 280) over the real
 /// photograph, in Light and Dark, and compared two ways: the mean per-pixel colour difference (0..1 of full scale;
@@ -32,7 +33,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final boundary = GlobalKey();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
         theme: goTheme(Accent.blue, Brightness.light),
         home: RepaintBoundary(
             key: boundary,
@@ -64,7 +65,7 @@ void main() {
       final boundary = GlobalKey();
       final hist = <String, List<double>>{}, lum = <String, double>{}, pixels = <String, ByteData>{}, band = <String, double>{};
       for (final k in sceneKeys.where((k) => k != 'plain')) {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, 
             theme: goTheme(Accent.blue, brightness),
             home: RepaintBoundary(key: boundary, child: SizedBox(width: w.toDouble(), height: h.toDouble(), child: SceneBackdrop(spec: spec(k), animate: false)))));
         await tester.runAsync(() async {
