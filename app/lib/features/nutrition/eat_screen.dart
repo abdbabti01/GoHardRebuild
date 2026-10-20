@@ -91,7 +91,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
       }
     }
-    if (_hint == 'eat.history') return const CoachSay('Your past meals and water are in History.');
+    if (_hint == 'eat.history') return const CoachSay('Your past meals and water, by day, week and month, are in History & trends.');
     if (_hint == 'eat.saved.new') return const CoachSay('Eat the same foods often? Tap the star on a food\'s amount page and it waits under Favourites in Add food.');
     if (_hint != 'eat.saved.shortcut') return null;
     final fav = saved.any((s) => s.isFavourite);
@@ -167,10 +167,10 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                 IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
               ]),
               below: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      // Under the date, named: History (a calendar and the days with entries; the arrows stay for a day
+                      // Under the date, named: History & trends (charts by week and month, the calendar and the days with entries; the arrows stay for a day
                       // either side) and, on an earlier day, Back to today. They wrap rather than squeeze.
                       Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                        TextButton.icon(key: const Key('eat-history'), onPressed: () => _openHistory(day, today), icon: const GoIcon(GoGlyph.history, size: 20), label: const Text('History')),
+                        TextButton.icon(key: const Key('eat-history'), onPressed: () => _openHistory(day, today), icon: const GoIcon(GoGlyph.history, size: 20), label: const Text('History & trends')),
                         if (day != today)
                           TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
                       ]),

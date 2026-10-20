@@ -110,8 +110,11 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
     final history = find.byKey(const Key('eat-history'));
-    expect(find.descendant(of: history, matching: find.text('History')), findsOneWidget, reason: 'a labelled action, not only arrows');
+    expect(find.descendant(of: history, matching: find.text('History & trends')), findsOneWidget, reason: 'a labelled action, not only arrows');
     await tester.tap(history);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('trends-calendar')));
+    await tester.tap(find.byKey(const Key('trends-calendar')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('history-calendar')), findsOneWidget);
     final old = find.byKey(const Key('history-day-2026-10-10'));

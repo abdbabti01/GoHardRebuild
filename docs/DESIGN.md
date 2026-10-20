@@ -472,6 +472,17 @@ for that meal, and one row per logged food with its own name, saved portion word
 The coach speaks under the title (docs/COACH.md › Train and Eat); with Show coach on Train and Eat off, the small
 avatar beside the date arrows opens the journal help instead.
 
+**History & trends (20 Oct 2026, from `GoHard_Nutrition_Trends_Claude_Handoff`; rules in docs/FOOD_DATA.md).** A pushed
+page from Eat's **History & trends** link: the serif title with Leon/Leona ("Tap a day to see what you logged."; under
+the title at large text), Week / Month, the period bar (arrows, calendar icon and label, "so far" line), metric chips,
+the pale photo-panel tint with the known total, coverage and daily average, "<Metric> by day" with one bar per day
+from a zero baseline (accent bars; partial lighter with outline and star; "?" unknown; dash not logged; ring for a
+recorded zero; a soft highlight column for the chosen day), a legend, the chosen-day panel with View day, then Days in
+this period and Calendar. No goal lines or colours that judge intake. Deviations from the board: the title is "History
+& trends" (the link's name); returning from a day goes back to Eat (its link restores the view) rather than a "Trends"
+back arrow on Eat; the root bar is not shown on this pushed page; the summary has no food photograph. Renders in
+`docs/evidence/nutrition-trends`.
+
 ## Me
 
 Redesigned on 13 October 2026 from `me-reference.png`. Me is identity, personal information, preferences and the

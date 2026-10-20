@@ -242,7 +242,7 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
 - **Other amount**: one field in the chosen unit and **Add water** (same validation: above zero, at most 5 L per entry),
   for the day shown. On an earlier day in Eat only Other amount is offered (the one-tap drink is for today).
 - **Water details**: tapping the water line opens the day's entries with correction and removal (unchanged).
-- **History** (Eat, under the date, `nutrition_history.dart`): a calendar to pick any day, and the days with food or
+- **History** (Eat, under the date; since 20 Oct 2026 inside History & trends, below): a calendar to pick any day, and the days with food or
   water on this phone, newest first, each with its count of foods, its calories (known totals labelled "known",
   "calories unknown" when no food had a value) and its water. Choosing a day shows it in Eat, dated, with Back to today;
   Add food and Other amount keep that day. Read from the same local records as Eat (`foodJournalProvider`,
@@ -250,6 +250,45 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
 - **Goals on earlier days**: goals of past days were never stored, so an earlier day is not set against today's goals
   (no goal bars or percentages on it, food or water); only today is.
 - Goals and **Customize tracking** are in Eat only (a labelled action); Today shows the water line and its actions.
+
+### History & trends (20 Oct 2026, GoHard_Nutrition_Trends_Claude_Handoff)
+
+Eat's **History & trends** (under the date, key `eat-history`; it replaces the History screen) shows what was logged
+per day, week and month. Code: `intake_history.dart` (the pure projection), `nutrition_history.dart` (the screen,
+the bar chart and the calendar). No API change, migration, dependency or permission: it reads the same local records
+as Eat (`foodJournalProvider`, `waterEntriesProvider`), grouped by day once per change of the records
+(`foodDaysProvider`, `waterDaysProvider`). The full sync snapshot already carries every food and water entry of the
+account (`/sync/snapshot`, no date limit), so nothing is fetched per day and no food provider is asked. Viewing changes
+no preference and queues no command.
+
+- **Periods.** Week is Monday to Sunday; Month is the calendar month (28–31 days). Both are worked out on day keys
+  (calendar dates, never 24-hour steps, so DST and month ends are exact). It opens on the period of the day Eat shows.
+  The current period is "This week so far" / "Month to date" with its date range; its future days are drawn empty with
+  faded dates, never as not logged or zero; no wholly future period can be opened. Previous goes back to the period of the earliest
+  entry (or a year). The period's label opens a date picker; **This week / This month** returns to the current one.
+- **Metrics.** Calories and Protein always; Carbs and Fat when shown; Water when turned on (and kept by the server).
+  A metric hidden after being chosen gives way to Calories without changing the period. kcal, g (one decimal) and the
+  chosen water unit, converted once from the exact sum.
+- **One day, one metric** (`intakeDay`): *Not logged* (no food that day: a water-only day is food not logged; no
+  water entry for Water), *Unknown* (food logged, none with this value: "?" in the chart), *Partial* (a known sum, some
+  foods without the value: lighter bar, outline and a star, and "known" in words), *Recorded* (every logged food has the
+  value), and a *recorded zero* (explicit zeroes: a ring on the baseline). Each nutrient has its own coverage. Nothing
+  is estimated, worked out from other nutrients, or recomputed from a food's current serving. Deleted entries are left
+  out; pending ones count as they do in Eat and are labelled "sync pending" / "needs review".
+- **Totals** (`IntakeSummary`): the period's total is the sum of known daily values (null, never zero, when there
+  are none). The **daily average** divides it by the days with a known value of *that* metric: a recorded zero counts;
+  unknown-only, unlogged and future days do not. When a partial day contributes, the panel says "Known … logged",
+  "Daily average, known values" and how many days are partial. Coverage reads "5 of 7 days with calorie values" (elapsed
+  days only, "so far" in the current period), and, when it differs, how many days had food logged and how many had no
+  value for this metric. Water counts water days.
+- **Choosing and opening a day.** Tap or slide across the chart (nearest elapsed day), or step with the day panel's
+  arrows; the panel shows the date, value and coverage and **View day**. View day, a row of *Days in this period* (every
+  elapsed day of the period, empty days included) or the **Calendar** (the calendar and every day with entries, as
+  before) open that day in Eat, dated, with Back to today; Add food and water there keep that day. Opening History &
+  trends again from that day keeps the period, metric and day (`trendsViewProvider`, cleared on account change).
+- **Goals** are not drawn: earlier days' goals were never stored.
+- Tests: `nutrition_trends_test` (states, denominators, periods), `nutrition_trends_ui_test`, `water_ui_test`;
+  renders `nutrition_trends_render_test` (gated) in `docs/evidence/nutrition-trends`; Native `journey_trends_test`.
 
 ### What is shown follows the account (17 Oct 2026)
 

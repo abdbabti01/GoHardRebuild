@@ -38,6 +38,9 @@ String durationText(int seconds) {
 /// "Oct"
 String monthShort(int month) => _months[month - 1].substring(0, 3);
 
+/// "October"
+String monthName(int month) => _months[month - 1];
+
 /// "Oct 9"
 String dayMonth(String dayKey) {
   final d = parseDayKey(dayKey);

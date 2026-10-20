@@ -88,9 +88,11 @@ void main() {
     await j.settle(6);
     await j.tap(inEat(const Key('eat-back-to-today')));
 
-    // History: named, with the calendar and the days with entries; yesterday opens dated, then Back to today.
+    // History & trends, then its Calendar: the calendar and the days with entries; yesterday opens dated, then Back to today.
     await j.tap(inEat(const Key('eat-history')));
-    await j.waitFor(find.byKey(const Key('history-calendar')), what: 'History');
+    await j.reveal(find.byKey(const Key('trends-calendar')));
+    await j.tapKey('trends-calendar');
+    await j.waitFor(find.byKey(const Key('history-calendar')), what: 'History & trends › Calendar');
     await j.reveal(find.byKey(Key('history-day-$yesterday')));
     expect(find.descendant(of: find.byKey(Key('history-day-$yesterday')), matching: find.textContaining('500 mL water')), findsOneWidget);
     await j.shot('thw-04-eat-history');

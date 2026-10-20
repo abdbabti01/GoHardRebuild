@@ -1952,3 +1952,39 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   `main` with the migration is deployed there, circumferences and corrections wait in the outbox and the app says so).
 - CI run 115 on `71a3e29`: **passed** (api, app). Unsigned IPA run 42 on `feature/body-progress` (`71a3e29`), artifact
   `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway, Cloudflare and the video branches unchanged.
+
+## 20 Oct 2026 — Nutrition trends (`feature/nutrition-trends`, from `main` 14f6285)
+
+- **Base:** `main` 14f6285 (Body progress, workout workspace, exercise-switch fix). Policies: docs/FOOD_DATA.md ›
+  History & trends; design: docs/DESIGN.md › Eat.
+- **Built:** Eat's History became **History & trends**: Week (Mon–Sun) / Month (calendar month), previous / next and a
+  date picker (no wholly future period), Calories / Protein / Carbs / Fat / Water by the account's settings, known
+  total, coverage and a daily average over the days with a known value of that metric, one bar per day with not
+  logged / unknown / partial / recorded-zero marks, the chosen day with View day, every day of the period, and the
+  previous calendar and day list behind **Calendar**. One pure projection (`intake_history.dart`) feeds all of it.
+  Returning from a day keeps period, metric and day (account-scoped). **No server change:** the snapshot already
+  carries all food and water history; no API, migration, dependency or permission.
+- **Tests:** `nutrition_trends_test` (11: the handoff's week 10,710 kcal / 5 days / 2,142 average, unknown-only out
+  and known zero in the denominator, per-nutrient coverage, water-only / food-only days, pending / review / deleted,
+  correction and deletion through the grouped provider, Mon–Sun across years, 28/29/30/31-day months, so far and
+  midnight), `nutrition_trends_ui_test` (4: week → chart → View day → return keeps the view, month to date, Protein,
+  optional metrics follow settings, water error leaves food, fl oz, Calendar, 320 px at 2× text), `water_ui_test`
+  updated (History's calendar is now behind Calendar), `eat_ui_test`, `food_ui_test`, `coach_companion_test`;
+  `flutter analyze`: no issues. The 320 px test found the legend overflowing (fixed). Renders
+  `nutrition_trends_render_test` (gated; six themes of week, month, an unknown day and protein; 320 px at 2× text) in
+  docs/evidence/nutrition-trends — fixture renders, not captures. They found the coach bubble covering the title and
+  weekday labels touching at large text (fixed: the coach goes under the title, weekdays shorten to one letter).
+- **Native (Pixel_7, branch API on port 5136 with a disposable database `gohard_trends_journey`, migrated then
+  dropped; the owner-video container on 5131 was left running):** `test-android.ps1 -Only journey_trends_test
+  -ApiBase http://10.0.2.2:5136` (not default) **passed** both phases. Phase 1: last week SEEDED through the API
+  ("Seeded …" entries: Monday complete, Tuesday not logged, Wednesday partial, Thursday unknown only, Friday water
+  only, Saturday a recorded zero, Sunday complete): 2,530 kcal over 4 of 7 days, average 633 kcal; each day's words
+  checked; Wednesday's journal opened; History & trends reopened on the same week and day; Month, Protein, Water;
+  no food or water command was queued by viewing. Offline, Wednesday's pasta removed in that day's journal: 1,670 kcal,
+  3 of 7 days. Phase 2 (new process): still 1,670 kcal; back online the removal reached the account and the totals
+  stayed the same. Captures `trends-01…05`, recording `docs/evidence/recordings/trends-flow.mp4`. Runs before the
+  passing one: two failed on the journey's own expectations (a wrong expected figure; a panel below the fold not yet
+  built), one on "Service has disappeared", one attach timeout, and one on a timing-sensitive command count (made
+  precise); one passing run had wrong capture steps and was rerun.
+- **Not verified:** a physical iPhone (chart feel, VoiceOver, keyboard). Observed, unchanged: Eat's water line on an
+  earlier day with no water still reads "0 mL" (existing behaviour, outside this change).

@@ -213,6 +213,10 @@ final _water2 = <String, (Accent, ThemeMode, Size, double, Future<void> Function
     await t.tap(find.byKey(const Key('eat-history')));
     await t.pump(const Duration(milliseconds: 600));
     await _settle(t);
+    await t.ensureVisible(find.byKey(const Key('trends-calendar')));
+    await t.tap(find.byKey(const Key('trends-calendar')));
+    await t.pump(const Duration(milliseconds: 600));
+    await _settle(t);
     await t.tap(find.byKey(const Key('history-day-2026-10-10')));
     await t.pump(const Duration(milliseconds: 600));
   }),
