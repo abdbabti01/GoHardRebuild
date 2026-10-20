@@ -1986,7 +1986,14 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   passing one: two failed on the journey's own expectations (a wrong expected figure; a panel below the fold not yet
   built), one on "Service has disappeared", one attach timeout, and one on a timing-sensitive command count (made
   precise); one passing run had wrong capture steps and was rerun.
-- **Not verified:** a physical iPhone (chart feel, VoiceOver, keyboard). Observed, unchanged: Eat's water line on an
-  earlier day with no water still reads "0 mL" (existing behaviour, outside this change).
+- **Not verified:** a physical iPhone (chart feel, VoiceOver, keyboard). Observed then: Eat's water line on an
+  earlier day with no water read "0 mL" (fixed in `c5ddc93`, below).
 - CI run 118 on `011c0c4`: **passed** (api, app). Unsigned IPA run 44 on `feature/nutrition-trends` (`011c0c4`), artifact
   `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway, Cloudflare and the video branches unchanged.
+- **Water wording fix (`c5ddc93`):** an earlier day with no water entries now reads "No water logged" in Eat's water
+  row and its water sheet, not "0 mL" (no goal bar; label "Water, no water logged"). Today keeps its goal progress
+  ("0 / 2,000 mL"); while entries are loading, or cannot be read, no amount is shown, as before. Test: `water_ui_test`
+  "an earlier day without water says…". `scripts\test.ps1` passed (analysis clean, 629 tests); no emulator journey
+  (wording only). CI run 120 on `c5ddc93`: **passed**. Unsigned IPA run 45 on `feature/nutrition-trends`
+  (`c5ddc93`), artifact `GoHard-Dev-unsigned-ipa`: **passed**. **Not verified:** a physical iPhone. `main` and
+  Railway unchanged.
