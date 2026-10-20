@@ -315,6 +315,8 @@ extension type Run(Json j) {
   String get routeState => j['routeState'] as String? ?? 'none';
 }
 
+/// One body check-in (docs/BODY_PROGRESS.md). Every value is optional; null is "not recorded", never zero.
+/// Circumferences (`waistCm`, `chestCm`, `leftUpperArmCm`, …) are read by key through [value].
 extension type BodyMetric(Json j) {
   String get id => j['id'] as String;
   String get dayKey => j['dayKey'] as String;
@@ -322,6 +324,13 @@ extension type BodyMetric(Json j) {
   double? get bodyFatPercent => _d(j['bodyFatPercent']);
   String? get note => j['note'] as String?;
   bool get isDeleted => j['isDeleted'] as bool? ?? false;
+  int get revision => j['revision'] as int? ?? 0;
+
+  /// A canonical value by its wire key (kg, cm or %).
+  double? value(String key) => _d(j[key]);
+
+  /// When this phone first saved it. Null on check-ins from before it: their order within a day is unknown.
+  String? get recordedAtUtc => j['recordedAtUtc'] as String?;
 }
 
 extension type Proposal(Json j) {

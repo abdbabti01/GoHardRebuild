@@ -229,12 +229,35 @@ class TrendChart extends StatelessWidget {
   final bool compact;
 
   @override
+  Widget build(BuildContext context) => PointChart<TrendPoint>(
+        points: points, value: (p) => p.value, at: (p) => DateTime.parse(p.startedAtUtc), dayKey: (p) => p.dayKey,
+        axisLabel: axisLabel, onPoint: onPoint, semanticsLabel: semanticsLabel, height: height, compact: compact,
+      );
+}
+
+/// The chart behind [TrendChart], for any recorded points: each point at [at] with its [value], the line through them
+/// in order, or through [line] when given (Body progress joins daily means and marks every reading).
+class PointChart<T> extends StatelessWidget {
+  const PointChart({super.key, required this.points, required this.value, required this.at, required this.dayKey, required this.axisLabel,
+      this.line, this.onPoint, this.semanticsLabel, this.height = 180, this.compact = false});
+  final List<T> points;
+  final double Function(T) value;
+  final DateTime Function(T) at;
+  final String Function(T) dayKey;
+  final List<(DateTime, double)>? line;
+  final String Function(double) axisLabel;
+  final void Function(T)? onPoint;
+  final String? semanticsLabel;
+  final double height;
+  final bool compact;
+
+  @override
   Widget build(BuildContext context) {
     final style = context.numStyle(12.5, color: context.c.secondary, weight: FontWeight.w400);
     final scale = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
     final h = height + (compact ? 0 : 6 * scale.scale(1));
     final chart = LayoutBuilder(builder: (context, box) {
-      final layout = _ChartLayout(points, Size(box.maxWidth, h), axisLabel, style, scale, compact);
+      final layout = _ChartLayout([for (final p in points) (at(p), value(p), dayKey(p))], line, Size(box.maxWidth, h), axisLabel, style, scale, compact);
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapUp: onPoint == null
@@ -251,31 +274,29 @@ class TrendChart extends StatelessWidget {
 }
 
 class _ChartLayout {
-  _ChartLayout(this.points, this.size, String Function(double) label, TextStyle style, TextScaler scale, bool compact) {
-    final values = points.map((p) => p.value);
+  _ChartLayout(List<(DateTime, double, String)> points, List<(DateTime, double)>? line, this.size, String Function(double) label, TextStyle style, TextScaler scale, bool compact) {
+    final values = points.map((p) => p.$2);
     var lo = values.isEmpty ? 0.0 : values.reduce(math.min), hi = values.isEmpty ? 1.0 : values.reduce(math.max);
     // One level: a flat line in the middle, never an invented slope.
     this.lo = hi == lo ? lo - 1 : lo;
     this.hi = hi == lo ? hi + 1 : hi;
     TextPainter text(String s) => TextPainter(text: TextSpan(text: s, style: style), textDirection: TextDirection.ltr, textScaler: scale)..layout();
     yLabels = [text(label(hi)), text(label(lo))];
-    xLabels = compact || points.isEmpty ? const [] : [text(dayMonth(points.first.dayKey)), if (points.length > 1) text(dayMonth(points.last.dayKey))];
+    xLabels = compact || points.isEmpty ? const [] : [text(dayMonth(points.first.$3)), if (points.length > 1) text(dayMonth(points.last.$3))];
     final left = yLabels.map((t) => t.width).reduce(math.max) + 10;
     final bottom = xLabels.isEmpty ? 6.0 : xLabels.first.height + 10;
     plot = Rect.fromLTRB(left, yLabels.first.height / 2 + 4, size.width - 10, size.height - bottom);
-    final times = points.map((p) => DateTime.parse(p.startedAtUtc).millisecondsSinceEpoch).toList();
+    final times = points.map((p) => p.$1.millisecondsSinceEpoch).toList();
     final t0 = times.isEmpty ? 0 : times.first, t1 = times.isEmpty ? 1 : times.last;
-    offsets = [
-      for (final (i, p) in points.indexed)
-        Offset(t1 == t0 ? plot.center.dx : plot.left + plot.width * (times[i] - t0) / (t1 - t0), plot.bottom - plot.height * (p.value - lo) / (hi - lo)),
-    ];
+    Offset place(int t, double v) => Offset(t1 == t0 ? plot.center.dx : plot.left + plot.width * (t - t0) / (t1 - t0), plot.bottom - plot.height * (v - this.lo) / (this.hi - this.lo));
+    offsets = [for (final (i, p) in points.indexed) place(times[i], p.$2)];
+    path = line == null ? offsets : [for (final (t, v) in line) place(t.millisecondsSinceEpoch, v)];
   }
-  final List<TrendPoint> points;
   final Size size;
   late final double lo, hi;
   late final List<TextPainter> yLabels, xLabels;
   late final Rect plot;
-  late final List<Offset> offsets;
+  late final List<Offset> offsets, path;
 
   int? nearest(Offset at) {
     int? best;
@@ -305,9 +326,9 @@ class _ChartPainter extends CustomPainter {
       final x = i == 0 ? l.offsets.first.dx : l.offsets.last.dx;
       t.paint(canvas, Offset((x - t.width / 2).clamp(0, size.width - t.width), l.plot.bottom + 6));
     }
-    if (l.offsets.length > 1) {
+    if (l.path.length > 1) {
       canvas.drawPath(
-          Path()..addPolygon(l.offsets, false),
+          Path()..addPolygon(l.path, false),
           Paint()
             ..color = accent
             ..style = PaintingStyle.stroke

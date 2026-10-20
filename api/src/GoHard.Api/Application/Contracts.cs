@@ -141,8 +141,37 @@ public sealed record RouteChunkResult(Guid RunId, int Index, int EntryCount);
 public sealed record RouteCompleteRequest(Guid OperationId, int ChunkCount, int EntryCount);
 public sealed record RouteChunkDto(int Index, int FirstSeq, int LastSeq, JsonElement Entries);
 public sealed record RoutePage(Guid RunId, string RouteState, int ChunkCount, List<RouteChunkDto> Chunks, int? NextIndex);
-public sealed record BodyMetricDto(Guid Id, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note, int Revision, bool IsDeleted);
-public sealed record BodyMetricRequest(Guid OperationId, Guid MetricId, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note);
+/// <summary>A body check-in (docs/BODY_PROGRESS.md). Weight kg, circumferences cm, body fat %; null = not recorded.
+/// The fields after IsDeleted are additive (capability <c>body-metrics.measurements</c>): left out when null.</summary>
+/// <param name="RecordedAtUtc">When the check-in was first saved, set once by the phone. Null on records from before it.</param>
+public sealed record BodyMetricDto(Guid Id, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note, int Revision, bool IsDeleted,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? WaistCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? ChestCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? LeftUpperArmCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? RightUpperArmCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? LeftThighCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? RightThighCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateTime? RecordedAtUtc = null);
+public sealed record BodyMetricRequest(Guid OperationId, Guid MetricId, DateOnly DayKey, decimal? WeightKg, decimal? BodyFatPercent, string? Note,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? WaistCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? ChestCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? LeftUpperArmCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? RightUpperArmCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? LeftThighCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? RightThighCm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateTime? RecordedAtUtc = null);
+/// <summary>A correction of a check-in, revision-checked. Each field: left out = kept, null = cleared, a value = set.
+/// The result must still hold at least one measurement (delete is the way to remove one).</summary>
+public sealed record BodyMetricUpdateRequest(Guid OperationId, int ExpectedRevision, DateOnly DayKey,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> WeightKg = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> BodyFatPercent = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> WaistCm = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> ChestCm = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> LeftUpperArmCm = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> RightUpperArmCm = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> LeftThighCm = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<decimal?> RightThighCm = default,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] Optional<string?> Note = default);
 
 /// <param name="CalorieGoal">Left out: the stored goal is kept. Null: it is cleared. A number: it is set (500 to 10,000 kcal).</param>
 /// <param name="ProteinGoal">Same three cases, 10 to 500 g.</param>

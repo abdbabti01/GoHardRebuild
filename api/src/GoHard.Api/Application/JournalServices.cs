@@ -173,7 +173,8 @@ public sealed class ActivityService(GoHardDb db)
 
     public static RunDto ToDto(Run r) => new(r.Id, r.DayKey, r.StartedAtUtc, r.FinishedAtUtc, r.ActiveDurationSeconds, r.DistanceMeters, r.Revision, r.DeletedAtUtc != null,
         r.ActivityType, r.Title, r.Notes, r.MetricsJson is null ? null : JsonSerializer.Deserialize<JsonElement>(r.MetricsJson), r.RouteState, r.RouteChunkCount);
-    public static BodyMetricDto ToDto(BodyMetric m) => new(m.Id, m.DayKey, m.WeightKg, m.BodyFatPercent, m.Note, m.Revision, m.DeletedAtUtc != null);
+    public static BodyMetricDto ToDto(BodyMetric m) => new(m.Id, m.DayKey, m.WeightKg, m.BodyFatPercent, m.Note, m.Revision, m.DeletedAtUtc != null,
+        m.WaistCm, m.ChestCm, m.LeftUpperArmCm, m.RightUpperArmCm, m.LeftThighCm, m.RightThighCm, m.RecordedAtUtc);
 
     /// <summary>Title 1–80 characters, notes up to 1,000, metrics a JSON object of at most 4,000 characters; each optional.</summary>
     private static bool ValidDetails(string? title, string? notes, JsonElement? metrics) =>
@@ -307,13 +308,57 @@ public sealed class ActivityService(GoHardDb db)
         return new RoutePage(id, run.RouteState, run.RouteChunkCount, chunks, page.Count > limit ? page[limit].Index : null);
     }
 
+    /// <summary>Circumferences, a correction command and a first-saved time per check-in (docs/BODY_PROGRESS.md).</summary>
+    public const string MeasurementsCapability = "body-metrics.measurements";
+
+    private static decimal? Round4(decimal? v) => v is null ? null : Math.Round(v.Value, 4, MidpointRounding.AwayFromZero);
+    private static decimal?[] Lengths(BodyMetric m) => [m.WaistCm, m.ChestCm, m.LeftUpperArmCm, m.RightUpperArmCm, m.LeftThighCm, m.RightThighCm];
+
+    /// <summary>At least one measurement (a note alone is not one); weight above 0 and at most 700 kg, body fat 0–100 %,
+    /// circumferences above 0 and at most 500 cm (input bounds, not health ranges), a note of at most 200 characters,
+    /// and no day after the latest calendar day anywhere on Earth right now.</summary>
+    private static bool Valid(BodyMetric m) =>
+        (m.WeightKg is not null || m.BodyFatPercent is not null || Lengths(m).Any(v => v is not null)) &&
+        (m.WeightKg is null or (> 0 and <= 700)) && (m.BodyFatPercent is null or (>= 0 and <= 100)) &&
+        Lengths(m).All(v => v is null or (> 0 and <= 500)) && (m.Note?.Length ?? 0) <= 200 &&
+        m.DayKey <= DateOnly.FromDateTime(DateTime.UtcNow.AddHours(14));
+
     public async Task<Outcome<BodyMetricDto>> AddMetricAsync(Guid userId, BodyMetricRequest r, CancellationToken ct)
     {
-        if (r.MetricId == Guid.Empty || (r.WeightKg is null && r.BodyFatPercent is null) || r.WeightKg is <= 0 or > 700 ||
-            r.BodyFatPercent is < 0 or > 100 || r.Note?.Length > 200) return Outcome.Rejected<BodyMetricDto>(Ack.Invalid);
+        var m = new BodyMetric
+        {
+            Id = r.MetricId, UserId = userId, DayKey = r.DayKey, WeightKg = Round4(r.WeightKg), BodyFatPercent = r.BodyFatPercent, Note = r.Note,
+            WaistCm = Round4(r.WaistCm), ChestCm = Round4(r.ChestCm), LeftUpperArmCm = Round4(r.LeftUpperArmCm), RightUpperArmCm = Round4(r.RightUpperArmCm),
+            LeftThighCm = Round4(r.LeftThighCm), RightThighCm = Round4(r.RightThighCm),
+            RecordedAtUtc = r.RecordedAtUtc is { } at ? WorkoutService.Utc(at) : null,
+        };
+        if (r.MetricId == Guid.Empty || !Valid(m)) return Outcome.Rejected<BodyMetricDto>(Ack.Invalid);
         if (await db.BodyMetrics.AnyAsync(x => x.Id == r.MetricId, ct)) return Outcome.Conflict<BodyMetricDto>("DUPLICATE_ID");
-        var m = new BodyMetric { Id = r.MetricId, UserId = userId, DayKey = r.DayKey, WeightKg = r.WeightKg, BodyFatPercent = r.BodyFatPercent, Note = r.Note };
         db.BodyMetrics.Add(m);
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(m.Revision, ToDto(m));
+    }
+
+    /// <summary>Corrects a check-in in place: same ID, same first-saved time. Fields left out keep their value.</summary>
+    public async Task<Outcome<BodyMetricDto>> UpdateMetricAsync(Guid userId, Guid id, BodyMetricUpdateRequest r, CancellationToken ct)
+    {
+        var m = await db.BodyMetrics.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, ct);
+        if (m is null) return Outcome.NotFound<BodyMetricDto>();
+        var next = new BodyMetric
+        {
+            DayKey = r.DayKey, WeightKg = Round4(r.WeightKg.OrKeep(m.WeightKg)), BodyFatPercent = r.BodyFatPercent.OrKeep(m.BodyFatPercent),
+            WaistCm = Round4(r.WaistCm.OrKeep(m.WaistCm)), ChestCm = Round4(r.ChestCm.OrKeep(m.ChestCm)),
+            LeftUpperArmCm = Round4(r.LeftUpperArmCm.OrKeep(m.LeftUpperArmCm)), RightUpperArmCm = Round4(r.RightUpperArmCm.OrKeep(m.RightUpperArmCm)),
+            LeftThighCm = Round4(r.LeftThighCm.OrKeep(m.LeftThighCm)), RightThighCm = Round4(r.RightThighCm.OrKeep(m.RightThighCm)),
+            Note = r.Note.IsSet ? (string.IsNullOrEmpty(r.Note.Value) ? null : r.Note.Value) : m.Note,
+        };
+        if (!Valid(next)) return Outcome.Rejected<BodyMetricDto>(Ack.Invalid);
+        if (m.DeletedAtUtc != null) return Outcome.Conflict("ENTRY_DELETED", m.Revision, ToDto(m));
+        if (m.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, m.Revision, ToDto(m));
+        (m.DayKey, m.WeightKg, m.BodyFatPercent, m.Note) = (next.DayKey, next.WeightKg, next.BodyFatPercent, next.Note);
+        (m.WaistCm, m.ChestCm, m.LeftUpperArmCm, m.RightUpperArmCm, m.LeftThighCm, m.RightThighCm) =
+            (next.WaistCm, next.ChestCm, next.LeftUpperArmCm, next.RightUpperArmCm, next.LeftThighCm, next.RightThighCm);
+        m.Revision++;
         await db.SaveChangesAsync(ct);
         return Outcome.Accepted(m.Revision, ToDto(m));
     }

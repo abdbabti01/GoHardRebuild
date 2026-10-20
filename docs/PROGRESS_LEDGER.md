@@ -1921,3 +1921,32 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
 - Verified on the user's iPhone with IPA 41 (user report, 19 Oct 2026). Follow-up: `journey_test` now checks that Bench
   press is in the selected movement's panel after Next (it used to accept the All movements row); `flutter analyze`
   clean, `workout_panel_test` passed. That journey was not rerun on the emulator (test-only change; user did not ask).
+
+## 20 Oct 2026 — Body progress (`feature/body-progress`, from `main` e33ec42)
+
+- **Base:** `main` e33ec42 contains the accepted exercise-switch fix 18588e7 (IPA 41), checked with `git merge-base
+  --is-ancestor`. Policies: docs/BODY_PROGRESS.md.
+- **Built:** Me › Body progress (replaces Body measurements; quiet link in Train › Progress): overview with latest
+  weight, day-weighted 7-day average, weight over time, latest per metric, all entries; Log / Edit entry with optional
+  waist, chest, left/right upper arm, left/right thigh, existing body fat and note, kg/lb and cm/in; Compare dates;
+  How to measure (CDC NHANES 2017 manual, cited). API: additive columns + `RecordedAtUtc`, weight precision
+  numeric(6,2)→(9,4) (lossless widening), `PUT /body-metrics/{id}` (`metric.update`, omit = keep, null = clear),
+  capability `body-metrics.measurements`, migration `AddBodyMeasurements`. Old `BodyMetricsScreen` /
+  `ActivityRepository` removed; every existing record is read unchanged.
+- **Tests:** API `BodyMetricTests` + existing `Runs_and_body_metrics…` (2 passed, testcontainers PostgreSQL with all
+  migrations). App `body_progress_test` (10), `body_progress_ui_test` (5), `me_ui_test` updated; full app suite
+  `flutter test`: 612 passed; `flutter analyze`: no issues. Renders `body_render_test` (six themes of overview, log,
+  compare, legacy state; 320 px at 2× text) in docs/evidence/body-progress — fixture renders, not captures. The 320 px
+  test found the unit toggles overflowing (fixed: they stack at large text).
+- **Native (Pixel_7, branch API on a disposable database `gohard_body_journey`, migrated then dropped):**
+  `test-android.ps1 -Only journey_body_test` (not default) **passed** both phases on the second run. Phase 1: two
+  SEEDED legacy weight entries (old shape, same day, no saved time) shown as "Average of 2 entries"; today's check-in in
+  lb/in (198 lb, waist 35,5 in, left upper arm 16.25 in); a measurement-only waist entry for yesterday; Compare dates;
+  body units → cm in Me › Units; today's waist corrected to 89.5 cm; Wi-Fi and data off (simulated outage), one more
+  check-in saved on the phone. Phase 2 (new process): still pending; back online the account holds 5 entries, the
+  offline one once, the corrected one at revision 2; deleting the offline entry moved the 7-day average 197.8 → 198.0 lb.
+  Captures `body-01…05`, recording `docs/evidence/recordings/body-flow.mp4`. The first run failed on the journey
+  itself (it looked for the waist row below the fold); fixed by scrolling to it. The owner-video API container was
+  stopped for the run and restarted.
+- **Not verified:** a physical iPhone (keyboard Done, VoiceOver, scrolling); the hosted API (not deployed: until
+  `main` with the migration is deployed there, circumferences and corrections wait in the outbox and the app says so).

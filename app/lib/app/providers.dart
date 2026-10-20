@@ -15,6 +15,7 @@ import '../data/session.dart';
 import '../data/sync.dart';
 import '../features/activity/activity_repository.dart';
 import '../features/activity/track_store.dart';
+import '../features/body/body_repository.dart';
 import '../features/me/account_repository.dart';
 import '../features/nutrition/food_discovery.dart';
 import '../features/nutrition/food_item.dart';
@@ -46,7 +47,7 @@ final syncProvider = Provider<SyncEngine>((ref) {
   engine.isBlocked = () => ref.read(compatibilityProvider).blocked;
   engine.mayDispatch = (cmd) {
     final capabilities = ref.read(compatibilityProvider).capabilities;
-    final ok = RunRepository.serverTakes(cmd, capabilities) && GoalRepository.serverTakes(cmd, capabilities);
+    final ok = RunRepository.serverTakes(cmd, capabilities) && GoalRepository.serverTakes(cmd, capabilities) && BodyRepository.serverTakes(cmd, capabilities);
     // Held only because the server has not answered yet (the app started offline): ask again (one check at a time),
     // and send once an answer arrives. No answer leaves it waiting, with no retry loop.
     if (!ok && capabilities == null) {
@@ -207,7 +208,7 @@ final savedFoodRepositoryProvider = Provider((ref) => _owned(ref, SavedFoodRepos
 final foodDiscoveryProvider = Provider((ref) => _owned(ref, (s, o) => FoodDiscovery(ref.watch(apiProvider), s, o, ref.watch(clockProvider))));
 final profileRepositoryProvider = Provider((ref) => _owned(ref, ProfileRepository.new));
 final workoutRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => WorkoutRepository(s, o, ref.watch(clockProvider))));
-final activityRepositoryProvider = Provider((ref) => _owned(ref, ActivityRepository.new));
+final bodyRepositoryProvider = Provider((ref) => _owned(ref, BodyRepository.new));
 final trackStoreProvider = Provider((ref) => TrackStore(ref.watch(dbProvider)));
 final goalRepositoryProvider = Provider((ref) => _owned(ref, GoalRepository.new));
 final runRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => RunRepository(s, o, ref.watch(trackStoreProvider), ref.watch(apiProvider))));

@@ -11,6 +11,7 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/move_widgets.dart' show PersonalBestsCard;
+import '../body/body_screens.dart' show BodyProgressScreen;
 import '../plans/plan_progress.dart' show dateRange;
 import '../shell/home_shell.dart';
 import '../workout/workout_detail_screen.dart';
@@ -75,6 +76,11 @@ class ProgressView extends ConsumerWidget {
                 action: SecondaryButton('Start a manual workout', onPressed: () => startManualWorkout(context, ref)))
       else
         for (final (i, t) in previews.indexed) ...[if (i > 0) gap, TrendPreview(t)],
+      // Body progress belongs to Me; this is only a quiet way there.
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: QuietLink('Body progress', key: const Key('progress-body'), said: 'Open Body progress: weight and measurements', onPressed: () => push(context, const BodyProgressScreen())),
+      ),
       between,
       const SectionHeader('Am I following my plan?'),
       gap,

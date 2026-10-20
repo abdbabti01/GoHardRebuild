@@ -21,6 +21,7 @@ public static class GoHardEndpoints
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
         "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes", WeeklyGoalService.Capability,
+        ActivityService.MeasurementsCapability,
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -231,6 +232,8 @@ public static class GoHardEndpoints
                 ? Results.Json(page, CommandRunner.Json) : Results.NotFound());
         me.MapPost("/body-metrics", (BodyMetricRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "metric.create", r, () => s.AddMetricAsync(u.UserId(), r, ct), ct));
+        me.MapPut("/body-metrics/{id:guid}", (Guid id, BodyMetricUpdateRequest r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "metric.update", new { id, r }, () => s.UpdateMetricAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/body-metrics/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, ActivityService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "metric.delete", new { id, r }, () => s.DeleteMetricAsync(u.UserId(), id, r, ct), ct));
     }

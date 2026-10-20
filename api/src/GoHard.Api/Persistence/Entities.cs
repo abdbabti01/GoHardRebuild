@@ -312,6 +312,7 @@ public class WeeklyGoal
     public DateTime UpdatedAtUtc { get; set; }
 }
 
+/// <summary>One body check-in (docs/BODY_PROGRESS.md): every measurement optional, at least one present.</summary>
 public class BodyMetric
 {
     public Guid Id { get; set; }
@@ -320,6 +321,15 @@ public class BodyMetric
     public decimal? WeightKg { get; set; }
     public decimal? BodyFatPercent { get; set; }
     public string? Note { get; set; }
+    /// <summary>Circumferences in centimetres. Left and right are separate measurements, never one for both.</summary>
+    public decimal? WaistCm { get; set; }
+    public decimal? ChestCm { get; set; }
+    public decimal? LeftUpperArmCm { get; set; }
+    public decimal? RightUpperArmCm { get; set; }
+    public decimal? LeftThighCm { get; set; }
+    public decimal? RightThighCm { get; set; }
+    /// <summary>When the phone first saved it; immutable. Null for records from before it: their order within a day is unknown.</summary>
+    public DateTime? RecordedAtUtc { get; set; }
     public int Revision { get; set; } = 1;
     public DateTime? DeletedAtUtc { get; set; }
 }

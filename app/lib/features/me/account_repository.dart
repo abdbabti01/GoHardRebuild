@@ -120,24 +120,3 @@ class ProfileRepository {
         payload: {'expectedRevision': {r'$rev': [Kinds.profile, _owner]}, ...fields});
   }
 }
-
-/// Optional body measurements. Run / Walk is features/activity/activity_repository.dart.
-class ActivityRepository {
-  ActivityRepository(this._sync, this._owner);
-  final SyncEngine _sync;
-  final String _owner;
-
-  Future<void> addMetric(String dayKey, {double? weightKg, double? bodyFatPercent, String? note}) {
-    if (weightKg == null && bodyFatPercent == null) throw const AuthFailure('Enter a weight or a body-fat value.');
-    if ((weightKg != null && (weightKg <= 0 || weightKg > 700)) || (bodyFatPercent != null && (bodyFatPercent < 0 || bodyFatPercent > 100))) {
-      throw const AuthFailure('That measurement is out of range.');
-    }
-    final id = SyncEngine.newId();
-    final fields = {'dayKey': dayKey, 'weightKg': weightKg, 'bodyFatPercent': bodyFatPercent, 'note': note};
-    return _sync.submit(_owner, kind: 'metric.create', path: '/body-metrics', targetKind: Kinds.metric, targetId: id,
-        writes: [LocalWrite(Kinds.metric, id, {'id': id, ...fields, 'revision': 0, 'isDeleted': false}, dayKey: dayKey)], payload: {'metricId': id, ...fields});
-  }
-
-  Future<void> deleteMetric(BodyMetric m) => _sync.submit(_owner, kind: 'metric.delete', path: '/body-metrics/${m.id}/delete', targetKind: Kinds.metric, targetId: m.id,
-      writes: [LocalWrite(Kinds.metric, m.id, copyJson(m.j)..['isDeleted'] = true, dayKey: m.dayKey)], payload: {'expectedRevision': {r'$rev': [Kinds.metric, m.id]}});
-}

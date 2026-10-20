@@ -101,8 +101,15 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         });
         Owned<RouteChunk>(b, x => x.UserId).HasKey(x => new { x.RunId, x.Index });
         b.Entity<RouteChunk>().HasOne<Run>().WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.Cascade);
-        Owned<BodyMetric>(b, x => x.UserId).Property(x => x.WeightKg).HasPrecision(6, 2);
-        b.Entity<BodyMetric>().Property(x => x.BodyFatPercent).HasPrecision(5, 2);
+        // Four decimals keep a quarter inch (0.635 cm) and a pound entry exact through a kg/lb round trip.
+        Owned<BodyMetric>(b, x => x.UserId).Property(x => x.WeightKg).HasPrecision(9, 4);
+        b.Entity<BodyMetric>(e =>
+        {
+            e.Property(x => x.BodyFatPercent).HasPrecision(5, 2);
+            foreach (var cm in new[] { nameof(BodyMetric.WaistCm), nameof(BodyMetric.ChestCm), nameof(BodyMetric.LeftUpperArmCm),
+                         nameof(BodyMetric.RightUpperArmCm), nameof(BodyMetric.LeftThighCm), nameof(BodyMetric.RightThighCm) })
+                e.Property(cm).HasPrecision(8, 4);
+        });
         // One effective record per owner and week: a retry or a second phone cannot create a competing one.
         Owned<WeeklyGoal>(b, x => x.UserId).HasKey(x => new { x.UserId, x.WeekStart });
         b.Entity<WeeklyGoal>().Property(x => x.Revision).IsConcurrencyToken();

@@ -32,24 +32,51 @@ namespace GoHard.Api.Persistence.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
 
+                    b.Property<decimal?>("ChestCm")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("numeric(8,4)");
+
                     b.Property<DateOnly>("DayKey")
                         .HasColumnType("date");
 
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("LeftThighCm")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("numeric(8,4)");
+
+                    b.Property<decimal?>("LeftUpperArmCm")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("numeric(8,4)");
+
                     b.Property<string>("Note")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Revision")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("RightThighCm")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("numeric(8,4)");
+
+                    b.Property<decimal?>("RightUpperArmCm")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("numeric(8,4)");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("WaistCm")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("numeric(8,4)");
+
                     b.Property<decimal?>("WeightKg")
-                        .HasPrecision(6, 2)
-                        .HasColumnType("numeric(6,2)");
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)");
 
                     b.HasKey("Id");
 

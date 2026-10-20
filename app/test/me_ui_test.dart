@@ -174,7 +174,7 @@ void main() {
     expect(find.textContaining('· °F'), findsOneWidget, reason: 'temperature is a phone setting beside the load unit');
     expect(profiles.units, ['lb'], reason: 'the account is not touched by it');
 
-    for (final (key, title) in [('me-edit-name', 'Edit profile'), ('me-body', 'Body measurements'), ('me-goals', 'Nutrition goals'), ('me-appearance', 'Appearance'), ('me-motion', 'Motion & haptics'), ('me-delete-account', 'Delete account')]) {
+    for (final (key, title) in [('me-edit-name', 'Edit profile'), ('me-body', 'Body progress'), ('me-goals', 'Nutrition goals'), ('me-appearance', 'Appearance'), ('me-motion', 'Motion & haptics'), ('me-delete-account', 'Delete account')]) {
       await tap(key);
       expect(find.byType(BackButton), findsOneWidget, reason: '$key opens a page');
       expect(find.text(title), findsWidgets, reason: key);

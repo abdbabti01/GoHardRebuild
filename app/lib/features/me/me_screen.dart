@@ -14,7 +14,9 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../activity/move_prefs.dart' show stepsEnabledProvider;
 import '../activity/steps_ui.dart' show showStepsSheet;
-import '../activity/activity_screens.dart';
+import '../body/body_prefs.dart';
+import '../body/body_metrics.dart';
+import '../body/body_screens.dart';
 import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
@@ -77,6 +79,26 @@ class MeScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 4),
           Text('Changes how loads are entered and shown. Your recorded training is stored in kilograms and is never rewritten. Time is shown in minutes and seconds.', style: context.caption),
+          const SizedBox(height: 16),
+          Text('Body progress', style: context.label),
+          for (final mass in LoadUnit.values)
+            ChoiceTile<LoadUnit>(
+              key: Key('unit-body-${mass.name}'), value: mass, groupValue: ref.read(bodyUnitsProvider).mass, title: mass == LoadUnit.kg ? 'Body weight in kilograms' : 'Body weight in pounds',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                setBodyUnits(ref, BodyUnits(chosen, ref.read(bodyUnitsProvider).length));
+              },
+            ),
+          for (final length in LengthUnit.values)
+            ChoiceTile<LengthUnit>(
+              key: Key('unit-body-${length.name}'), value: length, groupValue: ref.read(bodyUnitsProvider).length, title: length == LengthUnit.cm ? 'Measurements in centimetres (cm)' : 'Measurements in inches (in)',
+              onChanged: (chosen) {
+                Navigator.pop(sheet);
+                setBodyUnits(ref, BodyUnits(ref.read(bodyUnitsProvider).mass, chosen));
+              },
+            ),
+          const SizedBox(height: 4),
+          Text('For Body progress only: your lifting unit stays as it is. Stored in kilograms and centimetres, so changing this never changes a measurement. Set on this phone for this account.', style: context.caption),
           const SizedBox(height: 16),
           Text('Temperature', style: context.label),
           for (final f in const [false, true])
@@ -169,7 +191,7 @@ class MeScreen extends ConsumerWidget {
 
         const _Group('Personal'),
         GroupCard(children: [
-          GroupRow(key: const Key('me-body'), icon: Icons.monitor_weight_outlined, title: 'Body measurements', subtitle: 'Weight and body fat', onTap: () => push(context, const BodyMetricsScreen())),
+          GroupRow(key: const Key('me-body'), icon: Icons.monitor_weight_outlined, title: 'Body progress', subtitle: 'Weight, measurements and comparisons', onTap: () => push(context, const BodyProgressScreen())),
           // Shown unless the server has said it cannot store goals: a goal that silently vanishes is worse than no row.
           if (profile != null && ref.watch(compatibilityProvider).supports('profile.nutrition-goals'))
             GroupRow(

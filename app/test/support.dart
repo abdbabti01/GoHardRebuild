@@ -44,7 +44,7 @@ Json authFor(String owner) => {
 class FakeServer implements Transport {
   final calls = <({String method, String path, String body, String? bearer})>[];
   final operations = <String, (String body, ApiResponse response)>{};
-  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{}, weeklyGoals = <String, Json>{};
+  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{}, weeklyGoals = <String, Json>{}, bodyMetrics = <String, Json>{};
 
   /// The account's profile as this authority holds it. A field a request leaves out is kept, as on the real server.
   Json profile = {...authFor('owner-from-server')['profile'] as Json};
@@ -79,7 +79,7 @@ class FakeServer implements Transport {
       return ApiResponse(200, {
         'profile': profile, 'context': {'contextRevision': 1, 'primaryPlanId': null, 'plans': []},
         'workouts': [for (final w in workouts.values) {...w, 'exercises': [for (final e in w['exercises'] as List) {...e as Json, 'sets': [for (final s in sets.values) if (s['exerciseId'] == e['id']) s]}]}],
-        'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': [], 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(), 'waterEntries': water.values.toList(),
+        'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': bodyMetrics.values.toList(), 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(), 'waterEntries': water.values.toList(),
         'weeklyGoals': weeklyGoals.values.toList(),
       });
     }
@@ -143,6 +143,16 @@ class FakeServer implements Transport {
         return _revisioned(water, id, d, op, (r) => r.addAll({'dayKey': d['dayKey'], 'volumeMl': d['volumeMl']}));
       case ['water-entries', final id, 'delete']:
         return _revisioned(water, id, d, op, (r) => r['isDeleted'] = true);
+      // Body check-ins as the real server keeps them: fields left out of a correction are kept, null clears.
+      case ['body-metrics']:
+        if (bodyMetrics.containsKey(d['metricId'])) return _ack(op, 'conflict', 1, null, 'DUPLICATE_ID');
+        final m = {...d, 'id': d['metricId'], 'revision': 1, 'isDeleted': false}..remove('operationId')..remove('metricId');
+        bodyMetrics[m['id'] as String] = m;
+        return _ack(op, 'accepted', 1, Map.of(m));
+      case ['body-metrics', final id] when method == 'PUT':
+        return _revisioned(bodyMetrics, id, d, op, (r) => r.addAll({...d}..remove('operationId')..remove('expectedRevision')));
+      case ['body-metrics', final id, 'delete']:
+        return _revisioned(bodyMetrics, id, d, op, (r) => r['isDeleted'] = true);
       case ['saved-foods', final id] when method == 'PUT':
         final row = savedFoods[id];
         if ((row?['revision'] ?? 0) != d['expectedRevision']) return row == null ? const ApiResponse(404, null) : _ack(op, 'conflict', row['revision'] as int, row, 'REVISION_CONFLICT');
