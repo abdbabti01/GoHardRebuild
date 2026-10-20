@@ -43,8 +43,8 @@ class _Water implements WaterRepository {
 
 Json _entry(String id, double ml, {String day = _day}) => {'id': id, 'dayKey': day, 'volumeMl': ml, 'revision': 1, 'isDeleted': false};
 
-Future<List<Override>> _fixture(WidgetTester tester, {List<Json> water = const [], Json profile = const {}, _Water? repo, RecordingProfiles? profiles, Stream<List<Stored<WaterEntry>>>? waterStream}) async => [
-      ...(await tester.runAsync(() => overridesFor(day: _day, profile: profile,
+Future<List<Override>> _fixture(WidgetTester tester, {List<Json> water = const [], Json profile = const {}, _Water? repo, RecordingProfiles? profiles, Stream<List<Stored<WaterEntry>>>? waterStream, List<Json> food = const []}) async => [
+      ...(await tester.runAsync(() => overridesFor(day: _day, profile: profile, food: food,
           appearance: AppearanceStore(MemorySecretStore())..mode = ThemeMode.dark)))!,
       waterProvider.overrideWith((ref, d) => waterStream ?? Stream.value([for (final w in water) if (w['dayKey'] == d) stored(WaterEntry(w), Kinds.water, w['id'] as String, w)])),
       waterRepositoryProvider.overrideWithValue(repo ?? _Water()),
@@ -135,6 +135,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.byKey(const Key('water-quick-add'))), findsOneWidget);
     await tester.pump(const Duration(seconds: 6));
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('an earlier day without water says "No water logged" in its row and sheet, not 0 mL', (tester) async {
+    final container = await pumpApp(tester, await _fixture(tester, profile: {'waterGoalMl': 2000},
+        food: [foodEntry('f1', '2026-10-10', 'Lunch', 'Rice', '1 bowl', calories: 400)]), size: const Size(390, 2200));
+    container.read(trackingPrefsProvider.notifier).setDisplay('one', const NutritionDisplay(water: true));
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    final row = find.byKey(const Key('eat-water'));
+    expect(find.descendant(of: row, matching: find.text('0 / 2,000 mL')), findsOneWidget, reason: 'today keeps its goal progress');
+    await tester.tap(find.byKey(const Key('eat-history')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('trends-calendar')));
+    await tester.tap(find.byKey(const Key('trends-calendar')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-day-2026-10-10')));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: row, matching: find.text('No water logged')), findsOneWidget);
+    expect(find.descendant(of: row, matching: find.text('0 mL')), findsNothing);
+    expect(find.descendant(of: row, matching: find.byKey(const Key('water-goal-bar'))), findsNothing);
+    await tester.tap(find.descendant(of: row, matching: find.byKey(const Key('water-row'))));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.byKey(const Key('water-sheet-total'))).data, 'No water logged');
     await tester.pumpWidget(const SizedBox());
   });
 

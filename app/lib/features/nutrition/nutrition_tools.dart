@@ -179,8 +179,10 @@ class WaterRow extends ConsumerWidget {
     final total = rows.hasValue ? waterTotal([for (final r in rows.value!) r.value]) : null;
     // Only today is set against the goal: earlier days' goals were not kept, so today's is not used to judge them.
     final goal = today ? ref.watch(profileProvider).value?.waterGoalMl : null;
+    // An earlier day with nothing logged says so, rather than "0 mL" as if a zero had been recorded.
+    final none = !today && total == 0;
     final c = context.c;
-    final said = total == null ? 'Water, loading' : 'Water ${unit.format(total)}${goal == null ? '' : ' of ${unit.format(goal.toDouble())}, ${(total / goal * 100).round()} percent'}';
+    final said = total == null ? 'Water, loading' : none ? 'Water, no water logged' : 'Water ${unit.format(total)}${goal == null ? '' : ' of ${unit.format(goal.toDouble())}, ${(total / goal * 100).round()} percent'}';
     final quick = unit.everyday;
     final actions = Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
       if (today)
@@ -217,7 +219,7 @@ class WaterRow extends ConsumerWidget {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                         Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 6, children: [
                           Text('Water', style: context.sansStyle(15, weight: FontWeight.w600)),
-                          if (total != null) Text(goal == null ? unit.format(total) : unit.progress(total, goal.toDouble()), key: const Key('water-total'), style: context.numStyle(15)),
+                          if (total != null) Text(none ? 'No water logged' : goal == null ? unit.format(total) : unit.progress(total, goal.toDouble()), key: const Key('water-total'), style: context.numStyle(15)),
                         ]),
                         if (goal != null && total != null) Padding(padding: const EdgeInsets.only(top: 6), child: WaterGoalBar(total: total, goal: goal.toDouble())),
                       ]),
@@ -421,16 +423,18 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
   @override
   Widget build(BuildContext context) {
     final unit = ref.watch(volumeUnitProvider);
-    final entries = [for (final r in ref.watch(waterProvider(widget.day)).value ?? const <Stored<WaterEntry>>[]) if (!r.value.isDeleted) r];
+    final rows = ref.watch(waterProvider(widget.day));
+    final entries = [for (final r in rows.value ?? const <Stored<WaterEntry>>[]) if (!r.value.isDeleted) r];
     final total = waterTotal([for (final r in entries) r.value]);
     final today = ref.watch(todayKeyProvider);
     // Earlier days' goals were not kept: only today is set against the goal.
     final goal = widget.day == today ? ref.watch(profileProvider).value?.waterGoalMl : null;
+    final none = widget.day != today && rows.hasValue && entries.isEmpty;
     final c = context.c;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
       Text(widget.day == today ? 'Today' : longDate(widget.day), style: context.caption),
       Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
-        Text(unit.format(total), key: const Key('water-sheet-total'), style: context.pageTitleStyle(34)),
+        Text(none ? 'No water logged' : unit.format(total), key: const Key('water-sheet-total'), style: context.pageTitleStyle(none ? 26 : 34)),
         if (goal != null)
           Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('/ ${unit.format(goal.toDouble())}', style: context.sansStyle(15, color: c.secondary))),
       ]),
