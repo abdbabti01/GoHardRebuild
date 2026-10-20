@@ -63,6 +63,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
   String? _boundExerciseId, _error;
   LoadUnit? _entryUnit; // pinned while the entry is dirty
   bool _busy = false, _loaded = false;
+  final _panelKey = GlobalKey();
 
   /// The fields hold something the user typed (or a draft they typed earlier), not a suggestion: Use last values
   /// asks before replacing it.
@@ -119,10 +120,13 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
 
   /// A park, resume or finish made elsewhere (Today's Resume, another start's "save it for later") is the stored
   /// truth: it replaces this panel's copy, keeping only the entry being typed here.
+  /// The selection is this panel's too: only it changes exercise, so a late echo of an older write never switches back.
   void _adopt(WorkoutRuntime stored) {
     final mine = _runtime;
     if (mine == null || !_loaded || _closed) return;
-    setState(() => _runtime = WorkoutRuntime(copyJson(stored.j)..['drafts'] = copyJson(mine.j)['drafts'] ?? <String, dynamic>{}));
+    setState(() => _runtime = WorkoutRuntime(copyJson(stored.j)
+      ..['drafts'] = copyJson(mine.j)['drafts'] ?? <String, dynamic>{}
+      ..['selectedExerciseId'] = mine.selectedExerciseId));
   }
 
   void _onTyped() {
@@ -133,13 +137,38 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
   }
 
   void _flushDraft() {
+    final draft = _foldDraft();
+    if (draft != null) unawaited(_repo.saveDraft(widget.workoutId, _boundExerciseId!, draft));
+  }
+
+  /// Puts the entry into this panel's runtime as the bound exercise's draft. Only what the user typed is a draft; a
+  /// suggestion left untouched is not, and is suggested again when the exercise is opened.
+  EntryDraft? _foldDraft() {
     _draftDebounce?.cancel();
     final r = _runtime, id = _boundExerciseId;
-    if (r == null || id == null || _closed) return;
+    if (r == null || id == null || _closed) return null;
     final LoadUnit unit = _entryUnit ?? _unitNow;
-    final draft = EntryDraft.of(load: _load.text, reps: _reps.text, duration: _duration.text, unit: unit.name);
+    final draft = _typed ? EntryDraft.of(load: _load.text, reps: _reps.text, duration: _duration.text, unit: unit.name) : EntryDraft.of(unit: unit.name);
     _runtime = r.withDraft(id, draft);
-    unawaited(_repo.saveDraft(widget.workoutId, id, draft));
+    return draft;
+  }
+
+  /// The one way to change exercise (Next, a movement row, an added movement). The entry's draft goes in the same
+  /// write as the selection, so nothing can land on top of it. Nothing is recorded; time and rest are untouched.
+  Future<void> _select(String exerciseId) async {
+    _foldDraft();
+    // Brought into view only when its top is off screen, below the status bar; no animation with reduced motion.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = _panelKey.currentContext?.findRenderObject();
+      if (!mounted || box is! RenderBox) return;
+      final top = MediaQuery.paddingOf(context).top + 12;
+      box.showOnScreen(rect: Rect.fromLTWH(0, -top, box.size.width, top + 1), duration: context.motion(Motion.quick), curve: Motion.curve);
+    });
+    try {
+      await _save(_runtime!.selecting(exerciseId));
+    } on LocalSaveFailure {
+      if (mounted) toast(context, 'The change of movement could not be saved on this phone. Your sets and entry are unchanged; try again.');
+    }
   }
 
   /// Binds the entry fields to an exercise: its saved draft first, otherwise a suggestion from actual history.
@@ -315,9 +344,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
         final e = await push<CatalogExercise>(context, ExercisePicker(title: action == 'add' ? 'Add a movement' : 'Replace ${selected!.name}'));
         if (e == null) return;
         final added = await _repo.addExercise(workout, name: e.name, catalogKey: e.key, isTimed: e.isTimed, substitutedForKey: action == 'substitute' ? selected!.catalogKey ?? selected.name : null);
-        _flushDraft();
-        _boundExerciseId = null;
-        await _save(_runtime!.selecting(added.id));
+        await _select(added.id);
       case 'remove':
         try {
           await _repo.removeExercise(workout, selected!.id);
@@ -469,7 +496,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
             action: parked ? null : SecondaryButton('Add a movement', icon: Icons.add, onPressed: () => _menu('add', workout, null)))
       else ...[
         // The exercise heading: its place in the workout, the name in the serif and the planned prescription.
-        PhotoPanel(
+        KeyedSubtree(key: _panelKey, child: PhotoPanel(
           key: const Key('workout-exercise-panel'),
           photo: 'assets/images/workout-hero.webp',
           photoAlignment: const Alignment(1, 0.6),
@@ -486,7 +513,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
             QuietLink('About', key: const Key('workout-demo'), said: 'About ${selected.name}',
                 onPressed: () => showExerciseInfo(appContext(context), exercise: Prescription(selected.j), workoutName: workout.title)),
           ],
-        ),
+        )),
         // The plan's target is the user's aim: never put in the fields or counted as a set, and apart from last time.
         if (selected.targetLoadKg != null) ...[
           const SizedBox(height: 10),
@@ -542,15 +569,14 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           ]),
           const SizedBox(height: 12),
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-          if (targetReached) const Padding(padding: EdgeInsets.only(bottom: 10), child: StatusLine(Icons.check_circle_outline, 'Target set count recorded. Add another set, or move on when you are ready.')),
+          if (targetReached)
+            Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.check_circle_outline,
+                nextExercise == null ? 'Target set count recorded. This is the last movement: add another set, or finish the workout when you are ready.' : 'Target set count recorded. Add another set, or move on when you are ready.')),
           // Reaching the target never changes exercise. The same action stays available for extra sets.
           PrimaryButton(targetReached ? 'Record another set' : 'Record set', key: const Key('complete-set'), icon: Icons.check_rounded, busy: _busy, onPressed: () => _complete(workout, selected)),
           if (nextExercise != null) ...[
             const SizedBox(height: 8),
-            SecondaryButton('Next exercise · ${nextExercise.name}', key: const Key('next-exercise'), onPressed: () {
-              _flushDraft();
-              _save(_runtime!.selecting(nextExercise.id));
-            }),
+            SecondaryButton('Next exercise · ${nextExercise.name}', key: const Key('next-exercise'), onPressed: () => _select(nextExercise.id)),
           ],
         ],
         const SizedBox(height: 22),
@@ -581,10 +607,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
               title: e.name,
               subtitle: '${setsOf(e.id).length}${e.targetSets == null ? '' : ' of ${e.targetSets}'} sets recorded${e.id == selected?.id ? ' · current' : ''}',
               trailing: e.id == selected?.id ? Icon(Icons.radio_button_checked, size: 20, color: context.c.accent) : null,
-              onTap: e.id == selected?.id ? null : () {
-                _flushDraft();
-                _save(_runtime!.selecting(e.id));
-              },
+              onTap: e.id == selected?.id ? null : () => _select(e.id),
             ),
         ]),
       if (!parked) ...[

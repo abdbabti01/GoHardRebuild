@@ -1888,3 +1888,31 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
 - CI run 107 on `b059564`: app job failed (`run_walk_recorder_test`, above); CI run 108 on `57154fb`: **passed** (api,
   app). Unsigned IPA run 40 on `57154fb`, artifact `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway, Cloudflare
   and the owner-video branch unchanged. The local owner-video API container was paused for the journey and restarted.
+
+## Fix: exercise switching in the workout recorder (19 Oct 2026, `fix/workout-exercise-switch`)
+
+- **Report (iPhone, IPA 40):** with Triceps pushdown at 3 of 3 sets, Next exercise and the All movements rows did nothing.
+- **Cause (reproduced, traced):** both taps ran `_flushDraft()` (unawaited `saveDraft`: read the stored runtime, then write
+  it back with the draft) and then saved the new selection. The draft save read before the selection was written and
+  wrote after it, putting the previous exercise back; the panel adopted that stored runtime. Trace: save with the new
+  ID, then an adopt of a stored runtime holding the old ID, with nothing after it. Introduced with the workout panel
+  (21202e5). `journey_test` did not catch it: after Next it waits for the text "Bench press", which All movements always shows.
+- **Fix:** runtime writes in `WorkoutRepository` run in turn (a read-then-write can no longer land over a newer write);
+  one `_select` path for Next, the movement rows and an added movement folds the draft into the same write as the
+  selection; adopting a stored runtime keeps the panel's own selection; the selected panel is brought into view when
+  its top is off screen (no animation with reduced motion). An untouched suggestion is no longer stored as a typed
+  draft. On the last movement the target line says so; there is no Next there.
+- **Tests:** new `workout_panel_test` case through the real buttons and rows: Next and direct selection after the
+  target, a typed draft on another exercise kept, back to the first with its 3 sets, rapid taps, last movement, the
+  panel revealed on a 390×844 screen scrolled to the end; same workout, 3 sets, rest deadline and clock unchanged.
+  It failed on the unfixed code ("Overhead press is the selected exercise"), and the reveal check failed with the
+  reveal removed (panel at y = -706). `workout_panel_test`, `train_plan_ui_test`, `data_layer_test`,
+  `today_states_test`, `render_test`: 56 passed. `flutter analyze`: no issues.
+- **Native (Pixel_7, branch API on a disposable database, dropped afterwards):** `test-android.ps1 -Only
+  journey_switch_test` (not default) **passed**: a manual workout of Triceps pushdown, Lat pulldown, Skull crusher
+  (own exercise), Barbell row; three sets 45 kg × 12/10/10 and a typed 45 × 8; Next → Lat pulldown; row → Skull crusher;
+  row → Triceps pushdown with its 3 sets and the 45 × 8 draft. Same workout ID, clock anchors identical before and after
+  (manual exercises have no rest; the rest deadline is covered by the widget test). Captures `sw-01…04`. The first
+  run failed on a test assumption (a manual workout shows no target line). The media API container was stopped for
+  the run and restarted.
+- **Not verified:** a physical iPhone.

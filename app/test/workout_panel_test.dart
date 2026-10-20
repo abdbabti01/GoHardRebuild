@@ -263,4 +263,125 @@ void main() {
     expect(field('set-load').text, '150');
     await tester.pumpWidget(const SizedBox());
   });
+
+  // Regression (iPhone report): with the target reached, Next exercise and the All movements rows did nothing, because
+  // the switch's draft save wrote the old selection back over the new one.
+  testWidgets('Next exercise and All movements switch exercise after the target is reached; drafts, sets, workout and rest stay', (tester) async {
+    final db = AppDb(NativeDatabase.memory());
+    addTearDown(db.close);
+    final clock = FakeClock(DateTime.utc(2026, 10, 12, 15));
+    final container = await pumpApp(
+      tester,
+      [
+        ...(await tester.runAsync(() => overridesFor(day: _day, plans: [_plan()], primaryPlanId: _pid, profile: {'loadUnit': 'lb'}, liveWorkouts: true)))!,
+        dbProvider.overrideWithValue(db),
+        clockProvider.overrideWithValue(clock),
+        syncProvider.overrideWith((ref) {
+          final engine = SyncEngine(db, Api(FakeServer()..offline = true, ref.watch(sessionsProvider)), ref.watch(sessionsProvider))..isBlocked = () => true;
+          ref.onDispose(engine.dispose);
+          return engine;
+        }),
+      ],
+      size: const Size(390, 2600), settle: false,
+    );
+    Future<void> settle() async {
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+    }
+
+    Future<T> run<T>(Future<T> work) async {
+      T? out;
+      var done = false;
+      work.then<void>((v) => out = v).whenComplete(() => done = true);
+      for (var i = 0; i < 400 && !done; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      return out as T;
+    }
+
+    Future<void> tap(String key) async {
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.tap(find.byKey(Key(key)));
+      await settle();
+    }
+
+    Finder input(String key) => find.descendant(of: find.byKey(Key(key)), matching: find.byType(TextField));
+    String text(String key) => tester.widget<TextField>(input(key)).controller!.text;
+    void showing(String name) {
+      expect(find.descendant(of: find.byKey(const Key('workout-exercise-panel')), matching: find.text(name)), findsOneWidget, reason: '$name is the selected exercise');
+      expect(find.textContaining(RegExp('sets recorded · current')), findsOneWidget);
+    }
+
+    await settle();
+    await tap('today-details');
+    await tap('preview-start');
+    final repo = container.read(workoutRepositoryProvider);
+    final id = container.read(workoutListProvider).singleWhere((w) => w.isOpen).id;
+    showing('Bench press');
+
+    // The screenshot's state: three sets on the first exercise, the entry still holding the last values.
+    await tester.enterText(input('set-load'), '45');
+    await tester.enterText(input('set-reps'), '10');
+    await settle();
+    for (var i = 0; i < 3; i++) {
+      await tap('complete-set');
+    }
+    expect(find.text('Target set count recorded. Add another set, or move on when you are ready.'), findsOneWidget);
+    final before = (await run(repo.runtime(id)))!;
+
+    await tap('next-exercise');
+    showing('Overhead press');
+    expect(find.byKey(const Key('set-row-0')), findsNothing, reason: 'Bench press sets are not shown under Overhead press');
+    expect((await run(repo.runtime(id)))!.selectedExerciseId, isNot(before.selectedExerciseId), reason: 'the stored selection moved too');
+
+    // Directly to the third movement, then type a draft there.
+    await tap('exercise-row-3');
+    showing('Plank');
+    expect(find.byKey(const Key('set-duration')), findsOneWidget);
+    await tester.enterText(input('set-duration'), '40');
+    await settle();
+
+    // Back to the first: its three sets and its entry; then Plank again: its typed draft.
+    await tap('exercise-row-1');
+    showing('Bench press');
+    expect(find.byKey(const Key('set-row-2')), findsOneWidget);
+    expect(text('set-load'), '45');
+    expect(text('set-reps'), '10');
+    await tap('exercise-row-3');
+    showing('Plank');
+    expect(text('set-duration'), '40', reason: 'the typed draft stayed with its own exercise');
+    expect(find.byKey(const Key('next-exercise')), findsNothing, reason: 'the last movement offers no Next that does nothing');
+
+    // Rapid taps: the last one wins, and the earlier write's echo does not switch back.
+    await tester.ensureVisible(find.byKey(const Key('exercise-row-1')));
+    await tester.tap(find.byKey(const Key('exercise-row-1')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('exercise-row-2')));
+    await settle();
+    showing('Overhead press');
+
+    // On a phone-sized screen scrolled to the end (as in the report), the last movement row is tappable above the
+    // floating bar, and choosing it brings its panel into view.
+    tester.view.physicalSize = const Size(390, 844);
+    await settle();
+    final list = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    list.jumpTo(list.maxScrollExtent);
+    await settle();
+    await tester.tap(find.byKey(const Key('exercise-row-3')));
+    await settle();
+    showing('Plank');
+    final panelTop = tester.getTopLeft(find.byKey(const Key('workout-exercise-panel'))).dy;
+    expect(panelTop, inInclusiveRange(0, 844 - 100), reason: 'the selected movement is on screen, not above it');
+    tester.view.physicalSize = const Size(390, 2600);
+    await settle();
+
+    expect(await run(repo.sets(id)), hasLength(3), reason: 'switching records nothing');
+    expect(container.read(workoutListProvider).where((w) => w.isOpen).map((w) => w.id), [id], reason: 'the same workout, never a second one');
+    final after = (await run(repo.runtime(id)))!;
+    expect(after.restDeadlineUtc, before.restDeadlineUtc, reason: 'selection leaves rest alone');
+    expect(after.elapsedSeconds(clock.utcNow()), before.elapsedSeconds(clock.utcNow()), reason: 'and the workout clock');
+    expect(after.isPaused, isFalse);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

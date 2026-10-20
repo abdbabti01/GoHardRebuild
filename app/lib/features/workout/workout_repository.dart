@@ -46,16 +46,26 @@ class WorkoutRepository {
     return rec == null ? null : WorkoutRuntime(jsonDecode(rec.body) as Json);
   }
 
-  Future<void> saveRuntime(String workoutId, WorkoutRuntime runtime) => _sync.putLocal(_owner, LocalWrite(Kinds.runtime, workoutId, runtime.j));
+  /// Runtime writes run one after another: a read-then-write below can never interleave with another write and put
+  /// back what that write replaced (a draft save once restored the previous exercise over a newer selection).
+  Future<void> _runtimeWrites = Future.value();
+  Future<void> _inTurn(Future<void> Function() write) {
+    final done = _runtimeWrites.then((_) => write());
+    _runtimeWrites = done.catchError((Object _) {});
+    return done;
+  }
+
+  Future<void> _put(String workoutId, WorkoutRuntime runtime) => _sync.putLocal(_owner, LocalWrite(Kinds.runtime, workoutId, runtime.j));
+  Future<void> saveRuntime(String workoutId, WorkoutRuntime runtime) => _inTurn(() => _put(workoutId, runtime));
 
   /// Saves one exercise's typed entry into the stored runtime and changes nothing else, so a draft saved as the
-  /// panel closes can never undo a park, resume or finish made meanwhile. Nothing is written for a workout that has
-  /// no runtime any more (finished or removed).
-  // ponytail: read-then-write, not one transaction; both run on the one local database in order, add a transaction if a second isolate ever writes runtimes.
-  Future<void> saveDraft(String workoutId, String exerciseId, EntryDraft draft) async {
-    final r = await runtime(workoutId);
-    if (r != null) await saveRuntime(workoutId, r.withDraft(exerciseId, draft));
-  }
+  /// panel closes can never undo a park, resume, selection or finish made meanwhile. Nothing is written for a workout
+  /// that has no runtime any more (finished or removed).
+  // ponytail: in-turn on this repository only; add a transaction if a second isolate ever writes runtimes.
+  Future<void> saveDraft(String workoutId, String exerciseId, EntryDraft draft) => _inTurn(() async {
+        final r = await runtime(workoutId);
+        if (r != null) await _put(workoutId, r.withDraft(exerciseId, draft));
+      });
 
   /// The single foreground workout: open and not saved for later.
   Future<Workout?> foreground() async {
@@ -73,15 +83,15 @@ class WorkoutRepository {
   }
 
   /// Saved for later: timing and rest are frozen and the workout stays open and recoverable.
-  Future<void> park(String workoutId) async {
-    final r = await runtime(workoutId) ?? WorkoutRuntime.started(_clock.utcNow());
-    await saveRuntime(workoutId, r.paused(_clock.utcNow(), park: true));
-  }
+  Future<void> park(String workoutId) => _inTurn(() async {
+        final r = await runtime(workoutId) ?? WorkoutRuntime.started(_clock.utcNow());
+        await _put(workoutId, r.paused(_clock.utcNow(), park: true));
+      });
 
-  Future<void> bringToForeground(String workoutId) async {
-    final r = await runtime(workoutId) ?? WorkoutRuntime.started(_clock.utcNow());
-    await saveRuntime(workoutId, r.resumed(_clock.utcNow()));
-  }
+  Future<void> bringToForeground(String workoutId) => _inTurn(() async {
+        final r = await runtime(workoutId) ?? WorkoutRuntime.started(_clock.utcNow());
+        await _put(workoutId, r.resumed(_clock.utcNow()));
+      });
 
   // ------------------------------------------------------------------ start
 
