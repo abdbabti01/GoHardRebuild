@@ -1918,3 +1918,6 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
 - **Not verified:** a physical iPhone.
 - CI run 111 on `18588e7`: **passed** (api, app). Unsigned IPA run 41 on `fix/workout-exercise-switch` (`18588e7`),
   artifact `GoHard-Dev-unsigned-ipa`: **passed**. `main`, Railway and the owner-video branch unchanged.
+- Verified on the user's iPhone with IPA 41 (user report, 19 Oct 2026). Follow-up: `journey_test` now checks that Bench
+  press is in the selected movement's panel after Next (it used to accept the All movements row); `flutter analyze`
+  clean, `workout_panel_test` passed. That journey was not rerun on the emulator (test-only change; user did not ask).

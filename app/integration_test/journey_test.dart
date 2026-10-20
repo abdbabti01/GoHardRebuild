@@ -150,7 +150,8 @@ void main() {
     await waitFor(tester, find.byKey(const Key('set-row-3')));
     await shot(tester, '09-workout-target-reached-extra-set');
     await tapKey(tester, 'next-exercise'); // the deliberate transition
-    await waitFor(tester, find.text('Bench press'));
+    // In the selected movement's panel: All movements always lists Bench press, so the text alone proves nothing.
+    await waitFor(tester, find.descendant(of: find.byKey(const Key('workout-exercise-panel')), matching: find.text('Bench press')), what: 'Bench press as the selected movement');
 
     // --- Partial finish: honest result, one credit.
     await tapKey(tester, 'finish-workout');
