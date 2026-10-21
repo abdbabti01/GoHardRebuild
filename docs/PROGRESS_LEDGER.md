@@ -2063,3 +2063,8 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   docs/evidence/localization/native.
 - **Not reviewed by a fluent French or Arabic speaker.** Not verified on a physical phone. Hosted API: deploy needed only
   for French/Arabic AI replies. Not merged; Railway, Cloudflare and exercise-video work untouched.
+- CI run 125 on `d02b475`: attempt 1 failed one test (`coach_companion_test` › "no replay…", the CI-only flake seen on
+  19 Oct; it passes locally in both full runs), attempt 2 **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39606994744). Unsigned IPA run 47 on
+  `feature/localization-fr-ar` (`d02b475`), artifact `GoHard-Dev-unsigned-ipa`: **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39607063020).
