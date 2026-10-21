@@ -2087,3 +2087,6 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   deleted through the API. TalkBack on the emulator was switched off for the scripted taps and restored. Evidence in
   docs/evidence/branding/{renders,device}/{before,after}.
 - **Not verified:** iPhone (icon and launch screen are compiled only). Not merged.
+- CI run 127 on `c5c5e7d`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39669382810). Unsigned
+  IPA run 48 on `feature/original-branding` (`c5c5e7d`), artifact `GoHard-Dev-unsigned-ipa`: **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39669435464).
