@@ -216,7 +216,8 @@ class TabHeader extends StatelessWidget {
               Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(overline!, style: context.sansStyle(15, color: onBackdrop ? context.c.text : context.c.secondary, weight: FontWeight.w500))),
-            Heading(title, size: 44, serif: true),
+            // A one-word title too long for the line ("Aujourd'hui" at large text) gets smaller rather than break mid-word.
+            FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart, child: Heading(title, size: 44, serif: true)),
           ]),
         ),
         if (trailing != null) Padding(padding: const EdgeInsetsDirectional.only(start: 8), child: trailing),

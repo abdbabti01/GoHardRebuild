@@ -578,11 +578,15 @@ class _Dial extends StatelessWidget {
           width: size, height: size,
           decoration: BoxDecoration(shape: BoxShape.circle, color: panel.page, border: Border.all(color: panel.accentSoft, width: size * 0.035)),
           padding: EdgeInsets.all(size * 0.12),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            FittedBox(fit: BoxFit.scaleDown, child: Text(clockText(seconds), style: context.pageTitleStyle(size * 0.27, color: panel.text))),
-            const SizedBox(height: 2),
-            FittedBox(fit: BoxFit.scaleDown, child: Text(context.l10n.runActiveTime, style: context.sansStyle(16, color: panel.secondary))),
-          ]),
+          // The clock and its label scale down together, so a taller script (Arabic) or large text never spills out of the dial.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(clockText(seconds), style: context.pageTitleStyle(size * 0.27, color: panel.text)),
+              const SizedBox(height: 2),
+              Text(context.l10n.runActiveTime, style: context.sansStyle(16, color: panel.secondary)),
+            ]),
+          ),
         ),
       ),
     );

@@ -12,6 +12,7 @@ import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/activity/activity_detail.dart';
 import 'package:gohard_rebuild/features/activity/announcer.dart';
+import 'package:gohard_rebuild/core/language.dart';
 import 'package:gohard_rebuild/features/activity/intervals.dart';
 import 'package:gohard_rebuild/features/activity/location_source.dart';
 import 'package:gohard_rebuild/features/activity/move_prefs.dart';
@@ -36,7 +37,8 @@ import 'ui_support.dart';
 /// Without the flag it does nothing. Recorder states, GPS and steps are SIMULATED fixtures; these are renders of the
 /// Flutter widgets, not captures from a phone (the map is the drawn route: no map key in a widget test).
 const _enabled = bool.fromEnvironment('GOHARD_RENDER');
-const _out = '../docs/evidence/design';
+// With --dart-define=GOHARD_RENDER_LANG=fr or ar the same renders are made in that language, beside the others.
+const _out = renderLanguage == '' ? '../docs/evidence/design' : '../docs/evidence/localization/$renderLanguage/design';
 const _day = '2026-10-11';
 const _plan = IntervalPlan.preset;
 
@@ -51,7 +53,8 @@ class _Rec extends Recorder {
 
 class _Saying extends Announcer {
   @override
-  Cue? build() => const Cue('Walk and recover for 1 minute 30 seconds.', key: 'r', priority: Cue.phase);
+  // In the render's language: the spoken cue is made in the app language at the moment it is said.
+  Cue? build() => Cue(currentL10n.runCueWalk(spokenDuration(90)), key: 'r', priority: Cue.phase);
 }
 
 TrackAnalysis _route(int seconds, int startMs) {
@@ -122,6 +125,7 @@ Future<void> _fonts() async {
   }
   await inter.load();
   await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+  await loadArabicFonts();
   final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
   await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
 }

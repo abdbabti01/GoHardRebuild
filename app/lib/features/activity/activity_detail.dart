@@ -262,7 +262,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           GroupRow(
             title: [phaseName(l, p.phase.kind), if (p.phase.round != null) '${p.phase.round}'].join(' '), icon: p.phase.kind == PhaseKind.run ? Icons.directions_run : Icons.directions_walk,
             tone: p.phase.kind == PhaseKind.run ? Tone.accent : Tone.neutral,
-            subtitle: p.skipped ? l.runEndedEarly(ltr(phaseClock(p.phase.seconds))) : null, value: phaseClock(p.seconds),
+            subtitle: p.skipped ? l.runEndedEarly(phaseClock(p.phase.seconds)) : null, value: phaseClock(p.seconds),
           ),
       ]),
     ];

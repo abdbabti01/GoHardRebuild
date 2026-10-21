@@ -502,7 +502,7 @@ class _TrainingSection extends ConsumerWidget {
                   child: ExcludeSemantics(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(formatPercent((sets.fraction * 100).round() / 100), style: context.numStyle(21, color: c.accent, weight: FontWeight.w700)),
-                      Text(l.todayRecordedCaption, style: context.sansStyle(14, color: c.secondary)),
+                      FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart, child: Text(l.todayRecordedCaption, style: context.sansStyle(14, color: c.secondary))),
                     ]),
                   ),
                 ),

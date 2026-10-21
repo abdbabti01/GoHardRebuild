@@ -275,7 +275,7 @@ class IntervalBar extends ConsumerWidget {
                   child: ExcludeSemantics(
                     child: Wrap(spacing: 10, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.end, children: [
                       Text(label, key: const Key('runwalk-phase'), style: context.pageTitleStyle(compact ? 24 : 28)),
-                      Text(counting ? '$left' : l.runTimeLeft(ltr(phaseClock(left))), key: const Key('runwalk-phase-left'),
+                      Text(counting ? '$left' : l.runTimeLeft(phaseClock(left)), key: const Key('runwalk-phase-left'),
                           style: context.sansStyle(counting ? 24 : 17, weight: FontWeight.w700, color: counting ? context.c.accent : null)),
                       if (round != null) Text(round, style: context.sansStyle(15, color: context.c.secondary)),
                     ]),
@@ -287,7 +287,7 @@ class IntervalBar extends ConsumerWidget {
               if (!compact) ...[
                 const SizedBox(height: 6),
                 PhaseStrip(plan: plan, current: pos.index),
-                if (next != null) Padding(padding: const EdgeInsets.only(top: 4), child: ExcludeSemantics(child: Text(l.runNextPhase(phaseName(l, next.kind), ltr(phaseClock(next.seconds))), style: context.caption))),
+                if (next != null) Padding(padding: const EdgeInsets.only(top: 4), child: ExcludeSemantics(child: Text(l.runNextPhase(phaseName(l, next.kind), phaseClock(next.seconds)), style: context.caption))),
               ],
             ]),
           ),

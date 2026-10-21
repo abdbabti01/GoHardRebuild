@@ -6,6 +6,7 @@ library;
 import 'dart:math';
 
 import '../../core/language.dart';
+import '../../core/format.dart' show ltr;
 
 enum PhaseKind { warmup, run, walk, cooldown }
 
@@ -124,7 +125,9 @@ String phaseName(AppLocalizations l, PhaseKind k) => switch (k) {
     };
 
 /// "1:30", "5:00", "45 s" for setup and the phase bar.
-String phaseClock(int seconds) => seconds < 60 ? currentL10n.durationSeconds(seconds) : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+/// "40 s" under a minute, else the clock "1:30". Only the clock is isolated left-to-right inside Arabic; a value with an
+/// Arabic unit keeps Arabic order ("40 ث").
+String phaseClock(int seconds) => seconds < 60 ? currentL10n.durationSeconds(seconds) : ltr('${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}');
 
 /// "2 minutes", "1 minute 30 seconds", "45 seconds" for speech and screen readers, in [l] (the resolved language).
 String spokenDuration(int seconds, [AppLocalizations? l]) {

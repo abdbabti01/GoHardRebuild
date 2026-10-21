@@ -23,7 +23,8 @@ import 'ui_support.dart';
 /// Without the flag it does nothing. The food is a FIXTURE (the reference board's illustrative week and month); these
 /// are renders of the Flutter widgets, not captures from a phone.
 const _enabled = bool.fromEnvironment('GOHARD_RENDER');
-const _out = '../docs/evidence/nutrition-trends';
+// With --dart-define=GOHARD_RENDER_LANG=fr or ar the same renders are made in that language, beside the others.
+const _out = renderLanguage == '' ? '../docs/evidence/nutrition-trends' : '../docs/evidence/localization/$renderLanguage/nutrition-trends';
 const _day = '2026-10-19';
 
 Json _f(String id, String day, String meal, String name, num? kcal, [num? protein]) => foodEntry(id, day, meal, name, '1 serving', calories: kcal, protein: protein);
@@ -61,6 +62,7 @@ Future<void> _fonts() async {
   }
   await inter.load();
   await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+  await loadArabicFonts();
   final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
   await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
 }

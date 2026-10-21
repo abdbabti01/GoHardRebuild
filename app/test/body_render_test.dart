@@ -25,7 +25,8 @@ import 'ui_support.dart';
 /// Without the flag it does nothing. The check-ins are FIXTURES (the reference board's illustrative values); these are
 /// renders of the Flutter widgets, not captures from a phone.
 const _enabled = bool.fromEnvironment('GOHARD_RENDER');
-const _out = '../docs/evidence/body-progress';
+// With --dart-define=GOHARD_RENDER_LANG=fr or ar the same renders are made in that language, beside the others.
+const _out = renderLanguage == '' ? '../docs/evidence/body-progress' : '../docs/evidence/localization/$renderLanguage/body-progress';
 const _day = '2026-10-19';
 
 double _lb(double v) => v * kgPerLb;
@@ -67,6 +68,7 @@ Future<void> _fonts() async {
   }
   await inter.load();
   await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+  await loadArabicFonts();
   final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
   await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
 }

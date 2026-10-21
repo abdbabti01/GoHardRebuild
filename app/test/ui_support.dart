@@ -1,12 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
+
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show ByteData, FontLoader;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/app.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/catalog_names.dart';
 import 'package:gohard_rebuild/core/clock.dart';
 import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/theme.dart';
@@ -78,14 +82,32 @@ const phoneInsets = EdgeInsets.only(top: 47, bottom: 34);
 
 /// Pumps `home` inside the app's real themes, driven by the appearance provider exactly as GoHardApp does.
 /// [insets] stands for the system's safe-area insets (none by default; [phoneInsets] for a notched phone).
+/// The language a render run is made in (`--dart-define=GOHARD_RENDER_LANG=fr` or `ar`); empty for English.
+const renderLanguage = String.fromEnvironment('GOHARD_RENDER_LANG');
+
+/// The bundled Arabic fonts, for renders (the app registers them through pubspec.yaml).
+Future<void> loadArabicFonts() async {
+  Future<ByteData> f(String n) => File('assets/fonts/$n.ttf').readAsBytes().then((b) => ByteData.view(b.buffer));
+  final sans = FontLoader('IBM Plex Sans Arabic');
+  for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+    sans.addFont(f('IBMPlexSansArabic-$w'));
+  }
+  await sans.load();
+  await (FontLoader('Noto Naskh Arabic')..addFont(f('NotoNaskhArabic-SemiBold'))).load();
+}
+
 Future<ProviderContainer> pumpApp(WidgetTester tester, List<Override> overrides,
     {Widget home = const HomeShell(), Size size = const Size(390, 844), double textScale = 1, bool settle = true, EdgeInsets insets = EdgeInsets.zero}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   tester.view.padding = tester.view.viewPadding = FakeViewPadding(left: insets.left, top: insets.top, right: insets.right, bottom: insets.bottom);
   addTearDown(tester.view.reset);
-  final container = ProviderContainer(overrides: overrides, retry: (_, _) => null);
+  final container = ProviderContainer(overrides: [
+    ...overrides,
+    if (renderLanguage != '') exerciseNamesProvider.overrideWithValue(ExerciseNames.parse(File('assets/data/exercise-names.l10n.json').readAsStringSync())),
+  ], retry: (_, _) => null);
   addTearDown(container.dispose);
+  if (renderLanguage != '') container.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(renderLanguage == 'fr' ? 'fr-CA' : renderLanguage));
   await tester.pumpWidget(RepaintBoundary(
     key: const Key('shot'),
     child: UncontrolledProviderScope(

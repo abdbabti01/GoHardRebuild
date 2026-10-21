@@ -41,7 +41,8 @@ import 'package:gohard_rebuild/core/language.dart';
 /// has a notched phone's safe-area insets (47 px status bar, 34 px home indicator), so the placement shows. These are
 /// renders of the Flutter widgets, not captures from a phone: they show layout and colour, not device behaviour.
 const _enabled = bool.fromEnvironment('GOHARD_RENDER');
-const _out = '../docs/evidence/design';
+// With --dart-define=GOHARD_RENDER_LANG=fr or ar the same renders are made in that language, beside the others.
+const _out = renderLanguage == '' ? '../docs/evidence/design' : '../docs/evidence/localization/$renderLanguage/design';
 const _today = '2026-10-11';
 
 Future<void> _loadFonts() async {
@@ -51,6 +52,7 @@ Future<void> _loadFonts() async {
   }
   await inter.load();
   await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+  await loadArabicFonts();
   final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
   await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
 }
@@ -197,6 +199,15 @@ Future<void> _open(WidgetTester tester, String screen) async {
     case 'workout-result':
       ProviderScope.containerOf(tester.element(find.byType(HomeShell))).read(shellProvider.notifier).openWorkout(const WorkoutFocus.session('w-done'));
       await tester.pumpAndSettle();
+    case 'builder-availability' || 'builder-structure':
+      // A new account's plan builder: the template path, three days a week, then the suggested templates.
+      await tap('nav-train');
+      await tap('train-plan');
+      await tap('create-plan');
+      await tap('plan-path-direct');
+      await tap('plan-path-template');
+      await tap('days-3');
+      if (screen == 'builder-structure') await tap('builder-next');
     case 'eat':
       await tap('nav-eat');
     case 'run':
@@ -493,6 +504,9 @@ void main() {
     'large-text-workout-recording-320': ((t) => _workoutPanel(t, Accent.pink, ThemeMode.dark, inProgress: true), 'workout-recording', const Size(320, 4800), 2),
     'new-account-today': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'today', const Size(390, 844), 1),
     'new-account-plan': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'train-plan', const Size(390, 844), 1),
+    'builder-availability-light': ((t) async => [...(await t.runAsync(() => overridesFor(day: _today)))!, dbProvider.overrideWithValue(AppDb(NativeDatabase.memory())), transportProvider.overrideWithValue(FakeServer()..offline = true)], 'builder-availability', const Size(390, 1400), 1),
+    'builder-structure-light': ((t) async => [...(await t.runAsync(() => overridesFor(day: _today)))!, dbProvider.overrideWithValue(AppDb(NativeDatabase.memory())), transportProvider.overrideWithValue(FakeServer()..offline = true)], 'builder-structure', const Size(390, 1600), 1),
+    'large-text-builder-availability-320': ((t) async => [...(await t.runAsync(() => overridesFor(day: _today)))!, dbProvider.overrideWithValue(AppDb(NativeDatabase.memory())), transportProvider.overrideWithValue(FakeServer()..offline = true)], 'builder-availability', const Size(320, 3200), 2),
     'new-account-eat': ((t) async => (await t.runAsync(() => overridesFor(day: _today)))!, 'eat', const Size(390, 1000), 1),
   };
   // Today over the weather scenes, with fixed fake conditions for a selected city: the scene changes, nothing else.

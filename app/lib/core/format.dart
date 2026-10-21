@@ -19,6 +19,10 @@ String get _loc {
   return Intl.canonicalizedLocale(currentLocale.toLanguageTag());
 }
 
+/// Western digits in every language, the app's one numeral choice; flutter_localizations' Arabic date data would
+/// otherwise write Arabic-Indic digits in dates only.
+DateFormat _f(DateFormat f) => f..useNativeDigits = false;
+
 DateTime _date(String dayKey) {
   final d = parseDayKey(dayKey);
   return DateTime(d.year, d.month, d.day);
@@ -31,22 +35,22 @@ int weekdayOf(String dayKey) => parseDayKey(dayKey).weekday;
 DateTime _isoDay(int iso) => DateTime(2024, 1, iso);
 
 /// "Monday", "lundi", "الاثنين".
-String weekdayName(int iso) => DateFormat.EEEE(_loc).format(_isoDay(iso));
+String weekdayName(int iso) => _f(DateFormat.EEEE(_loc)).format(_isoDay(iso));
 
 /// "Mon", "lun.", "الاثنين" (Arabic has no shorter written form).
-String weekdayShort(int iso) => DateFormat.E(_loc).format(_isoDay(iso));
+String weekdayShort(int iso) => _f(DateFormat.E(_loc)).format(_isoDay(iso));
 
 /// One letter for a narrow column header: "M", "L", "ن".
-String weekdayNarrow(int iso) => DateFormat.EEEEE(_loc).format(_isoDay(iso));
+String weekdayNarrow(int iso) => _f(DateFormat.EEEEE(_loc)).format(_isoDay(iso));
 
 /// "Friday, October 9", "vendredi 9 octobre", "الجمعة، 9 أكتوبر".
-String longDate(String dayKey) => DateFormat.MMMMEEEEd(_loc).format(_date(dayKey));
+String longDate(String dayKey) => _f(DateFormat.MMMMEEEEd(_loc)).format(_date(dayKey));
 
 /// "Fri, Oct 9", "ven. 9 oct.", "الجمعة، 9 أكتوبر".
-String shortDate(String dayKey) => DateFormat.MMMEd(_loc).format(_date(dayKey));
+String shortDate(String dayKey) => _f(DateFormat.MMMEd(_loc)).format(_date(dayKey));
 
 /// "Oct 9, 2026", "9 oct. 2026".
-String dayMonthYear(String dayKey) => DateFormat.yMMMd(_loc).format(_date(dayKey));
+String dayMonthYear(String dayKey) => _f(DateFormat.yMMMd(_loc)).format(_date(dayKey));
 
 /// "1:05:09" or "5:09". Digits keep this order in every language.
 String clockText(int seconds) {
@@ -65,16 +69,16 @@ String durationText(int seconds) {
 }
 
 /// "Oct", "oct.", "أكتوبر"
-String monthShort(int month) => DateFormat.MMM(_loc).format(DateTime(2024, month));
+String monthShort(int month) => _f(DateFormat.MMM(_loc)).format(DateTime(2024, month));
 
 /// "October", "octobre", "أكتوبر"
-String monthName(int month) => DateFormat.MMMM(_loc).format(DateTime(2024, month));
+String monthName(int month) => _f(DateFormat.MMMM(_loc)).format(DateTime(2024, month));
 
 /// "October 2026", "octobre 2026"
-String monthYear(int year, int month) => DateFormat.yMMMM(_loc).format(DateTime(year, month));
+String monthYear(int year, int month) => _f(DateFormat.yMMMM(_loc)).format(DateTime(year, month));
 
 /// "Oct 9", "9 oct.", "9 أكتوبر"
-String dayMonth(String dayKey) => DateFormat.MMMd(_loc).format(_date(dayKey));
+String dayMonth(String dayKey) => _f(DateFormat.MMMd(_loc)).format(_date(dayKey));
 
 /// The decimal mark of the app language in an ASCII number ("82.5" → "82,5" in French). Display only.
 String localDecimal(String ascii) => currentLocale.languageCode == 'fr' ? ascii.replaceAll('.', ',') : ascii;

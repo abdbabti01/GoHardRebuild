@@ -244,8 +244,9 @@ class GoNavigationBar extends StatelessWidget {
                             // Train's dumbbell lies flat, as in the approved boards (the Material glyph is drawn diagonally).
                             Transform.rotate(angle: i == 1 ? -math.pi / 4 : 0, child: Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? c.accent : c.secondary)),
                             const SizedBox(height: 4),
-                            Text(_label(l, item.$1), maxLines: 1, overflow: TextOverflow.ellipsis,
-                                style: context.sansStyle(12.5, color: i == currentIndex ? c.accent : c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500)),
+                            // A longer name ("Entraînement") gets smaller rather than cut, so every destination stays readable.
+                            FittedBox(fit: BoxFit.scaleDown, child: Text(_label(l, item.$1), maxLines: 1,
+                                style: context.sansStyle(12.5, color: i == currentIndex ? c.accent : c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500))),
                           ]),
                         ),
                       ),

@@ -26,7 +26,8 @@ import 'ui_support.dart';
 /// Without the flag it does nothing. FIXTURES, not phone captures: an "Upper body A" plan with bench press at 190 lb
 /// (3 × 6–8), two complete sessions of 3 × 8 at 190 lb (16 and 19 Oct) and a 5 lb increment.
 const _enabled = bool.fromEnvironment('GOHARD_RENDER');
-const _out = '../docs/evidence/progression';
+// With --dart-define=GOHARD_RENDER_LANG=fr or ar the same renders are made in that language, beside the others.
+const _out = renderLanguage == '' ? '../docs/evidence/progression' : '../docs/evidence/localization/$renderLanguage/progression';
 const _day = '2026-10-20', _pid = '8b2c3d4e-5f60-4a71-8b92-a3b4c5d6e7f8', _wid = 'upper-a';
 final _target = ProgressionRules.round3(loadInputToKg(190, LoadUnit.lb));
 
@@ -109,6 +110,7 @@ Future<void> _fonts() async {
   }
   await inter.load();
   await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+  await loadArabicFonts();
   final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
   await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
 }
