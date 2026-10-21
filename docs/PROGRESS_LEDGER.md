@@ -2068,3 +2068,22 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39606994744). Unsigned IPA run 47 on
   `feature/localization-fr-ar` (`d02b475`), artifact `GoHard-Dev-unsigned-ipa`: **passed**
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39607063020).
+
+## 21 Oct 2026 — Original GoHard branding (`feature/original-branding`)
+
+- Base: `main` at `f4a1eb5`. Spec: GoHard_Original_Branding_Claude_Handoff (step 1 only: branding; no auth, signing,
+  backend or deploy changes). Bundle/application IDs, display names, signing, Maps config and account storage untouched.
+- What: the original GH/lightning badge (GoHardAPP `357a8b3`, unchanged masters in `design/brand/`) as the iOS and
+  Android app icons (adaptive icon keeps the whole badge inside every mask), on the iOS and Android launch screens
+  (warm-light/dark page colours, following the phone's appearance), and as a 44 dp badge beside the wordmark on
+  sign-in / create account. The header GH mark is the same shape, now cropped to the glyph. docs/BRANDING.md has the
+  derivations and `scripts/build-brand-assets.ps1` regenerates everything; `crypto` 3.0.7 pinned as a dev dependency.
+- Checks: `flutter analyze` no issues; `brand_test` (5) plus `widget`, `localization`, `l10n_shell`, `today_ui`,
+  `weather_contrast`, `session_refresh`, `theme` — 112 passed. Renders (fixtures) of sign-in, create account and the
+  update notice in en/fr/ar, light/dark, 320 px at 2× text; Today header in six themes and over weather.
+- Native (Android emulator, debug build installed as an update over the existing install): app drawer icon, cold launch
+  (Android 12+ splash) in OS light and dark, sign-in, registration, French → Arabic switch, OS dark switch, Today header
+  in OS light and dark. A disposable local account (brand-check-1021@example.test) was created for the header and then
+  deleted through the API. TalkBack on the emulator was switched off for the scripted taps and restored. Evidence in
+  docs/evidence/branding/{renders,device}/{before,after}.
+- **Not verified:** iPhone (icon and launch screen are compiled only). Not merged.

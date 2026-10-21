@@ -11,8 +11,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/app/app.dart' show UpdateRequiredScreen;
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/features/auth/auth_screen.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/sync.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
@@ -532,6 +534,27 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox()); // stops an open run screen's display timer
     });
+  }
+
+  // The original badge where the app shows its brand (docs/BRANDING.md): sign-in, registration and the update notice.
+  // The header's GH mark is in every tab render above.
+  for (final (mode, accent) in [(ThemeMode.light, Accent.blue), (ThemeMode.dark, Accent.pink)]) {
+    for (final (name, home, size, scale) in [
+      ('sign-in', const AuthScreen(), const Size(390, 844), 1.0),
+      ('register', const AuthScreen(), const Size(390, 844), 1.0),
+      ('update-notice', const UpdateRequiredScreen(), const Size(390, 844), 1.0),
+      if (mode == ThemeMode.light) ('sign-in-large-text-320', const AuthScreen(), const Size(320, 1900), 2.0),
+    ]) {
+      testWidgets('brand: $name ${mode.name}', (tester) async {
+        await pumpApp(tester, await _fixture(tester, accent, mode), home: home, size: size, textScale: scale, insets: phoneInsets);
+        if (name == 'register') {
+          await tester.tap(find.byKey(const Key('auth-toggle')));
+          await tester.pumpAndSettle();
+        }
+        await _save(tester, await _capture(tester), 'brand-$name-${mode.name}');
+        expect(tester.takeException(), isNull);
+      });
+    }
   }
 }
 

@@ -2,4 +2,6 @@
 <resources>
     <!-- The app's light page colour, shown while the app starts so there is no white flash before the first frame. -->
     <color name="launch_background">#F6F6F4</color>
+    <!-- Behind the adaptive launcher icon's foreground: the original badge's own black, in both modes. -->
+    <color name="ic_launcher_background">#000000</color>
 </resources>

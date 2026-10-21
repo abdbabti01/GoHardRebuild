@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The original GoHard badge on black (scripts/build-brand-assets.ps1, docs/BRANDING.md). The foreground keeps the
+     whole badge inside the 72 dp viewport, so no launcher mask cuts the GH. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

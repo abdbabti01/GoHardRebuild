@@ -1091,11 +1091,21 @@ class EmptyState extends StatelessWidget {
       );
 }
 
-/// The GH mark takes the foreground colour of the surface it sits on.
+/// The GH mark takes the foreground colour of the surface it sits on. Brand artwork: never mirrored in Arabic.
+/// The image is cropped to the glyph (docs/BRANDING.md), so [height] is the glyph's own height.
 class GhMark extends StatelessWidget {
-  const GhMark({super.key, this.height = 22});
+  const GhMark({super.key, this.height = 19});
   final double height;
   @override
   Widget build(BuildContext context) =>
       Image.asset('assets/images/evening-gh-mark.png', height: height, color: context.c.text, semanticLabel: context.l10n.brandName);
+}
+
+/// The original GoHard badge in full colour: opaque artwork, so it is never tinted. It sits beside the GoHard name,
+/// which is what screen readers read, so the badge itself is left out of the reading order.
+class BrandBadge extends StatelessWidget {
+  const BrandBadge({super.key, this.width = 44});
+  final double width;
+  @override
+  Widget build(BuildContext context) => Image.asset('assets/images/gohard-badge.png', width: width, excludeFromSemantics: true);
 }

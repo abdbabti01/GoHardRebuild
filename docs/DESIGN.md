@@ -8,7 +8,8 @@ Today, Train › Plan, Eat, Me, Add food, the portion form, Appearance; shown in
 Momentum" (12–13 October 2026), whose structure it keeps. The references are concepts with sample data; where they
 and real data, accessibility or truthfulness disagree, the app follows the latter, and the differences are listed at
 the end. Weather behaviour, provider and limits: `docs/WEATHER.md`. French and Arabic (Arabic fonts, line height,
-right-to-left layout and what is never mirrored): `docs/LOCALIZATION.md`.
+right-to-left layout and what is never mirrored): `docs/LOCALIZATION.md`. The original GoHard logo (app icons, launch
+screens, the sign-in badge, the header GH mark) and how its images are made: `docs/BRANDING.md`.
 
 ## Where things live
 
@@ -16,6 +17,7 @@ right-to-left layout and what is never mirrored): `docs/LOCALIZATION.md`.
 |---|---|
 | Colour tokens, type, radii, targets, motion, `ThemeData` | `app/lib/core/theme.dart` |
 | Accent + mode preference, saved on the device | `app/lib/core/appearance.dart` |
+| Brand images (`GhMark` one-colour mark, `BrandBadge` full-colour badge) | `app/lib/core/widgets.dart`, docs/BRANDING.md |
 | Shared components (buttons, Pressable, tab header, icon tile, group card and rows, sheet, segmented control, pass, rail, page) | `app/lib/core/widgets.dart` |
 | Motion and haptics preference, the `Haptics` helper | `app/lib/core/device_prefs.dart` |
 | Week tiles, day strip, state pills | `app/lib/features/plans/week_widgets.dart` |

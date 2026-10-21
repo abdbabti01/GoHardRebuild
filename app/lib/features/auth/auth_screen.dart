@@ -66,8 +66,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           padding: EdgeInsets.fromLTRB(context.inset, 28, context.inset, 28),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            // The wordmark in the serif, then the page title.
-            Center(child: Text(l.brandName, style: context.pageTitleStyle(34, color: context.c.accent))),
+            // The badge and the wordmark in the serif, then the page title.
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const BrandBadge(),
+              const SizedBox(width: 12),
+              Flexible(child: Text(l.brandName, style: context.pageTitleStyle(34, color: context.c.accent))),
+            ]),
             const SizedBox(height: 22),
             Heading(_register ? l.authCreateAccountTitle : l.authWelcomeBack, size: 40, serif: true),
             const SizedBox(height: 8),

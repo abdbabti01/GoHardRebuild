@@ -39,6 +39,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   sqlite3: ^3.7.0
+  crypto: 3.0.7
 
 flutter:
   uses-material-design: true
