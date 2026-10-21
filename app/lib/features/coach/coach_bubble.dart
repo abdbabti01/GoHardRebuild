@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart' show ownerProvider;
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import 'coach_avatar.dart';
@@ -44,11 +45,13 @@ class CoachSay {
 /// at large text. With [announce] it is read out once as it appears (an introduction); it never takes focus.
 /// [revealed] (0..1) fades it in as the guide settles; it is neither visible nor in the semantics tree before that.
 class CoachBubble extends StatelessWidget {
-  const CoachBubble({super.key, required this.say, this.announce = false, this.onClose, this.closeLabel = 'Close', this.closeKey = const Key('coach-say-close'), this.revealed, this.onAsk});
+  const CoachBubble({super.key, required this.say, this.announce = false, this.onClose, this.closeLabel, this.closeKey = const Key('coach-say-close'), this.revealed, this.onAsk});
   final CoachSay say;
   final bool announce;
   final VoidCallback? onClose;
-  final String closeLabel;
+
+  /// Default: Close, in the app's language.
+  final String? closeLabel;
   final Key closeKey;
   final ValueListenable<double>? revealed;
 
@@ -60,6 +63,7 @@ class CoachBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final l = context.l10n;
     final s = say;
     final open = s.onAsk ?? (s.ask == null ? null : () => openAskGoHard(context, s.ask!));
     final ask = open == null
@@ -78,7 +82,7 @@ class CoachBubble extends StatelessWidget {
       children: [
         if (s.title != null)
           Padding(
-            padding: EdgeInsets.only(right: closeRoom),
+            padding: EdgeInsetsDirectional.only(end: closeRoom),
             child: Text(
               s.title!,
               key: const Key('coach-say-title'),
@@ -86,7 +90,7 @@ class CoachBubble extends StatelessWidget {
             ),
           ),
         Padding(
-          padding: EdgeInsets.only(right: s.title == null ? closeRoom : 0),
+          padding: EdgeInsetsDirectional.only(end: s.title == null ? closeRoom : 0),
           child: Text.rich(
             TextSpan(
               children: [
@@ -101,7 +105,7 @@ class CoachBubble extends StatelessWidget {
                     // The paragraph already scales its inline widgets by the text size: not twice.
                     child: ExcludeSemantics(
                       child: Text(
-                        'Ask me ›',
+                        l.coachAskMeInline,
                         softWrap: false,
                         textScaler: TextScaler.noScaling,
                         style: context.sansStyle(15, color: c.accent, weight: FontWeight.w600),
@@ -121,15 +125,15 @@ class CoachBubble extends StatelessWidget {
             child: Wrap(spacing: 4, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
               PrimaryButton(p.label, key: p.key, expand: false, onPressed: p.onPressed),
               if (ask != null)
-                TextButton(key: const Key('coach-say-ask'), style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: ask, child: const Text('Ask me')),
+                TextButton(key: const Key('coach-say-ask'), style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: ask, child: Text(l.coachAskMe)),
               if (s.guide case final g?)
                 TextButton(key: g.key, style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: g.onPressed, child: Text(g.label)),
             ]),
           )
         else if (!inline && (ask != null || s.guide != null))
-          // The first button's label starts at the words' left edge (its padding hangs into the bubble's margin).
+          // The first button's label starts at the words' starting edge (its padding hangs into the bubble's margin).
           Transform.translate(
-            offset: const Offset(-8, 0),
+            offset: Offset(context.isRtl ? 8 : -8, 0),
             child: Wrap(
               spacing: 4,
               children: [
@@ -138,7 +142,7 @@ class CoachBubble extends StatelessWidget {
                     key: const Key('coach-say-ask'),
                     style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(Targets.minimum, Targets.minimum)),
                     onPressed: ask,
-                    child: const Text('Ask me'),
+                    child: Text(l.coachAskMe),
                   ),
                 if (s.guide case final g?)
                   TextButton(
@@ -161,7 +165,7 @@ class CoachBubble extends StatelessWidget {
       // One button the size of the bubble (at least 48 px high), read as its words and "Ask me".
       content = Semantics(
         button: true,
-        hint: 'Ask me',
+        hint: l.coachAskMe,
         child: InkWell(
           key: const Key('coach-say-ask'),
           customBorder: shape,
@@ -186,12 +190,12 @@ class CoachBubble extends StatelessWidget {
             content,
             // In the corner, over the bubble's own padding: it takes no line of its own.
             if (onClose != null)
-              Positioned(
+              PositionedDirectional(
                 top: 0,
-                right: 0,
+                end: 0,
                 child: IconButton(
                   key: closeKey,
-                  tooltip: closeLabel,
+                  tooltip: closeLabel ?? l.actionClose,
                   onPressed: onClose,
                   constraints: const BoxConstraints.tightFor(width: Targets.minimum, height: Targets.minimum),
                   icon: Icon(Icons.close_rounded, size: 18, color: c.secondary),
@@ -222,7 +226,9 @@ class CoachBubble extends StatelessWidget {
 /// guide whatever the head is doing, for either guide, any text length and any width. The portrait's empty side
 /// (beyond the muzzle) tucks under the bubble's edge, so only a small deliberate gap is left between the words and the
 /// face. [frame] picks the side: [RigFrame.edge] puts the guide on the right, leaning in from past the right edge by
-/// [bleed] (Today's screen edge); [RigFrame.inline] puts it on the left, whole.
+/// [bleed] (Today's screen edge); [RigFrame.inline] puts it on the left, whole. Right to left the guide is on the left
+/// in both, as painted (facing its words), [RigFrame.edge] leaning in from past the left edge: the artwork is never
+/// flipped, and the tail, the mouth and the gaze are worked out from where things really are.
 ///
 /// The guide's portrait is the Ask GoHard launcher when [onAvatarTap] is given (a button named for what it opens); otherwise
 /// it is decorative. The bubble's words stay put while the guide moves.
@@ -239,7 +245,7 @@ class CoachSpeech extends ConsumerStatefulWidget {
     this.announce = false,
     this.onGreeted,
     this.onClose,
-    this.closeLabel = 'Close',
+    this.closeLabel,
     this.onAvatarTap,
     this.onAsk,
     this.avatarLabel,
@@ -254,7 +260,7 @@ class CoachSpeech extends ConsumerStatefulWidget {
   final bool greet, attentive, announce;
   final int ack;
   final VoidCallback? onGreeted, onClose, onAvatarTap, onAsk;
-  final String closeLabel;
+  final String? closeLabel;
 
   @override
   ConsumerState<CoachSpeech> createState() => _CoachSpeechState();
@@ -282,15 +288,18 @@ class _CoachSpeechState extends ConsumerState<CoachSpeech> {
   Widget build(BuildContext context) {
     final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
     final art = RigArt.of(guide);
-    final geo = RigGeometry(art, widget.frame, widget.portrait);
-    final right = widget.frame == RigFrame.edge;
+    final rtl = context.isRtl;
+    final edge = widget.frame == RigFrame.edge;
+    final geo = RigGeometry(art, widget.frame, widget.portrait, direction: Directionality.of(context));
+    // Physical sides from here on: the guide is on the right only for an edge guide left to right.
+    final right = edge && !rtl;
     // From the settled pose: the mouth's height in the portrait, and how far the muzzle reaches towards the bubble.
     final mouth = geo.point(art.mouth, RigPose.settled);
     final front = geo.point(Offset(art.front, art.mouth.dy), RigPose.settled);
     final muzzleIn = right ? front.dx : widget.portrait.width - front.dx;
     final under = math.max(0.0, muzzleIn - 10); // the portrait's empty side, under the bubble's edge
     final bubbleTop = math.max(0.0, mouth.dy - _anchor), portraitTop = math.max(0.0, _anchor - mouth.dy);
-    final side = widget.portrait.width - under - (right ? widget.bleed : 0);
+    final side = widget.portrait.width - under - (edge ? widget.bleed : 0);
     Widget face = CoachCompanion(
       guide: guide,
       size: widget.portrait,
@@ -307,7 +316,7 @@ class _CoachSpeechState extends ConsumerState<CoachSpeech> {
         : Semantics(
             container: true,
             button: true,
-            label: widget.avatarLabel ?? 'Ask GoHard: open the conversation with ${guide.label}',
+            label: widget.avatarLabel ?? context.l10n.coachAskOpenWith(guide.displayName(context.l10n)),
             onTap: widget.onAvatarTap,
             child: GestureDetector(
               key: const Key('coach-avatar-launcher'),
@@ -320,9 +329,11 @@ class _CoachSpeechState extends ConsumerState<CoachSpeech> {
     return Stack(
       key: _stack,
       clipBehavior: Clip.none,
+      // A narrow bubble keeps to the guide's side when the guide is on the left right to left (inline, as left to right).
+      alignment: rtl && !edge ? Alignment.topLeft : AlignmentDirectional.topStart,
       children: [
         SizedBox(height: portraitTop + widget.portrait.height, width: double.infinity),
-        Positioned(key: _face, top: portraitTop, width: widget.portrait.width, height: widget.portrait.height, left: right ? null : 0, right: right ? -widget.bleed : null, child: face),
+        Positioned(key: _face, top: portraitTop, width: widget.portrait.width, height: widget.portrait.height, left: right ? null : (edge ? -widget.bleed : 0), right: right ? -widget.bleed : null, child: face),
         Padding(
           padding: EdgeInsets.only(top: bubbleTop, left: right ? 0 : side, right: right ? side : 0),
           child: KeyedSubtree(
@@ -428,11 +439,11 @@ class _TailPainter extends CustomPainter {
 /// is simply there, settled and ready to tap. Where it can answer (Ask me), the guide's portrait opens Ask GoHard too.
 /// Used by [CoachSpot] and [showCoachHelpSheet].
 class CoachSpeaker extends StatelessWidget {
-  const CoachSpeaker({super.key, required this.say, this.introduce = false, this.onClose, this.closeLabel = 'Close'});
+  const CoachSpeaker({super.key, required this.say, this.introduce = false, this.onClose, this.closeLabel});
   final CoachSay say;
   final bool introduce;
   final VoidCallback? onClose;
-  final String closeLabel;
+  final String? closeLabel;
 
   static const portrait = Size(62, 72);
 
@@ -461,7 +472,7 @@ class CoachAskLauncher extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
-    return CoachHelpButton(key: const Key('coach-ask-launcher'), semanticLabel: 'Ask GoHard: open the conversation with ${guide.label}', onPressed: () => openAskGoHard(context, ask));
+    return CoachHelpButton(key: const Key('coach-ask-launcher'), semanticLabel: context.l10n.coachAskOpenWith(guide.displayName(context.l10n)), onPressed: () => openAskGoHard(context, ask));
   }
 }
 

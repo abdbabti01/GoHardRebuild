@@ -1,5 +1,9 @@
 /// Actual submitted sets decide the result. Targets and prefills never count.
 /// Mirrored from the API's `WorkoutResultRules` and checked against the same fixture.
+library;
+
+import '../../core/language.dart' show AppLocalizations, currentL10n;
+
 class PrescribedExercise {
   const PrescribedExercise(this.exerciseId, this.targetSets);
   final String exerciseId;
@@ -43,11 +47,15 @@ abstract final class WorkoutResultRules {
     return WorkoutResult(isFull ? full : partial, performed.length, exercises, true);
   }
 
-  static String label(String? outcome) => switch (outcome) {
-        full => 'Finished',
-        partial => 'Finished partially',
-        noData => 'No training logged',
-        manualRecorded => 'Recorded',
-        _ => 'In progress',
-      };
+  /// The outcome as shown, in the resolved app language. Prefer [outcomeLabel] where a context is at hand.
+  static String label(String? outcome) => outcomeLabel(currentL10n, outcome);
 }
+
+/// An outcome code as shown; the code itself is what is stored and compared.
+String outcomeLabel(AppLocalizations l, String? outcome) => switch (outcome) {
+      WorkoutResultRules.full => l.workoutOutcomeFull,
+      WorkoutResultRules.partial => l.workoutOutcomePartial,
+      WorkoutResultRules.noData => l.workoutOutcomeNoData,
+      WorkoutResultRules.manualRecorded => l.workoutOutcomeManual,
+      _ => l.workoutOutcomeOpen,
+    };

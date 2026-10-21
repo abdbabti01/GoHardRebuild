@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../core/clock.dart';
 import '../../core/format.dart';
 import '../../core/go_icon.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -14,7 +15,7 @@ import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 import '../shell/home_shell.dart' show shellProvider;
 import 'food_form.dart';
-import 'food_repository.dart' show SavedFood;
+import 'food_repository.dart' show SavedFood, mealLabel;
 import 'log_food_screen.dart';
 import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
@@ -41,11 +42,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
 
   /// Built-in help with the journal. Ask GoHard answers training questions, so nothing here offers to ask it about food.
   /// It explains the saved foods and opens them, on request, at any time.
-  static void _help(BuildContext context, String day) => showCoachHelpSheet(context, title: 'Your food journal', say: CoachSay(
-      'Add food under a meal: search, scan a barcode or enter your own. The totals add up only what you logged. Your daily goals are set from the summary here, on Today or in Me. '
-      'Foods you eat again are saved in Add food: Favourites are foods you starred on their amount page; My foods are foods you wrote or corrected yourself. '
-      'Choosing one only opens its amount: nothing is logged until you confirm it.',
-      guide: (label: 'Open Favourites', key: const Key('eat-help-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))));
+  static void _help(BuildContext context, String day) => showCoachHelpSheet(context, title: context.l10n.eatHelpTitle, say: CoachSay(context.l10n.eatHelpBody,
+      guide: (label: context.l10n.eatOpenFavourites, key: const Key('eat-help-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))));
 
   /// Whether anything was logged on a day before today (food on this phone).
   bool get _pastDays {
@@ -91,44 +89,44 @@ class _EatScreenState extends ConsumerState<EatScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
       }
     }
-    if (_hint == 'eat.history') return const CoachSay('Your past meals and water, by day, week and month, are in History & trends.');
-    if (_hint == 'eat.saved.new') return const CoachSay('Eat the same foods often? Tap the star on a food\'s amount page and it waits under Favourites in Add food.');
+    final l = context.l10n;
+    if (_hint == 'eat.history') return CoachSay(l.eatHintHistory);
+    if (_hint == 'eat.saved.new') return CoachSay(l.eatHintSavedNew);
     if (_hint != 'eat.saved.shortcut') return null;
     final fav = saved.any((s) => s.isFavourite);
-    return CoachSay(fav ? 'Your favourite foods are one tap away. Pick one, check the amount, then log it.' : 'Foods you saved are in My foods. Pick one, check the amount, then log it.',
+    return CoachSay(fav ? l.eatHintFavourites : l.eatHintMine,
         guide: fav
-            ? (label: 'Open Favourites', key: const Key('eat-coach-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))
-            : (label: 'Open My foods', key: const Key('eat-coach-mine'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.mine)));
+            ? (label: l.eatOpenFavourites, key: const Key('eat-coach-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))
+            : (label: l.eatOpenMine, key: const Key('eat-coach-mine'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.mine)));
   }
 
   /// What the coach says on Eat: fixed words chosen from the account's own settings, never from the AI. Water is
   /// mentioned only where it is shown (turned on, and the server keeps it). Words only: Log food and the goals link
   /// are right below it in the summary, so the bubble repeats neither.
-  static CoachSay _say({required Profile? profile, required bool water}) {
+  static CoachSay _say(AppLocalizations l, {required Profile? profile, required bool water}) {
     final hasGoal = profile != null && (profile.calorieGoal != null || profile.proteinGoal != null || profile.waterGoalMl != null);
-    final what = water ? 'Log a meal or some water' : 'Log a meal';
-    return CoachSay(hasGoal ? '$what and see how the day adds up against your goals.' : '$what, or set your daily goals.');
+    return CoachSay(hasGoal ? (water ? l.eatSayGoalWater : l.eatSayGoal) : (water ? l.eatSayNoGoalWater : l.eatSayNoGoal));
   }
 
   /// The portion as it was saved, then the macros that are known, then how the record stands with the account.
-  static String _detail(Stored<FoodEntry> r) {
+  static String _detail(AppLocalizations l, Stored<FoodEntry> r) {
     final e = r.value;
     final macros = [
-      if (e.protein != null) 'P ${formatNumber(e.protein!)} g',
-      if (e.carbs != null) 'C ${formatNumber(e.carbs!)} g',
-      if (e.fat != null) 'F ${formatNumber(e.fat!)} g',
+      if (e.protein != null) l.eatMacroProtein(formatNumber(e.protein!)),
+      if (e.carbs != null) l.eatMacroCarbs(formatNumber(e.carbs!)),
+      if (e.fat != null) l.eatMacroFat(formatNumber(e.fat!)),
     ];
     return [
       e.amountDescription,
-      if (macros.isNotEmpty) macros.join(' · ') else if (e.calories == null) 'No nutrition entered',
-      if (r.needsReview) 'needs review' else if (r.isPending) 'sync pending',
+      if (macros.isNotEmpty) macros.join(' · ') else if (e.calories == null) l.eatNoNutritionEntered,
+      if (r.needsReview) l.eatNeedsReview else if (r.isPending) l.eatSyncPendingShort,
     ].join(' · ');
   }
 
   /// A meal's calories from its own entries: a sum of what is known, labelled when some are unknown.
-  static String _mealCalories(List<FoodEntry> entries) {
+  static String _mealCalories(AppLocalizations l, List<FoodEntry> entries) {
     final t = NutrientCoverage.calculate(entries)[Nutrient.calories]!;
-    return !t.hasAnyKnown ? 'Calories unknown' : '${formatKcal(t.knownTotal)} kcal${t.isComplete ? '' : ' known'}';
+    return !t.hasAnyKnown ? l.eatCaloriesUnknown : t.isComplete ? l.eatKcalValue(formatKcal(t.knownTotal)) : l.eatKcalKnown(formatKcal(t.knownTotal));
   }
 
   @override
@@ -141,6 +139,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final profile = ref.watch(profileProvider).value;
     final display = ref.watch(nutritionDisplayProvider);
     final c = context.c;
+    final l = context.l10n;
 
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
     final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
@@ -159,26 +158,27 @@ class _EatScreenState extends ConsumerState<EatScreen> {
           Padding(
             padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 18),
             child: TabHeader(
-              title: 'Eat', overline: longDate(day),
+              title: l.navEat, overline: longDate(day),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                 // Help with the journal from the same guide: its small avatar here only while the speaking coach is off.
-                if (!coachOn) CoachHelpButton(key: const Key('coach-help-eat'), semanticLabel: 'Help with your food journal', onPressed: () => _help(context, day)),
-                IconButton(tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
-                IconButton(tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
+                if (!coachOn) CoachHelpButton(key: const Key('coach-help-eat'), semanticLabel: l.eatHelpLabel, onPressed: () => _help(context, day)),
+                // In Arabic the row runs right to left and the chevrons mirror: the earlier day stays on the reading-back side.
+                IconButton(tooltip: l.eatPreviousDay, icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _picked = addDays(day, -1))),
+                IconButton(tooltip: l.eatNextDay, icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
               ]),
               below: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                       // Under the date, named: History & trends (charts by week and month, the calendar and the days with entries; the arrows stay for a day
                       // either side) and, on an earlier day, Back to today. They wrap rather than squeeze.
                       Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                        TextButton.icon(key: const Key('eat-history'), onPressed: () => _openHistory(day, today), icon: const GoIcon(GoGlyph.history, size: 20), label: const Text('History & trends')),
+                        TextButton.icon(key: const Key('eat-history'), onPressed: () => _openHistory(day, today), icon: const GoIcon(GoGlyph.history, size: 20), label: Text(l.eatHistoryTrends)),
                         if (day != today)
-                          TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: const Text('Back to today')),
+                          TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: Text(l.eatBackToToday)),
                       ]),
                       if (coachOn)
                         TabCoach(key: const Key('eat-coach'), id: 'eat',
                             say: _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
-                                _say(profile: profile, water: display.water),
-                            avatarLabel: 'Help with your food journal, from ${guide.label}', onAvatarTap: () => _help(context, day)),
+                                _say(l, profile: profile, water: display.water),
+                            avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day)),
                     ]),
             ),
           ),
@@ -186,19 +186,19 @@ class _EatScreenState extends ConsumerState<EatScreen> {
             padding: EdgeInsets.symmetric(horizontal: context.inset),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               if (rows.hasError)
-                const Panel(child: StatusLine(Icons.error_outline, 'Your food journal could not be read from this phone. Pull down to try again.', tone: Tone.error))
+                Panel(child: StatusLine(Icons.error_outline, l.eatJournalReadError, tone: Tone.error))
               else if (!rows.hasValue)
-                const Panel(child: StatusLine(Icons.hourglass_empty, 'Loading your journal…'))
+                Panel(child: StatusLine(Icons.hourglass_empty, l.eatJournalLoading))
               else ...[
                 // The day's summary as a photo panel, with the one general Log food in it.
                 NutritionSurface(
                   entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: day == today ? profile?.calorieGoal : null, proteinGoal: day == today ? profile?.proteinGoal : null, pending: live.any((r) => r.isPending),
                   showCarbs: display.carbs, showFat: display.fat,
                   footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
-                  action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
+                  action: PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
                 ),
                 const SizedBox(height: 28),
-                Heading(day == today ? 'Today\'s meals' : 'Meals', size: 20),
+                Heading(day == today ? l.eatTodaysMeals : l.eatMeals, size: 20),
                 const SizedBox(height: 12),
                 // One quiet group per meal: the meal as its heading (outlined icon, name, what its foods add up to as a
                 // quieter second line), each logged food as its own row, then a small "+ Add food" footer for this meal
@@ -209,24 +209,24 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                     final label = meal.toLowerCase();
                     return GroupCard(children: [
                       Padding(
-                        padding: EdgeInsets.fromLTRB(indent, 14, 16, mine.isEmpty ? 2 : 10),
+                        padding: EdgeInsetsDirectional.fromSTEB(indent, 14, 16, mine.isEmpty ? 2 : 10),
                         child: Row(children: [
                           if (roomy) ...[IconTile(_icons[meal] ?? Icons.restaurant, size: _tile), const SizedBox(width: 12)],
                           Expanded(
                             child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, children: [
-                              Semantics(header: true, child: Text(meal, style: context.sansStyle(18, weight: FontWeight.w700))),
-                              if (mine.isNotEmpty) Text(_mealCalories([for (final r in mine) r.value]), style: context.numStyle(14.5, color: c.secondary, weight: FontWeight.w500)),
+                              Semantics(header: true, child: Text(mealLabel(l, meal), style: context.sansStyle(18, weight: FontWeight.w700))),
+                              if (mine.isNotEmpty) Text(_mealCalories(l, [for (final r in mine) r.value]), style: context.numStyle(14.5, color: c.secondary, weight: FontWeight.w500)),
                             ]),
                           ),
                         ]),
                       ),
-                      for (final r in mine) _EntryRow(r, indent: indent, detail: _detail(r), onTap: () => openFoodForm(context, dayKey: day, entry: r.value)),
-                      _AddFood(key: Key('eat-add-$label'), meal: label, indent: indent, onTap: () => openFoodForm(context, dayKey: day, meal: meal)),
+                      for (final r in mine) _EntryRow(r, indent: indent, detail: _detail(l, r), onTap: () => openFoodForm(context, dayKey: day, entry: r.value)),
+                      _AddFood(key: Key('eat-add-$label'), meal: meal, indent: indent, onTap: () => openFoodForm(context, dayKey: day, meal: meal)),
                     ]);
                   }(),
                   const SizedBox(height: 12),
                 ],
-                Text('Only food you logged as eaten appears here.', style: context.caption),
+                Text(l.eatOnlyLoggedNote, style: context.caption),
               ],
             ]),
           ),
@@ -250,17 +250,17 @@ class _AddFood extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = context.c.accent;
     return Semantics(
-      button: true, label: 'Add food to $meal', excludeSemantics: true,
+      button: true, label: context.l10n.eatAddFoodToMeal(meal), excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: Targets.minimum),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(indent - 2, 4, 12, 6),
+            padding: EdgeInsetsDirectional.fromSTEB(indent - 2, 4, 12, 6),
             child: Row(children: [
               Icon(Icons.add, size: 18, color: accent),
               const SizedBox(width: 6),
-              Flexible(child: Text('Add food', style: context.sansStyle(15, weight: FontWeight.w500, color: accent))),
+              Flexible(child: Text(context.l10n.eatAddFood, style: context.sansStyle(15, weight: FontWeight.w500, color: accent))),
             ]),
           ),
         ),
@@ -283,7 +283,7 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = r.value;
     final name = Text(e.name, style: context.sansStyle(15.5, weight: FontWeight.w500));
-    final kcal = Text('${e.calories == null ? '—' : formatKcal(e.calories!)} kcal', style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
+    final kcal = Text(context.l10n.eatKcalValue(e.calories == null ? '—' : formatKcal(e.calories!)), style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
     return Semantics(
       button: true,
       child: InkWell(
@@ -292,7 +292,7 @@ class _EntryRow extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: Targets.minimum + 8),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(indent, 8, 12, 8),
+            padding: EdgeInsetsDirectional.fromSTEB(indent, 8, 12, 8),
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
@@ -303,7 +303,7 @@ class _EntryRow extends StatelessWidget {
                   Padding(padding: const EdgeInsets.only(top: 1), child: Text(detail, style: context.caption)),
                 ]),
               ),
-              Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.chevron_right, size: 20, color: context.c.secondary)),
+              Padding(padding: const EdgeInsetsDirectional.only(start: 4), child: Icon(Icons.chevron_right, size: 20, color: context.c.secondary)),
             ]),
           ),
         ),

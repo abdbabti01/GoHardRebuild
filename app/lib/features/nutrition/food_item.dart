@@ -1,3 +1,4 @@
+import '../../core/language.dart';
 import '../../core/units.dart';
 import '../../data/models.dart';
 
@@ -232,19 +233,22 @@ abstract final class FoodScaling {
     return extra.isEmpty ? item : FoodItem({...item.j, 'servings': [...[for (final s in item.servings) s.j], ...extra]});
   }
 
-  /// "per 100 g", "per 100 ml", "per 1 jar".
-  static String basisText(FoodItem item) => switch (item.basis) {
-        FoodItem.per100g => 'per 100 g',
-        FoodItem.per100ml => 'per 100 ml',
-        _ => 'per ${item.servings.firstOrNull?.label ?? 'serving'}',
-      };
+  /// "per 100 g", "per 100 ml", "per 1 jar" (the serving's label is its source's), in `l`'s language.
+  static String basisText(FoodItem item, [AppLocalizations? l]) {
+    l ??= currentL10n;
+    return l.foodBasisPer(switch (item.basis) {
+      FoodItem.per100g => '100 g',
+      FoodItem.per100ml => '100 ml',
+      _ => item.servings.firstOrNull?.label ?? l.foodServingFallback,
+    });
+  }
 }
 
-// Digits only, 6 to 14 of them, kept as text. Then Open Food Facts' documented normalization: leading zeros are
-/// dropped and the code padded back to 8 digits (short codes) or 13, so a UPC-A and its EAN-13 form are one
-/// product. Null for anything that is not a product code, such as a web link from a QR code.
+// Digits only (Arabic-Indic digits read as the same digits), 6 to 14 of them, kept as text. Then Open Food Facts'
+/// documented normalization: leading zeros are dropped and the code padded back to 8 digits (short codes) or 13, so
+/// a UPC-A and its EAN-13 form are one product. Null for anything that is not a product code, such as a web link.
 String? normalizeBarcode(String? raw) {
-  final code = (raw ?? '').trim();
+  final code = asciiDigits((raw ?? '').trim());
   if (code.length < 6 || code.length > 14 || !RegExp(r'^\d+$').hasMatch(code)) return null;
   final stripped = code.replaceFirst(RegExp(r'^0+'), '');
   if (stripped.isEmpty) return null;

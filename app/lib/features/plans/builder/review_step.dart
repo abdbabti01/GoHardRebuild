@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/catalog_names.dart';
 import '../../../core/clock.dart';
 import '../../../core/format.dart';
+import '../../../core/language.dart';
 import '../../../core/theme.dart';
 import '../../../core/units.dart';
 import '../../../core/widgets.dart';
@@ -35,7 +37,7 @@ class ReviewStep extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 7),
         child: Wrap(spacing: 12, runSpacing: 2, children: [
           SizedBox(width: 104, child: Text(shortDate(date), style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w500))),
-          Text(title ?? 'Rest', style: title == null ? context.sansStyle(15, color: context.c.secondary) : context.sansStyle(15.5, weight: FontWeight.w600)),
+          Text(title ?? context.l10n.builderRest, style: title == null ? context.sansStyle(15, color: context.c.secondary) : context.sansStyle(15.5, weight: FontWeight.w600)),
         ]),
       );
 
@@ -54,6 +56,8 @@ class ReviewStep extends ConsumerWidget {
     final editingLive = editing != null && !editing!.isDraft;
     final effective = d.effectiveDate ?? today;
     final from = editingLive ? (effective.compareTo(d.startDate) < 0 ? d.startDate : effective) : d.startDate;
+    final l = context.l10n;
+    final exNames = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context);
 
     final schedule = <Widget>[];
     if (!rotating) {
@@ -63,13 +67,13 @@ class ReviewStep extends ConsumerWidget {
       final span = weeks == null ? 14 : (daysBetween(from, addDays(d.startDate, weeks * 7)).clamp(0, 14));
       for (var i = 0; i < span; i++) {
         final date = addDays(from, i);
-        if (i % 7 == 0) schedule.add(Padding(padding: const EdgeInsets.only(top: 10), child: SectionLabel(i == 0 ? (editingLive ? 'From ${shortDate(date)}' : 'First week') : 'Second week')));
+        if (i % 7 == 0) schedule.add(Padding(padding: const EdgeInsets.only(top: 10), child: SectionLabel(i == 0 ? (editingLive ? l.builderFromDate(shortDate(date)) : l.planFirstWeek) : l.builderSecondWeek)));
         schedule.add(_day(context, 'review-day-$date', date, byDate[date]));
       }
       if (end != null) {
         schedule.add(Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text('${occ.length} workouts over ${weeks ?? 0} ${weeks == 1 ? 'week' : 'weeks'}, the last on ${longDate(end)}. The same week repeats until then.', style: context.caption)));
+            child: Text(l.builderReviewSummary(occ.length, l.planWeeksCount(weeks ?? 0), longDate(end)), style: context.caption)));
       }
     } else {
       final cycle = [for (final id in d.schedule.cycle) names[id] ?? '?'];
@@ -77,36 +81,36 @@ class ReviewStep extends ConsumerWidget {
       final plan = Plan({...d.toPlanJson(), if (editing != null) 'occasions': editing!.j['occasions'] ?? const []});
       final next = planOccasions(plan, today, editing == null ? const <Workout>[] : workouts, ahead: 8).where((o) => o.isVirtual).toList();
       schedule
-        ..add(Text('Cycle: ${cycle.join(' → ')}, then it starts again.', style: context.body))
-        ..add(Text(days.isEmpty ? 'Any day can be a training day.' : 'Training days: ${days.map(weekdayShort).join(', ')}.', style: context.caption))
-        ..add(Padding(padding: const EdgeInsets.only(top: 10), child: const SectionLabel('Next workouts if you train on each training day')));
+        ..add(Text(l.builderCycleThenAgain(cycle.join(l.planSequenceArrow)), style: context.body))
+        ..add(Text(days.isEmpty ? l.builderAnyDayTraining : l.builderTrainingDaysDot(days.map(weekdayShort).join(l.planListComma)), style: context.caption))
+        ..add(Padding(padding: const EdgeInsets.only(top: 10), child: SectionLabel(l.builderNextIfTrain)));
       for (final (i, o) in next.indexed) {
         schedule.add(_day(context, 'review-next-$i', o.scheduledDate, o.title));
       }
-      schedule.add(Text('These dates are a projection. A missed day does not skip a workout: the same one waits for your next training day.', style: context.caption));
+      schedule.add(Text(l.builderProjectionNote, style: context.caption));
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Heading(d.title.trim().isEmpty ? 'Untitled plan' : d.title.trim(), size: 30, serif: true),
+      Heading(d.title.trim().isEmpty ? l.builderUntitled : d.title.trim(), size: 30, serif: true),
       const SizedBox(height: 4),
       Text(
         [
-          rotating ? 'Rotating sequence' : 'Fixed weekdays',
-          weeks == null ? 'ongoing' : '$weeks ${weeks == 1 ? 'week' : 'weeks'}',
-          'starts ${longDate(d.startDate)}',
-          if (d.timeBudgetMinutes != null) 'planned time ${d.timeBudgetMinutes} min',
+          rotating ? l.planModeRotating : l.planModeFixed,
+          weeks == null ? l.planOngoingLower : l.planWeeksCount(weeks),
+          l.planStartsOn(longDate(d.startDate)),
+          if (d.timeBudgetMinutes != null) l.builderPlannedTimeLower(d.timeBudgetMinutes!),
         ].join(' · '),
         style: context.caption,
       ),
       if (missing.isNotEmpty) ...[
         const SizedBox(height: 12),
-        StatusLine(Icons.edit_note, 'Draft — add exercises to ${missing.join(', ')} before this plan can be activated.', tone: Tone.warning, key: const Key('review-draft')),
+        StatusLine(Icons.edit_note, l.builderDraftMissing(missing.join(l.planListComma)), tone: Tone.warning, key: const Key('review-draft')),
       ],
       if (replaces != null) ...[
         const SizedBox(height: 12),
         Panel(
           key: const Key('review-replaces'),
-          child: StatusLine(Icons.swap_horiz, 'You are following "${replaces.title}". Activating this plan pauses it. Its history and recorded workouts are kept, and you can resume it later.'),
+          child: StatusLine(Icons.swap_horiz, l.builderFollowingActivate(replaces.title)),
         ),
       ],
       if (editing != null) ...[
@@ -114,39 +118,39 @@ class ReviewStep extends ConsumerWidget {
         if (editingLive) ...[
           GroupCard(children: [
             GroupRow(
-              key: const Key('plan-effective-date'), title: 'Changes apply from', value: longDate(effective),
+              key: const Key('plan-effective-date'), title: l.builderChangesApplyFrom, value: longDate(effective),
               onTap: () async {
-                final day = await pickDay(context, initial: effective.compareTo(today) < 0 ? today : effective, first: today, help: 'Changes apply from');
+                final day = await pickDay(context, initial: effective.compareTo(today) < 0 ? today : effective, first: today, help: l.builderChangesApplyFrom);
                 if (day != null) change((d) => d.effectiveDate = day);
               },
             ),
           ]),
           const SizedBox(height: 8),
-          Text('Workouts you recorded or skipped, and one in progress, stay exactly as they are. Earlier workouts and any you edited on their own do not change.',
+          Text(l.builderEditKeeps,
               style: context.caption),
         ] else
-          Text('This plan has not started, so it is rebuilt with these changes.', style: context.caption),
+          Text(l.builderRebuilt, style: context.caption),
       ],
       const SizedBox(height: 18),
-      const SectionLabel('Schedule'),
+      SectionLabel(l.builderSchedule),
       ...schedule,
       const SizedBox(height: 18),
-      const SectionLabel('Workouts'),
+      SectionLabel(l.builderStepWorkouts),
       for (final w in d.workouts) ...[
         const SizedBox(height: 12),
         Text(w.name, style: context.sansStyle(16, weight: FontWeight.w600)),
-        if (w.exercises.isEmpty) Text('No exercises yet', style: context.caption),
+        if (w.exercises.isEmpty) Text(l.builderNoExercises, style: context.caption),
         for (final e in w.exercises)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Wrap(alignment: WrapAlignment.spaceBetween, spacing: 10, children: [
-              Text(e.name, style: context.sansStyle(15)),
-              Text([rxText(e), if (e.targetLoadKg != null) 'Target ${formatLoad(e.targetLoadKg, unit)}'].join(' · '), style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w500)),
+              Text(exNames.name(e.catalogKey, e.name, locale), style: context.sansStyle(15)),
+              Text([rxText(e), if (e.targetLoadKg != null) l.planTargetLoad(formatLoad(e.targetLoadKg, unit))].join(' · '), style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w500)),
             ]),
           ),
       ],
       const SizedBox(height: 12),
-      Text('Targets are a starting point, not a prescription. What you record is what counts.', style: context.caption),
+      Text(l.builderTargetsNote, style: context.caption),
     ]);
   }
 }

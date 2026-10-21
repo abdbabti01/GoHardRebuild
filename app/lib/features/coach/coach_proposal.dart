@@ -15,6 +15,12 @@ String draftRevision(PlanDraft d) => const Uuid().v5(Namespace.nil.value, jsonEn
 
 const _ops = {'replaceExercise', 'setPrescription', 'addExercise', 'removeExercise'};
 
+/// Why one operation of a suggestion was left out; the screen words it ([op] is the operation's kind, [exercise] the
+/// exercise as it is in the draft or the catalog, [workout] the workout's name).
+enum SkipReason { workoutGone, exerciseGone, replaceUnavailable, replaceSame, valuesOutside, addUnavailable, addOutside, addFull }
+
+typedef ProposalSkip = ({SkipReason reason, String op, String? workout, String? exercise, String? catalogKey});
+
 /// A suggestion checked against one version of the draft. [next] is that draft with every applicable operation done;
 /// [changes] is what differs, one row per exercise (`before`/`after` exercise JSON, null when added/removed), which
 /// is what the preview shows and Undo restores; [notApplicable] says why the other operations were left out.
@@ -22,7 +28,7 @@ class ProposalCheck {
   const ProposalCheck(this.next, this.changes, this.notApplicable, this.builtOn);
   final PlanDraft next;
   final List<Json> changes;
-  final List<String> notApplicable;
+  final List<ProposalSkip> notApplicable;
 
   /// [draftRevision] of the draft this was built on: Apply refuses if the draft has moved on since.
   final String builtOn;
@@ -41,14 +47,17 @@ ProposalCheck? checkProposal(Object? proposal, PlanDraft current, List<CatalogEx
   // Per workout: the occurrence key now in `next` → the key it had in `current` (null: added by this suggestion).
   // Operations name keys of the draft that was sent, so a replaced exercise is still found by its old key.
   final origin = <String, Map<String, String?>>{};
-  final skipped = <String>[];
+  final skipped = <ProposalSkip>[];
 
   for (final raw in ops.cast<Map>()) {
     final op = Map<String, dynamic>.from(raw);
     final wid = op['workoutId'];
     final w = wid is String ? next.workout(wid) : null;
+    final kind = op['op'] as String;
+    void skip(SkipReason why, {String? exercise, String? catalogKey}) =>
+        skipped.add((reason: why, op: kind, workout: w?.name, exercise: exercise, catalogKey: catalogKey));
     if (w == null) {
-      skipped.add('${_verb(op)}: the workout it names is no longer in your draft.');
+      skip(SkipReason.workoutGone);
       continue;
     }
     final keys = origin.putIfAbsent(w.id, () => {for (final e in w.exercises) e.occurrenceKey: e.occurrenceKey});
@@ -60,7 +69,7 @@ ProposalCheck? checkProposal(Object? proposal, PlanDraft current, List<CatalogEx
       case 'removeExercise':
         final key = resolve();
         if (key == null) {
-          skipped.add('${_verb(op)}: that exercise is no longer in ${w.name}.');
+          skip(SkipReason.exerciseGone);
           continue;
         }
         next.removeExercise(w.id, key);
@@ -69,11 +78,11 @@ ProposalCheck? checkProposal(Object? proposal, PlanDraft current, List<CatalogEx
         final key = resolve();
         final e = key == null ? null : at(key);
         if (e == null) {
-          skipped.add('${_verb(op)}: that exercise is no longer in ${w.name}.');
+          skip(SkipReason.exerciseGone);
         } else if (choice == null) {
-          skipped.add('Replace ${e.name}: the suggested exercise isn\'t available to your account.');
+          skip(SkipReason.replaceUnavailable, exercise: e.name, catalogKey: e.catalogKey);
         } else if (choice.key == e.catalogKey) {
-          skipped.add('Replace ${e.name}: it is already that exercise.');
+          skip(SkipReason.replaceSame, exercise: e.name, catalogKey: e.catalogKey);
         } else {
           final i = next.workout(w.id)!.exercises.indexWhere((x) => x.occurrenceKey == key);
           next.replaceExercise(w.id, key!, choice);
@@ -85,22 +94,22 @@ ProposalCheck? checkProposal(Object? proposal, PlanDraft current, List<CatalogEx
         final e = key == null ? null : at(key);
         final rx = e == null ? null : _merged(e.j, op);
         if (e == null) {
-          skipped.add('${_verb(op)}: that exercise is no longer in ${w.name}.');
+          skip(SkipReason.exerciseGone);
         } else if (rx == null) {
-          skipped.add('Change ${e.name}: the suggested values are outside what a plan allows.');
+          skip(SkipReason.valuesOutside, exercise: e.name, catalogKey: e.catalogKey);
         } else {
           _set(next, w.id, key!, e, rx);
         }
       case 'addExercise':
         if (choice == null) {
-          skipped.add('Add an exercise to ${w.name}: it isn\'t available to your account.');
+          skip(SkipReason.addUnavailable);
           continue;
         }
         final base = Prescription({'isTimed': choice.isTimed, 'targetSets': 3, 'targetRepsMin': choice.isTimed ? null : 8, 'targetRepsMax': choice.isTimed ? null : 12,
             'targetDurationSeconds': choice.isTimed ? 30 : null, 'restSeconds': 90});
         final rx = _merged(base.j, op);
         if (rx == null || w.exercises.length >= 30) {
-          skipped.add('Add ${choice.name} to ${w.name}: ${rx == null ? 'the suggested values are outside what a plan allows' : 'the workout already has 30 exercises'}.');
+          skip(rx == null ? SkipReason.addOutside : SkipReason.addFull, exercise: choice.name, catalogKey: choice.key);
           continue;
         }
         final key = next.addExercise(w.id, choice);
@@ -110,13 +119,6 @@ ProposalCheck? checkProposal(Object? proposal, PlanDraft current, List<CatalogEx
   }
   return ProposalCheck(next, _diff(current, next, origin), skipped, draftRevision(current));
 }
-
-String _verb(Json op) => switch (op['op']) {
-      'removeExercise' => 'Remove an exercise',
-      'replaceExercise' => 'Replace an exercise',
-      'setPrescription' => 'Change sets and reps',
-      _ => 'Add an exercise',
-    };
 
 typedef _Rx = ({int? sets, int? lo, int? hi, int? seconds, int? rest});
 
@@ -166,12 +168,13 @@ Object? _canonical(Object? v) => v is Map
         : v;
 
 /// Undoes an applied suggestion's [changes] on [current]: restores exactly the exercises it changed and nothing
-/// else. Refused (with the reason) when any of them was edited, moved to another workout or removed since.
-({PlanDraft? next, String? refused}) undoProposal(PlanDraft current, List<Json> changes) {
+/// else. Refused when any of them was edited, moved to another workout or removed since: [refused] is that exercise
+/// (its JSON), for the screen to name.
+({PlanDraft? next, Json? refused}) undoProposal(PlanDraft current, List<Json> changes) {
   final next = current.copy();
   List<Json>? list(String wid) => ((next.j['workouts'] as List).cast<Json>().where((w) => w['id'] == wid).firstOrNull?['exercises'] as List?)?.cast<Json>();
   int indexOf(List<Json> l, Object? key) => l.indexWhere((x) => x['occurrenceKey'] == key);
-  String refuse(Json c) => 'Undo is no longer safe: ${((c['after'] ?? c['before']) as Json)['name']} was changed after the suggestion was applied. Change it in the builder instead.';
+  Json refuse(Json c) => (c['after'] ?? c['before']) as Json;
 
   for (final c in changes) {
     final l = list(c['workoutId'] as String);

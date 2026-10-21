@@ -170,24 +170,4 @@ abstract final class PlanRules {
     }
     return out;
   }
-
-  static String describe(String code) => switch (code) {
-        titleInvalid => 'Give the plan a name of up to 60 characters.',
-        durationInvalid => 'Choose a length between 1 and 52 weeks. Only a rotating sequence can run without an end.',
-        timeBudgetInvalid => 'Choose a planned time between 10 and 240 minutes, or none.',
-        workoutsInvalid => 'Check the workouts: each needs a name, and sets, reps, rest and weights must be in range.',
-        scheduleInvalid => 'Check the schedule: every day or step needs a workout, with one workout per weekday.',
-        notUsable => 'Add at least one exercise to every scheduled workout before you activate the plan.',
-        'PLAN_NEEDS_NEWER_APP' => 'This plan was made with a newer version of the app. Update the app to change it.',
-        'UNKNOWN_EXERCISE' => 'An exercise in this plan is not available to your account.',
-        'START_LOCKED' => 'An active plan keeps its start date. Duplicate it to start again on another day.',
-        'MODE_LOCKED' => 'An active plan keeps its schedule type. Duplicate it to switch between weekdays and a rotation.',
-        'OCCASION_NOT_MOVABLE' => 'A rotating plan has no fixed dates. Skip the workout, or do it next time you train.',
-        'EXERCISE_NAME_INVALID' => 'Give the exercise a name of up to 80 characters.',
-        'PLAN_CHANGED_SINCE_EDIT' => 'This plan changed after you started editing it. Start again from the plan as it is now.',
-        'PLAN_NOT_ACTIVE' => 'This plan is closed. Duplicate it to train with it again.',
-        'TARGET_CONTEXT_CHANGED' => 'This exercise is no longer in that plan workout, so its target was not changed. Review the plan instead.',
-        'TARGET_CHANGED_SINCE' => 'This target was changed again since then, so the earlier one was not restored. Edit it instead.',
-        _ => 'That change could not be applied ($code).',
-      };
 }

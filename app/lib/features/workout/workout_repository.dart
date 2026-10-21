@@ -8,9 +8,12 @@ import 'workout_runtime.dart';
 
 /// Entered values that cannot be a performed set. The entry stays on screen; nothing is saved.
 class InvalidSet implements Exception {
-  const InvalidSet(this.message);
-  final String message;
+  const InvalidSet(this.reason);
+  final InvalidSetReason reason;
 }
+
+/// Why an entry cannot be saved; the panel says it in the app's language.
+enum InvalidSetReason { loadFormat, loadRange, nothingDone, outOfRange, hasSets }
 
 /// What a caller should do when asked to bring a workout to the foreground.
 sealed class ForegroundDecision {}
@@ -163,7 +166,7 @@ class WorkoutRepository {
 
   /// Removes a movement that has no recorded sets.
   Future<void> removeExercise(Workout workout, String exerciseId) async {
-    if ((await sets(workout.id)).any((s) => s.exerciseId == exerciseId && !s.isDeleted)) throw const InvalidSet('Remove its recorded sets first.');
+    if ((await sets(workout.id)).any((s) => s.exerciseId == exerciseId && !s.isDeleted)) throw const InvalidSet(InvalidSetReason.hasSets);
     final body = copyJson(workout.j);
     (body['exercises'] as List).cast<Json>().firstWhere((e) => e['id'] == exerciseId)['isDeleted'] = true;
     await _sync.submit(_owner, kind: 'exercise.remove', path: '/exercises/$exerciseId/remove', targetKind: Kinds.workout, targetId: workout.id,
@@ -173,9 +176,9 @@ class WorkoutRepository {
   // ------------------------------------------------------------------ sets
 
   static void _validate(int? reps, double? loadKg, int? durationSeconds) {
-    if (loadKg != null && (!loadKg.isFinite || loadKg < 0 || loadKg > 2000)) throw const InvalidSet('Enter a load of zero or more.');
-    if ((reps ?? 0) <= 0 && (durationSeconds ?? 0) <= 0) throw const InvalidSet('Enter the reps or time you actually did.');
-    if ((reps ?? 0) > 10000 || (durationSeconds ?? 0) > 86400) throw const InvalidSet('That value is out of range.');
+    if (loadKg != null && (!loadKg.isFinite || loadKg < 0 || loadKg > 2000)) throw const InvalidSet(InvalidSetReason.loadRange);
+    if ((reps ?? 0) <= 0 && (durationSeconds ?? 0) <= 0) throw const InvalidSet(InvalidSetReason.nothingDone);
+    if ((reps ?? 0) > 10000 || (durationSeconds ?? 0) > 86400) throw const InvalidSet(InvalidSetReason.outOfRange);
   }
 
   /// Records one performed set. It is durably saved before this returns; only then may the UI show it as saved.

@@ -4,6 +4,8 @@
 library;
 
 import '../core/clock.dart';
+import '../core/format.dart' show ltr;
+import '../core/language.dart' show AppLocalizations, currentL10n;
 
 typedef Json = Map<String, dynamic>;
 
@@ -99,13 +101,17 @@ extension type CustomExercise(Json j) {
   String get key => 'custom:$id';
 }
 
-/// "3 sets · 5–8 reps", "3 sets · 45 s", or an honest "No target" when the prescription has none.
-String targetText({int? sets, int? repsMin, int? repsMax, int? seconds}) {
+/// "3 sets · 5–8 reps", "3 sets · 45 s", or an honest "No target" when the prescription has none, in [l] (the
+/// resolved app language when omitted).
+String targetText({int? sets, int? repsMin, int? repsMax, int? seconds, AppLocalizations? l}) {
+  l ??= currentL10n;
   final parts = <String>[
-    if (sets != null) '$sets ${sets == 1 ? 'set' : 'sets'}',
-    if (seconds != null) '$seconds s' else if (repsMin != null && repsMax != null && repsMin != repsMax) '$repsMin–$repsMax reps' else if ((repsMin ?? repsMax) != null) '${repsMin ?? repsMax} reps',
+    if (sets != null) l.workoutTargetSets(sets),
+    if (seconds != null) l.durationSeconds(seconds)
+    else if (repsMin != null && repsMax != null && repsMin != repsMax) l.workoutTargetRepRange(ltr('$repsMin–$repsMax'))
+    else if ((repsMin ?? repsMax) != null) l.workoutTargetReps(repsMin ?? repsMax!),
   ];
-  return parts.isEmpty ? 'No target' : parts.join(' · ');
+  return parts.isEmpty ? l.workoutNoTarget : parts.join(' · ');
 }
 
 extension type Occasion(Json j) {

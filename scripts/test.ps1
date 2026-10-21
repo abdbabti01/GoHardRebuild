@@ -32,6 +32,9 @@ if (-not $SkipApp) {
         Step 'App: packages and generated database code'
         flutter pub get
         if ($LASTEXITCODE -ne 0) { Fail 'flutter pub get failed.' }
+        Step 'App: translation catalogs'
+        node (Join-Path $Root 'scripts/check-l10n.mjs')
+        if ($LASTEXITCODE -ne 0) { Fail 'Translation catalogs are incomplete or malformed.' }
         dart run build_runner build --delete-conflicting-outputs
         if ($LASTEXITCODE -ne 0) { Fail 'Code generation failed.' }
         Step 'App: static analysis'

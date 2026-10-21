@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/language.dart';
+import '../../core/language_picker.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../coach/coach_avatar.dart';
@@ -49,13 +51,14 @@ class _ChooseCoachState extends ConsumerState<_ChooseCoach> {
           prefs.setGuide(g);
           setState(() => _picked = true);
         });
+    final l = context.l10n;
     return AppPage(
-      title: 'Choose your coach',
-      subtitle: 'Leon or Leona: the same help either way, only the look changes. You can change this later in Appearance.',
+      title: l.setupCoachTitle,
+      subtitle: l.setupCoachSubtitle,
       actions: const [_Step(1)],
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
-        PrimaryButton('Continue', key: const Key('setup-continue'), onPressed: () => prefs.setupFeatures(widget.owner)),
-        TextButton(key: const Key('setup-skip'), onPressed: () => prefs.finishSetup(widget.owner), child: const Text('Not now')),
+        PrimaryButton(l.actionContinue, key: const Key('setup-continue'), onPressed: () => prefs.setupFeatures(widget.owner)),
+        TextButton(key: const Key('setup-skip'), onPressed: () => prefs.finishSetup(widget.owner), child: Text(l.setupNotNow)),
       ]),
       children: [
         if (across)
@@ -68,8 +71,11 @@ class _ChooseCoachState extends ConsumerState<_ChooseCoach> {
         if (_picked)
           CoachSpeaker(
             key: ValueKey('setup-hello-${guide.name}'), introduce: true,
-            say: CoachSay("I'm ${guide.label}. Tap me on any screen when you'd like a hand.", title: first.isEmpty ? 'Hi!' : 'Hi $first!'),
+            say: CoachSay(l.setupCoachHello(guide.displayName(l)), title: first.isEmpty ? l.setupHi : l.setupHiName(first)),
           ),
+        const SizedBox(height: 8),
+        // The language, without a step of its own: nothing is asked for or sent.
+        const Align(alignment: AlignmentDirectional.centerStart, child: LanguageButton()),
       ],
     );
   }
@@ -83,31 +89,34 @@ class _Features extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider).value;
     final done = ref.read(coachPrefsProvider.notifier);
+    final l = context.l10n;
     return AppPage(
-      title: 'Optional features',
-      subtitle: 'Turn on what you want now, or later in Me. The phone asks for access only when you use a feature that needs it.',
+      title: l.setupFeaturesTitle,
+      subtitle: l.setupFeaturesSubtitle,
       actions: const [_Step(2)],
-      bottom: PrimaryButton('Done', key: const Key('setup-done'), onPressed: () => done.finishSetup(owner)),
+      bottom: PrimaryButton(l.actionDone, key: const Key('setup-done'), onPressed: () => done.finishSetup(owner)),
       children: [
         GroupCard(children: [
           GroupRow(
-            key: const Key('setup-weather'), icon: Icons.wb_twilight_outlined, title: 'Weather on Today',
-            subtitle: 'Use your approximate location, or choose a city without sharing it.', value: ref.watch(todayBackgroundSummaryProvider),
+            key: const Key('setup-weather'), icon: Icons.wb_twilight_outlined, title: l.setupWeatherTitle,
+            subtitle: l.setupWeatherSubtitle, value: ref.watch(todayBackgroundSummaryProvider),
             onTap: () => push(context, const TodayBackgroundScreen()),
           ),
           if (profile != null)
             MergeSemantics(
               child: GroupRow(
-                key: const Key('setup-reminders'), icon: Icons.notifications_none, title: 'Workout reminders',
-                subtitle: 'On days with a planned workout. Notifications are asked for when you turn this on.',
+                key: const Key('setup-reminders'), icon: Icons.notifications_none, title: l.setupRemindersTitle,
+                subtitle: l.setupRemindersSubtitle,
                 trailing: Switch(value: profile.remindersEnabled, onChanged: (on) => setReminders(context, ref, profile, on)),
               ),
             ),
-          const GroupRow(icon: Icons.qr_code_scanner, title: 'Barcode scanning', subtitle: 'Ready in Eat. The camera is asked for the first time you scan.'),
-          const GroupRow(icon: Icons.directions_run, title: 'GPS runs', subtitle: 'Ready on Today. Location is asked for when you start a run.'),
+          GroupRow(icon: Icons.qr_code_scanner, title: l.setupBarcodeTitle, subtitle: l.setupBarcodeSubtitle),
+          GroupRow(icon: Icons.directions_run, title: l.setupGpsTitle, subtitle: l.setupGpsSubtitle),
         ]),
         const SizedBox(height: 12),
-        Text('Anything you allow or refuse can be changed later in the phone\'s Settings; Me › Phone permissions shows what is allowed now.', style: context.caption),
+        Text(l.setupPermissionsFootnote, style: context.caption),
+        const SizedBox(height: 8),
+        const Align(alignment: AlignmentDirectional.centerStart, child: LanguageButton()),
       ],
     );
   }
@@ -120,6 +129,6 @@ class _Step extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: EdgeInsetsDirectional.only(end: context.inset),
-        child: Center(child: Text('Step $n of 2', style: context.sansStyle(15, color: context.c.secondary, weight: FontWeight.w500))),
+        child: Center(child: Text(context.l10n.setupStep(n, 2), style: context.sansStyle(15, color: context.c.secondary, weight: FontWeight.w500))),
       );
 }

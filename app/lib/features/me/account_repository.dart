@@ -1,21 +1,49 @@
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../data/sync.dart';
 
+/// What went wrong, as a code: the screen says it in the app's language ([AuthFailure.text]).
+enum AuthError { invalidCredentials, emailInUse, weakPassword, invalidEmail, invalidDisplayName, wrongPassword, tooManyAttempts, unknown, unreachable, unreachableDelete, nameLength, calorieGoal, proteinGoal, waterGoal }
+
 class AuthFailure implements Exception {
-  const AuthFailure(this.message);
-  final String message;
+  /// [text] already in the app's language (a form's own check).
+  const AuthFailure(String text) : _text = text, code = null;
+  const AuthFailure.of(AuthError this.code) : _text = null;
+  final String? _text;
+  final AuthError? code;
+
+  /// In the app's current language.
+  String get message => text(currentL10n);
+
+  String text(AppLocalizations l) => _text ?? switch (code!) {
+        AuthError.invalidCredentials => l.accountErrorInvalidCredentials,
+        AuthError.emailInUse => l.accountErrorEmailInUse,
+        AuthError.weakPassword => l.accountErrorWeakPassword,
+        AuthError.invalidEmail => l.accountErrorInvalidEmail,
+        AuthError.invalidDisplayName => l.accountErrorInvalidDisplayName,
+        AuthError.wrongPassword => l.accountErrorWrongPassword,
+        AuthError.tooManyAttempts => l.accountErrorTooManyAttempts,
+        AuthError.unknown => l.errorGeneric,
+        AuthError.unreachable => l.accountErrorUnreachable,
+        AuthError.unreachableDelete => l.accountErrorUnreachableDelete,
+        AuthError.nameLength => l.accountErrorNameLength,
+        AuthError.calorieGoal => l.accountErrorCalorieGoal,
+        AuthError.proteinGoal => l.accountErrorProteinGoal,
+        AuthError.waterGoal => l.accountErrorWaterGoal,
+      };
 }
 
-String _authMessage(ApiResponse r) => switch (r.data is Map ? (r.data as Map)['code'] : null) {
-      'INVALID_CREDENTIALS' => 'That email and password do not match an account.',
-      'EMAIL_IN_USE' => 'An account with that email already exists. Sign in instead.',
-      'WEAK_PASSWORD' => 'Use a password of at least 8 characters.',
-      'INVALID_EMAIL' => 'Enter a valid email address.',
-      'INVALID_DISPLAY_NAME' => 'Enter the name you want to see in the app.',
-      'WRONG_PASSWORD' => 'That password is not correct. Your account was not deleted.',
-      _ => r.status == 429 ? 'Too many attempts. Wait a minute and try again.' : 'The server could not complete that (${r.status}).',
-    };
+/// The server's error code mapped to a known message; anything else is the generic one, never the raw details.
+AuthFailure _authFailure(ApiResponse r) => AuthFailure.of(switch (r.data is Map ? (r.data as Map)['code'] : null) {
+      'INVALID_CREDENTIALS' => AuthError.invalidCredentials,
+      'EMAIL_IN_USE' => AuthError.emailInUse,
+      'WEAK_PASSWORD' => AuthError.weakPassword,
+      'INVALID_EMAIL' => AuthError.invalidEmail,
+      'INVALID_DISPLAY_NAME' => AuthError.invalidDisplayName,
+      'WRONG_PASSWORD' => AuthError.wrongPassword,
+      _ => r.status == 429 ? AuthError.tooManyAttempts : AuthError.unknown,
+    });
 
 /// Registration, sign-in, non-destructive sign-out and confirmed account erasure.
 class AuthRepository {
@@ -29,9 +57,9 @@ class AuthRepository {
     try {
       r = await _api.send('POST', path, data: body, auth: false);
     } on TransportFailure {
-      throw const AuthFailure('The server cannot be reached. Check your connection and try again; nothing you typed was lost.');
+      throw const AuthFailure.of(AuthError.unreachable);
     }
-    if (!r.ok) throw AuthFailure(_authMessage(r));
+    if (!r.ok) throw _authFailure(r);
     onCreated?.call(((r.data as Json)['profile'] as Json)['userId'] as String); // before the app switches to the account
     final session = await _sessions.signIn(r.data as Json);
     // Resume only this owner's queue, then load their account state.
@@ -66,11 +94,11 @@ class AuthRepository {
     try {
       r = await _api.send('DELETE', '/account', data: {'password': password});
     } on TransportFailure {
-      throw const AuthFailure('The server cannot be reached, so nothing was deleted. Account deletion needs a connection.');
+      throw const AuthFailure.of(AuthError.unreachableDelete);
     }
-    if (r.status != 204) throw AuthFailure(_authMessage(r));
+    if (r.status != 204) throw _authFailure(r);
     await _sync.eraseOwner(s.ownerId);
-    await _sessions.signOut(reason: 'Your account and its data were deleted.');
+    await _sessions.signOut(code: SignOutReason.accountDeleted);
   }
 }
 
@@ -84,12 +112,12 @@ class ProfileRepository {
 
   /// Goals are whole numbers the person chose. Null means no goal; nothing is ever suggested in its place.
   static void validateGoals(int? calories, int? protein) {
-    if (calories != null && (calories < calorieGoalRange.$1 || calories > calorieGoalRange.$2)) throw const AuthFailure('A calorie goal is a whole number from 500 to 10,000, or left blank.');
-    if (protein != null && (protein < proteinGoalRange.$1 || protein > proteinGoalRange.$2)) throw const AuthFailure('A protein goal is a whole number from 10 to 500 grams, or left blank.');
+    if (calories != null && (calories < calorieGoalRange.$1 || calories > calorieGoalRange.$2)) throw const AuthFailure.of(AuthError.calorieGoal);
+    if (protein != null && (protein < proteinGoalRange.$1 || protein > proteinGoalRange.$2)) throw const AuthFailure.of(AuthError.proteinGoal);
   }
 
   static void validateWaterGoal(int? ml) {
-    if (ml != null && (ml < waterGoalRangeMl.$1 || ml > waterGoalRangeMl.$2)) throw const AuthFailure('A water goal is from 100 mL to 10 L (about 3.4 to 338 fl oz), or left blank.');
+    if (ml != null && (ml < waterGoalRangeMl.$1 || ml > waterGoalRangeMl.$2)) throw const AuthFailure.of(AuthError.waterGoal);
   }
 
   /// Sets both goals; null clears one. The clearing is sent as an explicit null, which is what tells the server
@@ -108,7 +136,7 @@ class ProfileRepository {
 
   Future<Receipt> update(Profile current, {String? displayName, String? appearance, String? loadUnit, bool? remindersEnabled, String? reminderLocalTime, Json? goals}) {
     final name = (displayName ?? current.displayName).trim();
-    if (name.isEmpty || name.length > 80) throw const AuthFailure('Enter a name of 1 to 80 characters.');
+    if (name.isEmpty || name.length > 80) throw const AuthFailure.of(AuthError.nameLength);
     final fields = {
       'displayName': name, 'appearance': appearance ?? current.appearance, 'loadUnit': loadUnit ?? current.loadUnit,
       'remindersEnabled': remindersEnabled ?? current.remindersEnabled, 'reminderLocalTime': reminderLocalTime ?? current.reminderLocalTime,

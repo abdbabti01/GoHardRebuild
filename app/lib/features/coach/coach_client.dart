@@ -1,12 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'dart:ui' show Locale;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../data/sync.dart';
+import '../plans/plan_draft.dart';
 import 'coach_contract.dart';
 import 'coach_proposal.dart';
 
@@ -19,6 +23,26 @@ class AskFailure implements Exception {
   const AskFailure(this.problem);
   final AskProblem problem;
 }
+
+/// The reply language sent with a question: only the server's allowlist ("en" | "fr-CA" | "ar"). The question itself
+/// is sent as typed, never translated; earlier messages keep their own words.
+String askLanguage(Locale locale) => switch (locale.languageCode) { 'fr' => 'fr-CA', 'ar' => 'ar', _ => 'en' };
+
+/// The `/coach/ask` body for one explicitly sent [question]: the last six [messages] as history (their own words), the
+/// context and draft, and the reply language for [locale].
+Json askRequestBody(String requestId, String question, List<Json> messages, CoachContext coach, PlanDraft? draft, Locale locale) => {
+      'requestId': requestId, 'question': question, 'language': askLanguage(locale),
+      'history': [
+        for (final m in messages.skip(messages.length > 6 ? messages.length - 6 : 0))
+          {'role': m['role'], 'text': (m['text'] as String).length > 1500 ? (m['text'] as String).substring(0, 1500) : m['text']},
+      ],
+      'context': {
+        'label': coach.label, 'focus': coach.focus.name, 'templateId': coach.templateId, 'workoutId': coach.workoutId,
+        'occurrenceKey': coach.occurrenceKey, 'catalogKey': coach.catalogKey,
+        'draft': draft == null ? null : {for (final k in ['title', 'durationWeeks', 'timeBudgetMinutes', 'schedule', 'workouts']) k: draft.planBody[k]},
+        'draftRevision': draft == null ? null : draftRevision(draft),
+      },
+    };
 
 /// `POST /coach/ask` (docs/COACH.md) through the signed-in owner's [Api]. A read, never a queued command.
 class CoachClient {
@@ -155,19 +179,7 @@ class AskConversation extends Notifier<AskState> {
     if (!retry) _unsent = '';
     _set(state.copy(pending: pending, sending: true, unsent: retry ? null : ''));
 
-    final request = {
-      'requestId': requestId, 'question': pending['question'],
-      'history': [
-        for (final m in state.messages.skip(state.messages.length > 6 ? state.messages.length - 6 : 0))
-          {'role': m['role'], 'text': (m['text'] as String).length > 1500 ? (m['text'] as String).substring(0, 1500) : m['text']},
-      ],
-      'context': {
-        'label': coach.label, 'focus': coach.focus.name, 'templateId': coach.templateId, 'workoutId': coach.workoutId,
-        'occurrenceKey': coach.occurrenceKey, 'catalogKey': coach.catalogKey,
-        'draft': draft == null ? null : {for (final k in ['title', 'durationWeeks', 'timeBudgetMinutes', 'schedule', 'workouts']) k: draft.planBody[k]},
-        'draftRevision': revision,
-      },
-    };
+    final request = askRequestBody(requestId, pending['question'] as String, state.messages, coach, draft, ref.read(appLocaleProvider));
     Json? answer;
     AskProblem? problem;
     try {

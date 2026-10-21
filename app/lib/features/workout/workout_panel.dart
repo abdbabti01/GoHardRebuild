@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -79,21 +80,21 @@ class _WorkoutPreviewState extends ConsumerState<WorkoutPreview> {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         AllWorkoutsLink(onPressed: widget.onLeave),
         ref.watch(plansProvider).hasValue
-            ? const EmptyState('This workout is no longer planned', 'The plan changed since it was opened. Nothing was started or recorded.')
+            ? EmptyState(context.l10n.workoutPreviewGoneTitle, context.l10n.workoutPreviewGoneBody)
             : const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator())),
       ]);
     }
     // Already started (here, on Today or on another device): that workout, never a second one.
     if (openWorkoutFor(o, workouts) case final open?) return WorkoutRecorder(key: ValueKey('session-${open.id}'), workoutId: open.id, onLeave: widget.onLeave);
 
-    final c = context.c;
+    final c = context.c, l = context.l10n;
     final unit = ref.watch(loadUnitProvider);
     final status = statusOf(o, plan, today, workouts);
     final startable = canStartOccasion(plan, o, today, workouts);
     final recorded = o.resultWorkoutId ?? workouts.where((w) => !w.isDeleted && w.occasionId == o.id && !w.isOpen && w.qualifiedOccasion).firstOrNull?.id;
     final sets = o.prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
     final minutes = plannedMinutes(plan);
-    final where = o.sequenceIndex != null ? 'Session ${o.sequenceIndex! + 1}' : 'Week ${o.weekNumber}';
+    final where = o.sequenceIndex != null ? l.workoutPreviewSession(o.sequenceIndex! + 1) : l.workoutPreviewWeek(o.weekNumber);
     final keys = [for (final p in o.prescription) p.catalogKey];
     // Anchored at now: before Start there is no session, and nothing is made up to stand in for one.
     final now = ref.read(clockProvider).utcNow();
@@ -101,7 +102,7 @@ class _WorkoutPreviewState extends ConsumerState<WorkoutPreview> {
     final visible = _all || rows.length <= _shown + 1 ? rows : rows.take(_shown).toList();
 
     return Column(key: const Key('workout-preview'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Align(alignment: Alignment.centerLeft, child: AllWorkoutsLink(onPressed: widget.onLeave)),
+      Align(alignment: AlignmentDirectional.centerStart, child: AllWorkoutsLink(onPressed: widget.onLeave)),
       PhotoPanel(
         key: const Key('preview-panel'),
         photo: 'assets/images/workout-hero.webp',
@@ -112,25 +113,25 @@ class _WorkoutPreviewState extends ConsumerState<WorkoutPreview> {
           Semantics(header: true, child: Text(o.title, style: context.pageTitleStyle(30))),
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Text('${o.prescription.length} ${o.prescription.length == 1 ? 'exercise' : 'exercises'}${sets == 0 ? '' : ' · $sets planned ${sets == 1 ? 'set' : 'sets'}'}',
+            child: Text('${l.workoutPreviewExerciseCount(o.prescription.length)}${sets == 0 ? '' : ' · ${l.workoutPreviewPlannedSets(sets)}'}',
                 style: context.numStyle(16, weight: FontWeight.w600)),
           ),
-          Text('${o.scheduledDate == today ? 'Today' : longDate(o.scheduledDate)} · ${plan.title}${minutes == null ? '' : ' · $minutes min planned'}', style: context.sansStyle(14.5, color: context.c.secondary)),
+          Text('${o.scheduledDate == today ? l.workoutPreviewToday : longDate(o.scheduledDate)} · ${plan.title}${minutes == null ? '' : ' · ${l.workoutPreviewMinutesPlanned(minutes)}'}', style: context.sansStyle(14.5, color: context.c.secondary)),
         ],
         actions: (context) => [
-          if (startable) PrimaryButton('Start workout', key: const Key('preview-start'), icon: Icons.play_arrow_rounded, expand: false, busy: _starting, onPressed: () => _start(plan, o)),
+          if (startable) PrimaryButton(l.workoutStart, key: const Key('preview-start'), icon: Icons.play_arrow_rounded, expand: false, busy: _starting, onPressed: () => _start(plan, o)),
           if (recorded != null)
-            QuietLink('View what was recorded', key: const Key('preview-recorded'), onPressed: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.session(recorded))),
+            QuietLink(l.workoutPreviewViewRecorded, key: const Key('preview-recorded'), onPressed: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.session(recorded))),
           // Move, skip, edit this one and the rest stay where they were, in the occurrence sheet.
-          QuietLink('More options', key: const Key('preview-options'), said: 'Move, skip or edit this workout', onPressed: () => showOccasionSheet(appContext(context), ref, plan, o)),
+          QuietLink(l.workoutPreviewMoreOptions, key: const Key('preview-options'), said: l.workoutPreviewMoreOptionsSemantic, onPressed: () => showOccasionSheet(appContext(context), ref, plan, o)),
         ],
       ),
       // Suggestions stay reachable here after the result is gone. An occurrence edited on its own keeps its content.
       if (o.workoutId != null && !o.isCustomised) NextTimeSection(planId: plan.id, workoutId: o.workoutId!),
       const SizedBox(height: 22),
-      const SectionHeader('Exercises'),
+      SectionHeader(l.workoutPreviewExercises),
       const SizedBox(height: 10),
-      if (rows.isEmpty) Text('No exercises are planned in this workout.', style: context.caption),
+      if (rows.isEmpty) Text(l.workoutPreviewNoExercises, style: context.caption),
       if (rows.isNotEmpty)
         GroupCard(children: [
           for (final (i, e) in visible)
@@ -144,26 +145,26 @@ class _WorkoutPreviewState extends ConsumerState<WorkoutPreview> {
         ]),
       if (visible.length < rows.length)
         Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(key: const Key('preview-see-all'), onPressed: () => setState(() => _all = true), child: Text('See all ${rows.length} exercises')),
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton(key: const Key('preview-see-all'), onPressed: () => setState(() => _all = true), child: Text(l.workoutPreviewSeeAll(rows.length))),
         ),
       if (!startable && recorded == null) ...[
         const SizedBox(height: 14),
         StatusLine(Icons.info_outline, switch (status) {
-          _ when plan.isPaused => 'The plan is paused. Resume the plan to start its workouts.',
-          OccasionStatus.skipped => 'Skipped. Nothing was recorded for it.',
-          _ when plan.isRotating => 'A rotation runs in order: this one comes up after the workouts before it.',
-          _ => 'This workout cannot be started now. More options shows what can be done with it.',
+          _ when plan.isPaused => l.workoutPreviewPlanPaused,
+          OccasionStatus.skipped => l.workoutPreviewSkipped,
+          _ when plan.isRotating => l.workoutPreviewRotationOrder,
+          _ => l.workoutPreviewCannotStart,
         }, tone: Tone.neutral),
       ],
-      Padding(padding: const EdgeInsets.only(top: 14), child: Text('Last time is what you actually recorded before. Nothing here is recorded until you start.', style: context.caption.copyWith(color: c.secondary))),
+      Padding(padding: const EdgeInsets.only(top: 14), child: Text(l.workoutPreviewFooter, style: context.caption.copyWith(color: c.secondary))),
     ]);
   }
 }
 
 /// One exercise of the preview: collapsed, its number, name and prescription; expanded, also the plan's words for it,
 /// the user's target and notes, About, and last time.
-class _PreviewRow extends StatelessWidget {
+class _PreviewRow extends ConsumerWidget {
   const _PreviewRow({required this.index, required this.exercise, required this.expanded, required this.unit, required this.workoutName, required this.history, required this.status, required this.onTap, this.slotKey});
   final int index;
   final Prescription exercise;
@@ -178,9 +179,10 @@ class _PreviewRow extends StatelessWidget {
   final TargetKey? slotKey;
 
   @override
-  Widget build(BuildContext context) {
-    final e = exercise, c = context.c;
-    final rx = targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final e = exercise, c = context.c, l = context.l10n;
+    final name = shownName(ref, context, e.catalogKey, e.name);
+    final rx = targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds, l: l);
     return Column(key: Key('preview-exercise-$index'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Semantics(
         expanded: expanded, button: true,
@@ -189,12 +191,12 @@ class _PreviewRow extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: Targets.minimum),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 8, 12),
               child: Row(children: [
                 SizedBox(width: 28, child: Text('${index + 1}', style: context.numStyle(15, color: c.secondary, weight: FontWeight.w400))),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(e.name, style: context.sansStyle(16, weight: FontWeight.w600)),
+                    Text(name, style: context.sansStyle(16, weight: FontWeight.w600)),
                     if (rx.isNotEmpty) Text(rx, style: context.numStyle(13.5, color: c.secondary, weight: FontWeight.w400)),
                   ]),
                 ),
@@ -206,19 +208,19 @@ class _PreviewRow extends StatelessWidget {
       ),
       if (expanded)
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 8, 14),
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 0, 8, 14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text(rxSentence(e), style: context.caption),
             // The user's own target, not a record and not the last performance.
-            if (e.targetLoadKg != null) Text('Target ${formatLoad(e.targetLoadKg, unit)}', style: context.numStyle(14, color: c.secondary, weight: FontWeight.w500)),
+            if (e.targetLoadKg != null) Text(l.workoutPreviewTarget(formatLoad(e.targetLoadKg, unit)), style: context.numStyle(14, color: c.secondary, weight: FontWeight.w500)),
             if ((e.notes ?? '').trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: StatusLine(Icons.sticky_note_2_outlined, e.notes!.trim())),
             Wrap(children: [
-              QuietLink('About', key: Key('preview-demo-$index'), said: 'About ${e.name}', onPressed: () => showExerciseInfo(appContext(context), exercise: e, workoutName: workoutName)),
+              QuietLink(l.workoutAbout, key: Key('preview-demo-$index'), said: l.workoutAboutSemantic(name), onPressed: () => showExerciseInfo(appContext(context), exercise: e, workoutName: workoutName)),
               if (slotKey != null)
-                QuietLink(e.targetLoadKg == null ? 'Set a target' : 'Review target', key: Key('preview-target-$index'), said: 'Target for ${e.name}',
+                QuietLink(e.targetLoadKg == null ? l.workoutSetATarget : l.workoutReviewTarget, key: Key('preview-target-$index'), said: l.workoutTargetForSemantic(name),
                     onPressed: () => showTargetReview(appContext(context), slotKey!)),
             ]),
-            LastTime(history: history, status: status, unit: unit, compare: false, onAll: () => showExerciseHistory(context, name: e.name, history: history, unit: unit)),
+            LastTime(history: history, status: status, unit: unit, compare: false, onAll: () => showExerciseHistory(context, name: name, history: history, unit: unit)),
           ]),
         ),
     ]);

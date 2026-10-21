@@ -1,0 +1,5 @@
+/* Permission purposes, Canadian French. docs/LOCALIZATION.md › Native. */
+"NSCameraUsageDescription" = "GoHard utilise la caméra pour lire le code-barres d'un emballage alimentaire lorsque tu choisis Scanner un code-barres. L'image reste sur ton téléphone.";
+"NSLocationWhenInUseUsageDescription" = "GoHard utilise ta position pour enregistrer le parcours, la distance et l'allure d'une course ou d'une marche que tu commences, y compris écran verrouillé jusqu'à ce que tu la termines, et, si tu actives l'arrière-plan Météo d'Aujourd'hui, pour obtenir la météo près de toi (arrondie à environ 10 km). Tes parcours restent privés dans ton compte.";
+"RouteRecording" = "La position précise est nécessaire pour mesurer le parcours et la distance de cette course ou de cette marche.";
+"NSMotionUsageDescription" = "GoHard compte tes pas pendant une course ou une marche, et affiche les pas d'aujourd'hui de cet iPhone, lorsque tu actives Pas. Les pas d'aujourd'hui restent sur ce téléphone; ceux d'une course ou d'une marche sont enregistrés avec elle.";

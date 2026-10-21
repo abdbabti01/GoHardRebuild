@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -195,11 +194,11 @@ final connectionProvider = NotifierProvider<Connection, bool?>(Connection.new);
 
 /// What Today and Me both say while that attempt has failed. The app knows only that the account did not answer
 /// properly: it cannot tell a phone without a connection from a server in trouble, so it never says "Offline".
-const cantSyncLabel = 'Can\'t sync right now';
-const cantSyncDetail = 'The last attempt to reach your account did not get through. That can be this phone\'s connection or the server.';
+String get cantSyncLabel => currentL10n.shellCantSyncLabel;
+String get cantSyncDetail => currentL10n.shellCantSyncDetail;
 
 /// "1 change waiting to sync": the real number of saved changes the account has not confirmed yet.
-String waitingToSync(int pending) => '$pending ${pending == 1 ? 'change' : 'changes'} waiting to sync';
+String waitingToSync(int pending) => currentL10n.shellWaitingToSync(pending);
 
 /// Pulls account state and pushes pending work. Safe to call often; never throws.
 Future<void> refreshFromAccount(WidgetRef ref) async {
@@ -303,4 +302,4 @@ final weeklyGoalsSupportedProvider = Provider<bool?>((ref) => ref.watch(compatib
 /// The everyday foods bundled with the app, read once. It is the same for every account and needs no connection.
 /// Read as bytes: `loadString` would decode a file this size on another isolate, for nothing.
 final commonFoodsProvider = FutureProvider<CommonFoodCatalog>(
-    (ref) async => CommonFoodCatalog.parse(utf8.decode(Uint8List.sublistView(await rootBundle.load('assets/data/common-foods.json')))));
+    (ref) => loadCommonFoods(rootBundle)); // with the French and Arabic names and aliases (common-foods.l10n.json)

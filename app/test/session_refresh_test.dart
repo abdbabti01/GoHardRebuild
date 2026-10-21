@@ -185,7 +185,7 @@ void main() {
         expect(await store.read('gohard.rebuild.session'), contains('R2'));
       } else {
         expect(sessions.current, isNull);
-        expect(sessions.notice, contains('Your sign-in expired'));
+        expect(sessions.notice, SignOutReason.expired);
       }
     });
   }
@@ -197,7 +197,7 @@ void main() {
     final r = await api.send('GET', '/sync/snapshot');
     expect(r.status, 401);
     expect(sessions.current, isNull);
-    expect(sessions.notice, contains('Your sign-in expired'));
+    expect(sessions.notice, SignOutReason.expired);
     expect(await store.read('gohard.rebuild.session'), isNull, reason: 'only the credentials are removed');
   });
 

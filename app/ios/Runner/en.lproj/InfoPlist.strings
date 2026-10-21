@@ -1,0 +1,5 @@
+/* Permission purposes, English (the same text as Info.plist). docs/LOCALIZATION.md › Native. */
+"NSCameraUsageDescription" = "GoHard uses the camera to read the barcode on a food packet when you choose Scan barcode. The picture stays on your phone.";
+"NSLocationWhenInUseUsageDescription" = "GoHard uses your location to record the route, distance and pace of a run or walk you start, including while the screen is locked until you finish it, and, if you turn on the Weather background for Today, to look up the weather near you (rounded to about 10 km). Routes stay private to your account.";
+"RouteRecording" = "Precise location is needed to measure the route and distance of this run or walk.";
+"NSMotionUsageDescription" = "GoHard counts your steps during a run or walk, and shows today's steps from this iPhone, when you turn Steps on. Today's steps stay on this phone; the steps of a run or walk are saved with it.";

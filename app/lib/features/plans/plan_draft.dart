@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import '../../core/clock.dart';
+import '../../core/language.dart' show AppLocalizations, currentL10n;
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import 'plan_l10n.dart';
 import 'plan_rules.dart';
 
-/// Equipment the user has. Keys are stored in drafts.
+/// Equipment the user has. Keys are stored in drafts; the values are English only ([equipmentLabel] shows them).
 const equipmentChoices = {'full_gym': 'Full gym', 'dumbbells': 'Dumbbells only', 'bodyweight': 'Bodyweight only'};
 const experienceChoices = {'new': 'New to training', 'comfortable': 'Comfortable with the basics', 'experienced': 'Experienced'};
 
@@ -81,15 +83,14 @@ class PlanTemplates {
 }
 
 /// The suggested starting structure for the days available, and why. Never a claim that one split is best.
-({String templateId, String reason}) suggestTemplate(int days, {String? experience}) => switch (days) {
-      <= 3 => (templateId: 'full-body', reason: 'With $days ${days == 1 ? 'day' : 'days'} a week, full-body sessions train every muscle group each time you train.'),
-      4 => (templateId: 'upper-lower', reason: 'With 4 days, alternating upper and lower body trains each half twice a week.'),
-      5 => (templateId: 'upper-lower-ppl', reason: 'With 5 days, an upper and a lower day plus push, pull and legs trains each area about twice a week.'),
-      _ => (templateId: 'push-pull-legs', reason: 'With $days days, repeating push, pull and legs trains each area twice a week${days == 7 ? ' and leaves one day for rest' : ''}.'),
-    };
+/// [reason] is in [l] (default: the app's language); [suggestionReason] gives it alone.
+({String templateId, String reason}) suggestTemplate(int days, {String? experience, AppLocalizations? l}) => (
+      templateId: switch (days) { <= 3 => 'full-body', 4 => 'upper-lower', 5 => 'upper-lower-ppl', _ => 'push-pull-legs' },
+      reason: suggestionReason(l ?? currentL10n, days),
+    );
 
-/// Shown with every suggestion (docs/TRAINING_PLANS.md › Starter templates).
-const splitEvidenceNote = 'Studies comparing splits with the same weekly volume found similar strength and muscle gains, so pick the structure you can keep doing.';
+/// Shown with every suggestion (docs/TRAINING_PLANS.md › Starter templates). With a context: [AppLocalizations.planSplitEvidenceNote].
+String get splitEvidenceNote => currentL10n.planSplitEvidenceNote;
 
 // ------------------------------------------------------------------ the draft being built or edited
 
@@ -150,10 +151,11 @@ class PlanDraft {
 
   static Json _emptySchedule(String mode) => {'mode': mode, 'pattern': <Json>[], 'cycle': <String>[], 'trainingDays': <int>[], 'cycleAnchor': 0};
 
-  static PlanDraft fresh({required String today, required String path, bool guided = false}) => PlanDraft({
+  /// [customTitle] names a "Build my own" plan (the user renames it).
+  static PlanDraft fresh({required String today, required String path, bool guided = false, String customTitle = 'My plan'}) => PlanDraft({
         'version': 1, 'mode': 'new', 'planId': SyncEngine.newId(), 'path': path, 'step': 0, if (guided) 'guided': true,
         'preferences': {'days': [1, 3, 5], 'equipment': 'full_gym', 'timeBudgetMinutes': null, 'experience': null},
-        'templateId': path == 'custom' ? 'custom' : null, 'title': path == 'custom' ? 'My plan' : '',
+        'templateId': path == 'custom' ? 'custom' : null, 'title': path == 'custom' ? customTitle : '',
         'workouts': <Json>[], 'schedule': _emptySchedule('fixed'), 'startDate': today, 'durationWeeks': 8, 'timeBudgetMinutes': null, 'effectiveDate': null,
       });
 
@@ -269,11 +271,13 @@ class PlanDraft {
   void renameWorkout(String id, String name) => _w(id)['name'] = name.trim();
   void setWorkoutNotes(String id, String? notes) => _w(id)['notes'] = notes == null || notes.trim().isEmpty ? null : notes.trim();
 
+  static String _copyName(String name) => '$name (copy)';
+
   /// A second, independent workout with the same exercises. Scheduling it is a separate choice.
   String duplicateWorkout(String id, {String? name}) {
     final copy = copyJson(_w(id))
       ..['id'] = SyncEngine.newId()
-      ..['name'] = name ?? '${_w(id)['name']} (copy)';
+      ..['name'] = name ?? _copyName(_w(id)['name'] as String);
     _workouts.insert(_workouts.indexWhere((w) => w['id'] == id) + 1, copy);
     return copy['id'] as String;
   }
@@ -391,7 +395,7 @@ class PlanDraft {
 
   /// Edit an existing plan, or start a new one from it. A plan from before the builder is read back as workouts:
   /// one per distinct workout name in its first week, on the weekdays it used.
-  static PlanDraft fromPlan(Plan plan, {required bool duplicate, required String today}) {
+  static PlanDraft fromPlan(Plan plan, {required bool duplicate, required String today, String Function(String name) copyName = _copyName}) {
     final Json schedule;
     final List<Json> workouts;
     if (plan.isBuilt) {
@@ -420,7 +424,7 @@ class PlanDraft {
       'version': 1, 'mode': duplicate ? 'duplicate' : 'edit', 'planId': duplicate ? SyncEngine.newId() : plan.id,
       'path': plan.templateId == null || plan.templateId == 'custom' ? 'custom' : 'template', 'step': duplicate ? 2 : 1,
       'preferences': {'days': [...days]..sort(), 'equipment': 'full_gym', 'timeBudgetMinutes': plan.timeBudgetMinutes, 'experience': null},
-      'templateId': plan.templateId, 'title': duplicate ? '${plan.title} (copy)' : plan.title,
+      'templateId': plan.templateId, 'title': duplicate ? copyName(plan.title) : plan.title,
       'workouts': workouts, 'schedule': schedule, 'startDate': start, 'durationWeeks': plan.isOngoing ? null : plan.blockWeeks,
       'timeBudgetMinutes': plan.timeBudgetMinutes,
       'effectiveDate': duplicate || plan.isDraft ? null : (today.compareTo(plan.startDate) < 0 ? plan.startDate : today),

@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/providers.dart';
 import '../../core/clock.dart';
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../today/daily.dart';
 
@@ -42,6 +43,9 @@ abstract interface class ReminderScheduler {
 }
 
 class DeviceReminderScheduler implements ReminderScheduler {
+  /// [l10n] is read when reminders are (re)scheduled, so their words follow the app language at that moment.
+  DeviceReminderScheduler(this._l10n);
+  final AppLocalizations Function() _l10n;
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
 
@@ -94,6 +98,7 @@ class DeviceReminderScheduler implements ReminderScheduler {
     final location = tz.getLocation((await FlutterTimezone.getLocalTimezone()).identifier);
     final parts = localTime.split(':');
     final now = tz.TZDateTime.now(location);
+    final l = _l10n();
     for (final r in reminders) {
       final day = parseDayKey(r.dayKey);
       final at = tz.TZDateTime(location, day.year, day.month, day.day, int.parse(parts[0]), int.parse(parts[1]));
@@ -101,12 +106,13 @@ class DeviceReminderScheduler implements ReminderScheduler {
       if (!at.isAfter(now)) continue; // today's time already passed: no late nag
       await _plugin.zonedSchedule(
         id: r.id,
-        title: 'Workout today',
+        title: l.reminderNotificationTitle,
         body: r.title,
         scheduledDate: at,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails('workout_reminders', 'Workout reminders', channelDescription: 'A reminder on days with a planned workout'),
-          iOS: DarwinNotificationDetails(),
+        notificationDetails: NotificationDetails(
+          // The channel ID never changes; Android updates the shown name and description in place.
+          android: AndroidNotificationDetails('workout_reminders', l.reminderChannelName, channelDescription: l.reminderChannelDescription),
+          iOS: const DarwinNotificationDetails(),
         ),
         // Inexact on purpose: a reminder needs no exact-alarm permission.
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -115,11 +121,14 @@ class DeviceReminderScheduler implements ReminderScheduler {
   }
 }
 
-final reminderSchedulerProvider = Provider<ReminderScheduler>((_) => DeviceReminderScheduler());
+final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) => DeviceReminderScheduler(() => ref.read(appL10nProvider)));
 
 /// Keeps the phone's scheduled reminders equal to [plannedReminders]. Watching it is enough; it reschedules
-/// whenever the plan, its lifecycle, the preference or the day changes, and when invalidated on app resume.
+/// whenever the plan, its lifecycle, the preference, the day or the app language changes, and when invalidated on app
+/// resume. A language change replaces the same reminders (same IDs, days and time) with reworded ones: replaceAll cancels
+/// everything first and skips times already past, so nothing is duplicated or replayed.
 final reminderSyncProvider = Provider<String>((ref) {
+  ref.watch(appLocaleProvider);
   // Signed out (or account deleted): this phone keeps no reminders for that owner. Decided here, in the one place
   // that schedules, so a late recompute with the previous owner's data can never put them back.
   if (ref.watch(ownerProvider) == null) {

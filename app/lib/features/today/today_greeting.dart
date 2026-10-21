@@ -1,3 +1,4 @@
+import '../../core/language.dart';
 import '../../data/models.dart';
 import 'daily.dart';
 
@@ -5,8 +6,12 @@ import 'daily.dart';
 /// Nothing here asks the AI, needs a connection or guesses: no readiness, recovery, calories or mood, and a line
 /// only when the projection says something definite.
 
-/// "Good morning" from the phone's local hour.
-String partOfDay(int hour) => hour >= 5 && hour < 12 ? 'Good morning' : hour >= 12 && hour < 18 ? 'Good afternoon' : 'Good evening';
+/// The part of the day from the phone's local hour: 'morning', 'afternoon' or 'evening' (the greeting's select).
+String partOfDay(int hour) => hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 18 ? 'afternoon' : 'evening';
+
+/// "Good morning, Alex!" or "Good morning!": one whole message per part of the day, the name a placeholder.
+String greetingTitle(AppLocalizations l, int hour, String? name) =>
+    name == null ? l.todayGreetingPlain(partOfDay(hour)) : l.todayGreetingNamed(partOfDay(hour), name);
 
 /// The first word of the profile's display name, or null without one.
 String? firstName(String? displayName) {
@@ -19,9 +24,9 @@ String? firstName(String? displayName) {
 /// [justSaved]: a workout was finished with training in it during this session (its own success path, never a
 /// sync or a restart). A planned rest day is a rest day, never a skipped workout; a manual workout never stands in
 /// for the plan's; a skipped day never turns into the next workout.
-String? todayLine(DailySnapshot s, Iterable<Workout> all, {bool justSaved = false}) {
-  if (justSaved) return 'Your workout is saved. Nice work.';
-  if (s.inProgress.isNotEmpty) return 'Your workout is ready to resume.';
+String? todayLine(AppLocalizations l, DailySnapshot s, Iterable<Workout> all, {bool justSaved = false}) {
+  if (justSaved) return l.todayLineSaved;
+  if (s.inProgress.isNotEmpty) return l.todayLineResume;
   return switch (s.training) {
     PlannedToday(:final plan, :final occasions) => () {
         final status = {for (final o in occasions) o.id: statusOf(o, plan, s.dayKey, all)};
@@ -31,16 +36,16 @@ String? todayLine(DailySnapshot s, Iterable<Workout> all, {bool justSaved = fals
             occasions.firstOrNull;
         if (lead == null) return null;
         return switch (status[lead.id]!) {
-          OccasionStatus.inProgress => 'Your workout is ready to resume.',
-          OccasionStatus.due => '${lead.title} is planned today.',
-          OccasionStatus.finished => 'Today\'s workout is done.',
-          OccasionStatus.partial => 'Today\'s workout is saved.',
-          OccasionStatus.skipped => 'Today\'s workout is skipped.',
+          OccasionStatus.inProgress => l.todayLineResume,
+          OccasionStatus.due => l.todayLineDue(lead.title),
+          OccasionStatus.finished => l.todayLineFinished,
+          OccasionStatus.partial => l.todayLinePartial,
+          OccasionStatus.skipped => l.todayLineSkipped,
           _ => null,
         };
       }(),
-    PlannedRest() => 'A planned rest day today.',
-    PlanPausedAction() => 'Your plan is paused today.',
+    PlannedRest() => l.todayLineRest,
+    PlanPausedAction() => l.todayLinePaused,
     _ => null,
   };
 }

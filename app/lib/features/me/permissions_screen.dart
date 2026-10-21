@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../weather/weather.dart';
@@ -55,27 +56,27 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
   @override
   Widget build(BuildContext context) {
     final locator = ref.read(weatherLocatorProvider);
+    final l = context.l10n;
     final location = switch (_location) {
-      LocatorPermission.granted => 'Allowed',
-      LocatorPermission.deniedForever => 'Not allowed',
-      LocatorPermission.denied => 'Not asked yet, or not allowed',
-      null => _known ? 'Unknown' : '…',
+      LocatorPermission.granted => l.permissionAllowed,
+      LocatorPermission.deniedForever => l.permissionNotAllowed,
+      LocatorPermission.denied => l.permissionNotAskedOrNotAllowed,
+      null => _known ? l.permissionUnknown : '…',
     };
-    final notifications = switch (_notifications) { true => 'Allowed', false => 'Not allowed', null => _known ? 'Unknown' : '…' };
-    return AppPage(title: 'Phone permissions', subtitle: 'Controlled by the phone, not by GoHard\'s own settings.', children: [
+    final notifications = switch (_notifications) { true => l.permissionAllowed, false => l.permissionNotAllowed, null => _known ? l.permissionUnknown : '…' };
+    return AppPage(title: l.mePermissions, subtitle: l.permissionsSubtitle, children: [
       GroupCard(children: [
-        GroupRow(key: const Key('permission-location'), icon: Icons.location_on_outlined, title: 'Location', value: location,
-            subtitle: 'Approximate, while the app is open: automatic weather on Today and GPS runs. Asked when you use one of them.'),
-        GroupRow(key: const Key('permission-camera'), icon: Icons.photo_camera_outlined, title: 'Camera',
-            subtitle: 'Barcode scanning only. Asked the first time you scan; the scanner says so if it is not allowed.'),
-        GroupRow(key: const Key('permission-notifications'), icon: Icons.notifications_none, title: 'Notifications', value: notifications,
-            subtitle: 'Workout reminders only. Asked when you turn them on in Me.'),
+        GroupRow(key: const Key('permission-location'), icon: Icons.location_on_outlined, title: l.permissionLocation, value: location,
+            subtitle: l.permissionLocationExplanation),
+        GroupRow(key: const Key('permission-camera'), icon: Icons.photo_camera_outlined, title: l.permissionCamera,
+            subtitle: l.permissionCameraExplanation),
+        GroupRow(key: const Key('permission-notifications'), icon: Icons.notifications_none, title: l.permissionNotifications, value: notifications,
+            subtitle: l.permissionNotificationsExplanation),
       ]),
       const SizedBox(height: 14),
-      Text('GoHard asks for each one only when you use the feature that needs it. To allow or stop something you refused or allowed earlier, use the phone\'s Settings. App preferences such as Units, Appearance and Today background are in Me.',
-          style: context.caption),
+      Text(l.permissionsFootnote, style: context.caption),
       const SizedBox(height: 14),
-      SecondaryButton('Open phone Settings', key: const Key('permission-open-settings'), onPressed: locator.openAppSettings),
+      SecondaryButton(l.permissionsOpenSettings, key: const Key('permission-open-settings'), onPressed: locator.openAppSettings),
     ]);
   }
 }

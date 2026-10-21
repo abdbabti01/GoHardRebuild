@@ -1,0 +1,1575 @@
+{
+  "version": 1,
+  "reviewNote": "Vérifié par le développeur le 15 octobre 2026 à partir des sources indiquées ici. Non révisé par un entraîneur ou un clinicien qualifié : il est en attente de révision. Les recommandations proviennent de ces sources, avec leurs conditions; les consignes d'exécution et les listes de muscles sont des descriptions générales, largement enseignées, et n'ont pas été vérifiées à partir d'une source. Information générale, et non un conseil individuel, un avis médical ou un diagnostic.",
+  "sources": [
+    {
+      "id": "acsm-2009",
+      "title": "American College of Sports Medicine position stand. Progression models in resistance training for healthy adults",
+      "publisher": "Medicine & Science in Sports & Exercise, 2009; 41(3):687–708 (American College of Sports Medicine)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19204579/"
+    },
+    {
+      "id": "ramos-campo-2024",
+      "title": "Efficacy of Split Versus Full-Body Resistance Training on Strength and Muscle Growth: A Systematic Review With Meta-Analysis",
+      "publisher": "Journal of Strength and Conditioning Research, 2024; 38(7):1330–1340 (Ramos-Campo et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38595233/"
+    },
+    {
+      "id": "acsm-2026",
+      "title": "American College of Sports Medicine Position Stand. Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults: An Overview of Reviews",
+      "publisher": "Medicine & Science in Sports & Exercise, 2026; 58(4):851–872 (American College of Sports Medicine; Currier et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41843416/"
+    },
+    {
+      "id": "schoenfeld-2016-rest",
+      "title": "Longer Interset Rest Periods Enhance Muscle Strength and Hypertrophy in Resistance-Trained Men",
+      "publisher": "Journal of Strength and Conditioning Research, 2016; 30(7):1805–1812 (Schoenfeld et al.)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/26605807/"
+    },
+    {
+      "id": "schoenfeld-2019-frequency",
+      "title": "How many times per week should a muscle be trained to maximize muscle hypertrophy? A systematic review and meta-analysis of studies examining the effects of resistance training frequency",
+      "publisher": "Journal of Sports Sciences, 2019; 37(11):1286–1295 (Schoenfeld, Grgic, Krieger)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/30558493/"
+    }
+  ],
+  "splits": [
+    {
+      "templateId": "full-body",
+      "name": "Corps entier",
+      "summary": "Chaque séance entraîne tout le corps : un squat ou une charnière de hanche, une poussée, un tirage et du travail du tronc.",
+      "organisation": "Corps entier A, B et C utilisent des exercices différents pour les mêmes schémas de mouvement. Deux jours : A et B. Trois jours : A, B et C. Pour les autres nombres de jours, on alterne A → B → C.",
+      "days": "2 à 3 jours par semaine, ou en rotation sur plus de jours",
+      "benefits": [
+        "Chaque groupe musculaire est entraîné à chaque séance, donc ta semaine reste équilibrée même si tu manques une journée.",
+        "Deux ou trois séances suffisent pour tout entraîner plus d'une fois par semaine.",
+        "Chaque séance a la même structure, donc c'est simple à suivre."
+      ],
+      "limitations": [
+        "Chaque séance couvre toutes les régions, donc il reste moins de place pour des séries supplémentaires pour un muscle en particulier.",
+        "Les levées lourdes du bas et du haut du corps partagent la même séance.",
+        "S'entraîner deux jours de suite sollicite de nouveau les mêmes muscles."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "upper-lower",
+      "name": "Haut / Bas",
+      "summary": "Les jours du haut et du bas du corps alternent.",
+      "organisation": "Haut A, Bas A, Haut B, Bas B. Quatre jours : une fois chacun. Deux jours : Haut A et Bas A. Pour les autres nombres de jours, les quatre séances sont en rotation d'une semaine à l'autre.",
+      "days": "4 jours par semaine, ou en rotation sur 2 à 3",
+      "benefits": [
+        "Chaque moitié du corps est entraînée deux fois en quatre séances.",
+        "Chaque séance couvre la moitié du corps, donc elle compte moins d'exercices qu'une séance corps entier.",
+        "Les jours du haut et du bas peuvent se suivre, car ils sollicitent des muscles différents."
+      ],
+      "limitations": [
+        "Avec trois jours, les quatre séances sont en rotation, donc un cycle complet prend plus d'une semaine.",
+        "Les jours du bas avec squats et soulevés de terre sont exigeants.",
+        "Les exercices accessoires pour les bras et les épaules viennent à la fin des jours du haut, après les principales poussées et les principaux tirages."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "push-pull-legs",
+      "name": "Poussée / Tirage / Jambes",
+      "summary": "La poussée, le tirage et les jambes ont chacun leur propre journée.",
+      "organisation": "Poussée (pectoraux, épaules, triceps), Tirage (dos, biceps, arrière des épaules), Jambes. Trois jours : une fois chacun. Six jours : les trois deux fois. Pour les autres nombres de jours, on alterne Poussée → Tirage → Jambes.",
+      "days": "3 ou 6 jours par semaine; en rotation pour les autres nombres de jours",
+      "benefits": [
+        "Chaque séance cible des muscles qui travaillent ensemble, donc on peut y placer plusieurs exercices pour eux.",
+        "Une règle claire pour ce que chaque journée entraîne.",
+        "Sur six jours, chaque région est entraînée deux fois par semaine."
+      ],
+      "limitations": [
+        "Sur trois jours, chaque région est entraînée une fois par semaine.",
+        "Une journée manquée laisse cette région sans entraînement jusqu'à son prochain tour.",
+        "Six séances par semaine demandent beaucoup de temps."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "push-pull",
+      "name": "Poussée / Tirage, jambes incluses",
+      "summary": "Deux types de journées : les jours de poussée comprennent le travail des jambes à dominante genou, les jours de tirage, celui à dominante hanche.",
+      "organisation": "Poussée A, Tirage A, Poussée B, Tirage B. Les squats, la presse à cuisses, les squats fendus et les extensions de jambes vont les jours de poussée; les soulevés de terre roumains, les soulevés de terre, les poussées de hanches et les flexions de jambes, les jours de tirage.",
+      "days": "4 jours par semaine, ou 2 (Poussée A et Tirage A)",
+      "benefits": [
+        "Les jambes sont entraînées chaque jour, réparties par mouvement, au lieu d'une journée de jambes séparée.",
+        "Sur quatre jours, chaque région est entraînée deux fois par semaine.",
+        "Le travail du haut du corps et des jambes est réparti également sur la semaine."
+      ],
+      "limitations": [
+        "Chaque séance comprend du travail des jambes, ce que certaines personnes trouvent fatigant sur des jours consécutifs.",
+        "Les séances sont plus longues qu'une journée consacrée seulement au haut du corps.",
+        "Les jours A et B utilisent des exercices différents, donc il y a plus à apprendre."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "upper-lower-ppl",
+      "name": "Haut / Bas + Poussée / Tirage / Jambes",
+      "summary": "Cinq séances : une journée du haut et une du bas, puis poussée, tirage et jambes.",
+      "organisation": "Haut, Bas, Poussée, Tirage, Jambes.",
+      "days": "5 jours par semaine",
+      "benefits": [
+        "Chaque groupe musculaire est entraîné environ deux fois sur les cinq séances.",
+        "Combine des journées complètes du haut et du bas avec des journées ciblées de poussée, de tirage et de jambes."
+      ],
+      "limitations": [
+        "Demande cinq séances par semaine; si tu en manques une, ses régions ne sont entraînées qu'une fois cette semaine-là.",
+        "Cinq séances différentes à apprendre."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "body-part",
+      "name": "Répartition par région du corps",
+      "summary": "Une région principale par séance : pectoraux, dos, jambes, épaules et bras.",
+      "organisation": "Pectoraux, Dos, Jambes, Épaules, Bras.",
+      "days": "5 jours par semaine",
+      "benefits": [
+        "Beaucoup de séries pour une région en une seule séance.",
+        "Chaque séance a un objectif clair.",
+        "Une région entraînée une journée a le reste de la semaine avant d'être entraînée directement de nouveau."
+      ],
+      "limitations": [
+        "Chaque région est entraînée directement une fois par semaine.",
+        "Une séance manquée signifie que cette région n'est pas entraînée directement cette semaine-là.",
+        "Demande cinq séances par semaine."
+      ],
+      "sources": [
+        "ramos-campo-2024",
+        "acsm-2009"
+      ]
+    },
+    {
+      "templateId": "custom",
+      "name": "Personnalisé",
+      "summary": "Tes propres noms de séances, exercices et ordre.",
+      "organisation": "Comme tu le construis : nomme chaque séance différente une fois, puis place-les sur des jours de la semaine ou dans un cycle en rotation.",
+      "days": "N'importe quel nombre de jours",
+      "benefits": [
+        "S'adapte à tout horaire ou à toute préférence.",
+        "Tu choisis chaque exercice."
+      ],
+      "limitations": [
+        "Aucun exercice de départ : tu ajoutes toi-même chaque exercice.",
+        "C'est à toi d'équilibrer les groupes musculaires sur la semaine. La prise de position 2026 de l'ACSM recommande aux adultes en bonne santé de s'entraîner au moins deux fois par semaine en sollicitant tous les grands groupes musculaires."
+      ],
+      "sources": [
+        "acsm-2026"
+      ]
+    }
+  ],
+  "exercises": [
+    {
+      "catalogKey": "back-squat",
+      "muscles": [
+        "Cuisses (quadriceps)",
+        "Fessiers",
+        "Intérieur des cuisses",
+        "Bas du dos"
+      ],
+      "equipment": "Barre et support à squat",
+      "role": "main",
+      "cues": [
+        "Barre sur le haut du dos, pieds à peu près à la largeur des épaules.",
+        "Gaine ton tronc avant chaque répétition.",
+        "Plie les hanches et les genoux en même temps, les genoux dans l'axe des orteils.",
+        "Descends aussi bas que possible tant que ton dos garde la même position, puis remonte."
+      ],
+      "benefits": [
+        "Entraîne plusieurs grands muscles des jambes à la fois.",
+        "Facile à charger par petits paliers."
+      ],
+      "limitations": [
+        "Demande un support, et des barres de sécurité ou un pareur pour les séries lourdes.",
+        "Demande de la pratique pour l'apprendre."
+      ],
+      "alternatives": [
+        "goblet-squat",
+        "leg-press",
+        "bulgarian-split-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bench-press",
+      "muscles": [
+        "Pectoraux",
+        "Avant des épaules",
+        "Triceps"
+      ],
+      "equipment": "Barre et banc",
+      "role": "main",
+      "cues": [
+        "Pieds à plat, omoplates tirées vers l'arrière et vers le bas.",
+        "Descends la barre de façon contrôlée jusqu'au milieu de ta poitrine.",
+        "Pousse vers le haut jusqu'à ce que tes bras soient tendus."
+      ],
+      "benefits": [
+        "Entraîne ensemble les principaux muscles de poussée.",
+        "Facile à charger par petits paliers."
+      ],
+      "limitations": [
+        "Demande des barres de sécurité ou un pareur pour les séries lourdes.",
+        "Demande un banc et un support."
+      ],
+      "alternatives": [
+        "dumbbell-bench-press",
+        "push-up",
+        "incline-dumbbell-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "barbell-row",
+      "muscles": [
+        "Haut du dos",
+        "Grands dorsaux",
+        "Arrière des épaules",
+        "Biceps"
+      ],
+      "equipment": "Barre",
+      "role": "main",
+      "cues": [
+        "Penche-toi vers l'avant à partir des hanches, dos plat, genoux légèrement fléchis.",
+        "Tire la barre vers le bas de tes côtes.",
+        "Redescends-la de façon contrôlée sans laisser ton dos s'arrondir."
+      ],
+      "benefits": [
+        "Entraîne tout le haut du dos avec une charge facile à augmenter."
+      ],
+      "limitations": [
+        "Tenir la position penchée sollicite aussi le bas du dos, ce qui peut limiter la charge."
+      ],
+      "alternatives": [
+        "dumbbell-row",
+        "seated-cable-row",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "deadlift",
+      "muscles": [
+        "Fessiers",
+        "Ischio-jambiers",
+        "Bas du dos",
+        "Cuisses (quadriceps)",
+        "Haut du dos et prise"
+      ],
+      "equipment": "Barre",
+      "role": "main",
+      "cues": [
+        "Barre au-dessus du milieu des pieds, tibias près de la barre.",
+        "Gaine-toi, aplatis ton dos, puis pousse le sol.",
+        "Garde la barre près de tes jambes tout au long de la montée.",
+        "Redescends-la en poussant d'abord les hanches vers l'arrière."
+      ],
+      "benefits": [
+        "Entraîne la majeure partie de l'arrière du corps en un seul mouvement.",
+        "Facile à charger par petits paliers."
+      ],
+      "limitations": [
+        "Exigeant; beaucoup de gens prennent plus de repos entre ses séries.",
+        "Demande de la pratique pour l'apprendre."
+      ],
+      "alternatives": [
+        "romanian-deadlift",
+        "dumbbell-romanian-deadlift",
+        "hip-thrust"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "overhead-press",
+      "muscles": [
+        "Épaules",
+        "Triceps",
+        "Haut des pectoraux"
+      ],
+      "equipment": "Barre",
+      "role": "main",
+      "cues": [
+        "Redresse-toi, serre les fessiers et gaine-toi.",
+        "Pousse la barre droit vers le haut en reculant légèrement la tête pour la laisser passer.",
+        "Termine avec la barre au-dessus du milieu de tes pieds."
+      ],
+      "benefits": [
+        "Entraîne les épaules et les triceps en position debout."
+      ],
+      "limitations": [
+        "Se fait généralement avec moins de charge que le développé couché.",
+        "Demande de pouvoir lever les bras au-dessus de la tête sans inconfort aux épaules."
+      ],
+      "alternatives": [
+        "dumbbell-shoulder-press",
+        "pike-push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "lat-pulldown",
+      "muscles": [
+        "Grands dorsaux",
+        "Haut du dos",
+        "Biceps"
+      ],
+      "equipment": "Appareil à poulie",
+      "role": "main",
+      "cues": [
+        "Assieds-toi, les cuisses sous les coussins.",
+        "Tire la barre jusqu'au haut de ta poitrine, coudes vers le bas et l'arrière.",
+        "Laisse-la remonter de façon contrôlée jusqu'à ce que tes bras soient tendus."
+      ],
+      "benefits": [
+        "La charge peut être réglée sous le poids du corps, contrairement à une traction."
+      ],
+      "limitations": [
+        "Demande un appareil à poulie."
+      ],
+      "alternatives": [
+        "pull-up",
+        "chin-up",
+        "dumbbell-pullover"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "romanian-deadlift",
+      "muscles": [
+        "Ischio-jambiers",
+        "Fessiers",
+        "Bas du dos"
+      ],
+      "equipment": "Barre",
+      "role": "main",
+      "cues": [
+        "Commence debout, genoux légèrement fléchis.",
+        "Pousse les hanches vers l'arrière et fais glisser la barre le long de tes cuisses, dos plat.",
+        "Arrête quand tes ischio-jambiers sont étirés, puis remonte en poussant les hanches vers l'avant."
+      ],
+      "benefits": [
+        "Entraîne les ischio-jambiers et les fessiers sur une grande amplitude."
+      ],
+      "limitations": [
+        "La profondeur de descente dépend de la souplesse des ischio-jambiers; la consigne est d'arrêter avant que ton dos s'arrondisse."
+      ],
+      "alternatives": [
+        "dumbbell-romanian-deadlift",
+        "deadlift",
+        "hip-thrust"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "leg-press",
+      "muscles": [
+        "Cuisses (quadriceps)",
+        "Fessiers"
+      ],
+      "equipment": "Appareil de presse à cuisses",
+      "role": "main",
+      "cues": [
+        "Pieds à plat sur la plateforme, à peu près à la largeur des épaules.",
+        "Descends jusqu'à ce que tes genoux soient bien fléchis, sans que le bas de ton dos décolle du coussin.",
+        "Pousse pour remonter sans verrouiller brusquement les genoux."
+      ],
+      "benefits": [
+        "Entraîne les jambes avec des charges lourdes, peu d'exigence d'équilibre et le dos soutenu."
+      ],
+      "limitations": [
+        "Demande un appareil.",
+        "N'entraîne pas l'équilibre ni le contrôle du tronc."
+      ],
+      "alternatives": [
+        "back-squat",
+        "goblet-squat",
+        "bulgarian-split-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "incline-dumbbell-press",
+      "muscles": [
+        "Haut des pectoraux",
+        "Avant des épaules",
+        "Triceps"
+      ],
+      "equipment": "Haltères et banc incliné",
+      "role": "main",
+      "cues": [
+        "Banc à faible inclinaison.",
+        "Descends les haltères sur les côtés du haut de ta poitrine.",
+        "Pousse vers le haut et légèrement vers l'intérieur."
+      ],
+      "benefits": [
+        "Chaque bras déplace son propre haltère."
+      ],
+      "limitations": [
+        "Mettre des haltères lourds en position demande de la pratique."
+      ],
+      "alternatives": [
+        "dumbbell-bench-press",
+        "bench-press",
+        "feet-elevated-push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-bench-press",
+      "muscles": [
+        "Pectoraux",
+        "Avant des épaules",
+        "Triceps"
+      ],
+      "equipment": "Haltères et banc",
+      "role": "main",
+      "cues": [
+        "Omoplates vers l'arrière, pieds à plat.",
+        "Descends les haltères au niveau de la poitrine, coudes à un angle confortable.",
+        "Pousse vers le haut jusqu'à ce que tes bras soient tendus."
+      ],
+      "benefits": [
+        "Chaque bras déplace son propre haltère.",
+        "Ne demande pas de support."
+      ],
+      "limitations": [
+        "Les haltères lourds sont difficiles à mettre en position."
+      ],
+      "alternatives": [
+        "bench-press",
+        "push-up",
+        "incline-dumbbell-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-row",
+      "muscles": [
+        "Grands dorsaux",
+        "Haut du dos",
+        "Arrière des épaules",
+        "Biceps"
+      ],
+      "equipment": "Haltère et banc",
+      "role": "main",
+      "cues": [
+        "Une main et un genou sur un banc, dos plat.",
+        "Tire l'haltère vers ta hanche.",
+        "Redescends-le jusqu'à ce que ton bras soit tendu."
+      ],
+      "benefits": [
+        "Un côté à la fois, avec le banc qui soutient ton dos."
+      ],
+      "limitations": [
+        "Chaque côté se fait séparément, donc ça prend plus de temps."
+      ],
+      "alternatives": [
+        "barbell-row",
+        "seated-cable-row",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "seated-cable-row",
+      "muscles": [
+        "Haut du dos",
+        "Grands dorsaux",
+        "Arrière des épaules",
+        "Biceps"
+      ],
+      "equipment": "Appareil à poulie",
+      "role": "main",
+      "cues": [
+        "Assieds-toi bien droit, genoux légèrement fléchis.",
+        "Tire la poignée vers le bas de tes côtes en serrant les omoplates.",
+        "Laisse tes bras se tendre de façon contrôlée."
+      ],
+      "benefits": [
+        "Une résistance constante, le dos soutenu par la position assise droite."
+      ],
+      "limitations": [
+        "Demande un appareil à poulie."
+      ],
+      "alternatives": [
+        "dumbbell-row",
+        "barbell-row",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "goblet-squat",
+      "muscles": [
+        "Cuisses (quadriceps)",
+        "Fessiers",
+        "Tronc"
+      ],
+      "equipment": "Un haltère",
+      "role": "main",
+      "cues": [
+        "Tiens un haltère à la verticale contre ta poitrine.",
+        "Descends entre tes talons, poitrine relevée.",
+        "Remonte en poussant avec tout le pied."
+      ],
+      "benefits": [
+        "Une façon courante de pratiquer le squat avec un seul haltère."
+      ],
+      "limitations": [
+        "Le poids que tu peux tenir limite la charge possible."
+      ],
+      "alternatives": [
+        "back-squat",
+        "bodyweight-squat",
+        "leg-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "walking-lunge",
+      "muscles": [
+        "Cuisses (quadriceps)",
+        "Fessiers",
+        "Intérieur des cuisses"
+      ],
+      "equipment": "Haltères (facultatif)",
+      "role": "accessory",
+      "cues": [
+        "Fais un grand pas vers l'avant et descends le genou arrière vers le sol.",
+        "Garde le genou avant dans l'axe de tes orteils.",
+        "Pousse sur le pied avant pour enchaîner le pas suivant."
+      ],
+      "benefits": [
+        "Entraîne une jambe à la fois et met l'équilibre au défi."
+      ],
+      "limitations": [
+        "Demande de l'espace pour marcher.",
+        "L'équilibre limite la charge."
+      ],
+      "alternatives": [
+        "reverse-lunge",
+        "bulgarian-split-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "leg-curl",
+      "muscles": [
+        "Ischio-jambiers"
+      ],
+      "equipment": "Appareil de flexion des jambes",
+      "role": "accessory",
+      "cues": [
+        "Place le coussin juste au-dessus de tes talons.",
+        "Ramène le coussin vers toi.",
+        "Reviens lentement jusqu'à ce que tes jambes soient presque tendues."
+      ],
+      "benefits": [
+        "Entraîne les ischio-jambiers par la flexion du genou, ce que les mouvements de charnière de hanche comme le soulevé de terre roumain font peu."
+      ],
+      "limitations": [
+        "Demande un appareil."
+      ],
+      "alternatives": [
+        "single-leg-glute-bridge",
+        "romanian-deadlift"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-shoulder-press",
+      "muscles": [
+        "Épaules",
+        "Triceps"
+      ],
+      "equipment": "Haltères",
+      "role": "main",
+      "cues": [
+        "En position assise ou debout, haltères à la hauteur des épaules.",
+        "Pousse vers le haut jusqu'à ce que tes bras soient tendus.",
+        "Redescends de façon contrôlée jusqu'à la hauteur des épaules."
+      ],
+      "benefits": [
+        "Chaque bras déplace son propre haltère.",
+        "En position assise, le dossier le rend plus stable."
+      ],
+      "limitations": [
+        "Demande de pouvoir lever les bras au-dessus de la tête sans inconfort aux épaules."
+      ],
+      "alternatives": [
+        "overhead-press",
+        "pike-push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "lateral-raise",
+      "muscles": [
+        "Côtés des épaules"
+      ],
+      "equipment": "Haltères",
+      "role": "accessory",
+      "cues": [
+        "Coudes légèrement fléchis.",
+        "Lève les haltères sur les côtés jusqu'à environ la hauteur des épaules.",
+        "Redescends lentement."
+      ],
+      "benefits": [
+        "Cible le côté de l'épaule, que les poussées sollicitent moins."
+      ],
+      "limitations": [
+        "Seules les charges légères sont pratiques."
+      ],
+      "alternatives": [
+        "dumbbell-shoulder-press",
+        "face-pull"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "biceps-curl",
+      "muscles": [
+        "Biceps",
+        "Avant-bras"
+      ],
+      "equipment": "Haltères",
+      "role": "accessory",
+      "cues": [
+        "Coudes le long du corps.",
+        "Fléchis les bras pour monter les haltères sans balancer ton corps.",
+        "Redescends jusqu'à ce que tes bras soient tendus."
+      ],
+      "benefits": [
+        "Travail direct des biceps."
+      ],
+      "limitations": [
+        "N'entraîne qu'un petit groupe musculaire."
+      ],
+      "alternatives": [
+        "hammer-curl",
+        "barbell-curl",
+        "chin-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "triceps-pushdown",
+      "muscles": [
+        "Triceps"
+      ],
+      "equipment": "Appareil à poulie",
+      "role": "accessory",
+      "cues": [
+        "Coudes collés au corps.",
+        "Pousse la poignée vers le bas jusqu'à ce que tes bras soient tendus.",
+        "Laisse-la remonter jusqu'à ce que tes avant-bras soient à peu près à l'horizontale."
+      ],
+      "benefits": [
+        "Travail direct des triceps avec la résistance constante de la poulie."
+      ],
+      "limitations": [
+        "Demande un appareil à poulie.",
+        "N'entraîne qu'un petit groupe musculaire."
+      ],
+      "alternatives": [
+        "overhead-triceps-extension",
+        "bench-dip",
+        "dip"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "pull-up",
+      "muscles": [
+        "Grands dorsaux",
+        "Haut du dos",
+        "Biceps"
+      ],
+      "equipment": "Barre de traction",
+      "role": "main",
+      "cues": [
+        "Suspends-toi, mains un peu plus larges que les épaules, paumes vers l'avant.",
+        "Tire jusqu'à ce que ton menton passe au-dessus de la barre.",
+        "Redescends complètement de façon contrôlée."
+      ],
+      "benefits": [
+        "Entraîne le dos avec ton propre poids et seulement une barre."
+      ],
+      "limitations": [
+        "Ton poids corporel est la charge minimale, ce qui peut être trop au début."
+      ],
+      "alternatives": [
+        "lat-pulldown",
+        "chin-up",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "push-up",
+      "muscles": [
+        "Pectoraux",
+        "Avant des épaules",
+        "Triceps",
+        "Tronc"
+      ],
+      "equipment": "Poids du corps",
+      "role": "main",
+      "cues": [
+        "Mains un peu plus larges que les épaules, corps en ligne droite.",
+        "Descends la poitrine vers le sol.",
+        "Pousse pour remonter sans laisser tes hanches s'affaisser."
+      ],
+      "benefits": [
+        "Ne demande aucun équipement.",
+        "Peut être facilité en posant les mains sur un banc."
+      ],
+      "limitations": [
+        "Plus difficile à alourdir qu'une poussée avec des poids."
+      ],
+      "alternatives": [
+        "feet-elevated-push-up",
+        "dumbbell-bench-press",
+        "bench-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dip",
+      "muscles": [
+        "Pectoraux",
+        "Triceps",
+        "Avant des épaules"
+      ],
+      "equipment": "Barres parallèles",
+      "role": "main",
+      "cues": [
+        "Commence les bras tendus sur les barres.",
+        "Descends jusqu'à ce que le haut de tes bras soit à peu près parallèle au sol, ou aussi bas que c'est confortable.",
+        "Pousse pour remonter."
+      ],
+      "benefits": [
+        "Entraîne les pectoraux et les triceps avec le poids du corps."
+      ],
+      "limitations": [
+        "Le poids du corps est la charge minimale.",
+        "La position basse peut être inconfortable pour certaines épaules."
+      ],
+      "alternatives": [
+        "bench-dip",
+        "push-up",
+        "triceps-pushdown"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "plank",
+      "muscles": [
+        "Tronc"
+      ],
+      "equipment": "Poids du corps",
+      "role": "accessory",
+      "cues": [
+        "Avant-bras sous les épaules, corps en ligne droite.",
+        "Serre les fessiers et gaine ton ventre.",
+        "Respire de façon régulière et arrête quand tes hanches commencent à descendre."
+      ],
+      "benefits": [
+        "Entraîne le tronc à rester immobile, sans équipement."
+      ],
+      "limitations": [
+        "Se tient sur une durée, donc c'est plus difficile de mesurer les progrès par la charge."
+      ],
+      "alternatives": [
+        "side-plank",
+        "dead-bug"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "side-plank",
+      "muscles": [
+        "Côtés du tronc (obliques)",
+        "Tronc",
+        "Hanches"
+      ],
+      "equipment": "Poids du corps",
+      "role": "accessory",
+      "cues": [
+        "Coude sous l'épaule, corps en ligne droite.",
+        "Soulève les hanches et garde-les en haut.",
+        "Fais les deux côtés."
+      ],
+      "benefits": [
+        "Entraîne les côtés du tronc sans équipement."
+      ],
+      "limitations": [
+        "Chaque côté se fait séparément."
+      ],
+      "alternatives": [
+        "plank",
+        "farmer-carry"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "hanging-leg-raise",
+      "muscles": [
+        "Bas des abdominaux",
+        "Fléchisseurs de la hanche"
+      ],
+      "equipment": "Barre de traction",
+      "role": "accessory",
+      "cues": [
+        "Suspends-toi à une barre sans te balancer.",
+        "Lève les jambes, en pliant les genoux pour faciliter le mouvement.",
+        "Redescends lentement."
+      ],
+      "benefits": [
+        "Entraîne ensemble les abdominaux et les fléchisseurs de la hanche."
+      ],
+      "limitations": [
+        "Ta prise doit soutenir ton poids corporel."
+      ],
+      "alternatives": [
+        "dead-bug",
+        "plank"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "farmer-carry",
+      "muscles": [
+        "Prise et avant-bras",
+        "Haut du dos",
+        "Tronc"
+      ],
+      "equipment": "Haltères",
+      "role": "accessory",
+      "cues": [
+        "Tiens un haltère lourd dans chaque main.",
+        "Redresse-toi et marche à petits pas réguliers.",
+        "Dépose les poids de façon contrôlée."
+      ],
+      "benefits": [
+        "Entraîne la prise et le tronc en marchant."
+      ],
+      "limitations": [
+        "Demande de l'espace pour marcher."
+      ],
+      "alternatives": [
+        "side-plank"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "calf-raise",
+      "muscles": [
+        "Mollets"
+      ],
+      "equipment": "Appareil à mollets",
+      "role": "accessory",
+      "cues": [
+        "Avant-pied sur le bord de la marche.",
+        "Descends les talons pour un étirement.",
+        "Monte aussi haut que possible, puis marque une pause."
+      ],
+      "benefits": [
+        "Travail direct des mollets."
+      ],
+      "limitations": [
+        "Demande un appareil."
+      ],
+      "alternatives": [
+        "single-leg-calf-raise"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "single-leg-calf-raise",
+      "muscles": [
+        "Mollets"
+      ],
+      "equipment": "Poids du corps et une marche",
+      "role": "accessory",
+      "cues": [
+        "Tiens-toi sur un pied au bord d'une marche, en te tenant pour garder l'équilibre.",
+        "Descends le talon, puis monte aussi haut que possible.",
+        "Fais les deux côtés."
+      ],
+      "benefits": [
+        "Ne demande qu'une marche."
+      ],
+      "limitations": [
+        "Chaque côté se fait séparément."
+      ],
+      "alternatives": [
+        "calf-raise"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "leg-extension",
+      "muscles": [
+        "Cuisses (quadriceps)"
+      ],
+      "equipment": "Appareil d'extension des jambes",
+      "role": "accessory",
+      "cues": [
+        "Coussin sur le devant du bas de tes tibias.",
+        "Tends les genoux.",
+        "Redescends de façon contrôlée."
+      ],
+      "benefits": [
+        "Travail direct du devant des cuisses."
+      ],
+      "limitations": [
+        "Demande un appareil."
+      ],
+      "alternatives": [
+        "goblet-squat",
+        "bulgarian-split-squat",
+        "leg-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "hip-thrust",
+      "muscles": [
+        "Fessiers",
+        "Ischio-jambiers"
+      ],
+      "equipment": "Barre et banc",
+      "role": "main",
+      "cues": [
+        "Haut du dos sur un banc, barre sur les hanches (un coussin aide).",
+        "Pousse les hanches vers le haut jusqu'à ce que ton corps soit aligné des épaules aux genoux.",
+        "Redescends de façon contrôlée."
+      ],
+      "benefits": [
+        "Charge lourdement les fessiers sans charger la colonne par le haut."
+      ],
+      "limitations": [
+        "L'installation de la barre prend un peu de temps."
+      ],
+      "alternatives": [
+        "glute-bridge",
+        "single-leg-glute-bridge",
+        "romanian-deadlift"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "glute-bridge",
+      "muscles": [
+        "Fessiers",
+        "Ischio-jambiers"
+      ],
+      "equipment": "Poids du corps",
+      "role": "accessory",
+      "cues": [
+        "Allonge-toi sur le dos, genoux pliés, pieds à plat.",
+        "Pousse dans tes talons pour soulever les hanches.",
+        "Marque une pause en haut, puis redescends."
+      ],
+      "benefits": [
+        "Ne demande aucun équipement."
+      ],
+      "limitations": [
+        "Le poids du corps seul est léger pour des jambes fortes."
+      ],
+      "alternatives": [
+        "hip-thrust",
+        "single-leg-glute-bridge"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "single-leg-glute-bridge",
+      "muscles": [
+        "Fessiers",
+        "Ischio-jambiers"
+      ],
+      "equipment": "Poids du corps",
+      "role": "accessory",
+      "cues": [
+        "Allonge-toi sur le dos, un pied à plat et l'autre jambe levée.",
+        "Pousse dans le talon au sol pour soulever les hanches.",
+        "Garde les hanches à niveau; fais les deux côtés."
+      ],
+      "benefits": [
+        "Plus difficile qu'un pont sur deux jambes, sans équipement."
+      ],
+      "limitations": [
+        "Chaque côté se fait séparément."
+      ],
+      "alternatives": [
+        "glute-bridge",
+        "hip-thrust",
+        "leg-curl"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bulgarian-split-squat",
+      "muscles": [
+        "Cuisses (quadriceps)",
+        "Fessiers"
+      ],
+      "equipment": "Haltères et banc",
+      "role": "main",
+      "cues": [
+        "Pied arrière sur un banc derrière toi.",
+        "Descends à la verticale jusqu'à ce que ta cuisse avant soit à peu près à l'horizontale.",
+        "Remonte en poussant avec le pied avant; fais les deux côtés."
+      ],
+      "benefits": [
+        "Entraîne une jambe à la fois, donc c'est exigeant même avec des charges légères."
+      ],
+      "limitations": [
+        "L'équilibre demande de la pratique.",
+        "Chaque côté se fait séparément."
+      ],
+      "alternatives": [
+        "reverse-lunge",
+        "goblet-squat",
+        "walking-lunge"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bodyweight-squat",
+      "muscles": [
+        "Cuisses (quadriceps)",
+        "Fessiers"
+      ],
+      "equipment": "Poids du corps",
+      "role": "accessory",
+      "cues": [
+        "Pieds à peu près à la largeur des épaules.",
+        "Descends vers le bas et l'arrière, genoux dans l'axe des orteils.",
+        "Remonte en poussant avec tout le pied."
+      ],
+      "benefits": [
+        "Ne demande aucun équipement."
+      ],
+      "limitations": [
+        "Le poids du corps seul est léger pour des jambes fortes; plus de répétitions ou un rythme plus lent le rendent plus difficile."
+      ],
+      "alternatives": [
+        "goblet-squat",
+        "reverse-lunge"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "reverse-lunge",
+      "muscles": [
+        "Cuisses (quadriceps)",
+        "Fessiers"
+      ],
+      "equipment": "Poids du corps",
+      "role": "accessory",
+      "cues": [
+        "Fais un pas vers l'arrière et descends le genou arrière vers le sol.",
+        "Garde la majeure partie de ton poids sur le pied avant.",
+        "Pousse pour revenir debout; fais les deux côtés."
+      ],
+      "benefits": [
+        "Ne demande aucun équipement et peu d'espace."
+      ],
+      "limitations": [
+        "Chaque côté se fait séparément."
+      ],
+      "alternatives": [
+        "walking-lunge",
+        "bulgarian-split-squat",
+        "bodyweight-squat"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-romanian-deadlift",
+      "muscles": [
+        "Ischio-jambiers",
+        "Fessiers",
+        "Bas du dos"
+      ],
+      "equipment": "Haltères",
+      "role": "main",
+      "cues": [
+        "Haltères devant les cuisses, genoux légèrement fléchis.",
+        "Pousse les hanches vers l'arrière, dos plat.",
+        "Arrête quand tes ischio-jambiers sont étirés, puis remonte."
+      ],
+      "benefits": [
+        "Le même mouvement que la version à la barre, avec des haltères."
+      ],
+      "limitations": [
+        "Les haltères que tu peux tenir limitent la charge."
+      ],
+      "alternatives": [
+        "romanian-deadlift",
+        "single-leg-glute-bridge",
+        "hip-thrust"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "cable-fly",
+      "muscles": [
+        "Pectoraux",
+        "Avant des épaules"
+      ],
+      "equipment": "Appareil à poulie",
+      "role": "accessory",
+      "cues": [
+        "Coudes légèrement fléchis, sans changer l'angle.",
+        "Rapproche tes mains devant ta poitrine en décrivant un grand arc.",
+        "Rouvre les bras de façon contrôlée."
+      ],
+      "benefits": [
+        "Travail des pectoraux avec la résistance constante de la poulie."
+      ],
+      "limitations": [
+        "Demande un appareil à poulie."
+      ],
+      "alternatives": [
+        "dumbbell-fly",
+        "push-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-fly",
+      "muscles": [
+        "Pectoraux",
+        "Avant des épaules"
+      ],
+      "equipment": "Haltères et banc",
+      "role": "accessory",
+      "cues": [
+        "Allonge-toi sur un banc, haltères au-dessus de la poitrine, coudes légèrement fléchis.",
+        "Ouvre les bras en grand arc jusqu'à sentir un étirement.",
+        "Ramène-les ensemble."
+      ],
+      "benefits": [
+        "Travail des pectoraux avec des haltères seulement."
+      ],
+      "limitations": [
+        "Charges légères seulement : la position bras allongés rend les charges lourdes difficiles à contrôler."
+      ],
+      "alternatives": [
+        "cable-fly",
+        "dumbbell-bench-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "feet-elevated-push-up",
+      "muscles": [
+        "Haut des pectoraux",
+        "Avant des épaules",
+        "Triceps"
+      ],
+      "equipment": "Poids du corps et banc",
+      "role": "main",
+      "cues": [
+        "Pieds sur un banc, mains au sol.",
+        "Corps en ligne droite.",
+        "Descends la poitrine, puis pousse pour remonter."
+      ],
+      "benefits": [
+        "Une pompe plus difficile, sans poids."
+      ],
+      "limitations": [
+        "Plus difficile à alourdir qu'une poussée avec des poids."
+      ],
+      "alternatives": [
+        "push-up",
+        "incline-dumbbell-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "chin-up",
+      "muscles": [
+        "Grands dorsaux",
+        "Biceps",
+        "Haut du dos"
+      ],
+      "equipment": "Barre de traction",
+      "role": "main",
+      "cues": [
+        "Suspends-toi, paumes vers toi, mains à la largeur des épaules.",
+        "Tire jusqu'à ce que ton menton passe au-dessus de la barre.",
+        "Redescends complètement de façon contrôlée."
+      ],
+      "benefits": [
+        "Entraîne ensemble le dos et les biceps avec seulement une barre."
+      ],
+      "limitations": [
+        "Ton poids corporel est la charge minimale."
+      ],
+      "alternatives": [
+        "pull-up",
+        "lat-pulldown",
+        "inverted-row"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "inverted-row",
+      "muscles": [
+        "Haut du dos",
+        "Grands dorsaux",
+        "Biceps"
+      ],
+      "equipment": "Une barre à hauteur de taille ou une table solide",
+      "role": "main",
+      "cues": [
+        "Suspends-toi sous une barre, corps droit, talons au sol.",
+        "Tire ta poitrine jusqu'à la barre.",
+        "Redescends jusqu'à ce que tes bras soient tendus."
+      ],
+      "benefits": [
+        "Un exercice de tirage sans poids; plier les genoux le rend plus facile."
+      ],
+      "limitations": [
+        "Demande une barre solide ou un bord de table solide."
+      ],
+      "alternatives": [
+        "dumbbell-row",
+        "seated-cable-row",
+        "pull-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dumbbell-pullover",
+      "muscles": [
+        "Grands dorsaux",
+        "Pectoraux"
+      ],
+      "equipment": "Un haltère et un banc",
+      "role": "accessory",
+      "cues": [
+        "Allonge-toi sur un banc en tenant un haltère au-dessus de ta poitrine.",
+        "Descends-le derrière ta tête, bras légèrement fléchis.",
+        "Ramène-le au-dessus de ta poitrine."
+      ],
+      "benefits": [
+        "Sollicite les grands dorsaux avec un seul haltère."
+      ],
+      "limitations": [
+        "Demande de pouvoir lever les bras au-dessus de la tête sans inconfort aux épaules."
+      ],
+      "alternatives": [
+        "lat-pulldown",
+        "pull-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "face-pull",
+      "muscles": [
+        "Arrière des épaules",
+        "Haut du dos"
+      ],
+      "equipment": "Appareil à poulie avec corde",
+      "role": "accessory",
+      "cues": [
+        "Corde à peu près à la hauteur du visage.",
+        "Tire-la vers ton visage en écartant les mains.",
+        "Reviens de façon contrôlée."
+      ],
+      "benefits": [
+        "Travail direct de l'arrière des épaules et du haut du dos."
+      ],
+      "limitations": [
+        "Demande un appareil à poulie."
+      ],
+      "alternatives": [
+        "rear-delt-fly"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "rear-delt-fly",
+      "muscles": [
+        "Arrière des épaules",
+        "Haut du dos"
+      ],
+      "equipment": "Haltères",
+      "role": "accessory",
+      "cues": [
+        "Penche-toi vers l'avant à partir des hanches, dos plat.",
+        "Lève les haltères sur les côtés, coudes légèrement fléchis.",
+        "Redescends lentement."
+      ],
+      "benefits": [
+        "Travail direct de l'arrière des épaules avec des haltères légers."
+      ],
+      "limitations": [
+        "Seules les charges légères sont pratiques."
+      ],
+      "alternatives": [
+        "face-pull"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "pike-push-up",
+      "muscles": [
+        "Épaules",
+        "Triceps"
+      ],
+      "equipment": "Poids du corps",
+      "role": "main",
+      "cues": [
+        "Hanches hautes, corps en V inversé.",
+        "Descends le dessus de ta tête vers le sol entre tes mains.",
+        "Pousse pour remonter."
+      ],
+      "benefits": [
+        "Une poussée de type au-dessus de la tête, sans équipement."
+      ],
+      "limitations": [
+        "Plus difficile à alourdir qu'une poussée avec des poids."
+      ],
+      "alternatives": [
+        "dumbbell-shoulder-press",
+        "overhead-press"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "barbell-curl",
+      "muscles": [
+        "Biceps",
+        "Avant-bras"
+      ],
+      "equipment": "Barre",
+      "role": "accessory",
+      "cues": [
+        "Coudes le long du corps.",
+        "Fléchis les bras pour monter la barre sans te balancer.",
+        "Redescends jusqu'à ce que tes bras soient tendus."
+      ],
+      "benefits": [
+        "Les deux bras ensemble, avec une charge facile à augmenter."
+      ],
+      "limitations": [
+        "N'entraîne qu'un petit groupe musculaire."
+      ],
+      "alternatives": [
+        "biceps-curl",
+        "hammer-curl",
+        "chin-up"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "hammer-curl",
+      "muscles": [
+        "Biceps",
+        "Avant-bras"
+      ],
+      "equipment": "Haltères",
+      "role": "accessory",
+      "cues": [
+        "Paumes face à face.",
+        "Fléchis les bras pour monter sans te balancer.",
+        "Redescends jusqu'à ce que tes bras soient tendus."
+      ],
+      "benefits": [
+        "La prise paumes face à face sollicite aussi les muscles des avant-bras."
+      ],
+      "limitations": [
+        "N'entraîne qu'un petit groupe musculaire."
+      ],
+      "alternatives": [
+        "biceps-curl",
+        "barbell-curl"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "overhead-triceps-extension",
+      "muscles": [
+        "Triceps"
+      ],
+      "equipment": "Un haltère",
+      "role": "accessory",
+      "cues": [
+        "Tiens un haltère au-dessus de ta tête à deux mains.",
+        "Descends-le derrière ta tête en pliant les coudes.",
+        "Tends les bras."
+      ],
+      "benefits": [
+        "Entraîne les triceps en position étirée avec un seul haltère."
+      ],
+      "limitations": [
+        "Demande de pouvoir lever les bras au-dessus de la tête sans inconfort aux épaules."
+      ],
+      "alternatives": [
+        "triceps-pushdown",
+        "bench-dip"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "bench-dip",
+      "muscles": [
+        "Triceps",
+        "Avant des épaules"
+      ],
+      "equipment": "Poids du corps et banc",
+      "role": "accessory",
+      "cues": [
+        "Mains sur le bord d'un banc derrière toi.",
+        "Descends en pliant les coudes, aussi bas que c'est confortable.",
+        "Pousse pour remonter."
+      ],
+      "benefits": [
+        "Travail des triceps avec seulement un banc."
+      ],
+      "limitations": [
+        "La position basse peut être inconfortable pour certaines épaules."
+      ],
+      "alternatives": [
+        "dip",
+        "triceps-pushdown",
+        "overhead-triceps-extension"
+      ],
+      "sources": []
+    },
+    {
+      "catalogKey": "dead-bug",
+      "muscles": [
+        "Tronc"
+      ],
+      "equipment": "Poids du corps",
+      "role": "accessory",
+      "cues": [
+        "Allonge-toi sur le dos, bras levés, genoux pliés au-dessus des hanches.",
+        "Plaque le bas de ton dos au sol.",
+        "Descends lentement le bras et la jambe opposés, puis change de côté."
+      ],
+      "benefits": [
+        "Entraîne le tronc à rester immobile pendant que les membres bougent, sans équipement."
+      ],
+      "limitations": [
+        "Facile à précipiter; il est conçu pour être fait lentement et avec contrôle."
+      ],
+      "alternatives": [
+        "plank",
+        "hanging-leg-raise"
+      ],
+      "sources": []
+    }
+  ],
+  "terms": [
+    {
+      "id": "sets-reps",
+      "term": "3 × 8–12",
+      "text": "Trois séries de 8 à 12 répétitions. Une répétition (rép.) est un mouvement complet; une série est un groupe de répétitions faites sans arrêt. Repose-toi, puis fais la série suivante. Pour les débutants, la prise de position de l'ACSM de 2009 recommandait des charges que tu peux soulever 8 à 12 fois, pour 1 à 3 séries par exercice; sa mise à jour de 2026 conseille aux adultes en bonne santé de faire au moins deux séries par exercice.",
+      "sources": [
+        "acsm-2009",
+        "acsm-2026"
+      ]
+    },
+    {
+      "id": "timed-sets",
+      "term": "3 × 40 s",
+      "text": "Trois séries de 40 secondes chacune, pour des exercices comme la planche, où la durée est la cible.",
+      "sources": []
+    },
+    {
+      "id": "rep-range",
+      "term": "Plage de répétitions",
+      "text": "Le nombre le plus bas et le plus élevé de répétitions que tu vises dans une série, par exemple 8 à 12. Choisis une charge que tu peux soulever au moins le nombre le plus bas de fois avec une bonne technique. Les séries n'ont pas à aller jusqu'à l'échec : la mise à jour de 2026 de l'ACSM a constaté que s'entraîner jusqu'à l'échec n'ajoutait rien aux gains de force ou de masse musculaire, et indique qu'arrêter environ 2 à 3 répétitions avant peut constituer un effort suffisant.",
+      "sources": [
+        "acsm-2009",
+        "acsm-2026"
+      ]
+    },
+    {
+      "id": "rest",
+      "term": "Repos",
+      "text": "Le temps entre les séries. La prise de position de l'ACSM de 2009 suggérait, pour l'entraînement en force, au moins 2 à 3 minutes pour les levées polyarticulaires plus lourdes comme les squats et 1 à 2 minutes pour les exercices accessoires plus légers; pour l'entraînement visant la masse musculaire aux niveaux débutant et intermédiaire, 1 à 2 minutes; et des repos plus courts (moins de 1 à 2 minutes) pour le travail d'endurance musculaire. La mise à jour de 2026 de l'ACSM a constaté que des repos de moins ou de plus de 1 minute ne faisaient pas de différence constante sur les gains de force d'une revue à l'autre, alors qu'une étude chez des hommes entraînés a constaté que 3 minutes donnaient plus de force et de muscle que 1 minute. Repose-toi assez longtemps pour refaire tes répétitions cibles avec une bonne technique.",
+      "sources": [
+        "acsm-2009",
+        "acsm-2026",
+        "schoenfeld-2016-rest"
+      ]
+    },
+    {
+      "id": "split",
+      "term": "Répartition (split)",
+      "text": "La façon dont l'entraînement est réparti sur la semaine. Un programme corps entier entraîne tout à chaque séance; une répartition attribue des régions différentes à des jours différents, comme le haut et le bas du corps. Une méta-analyse de 2024 (14 études, 392 adultes en bonne santé) n'a trouvé aucune différence significative de gains de force ou de masse musculaire entre les routines réparties et corps entier lorsque le volume d'entraînement hebdomadaire était le même; aucune n'est donc meilleure en général, et elle a conclu que chacun peut choisir selon ses préférences.",
+      "sources": [
+        "ramos-campo-2024"
+      ]
+    },
+    {
+      "id": "rotation",
+      "term": "Séquence en rotation",
+      "text": "Les séances suivent un ordre fixe et tu fais toujours la suivante, peu importe le jour où tu t'entraînes. L'ordre se poursuit d'une semaine à l'autre au lieu de recommencer le lundi.",
+      "sources": []
+    },
+    {
+      "id": "fixed-weekdays",
+      "term": "Jours de semaine fixes",
+      "text": "Chaque séance appartient à un jour de la semaine, comme Haut A le lundi. Une séance manquée reste à son jour jusqu'à ce que tu la déplaces ou la sautes.",
+      "sources": []
+    },
+    {
+      "id": "compound-accessory",
+      "term": "Polyarticulaire et accessoire",
+      "text": "Un exercice polyarticulaire (composé) fait bouger plusieurs articulations et sollicite plusieurs grands muscles, comme un squat ou un développé couché. Un exercice accessoire fait généralement bouger une seule articulation et sollicite un muscle plus petit, comme un curl. Les levées polyarticulaires viennent généralement en premier, quand tu as encore toute ton énergie : la prise de position de l'ACSM de 2009 recommande les exercices polyarticulaires avant les monoarticulaires, et sa mise à jour de 2026 a constaté que les exercices faits tôt dans une séance donnaient plus de gains de force (l'ordre des exercices n'a pas influé sur la masse musculaire).",
+      "sources": [
+        "acsm-2009",
+        "acsm-2026"
+      ]
+    },
+    {
+      "id": "progression",
+      "term": "Progression",
+      "text": "Rendre l'entraînement graduellement plus difficile pour continuer à t'adapter, par exemple avec plus de charge, de répétitions ou de séries. Pour l'entraînement avec une cible de répétitions fixe, la prise de position de l'ACSM de 2009 suggérait d'ajouter environ 2 à 10 % à la charge (moins pour les exercices de petits muscles, plus pour ceux de grands muscles) une fois que tu peux faire 1 à 2 répétitions de plus que la cible lors de deux séances consécutives. La mise à jour de 2026 de l'ACSM indique que l'entraînement est utile même sans progression; augmenter le défi compte surtout pour des gains continus à plus long terme.",
+      "sources": [
+        "acsm-2009",
+        "acsm-2026"
+      ]
+    },
+    {
+      "id": "volume",
+      "term": "Volume hebdomadaire",
+      "text": "Le nombre de séries qu'un groupe musculaire reçoit dans une semaine. La mise à jour de 2026 de l'ACSM a associé un plus grand nombre de séries hebdomadaires (10 ou plus par groupe musculaire) à une plus grande croissance musculaire, avec des gains plus faibles à des volumes plus élevés. À nombre de séries hebdomadaires égal, le nombre de jours sur lesquels elles étaient réparties n'a pas fait de différence significative sur la croissance musculaire dans une méta-analyse de 2019, et le choix entre répartition et corps entier n'a pas fait de différence significative dans une autre de 2024.",
+      "sources": [
+        "acsm-2026",
+        "schoenfeld-2019-frequency",
+        "ramos-campo-2024"
+      ]
+    }
+  ]
+}

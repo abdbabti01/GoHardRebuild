@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's languages for Android 13+ per-app language settings (docs/LOCALIZATION.md › Native). The app's own
+     Me › Language choice applies inside the app either way. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en"/>
+    <locale android:name="fr-CA"/>
+    <locale android:name="ar"/>
+</locale-config>

@@ -7,13 +7,13 @@ import '../../core/clock.dart';
 import '../../core/compatibility.dart';
 import '../../core/device_prefs.dart' show Haptics;
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../coach/coach_bubble.dart';
-import '../progress/progress_view.dart' show plural;
 import '../progress/trend_screens.dart' show PointChart, timeOf;
 import '../progress/trends.dart' show TrendRange;
 import 'body_metrics.dart';
@@ -24,8 +24,20 @@ import 'body_repository.dart';
 /// connected views over the account's own check-ins: the overview, Log measurements, Compare dates. Looking never
 /// writes; only Save, Delete and a unit or field choice change anything.
 
-/// "Oct 5, 2026"
-String _dateYear(String day) => '${dayMonth(day)}, ${parseDayKey(day).year}';
+/// "4 weeks", "12 weeks", "All".
+String _rangeLabel(AppLocalizations l, TrendRange r) => l.bodyRangeLabel(r.name);
+
+/// "in the last 4 weeks", "in all your history".
+String _rangeWords(AppLocalizations l, TrendRange r) => l.bodyRangeWords(r.name);
+
+String _inputText(AppLocalizations l, BodyInputError e) => switch (e.problem) {
+      BodyInputProblem.nothingEntered => l.bodyErrorNothingEntered,
+      BodyInputProblem.outOfRange => l.bodyErrorFieldOutOfRange(bodyFieldLabel(l, e.field!)),
+      BodyInputProblem.noteTooLong => l.bodyErrorNoteTooLong,
+      BodyInputProblem.measurementsNeedServer => l.bodyErrorMeasurementsNeedServer,
+      BodyInputProblem.needsOneMeasurement => l.bodyErrorNeedsOneMeasurement,
+      BodyInputProblem.correctionNeedsServer => l.bodyErrorCorrectionNeedsServer,
+    };
 
 /// What the page knows about this account's check-ins: every one not deleted (history shows them all) and the trusted
 /// ones (not awaiting review) that feed latest values, averages, charts and comparisons.
@@ -41,17 +53,18 @@ class _Records {
 Widget _guard(BuildContext context, WidgetRef ref, String title, Widget Function(_Records r) build) {
   final rows = ref.watch(metricsProvider);
   if (rows.hasError) {
-    return AppPage(title: title, children: const [EmptyState('This could not be read', 'Your measurements on this phone could not be read just now. Nothing was changed; try again.')]);
+    return AppPage(title: title, children: [EmptyState(context.l10n.bodyReadErrorTitle, context.l10n.bodyReadErrorBody)]);
   }
   if (!rows.hasValue) return const Scaffold(body: Center(child: CircularProgressIndicator()));
   return build(_Records(rows.value!));
 }
 
 /// "Saved on this phone · waiting to sync" or "Needs review", in the app's existing words; nothing for a synced one.
-String? _syncWords(Stored<BodyMetric> r) => r.needsReview ? 'Needs review in Me › Sync status' : r.isPending ? 'Saved on this phone · waiting to sync' : null;
+String? _syncWords(AppLocalizations l, Stored<BodyMetric> r) => r.needsReview ? l.bodySyncNeedsReview : r.isPending ? l.bodySyncWaiting : null;
 
 /// "Waist 35.5 in · Body fat 21.5 %", every value a check-in holds.
-String _summary(BodyMetric m, BodyUnits units) => [for (final f in BodyField.values) if (has(m, f)) '${f.label} ${units.value(f, m.value(f.key))}'].join(' · ');
+String _summary(AppLocalizations l, BodyMetric m, BodyUnits units) =>
+    [for (final f in BodyField.values) if (has(m, f)) l.bodyFieldValue(bodyFieldLabel(l, f), units.value(f, m.value(f.key)))].join(' · ');
 
 /// Opens a check-in for correction, or, on a day with several, a list to choose from.
 Future<void> _openDay(BuildContext context, List<BodyMetric> checkIns, String day) async {
@@ -70,14 +83,15 @@ class _DayList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final units = ref.watch(bodyUnitsProvider);
     final known = orderKnown(onDay);
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text(known ? '${onDay.length} entries this day, in the order they were saved.' : '${onDay.length} entries this day. The order they were taken in is not known.', style: context.caption),
+      Text(known ? l.bodyDayEntriesKnown(onDay.length) : l.bodyDayEntriesUnknown(onDay.length), style: context.caption),
       const SizedBox(height: 10),
       GroupCard(children: [
         for (final (i, m) in onDay.indexed)
           GroupRow(
-            key: Key('body-day-entry-${m.id}'), title: known && m.recordedAtUtc != null ? 'Saved at ${timeOf(m.recordedAtUtc!)}' : 'Entry ${i + 1}',
-            subtitle: _summary(m, units),
+            key: Key('body-day-entry-${m.id}'), title: known && m.recordedAtUtc != null ? l.bodySavedAt(timeOf(m.recordedAtUtc!)) : l.bodyEntryNumber(i + 1),
+            subtitle: _summary(l, m, units),
             onTap: () {
               Navigator.pop(context);
               push(context, CheckInScreen(existing: m));
@@ -101,33 +115,34 @@ class _BodyProgressScreenState extends ConsumerState<BodyProgressScreen> {
   TrendRange _range = TrendRange.weeks4;
 
   @override
-  Widget build(BuildContext context) => _guard(context, ref, 'Body progress', (r) {
+  Widget build(BuildContext context) => _guard(context, ref, context.l10n.bodyTitle, (r) {
         final units = ref.watch(bodyUnitsProvider);
         final today = ref.watch(todayKeyProvider);
         final pending = r.all.where((x) => x.isPending).length;
         final caps = ref.watch(compatibilityProvider).capabilities;
+        final l = context.l10n;
         return AppPage(
-          title: 'Body progress', subtitle: longDate(today),
-          actions: const [CoachHelpEntry(id: 'me.body', label: 'Help with body progress')],
+          title: l.bodyTitle, subtitle: longDate(today),
+          actions: [CoachHelpEntry(id: 'me.body', label: l.bodyHelp)],
           children: [
             CoachSpot(
               id: 'me.body', introduce: true, padding: const EdgeInsets.only(bottom: 16),
-              say: CoachSay('Track what matters to you. Every measurement is optional.',
-                  guide: (label: 'How to measure', key: const Key('body-how'), onPressed: () => push(context, const HowToMeasureScreen()))),
+              say: CoachSay(l.bodyCoachSay,
+                  guide: (label: l.bodyHowToMeasure, key: const Key('body-how'), onPressed: () => push(context, const HowToMeasureScreen()))),
             ),
             if (r.all.isEmpty)
-              EmptyState('Nothing recorded yet', 'Log a weight or any one measurement when it helps you. Nothing here is required.',
+              EmptyState(l.bodyEmptyTitle, l.bodyEmptyBody,
                   action: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    PrimaryButton('Log measurements', key: const Key('body-log'), onPressed: () => push(context, const CheckInScreen())),
-                    QuietLink('How to measure', key: const Key('body-how-empty'), onPressed: () => push(context, const HowToMeasureScreen())),
+                    PrimaryButton(l.bodyLogMeasurements, key: const Key('body-log'), onPressed: () => push(context, const CheckInScreen())),
+                    QuietLink(l.bodyHowToMeasure, key: const Key('body-how-empty'), onPressed: () => push(context, const HowToMeasureScreen())),
                   ]))
             else ...[
               _WeightPanel(checkIns: r.trusted, today: today, units: units),
               if (pending > 0) ...[
                 const SizedBox(height: 10),
                 StatusLine(Icons.phone_iphone, caps != null && !caps.contains(BodyRepository.capability)
-                    ? '${plural(pending, 'change')} saved on this phone. Some wait for your account\'s server to support body measurements.'
-                    : '${plural(pending, 'change')} saved on this phone · waiting to sync', key: const Key('body-pending')),
+                    ? l.bodyPendingOldServer(pending)
+                    : l.bodyPendingWaiting(pending), key: const Key('body-pending')),
               ],
               const SizedBox(height: 22),
               _ChartSection(field: BodyField.weight, checkIns: r.trusted, range: _range, today: today, units: units,
@@ -138,7 +153,7 @@ class _BodyProgressScreenState extends ConsumerState<BodyProgressScreen> {
               _LatestList(checkIns: r.trusted, units: units, range: _range),
               Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: QuietLink('All measurements', key: const Key('body-all'), onPressed: () => push(context, const BodyHistoryScreen())),
+                child: QuietLink(l.bodyAllMeasurements, key: const Key('body-all'), onPressed: () => push(context, const BodyHistoryScreen())),
               ),
             ],
           ],
@@ -161,14 +176,15 @@ class _WeightPanel extends StatelessWidget {
       key: const Key('body-weight-panel'),
       content: (context) {
         final c = context.c;
+        final l = context.l10n;
         return [
-          const Overline('Latest weight'),
+          Overline(l.bodyLatestWeight),
           if (latest == null) ...[
-            Text('Not recorded', key: const Key('body-latest-weight'), style: context.pageTitleStyle(32)),
-            Text('Your other measurements are below.', style: context.sansStyle(15, color: c.secondary)),
+            Text(l.bodyNotRecorded, key: const Key('body-latest-weight'), style: context.pageTitleStyle(32)),
+            Text(l.bodyOtherBelow, style: context.sansStyle(15, color: c.secondary)),
           ] else ...[
             Text(units.value(BodyField.weight, latest.value), key: const Key('body-latest-weight'), style: context.pageTitleStyle(44)),
-            Text(latest.averaged ? 'Average of ${latest.count} entries on ${dayMonth(latest.dayKey)}' : 'Recorded ${dayMonth(latest.dayKey)}',
+            Text(latest.averaged ? l.bodyAverageOfEntries(latest.count, dayMonth(latest.dayKey)) : l.bodyRecordedOn(dayMonth(latest.dayKey)),
                 key: const Key('body-latest-date'), style: context.sansStyle(15, color: c.secondary)),
           ],
           const SizedBox(height: 12),
@@ -176,12 +192,12 @@ class _WeightPanel extends StatelessWidget {
           const SizedBox(height: 12),
           Wrap(spacing: 24, runSpacing: 8, children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text('7-day average', style: context.sansStyle(15, color: c.secondary)),
-              Text(week == null ? 'Not available' : units.value(BodyField.weight, week.kg), key: const Key('body-average'), style: context.pageTitleStyle(26)),
+              Text(l.bodySevenDayAverage, style: context.sansStyle(15, color: c.secondary)),
+              Text(week == null ? l.bodyNotAvailable : units.value(BodyField.weight, week.kg), key: const Key('body-average'), style: context.pageTitleStyle(26)),
             ]),
             Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text(week == null ? 'No weight in the last 7 days' : '${plural(week.days, 'recorded day')} of 7', key: const Key('body-average-days'), style: context.sansStyle(15, weight: FontWeight.w600)),
-              Text('${dayMonth(addDays(today, -6))} – ${dayMonth(today)}', style: context.sansStyle(15, color: c.secondary)),
+              Text(week == null ? l.bodyNoWeightSevenDays : l.bodyRecordedDaysOfSeven(week.days), key: const Key('body-average-days'), style: context.sansStyle(15, weight: FontWeight.w600)),
+              Text(l.bodyDateRange(dayMonth(addDays(today, -6)), dayMonth(today)), style: context.sansStyle(15, color: c.secondary)),
             ]),
           ]),
         ];
@@ -195,8 +211,8 @@ class _Actions extends StatelessWidget {
   final VoidCallback onLog, onCompare;
   @override
   Widget build(BuildContext context) {
-    final log = PrimaryButton('Log', key: const Key('body-log'), icon: Icons.add, onPressed: onLog);
-    final compare = SecondaryButton('Compare dates', key: const Key('body-compare'), icon: Icons.date_range_outlined, onPressed: onCompare);
+    final log = PrimaryButton(context.l10n.bodyLog, key: const Key('body-log'), icon: Icons.add, onPressed: onLog);
+    final compare = SecondaryButton(context.l10n.bodyCompareDates, key: const Key('body-compare'), icon: Icons.date_range_outlined, onPressed: onCompare);
     // Side by side while the words fit; one under the other at large text.
     if (MediaQuery.textScalerOf(context).scale(10) > 13) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [log, const SizedBox(height: 10), compare]);
     return Row(children: [Expanded(child: log), const SizedBox(width: 12), Expanded(child: compare)]);
@@ -216,41 +232,47 @@ class _ChartSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final pts = seriesOf(checkIns, field, range, today);
     final means = dailyMeans(pts);
     final everRecorded = checkIns.any((m) => has(m, field));
-    final rangeWords = range == TrendRange.all ? 'in all your history' : 'in the last ${range.label}';
+    final name = bodyFieldLabel(l, field);
+    final rangeWords = _rangeWords(l, range);
     final severalADay = means.length < pts.length;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        Expanded(child: SectionHeader('${field.label} over time')),
-        if (seeAll != null && everRecorded) QuietLink('See all', key: Key('body-see-${field.name}'), onPressed: seeAll),
+        Expanded(child: SectionHeader(l.bodyOverTime(name))),
+        if (seeAll != null && everRecorded) QuietLink(l.bodySeeAll, key: Key('body-see-${field.name}'), onPressed: seeAll),
       ]),
       const SizedBox(height: 10),
-      Segmented<TrendRange>(values: TrendRange.values, selected: range, keyPrefix: 'body-range', label: (r) => r.label, onChanged: onRange),
+      Segmented<TrendRange>(values: TrendRange.values, selected: range, keyPrefix: 'body-range', label: (r) => _rangeLabel(l, r), onChanged: onRange),
       const SizedBox(height: 12),
       Panel(
         key: Key('body-chart-${field.name}'),
         child: !everRecorded
-            ? Text(field == BodyField.weight ? 'No weight recorded yet. Log one to see it over time.' : 'No ${field.label.toLowerCase()} recorded yet.', key: const Key('body-chart-none'), style: context.caption)
+            ? Text(field == BodyField.weight ? l.bodyChartNoWeight : l.bodyChartNone(name.toLowerCase()), key: const Key('body-chart-none'), style: context.caption)
             : pts.isEmpty
-                ? Text('No ${field.label.toLowerCase()} $rangeWords. Choose a longer range.', key: const Key('body-chart-empty'), style: context.caption)
+                ? Text(l.bodyChartEmptyInRange(name.toLowerCase(), rangeWords), key: const Key('body-chart-empty'), style: context.caption)
                 : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    Text(severalADay ? 'Points: each entry · line: daily average' : 'Each point is an entry you recorded', style: context.caption),
+                    Text(severalADay ? l.bodyChartLegendDaily : l.bodyChartLegendPoints, style: context.caption),
                     const SizedBox(height: 8),
-                    PointChart<BodyPoint>(
-                      points: pts, value: (p) => units.toDisplay(field, p.value), at: (p) => parseDayKey(p.dayKey), dayKey: (p) => p.dayKey,
-                      line: severalADay ? [for (final (d, v) in means) (parseDayKey(d), units.toDisplay(field, v))] : null,
-                      axisLabel: (v) => '${bodyNumber(v)} ${units.label(field)}',
-                      onPoint: (p) => _openDay(context, checkIns, p.dayKey),
-                      semanticsLabel: '${field.label} $rangeWords: ${plural(pts.length, 'entry', 'entries')}. ${pts.map((p) => '${dayMonth(p.dayKey)}, ${units.value(field, p.value)}').join('; ')}.',
+                    // Time runs left to right in every language; only the words around the chart follow the page.
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: PointChart<BodyPoint>(
+                        points: pts, value: (p) => units.toDisplay(field, p.value), at: (p) => parseDayKey(p.dayKey), dayKey: (p) => p.dayKey,
+                        line: severalADay ? [for (final (d, v) in means) (parseDayKey(d), units.toDisplay(field, v))] : null,
+                        axisLabel: (v) => withUnit(localDecimal(bodyNumber(v)), units.label(field)),
+                        onPoint: (p) => _openDay(context, checkIns, p.dayKey),
+                        semanticsLabel: l.bodyChartSemantics(name, rangeWords, pts.length, pts.map((p) => l.bodyReading(dayMonth(p.dayKey), units.value(field, p.value))).join('; ')),
+                      ),
                     ),
                     if (means.length == 1)
-                      Padding(padding: const EdgeInsets.only(top: 8), child: Text('One day recorded $rangeWords. A change needs at least two.', key: const Key('body-one-point'), style: context.caption))
+                      Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.bodyOneDayInRange(rangeWords), key: const Key('body-one-point'), style: context.caption))
                     else
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: Text('First to latest day in this range: ${units.change(field, means.first.$2, means.last.$2)}', key: const Key('body-range-change'), style: context.caption),
+                        child: Text(l.bodyRangeChange(units.change(field, means.first.$2, means.last.$2)), key: const Key('body-range-change'), style: context.caption),
                       ),
                   ]),
       ),
@@ -267,22 +289,23 @@ class _LatestList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final rows = [
       for (final f in BodyField.values)
         if (f != BodyField.weight)
           if (latestOf(checkIns, f) case final l?) (f, l),
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const SectionHeader('Latest measurements'),
+      SectionHeader(l.bodyLatestMeasurements),
       const SizedBox(height: 10),
       if (rows.isEmpty)
-        Text('No measurements other than weight yet. Log measurements to add waist, chest, arms or thighs.', key: const Key('body-latest-none'), style: context.caption)
+        Text(l.bodyLatestNone, key: const Key('body-latest-none'), style: context.caption)
       else
         GroupCard(children: [
-          for (final (f, l) in rows)
+          for (final (f, latest) in rows)
             GroupRow(
-              key: Key('body-latest-${f.name}'), title: f.label, value: units.value(f, l.value),
-              subtitle: l.averaged ? 'Average of ${l.count} entries on ${dayMonth(l.dayKey)}' : dayMonth(l.dayKey),
+              key: Key('body-latest-${f.name}'), title: bodyFieldLabel(l, f), value: units.value(f, latest.value),
+              subtitle: latest.averaged ? l.bodyAverageOfEntries(latest.count, dayMonth(latest.dayKey)) : dayMonth(latest.dayKey),
               onTap: () => push(context, MetricScreen(field: f, range: range)),
             ),
         ]),
@@ -305,16 +328,17 @@ class _MetricScreenState extends ConsumerState<MetricScreen> {
   late TrendRange _range = widget.range;
 
   @override
-  Widget build(BuildContext context) => _guard(context, ref, widget.field.label, (r) {
+  Widget build(BuildContext context) => _guard(context, ref, bodyFieldLabel(context.l10n, widget.field), (r) {
         final units = ref.watch(bodyUnitsProvider);
         final today = ref.watch(todayKeyProvider);
         final f = widget.field;
+        final l = context.l10n;
         final pts = seriesOf(r.trusted, f, _range, today);
-        return AppPage(title: f.label, subtitle: f.dimension == BodyDimension.percent ? 'Body fat you entered, in %' : 'In ${units.label(f)}', children: [
+        return AppPage(title: bodyFieldLabel(l, f), subtitle: f.dimension == BodyDimension.percent ? l.bodyMetricFatSubtitle : l.bodyMetricUnitSubtitle(units.label(f)), children: [
           _ChartSection(field: f, checkIns: r.trusted, range: _range, today: today, units: units, onRange: (x) => setState(() => _range = x)),
           if (pts.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const SectionHeader('Entries in this range'),
+            SectionHeader(l.bodyEntriesInRange),
             const SizedBox(height: 10),
             GroupCard(children: [
               for (final p in pts.reversed)
@@ -330,26 +354,28 @@ class BodyHistoryScreen extends ConsumerWidget {
   const BodyHistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _guard(context, ref, 'All measurements', (r) {
+  Widget build(BuildContext context, WidgetRef ref) => _guard(context, ref, context.l10n.bodyAllMeasurements, (r) {
         final units = ref.watch(bodyUnitsProvider);
+        final l = context.l10n;
         final perDay = <String, List<BodyMetric>>{};
         for (final x in r.all) {
           (perDay[x.value.dayKey] ??= []).add(x.value);
         }
-        return AppPage(title: 'All measurements', subtitle: 'Every entry, newest first', children: [
+        return AppPage(title: l.bodyAllMeasurements, subtitle: l.bodyHistorySubtitle, children: [
           if (r.all.isEmpty)
-            EmptyState('Nothing recorded yet', 'Your entries appear here once you log one.', action: PrimaryButton('Log measurements', onPressed: () => push(context, const CheckInScreen())))
+            EmptyState(l.bodyEmptyTitle, l.bodyHistoryEmptyBody, action: PrimaryButton(l.bodyLogMeasurements, onPressed: () => push(context, const CheckInScreen())))
           else
             GroupCard(children: [
               for (final x in r.all)
                 GroupRow(
                   key: Key('body-history-${x.value.id}'),
-                  title: _summary(x.value, units).isEmpty ? 'No measurement' : _summary(x.value, units),
+                  title: _summary(l, x.value, units).isEmpty ? l.bodyNoMeasurement : _summary(l, x.value, units),
                   subtitle: [
                     shortDate(x.value.dayKey),
-                    if (perDay[x.value.dayKey]!.length > 1) orderKnown(perDay[x.value.dayKey]!) && x.value.recordedAtUtc != null ? 'saved ${timeOf(x.value.recordedAtUtc!)}' : 'one of ${perDay[x.value.dayKey]!.length} entries, order not known',
-                    if (x.value.note != null) '“${x.value.note}”',
-                    ?_syncWords(x),
+                    if (perDay[x.value.dayKey]!.length > 1)
+                      orderKnown(perDay[x.value.dayKey]!) && x.value.recordedAtUtc != null ? l.bodySavedAtLower(timeOf(x.value.recordedAtUtc!)) : l.bodyOneOfEntriesLower(perDay[x.value.dayKey]!.length),
+                    if (x.value.note != null) l.bodyQuotedNote(x.value.note!),
+                    ?_syncWords(l, x),
                   ].join(' · '),
                   onTap: () => push(context, CheckInScreen(existing: x.value)),
                 ),
@@ -369,6 +395,9 @@ class CheckInScreen extends ConsumerStatefulWidget {
   ConsumerState<CheckInScreen> createState() => _CheckInScreenState();
 }
 
+/// Digits in any of the app's languages and one decimal mark; [readField] rejects anything else that gets through.
+final _numberChars = FilteringTextInputFormatter.allow(RegExp('[0-9.,٠-٩۰-۹٫]'));
+
 class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   BodyMetric? get _old => widget.existing;
   // One ID per form: however often Save is pressed, one check-in and one command.
@@ -381,8 +410,9 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       f: _old?.value(f.key) == null ? null : FieldAnchor(_units.number(f, _old!.value(f.key)!), _old!.value(f.key)!),
   };
   late final _note = TextEditingController(text: _old?.note ?? '');
-  final _errors = <BodyField, String>{};
-  String? _error;
+  final _errors = <BodyField, BodyFieldError>{};
+  // Kept as words to be said, so a language change rewords the message instead of leaving it in the old language.
+  String Function(AppLocalizations l)? _error;
   bool _saving = false;
 
   @override
@@ -418,7 +448,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   void _switchUnits(BodyUnits next) {
     final converted = convertFields({for (final f in BodyField.values) f: _text[f]!.text}, _anchors, _units, next);
     if (converted == null) {
-      setState(() => _error = 'A field holds text that is not a number. Correct or clear it, then change the unit.');
+      setState(() => _error = (l) => l.bodyConvertBlocked);
       return;
     }
     setState(() {
@@ -437,7 +467,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     final today = parseDayKey(ref.read(todayKeyProvider));
     final picked = await showDatePicker(
       context: context, initialDate: parseDayKey(_day), firstDate: DateTime.utc(2000), lastDate: today,
-      helpText: 'Date measured',
+      helpText: context.l10n.bodyDateMeasured,
     );
     if (picked != null) setState(() => _day = dayKeyOf(picked));
   }
@@ -453,9 +483,9 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       if (r.error != null) _errors[f] = r.error!;
       values[f] = r.value;
     }
-    if (_day.compareTo(ref.read(todayKeyProvider)) > 0) _error = 'Choose today or an earlier date.';
+    if (_day.compareTo(ref.read(todayKeyProvider)) > 0) _error = (l) => l.bodyFutureDate;
     if (_errors.isNotEmpty || _day.compareTo(ref.read(todayKeyProvider)) > 0) {
-      setState(() => _error ??= 'Check the highlighted fields. Nothing was saved.');
+      setState(() => _error ??= (l) => l.bodyCheckFields);
       return;
     }
     final caps = ref.read(compatibilityProvider).capabilities;
@@ -469,7 +499,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       if (_old == null) {
         await repo.create(_id, _day, values, note: _noteShown(prefs) ? _note.text : null, nowUtc: ref.read(clockProvider).utcNow(), measurementsServer: supported);
       } else {
-        if (!supported) throw const BodyInputError('Correcting an entry needs an update to your account\'s server. Your changes are still here.');
+        if (!supported) throw const BodyInputError(BodyInputProblem.correctionNeedsServer);
         final changes = {for (final f in shown) if (values[f] != _old!.value(f.key)) f: values[f]};
         final noteChanged = _noteShown(prefs) && _note.text.trim() != (_old!.note ?? '');
         if (changes.isEmpty && !noteChanged && _day == _old!.dayKey) {
@@ -480,12 +510,12 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       }
       Haptics.confirm();
       if (!mounted) return;
-      toast(context, 'Saved on this phone · it syncs to your account when it can');
+      toast(context, context.l10n.bodySavedToast);
       Navigator.pop(context);
     } on BodyInputError catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = (l) => _inputText(l, e));
     } on LocalSaveFailure {
-      setState(() => _error = 'That could not be saved on this phone. Everything you typed is still here.');
+      setState(() => _error = (l) => l.bodySaveFailed);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -493,45 +523,48 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
   Future<void> _delete() async {
     final m = _old!;
-    if (!await confirm(context, title: 'Delete this entry?', body: 'The entry from ${longDate(m.dayKey)} will be removed from your measurements.', action: 'Delete', destructive: true)) return;
+    final l = context.l10n;
+    if (!await confirm(context, title: l.bodyDeleteConfirmTitle, body: l.bodyDeleteConfirmBody(longDate(m.dayKey)), action: l.actionDelete, destructive: true)) return;
     try {
       await ref.read(bodyRepositoryProvider).delete(m);
       if (mounted) Navigator.pop(context);
     } on LocalSaveFailure {
-      if (mounted) setState(() => _error = 'That could not be removed on this phone. Try again.');
+      if (mounted) setState(() => _error = (l) => l.bodyDeleteFailed);
     }
   }
 
-  void _chooseFields() => showGoSheet<void>(context, title: 'Choose measurements', builder: (sheet) => Consumer(builder: (context, ref, _) {
+  void _chooseFields() => showGoSheet<void>(context, title: context.l10n.bodyChooseMeasurements, builder: (sheet) => Consumer(builder: (context, ref, _) {
         final prefs = ref.watch(bodyPrefsProvider);
         final shown = prefs.shown ?? BodyPrefs.defaultShown;
         final owner = ref.read(ownerProvider);
+        final l = context.l10n;
         void set(Set<BodyField> next, bool note) {
           if (owner != null) ref.read(bodyPrefsControllerProvider.notifier).update(owner, (p) => BodyPrefs(mass: p.mass, length: p.length, shown: next, note: note));
         }
 
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('Choose what this form shows. Hiding a field never removes anything you recorded.', style: context.caption),
+          Text(l.bodyChooseExplanation, style: context.caption),
           const SizedBox(height: 8),
           for (final f in BodyField.values)
             CheckboxListTile(
-              key: Key('body-choose-${f.name}'), value: shown.contains(f), title: Text(f.label), contentPadding: EdgeInsets.zero,
+              key: Key('body-choose-${f.name}'), value: shown.contains(f), title: Text(bodyFieldLabel(l, f)), contentPadding: EdgeInsets.zero,
               onChanged: (on) => set(on! ? {...shown, f} : ({...shown}..remove(f)), prefs.note),
             ),
-          CheckboxListTile(key: const Key('body-choose-note'), value: prefs.note, title: const Text('Note'), contentPadding: EdgeInsets.zero, onChanged: (on) => set(shown, on!)),
+          CheckboxListTile(key: const Key('body-choose-note'), value: prefs.note, title: Text(l.bodyNote), contentPadding: EdgeInsets.zero, onChanged: (on) => set(shown, on!)),
         ]);
       }));
 
   Widget _field(BodyField f, {bool large = false}) => TextField(
         key: Key('body-field-${f.name}'), controller: _text[f],
         keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.next,
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+        inputFormatters: [_numberChars],
         style: large ? context.pageTitleStyle(30) : context.numStyle(20),
         onChanged: (_) => setState(() {
           _errors.remove(f);
           _error = null;
         }),
-        decoration: InputDecoration(labelText: f.label, suffixText: _units.label(f), errorText: _errors[f], errorMaxLines: 3),
+        decoration: InputDecoration(labelText: bodyFieldLabel(context.l10n, f), suffixText: _units.label(f),
+            errorText: _errors[f] == null ? null : bodyFieldErrorText(context.l10n, f, _errors[f]!), errorMaxLines: 3),
       );
 
   @override
@@ -541,31 +574,32 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     final lengths = [for (final f in BodyField.values) if (f.dimension == BodyDimension.length && shown.contains(f)) f];
     final wide = MediaQuery.sizeOf(context).width >= 360 && MediaQuery.textScalerOf(context).scale(10) <= 13;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final l = context.l10n;
     return PopScope(
       canPop: _saving || !_dirty,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
-        final discard = await confirm(context, title: 'Discard your changes?', body: 'What you typed has not been saved.', action: 'Discard', cancel: 'Keep editing');
+        final discard = await confirm(context, title: l.bodyDiscardTitle, body: l.bodyDiscardBody, action: l.bodyDiscard, cancel: l.bodyKeepEditing);
         if (discard && context.mounted) Navigator.of(context).pop();
       },
       child: AppPage(
-        title: _old == null ? 'Log measurements' : 'Edit entry',
-        subtitle: 'Every measurement is optional.',
-        actions: [IconButton(tooltip: 'How to measure', icon: const Icon(Icons.help_outline), onPressed: () => push(context, const HowToMeasureScreen()))],
+        title: _old == null ? l.bodyLogMeasurements : l.bodyEditEntry,
+        subtitle: l.bodyEveryOptional,
+        actions: [IconButton(tooltip: l.bodyHowToMeasure, icon: const Icon(Icons.help_outline), onPressed: () => push(context, const HowToMeasureScreen()))],
         bottom: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           // iOS number pads have no return key: this closes the keyboard.
-          if (keyboard) Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(key: const Key('body-done-typing'), onPressed: () => FocusScope.of(context).unfocus(), child: const Text('Done typing'))),
-          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error, key: const Key('body-error'))),
-          PrimaryButton(_old == null ? 'Save measurements' : 'Save changes', key: const Key('body-save'), busy: _saving, onPressed: _save),
+          if (keyboard) Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(key: const Key('body-done-typing'), onPressed: () => FocusScope.of(context).unfocus(), child: Text(l.bodyDoneTyping))),
+          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!(l), tone: Tone.error, key: const Key('body-error'))),
+          PrimaryButton(_old == null ? l.bodySaveMeasurements : l.bodySaveChanges, key: const Key('body-save'), busy: _saving, onPressed: _save),
         ]),
         children: [
           GroupCard(children: [
-            GroupRow(key: const Key('body-date'), icon: Icons.event_outlined, title: longDate(_day), subtitle: 'Date measured', onTap: _pickDay),
+            GroupRow(key: const Key('body-date'), icon: Icons.event_outlined, title: longDate(_day), subtitle: l.bodyDateMeasured, onTap: _pickDay),
           ]),
           const SizedBox(height: 14),
           Wrap(spacing: 16, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            _UnitChoice<LoadUnit>(label: 'Weight', keyPrefix: 'body-mass', values: LoadUnit.values, selected: _units.mass, name: (u) => u.name, onChanged: (u) => _switchUnits(BodyUnits(u, _units.length))),
-            _UnitChoice<LengthUnit>(label: 'Length', keyPrefix: 'body-length', values: LengthUnit.values, selected: _units.length, name: (u) => u.label, onChanged: (u) => _switchUnits(BodyUnits(_units.mass, u))),
+            _UnitChoice<LoadUnit>(label: l.bodyUnitWeight, keyPrefix: 'body-mass', values: LoadUnit.values, selected: _units.mass, name: (u) => u.label, onChanged: (u) => _switchUnits(BodyUnits(u, _units.length))),
+            _UnitChoice<LengthUnit>(label: l.bodyUnitLength, keyPrefix: 'body-length', values: LengthUnit.values, selected: _units.length, name: (u) => u.label, onChanged: (u) => _switchUnits(BodyUnits(_units.mass, u))),
           ]),
           const SizedBox(height: 16),
           if (shown.contains(BodyField.weight)) ...[
@@ -589,19 +623,19 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: TextField(key: const Key('body-note'), controller: _note, maxLength: maxNoteLength, textCapitalization: TextCapitalization.sentences,
-                  onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Note (optional)')),
+                  onChanged: (_) => setState(() {}), decoration: InputDecoration(labelText: l.bodyNoteOptional)),
             ),
           GroupCard(children: [
-            GroupRow(key: const Key('body-choose'), icon: Icons.tune, title: 'Choose measurements', subtitle: 'Body fat, a note, or fewer fields', onTap: _chooseFields),
+            GroupRow(key: const Key('body-choose'), icon: Icons.tune, title: l.bodyChooseMeasurements, subtitle: l.bodyChooseSubtitle, onTap: _chooseFields),
           ]),
           const SizedBox(height: 10),
-          Text('Enter at least one measurement to save. Blank means not measured.', style: context.caption),
+          Text(l.bodyAtLeastOne, style: context.caption),
           if (_old != null) ...[
             const SizedBox(height: 20),
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: TextButton.icon(key: const Key('body-delete'), onPressed: _delete, icon: Icon(Icons.delete_outline, color: context.c.error),
-                  label: Text('Delete entry', style: TextStyle(color: context.c.error))),
+                  label: Text(l.bodyDeleteEntry, style: TextStyle(color: context.c.error))),
             ),
           ],
         ],
@@ -651,16 +685,17 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
     for (final m in eligible) {
       (perDay[m.dayKey] ??= []).add(m);
     }
-    final picked = await showGoSheet<String>(context, title: from ? 'Compare from' : 'Compare to', builder: (sheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('Only days with a saved entry can be chosen.', style: context.caption),
+    final l = context.l10n;
+    final picked = await showGoSheet<String>(context, title: from ? l.bodyCompareFrom : l.bodyCompareTo, builder: (sheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(l.bodyCompareOnlySaved, style: context.caption),
           const SizedBox(height: 10),
           for (final m in [...eligible]..sort((a, b) => compareCheckIns(b, a)))
             ChoiceTile<String?>(
-              key: Key('body-pick-${m.id}'), value: m.id, groupValue: current, title: _dateYear(m.dayKey),
+              key: Key('body-pick-${m.id}'), value: m.id, groupValue: current, title: dayMonthYear(m.dayKey),
               subtitle: [
                 if (perDay[m.dayKey]!.length > 1)
-                  orderKnown(perDay[m.dayKey]!) && m.recordedAtUtc != null ? 'Saved at ${timeOf(m.recordedAtUtc!)}' : 'One of ${perDay[m.dayKey]!.length} entries this day, order not known',
-                _summary(m, units),
+                  orderKnown(perDay[m.dayKey]!) && m.recordedAtUtc != null ? l.bodySavedAt(timeOf(m.recordedAtUtc!)) : l.bodyOneOfEntriesDay(perDay[m.dayKey]!.length),
+                _summary(l, m, units),
               ].join('\n'),
               onChanged: (id) => Navigator.pop(sheet, id),
             ),
@@ -669,8 +704,9 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => _guard(context, ref, 'Compare dates', (r) {
+  Widget build(BuildContext context) => _guard(context, ref, context.l10n.bodyCompareDates, (r) {
         final units = ref.watch(bodyUnitsProvider);
+        final l = context.l10n;
         final eligible = r.trusted;
         final days = {for (final m in eligible) m.dayKey};
         BodyMetric? byId(String? id) => id == null ? null : eligible.where((m) => m.id == id).firstOrNull;
@@ -679,27 +715,27 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
         final lostFrom = _fromId != null && byId(_fromId) == null, lostTo = _toId != null && byId(_toId) == null;
         final from = byId(_fromId) ?? defaults.$1, to = byId(_toId) ?? defaults.$2;
         return AppPage(
-          title: 'Compare dates', subtitle: 'Changes between your recorded entries.',
-          actions: const [CoachHelpEntry(id: 'me.body.compare', label: 'Help with comparing')],
+          title: l.bodyCompareDates, subtitle: l.bodyCompareSubtitle,
+          actions: [CoachHelpEntry(id: 'me.body.compare', label: l.bodyCompareHelp)],
           children: [
-            const CoachSpot(id: 'me.body.compare', padding: EdgeInsets.only(bottom: 16), say: CoachSay('Compare the same measurement on two dates. A dash means it was not recorded that day.')),
+            CoachSpot(id: 'me.body.compare', padding: const EdgeInsets.only(bottom: 16), say: CoachSay(l.bodyCompareCoachSay)),
             if (days.length < 2)
-              EmptyState('Two dates needed', days.isEmpty ? 'Comparing needs entries on two different days. You have none yet.' : 'Comparing needs entries on two different days. You have entries on ${dayMonth(days.single)} only.',
-                  action: PrimaryButton('Log measurements', key: const Key('body-compare-log'), onPressed: () => push(context, const CheckInScreen())))
+              EmptyState(l.bodyTwoDatesTitle, days.isEmpty ? l.bodyTwoDatesNone : l.bodyTwoDatesOne(dayMonth(days.single)),
+                  action: PrimaryButton(l.bodyLogMeasurements, key: const Key('body-compare-log'), onPressed: () => push(context, const CheckInScreen())))
             else ...[
               if (lostFrom || lostTo)
-                const Padding(padding: EdgeInsets.only(bottom: 10), child: StatusLine(Icons.info_outline, 'An entry you chose is no longer available, so the default is shown.', key: Key('body-compare-lost'))),
+                Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.info_outline, l.bodyCompareLost, key: const Key('body-compare-lost'))),
               _Pickers(
                 from: from, to: to,
                 onFrom: () => _choose(eligible, true), onTo: () => _choose(eligible, false),
               ),
               const SizedBox(height: 6),
-              Align(alignment: AlignmentDirectional.centerEnd, child: Text('${units.mass.name} · ${units.length.label}', style: context.caption)),
+              Align(alignment: AlignmentDirectional.centerEnd, child: Text('${units.mass.label} · ${units.length.label}', style: context.caption)),
               const SizedBox(height: 10),
               if (from == null || to == null)
-                const StatusLine(Icons.touch_app_outlined, 'Those days have more than one entry and their order is not known. Choose the entries to compare.', key: Key('body-compare-choose'))
+                StatusLine(Icons.touch_app_outlined, l.bodyCompareChoose, key: const Key('body-compare-choose'))
               else if (from.id == to.id)
-                const StatusLine(Icons.info_outline, 'From and To are the same entry. Choose another one.')
+                StatusLine(Icons.info_outline, l.bodyCompareSame)
               else
                 _Comparison(from: from, to: to, units: units),
             ],
@@ -714,13 +750,14 @@ class _Pickers extends StatelessWidget {
   final VoidCallback onFrom, onTo;
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     Widget pick(String label, BodyMetric? m, VoidCallback onTap, String key) => Expanded(
           child: GroupCard(children: [
-            GroupRow(key: Key(key), icon: Icons.event_outlined, title: m == null ? 'Choose' : _dateYear(m.dayKey), subtitle: label, onTap: onTap),
+            GroupRow(key: Key(key), icon: Icons.event_outlined, title: m == null ? l.bodyChoose : dayMonthYear(m.dayKey), subtitle: label, onTap: onTap),
           ]),
         );
     final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 360;
-    final a = pick('From', from, onFrom, 'body-compare-from'), b = pick('To', to, onTo, 'body-compare-to');
+    final a = pick(l.bodyFrom, from, onFrom, 'body-compare-from'), b = pick(l.bodyTo, to, onTo, 'body-compare-to');
     if (stacked) return Column(children: [Row(children: [a]), const SizedBox(height: 10), Row(children: [b])]);
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [a, const SizedBox(width: 10), b]);
   }
@@ -733,35 +770,36 @@ class _Comparison extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final rows = compareCheckInsRows(from, to);
     final weight = rows.where((x) => x.field == BodyField.weight).firstOrNull;
     final others = [for (final x in rows) if (x.field != BodyField.weight) x];
     final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 360;
     String cell(double? v, BodyField f) => v == null ? '—' : units.value(f, v);
-    String said(double? v, BodyField f) => v == null ? 'not recorded' : units.value(f, v);
+    String said(double? v, BodyField f) => v == null ? l.bodyNotRecordedLower : units.value(f, v);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (weight != null)
         PhotoPanel(
           key: const Key('body-compare-weight'),
           content: (context) => [
-            const Overline('Weight'),
+            Overline(bodyFieldLabel(l, BodyField.weight)),
             const SizedBox(height: 6),
             Wrap(spacing: 24, runSpacing: 8, children: [
               for (final (day, v) in [(from.dayKey, weight.from), (to.dayKey, weight.to)])
                 Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                   Text(dayMonth(day), style: context.sansStyle(15, color: context.c.secondary)),
                   Text(cell(v, BodyField.weight), style: context.pageTitleStyle(30)),
-                  if (v == null) Text('Not recorded', style: context.caption),
+                  if (v == null) Text(l.bodyNotRecorded, style: context.caption),
                 ]),
             ]),
             const SizedBox(height: 10),
-            Text(weight.hasChange ? 'Change  ${units.change(BodyField.weight, weight.from!, weight.to!)}' : 'Change  —  needs a weight on both days',
+            Text(weight.hasChange ? l.bodyCompareWeightChange(units.change(BodyField.weight, weight.from!, weight.to!)) : l.bodyCompareWeightNoChange,
                 key: const Key('body-compare-weight-change'), style: context.sansStyle(17, weight: FontWeight.w600)),
           ],
         ),
       if (others.isNotEmpty) ...[
         const SizedBox(height: 20),
-        const SectionHeader('Measurements'),
+        SectionHeader(l.bodyMeasurements),
         const SizedBox(height: 10),
         GroupCard(children: [
           if (!stacked)
@@ -769,33 +807,33 @@ class _Comparison extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Row(children: [
                 const Expanded(flex: 4, child: SizedBox()),
-                for (final h in [dayMonth(from.dayKey), dayMonth(to.dayKey), 'Change']) Expanded(flex: 3, child: Text(h, style: context.label)),
+                for (final h in [dayMonth(from.dayKey), dayMonth(to.dayKey), l.bodyChange]) Expanded(flex: 3, child: Text(h, style: context.label)),
               ]),
             ),
           for (final x in others)
             MergeSemantics(
               key: Key('body-compare-${x.field.name}'),
               child: Semantics(
-                label: '${x.field.label}: ${dayMonth(from.dayKey)} ${said(x.from, x.field)}, ${dayMonth(to.dayKey)} ${said(x.to, x.field)}, '
-                    'change ${x.hasChange ? units.change(x.field, x.from!, x.to!) : 'not available'}',
+                label: l.bodyCompareRowSemantics(bodyFieldLabel(l, x.field), dayMonth(from.dayKey), said(x.from, x.field), dayMonth(to.dayKey), said(x.to, x.field),
+                    x.hasChange ? units.change(x.field, x.from!, x.to!) : l.bodyNotAvailableLower),
                 child: ExcludeSemantics(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: stacked
                         ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(x.field.label, style: context.sansStyle(16, weight: FontWeight.w600)),
-                            Text('${dayMonth(from.dayKey)}: ${x.from == null ? '— Not recorded' : cell(x.from, x.field)}', style: context.body),
-                            Text('${dayMonth(to.dayKey)}: ${x.to == null ? '— Not recorded' : cell(x.to, x.field)}', style: context.body),
-                            Text('Change: ${x.hasChange ? units.change(x.field, x.from!, x.to!) : '—'}', style: context.body),
+                            Text(bodyFieldLabel(l, x.field), style: context.sansStyle(16, weight: FontWeight.w600)),
+                            Text(l.bodyDatedValue(dayMonth(from.dayKey), x.from == null ? l.bodyDashNotRecorded : cell(x.from, x.field)), style: context.body),
+                            Text(l.bodyDatedValue(dayMonth(to.dayKey), x.to == null ? l.bodyDashNotRecorded : cell(x.to, x.field)), style: context.body),
+                            Text(l.bodyChangeValue(x.hasChange ? units.change(x.field, x.from!, x.to!) : '—'), style: context.body),
                           ])
                         : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Expanded(flex: 4, child: Text(x.field.label, style: context.sansStyle(15.5, weight: FontWeight.w600))),
+                            Expanded(flex: 4, child: Text(bodyFieldLabel(l, x.field), style: context.sansStyle(15.5, weight: FontWeight.w600))),
                             for (final v in [x.from, x.to])
                               Expanded(
                                 flex: 3,
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                   Text(cell(v, x.field), style: context.numStyle(15)),
-                                  if (v == null) Text('Not recorded', style: context.caption),
+                                  if (v == null) Text(l.bodyNotRecorded, style: context.caption),
                                 ]),
                               ),
                             Expanded(flex: 3, child: Text(x.hasChange ? units.change(x.field, x.from!, x.to!) : '—', style: context.numStyle(15))),
@@ -806,10 +844,10 @@ class _Comparison extends StatelessWidget {
             ),
         ]),
         if (others.any((x) => x.field == BodyField.bodyFat && x.hasChange))
-          Padding(padding: const EdgeInsets.only(top: 8), child: Text('Body fat change is in percentage points.', style: context.caption)),
+          Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.bodyFatPointsNote, style: context.caption)),
       ],
       const SizedBox(height: 12),
-      Text('Recorded values only. A change is shown only where both entries have that measurement.', style: context.caption),
+      Text(l.bodyRecordedOnly, style: context.caption),
     ]);
   }
 }
@@ -822,6 +860,7 @@ class HowToMeasureScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     Widget part(String title, String body) => Padding(
           padding: const EdgeInsets.only(bottom: 18),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -830,17 +869,16 @@ class HowToMeasureScreen extends StatelessWidget {
             Text(body, style: context.body),
           ]),
         );
-    return AppPage(title: 'How to measure', subtitle: 'Measure the same way each time, so entries compare.', children: [
-      part('Any tape measurement', 'Use a flexible tape. Keep it level and snug, without pressing into the skin, and read it at the same place every time.'),
-      part('Waist', 'Find the top of your hip bone at the side. Wrap the tape around your waist at that level, parallel to the floor, and read it at the end of a normal breath out.'),
-      part('Upper arm', 'Find the midpoint between the bony tip of your shoulder and the point of your elbow, at the back of the arm. With the arm relaxed and hanging loosely, wrap the tape around the arm at that point. Tensing the muscle changes the reading. Measure the left and right arm separately.'),
-      part('Chest and thighs', 'GoHard has no verified standard landmark for these. Choose one place, note it if that helps, and measure there each time with the same tape fit. Measure the left and right thigh separately.'),
-      part('Weight and body fat', 'Optional. Enter body fat only if you have a value from a method you trust; GoHard does not estimate it.'),
+    return AppPage(title: l.bodyHowToMeasure, subtitle: l.bodyHowSubtitle, children: [
+      part(l.bodyHowTapeTitle, l.bodyHowTapeBody),
+      part(l.bodyFieldWaist, l.bodyHowWaistBody),
+      part(l.bodyHowArmTitle, l.bodyHowArmBody),
+      part(l.bodyHowChestThighsTitle, l.bodyHowChestThighsBody),
+      part(l.bodyHowWeightFatTitle, l.bodyHowWeightFatBody),
       const SizedBox(height: 4),
-      Text('Source: Centers for Disease Control and Prevention, National Center for Health Statistics. NHANES Anthropometry Procedures Manual, January 2017: '
-          '3.4.6 Upper Arm Length, 3.4.7 Arm Circumference, 3.4.8 Abdominal (Waist) Circumference.', key: const Key('body-how-source'), style: context.caption),
+      Text(l.bodyHowSource, key: const Key('body-how-source'), style: context.caption),
       const SizedBox(height: 8),
-      Text('This is measuring technique, not health advice. GoHard does not judge measurements.', style: context.caption),
+      Text(l.bodyHowNotAdvice, style: context.caption),
     ]);
   }
 }

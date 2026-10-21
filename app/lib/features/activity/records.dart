@@ -6,24 +6,35 @@ library;
 
 import 'dart:math';
 
+import '../../core/format.dart' show ltr, withUnit;
+import '../../core/language.dart';
 import '../../data/models.dart';
 import 'track_math.dart';
 
 /// A record category. [meters] is the benchmark distance; null for "longest distance".
 class Benchmark {
-  const Benchmark(this.id, this.type, this.label, this.meters);
-  final String id, type, label;
+  const Benchmark(this.id, this.type, this.meters);
+  final String id, type;
   final double? meters;
   bool get longest => meters == null;
 }
 
 const benchmarks = [
-  Benchmark('run.longest', 'run', 'Longest run', null),
-  Benchmark('run.1k', 'run', 'Fastest 1 km', 1000),
-  Benchmark('run.5k', 'run', 'Fastest 5 km', 5000),
-  Benchmark('walk.longest', 'walk', 'Longest walk', null),
-  Benchmark('walk.1k', 'walk', 'Fastest 1 km', 1000),
+  Benchmark('run.longest', 'run', null),
+  Benchmark('run.1k', 'run', 1000),
+  Benchmark('run.5k', 'run', 5000),
+  Benchmark('walk.longest', 'walk', null),
+  Benchmark('walk.1k', 'walk', 1000),
 ];
+
+/// "Longest run", "Fastest 1 km walk": the category's name, from its [Benchmark.id].
+String benchmarkLabel(AppLocalizations l, Benchmark b) => switch (b.id) {
+      'run.longest' => l.runBestLongestRun,
+      'run.1k' => l.runBestFastest1kRun,
+      'run.5k' => l.runBestFastest5kRun,
+      'walk.longest' => l.runBestLongestWalk,
+      _ => l.runBestFastest1kWalk,
+    };
 
 /// The benchmark distances worked out for every activity, whatever its type (a type change needs no recomputation).
 const effortMeters = [1000.0, 5000.0];
@@ -126,12 +137,14 @@ List<Best> newRecords(Run saved, Iterable<Run> others) {
 }
 
 /// "Your longest walk so far." / "A new best: fastest 1 km run, 5:42." Calm, once, from real data.
-String recordMessage(List<Best> records, String Function(double meters) distance) {
+/// Built in [l] (the resolved language) when it is said.
+String recordMessage(List<Best> records, String Function(double meters) distance, {AppLocalizations? l10n}) {
+  final l = l10n ?? currentL10n;
   String one(Best r) => r.benchmark.longest
-      ? 'your longest ${r.benchmark.type} so far, ${distance(r.value)}'
-      : 'your fastest ${r.benchmark.label.substring(8)} ${r.benchmark.type} so far, ${clockOf(r.value)}';
-  final parts = records.map(one).toList();
-  final text = parts.length == 1 ? parts.first : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
+      ? l.runRecordLongest(r.benchmark.type, distance(r.value))
+      : l.runRecordFastest(r.benchmark.type, withUnit('${(r.benchmark.meters! / 1000).round()}', l.unitKm), ltr(clockOf(r.value)));
+  final p = records.map(one).toList();
+  final text = switch (p.length) { 1 => p[0], 2 => l.runRecordsTwo(p[0], p[1]), _ => l.runRecordsThree(p[0], p[1], p.sublist(2).join(', ')) };
   return '${text[0].toUpperCase()}${text.substring(1)}.';
 }
 

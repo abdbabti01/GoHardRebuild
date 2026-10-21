@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../core/clock.dart';
 import '../../core/device_prefs.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -50,41 +51,36 @@ class _ActivityHistoryScreenState extends ConsumerState<ActivityHistoryScreen> {
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
     bool inWeek(Run r) => !parseDayKey(r.dayKey).isBefore(weekStart);
     bool inMonth(Run r) => parseDayKey(r.dayKey).year == today.year && parseDayKey(r.dayKey).month == today.month;
-    final noun = switch (_filter) {
-      _Filter.all => 'activities',
-      _Filter.run => 'runs',
-      _Filter.walk => 'walks',
-    };
+    final l = context.l10n;
 
     final header = <Widget>[
-      Heading('History', size: 36, serif: true),
+      Heading(l.runHistory, size: 36, serif: true),
       const SizedBox(height: 14),
       Segmented<_Filter>(keyPrefix: 'history-filter', values: _Filter.values, selected: _filter, label: (f) => switch (f) {
-            _Filter.all => 'All',
-            _Filter.run => 'Run',
-            _Filter.walk => 'Walk',
+            _Filter.all => l.runFilterAll,
+            _ => activityTitle(f.name),
           }, onChanged: (f) => setState(() => _filter = f)),
       const SizedBox(height: 14),
       if (open != null) ...[
         GroupCard(children: [
-          GroupRow(key: const Key('history-open'), icon: Icons.timelapse, title: '${activityTitle(open.activityType)} in progress', subtitle: 'Started ${shortDate(open.dayKey)}',
+          GroupRow(key: const Key('history-open'), icon: Icons.timelapse, title: l.runInProgress(open.activityType), subtitle: l.runStartedOn(shortDate(open.dayKey)),
               onTap: () => push(context, const RunWalkScreen())),
         ]),
         const SizedBox(height: 14),
       ],
       if (saved.isNotEmpty) ...[
         Row(children: [
-          Expanded(child: _Totals(key: const Key('history-week'), label: 'This week', runs: saved.where(inWeek).toList(), unit: unit)),
+          Expanded(child: _Totals(key: const Key('history-week'), label: l.runThisWeek, runs: saved.where(inWeek).toList(), unit: unit)),
           const SizedBox(width: 10),
-          Expanded(child: _Totals(key: const Key('history-month'), label: 'This month', runs: saved.where(inMonth).toList(), unit: unit)),
+          Expanded(child: _Totals(key: const Key('history-month'), label: l.runThisMonth, runs: saved.where(inMonth).toList(), unit: unit)),
         ]),
         const SizedBox(height: 16),
         PersonalBestsLink(types: _filter == _Filter.all ? const ['run', 'walk'] : [_filter.name]),
         const SizedBox(height: 16),
       ],
       if (saved.isEmpty)
-        EmptyState('No $noun yet', 'Saved ${_filter == _Filter.all ? 'runs and walks' : noun} appear here, every one of them.',
-            action: SecondaryButton('Start one', onPressed: () => push(context, const RunWalkScreen()))),
+        EmptyState(l.runHistoryEmpty(_filter.name), l.runHistoryEmptyBody(_filter.name),
+            action: SecondaryButton(l.runStartOne, onPressed: () => push(context, const RunWalkScreen()))),
     ];
 
     return Scaffold(
@@ -112,7 +108,8 @@ class _Totals extends StatelessWidget {
     final measured = runs.where((r) => r.distanceMeters != null);
     final distance = measured.fold<double>(0, (s, r) => s + r.distanceMeters!);
     final seconds = runs.fold<int>(0, (s, r) => s + (r.activeDurationSeconds ?? 0));
-    final said = '$label: ${runs.length} saved, ${unit.distance(distance)}${measured.length < runs.length ? ' where distance is known' : ''}, ${durationText(seconds)} active';
+    final l = context.l10n;
+    final said = (measured.length < runs.length ? l.runTotalsSaidPartial : l.runTotalsSaid)(label, runs.length, unit.distance(distance), durationText(seconds));
     return Semantics(
       label: said,
       child: ExcludeSemantics(
@@ -124,7 +121,7 @@ class _Totals extends StatelessWidget {
               builder: (context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(label, style: context.caption),
                 Text(unit.distance(distance), style: context.pageTitleStyle(24)),
-                Text('${runs.length} · ${durationText(seconds)} active', style: context.sansStyle(13.5, color: context.c.secondary)),
+                Text(l.runTotalsLine(runs.length, durationText(seconds)), style: context.sansStyle(13.5, color: context.c.secondary)),
               ]),
             ),
           ),
@@ -145,7 +142,7 @@ class _Row extends ConsumerWidget {
     final time = run.movingSeconds ?? run.activeDurationSeconds ?? 0;
     final subtitle = [
       '${shortDate(run.dayKey)} · ${activityTitle(run.activityType)}',
-      [if (run.distanceMeters != null) unit.distance(run.distanceMeters), durationText(time), if (run.isLegacy) 'Route not recorded'].join(' · '),
+      [if (run.distanceMeters != null) unit.distance(run.distanceMeters), durationText(time), if (run.isLegacy) context.l10n.runRouteNotRecorded].join(' · '),
     ];
     return Pressable(
       key: Key('history-${run.id}'),

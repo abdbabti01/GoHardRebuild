@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'device_prefs.dart';
+import 'format.dart' show formatPercent;
+import 'language.dart';
 import 'theme.dart';
 
 /// Shared Daily Rhythm building blocks: one button, card, list, sheet and form system for every screen.
@@ -75,7 +77,7 @@ class PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = busy
-        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: context.c.secondary, semanticsLabel: 'Working'))
+        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: context.c.secondary, semanticsLabel: context.l10n.busyWorking))
         : Text(label, textAlign: TextAlign.center);
     final style = destructive ? FilledButton.styleFrom(backgroundColor: context.c.error, foregroundColor: context.c.page) : null;
     final button = _ScaledButton((states) => (icon == null && leading == null) || busy
@@ -217,8 +219,8 @@ class TabHeader extends StatelessWidget {
             Heading(title, size: 44, serif: true),
           ]),
         ),
-        if (trailing != null) Padding(padding: const EdgeInsets.only(left: 8), child: trailing),
-        const Padding(padding: EdgeInsets.only(left: 12, top: 6), child: GhMark()),
+        if (trailing != null) Padding(padding: const EdgeInsetsDirectional.only(start: 8), child: trailing),
+        const Padding(padding: EdgeInsetsDirectional.only(start: 12, top: 6), child: GhMark()),
       ]),
       if (below != null) Padding(padding: const EdgeInsets.only(top: 10), child: below),
     ]);
@@ -411,7 +413,7 @@ class ProgressRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final v = value.isFinite ? value.clamp(0.0, 1.0) : 0.0;
     return Semantics(
-      label: label, value: '${(v * 100).round()} percent',
+      label: label, value: context.l10n.percentValue((v * 100).round()),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(height),
         child: TweenAnimationBuilder<double>(
@@ -444,7 +446,7 @@ class ProgressRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final v = value.isFinite ? value.clamp(0.0, 1.0) : 0.0;
     return Semantics(
-      container: true, label: label, value: '${(v * 100).round()} percent',
+      container: true, label: label, value: context.l10n.percentValue((v * 100).round()),
       child: ExcludeSemantics(
         child: SizedBox.square(
           dimension: size,
@@ -524,8 +526,8 @@ class ChoiceCard extends StatelessWidget {
                   ]),
                 ),
                 if (selected)
-                  Positioned(
-                    top: 8, right: 8,
+                  PositionedDirectional(
+                    top: 8, end: 8,
                     child: Container(
                       width: 22, height: 22,
                       decoration: BoxDecoration(color: c.accentDeep, shape: BoxShape.circle),
@@ -572,7 +574,7 @@ class ListRow extends StatelessWidget {
                   Text(title, style: context.sansStyle(16, weight: FontWeight.w500)),
                   if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(subtitle!, style: context.caption)),
                 ])),
-                if (trailing != null) Padding(padding: const EdgeInsets.only(left: 10), child: trailing) else if (onTap != null) Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
+                if (trailing != null) Padding(padding: const EdgeInsetsDirectional.only(start: 10), child: trailing) else if (onTap != null) Icon(Icons.chevron_right, size: 22, color: context.c.secondary),
               ]),
             ),
           ),
@@ -652,7 +654,7 @@ class GroupRow extends StatelessWidget {
               if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 1), child: Text(subtitle!, style: context.caption)),
             ]),
           ),
-          if (trailing != null) Padding(padding: const EdgeInsets.only(left: 10), child: trailing) else if (onTap != null) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.chevron_right, size: 22, color: context.c.secondary)),
+          if (trailing != null) Padding(padding: const EdgeInsetsDirectional.only(start: 10), child: trailing) else if (onTap != null) Padding(padding: const EdgeInsetsDirectional.only(start: 6), child: Icon(Icons.chevron_right, size: 22, color: context.c.secondary)),
         ]),
       ),
     );
@@ -806,7 +808,8 @@ class PanelPhoto extends StatelessWidget {
 /// The surface of a photo panel, under a [PanelTheme]: the pale tint, rounded, lifted off the page by a soft shadow
 /// and a thin edge. A [photo] fills the trailing [PanelSurface.photoShare] at full height and fades into the tint toward
 /// the words, so text sits on the tint or the faintest part of the fade. [below] is a full-width part under the
-/// photograph, where it fades out downward too.
+/// photograph, where it fades out downward too. [padding]'s left and right are its start and end: in a right-to-left
+/// language they swap, and the photograph (never mirrored) sits on the left.
 class PanelSurface extends StatelessWidget {
   const PanelSurface({super.key, required this.child, this.photo, this.below = const [], this.padding = const EdgeInsets.fromLTRB(18, 16, 16, 16)});
   final Widget child;
@@ -830,9 +833,11 @@ class PanelSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final radius = BorderRadius.circular(Radii.panel);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final padding = rtl ? EdgeInsets.fromLTRB(this.padding.right, this.padding.top, this.padding.left, this.padding.bottom) : this.padding;
     var picture = photo;
     if (picture != null) {
-      picture = _fade(picture, to: Alignment.centerRight);
+      picture = _fade(picture, to: rtl ? Alignment.centerLeft : Alignment.centerRight);
       if (below.isNotEmpty) picture = _fade(picture, to: Alignment.topCenter, stops: const [0, 0.15, 0.35, 0.5]);
     }
     return Container(
@@ -843,7 +848,7 @@ class PanelSurface extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
           () {
             final stack = Stack(children: [
-              if (picture != null) Positioned.fill(child: Align(alignment: Alignment.centerRight, child: FractionallySizedBox(widthFactor: photoShare, child: picture))),
+              if (picture != null) Positioned.fill(child: Align(alignment: AlignmentDirectional.centerEnd, child: FractionallySizedBox(widthFactor: photoShare, child: picture))),
               Padding(padding: below.isEmpty ? padding : padding.copyWith(bottom: 10), child: child),
             ]);
             return stack;
@@ -940,10 +945,10 @@ class PassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final percent = progress == null ? null : '${(progress!.clamp(0.0, 1.0) * 100).round()}%';
+    final percent = progress == null ? null : formatPercent((progress!.clamp(0.0, 1.0) * 100).round() / 100);
     final card = Panel(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Overline('Training plan'),
+        Overline(context.l10n.shellPassCardOverline),
         const SizedBox(height: 4),
         Text(title, style: context.titleStyle(24)),
         if (week != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(week!, style: context.sansStyle(15, color: c.secondary, weight: FontWeight.w500))),
@@ -964,7 +969,9 @@ class PassCard extends StatelessWidget {
     );
     return Semantics(
       container: true, button: onTap != null, onTap: onTap,
-      label: '$title. ${week == null ? '' : '$week. '}$count ${caption.toLowerCase()}${percent == null ? '' : ', $percent'}.',
+      label: context.l10n.shellPassCardSemantics(
+          switch ((week != null, percent != null)) { (true, true) => 'weekPercent', (true, false) => 'week', (false, true) => 'percent', _ => 'none' },
+          title, week ?? '', count, caption.toLowerCase(), percent ?? ''),
       child: ExcludeSemantics(child: onTap == null ? card : Pressable(onTap: onTap, child: card)),
     );
   }
@@ -1013,7 +1020,7 @@ class AppPage extends StatelessWidget {
 
 /// A specific confirmation. Returns true only when the named action was chosen. [destructive] fills the action
 /// with the error colour, for something that cannot be undone.
-Future<bool> confirm(BuildContext context, {required String title, required String body, required String action, String cancel = 'Cancel', bool destructive = false}) async =>
+Future<bool> confirm(BuildContext context, {required String title, required String body, required String action, String? cancel, bool destructive = false}) async =>
     await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1021,7 +1028,7 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
         title: Text(title),
         content: SingleChildScrollView(child: Text(body)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(cancel)),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(cancel ?? context.l10n.actionCancel)),
           FilledButton(
               style: destructive ? FilledButton.styleFrom(backgroundColor: context.c.error, foregroundColor: context.c.page) : null,
               onPressed: () => Navigator.pop(context, true), child: Text(action)),
@@ -1089,5 +1096,5 @@ class GhMark extends StatelessWidget {
   final double height;
   @override
   Widget build(BuildContext context) =>
-      Image.asset('assets/images/evening-gh-mark.png', height: height, color: context.c.text, semanticLabel: 'GoHard');
+      Image.asset('assets/images/evening-gh-mark.png', height: height, color: context.c.text, semanticLabel: context.l10n.brandName);
 }

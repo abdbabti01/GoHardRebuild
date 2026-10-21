@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/clock.dart';
+import '../../core/catalog_names.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -41,12 +43,12 @@ final completedWeeksProvider = Provider<List<String>>((ref) => completedWeeks(to
 String plural(int n, String one, [String? many]) => '$n ${n == 1 ? one : many ?? '${one}s'}';
 
 /// What the coach on Train › Progress says: one fact from this week, or how to set a goal. Nothing is asked of the AI.
-String progressCoachLine(WeekSummary week, {required bool? goalsSupported}) {
-  final done = '${plural(week.workoutCount, 'workout')} and ${plural(week.activityCount, 'run or walk', 'runs or walks')}';
-  if (week.workoutsTarget != null) return '${week.workoutCount} of ${week.workoutsTarget} workouts recorded this week.';
-  if (week.runWalkTarget != null) return '${week.activityCount} of ${week.runWalkTarget} runs or walks recorded this week.';
-  if (goalsSupported == false) return 'This week so far: $done recorded.';
-  return week.isEmpty ? 'Nothing recorded yet this week. Set weekly goals below if you\'d like a target.' : 'This week so far: $done recorded. Set weekly goals below if you\'d like a target.';
+String progressCoachLine(WeekSummary week, {required bool? goalsSupported, AppLocalizations? l}) {
+  l ??= currentL10n;
+  if (week.workoutsTarget != null) return l.progressCoachWorkoutsOfTarget(week.workoutCount, week.workoutsTarget!);
+  if (week.runWalkTarget != null) return l.progressCoachRunWalkOfTarget(week.activityCount, week.runWalkTarget!);
+  if (goalsSupported == false) return l.progressCoachSoFar(week.workoutCount, week.activityCount);
+  return week.isEmpty ? l.progressCoachNothingYet : l.progressCoachSoFarSetGoals(week.workoutCount, week.activityCount);
 }
 
 class ProgressView extends ConsumerWidget {
@@ -62,62 +64,64 @@ class ProgressView extends ConsumerWidget {
     final previews = [for (final t in index.recent) if (t.metric != TrendMetric.none) t].take(2).toList();
     final most = p.weeks.fold<int>(1, (m, w) => w.$2 > m ? w.$2 : m);
     const gap = SizedBox(height: 10), between = SizedBox(height: 28);
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       const _WeekPanel(),
       between,
-      SectionHeader('Strength trends',
-          trailing: index.trends.isEmpty ? null : QuietLink('See all', key: const Key('trends-see-all'), said: 'See all exercise trends', onPressed: () => push(context, const ExerciseListScreen()))),
+      SectionHeader(l.progressStrengthTrends,
+          trailing: index.trends.isEmpty ? null : QuietLink(l.progressSeeAll, key: const Key('trends-see-all'), said: l.progressSeeAllTrendsSemantic, onPressed: () => push(context, const ExerciseListScreen()))),
       gap,
       if (previews.isEmpty)
         // History is offered in every state, including an account with nothing recorded yet.
         p.hasEvidence
-            ? Panel(child: Text('No exercise with a stable identity has recorded sets yet. Movements typed as free text have no trend.', style: context.caption))
-            : EmptyState('No training recorded yet', 'Trends are built only from workouts you actually record. There is nothing to chart until then.',
-                action: SecondaryButton('Start a manual workout', onPressed: () => startManualWorkout(context, ref)))
+            ? Panel(child: Text(l.progressNoStableTrend, style: context.caption))
+            : EmptyState(l.progressNoTrainingTitle, l.progressNoTrainingBody,
+                action: SecondaryButton(l.progressStartManual, onPressed: () => startManualWorkout(context, ref)))
       else
         for (final (i, t) in previews.indexed) ...[if (i > 0) gap, TrendPreview(t)],
       // Body progress belongs to Me; this is only a quiet way there.
       Align(
         alignment: AlignmentDirectional.centerStart,
-        child: QuietLink('Body progress', key: const Key('progress-body'), said: 'Open Body progress: weight and measurements', onPressed: () => push(context, const BodyProgressScreen())),
+        child: QuietLink(l.progressBodyLink, key: const Key('progress-body'), said: l.progressBodyLinkSemantic, onPressed: () => push(context, const BodyProgressScreen())),
       ),
       between,
-      const SectionHeader('Am I following my plan?'),
+      SectionHeader(l.progressPlanHeader),
       gap,
       Panel(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (primary == null)
-            Text('You have no primary plan right now. Manual training still counts as training.', style: context.caption)
+            Text(l.progressNoPrimary, style: context.caption)
           else if (p.dueOccasions == 0)
-            Text('No planned workout has come due yet.', style: context.caption)
+            Text(l.progressNothingDue, style: context.caption)
           else ...[
-            Text('${p.recorded} of ${p.dueOccasions} due workouts recorded', style: context.numStyle(17)),
+            Text(l.progressDueRecorded(p.recorded, p.dueOccasions), style: context.numStyle(17)),
             const SizedBox(height: 10),
-            ProgressRail(p.recorded / p.dueOccasions, label: 'Due workouts recorded'),
+            ProgressRail(p.recorded / p.dueOccasions, label: l.progressDueRail),
             const SizedBox(height: 10),
-            Text('${p.full} completed · ${p.partial} partial · ${p.skipped} skipped · ${p.missed} missed', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
+            Text(l.progressAdherenceBreakdown(p.full, p.partial, p.skipped, p.missed), style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
           ],
           Align(
             alignment: AlignmentDirectional.centerEnd,
-            child: QuietLink(primary == null ? 'Plans' : 'View your plan', key: const Key('progress-view-plan'), said: 'Open Train, Plan',
+            child: QuietLink(primary == null ? l.progressPlansLink : l.progressViewPlan, key: const Key('progress-view-plan'), said: l.progressOpenPlanSemantic,
                 onPressed: () => ref.read(shellProvider.notifier).selectTrainView(TrainView.plan)),
           ),
-          Text('Weekly goals are separate: they never schedule, move or complete a planned workout.', style: context.caption),
+          Text(l.progressGoalsSeparate, style: context.caption),
         ]),
       ),
       between,
       _RecapLink(monday: weeks.first, older: weeks.length - 1),
       between,
-      const SectionHeader('Am I consistent?'),
+      SectionHeader(l.progressConsistencyHeader),
       gap,
       Panel(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Days with recorded training in each of the last 8 weeks. ${plural(p.sessions, 'session')} in total.', style: context.caption),
+          Text(l.progressConsistencyCaption(p.sessions), style: context.caption),
           const SizedBox(height: 14),
           Semantics(
-            label: 'Training days per week, oldest first: ${p.weeks.map((w) => w.$2).join(', ')}',
+            label: l.progressConsistencySemantic(p.weeks.map((w) => w.$2).join(l.workoutListSeparator)),
+            // Oldest week on the left in every language: time runs left to right.
             child: ExcludeSemantics(
-              child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              child: Directionality(textDirection: TextDirection.ltr, child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 for (final w in p.weeks)
                   Expanded(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -128,20 +132,20 @@ class ProgressView extends ConsumerWidget {
                       FittedBox(fit: BoxFit.scaleDown, child: Text(dayMonthNumeric(w.$1), style: context.numStyle(12.5, color: context.c.secondary, weight: FontWeight.w400))),
                     ]),
                   ),
-              ]),
+              ])),
             ),
           ),
         ]),
       ),
       if (recent.isNotEmpty) ...[
         between,
-        const SectionHeader('Recent workouts'),
+        SectionHeader(l.progressRecentWorkouts),
         gap,
         GroupCard(children: [for (final w in recent) WorkoutRow(w, grouped: true)]),
       ],
       between,
       GroupCard(children: [
-        GroupRow(key: const Key('progress-history'), icon: Icons.history, title: 'Workout history', subtitle: 'Every workout you recorded', onTap: () => push(context, const WorkoutHistoryScreen())),
+        GroupRow(key: const Key('progress-history'), icon: Icons.history, title: l.workoutHistoryTitle, subtitle: l.progressHistorySubtitle, onTap: () => push(context, const WorkoutHistoryScreen())),
       ]),
       // Run / Walk personal bests, once something is saved: the same projection History shows.
       if (ref.watch(_runListProvider).any((r) => !r.isDeleted && !r.isOpen)) ...[between, const PersonalBestsCard()],
@@ -149,9 +153,11 @@ class ProgressView extends ConsumerWidget {
   }
 }
 
+/// "10/12" in English (month first); day first in French and Arabic ("12/10").
 String dayMonthNumeric(String dayKey) {
   final p = dayKey.split('-');
-  return '${int.parse(p[1])}/${int.parse(p[2])}';
+  final m = int.parse(p[1]), d = int.parse(p[2]);
+  return currentLocale.languageCode == 'en' ? '$m/$d' : '$d/$m';
 }
 
 /// This week in the approved pale panel: the date range, Set/Edit goals, then Workouts and Run / Walk, each with
@@ -166,7 +172,8 @@ class _WeekPanel extends ConsumerWidget {
     final stored = (ref.watch(weeklyGoalsProvider).value ?? const <Stored<WeeklyGoal>>[]).where((r) => r.value.weekStart == week.monday).firstOrNull;
     final range = dateRange(week.monday, week.sunday);
     final pictured = MediaQuery.textScalerOf(context).scale(10) <= 13;
-    String said(String what, int? target, String counted) => target == null ? '$what: $counted recorded this week, no target.' : '$what: $counted of $target this week.';
+    final l = context.l10n;
+    String said(String what, int? target, int count, String counted) => target == null ? l.progressGoalSaidNoTarget(what, counted) : l.progressGoalSaidTarget(what, count, target);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       PanelTheme(
         child: Builder(
@@ -174,25 +181,25 @@ class _WeekPanel extends ConsumerWidget {
             key: const Key('progress-week-panel'),
             photo: pictured ? const PanelPhoto('assets/images/workout-hero.webp', alignment: Alignment(1, 0.6)) : null,
             below: [
-              _GoalRow(key: const Key('goal-row-workouts'), icon: Icons.fitness_center, label: 'Workouts', count: week.workoutCount, target: week.workoutsTarget,
-                  said: said('Workouts', week.workoutsTarget, week.workoutsTarget == null ? plural(week.workoutCount, 'workout') : '${week.workoutCount}')),
+              _GoalRow(key: const Key('goal-row-workouts'), icon: Icons.fitness_center, label: l.progressWorkoutsLabel, count: week.workoutCount, target: week.workoutsTarget,
+                  said: said(l.progressWorkoutsLabel, week.workoutsTarget, week.workoutCount, l.progressWorkoutCount(week.workoutCount))),
               const SizedBox(height: 12),
-              _GoalRow(key: const Key('goal-row-runwalk'), icon: Icons.directions_run, label: 'Run / Walk', count: week.activityCount, target: week.runWalkTarget,
-                  said: said('Run / Walk', week.runWalkTarget, week.runWalkTarget == null ? plural(week.activityCount, 'run or walk', 'runs or walks') : '${week.activityCount}')),
+              _GoalRow(key: const Key('goal-row-runwalk'), icon: Icons.directions_run, label: l.progressRunWalkLabel, count: week.activityCount, target: week.runWalkTarget,
+                  said: said(l.progressRunWalkLabel, week.runWalkTarget, week.activityCount, l.progressRunWalkCount(week.activityCount))),
             ],
             child: LayoutBuilder(
               builder: (context, box) => ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: pictured ? box.maxWidth * PanelSurface.wordsShare : box.maxWidth),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  const Overline('This week'),
+                  Overline(l.progressThisWeek),
                   const SizedBox(height: 4),
-                  Heading('Your weekly rhythm', size: 30, serif: true),
+                  Heading(l.progressWeeklyRhythm, size: 30, serif: true),
                   const SizedBox(height: 4),
                   Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
                     Text(range, key: const Key('progress-week-range'), style: context.numStyle(16, weight: FontWeight.w600)),
                     if (supported != false)
-                      QuietLink(week.hasGoals ? 'Edit goals' : 'Set weekly goals', key: const Key('goals-edit'),
-                          said: week.hasGoals ? 'Edit weekly goals' : 'Set weekly goals', onPressed: () => showGoalSheet(appContext(context), ref, week)),
+                      QuietLink(week.hasGoals ? l.progressEditGoals : l.progressSetGoals, key: const Key('goals-edit'),
+                          said: week.hasGoals ? l.progressEditGoalsSemantic : l.progressSetGoals, onPressed: () => showGoalSheet(appContext(context), ref, week)),
                   ]),
                 ]),
               ),
@@ -201,14 +208,14 @@ class _WeekPanel extends ConsumerWidget {
         ),
       ),
       if (supported == false)
-        const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: StatusLine(Icons.cloud_off_outlined, 'Weekly goals are not available on your account\'s server yet, so none can be saved. Your counts are still shown.',
-                key: Key('goals-unavailable'))),
+        Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: StatusLine(Icons.cloud_off_outlined, l.progressGoalsUnavailable,
+                key: const Key('goals-unavailable'))),
       if (stored?.isPending ?? false)
-        const Padding(padding: EdgeInsets.only(top: 10), child: StatusLine(Icons.phone_iphone, 'Goals saved on this phone · sync pending', key: Key('goals-pending'))),
+        Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.phone_iphone, l.progressGoalsPending, key: const Key('goals-pending'))),
       if (stored?.needsReview ?? false)
-        const Padding(padding: EdgeInsets.only(top: 10), child: StatusLine(Icons.rule, 'This week\'s goals were also changed on another device. Review them from the notice at the bottom of the screen.', tone: Tone.warning)),
+        Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.rule, l.progressGoalsReview, tone: Tone.warning)),
     ]);
   }
 }
@@ -231,9 +238,9 @@ class _GoalRow extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Wrap(alignment: WrapAlignment.spaceBetween, spacing: 8, children: [
                   Text(label, style: context.sansStyle(16, weight: FontWeight.w500)),
-                  Text(target == null ? '$count recorded' : '$count of $target', style: context.numStyle(16)),
+                  Text(target == null ? context.l10n.progressCountRecorded(count) : context.l10n.progressCountOfTarget(count, target!), style: context.numStyle(16)),
                 ]),
-                if (target != null) ...[const SizedBox(height: 6), ProgressRail(count / target!, label: '$label goal', height: 10)],
+                if (target != null) ...[const SizedBox(height: 6), ProgressRail(count / target!, label: context.l10n.progressGoalRail(label), height: 10)],
               ]),
             ),
           ]),
@@ -242,7 +249,7 @@ class _GoalRow extends StatelessWidget {
 }
 
 /// The weekly goals form: two optional whole numbers, effective from this week. Plans are untouched.
-Future<void> showGoalSheet(BuildContext context, WidgetRef ref, WeekSummary week) => showGoSheet<void>(context, title: 'Weekly goals', builder: (_) => _GoalForm(week: week));
+Future<void> showGoalSheet(BuildContext context, WidgetRef ref, WeekSummary week) => showGoSheet<void>(context, title: context.l10n.progressGoalsTitle, builder: (_) => _GoalForm(week: week));
 
 class _GoalForm extends ConsumerStatefulWidget {
   const _GoalForm({required this.week});
@@ -267,9 +274,10 @@ class _GoalFormState extends ConsumerState<_GoalForm> {
   Future<void> _save() async {
     final (w, we) = GoalRepository.parse(_workouts.text);
     final (r, re) = GoalRepository.parse(_runWalk.text);
+    String? say(GoalInputError? e) => e == null ? null : context.l10n.progressGoalRangeError(goalRange.$1, goalRange.$2);
     setState(() {
-      _workoutsError = we;
-      _runWalkError = re;
+      _workoutsError = say(we);
+      _runWalkError = say(re);
     });
     if (we != null || re != null) return;
     final week = widget.week;
@@ -282,38 +290,37 @@ class _GoalFormState extends ConsumerState<_GoalForm> {
       await ref.read(goalRepositoryProvider).set(week.monday, workouts: w, runWalk: r);
     } on LocalSaveFailure {
       if (mounted) setState(() => _saving = false);
-      if (mounted) toast(context, 'Your goals could not be saved on this phone. Nothing changed.');
+      if (mounted) toast(context, context.l10n.progressGoalsSaveFailed);
       return;
     }
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final messenger = ScaffoldMessenger.of(context), l = context.l10n;
     Navigator.pop(context);
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(w == null && r == null ? 'Weekly goals cleared from this week.' : 'Weekly goals saved.'), duration: const Duration(milliseconds: 2200)));
+      ..showSnackBar(SnackBar(content: Text(w == null && r == null ? l.progressGoalsCleared : l.progressGoalsSaved), duration: const Duration(milliseconds: 2200)));
   }
 
   Widget _field(String key, String label, TextEditingController c, String? error) => TextField(
         key: Key(key), controller: c, enabled: !_saving,
-        keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+        keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9\u0660-\u0669\u06F0-\u06F9]')), LengthLimitingTextInputFormatter(2)],
         textInputAction: TextInputAction.next,
-        decoration: InputDecoration(labelText: label, helperText: '1 to 21 a week, or blank for no target', errorText: error, helperMaxLines: 2, errorMaxLines: 3),
+        decoration: InputDecoration(labelText: label, helperText: context.l10n.progressGoalFieldHelper(goalRange.$1, goalRange.$2), errorText: error, helperMaxLines: 2, errorMaxLines: 3),
       );
 
   @override
   Widget build(BuildContext context) {
-    final week = widget.week;
+    final week = widget.week, l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('These are weekly activity targets. Your training plan stays the same.', key: const Key('goals-helper'), style: context.body),
+      Text(l.progressGoalsHelper, key: const Key('goals-helper'), style: context.body),
       const SizedBox(height: 6),
-      Text('They apply from this week (${dateRange(week.monday, week.sunday)}) until you change them. Earlier weeks keep the goals they had. '
-          'Leave a field blank for no target.', style: context.caption),
+      Text(l.progressGoalsApply(dateRange(week.monday, week.sunday)), style: context.caption),
       const SizedBox(height: 18),
-      _field('goal-workouts', 'Workouts per week', _workouts, _workoutsError),
+      _field('goal-workouts', l.progressGoalWorkoutsField, _workouts, _workoutsError),
       const SizedBox(height: 14),
-      _field('goal-runwalk', 'Runs and walks per week', _runWalk, _runWalkError),
+      _field('goal-runwalk', l.progressGoalRunWalkField, _runWalk, _runWalkError),
       const SizedBox(height: 20),
-      PrimaryButton('Save goals', key: const Key('goals-save'), onPressed: _saving ? null : _save),
+      PrimaryButton(l.progressGoalsSave, key: const Key('goals-save'), onPressed: _saving ? null : _save),
     ]);
   }
 }
@@ -328,7 +335,7 @@ class _RecapLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final range = dateRange(monday, addDays(monday, 6));
     return Semantics(
-      button: true, label: 'Last week\'s recap, $range${older > 0 ? '. Earlier weeks are inside.' : ''}',
+      button: true, label: older > 0 ? context.l10n.progressRecapLinkSemanticOlder(range) : context.l10n.progressRecapLinkSemantic(range),
       child: ExcludeSemantics(
         child: Pressable(
           key: const Key('progress-recap'),
@@ -337,14 +344,14 @@ class _RecapLink extends StatelessWidget {
           child: PanelTheme(
             child: Builder(
               builder: (context) => PanelSurface(
-                padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 12, 14).resolve(Directionality.of(context)),
                 child: Row(children: [
                   Icon(Icons.event_available_outlined, size: 26, color: context.c.text),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Last week\'s recap', style: context.pageTitleStyle(21)),
-                      Text(older > 0 ? '$range · earlier weeks inside' : range, style: context.sansStyle(15, color: context.c.secondary)),
+                      Text(context.l10n.progressRecapLinkTitle, style: context.pageTitleStyle(21)),
+                      Text(older > 0 ? context.l10n.progressRecapLinkOlder(range) : range, style: context.sansStyle(15, color: context.c.secondary)),
                     ]),
                   ),
                   Icon(Icons.chevron_right, color: context.c.text),
@@ -373,22 +380,23 @@ class TrendPreview extends ConsumerWidget {
     final shown = pts.isEmpty ? all : pts;
     final latest = all.last;
     final value = trendValue(trend, latest, unit);
+    final l = context.l10n, name = ref.watch(exerciseNamesProvider).name(trend.key, trend.name, Localizations.localeOf(context));
     return Semantics(
-      button: true, label: '${trend.name}. Latest recorded $value on ${dayMonth(latest.dayKey)}. ${metricLabel(trend, reps)}. ${plural(shown.length, 'session')} charted.',
+      button: true, label: l.progressTrendPreviewSemantic(name, value, dayMonth(latest.dayKey), metricLabel(trend, reps), shown.length),
       child: ExcludeSemantics(
         child: Pressable(
           key: Key('trend-preview-${trend.key}'),
           borderRadius: BorderRadius.circular(Radii.panel),
           onTap: () => push(context, ExerciseTrendScreen(exerciseKey: trend.key)),
           child: Panel(
-            padding: const EdgeInsets.fromLTRB(16, 14, 10, 12),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 10, 12).resolve(Directionality.of(context)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Row(children: [
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(trend.name, style: context.sansStyle(16, weight: FontWeight.w600)),
+                    Text(name, style: context.sansStyle(16, weight: FontWeight.w600)),
                     Text(value, style: context.pageTitleStyle(28)),
-                    Text('Latest recorded · ${dayMonth(latest.dayKey)}', style: context.caption),
+                    Text(l.progressLatestRecordedOn(dayMonth(latest.dayKey)), style: context.caption),
                   ]),
                 ),
                 Icon(Icons.chevron_right, color: context.c.secondary),
@@ -405,8 +413,8 @@ class TrendPreview extends ConsumerWidget {
 
 /// "92.5 kg × 8", "12 reps", "1:30".
 String trendValue(ExerciseTrend t, TrendPoint p, LoadUnit unit) => switch (t.metric) {
-      TrendMetric.load => '${formatLoad(p.value, unit)} × ${p.set.reps}',
-      TrendMetric.reps => '${p.value.round()} reps',
+      TrendMetric.load => currentL10n.workoutSetLoadReps(formatLoad(p.value, unit), p.set.reps ?? 0),
+      TrendMetric.reps => currentL10n.progressRepsValue(p.value.round()),
       TrendMetric.duration => secondsText(p.value.round()),
       TrendMetric.none => '',
     };
@@ -417,22 +425,24 @@ String axisValue(ExerciseTrend t, double v, LoadUnit unit) => switch (t.metric) 
       _ => formatNumber(v),
     };
 
-String secondsText(int s) => s < 60 ? '$s s' : clockText(s);
+String secondsText(int s) => s < 60 ? currentL10n.durationSeconds(s) : clockText(s);
 
 String metricLabel(ExerciseTrend t, int? reps) => switch (t.metric) {
-      TrendMetric.load => 'Top set load · $reps reps',
-      TrendMetric.reps => 'Most reps in a set · no added load',
-      TrendMetric.duration => 'Longest recorded time',
-      TrendMetric.none => 'No comparable measure',
+      TrendMetric.load => currentL10n.progressMetricLoad(reps ?? 0),
+      TrendMetric.reps => currentL10n.progressMetricReps,
+      TrendMetric.duration => currentL10n.progressMetricDuration,
+      TrendMetric.none => currentL10n.progressMetricNone,
     };
 
-/// The signed recorded change, shown neutrally: "+9 kg", "−2.5 kg", "No change".
+/// The signed recorded change, shown neutrally: "+9 kg", "−2.5 kg", "No change". The signed number keeps its order
+/// in Arabic.
 String changeText(ExerciseTrend t, double delta, LoadUnit unit) {
-  if (delta == 0) return 'No change';
+  final l = currentL10n;
+  if (delta == 0) return l.progressNoChange;
   final sign = delta > 0 ? '+' : '−';
   return switch (t.metric) {
-    TrendMetric.load => '$sign${formatLoad(delta.abs(), unit)}',
-    TrendMetric.reps => '$sign${plural(delta.abs().round(), 'rep')}',
-    _ => '$sign${secondsText(delta.abs().round())}',
+    TrendMetric.load => ltr('$sign${formatLoad(delta.abs(), unit)}'),
+    TrendMetric.reps => l.progressChangeReps(ltr('$sign${delta.abs().round()}'), delta.abs().round()),
+    _ => ltr('$sign${secondsText(delta.abs().round())}'),
   };
 }

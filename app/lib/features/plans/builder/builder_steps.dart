@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/format.dart';
+import '../../../core/language.dart';
+import '../../../core/units.dart' show asciiDigits;
 import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../data/models.dart';
@@ -12,13 +14,15 @@ import '../../coach/guide_sheets.dart';
 import '../../workout/workout_flow.dart' show PickChip;
 import '../plan_actions.dart' show pickDay;
 import '../plan_draft.dart';
+import '../plan_l10n.dart';
 import 'workout_editor.dart';
 
 Widget _label(String text) => Padding(padding: const EdgeInsets.only(top: 18, bottom: 4), child: SectionLabel(text));
 Widget _chips(List<Widget> chips) => Wrap(spacing: 6, children: chips);
 
 /// The first names a "Build my own" plan starts with, one per chosen day (up to four): the user renames them.
-List<String> defaultWorkoutNames(int days) => [for (var i = 0; i < (days.clamp(1, 4)); i++) 'Workout ${String.fromCharCode(65 + i)}'];
+/// In the app's language (they become the user's own names).
+List<String> defaultWorkoutNames(int days) => [for (var i = 0; i < (days.clamp(1, 4)); i++) currentL10n.builderDefaultWorkoutName(String.fromCharCode(65 + i))];
 
 /// Template choice from the "Start from a template" path: whether to copy its starting exercises. Kept in the draft.
 bool withExercises(PlanDraft d) => d.j['withExercises'] != false;
@@ -32,7 +36,7 @@ void layOutStructure(PlanDraft d, PlanTemplates templates) {
     d.applyTemplate(templates, d.templateId ?? suggestTemplate(d.days.length, experience: d.experience).templateId, withExercises: withExercises(d));
   } else if (d.workouts.isEmpty) {
     d.setCustomStructure(defaultWorkoutNames(d.days.length));
-    if (d.title.trim().isEmpty) d.title = 'My plan';
+    if (d.title.trim().isEmpty) d.title = currentL10n.planDefaultTitle;
   }
 }
 
@@ -42,7 +46,7 @@ void useTemplate(PlanDraft d, PlanTemplates templates, String id) {
   d.j['edited'] = false;
   if (id == 'custom') {
     d.setCustomStructure(defaultWorkoutNames(d.days.length));
-    if (d.title.trim().isEmpty || templates.templates.any((t) => t.name == d.title)) d.title = 'My plan';
+    if (d.title.trim().isEmpty || templates.templates.any((t) => t.name == d.title)) d.title = currentL10n.planDefaultTitle;
   } else {
     d.applyTemplate(templates, id, withExercises: withExercises(d));
   }
@@ -65,18 +69,15 @@ class _PreferencesStepState extends State<PreferencesStep> {
   Widget build(BuildContext context) {
     final d = widget.draft;
     final days = d.days;
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text(
-          d.guided
-              ? 'Answer these and the next step suggests a starting plan from them, with up to two alternatives. Nothing is created until you choose, and you can change everything later.'
-              : 'A few answers to suggest a starting point. You can change everything later.',
-          style: context.caption),
-      _label('Days a week'),
+      Text(d.guided ? l.builderPrefsGuided : l.builderPrefsIntro, style: context.caption),
+      _label(l.builderDaysAWeek),
       _chips([
         for (final n in defaultDays.keys)
-          PickChip(key: Key('days-$n'), label: '$n', semanticLabel: '$n days a week', selected: days.length == n, onTap: () => widget.change((d) => d.setPreferences(days: defaultDays[n]))),
+          PickChip(key: Key('days-$n'), label: '$n', semanticLabel: l.builderDaysAWeekCount(n), selected: days.length == n, onTap: () => widget.change((d) => d.setPreferences(days: defaultDays[n]))),
       ]),
-      _label('Which days'),
+      _label(l.builderWhichDays),
       _chips([
         for (var wd = 1; wd <= 7; wd++)
           PickChip(
@@ -84,31 +85,31 @@ class _PreferencesStepState extends State<PreferencesStep> {
             onTap: () => widget.change((d) => d.setPreferences(days: days.contains(wd) ? [for (final x in days) if (x != wd) x] : [...days, wd])),
           ),
       ]),
-      if (days.isEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: StatusLine(Icons.info_outline, 'Choose at least one day.', tone: Tone.warning)),
-      _label('Equipment'),
+      if (days.isEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: StatusLine(Icons.info_outline, l.builderChooseDay, tone: Tone.warning)),
+      _label(l.builderEquipment),
       _chips([
         for (final e in equipmentChoices.entries)
-          PickChip(key: Key('equipment-${e.key}'), label: e.value, selected: d.equipment == e.key, onTap: () => widget.change((d) => d.setPreferences(equipment: e.key))),
+          PickChip(key: Key('equipment-${e.key}'), label: equipmentLabel(l, e.key), selected: d.equipment == e.key, onTap: () => widget.change((d) => d.setPreferences(equipment: e.key))),
       ]),
-      _label('Planned time per workout (optional)'),
+      _label(l.builderPlannedTime),
       _chips([
-        PickChip(key: const Key('budget-none'), label: 'No limit', selected: d.timeBudgetMinutes == null, onTap: () => widget.change((d) => d.timeBudgetMinutes = null)),
+        PickChip(key: const Key('budget-none'), label: l.builderNoLimit, selected: d.timeBudgetMinutes == null, onTap: () => widget.change((d) => d.timeBudgetMinutes = null)),
         for (final m in const [30, 45, 60, 75, 90])
-          PickChip(key: Key('budget-$m'), label: '$m min', selected: d.timeBudgetMinutes == m, onTap: () => widget.change((d) => d.timeBudgetMinutes = m)),
+          PickChip(key: Key('budget-$m'), label: l.durationMinutes(m), selected: d.timeBudgetMinutes == m, onTap: () => widget.change((d) => d.timeBudgetMinutes = m)),
       ]),
-      Text('The time you plan to spend. It is your choice, not a calculated length of the workout.', style: context.caption),
+      Text(l.builderPlannedTimeNote, style: context.caption),
       const SizedBox(height: 8),
       if (!_experience)
         Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(key: const Key('experience-show'), onPressed: () => setState(() => _experience = true), icon: const Icon(Icons.add, size: 18), label: const Text('Add your training experience (optional)')),
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(key: const Key('experience-show'), onPressed: () => setState(() => _experience = true), icon: const Icon(Icons.add, size: 18), label: Text(l.builderAddExperience)),
         )
       else ...[
-        _label('Training experience (optional)'),
+        _label(l.builderExperience),
         _chips([
           for (final e in experienceChoices.entries)
             PickChip(
-              key: Key('experience-${e.key}'), label: e.value, selected: d.experience == e.key,
+              key: Key('experience-${e.key}'), label: experienceLabel(l, e.key), selected: d.experience == e.key,
               onTap: () => widget.change((d) => d.experience == e.key ? d.setPreferences(clearExperience: true) : d.setPreferences(experience: e.key)),
             ),
         ]),
@@ -157,10 +158,11 @@ class _StructureStepState extends ConsumerState<StructureStep> {
   /// workouts were already edited.
   Future<void> _pick(PlanTemplates templates, String id, {bool? exercises}) async {
     if (d.j['edited'] == true) {
-      final now = [for (final w in d.workouts) w.name].join(', ');
-      final next = id == 'custom' ? defaultWorkoutNames(d.days.length).join(', ') : [for (final w in previewOf(d, templates, id).workouts) w.name].join(', ');
-      if (!await confirm(context, title: 'Replace your workouts?', action: 'Replace them',
-          body: 'This starts the workouts again from ${id == 'custom' ? 'your own names' : templates.byId(id).name}.\n\nNow: $now\nAfter: $next\n\nChanges you made to the exercises are not kept.')) {
+      final l = context.l10n;
+      final now = [for (final w in d.workouts) w.name].join(l.planListComma);
+      final next = id == 'custom' ? defaultWorkoutNames(d.days.length).join(l.planListComma) : [for (final w in previewOf(d, templates, id).workouts) w.name].join(l.planListComma);
+      if (!await confirm(context, title: l.builderReplaceWorkoutsTitle, action: l.builderReplaceThem,
+          body: l.builderReplaceWorkoutsBody(id == 'custom' ? l.builderYourOwnNames : templates.byId(id).name, now, next))) {
         return;
       }
     }
@@ -176,17 +178,18 @@ class _StructureStepState extends ConsumerState<StructureStep> {
     final s = guidedSuggestion(d.days.length, d.equipment, experience: d.experience);
     final name = templates.byId(s.templateId).name;
     final chosen = d.workouts.isEmpty ? null : d.templateId;
+    final l = context.l10n;
     Widget use(String id, {bool primary = false}) => chosen == id
-        ? StatusLine(Icons.check_circle_outline, 'Using this starting plan. It is a draft: change anything in the next steps.', tone: Tone.success)
+        ? StatusLine(Icons.check_circle_outline, l.builderUsingStarting, tone: Tone.success)
         : primary
-            ? PrimaryButton('Use this starting plan', key: Key('guide-use-$id'), onPressed: () => _pick(templates, id))
-            : SecondaryButton('Use this starting plan', key: Key('guide-use-$id'), onPressed: () => _pick(templates, id));
+            ? PrimaryButton(l.builderUseStarting, key: Key('guide-use-$id'), onPressed: () => _pick(templates, id))
+            : SecondaryButton(l.builderUseStarting, key: Key('guide-use-$id'), onPressed: () => _pick(templates, id));
     // Styles come from the context they are drawn in: the pale panel's ink inside it, the page's outside.
     Widget week(BuildContext context, String id) => Text(weekLine(previewOf(d, templates, id)), style: context.sansStyle(15, weight: FontWeight.w500));
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (d.j['edited'] == true && chosen != null && chosen != s.templateId) ...[
         StatusLine(Icons.info_outline, key: const Key('guide-answers-changed'), tone: Tone.warning,
-            'Your answers now suggest $name. Your edited workouts stay as they are unless you choose Use this starting plan below.'),
+            l.builderAnswersChanged(name)),
         const SizedBox(height: 10),
       ],
       // The suggestion is the step's summary, a pale panel in the Today look. Its sheets open from this page's
@@ -194,22 +197,22 @@ class _StructureStepState extends ConsumerState<StructureStep> {
       PhotoPanel(
         key: const Key('guide-suggestion'),
         content: (pc) => [
-          const Overline('Suggested starting plan'),
+          Overline(l.builderSuggestedStarting),
           const SizedBox(height: 4),
           Semantics(header: true, child: Text(name, style: pc.pageTitleStyle(28))),
           const SizedBox(height: 6),
           Text(s.reason, key: const Key('guide-reason'), style: pc.body),
-          _label('Your week'),
+          _label(l.builderYourWeek),
           week(pc, s.templateId),
           if (guide?.split(s.templateId) case final split?) Padding(padding: const EdgeInsets.only(top: 4), child: Text(split.organisation, style: pc.caption)),
           const SizedBox(height: 14),
           SizedBox(width: double.infinity, child: use(s.templateId, primary: true)),
           const SizedBox(height: 8),
-          SecondaryButton('Compare splits', key: const Key('guide-compare'), onPressed: guide == null
+          SecondaryButton(l.builderCompareSplits, key: const Key('guide-compare'), onPressed: guide == null
               ? null
               : () => showCompareSplits(context, guide: guide, templates: templates, draft: d, templateIds: [s.templateId, ...s.alternatives], suggestedId: s.templateId)),
           TextButton.icon(
-            key: const Key('guide-why'), icon: const Icon(Icons.help_outline, size: 18), label: const Text('Why this suggestion?'),
+            key: const Key('guide-why'), icon: const Icon(Icons.help_outline, size: 18), label: Text(l.builderWhySuggestion),
             onPressed: guide == null
                 ? null
                 : () => showWhySuggestion(context, guide: guide, templateId: s.templateId, name: name, reason: s.reason,
@@ -217,7 +220,7 @@ class _StructureStepState extends ConsumerState<StructureStep> {
           ),
         ],
       ),
-      if (s.alternatives.isNotEmpty) _label('Also fits your days'),
+      if (s.alternatives.isNotEmpty) _label(l.builderAlsoFits),
       for (final id in s.alternatives)
         Padding(
           padding: const EdgeInsets.only(top: 8),
@@ -242,14 +245,14 @@ class _StructureStepState extends ConsumerState<StructureStep> {
     final chosen = await showGoSheet<String>(context, title: weekdayName(wd), builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           for (final (i, w) in workouts.indexed)
             ChoiceTile<String>(key: Key('day-assign-$wd-$i'), value: w.id, groupValue: current ?? '', title: w.name, onChanged: (v) => Navigator.pop(sheet, v)),
-          ChoiceTile<String>(key: Key('day-assign-$wd-rest'), value: '', groupValue: current ?? '', title: 'Rest', subtitle: 'No workout on this day', onChanged: (v) => Navigator.pop(sheet, v)),
+          ChoiceTile<String>(key: Key('day-assign-$wd-rest'), value: '', groupValue: current ?? '', title: context.l10n.builderRest, subtitle: context.l10n.builderRestSubtitle, onChanged: (v) => Navigator.pop(sheet, v)),
         ]));
     if (chosen != null) change((d) => d.assignDay(wd, chosen.isEmpty ? null : chosen));
   }
 
   Future<void> _addStep() async {
     final workouts = d.workouts;
-    final id = await showGoSheet<String>(context, title: 'Add a step', builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    final id = await showGoSheet<String>(context, title: context.l10n.builderAddStep, builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           for (final (i, w) in workouts.indexed) ListRow(key: Key('cycle-add-$i'), title: w.name, onTap: () => Navigator.pop(sheet, w.id)),
         ]));
     if (id != null) change((d) => d.setCycle([...d.schedule.cycle, id]));
@@ -257,15 +260,16 @@ class _StructureStepState extends ConsumerState<StructureStep> {
 
   Future<void> _customWeeks() async {
     final c = TextEditingController(text: d.durationWeeks?.toString() ?? '');
-    final weeks = await showGoSheet<int>(context, title: 'Plan length', builder: (sheet) => StatefulBuilder(builder: (sheet, setSheet) {
-          final v = int.tryParse(c.text.trim());
+    final l = context.l10n;
+    final weeks = await showGoSheet<int>(context, title: l.builderPlanLength, builder: (sheet) => StatefulBuilder(builder: (sheet, setSheet) {
+          final v = int.tryParse(asciiDigits(c.text.trim()));
           final ok = v != null && v >= 1 && v <= 52;
           return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             TextField(
                 key: const Key('duration-custom-field'), controller: c, autofocus: true, keyboardType: TextInputType.number, onChanged: (_) => setSheet(() {}),
-                decoration: InputDecoration(labelText: 'Weeks', helperText: '1 to 52 weeks', errorText: c.text.trim().isEmpty || ok ? null : 'Choose 1 to 52 weeks.')),
+                decoration: InputDecoration(labelText: l.builderWeeks, helperText: l.builderWeeksHelper, errorText: c.text.trim().isEmpty || ok ? null : l.builderWeeksError)),
             const SizedBox(height: 10),
-            PrimaryButton('Use this length', key: const Key('duration-custom-save'), onPressed: ok ? () => Navigator.pop(sheet, v) : null),
+            PrimaryButton(l.builderUseLength, key: const Key('duration-custom-save'), onPressed: ok ? () => Navigator.pop(sheet, v) : null),
           ]);
         }));
     c.dispose();
@@ -277,22 +281,23 @@ class _StructureStepState extends ConsumerState<StructureStep> {
   Widget _templates(PlanTemplates templates) {
     final n = d.days.length;
     final suggestion = suggestTemplate(n, experience: d.experience);
+    final l = context.l10n;
     String preview(PlanTemplate t) {
-      if (t.isCustom) return 'Name your own workouts and choose their days.';
+      if (t.isCustom) return l.builderTemplateCustomPreview;
       final names = [for (final k in t.sequenceFor(n)) t.workout(k).name];
-      return t.fitsWeekly(n) ? 'Your $n days: ${names.join(', ')}' : 'Rotates ${names.join(' → ')} over your $n days';
+      return t.fitsWeekly(n) ? l.builderTemplateWeekly(n, names.join(l.planListComma)) : l.builderTemplateRotates(names.join(l.planSequenceArrow), n);
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (d.guided)
-        _label('Other starting points')
+        _label(l.builderOtherStartingPoints)
       else ...[
         Panel(
           key: const Key('template-suggestion'),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            StatusLine(Icons.lightbulb_outline, 'Suggested: ${templates.byId(suggestion.templateId).name}. ${suggestion.reason}', tone: Tone.accent),
+            StatusLine(Icons.lightbulb_outline, l.builderSuggestedLine(templates.byId(suggestion.templateId).name, suggestionReason(l, n)), tone: Tone.accent),
             const SizedBox(height: 6),
-            Text(splitEvidenceNote, style: context.caption),
+            Text(l.planSplitEvidenceNote, style: context.caption),
           ]),
         ),
         const SizedBox(height: 12),
@@ -300,7 +305,7 @@ class _StructureStepState extends ConsumerState<StructureStep> {
       for (final t in templates.templates)
         ChoiceTile<String>(
           key: Key('template-${t.id}'), value: t.id, groupValue: d.templateId ?? '',
-          title: t.id == suggestion.templateId ? '${t.name} · Suggested' : t.name,
+          title: t.id == suggestion.templateId ? l.builderTemplateSuggested(t.name) : t.name,
           subtitle: '${t.summary}\n${preview(t)}',
           onChanged: (id) => id == d.templateId ? null : _pick(templates, id),
         ),
@@ -309,10 +314,8 @@ class _StructureStepState extends ConsumerState<StructureStep> {
         SwitchListTile(
           key: const Key('template-with-exercises'), contentPadding: EdgeInsets.zero, value: withExercises(d),
           onChanged: (v) => _pick(templates, d.templateId!, exercises: v),
-          title: const Text('Include starting exercises'),
-          subtitle: Text(withExercises(d)
-              ? 'A starting routine with sets, reps and rest and no weights. Change anything in the next step.'
-              : 'Workouts start empty. The plan stays a draft until every scheduled workout has an exercise.'),
+          title: Text(l.builderIncludeExercises),
+          subtitle: Text(withExercises(d) ? l.builderWithExercisesOn : l.builderWithExercisesOff),
         ),
       ],
     ]);
@@ -320,9 +323,10 @@ class _StructureStepState extends ConsumerState<StructureStep> {
 
   Widget _workoutNames() {
     final workouts = d.workouts;
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _label('Your workouts'),
-      Text('Name each different workout once. A workout can repeat on several days.', style: context.caption),
+      _label(l.builderYourWorkouts),
+      Text(l.builderNameOnce, style: context.caption),
       for (final (i, w) in workouts.indexed)
         Padding(
           padding: const EdgeInsets.only(top: 10),
@@ -330,17 +334,17 @@ class _StructureStepState extends ConsumerState<StructureStep> {
             Expanded(
               child: TextField(
                 key: Key('custom-workout-name-$i'), controller: _nameFor(w), maxLength: 60, textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(labelText: 'Workout ${i + 1}', counterText: '', errorText: _nameFor(w).text.trim().isEmpty ? 'Give it a name.' : null),
+                decoration: InputDecoration(labelText: l.builderWorkoutN(i + 1), counterText: '', errorText: _nameFor(w).text.trim().isEmpty ? l.builderGiveName : null),
                 onChanged: (v) => change((d) => d.renameWorkout(w.id, v)),
               ),
             ),
             IconButton(
-              key: Key('custom-workout-remove-$i'), tooltip: 'Remove ${w.name.isEmpty ? 'workout ${i + 1}' : w.name}', icon: const Icon(Icons.close),
+              key: Key('custom-workout-remove-$i'), tooltip: l.builderRemoveNamed(w.name.isEmpty ? l.builderWorkoutNLower(i + 1) : w.name), icon: const Icon(Icons.close),
               onPressed: workouts.length == 1
                   ? null
                   : () async {
                       if (w.exercises.isNotEmpty &&
-                          !await confirm(context, title: 'Remove ${w.name}?', action: 'Remove', destructive: true, body: 'Its exercises are removed with it, and every day or step that used it.')) {
+                          !await confirm(context, title: l.builderRemoveTitle(w.name), action: l.actionRemove, destructive: true, body: l.builderRemoveBody)) {
                         return;
                       }
                       change((d) => d.deleteWorkout(w.id), edits: true);
@@ -349,8 +353,8 @@ class _StructureStepState extends ConsumerState<StructureStep> {
           ]),
         ),
       const SizedBox(height: 10),
-      SecondaryButton('Add a workout', key: const Key('custom-add-workout'), icon: Icons.add, onPressed: () {
-        final name = 'Workout ${String.fromCharCode(65 + (workouts.length % 26))}';
+      SecondaryButton(l.builderAddAWorkout, key: const Key('custom-add-workout'), icon: Icons.add, onPressed: () {
+        final name = l.builderDefaultWorkoutName(String.fromCharCode(65 + (workouts.length % 26)));
         change((d) {
           final id = d.addWorkout(name);
           if (d.schedule.isRotating) d.setCycle([...d.schedule.cycle, id]);
@@ -362,13 +366,14 @@ class _StructureStepState extends ConsumerState<StructureStep> {
   Widget _fixedDays() {
     final byDay = {for (final p in d.schedule.pattern) p.weekday: p.workoutId};
     final names = {for (final w in d.workouts) w.id: w.name};
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _label('Your week'),
-      Text('One workout per weekday. A workout can be used on several days. A missed workout stays on its day until you move or skip it.', style: context.caption),
+      _label(l.builderYourWeek),
+      Text(l.builderFixedNote, style: context.caption),
       const SizedBox(height: 8),
       GroupCard(children: [
         for (var wd = 1; wd <= 7; wd++)
-          GroupRow(key: Key('day-assign-$wd'), title: weekdayName(wd), value: byDay[wd] == null ? 'Rest' : names[byDay[wd]] ?? 'Rest', onTap: () => _assignDay(wd, byDay[wd])),
+          GroupRow(key: Key('day-assign-$wd'), title: weekdayName(wd), value: byDay[wd] == null ? l.builderRest : names[byDay[wd]] ?? l.builderRest, onTap: () => _assignDay(wd, byDay[wd])),
       ]),
     ]);
   }
@@ -377,9 +382,10 @@ class _StructureStepState extends ConsumerState<StructureStep> {
     final cycle = d.schedule.cycle;
     final names = {for (final w in d.workouts) w.id: w.name};
     final days = d.schedule.trainingDays;
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _label('The cycle'),
-      Text('Workouts follow this order and start again from the top when it ends. The order carries on across weeks; it does not restart on Monday.', style: context.caption),
+      _label(l.builderTheCycle),
+      Text(l.builderCycleNote, style: context.caption),
       const SizedBox(height: 8),
       if (cycle.isNotEmpty)
         GroupCard(children: [
@@ -387,19 +393,19 @@ class _StructureStepState extends ConsumerState<StructureStep> {
             GroupRow(
               title: '${i + 1}. ${names[id] ?? ''}',
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(key: Key('cycle-up-$i'), tooltip: 'Move step ${i + 1} up', icon: const Icon(Icons.arrow_upward, size: 20),
+                IconButton(key: Key('cycle-up-$i'), tooltip: l.builderMoveStepUp(i + 1), icon: const Icon(Icons.arrow_upward, size: 20),
                     onPressed: i == 0 ? null : () => change((d) => d.setCycle([...cycle]..insert(i - 1, cycle[i])..removeAt(i + 1)))),
-                IconButton(key: Key('cycle-down-$i'), tooltip: 'Move step ${i + 1} down', icon: const Icon(Icons.arrow_downward, size: 20),
+                IconButton(key: Key('cycle-down-$i'), tooltip: l.builderMoveStepDown(i + 1), icon: const Icon(Icons.arrow_downward, size: 20),
                     onPressed: i == cycle.length - 1 ? null : () => change((d) => d.setCycle([...cycle]..insert(i + 2, cycle[i])..removeAt(i)))),
-                IconButton(key: Key('cycle-remove-$i'), tooltip: 'Remove step ${i + 1}', icon: const Icon(Icons.close, size: 20),
+                IconButton(key: Key('cycle-remove-$i'), tooltip: l.builderRemoveStep(i + 1), icon: const Icon(Icons.close, size: 20),
                     onPressed: cycle.length == 1 ? null : () => change((d) => d.setCycle([...cycle]..removeAt(i)))),
               ]),
             ),
         ]),
       const SizedBox(height: 8),
-      SecondaryButton('Add a step', key: const Key('cycle-add'), icon: Icons.add, onPressed: _addStep),
-      _label('Training days'),
-      Text('The next workout goes on the next of these days. With none chosen, any day can be a training day.', style: context.caption),
+      SecondaryButton(l.builderAddStep, key: const Key('cycle-add'), icon: Icons.add, onPressed: _addStep),
+      _label(l.builderTrainingDays),
+      Text(l.builderTrainingDaysNote, style: context.caption),
       _chips([
         for (var wd = 1; wd <= 7; wd++)
           PickChip(
@@ -421,45 +427,46 @@ class _StructureStepState extends ConsumerState<StructureStep> {
     final rotating = d.schedule.isRotating;
     final weeks = d.durationWeeks;
     const lengths = [4, 6, 8, 12, 16];
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (guided) _guide(templates!, guide),
       if (_chooseTemplate) templates == null ? const Center(child: CircularProgressIndicator()) : _templates(templates),
       if (_nameWorkouts) _workoutNames(),
-      _label('Plan name'),
+      _label(l.builderPlanName),
       TextField(
           key: const Key('plan-title'), controller: _title, maxLength: 60, textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(labelText: 'Name', hintText: 'My plan'), onChanged: (v) => change((d) => d.title = v)),
-      _label('Schedule'),
+          decoration: InputDecoration(labelText: l.builderName, hintText: l.planDefaultTitle), onChanged: (v) => change((d) => d.title = v)),
+      _label(l.builderSchedule),
       Segmented<String>(
-        keyPrefix: 'mode', values: const ['fixed', 'rotating'], selected: d.schedule.mode, label: (v) => v == 'fixed' ? 'Fixed weekdays' : 'Rotating sequence',
-        onChanged: widget.startLocked ? (_) => toast(context, 'An active plan keeps its schedule type. Duplicate it to switch.') : (v) => change((d) => d.setMode(v)),
+        keyPrefix: 'mode', values: const ['fixed', 'rotating'], selected: d.schedule.mode, label: (v) => scheduleModeLabel(l, v),
+        onChanged: widget.startLocked ? (_) => toast(context, l.builderModeLocked) : (v) => change((d) => d.setMode(v)),
       ),
       const SizedBox(height: 8),
-      Text('Fixed weekdays: each workout has its own weekday, and a missed one stays on its day.', style: context.caption.copyWith(fontWeight: rotating ? null : FontWeight.w600)),
+      Text(l.builderFixedExplain, style: context.caption.copyWith(fontWeight: rotating ? null : FontWeight.w600)),
       const SizedBox(height: 4),
-      Text('Rotating sequence: an ordered cycle that continues across weeks and moves on only when you finish or skip a workout.',
+      Text(l.builderRotatingExplain,
           style: context.caption.copyWith(fontWeight: rotating ? FontWeight.w600 : null)),
       if (rotating) _cycle() else _fixedDays(),
-      _label('Start and length'),
+      _label(l.builderStartAndLength),
       GroupCard(children: [
         GroupRow(
-          key: const Key('plan-start-date'), title: 'Starts', value: longDate(d.startDate),
-          subtitle: widget.startLocked ? 'An active plan keeps its start date.' : null,
+          key: const Key('plan-start-date'), title: l.builderStarts, value: longDate(d.startDate),
+          subtitle: widget.startLocked ? l.builderStartLocked : null,
           onTap: widget.startLocked
               ? null
               : () async {
-                  final day = await pickDay(context, initial: d.startDate.compareTo(widget.today) < 0 ? widget.today : d.startDate, first: widget.today, help: 'Plan starts');
+                  final day = await pickDay(context, initial: d.startDate.compareTo(widget.today) < 0 ? widget.today : d.startDate, first: widget.today, help: l.builderPlanStartsHelp);
                   if (day != null) change((d) => d.startDate = day);
                 },
         ),
       ]),
       const SizedBox(height: 8),
       _chips([
-        for (final n in lengths) PickChip(key: Key('duration-$n'), label: '$n weeks', selected: weeks == n, onTap: () => change((d) => d.durationWeeks = n)),
-        PickChip(key: const Key('duration-custom'), label: weeks != null && !lengths.contains(weeks) ? '$weeks ${weeks == 1 ? 'week' : 'weeks'}' : 'Other length', selected: weeks != null && !lengths.contains(weeks), onTap: _customWeeks),
-        if (rotating) PickChip(key: const Key('duration-ongoing'), label: 'Ongoing', selected: weeks == null, onTap: () => change((d) => d.durationWeeks = null)),
+        for (final n in lengths) PickChip(key: Key('duration-$n'), label: l.planWeeksPlain(n), selected: weeks == n, onTap: () => change((d) => d.durationWeeks = n)),
+        PickChip(key: const Key('duration-custom'), label: weeks != null && !lengths.contains(weeks) ? l.planWeeksCount(weeks) : l.builderOtherLength, selected: weeks != null && !lengths.contains(weeks), onTap: _customWeeks),
+        if (rotating) PickChip(key: const Key('duration-ongoing'), label: l.planOngoing, selected: weeks == null, onTap: () => change((d) => d.durationWeeks = null)),
       ]),
-      Text(rotating ? 'A rotation can run for 1 to 52 weeks, or keep going with no end.' : 'A fixed-weekday plan has an end: 1 to 52 weeks.', style: context.caption),
+      Text(rotating ? l.builderRotationLength : l.builderFixedLength, style: context.caption),
     ]);
   }
 }

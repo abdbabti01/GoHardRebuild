@@ -13,7 +13,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 import '../../app/providers.dart' show ownerProvider, clockProvider;
 import '../../core/device_prefs.dart';
-import '../../core/format.dart' show clockText;
+import '../../core/format.dart' show clockText, localDecimal, ltr, withUnit;
+import '../../core/language.dart';
 import '../../core/units.dart';
 import '../coach/coach_avatar.dart';
 import '../coach/coach_prefs.dart';
@@ -70,6 +71,7 @@ class TtsVoiceOut implements VoiceOut {
   Future<void> speak(String text, {VoiceOption? voice, required double pitch}) async {
     final t = await _ready();
     if (voice != null) {
+      await t.setLanguage(voice.locale);
       await t.setVoice({'name': voice.name, 'locale': voice.locale});
     } else {
       await t.clearVoice();
@@ -95,6 +97,22 @@ List<VoiceOption> offlineVoices(Object? raw) => [
         if (v is Map && v['name'] is String && v['locale'] is String && '${v['network_required']}' != '1') (name: v['name'] as String, locale: v['locale'] as String),
     ];
 
+/// The offline voices that speak [lang] (the app language: en, fr, ar), the app's own region first (fr-CA), then by
+/// name. A voice of another language is never offered or used.
+List<VoiceOption> voicesFor(List<VoiceOption> offline, String lang) {
+  String code(VoiceOption v) => v.locale.toLowerCase().replaceAll('_', '-');
+  int rank(VoiceOption v) => lang == 'fr' && code(v) == 'fr-ca' ? 0 : 1;
+  return [for (final v in offline) if (code(v).split('-').first == lang) v]
+    ..sort((a, b) => rank(a) != rank(b) ? rank(a) - rank(b) : a.name.compareTo(b.name));
+}
+
+/// The voice that speaks [lang]: the chosen one when it is installed, offline and of that language, else the first such
+/// voice. Null when none is installed: then nothing is said (the words stay on screen, the vibration still comes).
+VoiceOption? voiceFor(List<VoiceOption> offline, String lang, VoiceOption? chosen) {
+  final all = voicesFor(offline, lang);
+  return chosen != null && all.contains(chosen) ? chosen : all.firstOrNull;
+}
+
 final voiceOutProvider = Provider<VoiceOut>((ref) => TtsVoiceOut());
 
 /// Leon a little lower, Leona a little higher, in whichever voice is chosen: the same coach every time.
@@ -111,6 +129,21 @@ class Announcer extends Notifier<Cue?> {
   /// The offline-capable voices, read once.
   List<VoiceOption>? _offline;
 
+  Future<List<VoiceOption>> _offlineVoices() async {
+    try {
+      return _offline ??= await _voice.voices();
+    } on Object {
+      return _offline = const [];
+    }
+  }
+
+  /// The installed offline voice for the app language at this moment, or null. Once the list is read, chosen at once.
+  FutureOr<VoiceOption?> _voiceNow(VoiceOption? chosen) {
+    VoiceOption? pick(List<VoiceOption> all) => voiceFor(all, ref.read(appLocaleProvider).languageCode, chosen);
+    final known = _offline;
+    return known != null ? pick(known) : _offlineVoices().then(pick);
+  }
+
   /// How long words stay on screen.
   static const showFor = Duration(seconds: 10);
 
@@ -121,6 +154,7 @@ class Announcer extends Notifier<Cue?> {
   Cue? build() {
     ref.watch(ownerProvider); // another account: nothing carries over, speech stops
     final voice = ref.read(voiceOutProvider);
+    if (ref.read(movePrefsProvider).voice) _offlineVoices().ignore(); // read ahead, so the first cue is not late
     ref.onDispose(() {
       _hide?.cancel();
       _epoch++;
@@ -179,20 +213,16 @@ class Announcer extends Notifier<Cue?> {
     final epoch = ++_epoch;
     _speaking = c;
     final p = ref.read(movePrefsProvider);
-    var voice = p.voiceName == null || p.voiceLocale == null ? null : (name: p.voiceName!, locale: p.voiceLocale!);
-    // Only a voice that speaks offline; one chosen earlier that is gone or needs a connection gives way to the phone's own.
-    if (voice != null) {
+    // Only an offline voice of the app language; one chosen earlier that is gone, needs a connection or speaks another
+    // language gives way to another installed one. None at all: nothing is said, never in another language.
+    final found = _voiceNow(p.voiceName == null || p.voiceLocale == null ? null : (name: p.voiceName!, locale: p.voiceLocale!));
+    final voice = found is Future<VoiceOption?> ? await found : found;
+    if (voice != null && ref.mounted && epoch == _epoch) {
       try {
-        _offline ??= await _voice.voices();
+        await _voice.speak(c.spoken ?? c.text, voice: voice, pitch: coachPitch(ref.read(coachPrefsProvider).guide));
       } on Object {
-        _offline = const [];
+        // No speech engine, or it failed: the words are on screen.
       }
-      if (!_offline!.contains(voice)) voice = null;
-    }
-    try {
-      await _voice.speak(c.spoken ?? c.text, voice: voice, pitch: coachPitch(ref.read(coachPrefsProvider).guide));
-    } on Object {
-      // No speech engine, or it failed: the words are on screen.
     }
     if (!ref.mounted || epoch != _epoch) return;
     _speaking = null;
@@ -212,8 +242,10 @@ class Announcer extends Notifier<Cue?> {
   /// Voice preview, from Voice and alerts. Not an announcement: never deduplicated or queued.
   Future<void> preview(CoachGuide guide, VoiceOption? voice) async {
     _cut();
+    final v = await _voiceNow(voice);
+    if (v == null || !ref.mounted) return; // no offline voice for the app language: the sheet says so
     try {
-      await _voice.speak('Hi, I\'m ${guide.label}. I\'ll tell you when to run, when to walk, and how far you\'ve gone.', voice: voice, pitch: coachPitch(guide));
+      await _voice.speak(ref.read(appL10nProvider).runVoicePreviewLine(guide.displayName(ref.read(appL10nProvider))), voice: v, pitch: coachPitch(guide));
     } on Object {
       // Nothing to preview with on this phone.
     }
@@ -247,7 +279,10 @@ CueStep recordingCues({
   required double? paceSecondsPerUnit,
   required DistanceUnit unit,
   required MovePrefs prefs,
+  AppLocalizations? l,
 }) {
+  // The words are made now, in the resolved language [l]; keys and marks never depend on it.
+  l ??= currentL10n;
   final first = marks.phase == null && marks.dist == null && marks.time == null && !marks.done;
   final pos = plan == null ? null : IntervalClock.at(plan, skips, activeMs);
   final everyM = prefs.everyDistance * unit.meters, everyS = prefs.everyMinutes * 60;
@@ -268,10 +303,10 @@ CueStep recordingCues({
     marks.phase = pos.index;
     if (pos.done && !marks.done) {
       marks.done = true;
-      phaseText = 'Intervals finished. Continue freely, or finish and review.';
+      phaseText = l.runCueIntervalsDone;
       key = '$activityId:intervals:done';
     } else if (!pos.done) {
-      phaseText = phaseCue(pos);
+      phaseText = phaseCue(pos, l);
       key = '$activityId:phase:${pos.index}';
     }
   }
@@ -292,20 +327,27 @@ CueStep recordingCues({
   if (prefs.updates == UpdateMode.distance && distanceMeters != null && dist > (marks.dist ?? 0)) {
     marks.dist = dist;
     final d = dist * prefs.everyDistance;
-    final name = unit == DistanceUnit.km ? (d == 1 ? 'kilometre' : 'kilometres') : (d == 1 ? 'mile' : 'miles');
-    final n = d == d.roundToDouble() ? d.round().toString() : d.toString();
+    final whole = d == d.roundToDouble();
+    final n = whole ? d.round().toString() : localDecimal(d.toString());
+    final named = whole
+        ? (unit == DistanceUnit.km ? l.runSaidKilometres(d.round()) : l.runSaidMiles(d.round()))
+        : (unit == DistanceUnit.km ? l.runSaidKilometresDecimal(n) : l.runSaidMilesDecimal(n));
     final active = activeMs ~/ 1000;
-    updateShort = '$n ${unit.label} completed.';
-    update = '$n ${unit.label} completed. Active time ${clockText(active)}.${paceSecondsPerUnit == null ? '' : ' Avg. moving pace ${unit.paceNumber(paceSecondsPerUnit)} /${unit.label}.'}';
-    updateSaid = '$n $name. Active time ${spokenDuration(active)}.${paceSecondsPerUnit == null ? '' : ' Average moving pace ${spokenDuration(paceSecondsPerUnit.round())} per ${unit == DistanceUnit.km ? 'kilometre' : 'mile'}.'}';
+    updateShort = l.runCueDistanceDone(withUnit(n, unit.label));
+    update = [updateShort, l.runCueActiveTime(ltr(clockText(active))), if (paceSecondsPerUnit != null) _pace(l, unit, paceSecondsPerUnit)].join(' ');
+    updateSaid = ['$named.', l.runSaidActiveTime(spokenDuration(active, l)), if (paceSecondsPerUnit != null) l.runSaidPace(unit.name, spokenDuration(paceSecondsPerUnit.round(), l))].join(' ');
     key = key.isEmpty ? '$activityId:dist:$dist:${prefs.everyDistance}${unit.name}' : key;
   } else if (prefs.updates == UpdateMode.time && time > (marks.time ?? 0)) {
     marks.time = time;
     final m = time * prefs.everyMinutes;
     final d = distanceMeters == null ? null : unit.distance(distanceMeters);
-    updateShort = '$m min active.';
-    update = '$m min active.${d == null ? '' : ' $d.'}${paceSecondsPerUnit == null ? '' : ' Avg. moving pace ${unit.paceNumber(paceSecondsPerUnit)} /${unit.label}.'}';
-    updateSaid = '$m minutes active.${distanceMeters == null ? '' : ' ${_spokenDistance(distanceMeters, unit)}.'}${paceSecondsPerUnit == null ? '' : ' Average moving pace ${spokenDuration(paceSecondsPerUnit.round())} per ${unit == DistanceUnit.km ? 'kilometre' : 'mile'}.'}';
+    updateShort = l.runCueMinutesActive(m);
+    update = [updateShort, if (d != null) '$d.', if (paceSecondsPerUnit != null) _pace(l, unit, paceSecondsPerUnit)].join(' ');
+    updateSaid = [
+      l.runSaidMinutesActive(m),
+      if (distanceMeters != null) '${_spokenDistance(distanceMeters, unit, l)}.',
+      if (paceSecondsPerUnit != null) l.runSaidPace(unit.name, spokenDuration(paceSecondsPerUnit.round(), l)),
+    ].join(' ');
     key = key.isEmpty ? '$activityId:time:$time:${prefs.everyMinutes}' : key;
   } else {
     // Keep the marks current when updates are off, so turning them on mid-way never pours out old ones.
@@ -315,15 +357,17 @@ CueStep recordingCues({
 
   if (phaseText != null) {
     // Coalesced: the phase prompt, then only the distance or time itself.
-    final short = updateShort == null ? '' : ' $updateShort';
-    return (cue: Cue('$phaseText$short', key: key, priority: Cue.phase, vibrate: true), tick: tick);
+    return (cue: Cue([phaseText, ?updateShort].join(' '), key: key, priority: Cue.phase, vibrate: true), tick: tick);
   }
   if (update != null) return (cue: Cue(update, spoken: updateSaid, key: key, priority: Cue.update), tick: tick);
   return (cue: null, tick: tick);
 }
 
-String _spokenDistance(double m, DistanceUnit unit) {
+/// "Avg. moving pace 5:33 /km."
+String _pace(AppLocalizations l, DistanceUnit unit, double secondsPerUnit) => l.runCuePace(l.paceValue(ltr(unit.paceNumber(secondsPerUnit)), unit.label));
+
+String _spokenDistance(double m, DistanceUnit unit, AppLocalizations l) {
   final v = m / unit.meters;
-  final n = v.toStringAsFixed(v < 10 ? 2 : 1);
-  return '$n ${unit == DistanceUnit.km ? 'kilometres' : 'miles'}';
+  final n = localDecimal(v.toStringAsFixed(v < 10 ? 2 : 1));
+  return unit == DistanceUnit.km ? l.runSaidKilometresDecimal(n) : l.runSaidMilesDecimal(n);
 }

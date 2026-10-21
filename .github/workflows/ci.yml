@@ -23,6 +23,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: { channel: stable, flutter-version: 3.47.6 }
       - run: flutter pub get
+      # Every English message has a French and an Arabic one, with matching placeholders and plural forms (docs/LOCALIZATION.md).
+      - run: node ../scripts/check-l10n.mjs
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart format --output=none --set-exit-if-changed lib test integration_test || true   # formatting is not yet enforced; see docs/PROGRESS_LEDGER.md
       - run: flutter analyze

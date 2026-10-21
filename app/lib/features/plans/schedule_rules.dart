@@ -1,5 +1,4 @@
 import '../../core/clock.dart';
-import 'plan_rules.dart';
 
 /// Pure calendar-date rules, mirrored from the API's `ScheduleRules` and checked against the same fixture.
 class ScheduleOccasion {
@@ -82,14 +81,4 @@ abstract final class ScheduleRules {
     }
     return (errors: <String>[], dates: [for (var w = 0; w < blockWeeks; w++) for (final d in first) addDays(d, 7 * w)]);
   }
-
-  static String describe(String code) => switch (code) {
-        recoveryCollision => 'That leaves no recovery day between two workouts.',
-        occasionNotEligible => 'That workout is already recorded, skipped or in progress, so it cannot move.',
-        staleReview => 'The schedule changed since you reviewed it. Review it again.',
-        invalidWeekdayCount => 'Choose exactly as many days as workouts per week.',
-        invalidDate => 'Enter a real calendar date.',
-        duplicateOccasion || occasionNotFound => 'That workout is no longer part of this plan.',
-        _ => PlanRules.describe(code),
-      };
 }

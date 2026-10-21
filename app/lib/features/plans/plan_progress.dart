@@ -1,7 +1,9 @@
 import '../../core/clock.dart';
 import '../../core/format.dart';
+import '../../core/language.dart' show currentL10n;
 import '../../data/models.dart';
 import '../today/daily.dart';
+import 'plan_l10n.dart';
 
 /// Completion of a plan or one of its weeks: workouts with a recorded result, out of the planned workouts that
 /// are still expected. A skipped workout is neither completed nor expected. Elapsed time is not counted at all.
@@ -39,7 +41,9 @@ class PlanWeek {
 
 String dateRange(String start, String end) {
   final a = parseDayKey(start), b = parseDayKey(end);
-  return '${monthShort(a.month)} ${a.day} – ${a.month == b.month ? '' : '${monthShort(b.month)} '}${b.day}';
+  return a.month == b.month
+      ? currentL10n.planDateRangeSameMonth(monthShort(a.month), '${a.day}', '${b.day}')
+      : currentL10n.planDateRange(dayMonth(start), dayMonth(end));
 }
 
 /// Every week of the block. The count follows the plan: its length, or further if a workout was numbered later.
@@ -88,43 +92,55 @@ class SetProgress {
   }
 }
 
-const _directions = {'strength': 'Get stronger', 'muscle': 'Build muscle', 'fat_loss': 'Lose fat', 'general': 'General fitness'};
-const _equipment = {'full_gym': 'Full gym', 'dumbbells': 'Dumbbells only', 'bodyweight': 'Bodyweight only'};
-
 /// The wording of an older reviewed plan's setup answers.
-String setupSummary(Json s) =>
-    '${_directions[s['direction']] ?? s['direction']} · ${s['sessionsPerWeek']} a week · about ${s['minutesPerSession']} min · ${_equipment[s['equipment']] ?? s['equipment']}';
+String setupSummary(Json s) {
+  final l = currentL10n;
+  final direction = switch (s['direction']) {
+    'strength' => l.planDirectionStrength,
+    'muscle' => l.planDirectionMuscle,
+    'fat_loss' => l.planDirectionFatLoss,
+    'general' => l.planDirectionGeneral,
+    final d => '$d',
+  };
+  return [direction, l.planSetupPerWeek('${s['sessionsPerWeek']}'), l.planSetupAbout('${s['minutesPerSession']}'), equipmentLabel(l, '${s['equipment']}')].join(' · ');
+}
 
 /// The plan's split: the starter it was copied from, the user's own, or an older plan's setup.
 /// [templateName] looks a template's name up by ID (null while the templates are not loaded).
 String planSplit(Plan plan, String? Function(String id) templateName) {
-  if (!plan.isBuilt) return plan.setup == null ? 'Reviewed plan' : setupSummary(plan.setup!);
+  if (!plan.isBuilt) return plan.setup == null ? currentL10n.planReviewedPlan : setupSummary(plan.setup!);
   final id = plan.templateId;
-  return (id == null ? null : templateName(id)) ?? 'Your own split';
+  return (id == null ? null : templateName(id)) ?? currentL10n.planOwnSplit;
 }
 
-String scheduleMode(Plan plan) => plan.isRotating ? 'Rotating sequence' : 'Fixed weekdays';
+String scheduleMode(Plan plan) => plan.isRotating ? currentL10n.planModeRotating : currentL10n.planModeFixed;
 
 /// The time the user chose for a session. It is a plan, never a measured or estimated duration.
 int? plannedMinutes(Plan plan) => plan.timeBudgetMinutes ?? (plan.setup?['minutesPerSession'] as num?)?.toInt();
 
-/// "3 × 8–12 · 90 s rest", "3 × 45 s", "3 sets", "8 reps", or "No target".
-String prescriptionLine({int? sets, int? repsMin, int? repsMax, int? seconds, int? rest}) {
+/// "3 × 8–12 · 90 s rest", "3 × 45 s", "3 sets", "8 reps", or "No target", in the app's language. [restAsMinutes]
+/// shows a rest of two minutes or more in whole minutes as minutes; [zeroRest] keeps a rest of 0 s.
+String prescriptionLine({int? sets, int? repsMin, int? repsMax, int? seconds, int? rest, bool timed = false, bool restAsMinutes = true, bool zeroRest = false}) {
+  final l = currentL10n;
   final reps = seconds != null
-      ? '$seconds s'
-      : repsMin != null && repsMax != null && repsMin != repsMax
-          ? '$repsMin–$repsMax'
-          : (repsMin ?? repsMax)?.toString();
+      ? l.durationSeconds(seconds)
+      : timed
+          ? null
+          : repsMin != null && repsMax != null && repsMin != repsMax
+              ? ltr('$repsMin–$repsMax')
+              : (repsMin ?? repsMax)?.toString();
   final main = sets != null && reps != null
-      ? '$sets × $reps'
+      ? ltr(l.planRxSetsTimes(sets, reps))
       : sets != null
-          ? '$sets ${sets == 1 ? 'set' : 'sets'}'
+          ? l.planSetCount(sets)
           : reps == null
               ? null
-              : seconds != null ? reps : '$reps reps';
-  final restText = (rest ?? 0) <= 0 ? null : rest! >= 120 && rest % 60 == 0 ? '${rest ~/ 60} min rest' : '$rest s rest';
+              : seconds != null ? reps : l.planRepCount(repsMin ?? repsMax!);
+  final restText = rest == null || (rest <= 0 && !zeroRest)
+      ? null
+      : restAsMinutes && rest >= 120 && rest % 60 == 0 ? l.planRestMinutes(rest ~/ 60) : l.planRestSeconds(rest);
   final parts = [?main, ?restText];
-  return parts.isEmpty ? 'No target' : parts.join(' · ');
+  return parts.isEmpty ? l.planNoTarget : parts.join(' · ');
 }
 
 String prescriptionOf(Prescription e) =>
@@ -143,17 +159,18 @@ int creditedThisWeek(List<Occasion> occasions, Iterable<Workout> workouts, Strin
 /// Where a recorded planned workout came from: plan, workout, its week or rotation step, and its date.
 /// The plan may have been edited, paused, archived or closed since; the record keeps what was planned then.
 String provenanceOf(Workout w, List<Plan> plans, List<Workout> workouts) {
-  if (w.isManual || w.planId == null) return 'Manual workout · not part of a plan';
+  final l = currentL10n;
+  if (w.isManual || w.planId == null) return l.planProvenanceManual;
   final plan = plans.where((p) => p.id == w.planId).firstOrNull;
-  if (plan == null) return 'From a plan that is no longer on this phone · ${w.title}';
+  if (plan == null) return l.planProvenanceGone(w.title);
   final o = (plan.isRotating ? planOccasions(plan, w.dayKey, workouts, ahead: 0) : plan.occasions).where((o) => o.id == w.occasionId).firstOrNull;
-  final state = plan.isArchived ? ' (archived)' : plan.isClosed ? ' (closed)' : plan.isPaused ? ' (paused)' : '';
-  final step = o == null ? null : o.sequenceIndex != null ? 'session ${o.sequenceIndex! + 1} of the rotation' : 'week ${o.weekNumber}';
-  return 'From ${plan.title}$state · ${w.title}${step == null ? '' : ' · $step'} · ${longDate(o?.scheduledDate ?? w.dayKey)}';
+  final state = plan.isArchived ? 'archived' : plan.isClosed ? 'closed' : plan.isPaused ? 'paused' : 'none';
+  final step = o == null ? null : o.sequenceIndex != null ? l.planSessionOfRotation(o.sequenceIndex! + 1) : l.planWeekLower(o.weekNumber);
+  return [l.planProvenanceFrom(plan.title, state), w.title, ?step, longDate(o?.scheduledDate ?? w.dayKey)].join(' · ');
 }
 
 /// "5 exercises · 18 sets" from a prescription; set count is left out when no movement has a target.
 String prescriptionSummary(List<Prescription> prescription) {
   final sets = prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
-  return '${prescription.length} ${prescription.length == 1 ? 'exercise' : 'exercises'}${sets == 0 ? '' : ' · $sets sets'}';
+  return [currentL10n.planExerciseCount(prescription.length), if (sets != 0) currentL10n.planSetsPlain(sets)].join(' · ');
 }

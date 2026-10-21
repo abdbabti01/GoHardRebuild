@@ -5,10 +5,15 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import 'body_metrics.dart';
 
-/// A check-in the account would refuse, said in words. Nothing was saved and the form keeps its input.
+enum BodyInputProblem { nothingEntered, outOfRange, noteTooLong, measurementsNeedServer, needsOneMeasurement, correctionNeedsServer }
+
+/// A check-in the account would refuse, as a code the form says in words. Nothing was saved and the form keeps its input.
 class BodyInputError implements Exception {
-  const BodyInputError(this.message);
-  final String message;
+  const BodyInputError(this.problem, [this.field]);
+  final BodyInputProblem problem;
+
+  /// The field out of range.
+  final BodyField? field;
 }
 
 /// Body check-ins through the outbox (docs/BODY_PROGRESS.md › Sync): saved on the phone first, one stable ID and
@@ -32,11 +37,11 @@ class BodyRepository {
   }
 
   static void _check(Map<BodyField, double?> values, String? note) {
-    if (!values.values.any((v) => v != null)) throw const BodyInputError('Enter at least one measurement to save.');
+    if (!values.values.any((v) => v != null)) throw const BodyInputError(BodyInputProblem.nothingEntered);
     for (final MapEntry(key: f, value: v) in values.entries) {
-      if (v != null && !f.accepts(v)) throw BodyInputError('${f.label} is out of range.');
+      if (v != null && !f.accepts(v)) throw BodyInputError(BodyInputProblem.outOfRange, f);
     }
-    if ((note?.length ?? 0) > maxNoteLength) throw const BodyInputError('A note is at most 200 characters.');
+    if ((note?.length ?? 0) > maxNoteLength) throw const BodyInputError(BodyInputProblem.noteTooLong);
   }
 
   /// Saves a new check-in under [id] (made once per form, so a repeated tap can never create a second one).
@@ -46,7 +51,7 @@ class BodyRepository {
     note = (note?.trim().isEmpty ?? true) ? null : note!.trim();
     _check(values, note);
     if (!measurementsServer && values.entries.any((e) => e.value != null && e.key.needsMeasurementsServer)) {
-      throw const BodyInputError('Your account\'s server cannot store these measurements yet. Weight and body fat can be saved now.');
+      throw const BodyInputError(BodyInputProblem.measurementsNeedServer);
     }
     final fields = <String, Object?>{
       'dayKey': dayKey, 'weightKg': values[BodyField.weight], 'bodyFatPercent': values[BodyField.bodyFat], 'note': note,
@@ -64,7 +69,7 @@ class BodyRepository {
   Future<Receipt> update(BodyMetric m, String dayKey, Map<BodyField, double?> changes, {bool noteChanged = false, String? note}) {
     note = (note?.trim().isEmpty ?? true) ? null : note!.trim();
     final next = {for (final f in BodyField.values) f: changes.containsKey(f) ? changes[f] : m.value(f.key)};
-    if (!next.values.any((v) => v != null)) throw const BodyInputError('An entry needs at least one measurement. To remove it, use Delete entry.');
+    if (!next.values.any((v) => v != null)) throw const BodyInputError(BodyInputProblem.needsOneMeasurement);
     _check(next, noteChanged ? note : m.note);
     final fields = <String, Object?>{
       'dayKey': dayKey,

@@ -185,6 +185,40 @@ public partial class CoachTests(PostgresFixture pg)
         Assert.DoesNotContain(Key, body);
     }
 
+    [Fact]
+    public async Task A_supported_reply_language_adds_one_trusted_instruction_and_anything_else_is_the_old_request()
+    {
+        var fake = new FakeAnthropic();
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = On, Provider = fake.Handler() };
+        var a = await Account.RegisterAsync(api);
+        List<string> SystemOf(int call) => JsonNode.Parse(fake.Calls[call].Body)!["system"]!.AsArray().Select(b => b!["text"]!.GetValue<string>()).ToList();
+
+        // Absent (an older client), English, unknown or differently written: no instruction, the request as before.
+        var old = Ask();
+        Assert.Equal(HttpStatusCode.OK, (await Post(a, new { old.RequestId, old.Question, old.History, old.Context })).Status);
+        foreach (var language in new[] { "en", "de", "FR-ca", "fr", "" })
+            Assert.Equal(HttpStatusCode.OK, (await Post(a, Ask() with { Language = language })).Status);
+        for (var i = 0; i < 6; i++)
+        {
+            var system = SystemOf(i);
+            Assert.Equal(2, system.Count);
+            Assert.Equal(CoachService.Instructions, system[0]);
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await Post(a, Ask("Pourquoi le développé couché?") with { Language = "fr-CA" })).Status);
+        Assert.Equal(HttpStatusCode.OK, (await Post(a, Ask() with { Language = "ar" })).Status);
+        var fr = SystemOf(6);
+        Assert.Equal(3, fr.Count);
+        Assert.Equal(CoachService.Instructions, fr[0]);                                     // same rules, same references
+        Assert.Contains("Canadian French", fr[2]);
+        Assert.Contains("\"tu\"", fr[2]);
+        Assert.Contains("Modern Standard Arabic", SystemOf(7)[2]);
+        // The person's question is sent as written, never translated, and stays out of the trusted parts.
+        var user = JsonNode.Parse(fake.Calls[6].Body)!["messages"]![0]!["content"]!.AsArray().Select(b => b!["text"]!.GetValue<string>()).ToList();
+        Assert.Equal("<question>\nPourquoi le développé couché?\n</question>", user[^1]);
+        Assert.All(fr, s => Assert.DoesNotContain("Pourquoi", s));
+    }
+
     [Theory, InlineData("Anthropic"), InlineData("Groq")]
     public async Task Bad_proposals_are_dropped_and_the_answer_is_kept(string provider)
     {

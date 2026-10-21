@@ -1,1 +1,1028 @@
-{"version":1,"exercises":{},"categories":{},"equipment":{}}
+{
+  "version": 1,
+  "exercises": {
+    "back-squat": {
+      "en": "Back squat",
+      "fr": "Squat arrière",
+      "ar": "القرفصاء الخلفي بالبار",
+      "aliases": {
+        "fr": [
+          "squat",
+          "squat à la barre",
+          "squat barre"
+        ],
+        "ar": [
+          "سكوات",
+          "سكوات خلفي",
+          "القرفصاء بالبار"
+        ],
+        "en": [
+          "squat",
+          "barbell squat",
+          "back squats"
+        ]
+      }
+    },
+    "bench-press": {
+      "en": "Bench press",
+      "fr": "Développé couché",
+      "ar": "ضغط الصدر بالبار",
+      "aliases": {
+        "fr": [
+          "développé couché barre",
+          "bench",
+          "bench press"
+        ],
+        "ar": [
+          "بنش برس",
+          "ضغط البنش",
+          "ضغط الصدر"
+        ],
+        "en": [
+          "bench",
+          "barbell bench press",
+          "flat bench press"
+        ]
+      }
+    },
+    "barbell-row": {
+      "en": "Barbell row",
+      "fr": "Rowing barre",
+      "ar": "التجديف بالبار",
+      "aliases": {
+        "fr": [
+          "rowing buste penché",
+          "tirage barre buste penché"
+        ],
+        "ar": [
+          "التجديف المنحني بالبار",
+          "سحب البار منحنيًا"
+        ],
+        "en": [
+          "bent-over row",
+          "bent over barbell row",
+          "BB row"
+        ]
+      }
+    },
+    "deadlift": {
+      "en": "Deadlift",
+      "fr": "Soulevé de terre",
+      "ar": "الرفعة الميتة",
+      "aliases": {
+        "fr": [
+          "soulevé de terre barre",
+          "deadlift",
+          "SDT"
+        ],
+        "ar": [
+          "ديدلفت",
+          "الرفعة المميتة"
+        ],
+        "en": [
+          "conventional deadlift",
+          "barbell deadlift"
+        ]
+      }
+    },
+    "overhead-press": {
+      "en": "Overhead press",
+      "fr": "Développé militaire",
+      "ar": "الضغط العلوي بالبار",
+      "aliases": {
+        "fr": [
+          "développé épaules barre",
+          "presse militaire",
+          "développé debout"
+        ],
+        "ar": [
+          "الضغط العسكري",
+          "ضغط الكتف بالبار"
+        ],
+        "en": [
+          "military press",
+          "OHP",
+          "standing press",
+          "barbell shoulder press"
+        ]
+      }
+    },
+    "lat-pulldown": {
+      "en": "Lat pulldown",
+      "fr": "Tirage vertical",
+      "ar": "السحب العلوي للظهر",
+      "aliases": {
+        "fr": [
+          "tirage poitrine",
+          "tirage haut",
+          "lat pulldown"
+        ],
+        "ar": [
+          "لات بول داون",
+          "السحب الأمامي",
+          "السحب العلوي"
+        ],
+        "en": [
+          "pulldown",
+          "lat pull down",
+          "cable pulldown"
+        ]
+      }
+    },
+    "romanian-deadlift": {
+      "en": "Romanian deadlift",
+      "fr": "Soulevé de terre roumain",
+      "ar": "الرفعة الميتة الرومانية",
+      "aliases": {
+        "fr": [
+          "SDT roumain",
+          "RDL"
+        ],
+        "ar": [
+          "ديدلفت روماني"
+        ],
+        "en": [
+          "RDL",
+          "barbell RDL"
+        ]
+      }
+    },
+    "leg-press": {
+      "en": "Leg press",
+      "fr": "Presse à cuisses",
+      "ar": "مكبس الأرجل",
+      "aliases": {
+        "fr": [
+          "presse jambes",
+          "leg press"
+        ],
+        "ar": [
+          "ليج برس",
+          "دفع الأرجل"
+        ],
+        "en": [
+          "machine leg press",
+          "sled leg press"
+        ]
+      }
+    },
+    "incline-dumbbell-press": {
+      "en": "Incline dumbbell press",
+      "fr": "Développé incliné aux haltères",
+      "ar": "ضغط الصدر المائل بالدمبل",
+      "aliases": {
+        "fr": [
+          "développé incliné haltères"
+        ],
+        "ar": [
+          "ضغط مائل بالدمبل",
+          "بنش مائل دمبل"
+        ],
+        "en": [
+          "incline DB press",
+          "incline dumbbell bench press"
+        ]
+      }
+    },
+    "dumbbell-bench-press": {
+      "en": "Dumbbell bench press",
+      "fr": "Développé couché aux haltères",
+      "ar": "ضغط الصدر بالدمبل",
+      "aliases": {
+        "fr": [
+          "développé couché haltères",
+          "développé haltères"
+        ],
+        "ar": [
+          "بنش برس دمبل",
+          "ضغط الصدر المستوي بالدمبل"
+        ],
+        "en": [
+          "DB bench press",
+          "flat dumbbell press"
+        ]
+      }
+    },
+    "dumbbell-row": {
+      "en": "Dumbbell row",
+      "fr": "Rowing à un bras avec haltère",
+      "ar": "التجديف بالدمبل",
+      "aliases": {
+        "fr": [
+          "rowing haltère",
+          "rowing unilatéral"
+        ],
+        "ar": [
+          "سحب الدمبل",
+          "التجديف بذراع واحدة"
+        ],
+        "en": [
+          "one-arm dumbbell row",
+          "single-arm row",
+          "DB row"
+        ]
+      }
+    },
+    "seated-cable-row": {
+      "en": "Seated cable row",
+      "fr": "Tirage horizontal assis à la poulie",
+      "ar": "التجديف بالكابل جالسًا",
+      "aliases": {
+        "fr": [
+          "tirage horizontal",
+          "rowing poulie basse"
+        ],
+        "ar": [
+          "السحب الأرضي",
+          "السحب الأفقي بالكابل"
+        ],
+        "en": [
+          "cable row",
+          "seated row",
+          "low row"
+        ]
+      }
+    },
+    "goblet-squat": {
+      "en": "Goblet squat",
+      "fr": "Squat gobelet",
+      "ar": "القرفصاء الكأسية بالدمبل",
+      "aliases": {
+        "fr": [
+          "goblet squat"
+        ],
+        "ar": [
+          "سكوات جوبلت",
+          "قرفصاء الكأس"
+        ],
+        "en": [
+          "dumbbell goblet squat"
+        ]
+      }
+    },
+    "walking-lunge": {
+      "en": "Walking lunge",
+      "fr": "Fentes marchées",
+      "ar": "الطعن أثناء المشي",
+      "aliases": {
+        "fr": [
+          "fentes avant marchées",
+          "walking lunge"
+        ],
+        "ar": [
+          "لانجز مشي",
+          "الطعنات المتحركة"
+        ],
+        "en": [
+          "walking lunges",
+          "dumbbell walking lunge"
+        ]
+      }
+    },
+    "leg-curl": {
+      "en": "Leg curl",
+      "fr": "Flexion des jambes",
+      "ar": "ثني الساقين على الجهاز",
+      "aliases": {
+        "fr": [
+          "leg curl",
+          "curl ischio-jambiers"
+        ],
+        "ar": [
+          "ليج كيرل",
+          "ثني الأرجل"
+        ],
+        "en": [
+          "hamstring curl",
+          "machine leg curl"
+        ]
+      }
+    },
+    "dumbbell-shoulder-press": {
+      "en": "Dumbbell shoulder press",
+      "fr": "Développé épaules aux haltères",
+      "ar": "ضغط الكتف بالدمبل",
+      "aliases": {
+        "fr": [
+          "développé militaire haltères",
+          "développé assis haltères"
+        ],
+        "ar": [
+          "ضغط الأكتاف بالدمبل"
+        ],
+        "en": [
+          "DB shoulder press",
+          "seated dumbbell press",
+          "dumbbell overhead press"
+        ]
+      }
+    },
+    "lateral-raise": {
+      "en": "Lateral raise",
+      "fr": "Élévations latérales",
+      "ar": "الرفع الجانبي بالدمبل",
+      "aliases": {
+        "fr": [
+          "élévation latérale",
+          "élévations latérales haltères"
+        ],
+        "ar": [
+          "رفرفة جانبية",
+          "رفع جانبي"
+        ],
+        "en": [
+          "side raise",
+          "dumbbell lateral raise",
+          "lateral raises"
+        ]
+      }
+    },
+    "biceps-curl": {
+      "en": "Biceps curl",
+      "fr": "Flexion des biceps aux haltères",
+      "ar": "ثني العضلة ذات الرأسين بالدمبل",
+      "aliases": {
+        "fr": [
+          "curl biceps",
+          "curl haltères"
+        ],
+        "ar": [
+          "بايسبس كيرل",
+          "تمرين البايسبس"
+        ],
+        "en": [
+          "dumbbell curl",
+          "bicep curl",
+          "curls"
+        ]
+      }
+    },
+    "triceps-pushdown": {
+      "en": "Triceps pushdown",
+      "fr": "Extension des triceps à la poulie",
+      "ar": "دفع الترايسبس بالكابل",
+      "aliases": {
+        "fr": [
+          "pushdown triceps",
+          "extension triceps poulie haute"
+        ],
+        "ar": [
+          "ترايسبس بوش داون",
+          "تمديد الترايسبس بالكابل"
+        ],
+        "en": [
+          "tricep pushdown",
+          "cable pushdown",
+          "rope pushdown"
+        ]
+      }
+    },
+    "pull-up": {
+      "en": "Pull-up",
+      "fr": "Traction",
+      "ar": "العقلة",
+      "aliases": {
+        "fr": [
+          "tractions",
+          "traction en pronation"
+        ],
+        "ar": [
+          "بول أب",
+          "سحب الجسم على العقلة"
+        ],
+        "en": [
+          "pullup",
+          "pull ups",
+          "overhand pull-up"
+        ]
+      }
+    },
+    "push-up": {
+      "en": "Push-up",
+      "fr": "Pompe",
+      "ar": "تمرين الضغط",
+      "aliases": {
+        "fr": [
+          "pompes",
+          "push-up"
+        ],
+        "ar": [
+          "ضغط",
+          "بوش أب"
+        ],
+        "en": [
+          "pushup",
+          "press-up",
+          "push ups"
+        ]
+      }
+    },
+    "dip": {
+      "en": "Dip",
+      "fr": "Dips aux barres parallèles",
+      "ar": "الغطس على المتوازي",
+      "aliases": {
+        "fr": [
+          "dips",
+          "dip"
+        ],
+        "ar": [
+          "ديبس",
+          "الغطس"
+        ],
+        "en": [
+          "dips",
+          "parallel bar dip",
+          "chest dip"
+        ]
+      }
+    },
+    "plank": {
+      "en": "Plank",
+      "fr": "Planche",
+      "ar": "البلانك",
+      "aliases": {
+        "fr": [
+          "gainage",
+          "planche ventrale"
+        ],
+        "ar": [
+          "تمرين اللوح",
+          "بلانك"
+        ],
+        "en": [
+          "front plank",
+          "forearm plank"
+        ]
+      }
+    },
+    "side-plank": {
+      "en": "Side plank",
+      "fr": "Planche latérale",
+      "ar": "البلانك الجانبي",
+      "aliases": {
+        "fr": [
+          "gainage latéral"
+        ],
+        "ar": [
+          "اللوح الجانبي",
+          "بلانك جانبي"
+        ],
+        "en": [
+          "side bridge"
+        ]
+      }
+    },
+    "hanging-leg-raise": {
+      "en": "Hanging leg raise",
+      "fr": "Relevé de jambes suspendu",
+      "ar": "رفع الساقين معلّقًا",
+      "aliases": {
+        "fr": [
+          "levée de jambes suspendu",
+          "relevé de jambes à la barre"
+        ],
+        "ar": [
+          "رفع الأرجل معلقًا",
+          "رفع الساقين على العقلة"
+        ],
+        "en": [
+          "hanging leg raises",
+          "HLR"
+        ]
+      }
+    },
+    "farmer-carry": {
+      "en": "Farmer carry",
+      "fr": "Marche du fermier",
+      "ar": "حمل المزارع",
+      "aliases": {
+        "fr": [
+          "farmer walk",
+          "portée du fermier"
+        ],
+        "ar": [
+          "مشي المزارع",
+          "فارمر ووك"
+        ],
+        "en": [
+          "farmer's walk",
+          "farmers carry",
+          "farmer walk"
+        ]
+      }
+    },
+    "calf-raise": {
+      "en": "Standing calf raise",
+      "fr": "Extension des mollets debout",
+      "ar": "رفع السمانة وقوفًا",
+      "aliases": {
+        "fr": [
+          "mollets debout",
+          "élévation des mollets"
+        ],
+        "ar": [
+          "رفع الكعبين وقوفًا",
+          "سمانة واقف"
+        ],
+        "en": [
+          "calf raise",
+          "standing calf raises",
+          "machine calf raise"
+        ]
+      }
+    },
+    "single-leg-calf-raise": {
+      "en": "Single-leg calf raise",
+      "fr": "Extension des mollets sur une jambe",
+      "ar": "رفع السمانة على ساق واحدة",
+      "aliases": {
+        "fr": [
+          "mollet unilatéral"
+        ],
+        "ar": [
+          "رفع الكعب على ساق واحدة"
+        ],
+        "en": [
+          "one-leg calf raise",
+          "single leg calf raises"
+        ]
+      }
+    },
+    "leg-extension": {
+      "en": "Leg extension",
+      "fr": "Extension des jambes",
+      "ar": "مدّ الساقين على الجهاز",
+      "aliases": {
+        "fr": [
+          "leg extension",
+          "extension quadriceps"
+        ],
+        "ar": [
+          "ليج إكستنشن",
+          "تمديد الأرجل"
+        ],
+        "en": [
+          "quad extension",
+          "knee extension",
+          "machine leg extension"
+        ]
+      }
+    },
+    "hip-thrust": {
+      "en": "Barbell hip thrust",
+      "fr": "Poussée de hanches à la barre",
+      "ar": "دفع الورك بالبار",
+      "aliases": {
+        "fr": [
+          "hip thrust",
+          "hip thrust barre"
+        ],
+        "ar": [
+          "هيب ثرست",
+          "دفع الحوض بالبار"
+        ],
+        "en": [
+          "hip thrust",
+          "glute thrust"
+        ]
+      }
+    },
+    "glute-bridge": {
+      "en": "Glute bridge",
+      "fr": "Pont fessier",
+      "ar": "جسر الألوية",
+      "aliases": {
+        "fr": [
+          "pont",
+          "relevé de bassin"
+        ],
+        "ar": [
+          "جسر المؤخرة",
+          "رفع الحوض"
+        ],
+        "en": [
+          "bridge",
+          "hip bridge"
+        ]
+      }
+    },
+    "single-leg-glute-bridge": {
+      "en": "Single-leg glute bridge",
+      "fr": "Pont fessier sur une jambe",
+      "ar": "جسر الألوية على ساق واحدة",
+      "aliases": {
+        "fr": [
+          "pont fessier unilatéral"
+        ],
+        "ar": [
+          "جسر بساق واحدة"
+        ],
+        "en": [
+          "one-leg glute bridge",
+          "single leg hip bridge"
+        ]
+      }
+    },
+    "bulgarian-split-squat": {
+      "en": "Bulgarian split squat",
+      "fr": "Squat bulgare",
+      "ar": "القرفصاء البلغارية",
+      "aliases": {
+        "fr": [
+          "fente bulgare",
+          "split squat bulgare"
+        ],
+        "ar": [
+          "سكوات بلغاري",
+          "الطعن البلغاري"
+        ],
+        "en": [
+          "BSS",
+          "rear-foot elevated split squat",
+          "Bulgarian squat"
+        ]
+      }
+    },
+    "bodyweight-squat": {
+      "en": "Bodyweight squat",
+      "fr": "Squat au poids du corps",
+      "ar": "القرفصاء بوزن الجسم",
+      "aliases": {
+        "fr": [
+          "squat sans charge",
+          "squat à vide"
+        ],
+        "ar": [
+          "سكوات بدون أوزان",
+          "القرفصاء الهوائية"
+        ],
+        "en": [
+          "air squat",
+          "squat"
+        ]
+      }
+    },
+    "reverse-lunge": {
+      "en": "Reverse lunge",
+      "fr": "Fente arrière",
+      "ar": "الطعن الخلفي",
+      "aliases": {
+        "fr": [
+          "fentes arrière",
+          "fente reculée"
+        ],
+        "ar": [
+          "لانج خلفي",
+          "الطعنة الخلفية"
+        ],
+        "en": [
+          "reverse lunges",
+          "backward lunge"
+        ]
+      }
+    },
+    "dumbbell-romanian-deadlift": {
+      "en": "Dumbbell Romanian deadlift",
+      "fr": "Soulevé de terre roumain aux haltères",
+      "ar": "الرفعة الميتة الرومانية بالدمبل",
+      "aliases": {
+        "fr": [
+          "SDT roumain haltères"
+        ],
+        "ar": [
+          "ديدلفت روماني دمبل"
+        ],
+        "en": [
+          "DB RDL",
+          "dumbbell RDL"
+        ]
+      }
+    },
+    "cable-fly": {
+      "en": "Cable fly",
+      "fr": "Écarté à la poulie",
+      "ar": "التفتيح بالكابل",
+      "aliases": {
+        "fr": [
+          "écartés poulie",
+          "croisé à la poulie",
+          "vis-à-vis"
+        ],
+        "ar": [
+          "تفتيح الصدر بالكابل",
+          "كروس أوفر"
+        ],
+        "en": [
+          "cable crossover",
+          "cable flye",
+          "cable chest fly"
+        ]
+      }
+    },
+    "dumbbell-fly": {
+      "en": "Dumbbell fly",
+      "fr": "Écarté couché aux haltères",
+      "ar": "التفتيح بالدمبل",
+      "aliases": {
+        "fr": [
+          "écartés haltères"
+        ],
+        "ar": [
+          "تفتيح الصدر بالدمبل",
+          "فلاي دمبل"
+        ],
+        "en": [
+          "dumbbell flye",
+          "DB fly",
+          "chest fly"
+        ]
+      }
+    },
+    "feet-elevated-push-up": {
+      "en": "Feet-elevated push-up",
+      "fr": "Pompe pieds surélevés",
+      "ar": "تمرين الضغط مع رفع القدمين",
+      "aliases": {
+        "fr": [
+          "pompe déclinée",
+          "pompes pieds surélevés"
+        ],
+        "ar": [
+          "ضغط بقدمين مرتفعتين",
+          "الضغط المنحدر"
+        ],
+        "en": [
+          "decline push-up",
+          "decline pushup"
+        ]
+      }
+    },
+    "chin-up": {
+      "en": "Chin-up",
+      "fr": "Traction en supination",
+      "ar": "العقلة بقبضة معكوسة",
+      "aliases": {
+        "fr": [
+          "chin-up",
+          "tractions supination"
+        ],
+        "ar": [
+          "تشين أب",
+          "العقلة بقبضة سفلية"
+        ],
+        "en": [
+          "chinup",
+          "chin ups",
+          "underhand pull-up"
+        ]
+      }
+    },
+    "inverted-row": {
+      "en": "Inverted row",
+      "fr": "Rowing inversé",
+      "ar": "التجديف المقلوب",
+      "aliases": {
+        "fr": [
+          "traction australienne",
+          "rowing au poids du corps"
+        ],
+        "ar": [
+          "السحب المقلوب",
+          "السحب الأسترالي"
+        ],
+        "en": [
+          "australian pull-up",
+          "bodyweight row",
+          "body row"
+        ]
+      }
+    },
+    "dumbbell-pullover": {
+      "en": "Dumbbell pullover",
+      "fr": "Pull-over à l'haltère",
+      "ar": "البول أوفر بالدمبل",
+      "aliases": {
+        "fr": [
+          "pullover",
+          "pull-over haltère"
+        ],
+        "ar": [
+          "بول أوفر",
+          "السحب فوق الرأس بالدمبل"
+        ],
+        "en": [
+          "pullover",
+          "DB pullover"
+        ]
+      }
+    },
+    "face-pull": {
+      "en": "Face pull",
+      "fr": "Tirage visage",
+      "ar": "سحب الوجه بالكابل",
+      "aliases": {
+        "fr": [
+          "face pull",
+          "tirage vers le visage"
+        ],
+        "ar": [
+          "فيس بول",
+          "السحب نحو الوجه"
+        ],
+        "en": [
+          "rope face pull",
+          "cable face pull"
+        ]
+      }
+    },
+    "rear-delt-fly": {
+      "en": "Rear delt fly",
+      "fr": "Oiseau aux haltères",
+      "ar": "التفتيح العكسي للكتف الخلفي",
+      "aliases": {
+        "fr": [
+          "oiseau",
+          "élévation arrière",
+          "deltoïdes postérieurs"
+        ],
+        "ar": [
+          "رفرفة خلفية",
+          "ريفيرس فلاي"
+        ],
+        "en": [
+          "reverse fly",
+          "rear delt raise",
+          "bent-over reverse fly"
+        ]
+      }
+    },
+    "pike-push-up": {
+      "en": "Pike push-up",
+      "fr": "Pompe pike",
+      "ar": "ضغط البايك للأكتاف",
+      "aliases": {
+        "fr": [
+          "pompe piquée",
+          "pompe en V inversé"
+        ],
+        "ar": [
+          "بايك بوش أب",
+          "الضغط بوضعية V مقلوبة"
+        ],
+        "en": [
+          "pike pushup",
+          "pike press"
+        ]
+      }
+    },
+    "barbell-curl": {
+      "en": "Barbell curl",
+      "fr": "Flexion des biceps à la barre",
+      "ar": "ثني الذراعين بالبار",
+      "aliases": {
+        "fr": [
+          "curl barre",
+          "curl biceps barre"
+        ],
+        "ar": [
+          "بايسبس بالبار",
+          "كيرل بالبار"
+        ],
+        "en": [
+          "BB curl",
+          "standing barbell curl"
+        ]
+      }
+    },
+    "hammer-curl": {
+      "en": "Hammer curl",
+      "fr": "Flexion marteau",
+      "ar": "ثني المطرقة بالدمبل",
+      "aliases": {
+        "fr": [
+          "curl marteau"
+        ],
+        "ar": [
+          "هامر كيرل",
+          "تمرين المطرقة"
+        ],
+        "en": [
+          "hammer curls",
+          "dumbbell hammer curl"
+        ]
+      }
+    },
+    "overhead-triceps-extension": {
+      "en": "Overhead triceps extension",
+      "fr": "Extension des triceps au-dessus de la tête",
+      "ar": "تمديد الترايسبس فوق الرأس",
+      "aliases": {
+        "fr": [
+          "extension nuque",
+          "extension triceps haltère"
+        ],
+        "ar": [
+          "ترايسبس خلف الرأس",
+          "تمديد فوق الرأس بالدمبل"
+        ],
+        "en": [
+          "overhead extension",
+          "overhead tricep extension"
+        ]
+      }
+    },
+    "bench-dip": {
+      "en": "Bench dip",
+      "fr": "Dips sur banc",
+      "ar": "الغطس على المقعد",
+      "aliases": {
+        "fr": [
+          "dips banc",
+          "dips triceps"
+        ],
+        "ar": [
+          "ديبس على البنش",
+          "غطس المقعد"
+        ],
+        "en": [
+          "bench dips",
+          "triceps bench dip"
+        ]
+      }
+    },
+    "dead-bug": {
+      "en": "Dead bug",
+      "fr": "Dead bug",
+      "ar": "تمرين الحشرة الميتة",
+      "aliases": {
+        "fr": [
+          "insecte mort"
+        ],
+        "ar": [
+          "ديد باغ"
+        ],
+        "en": [
+          "deadbug",
+          "dead bugs"
+        ]
+      }
+    }
+  },
+  "categories": {
+    "Legs": {
+      "fr": "Jambes",
+      "ar": "الساقان"
+    },
+    "Chest": {
+      "fr": "Pectoraux",
+      "ar": "الصدر"
+    },
+    "Back": {
+      "fr": "Dos",
+      "ar": "الظهر"
+    },
+    "Shoulders": {
+      "fr": "Épaules",
+      "ar": "الأكتاف"
+    },
+    "Arms": {
+      "fr": "Bras",
+      "ar": "الذراعان"
+    },
+    "Core": {
+      "fr": "Tronc",
+      "ar": "عضلات الجذع"
+    },
+    "Other": {
+      "fr": "Autre",
+      "ar": "أخرى"
+    }
+  },
+  "equipment": {
+    "Barbell": {
+      "fr": "Barre",
+      "ar": "البار"
+    },
+    "Cable": {
+      "fr": "Poulie",
+      "ar": "الكابل"
+    },
+    "Machine": {
+      "fr": "Appareil",
+      "ar": "الجهاز"
+    },
+    "Dumbbell": {
+      "fr": "Haltères",
+      "ar": "الدمبل"
+    },
+    "Bodyweight": {
+      "fr": "Poids du corps",
+      "ar": "وزن الجسم"
+    },
+    "Other": {
+      "fr": "Autre",
+      "ar": "أخرى"
+    }
+  }
+}

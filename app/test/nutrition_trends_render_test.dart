@@ -127,7 +127,7 @@ void main() {
           await _settle(tester);
           await reach(tester);
           final image = await _capture(tester);
-          shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
+          shots['${accent.name[0].toUpperCase()}${accent.name.substring(1)} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
           if (accent == Accent.blue || name == 'week') await _save(tester, image, '$name-${accent.name}-${mode.name}');
           await tester.pumpWidget(const SizedBox());
         }

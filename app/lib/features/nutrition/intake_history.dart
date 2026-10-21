@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/clock.dart';
+import '../../core/language.dart';
 import '../../data/models.dart';
 import 'nutrient_coverage.dart';
 import 'water.dart';
@@ -10,14 +11,14 @@ import 'water.dart';
 /// from the account's own food and water entries on this phone. Nothing is fetched, estimated or stored here.
 
 enum IntakeMetric {
-  calories('Calories', 'calorie'),
-  protein('Protein', 'protein'),
-  carbs('Carbs', 'carb'),
-  fat('Fat', 'fat'),
-  water('Water', 'water');
+  calories,
+  protein,
+  carbs,
+  fat,
+  water;
 
-  const IntakeMetric(this.label, this.noun);
-  final String label, noun;
+  /// "Calories", in the app's language ([intakeMetricLabel]).
+  String get label => intakeMetricLabel(currentL10n, this);
 
   Nutrient? get nutrient => switch (this) {
         calories => Nutrient.calories,
@@ -27,6 +28,24 @@ enum IntakeMetric {
         water => null,
       };
 }
+
+/// The metric's name: "Calories", "Protein", "Carbs", "Fat", "Water".
+String intakeMetricLabel(AppLocalizations l, IntakeMetric m) => switch (m) {
+      IntakeMetric.calories => l.eatCalories,
+      IntakeMetric.protein => l.eatProtein,
+      IntakeMetric.carbs => l.eatCarbs,
+      IntakeMetric.fat => l.eatFat,
+      IntakeMetric.water => l.waterTitle,
+    };
+
+/// The metric as it qualifies "values": "calorie", "protein", "carb", "fat", "water".
+String intakeMetricNoun(AppLocalizations l, IntakeMetric m) => switch (m) {
+      IntakeMetric.calories => l.trendsNounCalorie,
+      IntakeMetric.protein => l.trendsNounProtein,
+      IntakeMetric.carbs => l.trendsNounCarb,
+      IntakeMetric.fat => l.trendsNounFat,
+      IntakeMetric.water => l.trendsNounWater,
+    };
 
 /// One day for one metric. [notLogged] means nothing of that kind was logged (food for a nutrient, water for water):
 /// not a zero. [unknown]: food was logged but none of it has this value. [partial]: a known sum, some foods without a

@@ -308,7 +308,7 @@ void main() {
             await precacheImage((e.widget as Image).image, e);
           }
         });
-        shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = await _capture(tester);
+        shots['${accent.name[0].toUpperCase()}${accent.name.substring(1)} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = await _capture(tester);
         await tester.pumpWidget(const SizedBox());
       }
     }
@@ -415,7 +415,7 @@ void main() {
           await pumpApp(tester, await _fixture(tester, accent, mode), insets: phoneInsets);
           await _open(tester, screen);
           final image = await _capture(tester);
-          shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
+          shots['${accent.name[0].toUpperCase()}${accent.name.substring(1)} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
           if (accent == Accent.blue) await _save(tester, image, '$screen-blue-${mode.name}');
           await tester.pumpWidget(const SizedBox()); // a fresh app for the next theme
         }

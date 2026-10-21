@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/format.dart';
+import '../../core/catalog_names.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
@@ -19,12 +21,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
   final String workoutId;
   final bool justFinished;
 
-  static String outcomeExplanation(Workout w) => switch (w.outcome) {
-        WorkoutResultRules.full => 'Every planned movement has its target number of sets recorded.',
-        WorkoutResultRules.partial => 'Actual training was recorded. Some planned work was not; that is shown below.',
-        WorkoutResultRules.noData => 'No training was logged, so this gives no training credit${w.isManual ? '' : ' and the planned workout is still available'}.',
-        WorkoutResultRules.manualRecorded => 'Recorded as manual training. It does not tick off a planned workout.',
-        _ => 'This workout is still open. It is never finished automatically.',
+  static String outcomeExplanation(AppLocalizations l, Workout w) => switch (w.outcome) {
+        WorkoutResultRules.full => l.workoutOutcomeFullExplain,
+        WorkoutResultRules.partial => l.workoutOutcomePartialExplain,
+        WorkoutResultRules.noData => w.isManual ? l.workoutOutcomeNoDataExplainManual : l.workoutOutcomeNoDataExplainPlanned,
+        WorkoutResultRules.manualRecorded => l.workoutOutcomeManualExplain,
+        _ => l.workoutOutcomeOpenExplain,
       };
 
   @override
@@ -33,17 +35,18 @@ class WorkoutDetailScreen extends ConsumerWidget {
     if (row == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final w = row.value;
     final sets = _setsOf(ref, workoutId);
+    final l = context.l10n;
 
     return AppPage(
-      title: justFinished ? WorkoutResultRules.label(w.outcome) : w.title,
-      bottom: justFinished ? PrimaryButton('Done', key: const Key('result-done'), onPressed: () => Navigator.pop(context)) : null,
+      title: justFinished ? outcomeLabel(l, w.outcome) : w.title,
+      bottom: justFinished ? PrimaryButton(l.actionDone, key: const Key('result-done'), onPressed: () => Navigator.pop(context)) : null,
       actions: [
         if (!justFinished)
           IconButton(
-            tooltip: 'Remove workout',
+            tooltip: l.workoutRemoveAction,
             icon: const Icon(Icons.delete_outline),
             onPressed: () async {
-              if (!await confirm(context, title: 'Remove this workout?', body: 'This removes "${w.title}" from ${longDate(w.dayKey)} and its ${sets.length} recorded set${sets.length == 1 ? '' : 's'} from your history.', action: 'Remove workout')) return;
+              if (!await confirm(context, title: l.workoutRemoveTitle, body: l.workoutRemoveRecordedBody(w.title, longDate(w.dayKey), sets.length), action: l.workoutRemoveAction, cancel: l.actionCancel)) return;
               await ref.read(workoutRepositoryProvider).delete(w);
               if (context.mounted) Navigator.pop(context);
             },
@@ -64,8 +67,10 @@ List<WorkoutSet> _setsOf(WidgetRef ref, String workoutId) =>
 List<Widget> _facts(BuildContext context, WidgetRef ref, Stored<Workout> row, List<WorkoutSet> sets) {
   final w = row.value;
   final unit = ref.watch(loadUnitProvider);
+  final l = context.l10n;
+  final names = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context);
   return [
-        Text('${longDate(w.dayKey)}${w.isManual ? ' · manual' : ''}', style: context.caption),
+        Text(w.isManual ? l.workoutDateManual(longDate(w.dayKey)) : longDate(w.dayKey), style: context.caption),
         // Which plan and session this came from, read from the plan as it is now (it may since have been edited,
         // archived or closed); the recorded exercises below are this workout's own and never change with the plan.
         Padding(
@@ -74,9 +79,9 @@ List<Widget> _facts(BuildContext context, WidgetRef ref, Stored<Workout> row, Li
         ),
         const SizedBox(height: 12),
         StatusLine(w.isOpen ? Icons.timelapse : w.outcome == WorkoutResultRules.noData ? Icons.remove_circle_outline : Icons.check_circle_outline,
-            '${WorkoutResultRules.label(w.outcome)}. ${WorkoutDetailScreen.outcomeExplanation(w)}'),
-        if (row.isPending) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.phone_iphone, 'Saved on this phone · sync pending')),
-        if (row.needsReview) const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, 'Saved on this phone; needs your review before it can sync.', tone: Tone.warning)),
+            '${outcomeLabel(l, w.outcome)}. ${WorkoutDetailScreen.outcomeExplanation(l, w)}'),
+        if (row.isPending) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.phone_iphone, l.workoutSyncPending)),
+        if (row.needsReview) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, l.workoutDetailNeedsReview, tone: Tone.warning)),
         const SizedBox(height: 16),
         // The recorded facts as the page's pale summary panel; they wrap onto their own lines with large text.
         PhotoPanel(
@@ -85,27 +90,27 @@ List<Widget> _facts(BuildContext context, WidgetRef ref, Stored<Workout> row, Li
           photoAlignment: const Alignment(1, 0.6),
           content: (_) => [
             Wrap(spacing: 24, runSpacing: 10, children: [
-              _Fact('Time', w.activeDurationSeconds == null ? '—' : durationText(w.activeDurationSeconds!)),
-              _Fact('Sets', '${sets.length}'),
-              _Fact('Movements', '${sets.map((s) => s.exerciseId).toSet().length}'),
+              _Fact(l.workoutFactTime, w.activeDurationSeconds == null ? '—' : durationText(w.activeDurationSeconds!)),
+              _Fact(l.workoutFactSets, '${sets.length}'),
+              _Fact(l.workoutFactMovements, '${sets.map((s) => s.exerciseId).toSet().length}'),
             ]),
           ],
         ),
         const SizedBox(height: 20),
-        if (w.isOpen) PrimaryButton('Resume workout', onPressed: () => resumeWorkout(context, ref, w)),
+        if (w.isOpen) PrimaryButton(l.workoutResumeWorkout, onPressed: () => resumeWorkout(context, ref, w)),
         for (final e in w.exercises) ...[
           const SizedBox(height: 14),
-          Text(e.name, style: context.sansStyle(16, weight: FontWeight.w600)),
-          if (e.isPrescribed) Text('Planned · ${e.target}', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
+          Text(names.name(e.catalogKey, e.name, locale), style: context.sansStyle(16, weight: FontWeight.w600)),
+          if (e.isPrescribed) Text(l.workoutPlannedTarget(targetText(sets: e.targetSets, repsMin: e.targetRepsMin, repsMax: e.targetRepsMax, seconds: e.targetDurationSeconds, l: l)), style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
           if (sets.where((s) => s.exerciseId == e.id).isEmpty)
-            Padding(padding: const EdgeInsets.only(top: 4), child: Text(e.isPrescribed ? 'Not recorded.' : 'No sets recorded.', style: context.sansStyle(14, color: context.c.secondary)))
+            Padding(padding: const EdgeInsets.only(top: 4), child: Text(e.isPrescribed ? l.workoutExerciseNotRecorded : l.workoutExerciseNoSets, style: context.sansStyle(14, color: context.c.secondary)))
           else
             for (final (i, s) in sets.where((s) => s.exerciseId == e.id).indexed)
-              Padding(padding: const EdgeInsets.only(top: 4), child: Text('${i + 1}.  ${setText(s, unit)}', style: context.numStyle(15, weight: FontWeight.w400))),
+              Padding(padding: const EdgeInsets.only(top: 4), child: Text(l.workoutSetRowTitle(i + 1, setText(s, unit, l)), style: context.numStyle(15, weight: FontWeight.w400))),
           const SizedBox(height: 12),
           const Rule(),
         ],
-        if (w.exercises.isEmpty) const EmptyState('Nothing recorded', 'This workout has no movements.'),
+        if (w.exercises.isEmpty) EmptyState(l.workoutDetailEmptyTitle, l.workoutDetailEmptyBody),
   ];
 }
 
@@ -121,14 +126,14 @@ class WorkoutResultView extends ConsumerWidget {
     final row = (ref.watch(workoutsProvider).value ?? const <Stored<Workout>>[]).where((r) => r.value.id == workoutId).firstOrNull;
     if (row == null) return const SizedBox.shrink();
     return Column(key: const Key('workout-result'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Align(alignment: Alignment.centerLeft, child: AllWorkoutsLink(onPressed: onDone)),
-      Heading(WorkoutResultRules.label(row.value.outcome), size: 28, serif: true),
+      Align(alignment: AlignmentDirectional.centerStart, child: AllWorkoutsLink(onPressed: onDone)),
+      Heading(outcomeLabel(context.l10n, row.value.outcome), size: 28, serif: true),
       Text(row.value.title, style: context.sansStyle(16, weight: FontWeight.w600)),
       ..._facts(context, ref, row, _setsOf(ref, workoutId)),
       // Optional next targets this saved workout supports. It is already saved; nothing here changes it.
       if (definitionOf(ref, row.value) case final def? when !row.value.isOpen) NextTimeSection(planId: row.value.planId!, workoutId: def, source: row.value.id),
       const SizedBox(height: 20),
-      PrimaryButton('Done', key: const Key('result-done'), onPressed: onDone),
+      PrimaryButton(context.l10n.actionDone, key: const Key('result-done'), onPressed: onDone),
     ]);
   }
 }
@@ -149,8 +154,8 @@ class WorkoutHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workouts = [for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted) w]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
-    return AppPage(title: 'Workout history', children: [
-      if (workouts.isEmpty) const EmptyState('No workouts yet', 'Workouts you record will appear here with what you actually did.'),
+    return AppPage(title: context.l10n.workoutHistoryTitle, children: [
+      if (workouts.isEmpty) EmptyState(context.l10n.workoutHistoryEmptyTitle, context.l10n.workoutHistoryEmptyBody),
       for (final w in workouts) WorkoutRow(w),
     ]);
   }
@@ -165,8 +170,12 @@ class WorkoutRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plan = workout.planId == null ? null : ref.watch(planListProvider).where((p) => p.id == workout.planId).firstOrNull;
-    final subtitle = '${shortDate(workout.dayKey)} · ${WorkoutResultRules.label(workout.outcome)}'
-        '${workout.isOpen ? '' : ' · ${workout.performedSets} set${workout.performedSets == 1 ? '' : 's'}'}${workout.isManual ? ' · manual' : plan == null ? '' : ' · ${plan.title}'}';
+    final l = context.l10n;
+    final subtitle = [
+      shortDate(workout.dayKey), outcomeLabel(l, workout.outcome),
+      if (!workout.isOpen) l.workoutSetCount(workout.performedSets),
+      if (workout.isManual) l.workoutManualTag else if (plan != null) plan.title,
+    ].join(' · ');
     void open() => push(context, WorkoutDetailScreen(workoutId: workout.id));
     return grouped
         ? GroupRow(icon: Icons.fitness_center, tone: Tone.neutral, title: workout.title, subtitle: subtitle, onTap: open)

@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/device_prefs.dart';
+import '../../core/language.dart';
+import '../../core/units.dart' show asciiDigits;
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import 'food_item.dart';
@@ -49,34 +51,32 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
   }
 
   void _submitTyped() {
-    if (normalizeBarcode(_typed.text) == null) {
-      setState(() => _typedError = 'A barcode is 6 to 14 digits, as printed under the bars.');
+    // Arabic-Indic digits are the same digits; leading zeros are kept ("٠١٢…" → "012…").
+    final typed = asciiDigits(_typed.text.trim());
+    if (normalizeBarcode(typed) == null) {
+      setState(() => _typedError = context.l10n.barcodeTypedInvalid);
       return;
     }
-    _onCode(_typed.text);
+    _onCode(typed);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final unavailable = _permissionRefused != null;
     return AppPage(
-      title: 'Scan a barcode',
-      subtitle: unavailable ? null : 'Hold the barcode on the packet inside the frame.',
+      title: l.barcodeTitle,
+      subtitle: unavailable ? null : l.barcodeHold,
       // The actions are pinned, which also makes this a page that keeps every field built: the keyboard opening
       // under a tall camera view must never drop the field that was just tapped.
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
-        SecondaryButton('Look up this barcode', key: const Key('barcode-typed-submit'), onPressed: _submitTyped),
-        TextButton(key: const Key('barcode-cancel'), onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        SecondaryButton(l.barcodeLookUp, key: const Key('barcode-typed-submit'), onPressed: _submitTyped),
+        TextButton(key: const Key('barcode-cancel'), onPressed: () => Navigator.pop(context), child: Text(l.actionCancel)),
       ]),
       children: [
         if (unavailable)
           Panel(
-            child: StatusLine(
-                Icons.no_photography_outlined,
-                _permissionRefused!
-                    ? 'GoHard is not allowed to use the camera, so it cannot scan. You can allow it in the phone\'s settings, or type the barcode below.'
-                    : 'The camera cannot be used on this phone right now. You can type the barcode below.',
-                tone: Tone.warning),
+            child: StatusLine(Icons.no_photography_outlined, _permissionRefused! ? l.barcodeCameraRefused : l.barcodeCameraUnavailable, tone: Tone.warning),
           )
         else
           ClipRRect(
@@ -87,13 +87,15 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
             ),
           ),
         const SizedBox(height: 22),
-        const SectionLabel('Or type the barcode'),
+        SectionLabel(l.barcodeOrType),
         const SizedBox(height: 8),
+        // Digits read left to right in every language, as printed under the bars.
         TextField(
           key: const Key('barcode-typed'), controller: _typed, keyboardType: TextInputType.number, textInputAction: TextInputAction.search,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(14)],
+          textDirection: TextDirection.ltr,
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩۰-۹]')), LengthLimitingTextInputFormatter(14)],
           onSubmitted: (_) => _submitTyped(),
-          decoration: InputDecoration(labelText: 'Barcode digits', errorText: _typedError),
+          decoration: InputDecoration(labelText: l.barcodeDigitsLabel, errorText: _typedError),
         ),
       ],
     );
@@ -164,7 +166,7 @@ class _CameraViewState extends State<_CameraView> with WidgetsBindingObserver {
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
         MobileScanner(
           controller: _controller,
-          placeholderBuilder: (context) => ColoredBox(color: context.c.sunken, child: const Center(child: CircularProgressIndicator(semanticsLabel: 'Starting the camera'))),
+          placeholderBuilder: (context) => ColoredBox(color: context.c.sunken, child: Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.barcodeCameraStarting))),
           errorBuilder: (context, error) => ColoredBox(color: context.c.sunken),
         ),
         // A plain frame in the app's own shapes, so this never looks like another app's scanner.
@@ -176,15 +178,15 @@ class _CameraViewState extends State<_CameraView> with WidgetsBindingObserver {
             ),
           ),
         ),
-        Positioned(
-          right: 10, bottom: 10,
+        PositionedDirectional(
+          end: 10, bottom: 10,
           child: ValueListenableBuilder<MobileScannerState>(
             valueListenable: _controller,
             builder: (context, state, _) => state.torchState == TorchState.unavailable
                 ? const SizedBox.shrink()
                 : IconButton.filled(
                     key: const Key('barcode-torch'),
-                    tooltip: state.torchState == TorchState.on ? 'Turn the light off' : 'Turn the light on',
+                    tooltip: state.torchState == TorchState.on ? context.l10n.barcodeTorchOff : context.l10n.barcodeTorchOn,
                     style: IconButton.styleFrom(backgroundColor: Colors.black54, foregroundColor: Colors.white),
                     icon: Icon(state.torchState == TorchState.on ? Icons.flashlight_on : Icons.flashlight_off),
                     onPressed: _controller.toggleTorch,

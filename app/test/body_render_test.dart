@@ -121,7 +121,7 @@ void main() {
         for (final accent in Accent.values) {
           await pumpApp(tester, await _fixture(tester, accent, mode, checkIns), home: screen, size: size, insets: phoneInsets, settle: false);
           final image = await _capture(tester);
-          shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
+          shots['${accent.name[0].toUpperCase()}${accent.name.substring(1)} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = image;
           if (accent == Accent.blue) await _save(tester, image, '$name-blue-${mode.name}');
           await tester.pumpWidget(const SizedBox());
         }

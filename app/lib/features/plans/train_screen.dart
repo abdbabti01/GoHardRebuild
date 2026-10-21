@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/clock.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
@@ -41,12 +42,13 @@ class TrainScreen extends ConsumerWidget {
     final onTrain = ref.watch(shellProvider.select((s) => s.tab)) == 1;
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
     final noPlan = ref.watch(primaryPlanProvider) == null;
+    final l = context.l10n;
     // Ask GoHard about the section in view: the primary plan on Plan, recorded training on Progress.
     final ask = switch (view) {
-      TrainView.plan when noPlan => const CoachContext(label: 'Starting a plan'),
-      TrainView.plan => CoachContext(label: ref.watch(primaryPlanProvider)?.title ?? 'Your plan'),
-      TrainView.progress => const CoachContext(label: 'Your progress'),
-      TrainView.workouts => const CoachContext(label: 'Your training'),
+      TrainView.plan when noPlan => CoachContext(label: l.trainAskStartingPlan),
+      TrainView.plan => CoachContext(label: ref.watch(primaryPlanProvider)?.title ?? l.trainAskYourPlan),
+      TrainView.progress => CoachContext(label: l.trainAskYourProgress),
+      TrainView.workouts => CoachContext(label: l.trainAskYourTraining),
     };
     return PopScope(
       canPop: !(inPanel && onTrain),
@@ -61,12 +63,12 @@ class TrainScreen extends ConsumerWidget {
         // The guide's face is Ask GoHard's way in on Train: the speaking bust (Show coach on Train and Eat), or, with
         // that off, its small avatar beside the title. Never both.
         if (!inPanel) ...[
-          TabHeader(title: 'Train', overline: longDate(ref.watch(todayKeyProvider)), trailing: coachOn ? null : CoachAskLauncher(ask: ask)),
+          TabHeader(title: l.navTrain, overline: longDate(ref.watch(todayKeyProvider)), trailing: coachOn ? null : CoachAskLauncher(ask: ask)),
           const SizedBox(height: 16),
         ],
         Segmented<TrainView>(
           values: TrainView.values, selected: view, keyPrefix: 'train',
-          label: (v) => '${v.name[0].toUpperCase()}${v.name.substring(1)}',
+          label: (v) => switch (v) { TrainView.workouts => l.trainSectionWorkouts, TrainView.plan => l.trainSectionPlan, TrainView.progress => l.trainSectionProgress },
           onChanged: (v) => ref.read(shellProvider.notifier).selectTrainView(v),
         ),
         // Under the sections, speaking about the one chosen: with large text its words can run long, and the sections
@@ -105,17 +107,18 @@ final builderDraftProvider = FutureProvider.autoDispose<PlanDraft?>((ref) => ref
   }
 
   final inProgress = ref.watch(builderDraftProvider).value;
+  final l = context.l10n;
   final saved = ref.watch(planListProvider).where((p) => p.isDraft && !p.isArchived).firstOrNull;
   if (inProgress != null) {
-    return (text: 'Your plan in progress is saved on this phone. Pick up where you left off.', title: 'Plan in progress', body: 'Saved on this phone. Nothing is scheduled until you start it.',
-        action: (label: 'Continue my plan', key: const Key('plan-builder-continue'), onPressed: () => open(PlanBuilder(initial: inProgress))));
+    return (text: l.planStartInProgressCoach, title: l.planStartInProgressTitle, body: l.planStartInProgressBody,
+        action: (label: l.planStartContinue, key: const Key('plan-builder-continue'), onPressed: () => open(PlanBuilder(initial: inProgress))));
   }
   if (saved != null) {
-    return (text: 'Your plan is saved as a draft. Review it, then start it when you\'re ready.', title: 'Your plan is ready to review', body: 'A saved draft does not schedule anything until you start it.',
-        action: (label: 'Review my plan', key: const Key('plan-review-draft'), onPressed: () => open(PlanReviewScreen(planId: saved.id))));
+    return (text: l.planStartDraftCoach, title: l.planStartDraftTitle, body: l.planStartDraftBody,
+        action: (label: l.planStartReview, key: const Key('plan-review-draft'), onPressed: () => open(PlanReviewScreen(planId: saved.id))));
   }
-  return (text: 'Let\'s build your training plan. Choose a familiar split or make your own.', title: 'No plan yet', body: 'Choose a familiar split or make your own. Nothing is scheduled until you review it.',
-      action: (label: 'Create my plan', key: const Key('create-plan'), onPressed: () => open(const CreatePlanScreen())));
+  return (text: l.planStartNewCoach, title: l.planStartNewTitle, body: l.planStartNewBody,
+      action: (label: l.planStartCreate, key: const Key('create-plan'), onPressed: () => open(const CreatePlanScreen())));
 }
 
 /// What the coach says on Train, from the section in view and what is really there. Facts and next steps only: no
@@ -123,22 +126,23 @@ final builderDraftProvider = FutureProvider.autoDispose<PlanDraft?>((ref) => ref
 CoachSay _coachSay(BuildContext context, WidgetRef ref, TrainView view) {
   final plan = ref.watch(primaryPlanProvider);
   final workouts = [for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted) w];
+  final l = context.l10n;
   switch (view) {
     case TrainView.plan when plan == null:
       final start = _planStart(context, ref);
       return CoachSay(start.text, primary: start.action);
     case TrainView.plan:
-      return CoachSay(plan!.isPaused ? 'Your plan is paused, so nothing counts as missed. Resume it below when you\'re ready.' : 'Here\'s your plan week by week. Tap a workout for its details, or ask me about the schedule.',
+      return CoachSay(plan!.isPaused ? l.trainCoachPlanPaused : l.trainCoachPlanWeek,
           ask: CoachContext(label: plan.title));
     case TrainView.workouts:
       return CoachSay(
-          workouts.any((w) => w.isOpen) ? 'A workout is still open. Resume it below when you\'re ready.'
-              : plan != null ? 'Start your planned workout from Today, or record one of your own here.'
-              : 'Record a workout of your own here. A plan can schedule them for you.',
-          ask: const CoachContext(label: 'Your training'));
+          workouts.any((w) => w.isOpen) ? l.trainCoachWorkoutOpen
+              : plan != null ? l.trainCoachWorkoutsPlan
+              : l.trainCoachWorkoutsNoPlan,
+          ask: CoachContext(label: l.trainAskYourTraining));
     case TrainView.progress:
       // One fact from the shared weekly projection, or how to set a goal. Nothing is asked of the AI.
-      return CoachSay(progressCoachLine(ref.watch(currentWeekProvider), goalsSupported: ref.watch(weeklyGoalsSupportedProvider)), ask: const CoachContext(label: 'Your progress'));
+      return CoachSay(progressCoachLine(ref.watch(currentWeekProvider), goalsSupported: ref.watch(weeklyGoalsSupportedProvider)), ask: CoachContext(label: l.trainAskYourProgress));
   }
 }
 
@@ -152,7 +156,7 @@ class _HistoryCard extends StatelessWidget {
   final bool runs;
   @override
   Widget build(BuildContext context) => GroupCard(children: [
-        GroupRow(key: Key(runs ? 'train-history' : 'progress-history'), icon: Icons.history, title: 'Workout history', subtitle: 'Every workout you recorded', onTap: () => push(context, const WorkoutHistoryScreen())),
+        GroupRow(key: Key(runs ? 'train-history' : 'progress-history'), icon: Icons.history, title: context.l10n.trainWorkoutHistory, subtitle: context.l10n.trainWorkoutHistorySubtitle, onTap: () => push(context, const WorkoutHistoryScreen())),
       ]);
 }
 
@@ -166,6 +170,7 @@ class _WorkoutsView extends ConsumerWidget {
     final sets = ref.watch(trustedSetsProvider);
     // Today's planned workouts still to start, from Today's own projection; one already open is shown below instead.
     final snapshot = ref.watch(dailySnapshotProvider);
+    final l = context.l10n;
     final scheduled = switch (snapshot?.training) {
       PlannedToday(:final plan, :final occasions) => [
           for (final o in occasions)
@@ -175,19 +180,19 @@ class _WorkoutsView extends ConsumerWidget {
     };
     return _section([
       if (scheduled.isNotEmpty) ...[
-        const SectionHeader('Scheduled today'),
+        SectionHeader(l.trainScheduledToday),
         _gap,
         GroupCard(children: [
           for (final (plan, o) in scheduled)
             GroupRow(
-              key: Key('train-scheduled-${o.id}'), icon: Icons.fitness_center, title: o.title, subtitle: 'Due today · ${_plannedSummary(o.prescription)}',
+              key: Key('train-scheduled-${o.id}'), icon: Icons.fitness_center, title: o.title, subtitle: l.trainDueToday(_plannedSummary(l, o.prescription)),
               onTap: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.preview(plan.id, o.id)),
             ),
         ]),
         const SizedBox(height: 20),
       ],
       if (open.isNotEmpty) ...[
-        const SectionHeader('Open workouts'),
+        SectionHeader(l.trainOpenWorkouts),
         _gap,
         // Each open workout is a panel with its own Resume (the deep button; quiet when saved for later) and Details.
         // The photograph goes to the first one only, so a second open workout does not repeat it.
@@ -198,23 +203,23 @@ class _WorkoutsView extends ConsumerWidget {
         const SizedBox(height: 20),
       ],
       GroupCard(children: [
-        GroupRow(key: const Key('start-manual'), icon: Icons.add, title: 'Start a manual workout', subtitle: 'Train without a plan. It never ticks off a planned workout.',
+        GroupRow(key: const Key('start-manual'), icon: Icons.add, title: l.trainStartManual, subtitle: l.trainStartManualSubtitle,
             onTap: () => startManualWorkout(context, ref)),
-        GroupRow(key: const Key('train-start-run'), icon: Icons.directions_run, title: 'Run / Walk', subtitle: 'Record a run or a walk outdoors, with its route', onTap: () => openRunWalk(context, ref)),
+        GroupRow(key: const Key('train-start-run'), icon: Icons.directions_run, title: l.trainRunWalk, subtitle: l.trainRunWalkSubtitle, onTap: () => openRunWalk(context, ref)),
         // Run / Walk's history lives here, beside starting one (Today offers only Start / Resume).
-        GroupRow(key: const Key('train-run-history'), leading: const GoIcon(GoGlyph.history), title: 'Run / Walk history', subtitle: 'Every run and walk, routes and personal bests',
+        GroupRow(key: const Key('train-run-history'), leading: const GoIcon(GoGlyph.history), title: l.trainRunWalkHistory, subtitle: l.trainRunWalkHistorySubtitle,
             onTap: () => push(context, const ActivityHistoryScreen())),
       ]),
       _between,
-      const SectionHeader('Recent'),
+      SectionHeader(l.trainRecent),
       if (done.isEmpty)
-        const EmptyState('No workouts recorded yet', 'When you finish a workout, what you actually did shows up here.')
+        EmptyState(l.trainRecentEmptyTitle, l.trainRecentEmptyBody)
       else ...[
         _gap,
         GroupCard(children: [for (final w in done.take(5)) WorkoutRow(w, grouped: true)]),
       ],
       _between,
-      const SectionHeader('History'),
+      SectionHeader(l.trainHistory),
       _gap,
       const _HistoryCard(runs: true),
     ]);
@@ -232,7 +237,8 @@ class _OpenPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final status = parked ? 'Saved for later' : 'In progress';
+    final l = context.l10n;
+    final status = parked ? l.trainSavedForLater : l.trainInProgress;
     void resume() => resumeWorkout(context, ref, w);
     return PhotoPanel(
       key: Key('train-open-${w.id}'),
@@ -241,14 +247,14 @@ class _OpenPanel extends ConsumerWidget {
       content: (context) => [
         StatusPill(status, icon: parked ? Icons.bookmark_outline : Icons.timelapse, tone: parked ? Tone.neutral : Tone.accent),
         Padding(padding: const EdgeInsets.only(top: 8), child: Text(w.title, style: context.pageTitleStyle(30))),
-        Padding(padding: const EdgeInsets.only(top: 2), child: Text('$status · started ${shortDate(w.dayKey)}', style: context.sansStyle(15, color: context.c.secondary))),
-        if (recorded > 0) Padding(padding: const EdgeInsets.only(top: 2), child: Text('$recorded ${recorded == 1 ? 'set' : 'sets'} recorded', style: context.numStyle(15))),
+        Padding(padding: const EdgeInsets.only(top: 2), child: Text(l.trainOpenStatusLine(status, shortDate(w.dayKey)), style: context.sansStyle(15, color: context.c.secondary))),
+        if (recorded > 0) Padding(padding: const EdgeInsets.only(top: 2), child: Text(l.trainSetsRecorded(recorded), style: context.numStyle(15))),
       ],
       actions: (_) => [
         parked
-            ? TextButton(key: Key('train-resume-${w.id}'), onPressed: resume, child: const Text('Resume'))
-            : PrimaryButton('Resume', key: Key('train-resume-${w.id}'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume),
-        QuietLink('Details', key: Key('train-details-${w.id}'), said: 'Details of ${w.title}', onPressed: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.session(w.id))),
+            ? TextButton(key: Key('train-resume-${w.id}'), onPressed: resume, child: Text(l.trainResume))
+            : PrimaryButton(l.trainResume, key: Key('train-resume-${w.id}'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume),
+        QuietLink(l.trainDetails, key: Key('train-details-${w.id}'), said: l.trainDetailsOf(w.title), onPressed: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.session(w.id))),
       ],
     );
   }
@@ -272,11 +278,12 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final workouts = ref.watch(workoutListProvider);
     final ctxRow = ref.watch(contextRowProvider).value;
     final others = plans.where((p) => p.id != primary?.id).toList();
+    final l = context.l10n;
     final proposals = [for (final r in ref.watch(proposalsProvider).value ?? const <Stored<Proposal>>[]) if (r.value.planId == primary?.id && (r.value.state == 'open' || r.value.state == 'needs_review')) r.value];
 
     return _section([
       if (ctxRow?.needsReview ?? false)
-        const Padding(padding: EdgeInsets.only(bottom: 14), child: StatusLine(Icons.rule, 'A plan change saved on this phone differs from your account. Review it from the notice at the bottom of the screen.', tone: Tone.warning)),
+        Padding(padding: const EdgeInsets.only(bottom: 14), child: StatusLine(Icons.rule, l.planNeedsReview, tone: Tone.warning)),
       // No plan: with the coach on Train, its bubble holds the one way to start (above); without it, the same action
       // here. Manual training stays a quiet alternative either way.
       if (primary == null) ...[
@@ -286,15 +293,15 @@ class _PlanViewState extends ConsumerState<_PlanView> {
             return EmptyState(start.title, start.body, action: PrimaryButton(start.action.label, key: start.action.key, onPressed: start.action.onPressed));
           }(),
         Align(
-          alignment: Alignment.centerLeft,
-          child: QuietLink('Train without a plan', key: const Key('train-manual-instead'), said: 'Start a manual workout without a plan', onPressed: () => startManualWorkout(context, ref)),
+          alignment: AlignmentDirectional.centerStart,
+          child: QuietLink(l.planTrainWithoutPlan, key: const Key('train-manual-instead'), said: l.planTrainWithoutPlanSaid, onPressed: () => startManualWorkout(context, ref)),
         ),
       ],
       if (primary != null)
         ..._primary(context, primary, today, workouts, proposals),
       if (others.isNotEmpty) ...[
         _between,
-        const SectionHeader('Saved and past plans'),
+        SectionHeader(l.planSavedAndPast),
         _gap,
         GroupCard(children: [
           for (final p in others.where((p) => !p.isArchived))
@@ -302,17 +309,17 @@ class _PlanViewState extends ConsumerState<_PlanView> {
               key: Key('saved-plan-${p.id}'),
               title: p.title,
               subtitle: switch (p.lifecycle) {
-                'draft' when p.isBuilt => 'Draft · ${scheduleMode(p)} · ${PlanRules.usable(p.j) ? 'not started · would start ${shortDate(p.startDate)}' : 'add exercises to use it'}',
-                'draft' => 'Draft · not started · would start ${shortDate(p.startDate)}',
-                'paused' => 'Paused · not your primary plan',
-                'closed' => p.closureIntent == 'stopped_early' ? 'Stopped early' : 'Finished for now',
-                'active' => 'Active · not your primary plan',
+                'draft' when p.isBuilt => PlanRules.usable(p.j) ? l.planSavedDraftReady(scheduleMode(p), shortDate(p.startDate)) : l.planSavedDraftEmpty(scheduleMode(p)),
+                'draft' => l.planSavedDraftOld(shortDate(p.startDate)),
+                'paused' => l.planSavedPaused,
+                'closed' => p.closureIntent == 'stopped_early' ? l.planStoppedEarly : l.planFinishedForNow,
+                'active' => l.planSavedActive,
                 _ => p.lifecycle,
               },
               onTap: () => push(context, p.isDraft ? PlanReviewScreen(planId: p.id) : PlanDetailScreen(planId: p.id)),
             ),
           if (others.any((p) => p.isArchived))
-            GroupRow(icon: Icons.inventory_2_outlined, tone: Tone.neutral, title: 'Archived plans (${others.where((p) => p.isArchived).length})', onTap: () => push(context, const ArchivedPlansScreen())),
+            GroupRow(icon: Icons.inventory_2_outlined, tone: Tone.neutral, title: l.planArchivedCount(others.where((p) => p.isArchived).length), onTap: () => push(context, const ArchivedPlansScreen())),
         ]),
       ],
     ]);
@@ -324,57 +331,58 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final rotation = rotationOf(plan, occasions, workouts);
     final position = planWeek(plan, today);
     final minutes = plan.isBuilt ? plannedMinutes(plan) : null;
+    final l = context.l10n;
     final note = [
-      if (position == 0) 'Not started',
-      if (plan.isPaused) 'Paused',
-      if (plan.endDate != null) 'Ends ${shortDate(plan.endDate!)}' else if (plan.isOngoing) 'Ongoing, no end date',
+      if (position == 0) l.planNotStarted,
+      if (plan.isPaused) l.planPaused,
+      if (plan.endDate != null) l.planEnds(shortDate(plan.endDate!)) else if (plan.isOngoing) l.planOngoingNoEnd,
     ].join(' · ');
     return [
       _TrainPass(
         title: plan.title,
         // Calendar position and completion are two different facts, shown separately.
-        week: position == 0 ? 'Starts ${dayMonth(plan.startDate)}' : plan.isOngoing ? 'Week $position' : 'Week $position of ${plan.blockWeeks}',
+        week: position == 0 ? l.planStarts(dayMonth(plan.startDate)) : plan.isOngoing ? l.planWeekN(position) : l.planWeekNOfM(position, plan.blockWeeks),
         completion: rotation == null ? Completion.of(plan.occasions, workouts) : null,
         rotation: rotation, thisWeek: rotation == null ? 0 : creditedThisWeek(occasions, workouts, today),
         photo: plan.isActive && position > 0,
       ),
       Padding(padding: const EdgeInsets.only(top: 8), child: Text('${splitOf(ref, plan)} · ${scheduleMode(plan)}', key: const Key('plan-split'), style: context.body)),
-      if (minutes != null) Text('Planned time $minutes min', key: const Key('plan-time'), style: context.caption),
+      if (minutes != null) Text(l.planPlannedTime(minutes), key: const Key('plan-time'), style: context.caption),
       if (note.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note, style: context.caption)),
       if (plan.isPaused) ...[
         const SizedBox(height: 14),
-        const StatusLine(Icons.pause_circle_outline, 'Plan paused. No new workouts are expected, and nothing counts as missed while it is paused.'),
+        StatusLine(Icons.pause_circle_outline, l.planPausedLine),
         const SizedBox(height: 12),
-        PrimaryButton('Resume plan', key: const Key('plan-resume'), onPressed: () => push(context, ResumeReviewScreen(planId: plan.id))),
+        PrimaryButton(l.planResume, key: const Key('plan-resume'), onPressed: () => push(context, ResumeReviewScreen(planId: plan.id))),
       ],
       if (proposals.isNotEmpty) ...[
         const SizedBox(height: 14),
         GroupCard(children: [
           for (final p in proposals)
-            GroupRow(icon: Icons.tips_and_updates_outlined, tone: Tone.warning, title: 'Suggested change to review', subtitle: p.explanation, onTap: () => push(context, ProposalReviewScreen(proposalId: p.id))),
+            GroupRow(icon: Icons.tips_and_updates_outlined, tone: Tone.warning, title: l.planSuggestedChange, subtitle: p.explanation, onTap: () => push(context, ProposalReviewScreen(proposalId: p.id))),
         ]),
       ],
       if (rotation != null) ..._rotation(context, plan, today, workouts, occasions, rotation) else ..._weeks(context, plan, today, workouts),
       _between,
-      const SectionHeader('Manage this plan'),
+      SectionHeader(l.planManage),
       _gap,
       GroupCard(children: [
         if (plan.isBuilt)
-          GroupRow(key: const Key('plan-edit'), icon: Icons.edit_outlined, tone: Tone.neutral, title: 'Edit plan',
-              subtitle: 'Workouts, exercises and schedule from a date you choose. Recorded workouts never change.', onTap: () => openPlanEditor(context, ref, plan)),
-        if (plan.isActive) GroupRow(key: const Key('plan-pause'), icon: Icons.pause, tone: Tone.neutral, title: 'Pause plan', onTap: () => pausePlanFlow(context, ref, plan)),
+          GroupRow(key: const Key('plan-edit'), icon: Icons.edit_outlined, tone: Tone.neutral, title: l.planEdit,
+              subtitle: l.planEditSubtitle, onTap: () => openPlanEditor(context, ref, plan)),
+        if (plan.isActive) GroupRow(key: const Key('plan-pause'), icon: Icons.pause, tone: Tone.neutral, title: l.planPause, onTap: () => pausePlanFlow(context, ref, plan)),
         if (plan.isBuilt)
-          GroupRow(key: const Key('plan-duplicate'), icon: Icons.copy_outlined, tone: Tone.neutral, title: 'Duplicate plan',
-              subtitle: 'A new draft with the same workouts and schedule. This plan stays as it is.', onTap: () => openPlanEditor(context, ref, plan, duplicate: true)),
+          GroupRow(key: const Key('plan-duplicate'), icon: Icons.copy_outlined, tone: Tone.neutral, title: l.planDuplicate,
+              subtitle: l.planDuplicateSubtitle, onTap: () => openPlanEditor(context, ref, plan, duplicate: true)),
         // A reviewed swap in the remaining workouts (a built plan's own workouts follow it). A rotation has no
         // remaining dated workouts to swap in: edit it instead.
         if (!plan.isRotating)
-          GroupRow(icon: Icons.swap_horiz, tone: Tone.neutral, title: 'Replace a movement in remaining workouts', onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
-        GroupRow(icon: Icons.flag_outlined, tone: Tone.neutral, title: 'Review or finish this block', onTap: () => push(context, BlockReviewScreen(planId: plan.id))),
-        GroupRow(icon: Icons.add, tone: Tone.neutral, title: 'Create a different plan', subtitle: 'Starting it will ask before replacing this one.', onTap: () => push(context, const CreatePlanScreen())),
+          GroupRow(icon: Icons.swap_horiz, tone: Tone.neutral, title: l.planReplaceMovement, onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
+        GroupRow(icon: Icons.flag_outlined, tone: Tone.neutral, title: l.planReviewBlockRow, onTap: () => push(context, BlockReviewScreen(planId: plan.id))),
+        GroupRow(icon: Icons.add, tone: Tone.neutral, title: l.planCreateDifferent, subtitle: l.planCreateDifferentSubtitle, onTap: () => push(context, const CreatePlanScreen())),
       ]),
       _gap,
-      Text('Your primary plan is paused, finished or replaced before it can be archived. Saved and past plans can be archived from their page.', style: context.caption),
+      Text(l.planArchiveNote, style: context.caption),
     ];
   }
 
@@ -383,26 +391,27 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final weeks = planWeeks(plan, today, workouts);
     final week = weeks.where((w) => w.number == _picked).firstOrNull ?? focusWeek(weeks);
     if (week == null) return const [];
+    final l = context.l10n;
     return [
       _between,
-      const SectionHeader('Choose a week'),
+      SectionHeader(l.planChooseWeek),
       _gap,
       WeekGrid(weeks: weeks, selected: week.number, stateOf: (w) => weekStateOf(w, plan, today, workouts), onSelect: (n) => setState(() => _picked = n)),
       _between,
-      SectionHeader(week.isCurrent ? 'This week' : 'Week ${week.number}', detail: week.range,
-          trailing: week.completion.eligible == 0 ? null : Text('${week.completion.completed} of ${week.completion.eligible} completed', style: context.numStyle(14.5))),
+      SectionHeader(week.isCurrent ? l.planThisWeek : l.planWeekN(week.number), detail: week.range,
+          trailing: week.completion.eligible == 0 ? null : Text(l.planCompletedOf(week.completion.completed, week.completion.eligible), style: context.numStyle(14.5))),
       if (week.completion.eligible > 0) ...[
         _gap,
         Row(children: [
-          Expanded(child: ProgressRail(week.completion.fraction, label: 'Workouts completed in this week')),
+          Expanded(child: ProgressRail(week.completion.fraction, label: l.planWeekRailLabel)),
           const SizedBox(width: 12),
-          ExcludeSemantics(child: Text('${(week.completion.fraction * 100).round()}%', style: context.numStyle(14.5, color: context.c.secondary))),
+          ExcludeSemantics(child: Text(formatPercent(week.completion.fraction), style: context.numStyle(14.5, color: context.c.secondary))),
         ]),
       ],
       const SizedBox(height: 16),
       WeekDayStrip(week: week, plan: plan, today: today, workouts: workouts),
       const SizedBox(height: 14),
-      if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('No workouts are planned in this week.', style: context.caption)),
+      if (week.occasions.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text(l.planNoWorkoutsThisWeek, style: context.caption)),
       _rows([for (final o in week.occasions) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), today: today)]),
     ];
   }
@@ -417,30 +426,28 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final end = addDays(today, 6);
     final days7 = PlanWeek(number: 0, start: today, end: end, occasions: [for (final o in ahead) if (o.scheduledDate.compareTo(end) <= 0) o],
         completion: const Completion(0, 0), isCurrent: true, isPast: false);
-    String? noteOf(Occasion o) => o.id == rotation.next?.id ? 'Next in the cycle' : o.isVirtual ? 'Projected' : null;
+    final l = context.l10n;
+    String? noteOf(Occasion o) => o.id == rotation.next?.id ? l.planNextInCycle : o.isVirtual ? l.planProjected : null;
     return [
       _between,
-      SectionHeader('Your cycle', detail: 'Cycle ${rotation.cyclesDone + 1}'),
+      SectionHeader(l.planYourCycle, detail: l.planCycleN(rotation.cyclesDone + 1)),
       _gap,
       _CycleStrip(cycle: rotation.cycle, position: rotation.next == null ? null : rotation.position),
       _gap,
-      Text(
-          'A rotation has no fixed dates. The next workout waits for you until you finish or skip it, and the cycle carries on across weeks. '
-          '${days.isEmpty ? 'Upcoming days assume you train every day.' : 'Upcoming days follow your training days (${days.map(weekdayShort).join(', ')}); the others are rest days.'}',
-          style: context.caption),
+      Text(days.isEmpty ? l.planRotationNoteEveryDay : l.planRotationNoteDays(days.map(weekdayShort).join(l.planListComma)), style: context.caption),
       _between,
-      SectionHeader('Coming up', detail: dateRange(today, end)),
+      SectionHeader(l.planComingUp, detail: dateRange(today, end)),
       _gap,
       WeekDayStrip(week: days7, plan: plan, today: today, workouts: workouts),
       const SizedBox(height: 14),
-      if (ahead.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('Nothing is left in this plan.', style: context.caption)),
+      if (ahead.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text(l.planNothingLeft, style: context.caption)),
       _rows([
         for (final o in ahead)
           _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), today: today, rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}', note: noteOf(o)),
       ]),
       if (recent.isNotEmpty) ...[
         _between,
-        const SectionHeader('Recent sessions'),
+        SectionHeader(l.planRecentSessions),
         _gap,
         _rows([for (final o in recent) _OccasionRow(plan: plan, occasion: o, status: statusOf(o, plan, today, workouts), today: today, rowKey: 'rotation-${o.sequenceIndex ?? o.ordinal - 1}')]),
       ],
@@ -470,7 +477,7 @@ class _CycleStrip extends StatelessWidget {
         ),
         child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(w.name, style: context.sansStyle(15, weight: FontWeight.w600)),
-          if (next) Text('Next', style: context.numStyle(12.5, color: c.accent)),
+          if (next) Text(context.l10n.planNext, style: context.numStyle(12.5, color: c.accent)),
         ]),
       );
     }
@@ -479,7 +486,7 @@ class _CycleStrip extends StatelessWidget {
       for (final (i, w) in cycle.indexed) ...[
         if (i > 0) ExcludeSemantics(child: Icon(Icons.arrow_forward, size: 16, color: context.c.secondary)),
         Semantics(
-          label: 'Step ${i + 1} of ${cycle.length}, ${w.name}${i == position ? ', next' : ''}',
+          label: i == position ? context.l10n.planCycleStepNextSemantics(i + 1, cycle.length, w.name) : context.l10n.planCycleStepSemantics(i + 1, cycle.length, w.name),
           // The next step takes the panel palette: dark ink and the deep accent on the pale tint, in Light and Dark.
           child: ExcludeSemantics(child: i == position ? PanelTheme(child: Builder(builder: (context) => step(context, i, w))) : step(context, i, w)),
         ),
@@ -504,18 +511,19 @@ class _TrainPass extends StatelessWidget {
   Widget build(BuildContext context) {
     final done = completion ?? const Completion(0, 0);
     final measured = done.eligible > 0;
-    final percent = '${(done.fraction * 100).round()}%';
+    final percent = formatPercent(done.fraction);
+    final l = context.l10n;
     final r = rotation;
     final cycleLine = r == null
         ? null
         : r.next == null
-            ? 'Cycle ${r.cyclesDone + 1} · nothing left'
-            : 'Cycle ${r.cyclesDone + 1} · step ${r.position + 1} of ${r.cycle.length} · ${r.next!.title} next';
+            ? l.planCycleNothingLeft(r.cyclesDone + 1)
+            : l.planCycleLine(r.cyclesDone + 1, r.position + 1, r.cycle.length, r.next!.title);
     return Semantics(
       container: true,
       label: r == null
-          ? '$title. $week. ${done.completed} / ${done.eligible} workouts completed${measured ? ', $percent' : ''}.'
-          : '$title. $week. $thisWeek ${thisWeek == 1 ? 'session' : 'sessions'} completed this week. $cycleLine.',
+          ? measured ? l.planPassSemanticsPercent(title, week, done.completed, done.eligible, percent) : l.planPassSemantics(title, week, done.completed, done.eligible)
+          : l.planPassRotationSemantics(title, week, thisWeek, cycleLine!),
       child: ExcludeSemantics(
         child: PhotoPanel(
           key: const Key('train-pass'),
@@ -528,7 +536,7 @@ class _TrainPass extends StatelessWidget {
               Row(children: [
                 Icon(Icons.event_note_outlined, size: 18, color: c.secondary),
                 const SizedBox(width: 6),
-                const Flexible(child: Overline('Training plan')),
+                Flexible(child: Overline(l.planTrainingPlanOverline)),
               ]),
               const SizedBox(height: 4),
               Text(title, style: context.pageTitleStyle(30)),
@@ -537,12 +545,12 @@ class _TrainPass extends StatelessWidget {
               if (r == null) ...[
                 Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
                   Text.rich(TextSpan(text: '${done.completed}', children: [TextSpan(text: ' / ${done.eligible}', style: TextStyle(color: c.secondary))]), style: context.titleStyle(28)),
-                  Padding(padding: const EdgeInsets.only(bottom: 3), child: Text('Workouts completed', style: context.sansStyle(15, color: c.secondary))),
+                  Padding(padding: const EdgeInsets.only(bottom: 3), child: Text(l.planWorkoutsCompleted, style: context.sansStyle(15, color: c.secondary))),
                 ]),
                 if (measured) ...[
                   const SizedBox(height: 10),
                   Row(children: [
-                    Expanded(child: ProgressRail(done.fraction, label: 'Workouts completed')),
+                    Expanded(child: ProgressRail(done.fraction, label: l.planWorkoutsCompleted)),
                     const SizedBox(width: 10),
                     Text(percent, style: context.numStyle(15)),
                   ]),
@@ -550,7 +558,7 @@ class _TrainPass extends StatelessWidget {
               ] else ...[
                 Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
                   Text('$thisWeek', style: context.titleStyle(28)),
-                  Padding(padding: const EdgeInsets.only(bottom: 3), child: Text('${thisWeek == 1 ? 'Session' : 'Sessions'} completed this week', style: context.sansStyle(15, color: c.secondary))),
+                  Padding(padding: const EdgeInsets.only(bottom: 3), child: Text(l.planSessionsThisWeek(thisWeek), style: context.sansStyle(15, color: c.secondary))),
                 ]),
                 const SizedBox(height: 4),
                 Text(cycleLine!, style: context.numStyle(15, color: c.secondary, weight: FontWeight.w500)),
@@ -564,9 +572,9 @@ class _TrainPass extends StatelessWidget {
 }
 
 /// "5 exercises · 18 planned sets"; the sets are left out when no movement has a target.
-String _plannedSummary(List<Prescription> prescription) {
+String _plannedSummary(AppLocalizations l, List<Prescription> prescription) {
   final sets = prescription.fold(0, (n, e) => n + (e.targetSets ?? 0));
-  return '${prescription.length} ${prescription.length == 1 ? 'exercise' : 'exercises'}${sets == 0 ? '' : ' · $sets planned ${sets == 1 ? 'set' : 'sets'}'}';
+  return [l.planExerciseCount(prescription.length), if (sets != 0) l.planPlannedSetCount(sets)].join(' · ');
 }
 
 /// The rows of one week (or of the rotation ahead) in one quiet card, so the days read as a single schedule.
@@ -589,25 +597,26 @@ class _OccasionRow extends ConsumerWidget {
     final pill = OccasionPill(status);
     final day = parseDayKey(o.scheduledDate);
     final isToday = o.scheduledDate == today;
-    final summary = _plannedSummary(o.prescription);
-    final moved = o.wasMoved ? 'Moved · originally ${shortDate(o.originalDate)}' : null;
+    final l = context.l10n;
+    final summary = _plannedSummary(l, o.prescription);
+    final moved = o.wasMoved ? l.planMovedOriginally(shortDate(o.originalDate)) : null;
     final extra = [?moved, ?note].join(' · ');
     // With large text the state sits under the title instead of squeezing it.
     final below = MediaQuery.textScalerOf(context).scale(10) > 13;
     final row = Pressable(
       key: Key(rowKey ?? 'occasion-${o.weekNumber}-${o.ordinal}'),
       borderRadius: BorderRadius.circular(Radii.field),
-      semanticLabel: '${o.title}, ${longDate(o.scheduledDate)}${isToday ? ', today' : ''}, $summary${extra.isEmpty ? '' : ', $extra'}, ${status.label}',
+      semanticLabel: [o.title, longDate(o.scheduledDate), if (isToday) l.planTodayLower, summary, if (extra.isNotEmpty) extra, status.label].join(l.planListComma),
       onTap: () => showOccasionSheet(context, ref, plan, o),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 8, 12),
         child: Row(children: [
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 44),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(weekdayShort(day.weekday), style: context.sansStyle(13, color: isToday ? c.text : c.secondary, weight: isToday ? FontWeight.w700 : FontWeight.w400)),
               Text('${day.day}', style: context.numStyle(18)),
-              if (isToday) Text('Today', style: context.sansStyle(12.5, color: c.accent, weight: FontWeight.w700)),
+              if (isToday) Text(l.planTodayLabel, style: context.sansStyle(12.5, color: c.accent, weight: FontWeight.w700)),
             ]),
           ),
           const SizedBox(width: 12),
@@ -623,7 +632,7 @@ class _OccasionRow extends ConsumerWidget {
               if (below) Padding(padding: const EdgeInsets.only(top: 6), child: Align(alignment: AlignmentDirectional.centerStart, child: pill)),
             ]),
           ),
-          Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.chevron_right, size: 22, color: c.secondary)),
+          Padding(padding: const EdgeInsetsDirectional.only(start: 4), child: Icon(Icons.chevron_right, size: 22, color: c.secondary)),
         ]),
       ),
     );

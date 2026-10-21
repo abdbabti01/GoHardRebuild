@@ -59,13 +59,13 @@ void main() {
     final w = summarizeWeek(monday: '2026-10-19', today: '2026-10-22', workouts: workouts, runs: runs, goals: [_g('2026-10-19', 3, 2)]);
     expect(w.workouts.map((x) => x.id), ['full', 'partial', 'manual']);
     expect(w.activities.map((x) => x.id), ['walk', 'run', 'intervals'], reason: 'one interval session is one activity; open, deleted and zero-time ones do not count');
-    expect((w.runs.length, w.walks.length, w.activityWord), (2, 1, 'Run / Walk'));
+    expect((w.runs.length, w.walks.length, w.activityMix), (2, 1, ActivityMix.mixed));
     expect((w.distance.value, w.distance.counted, w.distance.missing, w.distance.incomplete), (5500.0, 2, 1, true), reason: 'unknown distance is not zero');
     expect(w.activeSeconds.value, 1800 + 1200 + 1500);
     expect((w.workoutsTarget, w.runWalkTarget, w.isComplete), (3, 2, false));
 
     final walks = summarizeWeek(monday: '2026-10-19', today: '2026-10-30', workouts: const [], runs: [_r('a', '2026-10-19'), _r('b', '2026-10-20', meters: 1000)], goals: const []);
-    expect((walks.activityWord, walks.distance.value, walks.distance.incomplete), ('Walking', 3000.0, false));
+    expect((walks.activityMix, walks.distance.value, walks.distance.incomplete), (ActivityMix.walking, 3000.0, false));
     final empty = summarizeWeek(monday: '2026-10-12', today: '2026-10-30', workouts: const [], runs: const [], goals: const []);
     expect((empty.isEmpty, empty.distance.known, empty.hasGoals), (true, false, false));
   });

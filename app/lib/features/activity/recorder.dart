@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/device_prefs.dart';
+import '../../core/language.dart' show appL10nProvider;
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import 'announcer.dart';
@@ -37,6 +38,9 @@ enum RecState {
   review,
 }
 
+/// What the recording screen must say: entries are not being stored, or the GPS stream stopped (shown in the app language).
+enum RecIssue { notSaving, gpsStopped }
+
 @immutable
 class RecorderView {
   const RecorderView({this.state = RecState.idle, this.run, this.analysis, this.last, this.gpsOn = false, this.problem, this.timerOnly = false, this.gpsError,
@@ -54,10 +58,10 @@ class RecorderView {
   final bool gpsOn, timerOnly;
 
   /// Something the person must know: GPS points are not being saved on this phone.
-  final String? problem;
+  final RecIssue? problem;
 
   /// The GPS stream stopped with an error.
-  final String? gpsError;
+  final RecIssue? gpsError;
 
   /// The interval setup this session follows (null: a free Run / Walk), the active times (ms) of its skips, and
   /// whether the person chose to continue freely after the last phase.
@@ -73,7 +77,7 @@ class RecorderView {
 
   bool get live => state == RecState.recording || state == RecState.paused || state == RecState.autoPaused;
   bool get open => state != RecState.idle;
-  RecorderView copy({RecState? state, Run? run, Reading? last, bool? gpsOn, String? problem, bool clearProblem = false, bool? timerOnly, String? gpsError, bool clearGpsError = false,
+  RecorderView copy({RecState? state, Run? run, Reading? last, bool? gpsOn, RecIssue? problem, bool clearProblem = false, bool? timerOnly, RecIssue? gpsError, bool clearGpsError = false,
           List<int>? skips, bool? free, String? stepsState}) =>
       RecorderView(state: state ?? this.state, run: run ?? this.run, analysis: analysis, last: last ?? this.last, gpsOn: gpsOn ?? this.gpsOn,
           problem: clearProblem ? null : problem ?? this.problem, timerOnly: timerOnly ?? this.timerOnly, gpsError: clearGpsError ? null : gpsError ?? this.gpsError,
@@ -149,7 +153,7 @@ class Recorder extends Notifier<RecorderView> {
     }
   }
 
-  static const _notSaving = 'This phone is not saving the recording right now. Keep GoHard open; it keeps trying.';
+  static const _notSaving = RecIssue.notSaving;
 
   /// Entries are written one by one, in order. A failed write is kept and retried before the next one, and the
   /// screen says so until it succeeds.
@@ -192,7 +196,7 @@ class Recorder extends Notifier<RecorderView> {
   void _listen() {
     if (_sub != null || state.timerOnly) return;
     _sub = _source.watch(recording: true, type: state.run?.activityType ?? 'run').listen(_onReading, onError: (Object _) {
-      _emit(state.copy(gpsError: 'GPS stopped giving positions. The timer goes on; distance resumes when GPS does.'));
+      _emit(state.copy(gpsError: RecIssue.gpsStopped));
     });
     _emit(state.copy(gpsOn: true, clearGpsError: true));
     _checkpoint ??= Timer.periodic(checkpointEvery, (_) {
@@ -282,7 +286,7 @@ class Recorder extends Notifier<RecorderView> {
     final step = recordingCues(
       marks: _marks, activityId: run.id, plan: state.free ? null : state.plan, skips: state.skips, activeMs: a.activeMs(now),
       distanceMeters: a.measured || a.hasLegacy ? a.distance + a.legacyDistance : null, paceSecondsPerUnit: a.avgMovingPace(unit.meters), unit: unit,
-      prefs: ref.read(movePrefsProvider),
+      prefs: ref.read(movePrefsProvider), l: ref.read(appL10nProvider),
     );
     final announcer = ref.read(announcerProvider.notifier);
     if (step.tick) announcer.tick();
@@ -487,7 +491,7 @@ class Recorder extends Notifier<RecorderView> {
     final records = newRecords(saved, [for (final r in others) r.value]);
     if (records.isEmpty) return;
     final unit = ref.read(devicePrefsProvider).distance;
-    final text = recordMessage(records, unit.distance);
+    final text = recordMessage(records, unit.distance, l10n: ref.read(appL10nProvider));
     ref.read(recordCueProvider.notifier).set((runId: saved.id, text: text));
     ref.read(announcerProvider.notifier).say(Cue(text, key: 'record:${saved.id}', priority: Cue.record));
   }

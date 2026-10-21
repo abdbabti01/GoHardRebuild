@@ -141,7 +141,8 @@ class RigArt {
 
 /// How the bust sits in its box. [edge]: mirrored, so it faces left towards a bubble on its left, leaning in around
 /// the box's right edge (Today's screen edge). [inline]: as painted, facing right towards a bubble on its right,
-/// whole in a small box (pages and sheets).
+/// whole in a small box (pages and sheets). Right to left, [edge] leans in around the box's left edge instead, as
+/// painted (facing the bubble on its right): the artwork itself is never flipped for a language.
 enum RigFrame { edge, inline }
 
 /// Everything the rig can show. Each value is small by design.
@@ -181,19 +182,25 @@ final rigImageProvider = FutureProvider.family<ui.Image?, CoachGuide>((ref, g) a
 /// Where the painting lands in a [size] box in a [frame] under a pose: the one place this mapping is written, used to
 /// draw and to anchor (a bubble's tail at the mouth follows the head exactly).
 class RigGeometry {
-  RigGeometry(this.art, this.frame, this.size) : d = size.height / (art.bottom - art.top) {
-    // The face sits at 46% of the box (edge, the back of the head runs off the edge) or 56% (inline, whole).
-    left = frame == RigFrame.edge ? size.width * 0.46 - d * (1 - art.faceX) : size.width * 0.56 - d * art.faceX;
+  RigGeometry(this.art, this.frame, this.size, {this.direction = TextDirection.ltr}) : d = size.height / (art.bottom - art.top) {
+    // The face sits at 46% of the box (edge, the back of the head runs off the edge), its mirror image 54% (edge right
+    // to left) or 56% (inline, whole).
+    left = mirrored
+        ? size.width * 0.46 - d * (1 - art.faceX)
+        : size.width * (frame == RigFrame.edge ? 0.54 : 0.56) - d * art.faceX;
   }
   final RigArt art;
   final RigFrame frame;
   final Size size;
 
+  /// Right to left, an [RigFrame.edge] bust leans in from the left edge, as painted.
+  final TextDirection direction;
+
   /// The source square's side in logical pixels.
   final double d;
   late final double left;
 
-  bool get mirrored => frame == RigFrame.edge;
+  bool get mirrored => frame == RigFrame.edge && direction == TextDirection.ltr;
 
   /// Max head tilt, radians, and the nod's drop and squash, as fractions of the source.
   static const tiltMax = 0.075, _nodDrop = 0.014, _nodSquash = 0.03, _browLift = 0.012, _breathLift = 0.004;
@@ -232,6 +239,7 @@ class RigGeometry {
   /// The entrance's slide and lean, as applied to the canvas before the bust is drawn.
   Matrix4 entrance(RigPose s) {
     final m = Matrix4.identity();
+    // The edge it comes from: the right one when mirrored, otherwise the left.
     final edgeX = mirrored ? size.width : 0.0;
     m.translateByDouble((mirrored ? 1 : -1) * size.width * 0.9 * (1 - s.slide), 0, 0, 1);
     if (s.lean != 0) {
@@ -273,7 +281,7 @@ class RigPortrait extends ConsumerWidget {
         child: switch (image) {
           AsyncData(value: final ui.Image img) => ClipRect(
             child: RepaintBoundary(
-              child: CustomPaint(key: Key('coach-rig-${guide.name}'), painter: RigPainter(img, RigArt.of(guide), pose, frame: frame)),
+              child: CustomPaint(key: Key('coach-rig-${guide.name}'), painter: RigPainter(img, RigArt.of(guide), pose, frame: frame, direction: Directionality.of(context))),
             ),
           ),
           // Missing or unreadable texture: the plain round avatar, still and quiet.
@@ -292,7 +300,7 @@ class RigPortrait extends ConsumerWidget {
 const _grid = 18;
 
 class RigPainter extends CustomPainter {
-  RigPainter(this.image, this.art, this.pose, {this.frame = RigFrame.edge}) : super(repaint: pose) {
+  RigPainter(this.image, this.art, this.pose, {this.frame = RigFrame.edge, this.direction = TextDirection.ltr}) : super(repaint: pose) {
     final n = _grid + 1;
     _tex = Float32List(n * n * 2);
     for (var j = 0; j < n; j++) {
@@ -316,13 +324,14 @@ class RigPainter extends CustomPainter {
   final ui.Image image;
   final RigArt art;
   final RigFrame frame;
+  final TextDirection direction;
   final ValueListenable<RigPose> pose;
   late final Float32List _tex;
   late final Uint16List _indices;
   late final ImageShader _shader;
   RigGeometry? _geo;
 
-  RigGeometry _geometry(Size size) => _geo != null && _geo!.size == size ? _geo! : _geo = RigGeometry(art, frame, size);
+  RigGeometry _geometry(Size size) => _geo != null && _geo!.size == size ? _geo! : _geo = RigGeometry(art, frame, size, direction: direction);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -501,5 +510,5 @@ class RigPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(RigPainter old) => old.image != image || old.art != art || old.pose != pose || old.frame != frame;
+  bool shouldRepaint(RigPainter old) => old.image != image || old.art != art || old.pose != pose || old.frame != frame || old.direction != direction;
 }

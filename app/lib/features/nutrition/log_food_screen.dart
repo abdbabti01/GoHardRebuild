@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/compatibility.dart';
 import '../../core/device_prefs.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -97,7 +98,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     final e = s.entry, common = s.common;
     // A food logged before starts from the same amount and values it was logged with, for the day and meal chosen now.
     _open(e == null
-        ? FoodDraft.of(_withPortions(s.item), dayKey: widget.dayKey, meal: _meal, name: common?.name, unitId: common?.unitId)
+        ? FoodDraft.of(_withPortions(s.item), dayKey: widget.dayKey, meal: _meal, name: common?.nameIn(foodLang(context.l10n)), unitId: common?.unitId)
         : FoodDraft(dayKey: widget.dayKey, meal: _meal, name: e.name, amount: e.amountDescription, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat,
             item: e.source == null ? null : s.item, quantity: (e.source?['quantity'] as num?)?.toDouble(), unitId: e.source?['unit'] as String?));
   }
@@ -177,35 +178,40 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       await _open(FoodDraft.of(_withPortions(item), dayKey: widget.dayKey, meal: _meal));
     } on LookupFailure catch (e) {
       if (!mounted) return;
+      final l = context.l10n, shown = ltr(code);
       setState(() {
         _lookingUp = null;
         _barcodeMessage = switch (e.problem) {
-          LookupProblem.notFound => 'No product was found for barcode $code. You can search for it by name or create your own food.',
+          LookupProblem.notFound => l.foodBarcodeNotFound(shown),
           // The app knows the lookup did not get through, not why.
-          LookupProblem.offline => 'Barcode $code could not be looked up just now, and it has not been looked up on this phone before. That can be this phone\'s connection or the server. You can create your own food.',
-          LookupProblem.timeout => 'The product database took too long to answer for barcode $code. Try again, or create your own food.',
-          LookupProblem.rateLimited => 'The product database has had too many requests for now. Try again in a few minutes, or create your own food.',
-          LookupProblem.invalid => 'That is not a product barcode.',
-          _ => 'The product database is not answering right now. Try again, or create your own food.',
+          LookupProblem.offline => l.foodBarcodeOffline(shown),
+          LookupProblem.timeout => l.foodBarcodeTimeout(shown),
+          LookupProblem.rateLimited => l.foodBarcodeRateLimited,
+          LookupProblem.invalid => l.foodBarcodeInvalid,
+          _ => l.foodBarcodeUnavailable,
         };
       });
     }
   }
 
   /// Why the wider search produced nothing, said as what the app actually knows.
-  static String _problemText(LookupProblem problem, {required bool hasLocal}) {
-    final still = hasLocal ? ' The foods above are from this phone and still work.' : ' You can still scan a barcode or create your own food.';
+  static String _problemText(AppLocalizations l, LookupProblem problem, {required bool hasLocal}) {
+    final still = hasLocal ? l.foodSearchStillLocal : l.foodSearchStillScan;
     return switch (problem) {
-      LookupProblem.offline => 'The wider food database could not be reached just now. That can be this phone\'s connection or the server.$still',
-      LookupProblem.timeout => 'The wider food database took too long to answer.$still',
-      LookupProblem.rateLimited => 'The wider food database has had too many requests for now. Try again in a few minutes.$still',
-      LookupProblem.notConfigured => 'Wider food search is not set up on this server. Common foods, your own foods and barcodes still work.',
-      LookupProblem.invalid || LookupProblem.notFound => 'That search could not be used. Try other words.',
-      LookupProblem.unavailable => 'The wider food database is not answering right now. Try again in a moment.$still',
+      LookupProblem.offline => '${l.foodSearchOffline} $still',
+      LookupProblem.timeout => '${l.foodSearchTimeout} $still',
+      LookupProblem.rateLimited => '${l.foodSearchRateLimited} $still',
+      LookupProblem.notConfigured => l.foodSearchNotConfigured,
+      LookupProblem.invalid || LookupProblem.notFound => l.foodSearchInvalid,
+      LookupProblem.unavailable => '${l.foodSearchUnavailable} $still',
     };
   }
 
-  Widget _row(Suggestion s, String keyPrefix, {String? id}) => _FoodRow(key: Key('$keyPrefix-${id ?? s.item.key}'), facts: rowFacts(s), onTap: () => _choose(s));
+  /// Arabic letters typed, or an app language other than English: the wider database (USDA, in English) may not
+  /// understand the words even though the food exists.
+  bool _nonEnglish(String q) => RegExp('[؀-ۿ]').hasMatch(q) || foodLang(context.l10n) != 'en';
+
+  Widget _row(Suggestion s, String keyPrefix, {String? id}) => _FoodRow(key: Key('$keyPrefix-${id ?? s.item.key}'), facts: rowFacts(s, context.l10n), onTap: () => _choose(s));
 
   Widget _status(IconData icon, String text, {Key? key, Tone tone = Tone.neutral}) => Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: StatusLine(icon, text, key: key, tone: tone));
 
@@ -213,13 +219,15 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
 
   /// The Search list for what is typed: the owner's matches and the catalog's, then the wider database.
   List<Widget> _searchRows(CommonFoodCatalog catalog, List<Json> saved, List<FoodEntry> journal, List<FoodItem> seen, bool supported) {
+    final l = context.l10n;
     final q = _query.text.trim(), category = _category;
+    final categoryName = category == null ? null : foodCategoryLabel(l, category);
     if (q.isEmpty && category == null) {
       final recent = localSuggestions(saved: const [], journal: journal, seen: const []).take(5);
       return [
-        if (recent.isNotEmpty) const _GroupLabel('Recent'),
+        if (recent.isNotEmpty) _GroupLabel(l.foodScopeRecent),
         for (final s in recent) _row(Suggestion(s.item, s.origin, entry: s.entry, common: catalog.of(s.item)), 'recent'),
-        _note('Type a food, such as "egg" or "rice", or pick a category. Everyday foods and your own are found without a connection.', const Key('food-search-guide')),
+        _note(l.foodSearchGuide, const Key('food-search-guide')),
       ];
     }
 
@@ -229,9 +237,9 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     final local = searchLocal(q, catalog: catalog, saved: saved, journal: journal, seen: [for (final i in seen) if (!fresh.contains(i.key)) i], category: category);
     final hasLocal = local.own.isNotEmpty || local.common.isNotEmpty;
     int best(List<Suggestion> l) => l.isEmpty ? 9 : matchScore(q, _fields(l.first)) ?? 9;
-    final own = [if (local.own.isNotEmpty) const _GroupLabel('Your foods'), for (final s in local.own.take(12)) _row(s, 'local')];
+    final own = [if (local.own.isNotEmpty) _GroupLabel(l.foodGroupYours), for (final s in local.own.take(12)) _row(s, 'local')];
     final common = [
-      if (local.common.isNotEmpty) _GroupLabel(category ?? 'Common foods'),
+      if (local.common.isNotEmpty) _GroupLabel(categoryName ?? l.foodGroupCommon),
       for (final s in category == null ? local.common.take(12) : local.common) _row(s, 'common', id: s.common!.id),
     ];
     final shown = {for (final s in local.own) s.item.key, for (final s in local.common) s.item.key};
@@ -241,39 +249,41 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       // Whichever group holds the better match comes first; your own foods win a tie.
       ...(best(local.common) < best(local.own) ? [...common, ...own] : [...own, ...common]),
       if (category != null) ...[
-        if (!hasLocal) _status(Icons.search_off, q.isEmpty ? 'No common foods are filed under $category.' : 'No common food in $category matches "$q".', key: const Key('food-search-empty')),
+        if (!hasLocal) _status(Icons.search_off, q.isEmpty ? l.foodCategoryEmpty(categoryName!) : l.foodCategoryNoMatch(categoryName!, q), key: const Key('food-search-empty')),
         // A category is a property of the catalog. Foods without one are left out, and that is said.
-        _note('Only common foods have a category. Choose All to include your own foods and the wider database.', const Key('food-category-note')),
+        _note(l.foodCategoryNote, const Key('food-category-note')),
       ] else if (!supported)
-        _status(Icons.cloud_off_outlined, _problemText(LookupProblem.notConfigured, hasLocal: hasLocal), key: const Key('food-search-problem'))
+        _status(Icons.cloud_off_outlined, _problemText(l, LookupProblem.notConfigured, hasLocal: hasLocal), key: const Key('food-search-problem'))
       else if (_searching)
-        _status(Icons.hourglass_empty, 'Searching more foods…', key: const Key('food-search-busy'))
+        _status(Icons.hourglass_empty, l.foodSearchBusy, key: const Key('food-search-busy'))
       else if (_asked != _question) ...[
-        if (!hasLocal) _status(Icons.search, 'Nothing on this phone matches "$q".', key: const Key('food-search-local-empty')),
+        if (!hasLocal) _status(Icons.search, l.foodSearchLocalEmpty(q), key: const Key('food-search-local-empty')),
         if (_question.length >= 2)
-          _LinkRow(key: const Key('food-search-online'), title: 'Search more foods', subtitle: 'Look up "$q" in USDA FoodData Central', accent: true, onTap: _searchMore),
+          _LinkRow(key: const Key('food-search-online'), title: l.foodSearchMore, subtitle: l.foodSearchMoreSubtitle(q), accent: true, onTap: _searchMore),
       ] else if (_problem != null) ...[
-        _status(Icons.cloud_off_outlined, _problemText(_problem!, hasLocal: hasLocal), key: const Key('food-search-problem'), tone: Tone.warning),
-        if (_problem != LookupProblem.notConfigured) ListRow(key: const Key('food-search-retry'), icon: Icons.refresh, title: 'Try again', onTap: _searchMore),
+        _status(Icons.cloud_off_outlined, _problemText(l, _problem!, hasLocal: hasLocal), key: const Key('food-search-problem'), tone: Tone.warning),
+        if (_problem != LookupProblem.notConfigured) ListRow(key: const Key('food-search-retry'), icon: Icons.refresh, title: l.actionTryAgain, onTap: _searchMore),
       ] else if (found.isEmpty)
         // Said only when the database answered and had nothing (more): a failed search never reads as "no foods".
-        _status(Icons.search_off, hasLocal ? 'The wider database has no other foods for "$q".' : 'No foods were found for "$q". Try other words, scan the barcode, or create your own food.',
+        // In another language the provider may simply not know the words: the way on is said, never "no such food".
+        _status(Icons.search_off, _nonEnglish(q) ? l.foodSearchNoneNonEnglish(q) : hasLocal ? l.foodSearchNoOthers(q) : l.foodSearchNoneFound(q),
             key: const Key('food-search-empty'))
       else ...[
-        const _GroupLabel('More foods'),
+        _GroupLabel(l.foodGroupMore),
         for (final s in found) _row(s, 'result'),
-        _note('From USDA FoodData Central, in English, mostly foods sold or eaten in the United States. Values are as published and may differ from your packet.', const Key('food-search-credit')),
+        _note(l.foodSearchCredit, const Key('food-search-credit')),
       ],
     ];
   }
 
   /// One of the owner's own lists, narrowed by what is typed.
   List<Widget> _ownRows(CommonFoodCatalog catalog, List<Json> saved, List<FoodEntry> journal) {
+    final l = context.l10n;
     final q = _query.text.trim();
     final (origin, prefix, title, body) = switch (_scope) {
-      FoodScope.recent => (Origin.recent, 'recent', 'Nothing logged yet', 'Foods you log are listed here, ready to log again.'),
-      FoodScope.favourites => (Origin.favourite, 'favourite', 'No favourites yet', 'Mark a food with the star on its amount page to keep it here.'),
-      _ => (Origin.mine, 'mine', 'No foods of your own yet', 'Create your own food below, or use "Save to My foods" on any food\'s amount page.'),
+      FoodScope.recent => (Origin.recent, 'recent', l.foodRecentEmptyTitle, l.foodRecentEmptyBody),
+      FoodScope.favourites => (Origin.favourite, 'favourite', l.foodFavouritesEmptyTitle, l.foodFavouritesEmptyBody),
+      _ => (Origin.mine, 'mine', l.foodMineEmptyTitle, l.foodMineEmptyBody),
     };
     // Each list is built on its own, so a favourite that was also logged is in both.
     bool belongs(Json j) => origin == Origin.favourite ? j['isFavourite'] == true : FoodItem(j['item'] as Json? ?? const {}).source == 'user';
@@ -283,7 +293,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     ];
     final matching = rankByRelevance(q, all, _fields);
     return [
-      if (all.isEmpty) EmptyState(title, body) else if (matching.isEmpty) _status(Icons.search_off, 'Nothing in this list matches "$q".', key: const Key('food-search-empty')),
+      if (all.isEmpty) EmptyState(title, body) else if (matching.isEmpty) _status(Icons.search_off, l.foodListNoMatch(q), key: const Key('food-search-empty')),
       for (final s in matching.take(40)) _row(s, prefix),
     ];
   }
@@ -302,18 +312,19 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     final seen = ref.watch(seenFoodsProvider).value ?? const <FoodItem>[];
     final supported = ref.watch(compatibilityProvider).supports('food.search');
     final inset = context.inset;
+    final l = context.l10n;
 
     final top = Padding(
       padding: EdgeInsets.fromLTRB(inset, 4, inset, 0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
           IconButton(
-            key: const Key('food-back'), tooltip: 'Back', padding: EdgeInsets.zero, alignment: Alignment.centerLeft,
+            key: const Key('food-back'), tooltip: MaterialLocalizations.of(context).backButtonTooltip, padding: EdgeInsets.zero, alignment: AlignmentDirectional.centerStart,
             constraints: const BoxConstraints(minWidth: Targets.minimum, minHeight: Targets.minimum),
             icon: const Icon(Icons.arrow_back_ios_new, size: 22), onPressed: () => Navigator.maybePop(context),
           ),
-          const Expanded(child: Heading('Add food', size: 40, serif: true)),
-          const CoachHelpEntry(id: 'food.search', label: 'Help with finding a food'),
+          Expanded(child: Heading(l.foodAddTitle, size: 40, serif: true)),
+          CoachHelpEntry(id: 'food.search', label: l.foodHelpSearch),
         ]),
         Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
           _MealSelector(meal: _meal, onChanged: (m) => setState(() => _meal = m)),
@@ -329,13 +340,13 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
           },
           style: context.sansStyle(17),
           decoration: InputDecoration(
-            hintText: 'Search foods', prefixIcon: const Icon(Icons.search, size: 26), contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+            hintText: l.foodSearchHint, prefixIcon: const Icon(Icons.search, size: 26), contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(Radii.panel), borderSide: BorderSide(color: context.c.outline)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(Radii.panel), borderSide: BorderSide(color: context.c.accent, width: 2)),
             suffixIcon: q.isEmpty
                 ? null
                 : IconButton(
-                    key: const Key('food-search-clear'), tooltip: 'Clear search',
+                    key: const Key('food-search-clear'), tooltip: l.foodSearchClear,
                     icon: Container(width: 30, height: 30, decoration: BoxDecoration(color: context.c.sunken, shape: BoxShape.circle), child: Icon(Icons.close, size: 18, color: context.c.text)),
                     onPressed: () {
                       _query.clear();
@@ -345,11 +356,11 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
         ),
         const SizedBox(height: 10),
         // The second way in, as prominent as the field.
-        SecondaryButton('Scan barcode', key: const Key('food-scan'), icon: Icons.qr_code_scanner, onPressed: _lookingUp != null ? null : _scan),
+        SecondaryButton(l.foodScanBarcode, key: const Key('food-scan'), icon: Icons.qr_code_scanner, onPressed: _lookingUp != null ? null : _scan),
         const SizedBox(height: 10),
         _Tabs<FoodScope>(
           values: FoodScope.values, selected: _scope, keyPrefix: 'food-scope',
-          label: (s) => const {FoodScope.search: 'Search', FoodScope.recent: 'Recent', FoodScope.favourites: 'Favourites', FoodScope.mine: 'My foods'}[s]!,
+          label: (s) => switch (s) { FoodScope.search => l.foodScopeSearch, FoodScope.recent => l.foodScopeRecent, FoodScope.favourites => l.foodScopeFavourites, FoodScope.mine => l.foodScopeMine },
           onChanged: (s) {
             _scope = s;
             _changed();
@@ -361,9 +372,9 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     final rows = <Widget>[
       // At the top of the results, so the search field never moves: once, the first time this page is in view with no
       // keyboard up; afterwards from the help entry beside Scan. Typing a search puts it away: the results come first.
-      if (_query.text.trim().isEmpty) const CoachSpot(
-        id: 'food.search', introduce: true, padding: EdgeInsets.only(top: 4, bottom: 8),
-        say: CoachSay('Search for a food, scan a barcode or enter your own. Recent, Favourites and My foods are one tap away.'),
+      if (_query.text.trim().isEmpty) CoachSpot(
+        id: 'food.search', introduce: true, padding: const EdgeInsets.only(top: 4, bottom: 8),
+        say: CoachSay(l.foodSearchCoach),
       ),
       if (_scope == FoodScope.search && catalog.categories.isNotEmpty)
         _Chips(
@@ -373,25 +384,25 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             _changed();
           },
         ),
-      if (_lookingUp != null) _status(Icons.hourglass_empty, 'Looking up barcode $_lookingUp…'),
+      if (_lookingUp != null) _status(Icons.hourglass_empty, l.foodBarcodeLookingUp(ltr(_lookingUp!))),
       if (_barcodeMessage != null) _status(Icons.info_outline, _barcodeMessage!, key: const Key('barcode-message'), tone: Tone.warning),
       ...(_scope == FoodScope.search ? _searchRows(catalog, saved, journal, seen, supported) : _ownRows(catalog, saved, journal)),
       Padding(
         padding: const EdgeInsets.only(top: 16),
         child: GroupCard(children: [
           GroupRow(
-            key: const Key('food-manual'), icon: Icons.edit_outlined, title: 'Enter it yourself', subtitle: 'Can\'t find it? Create your own food',
+            key: const Key('food-manual'), icon: Icons.edit_outlined, title: l.foodManualTitle, subtitle: l.foodManualSubtitle,
             onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
           ),
         ]),
       ),
       Padding(
         padding: const EdgeInsets.only(top: 28),
-        child: Text('Choose a food to check the amount before logging.', key: const Key('food-footer'), style: context.caption),
+        child: Text(l.foodFooter, key: const Key('food-footer'), style: context.caption),
       ),
       Padding(
         padding: const EdgeInsets.only(top: 6),
-        child: Text('Common foods and wider search: USDA FoodData Central. Barcodes: Open Food Facts (Open Database License).', style: context.caption),
+        child: Text(l.foodCredits, style: context.caption),
       ),
     ];
 
@@ -431,12 +442,12 @@ class _MealSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
-        key: const Key('food-meal-select'), tooltip: 'Change meal', initialValue: meal, onSelected: onChanged, color: context.c.surface,
-        itemBuilder: (_) => [for (final m in meals) PopupMenuItem(key: Key('food-meal-option-$m'), value: m, child: Text(m))],
+        key: const Key('food-meal-select'), tooltip: context.l10n.foodChangeMeal, initialValue: meal, onSelected: onChanged, color: context.c.surface,
+        itemBuilder: (_) => [for (final m in meals) PopupMenuItem(key: Key('food-meal-option-$m'), value: m, child: Text(mealLabel(context.l10n, m)))],
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: Targets.minimum, minWidth: Targets.minimum),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Flexible(child: Text(meal, style: context.sansStyle(18, weight: FontWeight.w500, color: context.c.secondary))),
+            Flexible(child: Text(mealLabel(context.l10n, meal), style: context.sansStyle(18, weight: FontWeight.w500, color: context.c.secondary))),
             const SizedBox(width: 4),
             Icon(Icons.expand_more, size: 22, color: context.c.secondary),
           ]),
@@ -502,15 +513,13 @@ class _Chips extends StatelessWidget {
   final String? selected;
   final ValueChanged<String?> onChanged;
 
-  static const _short = {'Carbohydrates': 'Carbs'};
-
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(children: [
           for (final v in values)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: Semantics(
                 selected: v == selected, button: true, inMutuallyExclusiveGroup: true,
                 child: InkWell(
@@ -530,7 +539,7 @@ class _Chips extends StatelessWidget {
                         decoration: BoxDecoration(
                             color: v == selected ? context.c.accentSoft : context.c.surface, borderRadius: BorderRadius.circular(99),
                             border: Border.all(color: v == selected ? context.c.accent : context.c.divider, width: v == selected ? 1.5 : 1)),
-                        child: Text(v == null ? 'All' : _short[v] ?? v, style: context.sansStyle(14.5, weight: v == selected ? FontWeight.w700 : FontWeight.w500)),
+                        child: Text(v == null ? context.l10n.foodCategoryAll : foodCategoryLabel(context.l10n, v, short: true), style: context.sansStyle(14.5, weight: v == selected ? FontWeight.w700 : FontWeight.w500)),
                       ),
                     ),
                   ),
@@ -553,13 +562,14 @@ class _FoodRow extends StatelessWidget {
   Widget build(BuildContext context) {
     // With large text or on a narrow phone, protein joins the line under the name instead of crowding it.
     final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
-    final kcal = '${facts.calories == null ? '—' : formatNumber(facts.calories!.roundToDouble())} kcal';
-    final protein = facts.protein == null ? '— protein' : '${formatNumber((facts.protein! * 10).roundToDouble() / 10)} g protein';
+    final l = context.l10n;
+    final kcal = l.eatKcalValue(facts.calories == null ? '—' : formatNumber(facts.calories!.roundToDouble()));
+    final protein = facts.protein == null ? l.foodRowProteinUnknown : l.eatProteinGramsValue(formatNumber((facts.protein! * 10).roundToDouble() / 10));
     final values = stacked ? '${facts.basis} · $kcal · $protein' : '${facts.basis} · $kcal';
-    String spoken(String text) => text.replaceAll('—', 'unknown');
+    String spoken(String text) => text.replaceAll('—', l.foodUnknownSaid);
     return Column(children: [
       Semantics(
-        button: true, hint: 'Choose this food',
+        button: true, hint: l.foodChooseHint,
         child: InkWell(
           onTap: onTap,
           child: ConstrainedBox(
@@ -574,8 +584,8 @@ class _FoodRow extends StatelessWidget {
                     Text(values, semanticsLabel: spoken(values), style: context.caption),
                   ]),
                 ),
-                if (!stacked) Padding(padding: const EdgeInsets.only(left: 10), child: Text(protein, semanticsLabel: spoken(protein), style: context.sansStyle(14.5, weight: FontWeight.w500))),
-                Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.chevron_right, size: 24, color: context.c.secondary)),
+                if (!stacked) Padding(padding: const EdgeInsetsDirectional.only(start: 10), child: Text(protein, semanticsLabel: spoken(protein), style: context.sansStyle(14.5, weight: FontWeight.w500))),
+                Padding(padding: const EdgeInsetsDirectional.only(start: 6), child: Icon(Icons.chevron_right, size: 24, color: context.c.secondary)),
               ]),
             ),
           ),

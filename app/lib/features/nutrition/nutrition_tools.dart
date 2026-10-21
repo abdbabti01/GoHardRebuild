@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -40,17 +41,14 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
   bool _busy = false;
 
   /// "Use it" fills the field with the suggestion; until the field is typed in or saved, nothing is decided.
-  void _useSuggestion() => setState(() => _water.text = _unit.number(VolumeUnit.suggestedGoalMl.toDouble()).replaceAll(',', ''));
+  void _useSuggestion() =>
+      setState(() => _water.text = _unit == VolumeUnit.ml ? '${VolumeUnit.suggestedGoalMl}' : _unit.number(VolumeUnit.suggestedGoalMl.toDouble()));
 
   void _aboutSuggestion() => showDialog<void>(context: context, builder: (dialog) => AlertDialog(
         key: const Key('water-suggestion-about'),
-        title: const Text('About the suggested water goal'),
-        content: Text(
-            '${_unit.format(VolumeUnit.suggestedGoalMl.toDouble())} a day is a general starting point, not a recommendation worked out for you. '
-            'How much someone needs varies with body size, activity, heat and health; if a condition or medicine affects how much you should drink, '
-            'follow your doctor\'s advice.\n\nOther drinks and food also contribute to hydration. GoHard counts only the water you log yourself, '
-            'so your total here is not everything you drank.'),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('OK'))],
+        title: Text(dialog.l10n.waterSuggestionAboutTitle),
+        content: Text(dialog.l10n.waterSuggestionAboutBody(_unit.format(VolumeUnit.suggestedGoalMl.toDouble()))),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(dialog.l10n.actionOk))],
       ));
 
   @override
@@ -61,18 +59,18 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
     super.dispose();
   }
 
-  /// Blank is "no goal". Anything else has to be a whole number.
-  static int? _whole(String raw, String what) {
+  /// Blank is "no goal". Anything else has to be a whole number ("2,200", "2 200" and "٢٢٠٠" are 2200).
+  static int? _whole(String raw, String error) {
     if (raw.trim().isEmpty) return null;
-    final v = parsePositiveInt(raw.replaceAll(',', ''));
-    if (v == null) throw AuthFailure('$what is a whole number, or left blank for no goal.');
+    final v = parsePositiveInt(raw, grouping: true);
+    if (v == null) throw AuthFailure(error);
     return v;
   }
 
   int? _waterMl() {
     if (_water.text.trim().isEmpty) return null;
-    final v = parseNonNegative(_water.text.replaceAll(RegExp(r'[,\s]'), ''));
-    if (v == null || v <= 0) throw const AuthFailure('A water goal is an amount above zero, or left blank for no goal.');
+    final v = _unit.parseAmount(_water.text);
+    if (v == null || v <= 0) throw AuthFailure(context.l10n.eatGoalWaterInvalid);
     return _unit.toMl(v).round();
   }
 
@@ -83,13 +81,13 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
       // The newest profile on this phone, so a goal change never carries an older name or unit with it.
       final current = ref.read(profileProvider).value ?? widget.profile;
       await ref.read(profileRepositoryProvider).setGoals(current,
-          calorieGoal: _whole(_calories.text, 'A calorie goal'), proteinGoal: _whole(_protein.text, 'A protein goal'),
+          calorieGoal: _whole(_calories.text, context.l10n.eatGoalCaloriesWhole), proteinGoal: _whole(_protein.text, context.l10n.eatGoalProteinWhole),
           withWater: withWater, waterGoalMl: withWater ? _waterMl() : null);
       if (mounted) widget.onSaved();
     } on AuthFailure catch (e) {
       setState(() => _error = e.message);
     } on LocalSaveFailure {
-      setState(() => _error = 'Your goals could not be saved on this phone. What you typed is still here.');
+      setState(() => _error = context.l10n.eatGoalsSaveFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -98,17 +96,19 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
   @override
   Widget build(BuildContext context) {
     final water = ref.watch(nutritionDisplayProvider).water;
+    final l = context.l10n;
+    final suggested = _unit.format(VolumeUnit.suggestedGoalMl.toDouble());
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
       TextField(key: const Key('goal-calories'), controller: _calories, keyboardType: TextInputType.number, textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(labelText: 'Daily calories', suffixText: 'kcal', hintText: 'No goal', helperText: '500 to 10,000. Leave blank for no calorie goal.')),
+          decoration: InputDecoration(labelText: l.eatGoalCaloriesLabel, suffixText: l.eatUnitKcal, hintText: l.eatGoalNone, helperText: l.eatGoalCaloriesHelper)),
       const SizedBox(height: 14),
       TextField(key: const Key('goal-protein'), controller: _protein, keyboardType: TextInputType.number, textInputAction: water ? TextInputAction.next : TextInputAction.done,
-          decoration: const InputDecoration(labelText: 'Daily protein', suffixText: 'g', hintText: 'No goal', helperText: '10 to 500. Leave blank for no protein goal.')),
+          decoration: InputDecoration(labelText: l.eatGoalProteinLabel, suffixText: l.eatUnitGram, hintText: l.eatGoalNone, helperText: l.eatGoalProteinHelper)),
       if (water) ...[
         const SizedBox(height: 14),
         TextField(key: const Key('goal-water'), controller: _water, keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: 'Daily water', suffixText: _unit.short, hintText: 'No goal',
-                helperText: _unit == VolumeUnit.ml ? '100 to 10,000. Leave blank for no water goal.' : '3.4 to 338 (US fluid ounces). Leave blank for no water goal.')),
+            decoration: InputDecoration(labelText: l.eatGoalWaterLabel, suffixText: _unit.short, hintText: l.eatGoalNone,
+                helperText: _unit == VolumeUnit.ml ? l.eatGoalWaterHelperMl : l.eatGoalWaterHelperFlOz)),
         // Offered only while the account has no water goal; an existing goal is never replaced by it.
         if (widget.profile.waterGoalMl == null)
           ValueListenableBuilder<TextEditingValue>(
@@ -123,26 +123,26 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Padding(
                             padding: const EdgeInsets.only(top: 12),
-                            child: Text('Suggested starting goal: ${_unit.format(VolumeUnit.suggestedGoalMl.toDouble())} daily.', style: context.sansStyle(15, weight: FontWeight.w600)),
+                            child: Text(l.waterSuggestedGoal(suggested), style: context.sansStyle(15, weight: FontWeight.w600)),
                           ),
-                          Text('A general starting point; your needs may differ. Only water you log is counted.', style: context.caption),
+                          Text(l.waterSuggestedGoalNote, style: context.caption),
+                          // Pulled back to the text's leading edge (left in English, right in Arabic).
                           Transform.translate(
-                            offset: const Offset(-8, 0),
-                            child: TextButton(key: const Key('water-suggestion-use'), onPressed: _useSuggestion,
-                                child: Text('Use ${_unit.format(VolumeUnit.suggestedGoalMl.toDouble())}')),
+                            offset: Offset(context.isRtl ? 8 : -8, 0),
+                            child: TextButton(key: const Key('water-suggestion-use'), onPressed: _useSuggestion, child: Text(l.waterSuggestionUse(suggested))),
                           ),
                         ]),
                       ),
-                      IconButton(key: const Key('water-suggestion-info'), tooltip: 'About the suggested water goal', icon: const Icon(Icons.info_outline), onPressed: _aboutSuggestion),
+                      IconButton(key: const Key('water-suggestion-info'), tooltip: l.waterSuggestionAboutTitle, icon: const Icon(Icons.info_outline), onPressed: _aboutSuggestion),
                     ]),
                   ),
           ),
       ],
       const SizedBox(height: 14),
       if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-      PrimaryButton('Save goals', key: const Key('goal-save'), busy: _busy, onPressed: _save),
+      PrimaryButton(l.eatGoalsSave, key: const Key('goal-save'), busy: _busy, onPressed: _save),
       const SizedBox(height: 10),
-      Text('GoHard does not suggest a calorie or protein goal. If you are unsure what suits you, a dietitian or doctor can help.', style: context.caption),
+      Text(l.eatGoalsNoSuggestion, style: context.caption),
     ]);
   }
 }
@@ -151,8 +151,8 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
 Future<void> showGoalsSheet(BuildContext context, WidgetRef ref) async {
   final profile = ref.read(profileProvider).value;
   if (profile == null) return;
-  await showGoSheet<void>(appContext(context), title: 'Daily goals', builder: (sheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('These repeat every day until you change them. Leave any of them blank for no goal.', style: sheet.sansStyle(15, color: sheet.c.secondary)),
+  await showGoSheet<void>(appContext(context), title: context.l10n.eatGoalsSheetTitle, builder: (sheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(sheet.l10n.eatGoalsSheetIntro, style: sheet.sansStyle(15, color: sheet.c.secondary)),
         const SizedBox(height: 16),
         GoalsEditor(profile: profile, onSaved: () => Navigator.pop(sheet)),
       ]));
@@ -182,7 +182,14 @@ class WaterRow extends ConsumerWidget {
     // An earlier day with nothing logged says so, rather than "0 mL" as if a zero had been recorded.
     final none = !today && total == 0;
     final c = context.c;
-    final said = total == null ? 'Water, loading' : none ? 'Water, no water logged' : 'Water ${unit.format(total)}${goal == null ? '' : ' of ${unit.format(goal.toDouble())}, ${(total / goal * 100).round()} percent'}';
+    final l = context.l10n;
+    final said = total == null
+        ? l.waterSaidLoading
+        : none
+            ? l.waterSaidNone
+            : goal == null
+                ? l.waterSaid(unit.format(total))
+                : l.waterSaidWithGoal(unit.format(total), unit.format(goal.toDouble()), (total / goal * 100).round());
     final quick = unit.everyday;
     final actions = Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
       if (today)
@@ -190,14 +197,14 @@ class WaterRow extends ConsumerWidget {
           key: const Key('water-quick-add'), onPressed: () => addWater(context, ref, day, unit.toMl(quick)),
           style: FilledButton.styleFrom(minimumSize: const Size(0, Targets.minimum), padding: const EdgeInsets.symmetric(horizontal: 14)),
           icon: const Icon(Icons.water_drop_outlined, size: 18),
-          label: Text('+${unit.amount(quick)} ${unit.short}', semanticsLabel: 'Add ${unit.amount(quick)} ${unit == VolumeUnit.ml ? 'millilitres' : 'fluid ounces'} of water'),
+          label: Text(_plus(unit, quick), semanticsLabel: unit == VolumeUnit.ml ? l.waterAddSaidMl(unit.amount(quick)) : l.waterAddSaidFlOz(unit.amount(quick))),
         ),
       // For 5 s after a drink is added, Undo takes Other amount's place: the line keeps its height and nothing moves.
       if (last != null)
         TextButton.icon(key: const Key('water-undo'), onPressed: () => ref.read(lastWaterProvider.notifier).undo(),
-            icon: const Icon(Icons.undo, size: 18), label: Text('Undo ${unit.format(last.ml)}', semanticsLabel: 'Undo adding ${unit.format(last.ml)} of water'))
+            icon: const Icon(Icons.undo, size: 18), label: Text(l.waterUndo(unit.format(last.ml)), semanticsLabel: l.waterUndoSaid(unit.format(last.ml))))
       else
-        TextButton(key: const Key('water-other'), onPressed: () => showOtherWaterSheet(context, ref, day), child: const Text('Other amount')),
+        TextButton(key: const Key('water-other'), onPressed: () => showOtherWaterSheet(context, ref, day), child: Text(l.waterOtherAmount)),
     ]);
     return Semantics(
       container: true,
@@ -211,15 +218,15 @@ class WaterRow extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Semantics(
-                  button: true, label: said, hint: 'Opens water details for this day', excludeSemantics: true,
+                  button: true, label: said, hint: l.waterRowHint, excludeSemantics: true,
                   child: Row(children: [
                     Icon(Icons.water_drop_outlined, size: 22, color: c.accent),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                         Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 6, children: [
-                          Text('Water', style: context.sansStyle(15, weight: FontWeight.w600)),
-                          if (total != null) Text(none ? 'No water logged' : goal == null ? unit.format(total) : unit.progress(total, goal.toDouble()), key: const Key('water-total'), style: context.numStyle(15)),
+                          Text(l.waterTitle, style: context.sansStyle(15, weight: FontWeight.w600)),
+                          if (total != null) Text(none ? l.waterNoneLogged : goal == null ? unit.format(total) : unit.progress(total, goal.toDouble()), key: const Key('water-total'), style: context.numStyle(15)),
                         ]),
                         if (goal != null && total != null) Padding(padding: const EdgeInsets.only(top: 6), child: WaterGoalBar(total: total, goal: goal.toDouble())),
                       ]),
@@ -230,11 +237,19 @@ class WaterRow extends ConsumerWidget {
               ),
             ),
         ),
-        Padding(padding: const EdgeInsets.only(left: 28), child: actions),
+        Padding(padding: const EdgeInsetsDirectional.only(start: 28), child: actions),
       ]),
     );
   }
 }
+
+/// "+250 mL" on a quick-add button: the sign stays with the number in Arabic too.
+String _plus(VolumeUnit unit, double amount) => withUnit(ltr('+${unit.amount(amount)}'), unit.short);
+
+String _waterProblem(AppLocalizations l, InvalidWater e) => switch (e.problem) {
+      WaterProblem.notAboveZero => l.waterProblemNotAboveZero,
+      WaterProblem.overMax => l.waterProblemOverMax,
+    };
 
 /// Logs [ml] on [day] at once, as one entry, and offers Undo of exactly that entry for a few seconds (a bar that goes
 /// away by itself, one at a time). Undo removes that entry through the outbox (it waits for the add when that has not
@@ -248,20 +263,22 @@ Future<bool> addWater(BuildContext context, WidgetRef ref, String day, double ml
   final view = View.maybeOf(context);
   final direction = Directionality.of(context);
   final id = SyncEngine.newId();
+  final l = context.l10n;
   try {
     await repo.add(day, ml, id: id);
   } on InvalidWater catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text(e.message), duration: const Duration(seconds: 3)));
+    messenger.showSnackBar(SnackBar(content: Text(_waterProblem(l, e)), duration: const Duration(seconds: 3)));
     return false;
   } on LocalSaveFailure {
-    messenger.showSnackBar(const SnackBar(content: Text('That could not be saved on this phone. Nothing was added.'), duration: Duration(seconds: 3)));
+    messenger.showSnackBar(SnackBar(content: Text(l.waterSaveFailed), duration: const Duration(seconds: 3)));
     return false;
   }
   // Undo is offered in the water line itself (not a bar over the page), for a few seconds.
   container.read(lastWaterProvider.notifier).set((id: id, day: day, owner: owner, ml: roundMl(ml), repo: repo));
   final today = container.read(todayKeyProvider) == day;
   if (view != null) {
-    SemanticsService.sendAnnouncement(view, 'Added ${unit.format(roundMl(ml))} of water${today ? '' : ' on ${longDate(day)}'}. Undo available.', direction);
+    final amount = unit.format(roundMl(ml));
+    SemanticsService.sendAnnouncement(view, today ? l.waterAddedAnnounce(amount) : l.waterAddedOnDayAnnounce(amount, longDate(day)), direction);
   }
   return true;
 }
@@ -304,7 +321,7 @@ final lastWaterProvider = NotifierProvider<LastWaterController, LastWater?>(Last
 
 /// Other amount: one field in the chosen unit and Add water, for [day].
 Future<void> showOtherWaterSheet(BuildContext context, WidgetRef ref, String day) =>
-    showGoSheet<void>(appContext(context), title: 'Add water', builder: (sheet) => _OtherWater(day: day));
+    showGoSheet<void>(appContext(context), title: context.l10n.waterAddTitle, builder: (sheet) => _OtherWater(day: day));
 
 class _OtherWater extends ConsumerStatefulWidget {
   const _OtherWater({required this.day});
@@ -325,12 +342,12 @@ class _OtherWaterState extends ConsumerState<_OtherWater> {
 
   Future<void> _submit() async {
     final unit = ref.read(volumeUnitProvider);
-    final v = parseNonNegative(_field.text.replaceAll(RegExp(r'[,\s]'), ''));
-    if (v == null || v <= 0) return setState(() => _error = 'Enter an amount above zero.');
+    final v = unit.parseAmount(_field.text);
+    if (v == null || v <= 0) return setState(() => _error = context.l10n.waterProblemNotAboveZero);
     try {
       WaterRepository.validate(unit.toMl(v));
     } on InvalidWater catch (e) {
-      return setState(() => _error = e.message);
+      return setState(() => _error = _waterProblem(context.l10n, e));
     }
     final nav = Navigator.of(context);
     if (await addWater(context, ref, widget.day, unit.toMl(v))) nav.pop();
@@ -341,14 +358,14 @@ class _OtherWaterState extends ConsumerState<_OtherWater> {
     final unit = ref.watch(volumeUnitProvider);
     final today = ref.watch(todayKeyProvider) == widget.day;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-      if (!today) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('For ${longDate(widget.day)}', style: context.caption)),
+      if (!today) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(context.l10n.waterForDay(longDate(widget.day)), style: context.caption)),
       TextField(
         key: const Key('water-other-amount'), controller: _field, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textInputAction: TextInputAction.done, onSubmitted: (_) => _submit(),
-        decoration: InputDecoration(labelText: 'Amount', suffixText: unit.short, errorText: _error),
+        decoration: InputDecoration(labelText: context.l10n.waterAmountLabel, suffixText: unit.short, errorText: _error),
       ),
       const SizedBox(height: 12),
-      PrimaryButton('Add water', key: const Key('water-other-add'), onPressed: _submit),
+      PrimaryButton(context.l10n.waterAddTitle, key: const Key('water-other-add'), onPressed: _submit),
     ]);
   }
 }
@@ -360,10 +377,10 @@ class WaterGoalBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(key: const Key('water-goal-bar'), children: [
-        Expanded(child: ProgressRail(total / goal, label: 'Water goal', height: 6)),
+        Expanded(child: ProgressRail(total / goal, label: context.l10n.waterGoalLabel, height: 6)),
         ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 48),
-          child: Text('${(total / goal * 100).round()}%', textAlign: TextAlign.end, style: context.numStyle(13, color: context.c.secondary, weight: FontWeight.w500)),
+          child: Text(formatPercent((total / goal * 100).round() / 100), textAlign: TextAlign.end, style: context.numStyle(13, color: context.c.secondary, weight: FontWeight.w500)),
         ),
       ]);
 }
@@ -371,7 +388,7 @@ class WaterGoalBar extends StatelessWidget {
 /// Logging water for [day] (pinned when the sheet opens): three quick amounts in the chosen unit, a custom amount,
 /// and the day's entries, each of which can be corrected or removed. Adding offers Undo.
 Future<void> showWaterSheet(BuildContext context, WidgetRef ref, String day) =>
-    showGoSheet<void>(appContext(context), title: 'Water', builder: (sheet) => _WaterSheet(day: day));
+    showGoSheet<void>(appContext(context), title: context.l10n.waterTitle, builder: (sheet) => _WaterSheet(day: day));
 
 class _WaterSheet extends ConsumerStatefulWidget {
   const _WaterSheet({required this.day});
@@ -394,7 +411,7 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
     try {
       WaterRepository.validate(ml);
     } on InvalidWater catch (e) {
-      return setState(() => _error = e.message);
+      return setState(() => _error = _waterProblem(context.l10n, e));
     }
     if (await addWater(context, ref, widget.day, ml)) {
       setState(() => _error = null);
@@ -403,9 +420,10 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
   }
 
   void _addCustom() {
-    final v = parseNonNegative(_custom.text.replaceAll(RegExp(r'[,\s]'), ''));
-    if (v == null || v <= 0) return setState(() => _error = 'Enter an amount above zero.');
-    _add(ref.read(volumeUnitProvider).toMl(v));
+    final unit = ref.read(volumeUnitProvider);
+    final v = unit.parseAmount(_custom.text);
+    if (v == null || v <= 0) return setState(() => _error = context.l10n.waterProblemNotAboveZero);
+    _add(unit.toMl(v));
   }
 
   Future<void> _edit(WaterEntry e) async {
@@ -416,7 +434,7 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
       await ref.read(waterRepositoryProvider).update(e, ml);
       setState(() => _error = null);
     } on InvalidWater catch (x) {
-      setState(() => _error = x.message);
+      if (mounted) setState(() => _error = _waterProblem(context.l10n, x));
     }
   }
 
@@ -431,21 +449,22 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
     final goal = widget.day == today ? ref.watch(profileProvider).value?.waterGoalMl : null;
     final none = widget.day != today && rows.hasValue && entries.isEmpty;
     final c = context.c;
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-      Text(widget.day == today ? 'Today' : longDate(widget.day), style: context.caption),
+      Text(widget.day == today ? l.eatTodayCaption : longDate(widget.day), style: context.caption),
       Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [
-        Text(none ? 'No water logged' : unit.format(total), key: const Key('water-sheet-total'), style: context.pageTitleStyle(none ? 26 : 34)),
+        Text(none ? l.waterNoneLogged : unit.format(total), key: const Key('water-sheet-total'), style: context.pageTitleStyle(none ? 26 : 34)),
         if (goal != null)
           Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('/ ${unit.format(goal.toDouble())}', style: context.sansStyle(15, color: c.secondary))),
       ]),
       if (goal != null) Padding(padding: const EdgeInsets.only(top: 8), child: WaterGoalBar(total: total, goal: goal.toDouble())),
       const SizedBox(height: 18),
-      Text('Add', style: context.label),
+      Text(l.waterAdd, style: context.label),
       const SizedBox(height: 8),
       Row(children: [
         for (final (i, q) in unit.quick.indexed) ...[
           if (i > 0) const SizedBox(width: 8),
-          Expanded(child: SecondaryButton('+${unit.amount(q)} ${unit.short}', key: Key('water-add-${q.round()}'), onPressed: () => _add(unit.toMl(q)))),
+          Expanded(child: SecondaryButton(_plus(unit, q), key: Key('water-add-${q.round()}'), onPressed: () => _add(unit.toMl(q)))),
         ],
       ]),
       const SizedBox(height: 12),
@@ -453,30 +472,30 @@ class _WaterSheetState extends ConsumerState<_WaterSheet> {
         Expanded(
           child: TextField(key: const Key('water-custom'), controller: _custom, keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.done, onSubmitted: (_) => _addCustom(),
-              decoration: InputDecoration(labelText: 'Another amount', suffixText: unit.short)),
+              decoration: InputDecoration(labelText: l.waterAnotherAmount, suffixText: unit.short)),
         ),
         const SizedBox(width: 10),
-        PrimaryButton('Add', key: const Key('water-add-custom'), expand: false, onPressed: _addCustom),
+        PrimaryButton(l.waterAdd, key: const Key('water-add-custom'), expand: false, onPressed: _addCustom),
       ]),
       if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
       const SizedBox(height: 18),
-      Text(entries.isEmpty ? 'Nothing logged on this day' : 'Logged on this day', style: context.label),
+      Text(entries.isEmpty ? l.waterNothingThisDay : l.waterLoggedThisDay, style: context.label),
       if (entries.isNotEmpty) ...[
         const SizedBox(height: 8),
         GroupCard(children: [
           for (final r in entries.reversed)
             GroupRow(
               key: Key('water-entry-${r.value.id}'), icon: Icons.water_drop_outlined, title: unit.format(r.value.volumeMl),
-              subtitle: r.isPending ? 'Saved on this phone · tap to correct' : 'Tap to correct',
+              subtitle: r.isPending ? l.waterEntryPending : l.waterEntryTap,
               onTap: () => _edit(r.value),
-              trailing: IconButton(key: Key('water-delete-${r.value.id}'), tooltip: 'Remove ${unit.format(r.value.volumeMl)}', icon: const Icon(Icons.delete_outline),
+              trailing: IconButton(key: Key('water-delete-${r.value.id}'), tooltip: l.waterRemoveTooltip(unit.format(r.value.volumeMl)), icon: const Icon(Icons.delete_outline),
                   onPressed: () => ref.read(waterRepositoryProvider).remove(r.value).ignore()),
             ),
         ]),
       ],
       // Logging, correcting and removing only: the water goal is set with the other goals, in Eat.
       const SizedBox(height: 10),
-      Text('Only water you log here is counted, not drinks or food.', style: context.caption),
+      Text(l.waterOnlyLoggedNote, style: context.caption),
     ]);
   }
 }
@@ -502,15 +521,15 @@ class _AmountDialogState extends State<_AmountDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Correct this amount'),
+        title: Text(context.l10n.waterCorrectTitle),
         content: TextField(key: const Key('water-edit-field'), controller: _field, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(suffixText: widget.unit.short)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.actionCancel)),
           TextButton(key: const Key('water-edit-save'), onPressed: () {
-            final v = parseNonNegative(_field.text.replaceAll(RegExp(r'[,\s]'), ''));
+            final v = widget.unit.parseAmount(_field.text);
             if (v != null && v > 0) Navigator.pop(context, widget.unit.toMl(v));
-          }, child: const Text('Save')),
+          }, child: Text(context.l10n.actionSave)),
         ],
       );
 }
@@ -519,7 +538,7 @@ class _AmountDialogState extends State<_AmountDialog> {
 
 /// What this account sees in its nutrition. Calories and protein always stay; hiding the others changes only what is
 /// shown: entries, goals and logged values are kept and come back when shown again.
-Future<void> showTrackingSheet(BuildContext context) => showGoSheet<void>(appContext(context), title: 'Customize tracking', builder: (sheet) => const _TrackingSheet());
+Future<void> showTrackingSheet(BuildContext context) => showGoSheet<void>(appContext(context), title: context.l10n.eatCustomizeTracking, builder: (sheet) => const _TrackingSheet());
 
 class _TrackingSheet extends ConsumerWidget {
   const _TrackingSheet();
@@ -536,17 +555,17 @@ class _TrackingSheet extends ConsumerWidget {
         key: Key(key), contentPadding: EdgeInsets.zero, title: Text(title, style: context.sansStyle(16, weight: FontWeight.w600)),
         subtitle: Text(subtitle, style: context.caption), value: value, onChanged: (v) => set(next(v)));
 
+    final l = context.l10n;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-      Text('Calories and protein are always shown. Hiding something changes only what you see: nothing you logged or set is removed.',
-          style: context.sansStyle(15, color: context.c.secondary)),
+      Text(l.eatTrackingIntro, style: context.sansStyle(15, color: context.c.secondary)),
       const SizedBox(height: 8),
       if (ref.watch(waterSupportedProvider))
-        toggle('track-water', 'Water', 'A water line on Today and Eat, with an optional goal', d.water, (v) => raw.copy(water: v))
+        toggle('track-water', l.waterTitle, l.eatTrackWaterSubtitle, d.water, (v) => raw.copy(water: v))
       else
-        Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: StatusLine(Icons.info_outline, "Water tracking needs a newer version of your account's server. Nothing else changes.")),
-      toggle('track-carbs', 'Carbs', 'The carbohydrate total in Eat', d.carbs, (v) => raw.copy(carbs: v)),
-      toggle('track-fat', 'Fat', 'The fat total in Eat', d.fat, (v) => raw.copy(fat: v)),
-      if (ref.watch(displaySyncProvider)) Padding(padding: const EdgeInsets.only(top: 4), child: Text('These choices follow your account to your other phones.', style: context.caption)),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: StatusLine(Icons.info_outline, l.eatTrackWaterUnsupported)),
+      toggle('track-carbs', l.eatCarbs, l.eatTrackCarbsSubtitle, d.carbs, (v) => raw.copy(carbs: v)),
+      toggle('track-fat', l.eatFat, l.eatTrackFatSubtitle, d.fat, (v) => raw.copy(fat: v)),
+      if (ref.watch(displaySyncProvider)) Padding(padding: const EdgeInsets.only(top: 4), child: Text(l.eatTrackSynced, style: context.caption)),
     ]);
   }
 }
@@ -569,9 +588,9 @@ class NutritionTools extends ConsumerWidget {
     // The goals link, then Customize tracking with its name (not an unexplained icon); they wrap by words.
     return Wrap(spacing: 4, runSpacing: 0, crossAxisAlignment: WrapCrossAlignment.center, children: [
       if (goals)
-        QuietLink(hasGoal ? 'Edit goals' : 'Set daily goals', key: Key('$keyPrefix-goals'), said: hasGoal ? 'Edit daily goals' : 'Set daily goals',
+        QuietLink(hasGoal ? context.l10n.eatEditGoals : context.l10n.eatSetGoals, key: Key('$keyPrefix-goals'), said: hasGoal ? context.l10n.eatEditGoalsSaid : context.l10n.eatSetGoals,
             onPressed: p == null ? null : () => showGoalsSheet(context, ref)),
-      TextButton.icon(key: Key('$keyPrefix-customize'), onPressed: () => showTrackingSheet(context), icon: const Icon(Icons.tune, size: 20), label: const Text('Customize tracking')),
+      TextButton.icon(key: Key('$keyPrefix-customize'), onPressed: () => showTrackingSheet(context), icon: const Icon(Icons.tune, size: 20), label: Text(context.l10n.eatCustomizeTracking)),
     ]);
   }
 }
@@ -579,10 +598,11 @@ class NutritionTools extends ConsumerWidget {
 /// "2,200 kcal · 140 g protein · 2 L water" for the goals that were set; null when none was.
 String? goalsSummary(Profile? p, VolumeUnit unit, {required bool water}) {
   if (p == null) return null;
+  final l = currentL10n;
   final parts = [
-    if (p.calorieGoal != null) '${formatKcal(p.calorieGoal!)} kcal',
-    if (p.proteinGoal != null) '${p.proteinGoal} g protein',
-    if (water && p.waterGoalMl != null) '${unit.format(p.waterGoalMl!.toDouble())} water',
+    if (p.calorieGoal != null) l.eatKcalValue(formatKcal(p.calorieGoal!)),
+    if (p.proteinGoal != null) l.eatProteinGramsValue(formatGrouped(p.proteinGoal!)),
+    if (water && p.waterGoalMl != null) l.eatWaterValue(unit.format(p.waterGoalMl!.toDouble())),
   ];
   return parts.isEmpty ? null : parts.join(' · ');
 }

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/language.dart';
+import '../../core/language_picker.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../data/session.dart' show SignOutReason;
 import '../coach/coach_prefs.dart';
 import '../me/account_repository.dart';
 
@@ -17,7 +20,8 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _email = TextEditingController(), _password = TextEditingController(), _name = TextEditingController();
   bool _register = false, _busy = false, _showPassword = false;
-  String? _error;
+  /// Worded at build time, so an error on screen follows a language change.
+  String Function(AppLocalizations)? _error;
 
   @override
   void dispose() {
@@ -30,7 +34,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (_email.text.trim().isEmpty || _password.text.isEmpty || (_register && _name.text.trim().isEmpty)) {
-      setState(() => _error = 'Fill in every field to continue.');
+      setState(() => _error = (l) => l.authFillEveryField);
       return;
     }
     setState(() {
@@ -42,7 +46,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final coach = ref.read(coachPrefsProvider.notifier);
       await (_register ? auth.register(_email.text, _password.text, _name.text, onCreated: coach.startSetup) : auth.signIn(_email.text, _password.text));
     } on AuthFailure catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.text);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -50,7 +54,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notice = ref.watch(sessionsProvider).notice;
+    final l = context.l10n;
+    final notice = switch (ref.watch(sessionsProvider).notice) {
+      SignOutReason.expired => l.authNoticeExpired,
+      SignOutReason.accountDeleted => l.authNoticeAccountDeleted,
+      null => null,
+    };
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -58,18 +67,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
             // The wordmark in the serif, then the page title.
-            Center(child: Text('GoHard', style: context.pageTitleStyle(34, color: context.c.accent))),
+            Center(child: Text(l.brandName, style: context.pageTitleStyle(34, color: context.c.accent))),
             const SizedBox(height: 22),
-            Heading(_register ? 'Create account' : 'Welcome back', size: 40, serif: true),
+            Heading(_register ? l.authCreateAccountTitle : l.authWelcomeBack, size: 40, serif: true),
             const SizedBox(height: 8),
-            Text(_register ? 'Know what to do next, and keep a record of what you actually did.' : 'Sign in to pick up where you left off.',
+            Text(_register ? l.authRegisterLead : l.authSignInLead,
                 style: context.sansStyle(16, color: context.c.secondary)),
             const SizedBox(height: 20),
             PhotoPanel(
               photo: 'assets/images/workout-hero.webp',
               content: (context) => [
                 const SizedBox(height: 6),
-                Text('Plan it.\nRecord it.\nKeep going.', style: context.pageTitleStyle(26)),
+                Text(context.l10n.authTagline, style: context.pageTitleStyle(26)),
                 const SizedBox(height: 6),
               ],
             ),
@@ -77,26 +86,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             if (notice != null) ...[Panel(padding: const EdgeInsets.all(14), child: StatusLine(Icons.info_outline, notice, tone: Tone.warning)), const SizedBox(height: 16)],
             if (_register) ...[
               TextField(key: const Key('auth-name'), controller: _name, textInputAction: TextInputAction.next, textCapitalization: TextCapitalization.words,
-                  autofillHints: const [AutofillHints.name], decoration: const InputDecoration(labelText: 'Your name')),
+                  autofillHints: const [AutofillHints.name], decoration: InputDecoration(labelText: l.authNameLabel)),
               const SizedBox(height: 12),
             ],
             TextField(key: const Key('auth-email'), controller: _email, keyboardType: TextInputType.emailAddress, textInputAction: TextInputAction.next, autocorrect: false,
-                autofillHints: const [AutofillHints.email], decoration: const InputDecoration(labelText: 'Email')),
+                autofillHints: const [AutofillHints.email], decoration: InputDecoration(labelText: l.authEmailLabel)),
             const SizedBox(height: 12),
             TextField(key: const Key('auth-password'), controller: _password, obscureText: !_showPassword, autocorrect: false, enableSuggestions: false, onSubmitted: (_) => _submit(),
                 autofillHints: [_register ? AutofillHints.newPassword : AutofillHints.password],
                 decoration: InputDecoration(
-                  labelText: 'Password', helperText: _register ? 'At least 8 characters' : null,
+                  labelText: l.authPasswordLabel, helperText: _register ? l.authPasswordHelper : null,
                   // The one visibility control: a labelled button that says what it will do.
                   suffixIcon: IconButton(
-                    key: const Key('auth-show-password'), tooltip: _showPassword ? 'Hide password' : 'Show password',
+                    key: const Key('auth-show-password'), tooltip: _showPassword ? l.authHidePassword : l.authShowPassword,
                     icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                     onPressed: () => setState(() => _showPassword = !_showPassword),
                   ),
                 )),
             const SizedBox(height: 16),
-            if (_error != null) ...[StatusLine(Icons.error_outline, _error!, tone: Tone.error), const SizedBox(height: 14)],
-            PrimaryButton(_register ? 'Create account' : 'Sign in', key: const Key('auth-submit'), onPressed: _submit, busy: _busy),
+            if (_error != null) ...[StatusLine(Icons.error_outline, _error!(l), tone: Tone.error), const SizedBox(height: 14)],
+            PrimaryButton(_register ? l.authCreateAccountButton : l.authSignInButton, key: const Key('auth-submit'), onPressed: _submit, busy: _busy),
             const SizedBox(height: 6),
             Center(
               child: TextButton(
@@ -105,9 +114,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   _register = !_register;
                   _error = null;
                 }),
-                child: Text(_register ? 'I already have an account · Sign in' : 'New to GoHard? Create account'),
+                child: Text(_register ? l.authToggleToSignIn : l.authToggleToRegister),
               ),
             ),
+            // The language, without a step of its own: nothing is asked for or sent.
+            const Center(child: LanguageButton()),
           ],
         ),
       ),

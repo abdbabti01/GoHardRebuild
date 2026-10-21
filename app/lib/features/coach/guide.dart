@@ -1,9 +1,12 @@
 import 'dart:convert';
 
-import 'package:flutter/services.dart' show rootBundle;
+import 'dart:ui' show Locale;
+
+import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../plans/plan_draft.dart';
 
@@ -72,7 +75,22 @@ class CoachGuideContent {
   List<GuideSource> sourcesFor(List<String> ids) => [for (final id in ids) ?sources[id]];
 }
 
-final coachGuideProvider = FutureProvider<CoachGuideContent>((ref) async => CoachGuideContent.parse(await rootBundle.loadString('assets/data/coach-guide.json')));
+/// The reviewed guide in [locale]'s language: `coach-guide.fr.json` / `coach-guide.ar.json` (the same entries, IDs,
+/// sources and review note, translated), or the English `coach-guide.json` when that file is missing or [parse] cannot
+/// read it. Offline, no AI; the API keeps grounding answers in the English original.
+Future<T> loadCoachGuide<T>(Locale locale, T Function(String text) parse, {AssetBundle? bundle}) async {
+  final b = bundle ?? rootBundle;
+  if (switch (locale.languageCode) { 'fr' => 'fr', 'ar' => 'ar', _ => null } case final lang?) {
+    try {
+      return parse(await b.loadString('assets/data/coach-guide.$lang.json'));
+    } on Object {
+      // English below
+    }
+  }
+  return parse(await b.loadString('assets/data/coach-guide.json'));
+}
+
+final coachGuideProvider = FutureProvider<CoachGuideContent>((ref) => loadCoachGuide(ref.watch(appLocaleProvider), CoachGuideContent.parse));
 
 // ------------------------------------------------------------------ Guide me: reproducible suggestions, no AI
 
@@ -85,28 +103,28 @@ const _alternatives = {
   6: ['upper-lower', 'push-pull'],
   7: ['upper-lower', 'push-pull'],
 };
-const _counts = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
-const _equipmentWords = {'full_gym': 'gym equipment', 'dumbbells': 'dumbbells only', 'bodyweight': 'bodyweight only'};
+const _equipment = {'full_gym', 'dumbbells', 'bodyweight'};
 
 typedef GuidedSuggestion = ({String templateId, String reason, List<String> alternatives});
 
 /// One suggested starting routine and up to two alternatives from the answers, by the existing rule
 /// ([suggestTemplate]). The same answers always give the same result.
 GuidedSuggestion guidedSuggestion(int days, String equipment, {String? experience}) {
+  final l = currentL10n;
   final base = suggestTemplate(days, experience: experience);
   final n = days.clamp(0, 7);
-  final swaps = equipment == 'full_gym' ? '' : ' Exercises use the ${equipment == 'dumbbells' ? 'dumbbell' : 'bodyweight'} versions.';
+  final swaps = equipment == 'full_gym' ? '' : ' ${equipment == 'dumbbells' ? l.coachGuideSwapDumbbell : l.coachGuideSwapBodyweight}';
+  final because = l.coachGuideSuggestedBecause(l.coachGuideDays('d$n'), _equipment.contains(equipment) ? l.coachGuideEquipment(equipment) : equipment);
   return (
     templateId: base.templateId,
-    reason: 'Suggested because you selected ${_counts[n]} training ${n == 1 ? 'day' : 'days'} and ${_equipmentWords[equipment] ?? equipment}. ${base.reason}$swaps',
+    reason: '$because ${base.reason}$swaps',
     alternatives: [for (final id in _alternatives[days] ?? const <String>[]) if (id != base.templateId) id].take(2).toList(),
   );
 }
 
 /// How a template sits on the chosen days, in a few words.
-String fitLine(PlanTemplate t, int days) => t.fitsWeekly(days)
-    ? 'One workout on each of your $days days.'
-    : 'Its ${t.sequenceFor(days).length} workouts rotate across your $days ${days == 1 ? 'day' : 'days'}.';
+String fitLine(PlanTemplate t, int days) =>
+    t.fitsWeekly(days) ? currentL10n.coachGuideFitWeekly(days) : currentL10n.coachGuideFitRotate(days, t.sequenceFor(days).length);
 
 /// The draft as it would be with this template: what the previews read. The real draft is untouched.
 PlanDraft previewOf(PlanDraft d, PlanTemplates templates, String templateId) => d.copy()..applyTemplate(templates, templateId);
@@ -116,6 +134,7 @@ String weekLine(PlanDraft d) {
   final names = {for (final w in d.workouts) w.id: w.name};
   final s = d.schedule;
   if (!s.isRotating) return [for (final p in s.pattern) '${weekdayShort(p.weekday)} ${names[p.workoutId] ?? ''}'].join(' · ');
-  final days = s.trainingDays.isEmpty ? 'any day' : s.trainingDays.map(weekdayShort).join(', ');
-  return '${[for (final id in s.cycle) names[id] ?? ''].join(' → ')}, on $days. The order carries on across weeks.';
+  final l = currentL10n;
+  final days = s.trainingDays.isEmpty ? l.coachGuideAnyDay : s.trainingDays.map(weekdayShort).join(l.coachListSeparator);
+  return l.coachGuideRotation([for (final id in s.cycle) names[id] ?? ''].join(l.coachCycleArrow), days);
 }

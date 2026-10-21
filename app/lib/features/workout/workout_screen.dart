@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/catalog_names.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -25,11 +27,29 @@ import 'workout_flow.dart';
 import 'workout_repository.dart';
 import 'workout_runtime.dart';
 
-String setText(WorkoutSet s, LoadUnit unit) {
-  if (s.reps == null && s.durationSeconds != null) return '${s.durationSeconds} s';
-  final load = (s.loadKg ?? 0) == 0 ? 'Bodyweight' : formatLoad(s.loadKg, unit);
-  return '$load × ${s.reps ?? 0}${s.durationSeconds != null ? ' · ${s.durationSeconds} s' : ''}';
+/// "82.5 kg × 8", "Bodyweight × 12", "45 s", in [l] (the resolved app language when omitted).
+String setText(WorkoutSet s, LoadUnit unit, [AppLocalizations? l]) {
+  l ??= currentL10n;
+  if (s.reps == null && s.durationSeconds != null) return l.durationSeconds(s.durationSeconds!);
+  final load = (s.loadKg ?? 0) == 0 ? l.workoutSetBodyweight : formatLoad(s.loadKg, unit);
+  return s.durationSeconds != null ? l.workoutSetLoadRepsTime(load, s.reps ?? 0, l.durationSeconds(s.durationSeconds!)) : l.workoutSetLoadReps(load, s.reps ?? 0);
 }
+
+/// A typed load in any of the app's languages ([parseNonNegative]), or null for blank or malformed input. A value
+/// still being typed ("82," "٨٢٫" "82.") is not a number yet: it is never recorded or saved as a whole one.
+double? typedLoad(String raw) => RegExp(r'[.,٫]\s*$').hasMatch(raw) ? null : parseNonNegative(raw);
+
+String invalidSetText(AppLocalizations l, InvalidSetReason r) => switch (r) {
+      InvalidSetReason.loadFormat => l.workoutInvalidLoadFormat,
+      InvalidSetReason.loadRange => l.workoutInvalidLoadRange,
+      InvalidSetReason.nothingDone => l.workoutInvalidNothingDone,
+      InvalidSetReason.outOfRange => l.workoutInvalidOutOfRange,
+      InvalidSetReason.hasSets => l.workoutInvalidHasSets,
+    };
+
+/// An exercise's name as shown: an unchanged built-in catalog name in the app's language, anything else as stored.
+String shownName(WidgetRef ref, BuildContext context, String? catalogKey, String stored) =>
+    ref.read(exerciseNamesProvider).name(catalogKey, stored, Localizations.localeOf(context));
 
 /// "‹ All workouts": back to the Workouts overview. It only changes what Train shows; nothing is paused, saved,
 /// finished or removed.
@@ -38,8 +58,8 @@ class AllWorkoutsLink extends StatelessWidget {
   final VoidCallback onPressed;
   @override
   Widget build(BuildContext context) => TextButton.icon(
-        key: const Key('workout-all'), onPressed: onPressed, icon: const Icon(Icons.chevron_left, size: 22), label: const Text('All workouts', maxLines: 1, overflow: TextOverflow.ellipsis),
-        style: TextButton.styleFrom(padding: const EdgeInsets.only(left: 4, right: 10)),
+        key: const Key('workout-all'), onPressed: onPressed, icon: const Icon(Icons.chevron_left, size: 22), label: Text(context.l10n.workoutAllWorkoutsLink, maxLines: 1, overflow: TextOverflow.ellipsis),
+        style: TextButton.styleFrom(padding: const EdgeInsetsDirectional.only(start: 4, end: 10)),
       );
 }
 
@@ -168,7 +188,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
     try {
       await _save(_runtime!.selecting(exerciseId));
     } on LocalSaveFailure {
-      if (mounted) toast(context, 'The change of movement could not be saved on this phone. Your sets and entry are unchanged; try again.');
+      if (mounted) toast(context, context.l10n.workoutSelectSaveFailed);
     }
   }
 
@@ -202,8 +222,8 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
     if (shown) return;
     final typed = _typed && [_load, _reps, _duration].any((c) => c.text.trim().isNotEmpty);
     if (typed &&
-        !await confirm(context, title: 'Replace what you typed?', body: "The entry for this set will show last time's values instead. Nothing is recorded until you tap Record set.",
-            action: 'Use last values', cancel: 'Keep mine')) {
+        !await confirm(context, title: context.l10n.workoutUseLastConfirmTitle, body: context.l10n.workoutUseLastConfirmBody,
+            action: context.l10n.workoutUseLastValues, cancel: context.l10n.workoutUseLastKeepMine)) {
       return;
     }
     if (!mounted) return;
@@ -224,8 +244,8 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
       _error = null;
     });
     try {
-      final rawLoad = parseNonNegative(_load.text);
-      if (_load.text.trim().isNotEmpty && rawLoad == null) throw const InvalidSet('Enter the load as a number of zero or more, or leave it blank for bodyweight.');
+      final rawLoad = typedLoad(_load.text);
+      if (_load.text.trim().isNotEmpty && rawLoad == null) throw const InvalidSet(InvalidSetReason.loadFormat);
       final set = exercise.isTimed
           ? await _repo.recordSet(workout, exercise.id, durationSeconds: parsePositiveInt(_duration.text), loadKg: rawLoad == null ? null : loadInputToKg(rawLoad, unit))
           // Converted to canonical kilograms exactly once, from the unit the entry was typed in.
@@ -241,14 +261,14 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
           duration: const Duration(seconds: 4), persist: false, // with an action it would otherwise stay and cover Finish and Save for later
-          content: Text('Saved on this phone: ${setText(set, ref.read(loadUnitProvider))}'),
-          action: SnackBarAction(label: 'Undo', onPressed: () => _repo.deleteSet(set)),
+          content: Text(context.l10n.workoutSetSavedSnack(setText(set, ref.read(loadUnitProvider), context.l10n))),
+          action: SnackBarAction(label: context.l10n.workoutUndo, onPressed: () => _repo.deleteSet(set)),
         ));
     } on InvalidSet catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = invalidSetText(context.l10n, e.reason));
     } on LocalSaveFailure {
       // The typed values stay in the fields. No checkmark, no count change.
-      setState(() => _error = 'Not saved. Your entry is still here. Tap again to retry.');
+      setState(() => _error = context.l10n.workoutSetNotSaved);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -262,16 +282,16 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
       context: context,
       builder: (context) => AlertDialog(
         actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
-        title: const Text('Edit set'),
+        title: Text(context.l10n.workoutEditSetTitle),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: load, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: 'Load', suffixText: unit.name, hintText: 'Bodyweight')),
+          TextField(controller: load, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.l10n.workoutLoadLabel, suffixText: unit.label, hintText: context.l10n.workoutSetBodyweight)),
           const SizedBox(height: 12),
-          TextField(controller: value, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: exercise.isTimed ? 'Seconds' : 'Reps')),
+          TextField(controller: value, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: exercise.isTimed ? context.l10n.workoutSecondsLabel : context.l10n.workoutRepsLabel)),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, 'delete'), child: const Text('Delete set')),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, 'save'), child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(context, 'delete'), child: Text(context.l10n.workoutDeleteSet)),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.actionCancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, 'save'), child: Text(context.l10n.actionSave)),
         ],
       ),
     );
@@ -281,17 +301,18 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
         if (mounted) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(const SnackBar(content: Text('Set removed.')));
+            ..showSnackBar(SnackBar(content: Text(context.l10n.workoutSetRemoved)));
         }
       } else if (action == 'save') {
-        final rawLoad = parseNonNegative(load.text);
+        final rawLoad = typedLoad(load.text);
+        if (load.text.trim().isNotEmpty && rawLoad == null) throw const InvalidSet(InvalidSetReason.loadFormat);
         final n = parsePositiveInt(value.text);
         await _repo.updateSet(set, loadKg: rawLoad == null ? null : loadInputToKg(rawLoad, unit), reps: exercise.isTimed ? null : n, durationSeconds: exercise.isTimed ? n : null);
       }
     } on InvalidSet catch (e) {
-      if (mounted) toast(context, e.message);
+      if (mounted) toast(context, invalidSetText(context.l10n, e.reason));
     } on LocalSaveFailure {
-      if (mounted) toast(context, 'That change could not be saved on this phone. The set is unchanged.');
+      if (mounted) toast(context, context.l10n.workoutSetEditFailed);
     }
   }
 
@@ -303,23 +324,24 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
     if (!mounted) return;
     final missing = [
       for (final e in workout.exercises)
-        if (e.isPrescribed && sets.where((s) => s.exerciseId == e.id && !s.isDeleted).length < (e.targetSets ?? 1)) e.name
+        if (e.isPrescribed && sets.where((s) => s.exerciseId == e.id && !s.isDeleted).length < (e.targetSets ?? 1)) shownName(ref, context, e.catalogKey, e.name)
     ];
+    final l = context.l10n;
     final noData = preview.outcome == WorkoutResultRules.noData;
     final go = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
-        title: Text(noData ? 'No training logged' : 'Finish workout?'),
+        title: Text(noData ? l.workoutFinishNoDataTitle : l.workoutFinishTitle),
         content: SingleChildScrollView(
           child: Text(noData
-              ? 'No set has been recorded. You can save this as a record without training: it gives no training credit${workout.isManual ? '' : ' and leaves the planned workout available'}. Time on the clock alone is not training.'
-              : '${preview.performedSets} set${preview.performedSets == 1 ? '' : 's'} across ${preview.performedExercises} movement${preview.performedExercises == 1 ? '' : 's'} recorded.'
-                  '${missing.isEmpty ? '' : '\n\nNot fully recorded: ${missing.join(', ')}. You can still finish; it will be saved as partial.'}'),
+              ? (workout.isManual ? l.workoutFinishNoDataBodyManual : l.workoutFinishNoDataBodyPlanned)
+              : '${l.workoutFinishSummary(preview.performedSets, preview.performedExercises)}'
+                  '${missing.isEmpty ? '' : '\n\n${l.workoutFinishMissing(missing.join(l.workoutListSeparator))}'}'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep training')),
-          FilledButton(key: const Key('finish-confirm'), onPressed: () => Navigator.pop(context, true), child: Text(noData ? 'Save without training' : 'Finish workout')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.workoutKeepTraining)),
+          FilledButton(key: const Key('finish-confirm'), onPressed: () => Navigator.pop(context, true), child: Text(noData ? l.workoutSaveWithoutTraining : l.workoutFinishButton)),
         ],
       ),
     );
@@ -335,14 +357,14 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
       // The panel now shows the saved result: the workout is no longer open.
     } on LocalSaveFailure {
       _closed = false;
-      if (mounted) toast(context, 'The workout could not be finished on this phone. Nothing changed. Try again.');
+      if (mounted) toast(context, context.l10n.workoutFinishFailed);
     }
   }
 
   Future<void> _menu(String action, Workout workout, WorkoutExercise? selected) async {
     switch (action) {
       case 'add' || 'substitute':
-        final e = await push<CatalogExercise>(context, ExercisePicker(title: action == 'add' ? 'Add a movement' : 'Replace ${selected!.name}'));
+        final e = await push<CatalogExercise>(context, ExercisePicker(title: action == 'add' ? context.l10n.workoutAddMovement : context.l10n.workoutReplaceMovementTitle(shownName(ref, context, selected!.catalogKey, selected.name))));
         if (e == null) return;
         final added = await _repo.addExercise(workout, name: e.name, catalogKey: e.key, isTimed: e.isTimed, substitutedForKey: action == 'substitute' ? selected!.catalogKey ?? selected.name : null);
         await _select(added.id);
@@ -351,7 +373,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           await _repo.removeExercise(workout, selected!.id);
           _boundExerciseId = null;
         } on InvalidSet catch (e) {
-          if (mounted) toast(context, e.message);
+          if (mounted) toast(context, invalidSetText(context.l10n, e.reason));
         }
       case 'park':
         // Typed input is folded in, then the parked state is the LAST write: leaving the screen must not overwrite it.
@@ -361,7 +383,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
         await _repo.saveRuntime(workout.id, _runtime!.paused(_now, park: true));
         if (mounted) widget.onLeave();
       case 'discard':
-        if (await confirm(context, title: 'Remove this workout?', body: 'This removes "${workout.title}" and every set recorded in it. This is the only way a workout is ever removed; it is never cleaned up automatically.', action: 'Remove workout')) {
+        if (await confirm(context, title: context.l10n.workoutRemoveTitle, body: context.l10n.workoutRemoveOpenBody(workout.title), action: context.l10n.workoutRemoveAction, cancel: context.l10n.actionCancel)) {
           _closed = true;
           await _repo.delete(workout);
           if (mounted) widget.onLeave();
@@ -389,10 +411,11 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
     final row = (all.value ?? const <Stored<Workout>>[]).where((r) => r.value.id == widget.workoutId).firstOrNull;
     final setRows = ref.watch(setsProvider(widget.workoutId)).value ?? const <Stored<WorkoutSet>>[];
     final unit = _unitNow = ref.watch(loadUnitProvider);
+    final l = context.l10n;
     if (row == null && all.hasValue) {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         AllWorkoutsLink(onPressed: widget.onLeave),
-        const EmptyState('This workout is not on this phone', 'It may have been removed. Nothing else changed.'),
+        EmptyState(l.workoutMissingTitle, l.workoutMissingBody),
       ]);
     }
     if (row == null || !_loaded) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()));
@@ -423,13 +446,14 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
     final targetReached = selected != null && selected.targetSets != null && mine.length >= selected.targetSets!;
     final nextExercise = selected == null ? null : exercises.where((e) => e.ordinal > selected.ordinal).firstOrNull;
     final lastForNext = previous?.sets.elementAtOrNull(mine.length);
+    String nameOf(WorkoutExercise e) => shownName(ref, context, e.catalogKey, e.name);
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       // A compact header: back to the overview, help with recording and the workout's options.
       Row(children: [
         Expanded(
           child: Align(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child: AllWorkoutsLink(onPressed: () {
               _flushDraft();
               widget.onLeave();
@@ -437,22 +461,22 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           ),
         ),
         CoachHelpButton(
-          key: const Key('coach-help-workout'), semanticLabel: 'Help with recording this workout',
-          onPressed: () => showCoachHelpSheet(context, title: 'Recording sets', say: CoachSay(
-              'Record each set as you finish it; the rest timer then starts on its own. Last time is what you actually did before, and Use last values only fills the entry. Save for later keeps everything.',
-              ask: selected == null ? null : CoachContext(label: selected.name, focus: CoachFocus.exercise, catalogKey: selected.catalogKey))),
+          key: const Key('coach-help-workout'), semanticLabel: l.workoutHelpSemantic,
+          onPressed: () => showCoachHelpSheet(context, title: l.workoutHelpTitle, say: CoachSay(
+              l.workoutHelpBody,
+              ask: selected == null ? null : CoachContext(label: nameOf(selected), focus: CoachFocus.exercise, catalogKey: selected.catalogKey))),
         ),
         if (!parked)
           PopupMenuButton<String>(
             key: const Key('workout-menu'),
-            tooltip: 'Workout options',
+            tooltip: l.workoutOptionsTooltip,
             onSelected: (a) => _menu(a, workout, selected),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'add', child: Text('Add a movement')),
-              if (selected != null) const PopupMenuItem(value: 'substitute', child: Text('Replace this movement')),
-              if (selected != null && mine.isEmpty) const PopupMenuItem(value: 'remove', child: Text('Remove this movement')),
-              const PopupMenuItem(value: 'park', child: Text('Save for later')),
-              const PopupMenuItem(value: 'discard', child: Text('Remove workout')),
+              PopupMenuItem(value: 'add', child: Text(l.workoutAddMovement)),
+              if (selected != null) PopupMenuItem(value: 'substitute', child: Text(l.workoutReplaceThisMovement)),
+              if (selected != null && mine.isEmpty) PopupMenuItem(value: 'remove', child: Text(l.workoutRemoveThisMovement)),
+              PopupMenuItem(value: 'park', child: Text(l.workoutSaveForLater)),
+              PopupMenuItem(value: 'discard', child: Text(l.workoutRemoveAction)),
             ],
           ),
       ]),
@@ -461,40 +485,40 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
       Row(children: [
         Expanded(
           child: Semantics(
-            label: 'Workout time ${durationText(runtime.elapsedSeconds(_now))}${runtime.isPaused ? ', paused' : ''}',
+            label: runtime.isPaused ? l.workoutTimePausedSemantic(durationText(runtime.elapsedSeconds(_now))) : l.workoutTimeSemantic(durationText(runtime.elapsedSeconds(_now))),
             child: ExcludeSemantics(child: Text(clockText(runtime.elapsedSeconds(_now)), style: context.titleStyle(30))),
           ),
         ),
         if (!parked)
-          SecondaryButton(runtime.isPaused ? 'Resume' : 'Pause', key: const Key('workout-pause'), expand: false, icon: runtime.isPaused ? Icons.play_arrow : Icons.pause,
+          SecondaryButton(runtime.isPaused ? l.workoutResume : l.workoutPause, key: const Key('workout-pause'), expand: false, icon: runtime.isPaused ? Icons.play_arrow : Icons.pause,
               onPressed: () => _save(runtime.isPaused ? runtime.resumed(_now) : runtime.paused(_now))),
       ]),
       if (parked) ...[
-        const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.bookmark_outline, 'Saved for later. Everything recorded is kept; resume it to record more.')),
+        Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.bookmark_outline, l.workoutParkedStatus)),
         const SizedBox(height: 10),
-        PrimaryButton('Resume workout', key: const Key('panel-resume'), icon: Icons.play_arrow_rounded, busy: _busy, onPressed: () => _resumeParked(workout)),
+        PrimaryButton(l.workoutResumeWorkout, key: const Key('panel-resume'), icon: Icons.play_arrow_rounded, busy: _busy, onPressed: () => _resumeParked(workout)),
       ] else if (runtime.isPaused)
-        const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.pause_circle_outline, 'Workout paused. Time and rest are frozen until you resume.')),
+        Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.pause_circle_outline, l.workoutPausedStatus)),
       if (row.needsReview)
-        const Padding(padding: EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, 'Saved on this phone; this workout needs review before it can sync. See the review notice below the screen.', tone: Tone.warning)),
+        Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.rule, l.workoutNeedsReviewStatus, tone: Tone.warning)),
       // Recorded work against the plan, for the whole workout. Targets alone never move it.
       Builder(builder: (context) {
         final p = SetProgress.of(workout, [for (final r in live) r.value]);
         return Padding(
           padding: const EdgeInsets.only(top: 12),
           child: p.planned == null
-              ? Text('${p.recorded} ${p.recorded == 1 ? 'set' : 'sets'} recorded', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400))
+              ? Text(l.workoutSetsRecorded(p.recorded), style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400))
               : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${p.counted} of ${p.planned} planned sets recorded', style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
+                  Text(l.workoutPlannedSetsRecorded(p.counted, p.planned!), style: context.numStyle(13.5, color: context.c.secondary, weight: FontWeight.w400)),
                   const SizedBox(height: 6),
-                  ProgressRail(p.fraction, label: 'Planned sets recorded', height: 6),
+                  ProgressRail(p.fraction, label: l.workoutPlannedSetsRail, height: 6),
                 ]),
         );
       }),
       const SizedBox(height: 18),
       if (selected == null)
-        EmptyState('No movements yet', 'Add a movement to start recording sets.',
-            action: parked ? null : SecondaryButton('Add a movement', icon: Icons.add, onPressed: () => _menu('add', workout, null)))
+        EmptyState(l.workoutNoMovementsTitle, l.workoutNoMovementsBody,
+            action: parked ? null : SecondaryButton(l.workoutAddMovement, icon: Icons.add, onPressed: () => _menu('add', workout, null)))
       else ...[
         // The exercise heading: its place in the workout, the name in the serif and the planned prescription.
         KeyedSubtree(key: _panelKey, child: PhotoPanel(
@@ -502,16 +526,16 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           photo: 'assets/images/workout-hero.webp',
           photoAlignment: const Alignment(1, 0.6),
           content: (context) => [
-            Overline('Movement ${exercises.indexOf(selected) + 1} of ${exercises.length}${selected.isPrescribed ? '' : ' · extra'}'),
+            Overline(selected.isPrescribed ? l.workoutMovementPosition(exercises.indexOf(selected) + 1, exercises.length) : l.workoutMovementPositionExtra(exercises.indexOf(selected) + 1, exercises.length)),
             const SizedBox(height: 4),
-            Semantics(header: true, child: Text(selected.name, style: context.pageTitleStyle(26))),
+            Semantics(header: true, child: Text(nameOf(selected), style: context.pageTitleStyle(26))),
             const SizedBox(height: 2),
-            Text(selected.target, key: const Key('workout-prescription'), style: context.numStyle(16, color: context.c.secondary, weight: FontWeight.w500)),
+            Text(targetText(sets: selected.targetSets, repsMin: selected.targetRepsMin, repsMax: selected.targetRepsMax, seconds: selected.targetDurationSeconds, l: l), key: const Key('workout-prescription'), style: context.numStyle(16, color: context.c.secondary, weight: FontWeight.w500)),
             if (selected.substitutedForKey != null)
-              Padding(padding: const EdgeInsets.only(top: 4), child: Text('Recorded as ${selected.name}, in place of the planned movement.', style: context.caption)),
+              Padding(padding: const EdgeInsets.only(top: 4), child: Text(l.workoutSubstitutedNote(nameOf(selected)), style: context.caption)),
           ],
           actions: (context) => [
-            QuietLink('About', key: const Key('workout-demo'), said: 'About ${selected.name}',
+            QuietLink(l.workoutAbout, key: const Key('workout-demo'), said: l.workoutAboutSemantic(nameOf(selected)),
                 onPressed: () => showExerciseInfo(appContext(context), exercise: Prescription(selected.j), workoutName: workout.title)),
           ],
         )),
@@ -519,7 +543,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
         // It is the one frozen into this workout at Start; a next target changes the plan, never this workout.
         if (selected.targetLoadKg != null) ...[
           const SizedBox(height: 10),
-          _Tile(icon: Icons.flag_outlined, label: 'Target in this workout', value: formatLoad(selected.targetLoadKg, unit), valueKey: const Key('workout-target-load')),
+          _Tile(icon: Icons.flag_outlined, label: l.workoutTargetInWorkout, value: formatLoad(selected.targetLoadKg, unit), valueKey: const Key('workout-target-load')),
         ],
         if (definitionOf(ref, workout) case final def? when selected.isPrescribed && selected.occurrenceKey != null)
           NextTargetLine(slotKey: (planId: workout.planId!, workoutId: def, occurrenceKey: selected.occurrenceKey!)),
@@ -530,7 +554,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
         LastTime(
           history: history, status: historyStatus(ref, selected.catalogKey), unit: unit,
           today: [for (final r in mine) r.value], nextIndex: parked ? null : mine.length, rows: selected.targetSets,
-          onAll: () => showExerciseHistory(context, name: selected.name, history: history, unit: unit),
+          onAll: () => showExerciseHistory(context, name: nameOf(selected), history: history, unit: unit),
         ),
         const SizedBox(height: 16),
         if (!parked) ...[
@@ -539,85 +563,88 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
               padding: const EdgeInsets.only(bottom: 16),
               child: Panel(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Overline(rest == 0 ? 'Rest ended' : 'Rest${runtime.restExerciseId != selected.id ? ' · from the previous movement' : ''}'),
+                  Overline(rest == 0 ? l.workoutRestEnded : runtime.restExerciseId != selected.id ? l.workoutRestFromPrevious : l.workoutRestOverline),
                   Semantics(
-                    label: rest == 0 ? 'Rest ended' : 'Rest, ${durationText(rest)} left',
+                    label: rest == 0 ? l.workoutRestEnded : l.workoutRestSemantic(durationText(rest)),
                     child: ExcludeSemantics(child: Text(clockText(rest), key: const Key('rest-clock'), style: context.sansStyle(context.display(70), weight: FontWeight.w300).copyWith(height: 1.05, fontFeatures: const [FontFeature.tabularFigures()]))),
                   ),
                   Wrap(spacing: 8, children: [
-                    if (rest > 0) TextButton(onPressed: () => _save(runtime.restExtended(_now, 30)), child: const Text('+30 s')),
-                    TextButton(key: const Key('rest-skip'), onPressed: () => _save(runtime.withoutRest()), child: Text(rest == 0 ? 'Dismiss' : 'Skip rest')),
+                    if (rest > 0) TextButton(onPressed: () => _save(runtime.restExtended(_now, 30)), child: Text(l.workoutRestAdd30)),
+                    TextButton(key: const Key('rest-skip'), onPressed: () => _save(runtime.withoutRest()), child: Text(rest == 0 ? l.workoutRestDismiss : l.workoutRestSkip)),
                   ]),
                 ]),
               ),
             ),
           // The next set's entry: what will be recorded, not yet a set.
           Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
-            Overline('Set ${mine.length + 1} · not recorded yet'),
+            Overline(l.workoutNextSetOverline(mine.length + 1)),
             if (lastForNext != null)
               TextButton.icon(key: const Key('use-last-values'), onPressed: () => _useLast(lastForNext, unit), icon: const Icon(Icons.history, size: 18),
-                  label: Text('Use last values', semanticsLabel: 'Use last values: ${setText(lastForNext, unit)}')),
+                  label: Text(l.workoutUseLastValues, semanticsLabel: l.workoutUseLastValuesSemantic(setText(lastForNext, unit, l)))),
           ]),
           const SizedBox(height: 8),
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
-              child: _BigField(key: const Key('set-load'), controller: _load, label: 'Load', suffix: entryUnit.name, hint: 'Bodyweight', decimal: true, onChanged: _onTyped),
+              child: _BigField(key: const Key('set-load'), controller: _load, label: l.workoutLoadLabel, suffix: entryUnit.label, hint: l.workoutSetBodyweight, decimal: true, onChanged: _onTyped),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: selected.isTimed
-                  ? _BigField(key: const Key('set-duration'), controller: _duration, label: 'Time', suffix: 's', hint: selected.targetDurationSeconds?.toString() ?? '', onChanged: _onTyped)
-                  : _BigField(key: const Key('set-reps'), controller: _reps, label: 'Reps', suffix: '',
-                      hint: selected.targetRepsMin == null ? '' : selected.targetRepsMin == selected.targetRepsMax ? '${selected.targetRepsMin}' : '${selected.targetRepsMin}–${selected.targetRepsMax}', onChanged: _onTyped),
+                  ? _BigField(key: const Key('set-duration'), controller: _duration, label: l.workoutTimeLabel, suffix: l.workoutSecondsUnit, hint: selected.targetDurationSeconds?.toString() ?? '', onChanged: _onTyped)
+                  : _BigField(key: const Key('set-reps'), controller: _reps, label: l.workoutRepsLabel, suffix: '',
+                      hint: selected.targetRepsMin == null ? '' : selected.targetRepsMin == selected.targetRepsMax ? '${selected.targetRepsMin}' : ltr('${selected.targetRepsMin}–${selected.targetRepsMax}'), onChanged: _onTyped),
             ),
           ]),
           const SizedBox(height: 12),
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
           if (targetReached)
             Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.check_circle_outline,
-                nextExercise == null ? 'Target set count recorded. This is the last movement: add another set, or finish the workout when you are ready.' : 'Target set count recorded. Add another set, or move on when you are ready.')),
+                nextExercise == null ? l.workoutTargetReachedLast : l.workoutTargetReached)),
           // Reaching the target never changes exercise. The same action stays available for extra sets.
-          PrimaryButton(targetReached ? 'Record another set' : 'Record set', key: const Key('complete-set'), icon: Icons.check_rounded, busy: _busy, onPressed: () => _complete(workout, selected)),
+          PrimaryButton(targetReached ? l.workoutRecordAnotherSet : l.workoutRecordSet, key: const Key('complete-set'), icon: Icons.check_rounded, busy: _busy, onPressed: () => _complete(workout, selected)),
           if (nextExercise != null) ...[
             const SizedBox(height: 8),
-            SecondaryButton('Next exercise · ${nextExercise.name}', key: const Key('next-exercise'), onPressed: () => _select(nextExercise.id)),
+            SecondaryButton(l.workoutNextExercise(nameOf(nextExercise)), key: const Key('next-exercise'), onPressed: () => _select(nextExercise.id)),
           ],
         ],
         const SizedBox(height: 22),
-        const Overline('Recorded sets'),
+        Overline(l.workoutRecordedSetsOverline),
         const SizedBox(height: 8),
         if (mine.isEmpty)
-          Text('None yet. Targets, last time and suggestions are not recorded sets.', style: context.caption)
+          Text(l.workoutNoRecordedSets, style: context.caption)
         else
           GroupCard(children: [
             for (final (i, r) in mine.indexed)
               GroupRow(
                 key: Key('set-row-$i'),
-                title: '${i + 1}.  ${setText(r.value, unit)}',
-                subtitle: r.needsReview ? 'Needs review' : r.isPending ? 'Recorded · saved on this phone, sync pending' : 'Recorded',
+                title: l.workoutSetRowTitle(i + 1, setText(r.value, unit, l)),
+                subtitle: r.needsReview ? l.workoutSetNeedsReview : r.isPending ? l.workoutSetPending : l.workoutSetRecorded,
                 trailing: parked ? null : Icon(Icons.edit_outlined, size: 20, color: context.c.secondary),
                 onTap: parked ? null : () => _editSet(r.value, selected),
               ),
           ]),
       ],
       const SizedBox(height: 26),
-      const Overline('All movements'),
+      Overline(l.workoutAllMovementsOverline),
       const SizedBox(height: 8),
       if (exercises.isNotEmpty)
         GroupCard(children: [
           for (final e in exercises)
             GroupRow(
               key: Key('exercise-row-${e.ordinal}'),
-              title: e.name,
-              subtitle: '${setsOf(e.id).length}${e.targetSets == null ? '' : ' of ${e.targetSets}'} sets recorded${e.id == selected?.id ? ' · current' : ''}',
+              title: nameOf(e),
+              subtitle: switch ((e.targetSets == null ? l.workoutMovementSetsRecorded(setsOf(e.id).length) : l.workoutMovementSetsOfTarget(setsOf(e.id).length, e.targetSets!))) {
+                final s when e.id == selected?.id => l.workoutMovementCurrent(s),
+                final s => s,
+              },
               trailing: e.id == selected?.id ? Icon(Icons.radio_button_checked, size: 20, color: context.c.accent) : null,
               onTap: e.id == selected?.id ? null : () => _select(e.id),
             ),
         ]),
       if (!parked) ...[
         const SizedBox(height: 22),
-        SecondaryButton('Finish workout', key: const Key('finish-workout'), icon: Icons.flag_outlined, onPressed: () => _finish(workout)),
-        Center(child: TextButton(onPressed: () => _menu('park', workout, selected), child: const Text('Save for later'))),
+        SecondaryButton(l.workoutFinishButton, key: const Key('finish-workout'), icon: Icons.flag_outlined, onPressed: () => _finish(workout)),
+        Center(child: TextButton(onPressed: () => _menu('park', workout, selected), child: Text(l.workoutSaveForLater))),
       ],
     ]);
   }
@@ -652,13 +679,13 @@ class LastTime extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.c;
+    final c = context.c, l = context.l10n;
     final last = history.firstOrNull;
     final empty = switch (status) {
-      HistoryStatus.loading => 'Reading your previous sessions…',
-      HistoryStatus.unavailable => 'Your previous sessions could not be read on this phone right now.',
-      HistoryStatus.noIdentity => 'No history: this movement is not linked to a saved exercise, so nothing is matched by name.',
-      HistoryStatus.ready when last == null => 'No previous session recorded.',
+      HistoryStatus.loading => l.workoutHistoryLoading,
+      HistoryStatus.unavailable => l.workoutHistoryUnavailable,
+      HistoryStatus.noIdentity => l.workoutHistoryNoIdentity,
+      HistoryStatus.ready when last == null => l.workoutHistoryNone,
       _ => null,
     };
     final count = [last?.sets.length ?? 0, if (compare) today.length + (nextIndex == null ? 0 : 1), if (compare) rows ?? 0].fold(0, (a, b) => a > b ? a : b);
@@ -675,31 +702,34 @@ class LastTime extends StatelessWidget {
             ),
           ]),
         );
-    Widget lastCell(int i, {String label = ''}) {
+    // [labeled]: the large-text layout names the column in each cell.
+    Widget lastCell(int i, {bool labeled = false}) {
       final s = last?.sets.elementAtOrNull(i);
-      return s != null ? cell('$label${setText(s, unit)}', key: Key('compare-$i-last')) : cell('$label—', key: Key('compare-$i-last'), color: c.secondary);
+      String t(String v) => labeled ? l.workoutCompareLastLabeled(v) : v;
+      return s != null ? cell(t(setText(s, unit, l)), key: Key('compare-$i-last')) : cell(t('—'), key: Key('compare-$i-last'), color: c.secondary);
     }
 
-    Widget todayCell(int i, {String label = ''}) {
+    Widget todayCell(int i, {bool labeled = false}) {
       final s = today.elementAtOrNull(i);
+      String t(String v) => labeled ? l.workoutCompareTodayLabeled(v) : v;
       return s != null
-        ? Semantics(label: 'Recorded: ${setText(s, unit)}', child: ExcludeSemantics(child: cell('$label${setText(s, unit)}', key: Key('compare-$i-today'), weight: FontWeight.w700, icon: Icons.check_circle, below: 'Recorded')))
-        : cell('$label${i == nextIndex ? 'Next · not recorded yet' : 'Not recorded yet'}', key: Key('compare-$i-today'), color: c.secondary, weight: i == nextIndex ? FontWeight.w600 : FontWeight.w400);
+        ? Semantics(label: l.workoutCompareRecordedSemantic(setText(s, unit, l)), child: ExcludeSemantics(child: cell(t(setText(s, unit, l)), key: Key('compare-$i-today'), weight: FontWeight.w700, icon: Icons.check_circle, below: l.workoutSetRecorded)))
+        : cell(t(i == nextIndex ? l.workoutCompareNext : l.workoutCompareNotYet), key: Key('compare-$i-today'), color: c.secondary, weight: i == nextIndex ? FontWeight.w600 : FontWeight.w400);
     }
 
     Widget head(String text) => Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(text, style: context.sansStyle(13, color: c.secondary, weight: FontWeight.w600)));
     return Panel(
       key: const Key('last-time'),
-      padding: const EdgeInsets.fromLTRB(16, 10, 8, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 8, 12).resolve(Directionality.of(context)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text(last == null ? 'Last time' : 'Last time · ${shortDate(last.dayKey)}', key: const Key('last-time-title'), style: context.sansStyle(16, weight: FontWeight.w600)),
+            child: Text(last == null ? l.workoutLastTime : l.workoutLastTimeOn(shortDate(last.dayKey)), key: const Key('last-time-title'), style: context.sansStyle(16, weight: FontWeight.w600)),
           ),
-          if (history.isNotEmpty) QuietLink('All sessions', key: const Key('all-sessions'), said: 'All previous sessions', onPressed: onAll),
+          if (history.isNotEmpty) QuietLink(l.workoutAllSessions, key: const Key('all-sessions'), said: l.workoutAllSessionsSemantic, onPressed: onAll),
         ]),
-        if (last != null && last.workout.outcome != WorkoutResultRules.full) Text('${last.workout.title} · ${WorkoutResultRules.label(last.workout.outcome)}', style: context.caption),
+        if (last != null && last.workout.outcome != WorkoutResultRules.full) Text('${last.workout.title} · ${outcomeLabel(l, last.workout.outcome)}', style: context.caption),
         if (empty != null) Padding(padding: const EdgeInsets.only(top: 2, bottom: 4), child: Text(empty, key: const Key('last-time-empty'), style: context.caption)),
         // With large text each set is a short block (Set, then Last time and Today under it) instead of squeezed columns.
         if (count > 0 && MediaQuery.textScalerOf(context).scale(10) > 13)
@@ -710,9 +740,9 @@ class LastTime extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    head('Set ${i + 1}'),
-                    lastCell(i, label: 'Last time: '),
-                    if (compare) todayCell(i, label: 'Today: '),
+                    head(l.workoutCompareSetNumber(i + 1)),
+                    lastCell(i, labeled: true),
+                    if (compare) todayCell(i, labeled: true),
                   ]),
                 ),
               ),
@@ -722,7 +752,7 @@ class LastTime extends StatelessWidget {
             key: const Key('compare-table'),
             columnWidths: compare ? const {0: FlexColumnWidth(0.55), 1: FlexColumnWidth(1.3), 2: FlexColumnWidth(1.6)} : const {0: FlexColumnWidth(0.55), 1: FlexColumnWidth(2.9)},
             children: [
-              TableRow(children: [head('Set'), head('Last time'), if (compare) head('Today')]),
+              TableRow(children: [head(l.workoutCompareSet), head(l.workoutLastTime), if (compare) head(l.workoutCompareToday)]),
               for (var i = 0; i < count; i++)
                 TableRow(
                   decoration: i == nextIndex ? BoxDecoration(border: Border(top: BorderSide(color: c.divider), bottom: BorderSide(color: c.divider))) : null,
@@ -745,13 +775,13 @@ Future<void> showExerciseHistory(BuildContext context, {required String name, re
       appContext(context),
       title: name,
       builder: (sheet) => Column(key: const Key('history-sheet'), crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text('Previous sessions, newest first: workouts that count as training, matched by this exercise and its place in the workout.', style: sheet.caption),
+        Text(sheet.l10n.workoutHistorySheetCaption, style: sheet.caption),
         for (final (i, p) in history.indexed) ...[
           const SizedBox(height: 12),
           if (i > 0) ...[const Rule(), const SizedBox(height: 12)],
           Text(longDate(p.dayKey), key: Key('history-session-$i'), style: sheet.sansStyle(16, weight: FontWeight.w600)),
-          Text('${p.workout.title} · ${WorkoutResultRules.label(p.workout.outcome)}', style: sheet.caption),
-          for (final (n, s) in p.sets.indexed) Padding(padding: const EdgeInsets.only(top: 4), child: Text('${n + 1}.  ${setText(s, unit)}', style: sheet.numStyle(15, weight: FontWeight.w400))),
+          Text('${p.workout.title} · ${outcomeLabel(sheet.l10n, p.workout.outcome)}', style: sheet.caption),
+          for (final (n, s) in p.sets.indexed) Padding(padding: const EdgeInsets.only(top: 4), child: Text(sheet.l10n.workoutSetRowTitle(n + 1, setText(s, unit, sheet.l10n)), style: sheet.numStyle(15, weight: FontWeight.w400))),
         ],
       ]),
     );
@@ -802,7 +832,7 @@ class _BigField extends StatelessWidget {
           textAlign: TextAlign.center,
           style: context.sansStyle(37, weight: FontWeight.w600).copyWith(height: 1.1, fontFeatures: const [FontFeature.tabularFigures()]),
           decoration: InputDecoration(
-            labelText: suffix.isEmpty ? label : '$label ($suffix)',
+            labelText: suffix.isEmpty ? label : context.l10n.workoutFieldWithUnit(label, suffix),
             floatingLabelBehavior: FloatingLabelBehavior.always,
             hintText: hint,
             hintStyle: context.sansStyle(20, color: context.c.secondary),

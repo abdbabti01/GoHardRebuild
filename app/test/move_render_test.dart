@@ -312,7 +312,7 @@ void main() {
           await pumpApp(tester, await _fixture(tester, accent, mode, view: view(), saying: saying), home: home is SizedBox ? const HomeShell() : home, insets: phoneInsets, settle: false);
           await _settle(tester);
           await reach(tester);
-          shots['${accent.label} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = await _capture(tester);
+          shots['${accent.name[0].toUpperCase()}${accent.name.substring(1)} · ${mode == ThemeMode.light ? 'Light' : 'Dark'}'] = await _capture(tester);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
         }

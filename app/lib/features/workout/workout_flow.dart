@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/catalog_names.dart';
 import '../../core/device_prefs.dart';
+import '../../core/language.dart';
+import '../../core/search_fold.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../plans/plan_l10n.dart' show exerciseMatches;
 import '../plans/plan_projection.dart';
 import '../plans/plan_repository.dart';
 import '../shell/home_shell.dart';
 import 'workout_repository.dart';
+import 'workout_screen.dart' show shownName;
 
 /// Every way of starting or resuming a workout goes through here, so the one-foreground-workout rule and
 /// its explicit choice are applied the same everywhere, and each ends in the same panel in Train › Workouts.
@@ -27,12 +32,12 @@ Future<bool> ensureForeground(BuildContext context, WidgetRef ref, String? wante
     context: context,
     builder: (context) => AlertDialog(
       actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
-      title: Text('${current.title} is still open'),
-      content: const Text('Only one workout is in front at a time. Resume it, or save it for later. Saving for later keeps every recorded set and never finishes it.'),
+      title: Text(context.l10n.workoutStillOpenTitle(current.title)),
+      content: Text(context.l10n.workoutStillOpenBody),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(context, 'park'), child: const Text('Save it for later and continue')),
-        FilledButton(onPressed: () => Navigator.pop(context, 'resume'), child: const Text('Resume it')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.actionCancel)),
+        TextButton(onPressed: () => Navigator.pop(context, 'park'), child: Text(context.l10n.workoutStillOpenPark)),
+        FilledButton(onPressed: () => Navigator.pop(context, 'resume'), child: Text(context.l10n.workoutStillOpenResume)),
       ],
     ),
   );
@@ -68,7 +73,7 @@ Future<void> _once(BuildContext context, WidgetRef ref, Future<String?> Function
     // A late answer for an account that has since signed out shows nothing.
     if (id != null && context.mounted && ref.read(ownerProvider) == owner) openWorkoutPanel(context, ref, id);
   } on LocalSaveFailure {
-    if (context.mounted) toast(context, 'The workout could not be started on this phone. Nothing was recorded. Try again.');
+    if (context.mounted) toast(context, context.l10n.workoutStartFailed);
   } finally {
     _busy = false;
   }
@@ -146,8 +151,10 @@ class PickChip extends StatelessWidget {
 /// Choose an exercise: search familiar names, narrow by muscle group and equipment, or create your own (private to
 /// the account, synced like everything else). Pops a [CatalogExercise]; one of your own has key `custom:<id>`.
 class ExercisePicker extends ConsumerStatefulWidget {
-  const ExercisePicker({super.key, this.title = 'Choose a movement'});
-  final String title;
+  const ExercisePicker({super.key, this.title});
+
+  /// "Choose a movement" when null.
+  final String? title;
   @override
   ConsumerState<ExercisePicker> createState() => _ExercisePickerState();
 }
@@ -156,29 +163,32 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
   String _query = '';
   String? _muscle, _equipment;
 
-  static bool _matches(CatalogExercise e, String query) {
-    final q = _fold(query);
-    if (q.isEmpty) return true;
-    final hay = _fold('${e.name} ${e.category} ${e.equipment}');
+  /// Matched in every language: the stored name, the category and equipment in English and as shown, and the
+  /// catalog's French, Arabic and English names and aliases (folded for accents and Arabic variants).
+  /// The shared rule ([exerciseMatches]) first; then word by word, ignoring hyphens and spacing ("push up").
+  static bool _matches(CatalogExercise e, String query, ExerciseNames names, Locale locale) {
+    if (exerciseMatches(names, query, name: e.name, catalogKey: e.key, extra: '${e.category} ${e.equipment}')) return true;
+    final q = _fold(foldForSearch(query));
+    final hay = _fold(foldForSearch([e.name, e.category, e.equipment, names.category(e.category, locale), names.equipment(e.equipment, locale), if (e.key != null) ...names.searchTerms(e.key!)].join(' ')));
     return q.split(' ').every(hay.contains) || hay.replaceAll(' ', '').contains(q.replaceAll(' ', ''));
   }
 
   Future<void> _create() async {
     final all = ref.read(exerciseChoicesProvider);
-    final made = await showGoSheet<CustomExercise>(context, title: 'Your own exercise',
+    final made = await showGoSheet<CustomExercise>(context, title: context.l10n.workoutCustomTitle,
         builder: (_) => _CustomExerciseForm(name: _query.trim(), categories: {for (final e in all) e.category}, equipment: {for (final e in all) if (e.equipment.isNotEmpty) e.equipment}));
     if (made == null || !mounted) return;
     Navigator.pop(context, CatalogExercise({'key': made.key, 'name': made.name, 'category': made.category, 'equipment': made.equipment, 'isTimed': made.isTimed, 'isCustom': true}));
   }
 
-  Widget _chips(String label, List<String> values, String? selected, String keyPrefix, ValueChanged<String?> pick) =>
+  Widget _chips(String label, List<String> values, String Function(String) shown, String? selected, String keyPrefix, ValueChanged<String?> pick) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         SectionLabel(label),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(children: [
             for (final v in values)
-              Padding(padding: const EdgeInsets.only(right: 6), child: PickChip(key: Key('$keyPrefix-$v'), label: v, selected: v == selected, onTap: () => pick(v == selected ? null : v))),
+              Padding(padding: const EdgeInsetsDirectional.only(end: 6), child: PickChip(key: Key('$keyPrefix-$v'), label: shown(v), selected: v == selected, onTap: () => pick(v == selected ? null : v))),
           ]),
         ),
       ]);
@@ -186,37 +196,40 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(exerciseChoicesProvider);
+    final names = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context), l = context.l10n;
+    String category(String v) => names.category(v, locale);
+    String kit(String v) => names.equipment(v, locale);
     final catalogEmpty = !all.any((e) => !e.isCustom);
     final muscles = {for (final e in all) e.category}.toList()..sort();
     final equipment = {for (final e in all) if (e.equipment.isNotEmpty) e.equipment}.toList()..sort();
     final shown = [
       for (final e in all)
-        if ((_muscle == null || e.category == _muscle) && (_equipment == null || e.equipment == _equipment) && _matches(e, _query)) e,
+        if ((_muscle == null || e.category == _muscle) && (_equipment == null || e.equipment == _equipment) && _matches(e, _query, names, locale)) e,
     ];
     final q = _query.trim();
-    return AppPage(title: widget.title, children: [
+    return AppPage(title: widget.title ?? l.workoutPickerTitle, children: [
       TextField(
           key: const Key('exercise-search'), textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(labelText: 'Search exercises', prefixIcon: Icon(Icons.search)), onChanged: (v) => setState(() => _query = v)),
+          decoration: InputDecoration(labelText: l.workoutPickerSearch, prefixIcon: const Icon(Icons.search)), onChanged: (v) => setState(() => _query = v)),
       const SizedBox(height: 10),
       if (catalogEmpty) ...[
-        const StatusLine(Icons.cloud_off, 'The exercise list has not been downloaded to this phone yet. You can still create your own exercise.', tone: Tone.warning),
+        StatusLine(Icons.cloud_off, l.workoutPickerCatalogEmpty, tone: Tone.warning),
         const SizedBox(height: 10),
       ],
-      if (muscles.length > 1) _chips('Muscle group', muscles, _muscle, 'filter-muscle', (v) => setState(() => _muscle = v)),
-      if (equipment.length > 1) ...[const SizedBox(height: 6), _chips('Equipment', equipment, _equipment, 'filter-equipment', (v) => setState(() => _equipment = v))],
+      if (muscles.length > 1) _chips(l.workoutPickerMuscle, muscles, category, _muscle, 'filter-muscle', (v) => setState(() => _muscle = v)),
+      if (equipment.length > 1) ...[const SizedBox(height: 6), _chips(l.workoutPickerEquipment, equipment, kit, _equipment, 'filter-equipment', (v) => setState(() => _equipment = v))],
       const SizedBox(height: 6),
-      if (shown.isEmpty && all.isNotEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text('No exercise matches that. Try another name or filter, or create your own.', style: context.caption)),
+      if (shown.isEmpty && all.isNotEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(l.workoutPickerNoMatch, style: context.caption)),
       for (final e in shown)
         ListRow(
-          key: Key('exercise-${e.key}'), title: e.name,
-          subtitle: [e.category, if (e.equipment.isNotEmpty) e.equipment, if (e.isTimed) 'timed', if (e.isCustom) 'Your exercise'].join(' · '),
+          key: Key('exercise-${e.key}'), title: names.name(e.key, e.name, locale),
+          subtitle: [category(e.category), if (e.equipment.isNotEmpty) kit(e.equipment), if (e.isTimed) l.workoutPickerTimedTag, if (e.isCustom) l.workoutPickerYourExercise].join(' · '),
           onTap: () => Navigator.pop(context, e),
         ),
       ListRow(
         key: const Key('exercise-create-custom'), icon: Icons.add,
-        title: q.isEmpty ? 'Create your own exercise' : 'Create “$q” as your own exercise',
-        subtitle: 'Private to your account. It keeps its own history.', onTap: _create,
+        title: q.isEmpty ? l.workoutPickerCreate : l.workoutPickerCreateNamed(q),
+        subtitle: l.workoutPickerCreateSubtitle, onTap: _create,
       ),
     ]);
   }
@@ -252,32 +265,35 @@ class _CustomExerciseFormState extends ConsumerState<_CustomExerciseForm> {
     } on ScheduleRefused catch (e) {
       if (mounted) setState(() { _busy = false; _error = e.message; });
     } on LocalSaveFailure {
-      if (mounted) setState(() { _busy = false; _error = 'It could not be saved on this phone. Try again.'; });
+      if (mounted) setState(() { _busy = false; _error = context.l10n.workoutSaveFailedRetry; });
     }
   }
 
-  Widget _choices(List<String> values, String selected, String keyPrefix, ValueChanged<String> pick) =>
-      Wrap(spacing: 6, children: [for (final v in values) PickChip(key: Key('$keyPrefix-$v'), label: v, selected: v == selected, onTap: () => setState(() => pick(v)))]);
+  Widget _choices(List<String> values, String Function(String) shown, String selected, String keyPrefix, ValueChanged<String> pick) =>
+      Wrap(spacing: 6, children: [for (final v in values) PickChip(key: Key('$keyPrefix-$v'), label: shown(v), selected: v == selected, onTap: () => setState(() => pick(v)))]);
 
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text('Only you can see your own exercises. Renaming one later never changes what you already recorded.', style: context.caption),
+  Widget build(BuildContext context) {
+    final names = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context), l = context.l10n;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        Text(l.workoutCustomCaption, style: context.caption),
         const SizedBox(height: 12),
         TextField(
             key: const Key('custom-name'), controller: _name, maxLength: 80, textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(labelText: 'Name', errorText: _error), onChanged: (_) => setState(() {})),
+            decoration: InputDecoration(labelText: l.workoutCustomName, errorText: _error), onChanged: (_) => setState(() {})),
         const SizedBox(height: 8),
-        const SectionLabel('Muscle group'),
-        _choices(_categories, _category, 'custom-category', (v) => _category = v),
+        SectionLabel(l.workoutPickerMuscle),
+        _choices(_categories, (v) => names.category(v, locale), _category, 'custom-category', (v) => _category = v),
         const SizedBox(height: 8),
-        const SectionLabel('Equipment'),
-        _choices(_kits, _kit, 'custom-equipment', (v) => _kit = v),
+        SectionLabel(l.workoutPickerEquipment),
+        _choices(_kits, (v) => names.equipment(v, locale), _kit, 'custom-equipment', (v) => _kit = v),
         SwitchListTile(
             key: const Key('custom-timed'), contentPadding: EdgeInsets.zero, value: _timed, onChanged: (v) => setState(() => _timed = v),
-            title: const Text('Timed'), subtitle: const Text('Held or done for a time, like a plank, instead of counted reps.')),
+            title: Text(l.workoutCustomTimed), subtitle: Text(l.workoutCustomTimedHelp)),
         const SizedBox(height: 8),
-        PrimaryButton('Save exercise', key: const Key('custom-save'), busy: _busy, onPressed: _name.text.trim().isEmpty ? null : _save),
+        PrimaryButton(l.workoutCustomSave, key: const Key('custom-save'), busy: _busy, onPressed: _name.text.trim().isEmpty ? null : _save),
       ]);
+  }
 }
 
 class ManualWorkoutSetup extends ConsumerStatefulWidget {
@@ -297,28 +313,33 @@ class _ManualWorkoutSetupState extends ConsumerState<ManualWorkoutSetup> {
   }
 
   @override
-  Widget build(BuildContext context) => AppPage(
-        title: 'Manual workout',
-        bottom: PrimaryButton('Start workout', key: const Key('manual-start'), onPressed: () => Navigator.pop(context, (_title.text, List.of(_chosen)))),
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    String nameOf(CatalogExercise e) => shownName(ref, context, e.key, e.name);
+    return AppPage(
+        title: l.workoutManualTitle,
+        // Left blank, the workout is named in the app's language ("Workout" in English, as before).
+        bottom: PrimaryButton(l.workoutStart, key: const Key('manual-start'), onPressed: () => Navigator.pop(context, (_title.text.trim().isEmpty ? l.workoutManualDefaultName : _title.text, List.of(_chosen)))),
         children: [
-          Text('Train without a plan. This is recorded as real training and never ticks off a planned workout.', style: context.caption),
+          Text(l.workoutManualCaption, style: context.caption),
           const SizedBox(height: 14),
-          TextField(key: const Key('manual-title'), controller: _title, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Name', hintText: 'Workout')),
+          TextField(key: const Key('manual-title'), controller: _title, textCapitalization: TextCapitalization.sentences, decoration: InputDecoration(labelText: l.workoutCustomName, hintText: l.workoutManualDefaultName)),
           const SizedBox(height: 18),
-          const SectionLabel('Movements'),
-          if (_chosen.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('None yet. You can also add movements after starting.', style: context.caption)),
+          SectionLabel(l.workoutManualMovements),
+          if (_chosen.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.workoutManualNone, style: context.caption)),
           if (_chosen.isNotEmpty) ...[
             const SizedBox(height: 8),
             GroupCard(children: [
               for (final (i, e) in _chosen.indexed)
-                GroupRow(title: e.name, trailing: IconButton(tooltip: 'Remove ${e.name}', icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() => _chosen.removeAt(i)))),
+                GroupRow(title: nameOf(e), trailing: IconButton(tooltip: l.workoutManualRemove(nameOf(e)), icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() => _chosen.removeAt(i)))),
             ]),
           ],
           const SizedBox(height: 10),
-          SecondaryButton('Add a movement', key: const Key('manual-add-exercise'), icon: Icons.add, onPressed: () async {
+          SecondaryButton(l.workoutAddMovement, key: const Key('manual-add-exercise'), icon: Icons.add, onPressed: () async {
             final e = await push<CatalogExercise>(context, const ExercisePicker());
             if (e != null) setState(() => _chosen.add(e));
           }),
         ],
       );
+  }
 }

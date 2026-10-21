@@ -78,12 +78,15 @@ class WeekSummary {
   Total get activeSeconds => _sum(activities, (r) => r.activeDurationSeconds);
 
   /// "Walking distance" only when every counted activity is a walk; "Running" likewise; otherwise "Run / Walk".
-  String get activityWord => activities.isNotEmpty && activities.every((r) => r.isWalk)
-      ? 'Walking'
+  ActivityMix get activityMix => activities.isNotEmpty && activities.every((r) => r.isWalk)
+      ? ActivityMix.walking
       : activities.isNotEmpty && activities.every((r) => !r.isWalk)
-          ? 'Running'
-          : 'Run / Walk';
+          ? ActivityMix.running
+          : ActivityMix.mixed;
 }
+
+/// Which activities a week's Run / Walk totals cover; shown as words by the recap.
+enum ActivityMix { walking, running, mixed }
 
 /// Builds the summary of the week starting [monday]. [workouts] and [runs] are the owner's records on this phone;
 /// the same record is never counted twice, whatever retries or route chunks did.

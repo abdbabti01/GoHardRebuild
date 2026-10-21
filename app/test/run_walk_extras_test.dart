@@ -85,7 +85,8 @@ class _Voice implements VoiceOut {
   }
 
   @override
-  Future<List<VoiceOption>> voices() async => const [];
+  // An installed offline English voice: speech is only ever in the app language (docs/RUN_WALK.md › Voice and alerts).
+  Future<List<VoiceOption>> voices() async => const [(name: 'en-test', locale: 'en-US')];
 }
 
 class _Day extends TodayKey {
@@ -222,6 +223,7 @@ void main() {
       await h.signIn('one');
       prefs.value = const MovePrefs(voice: true);
       c = app();
+      await Future<void>.delayed(Duration.zero); // the installed voices are read ahead
     });
     tearDown(() => c.dispose());
 

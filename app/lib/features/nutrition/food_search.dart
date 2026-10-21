@@ -1,5 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show AssetBundle;
+
+import '../../core/language.dart';
+import '../../core/search_fold.dart';
+import '../../core/units.dart' show formatNumber2;
 import '../../data/models.dart';
 import 'food_discovery.dart';
 import 'food_item.dart';
@@ -12,13 +18,13 @@ const _folded = {
   'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a', 'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e', 'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
   'ñ': 'n', 'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u', 'ý': 'y', 'ÿ': 'y', 'œ': 'oe', 'æ': 'ae', 'ß': 'ss',
 };
-final _kept = RegExp(r'[a-z0-9%]');
+final _kept = RegExp('[a-z0-9%ء-ي]');
 
-/// Lower case, accents and ligatures folded ("Œufs" → "oeufs"), punctuation and repeated spaces removed.
+/// Lower case, accents and ligatures folded ("Œufs" → "oeufs"), Arabic folded as [foldForSearch] does ("أرز" =
+/// "ارز"), punctuation and repeated spaces removed.
 String normalizeSearch(String text) {
   final out = StringBuffer();
-  for (final rune in text.toLowerCase().runes) {
-    if (rune >= 0x300 && rune <= 0x36f) continue; // an accent written as its own combining character
+  for (final rune in foldForSearch(text).runes) {
     final ch = String.fromCharCode(rune);
     out.write(_folded[ch] ?? (_kept.hasMatch(ch) ? ch : ' '));
   }
@@ -26,7 +32,10 @@ String normalizeSearch(String text) {
 }
 
 // ponytail: plain English/French plural endings only; a word list or stemmer if irregular plurals start to matter.
+// ponytail: the Arabic article "ال" is dropped from a word of four letters or more, so "الأرز" finds "أرز"; a real
+// stemmer if attached prefixes (و، ب، ل) start to matter.
 String _singular(String w) {
+  if (w.length > 3 && w.startsWith('ال')) return w.substring(2);
   if (w.length > 3 && w.endsWith('ies')) return '${w.substring(0, w.length - 3)}y';
   if (w.length > 3 && RegExp(r'(ss|x|z|ch|sh|o)es$').hasMatch(w)) return w.substring(0, w.length - 2);
   if (w.length > 2 && w.endsWith('s') && !w.endsWith('ss')) return w.substring(0, w.length - 1);
@@ -93,17 +102,26 @@ List<T> rankByRelevance<T>(String query, Iterable<T> items, SearchFields Functio
   return [for (final s in scored) s.$3, if (keepUnmatched) ...rest];
 }
 
+/// A catalog food's everyday name, preparation, start portion and other names in one language. Words only: the
+/// food and its values are the main file's.
+typedef FoodWords = ({String name, String qualifier, String? portion, List<String> aliases});
+
 /// One everyday food of the bundled catalog: a provider record ([item], untouched) with the name people use for
 /// it, its preparation, a category, and other names it is searched by.
 class CommonFood {
-  CommonFood(Json j)
+  CommonFood(Json j, [Json? words])
       : id = j['id'] as String,
         name = j['name'] as String,
         qualifier = j['qualifier'] as String,
         category = j['category'] as String,
         aliases = [for (final a in j['aliases'] as List? ?? const []) a as String],
         portion = j['portion'] as String?,
-        item = FoodItem(j['item'] as Json);
+        item = FoodItem(j['item'] as Json),
+        words = {
+          for (final e in (words ?? const <String, dynamic>{}).entries)
+            if (e.value case final Map w)
+              e.key: (name: w['name'] as String, qualifier: w['qualifier'] as String, portion: w['portion'] as String?, aliases: [for (final a in w['aliases'] as List? ?? const []) a as String]),
+        };
 
   final String id, name, qualifier, category;
   final List<String> aliases;
@@ -112,8 +130,19 @@ class CommonFood {
   final String? portion;
   final FoodItem item;
 
-  /// The provider's own title is one more name the food answers to.
-  SearchFields get fields => SearchFields(name, aliases: [...aliases, item.name], qualifier: qualifier);
+  /// The food's words by language code ("fr", "ar"), from `common-foods.l10n.json`. English is the main file's.
+  final Map<String, FoodWords> words;
+
+  String nameIn(String lang) => words[lang]?.name ?? name;
+  String qualifierIn(String lang) => words[lang]?.qualifier ?? qualifier;
+
+  /// [portion] as it reads in `lang`; [portion] itself stays what the unit is found by.
+  String? portionIn(String lang) => portion == null ? null : words[lang]?.portion ?? portion;
+
+  /// The provider's own title is one more name the food answers to, and so are its names in every language: a
+  /// French or Arabic name finds this same food whatever language the app is in.
+  SearchFields get fields => SearchFields(name,
+      aliases: [...aliases, item.name, for (final w in words.values) ...[w.name, ...w.aliases]], qualifier: [qualifier, for (final w in words.values) w.qualifier].join(' '));
 
   /// The unit a new entry starts in: [portion] when the record states it, otherwise the food's own measure.
   String get unitId {
@@ -126,11 +155,14 @@ class CommonFood {
 /// with no connection. A catalog food and the same record met in a wider search are one food: same [FoodItem.key].
 class CommonFoodCatalog {
   CommonFoodCatalog({required this.version, required this.provenance, required this.categories, required this.foods}) : _byKey = {for (final f in foods) f.item.key: f};
-  factory CommonFoodCatalog.parse(String source) {
+  /// With [overlay] (`assets/data/common-foods.l10n.json`) each food also gets its French and Arabic words, by id.
+  factory CommonFoodCatalog.parse(String source, {String? overlay}) {
     final j = jsonDecode(source) as Json;
+    final words = overlay == null ? const <String, dynamic>{} : (jsonDecode(overlay) as Json)['foods'] as Json;
     return CommonFoodCatalog(
       version: j['version'] as int, provenance: j['provenance'] as Json,
-      categories: [for (final c in j['categories'] as List) c as String], foods: [for (final f in j['foods'] as List) CommonFood(f as Json)]);
+      categories: [for (final c in j['categories'] as List) c as String],
+      foods: [for (final f in (j['foods'] as List).cast<Json>()) CommonFood(f, words[f['id']] as Json?)]);
   }
   static final empty = CommonFoodCatalog(version: 0, provenance: const {}, categories: const [], foods: const []);
 
@@ -143,6 +175,28 @@ class CommonFoodCatalog {
   /// The catalog entry for exactly this record, by source identity. Never by a similar name.
   CommonFood? of(FoodItem item) => _byKey[item.key];
 }
+
+/// The bundled catalog with its French and Arabic words, read from `bundle` (the app's `rootBundle`).
+Future<CommonFoodCatalog> loadCommonFoods(AssetBundle bundle) async {
+  Future<String> read(String path) async => utf8.decode(Uint8List.sublistView(await bundle.load(path)));
+  return CommonFoodCatalog.parse(await read('assets/data/common-foods.json'), overlay: await read('assets/data/common-foods.l10n.json'));
+}
+
+/// A catalog category's name from its stored id ("Fats & Oils"); [short] is the chip's ("Carbs").
+String foodCategoryLabel(AppLocalizations l, String id, {bool short = false}) => switch (id) {
+      'Proteins' => l.foodCategoryProteins,
+      'Carbohydrates' => short ? l.foodCategoryCarbsShort : l.foodCategoryCarbohydrates,
+      'Vegetables' => l.foodCategoryVegetables,
+      'Fruits' => l.foodCategoryFruits,
+      'Dairy' => l.foodCategoryDairy,
+      'Fats & Oils' => l.foodCategoryFatsOils,
+      'Snacks' => l.foodCategorySnacks,
+      'Beverages' => l.foodCategoryBeverages,
+      _ => id,
+    };
+
+/// The language code [CommonFood.words] are kept under: "en", "fr", "ar".
+String foodLang(AppLocalizations l) => l.localeName.split('_').first;
 
 SearchFields _fieldsOf(Suggestion s) => s.common?.fields ?? SearchFields(s.item.name, brand: s.item.brand);
 
@@ -180,17 +234,29 @@ class RowFacts {
   final double? calories, protein;
 }
 
-const _tags = {Origin.favourite: 'Favourite', Origin.mine: 'My food', Origin.recent: 'Recent'};
-
-RowFacts rowFacts(Suggestion s) {
+/// In `l`'s language (the app's when not given): a catalog food by its everyday name there; any other food, and
+/// whatever was logged, as stored.
+RowFacts rowFacts(Suggestion s, [AppLocalizations? l]) {
+  l ??= currentL10n;
+  final lang = foodLang(l);
   final e = s.entry, item = s.item, common = s.common;
-  final title = common?.name ?? item.name;
-  final about = [?_tags[s.origin], ?(common?.qualifier ?? item.brand)].join(' · ');
+  final title = common?.nameIn(lang) ?? item.name;
+  final tag = switch (s.origin) { Origin.favourite => l.foodTagFavourite, Origin.mine => l.foodTagMine, Origin.recent => l.foodTagRecent, _ => null };
+  final about = [?tag, ?(common?.qualifierIn(lang) ?? item.brand)].join(' · ');
   // A food logged before is offered as it was logged: that amount, those values.
-  if (e != null) return RowFacts(title: title, detail: e.source == null ? 'As you logged it' : about, basis: e.amountDescription, calories: e.calories, protein: e.protein);
+  if (e != null) return RowFacts(title: title, detail: e.source == null ? l.foodAsYouLoggedIt : about, basis: e.amountDescription, calories: e.calories, protein: e.protein);
   final (quantity, unit) = startAmount(item, common);
   final values = FoodScaling.scale(item, quantity, unit);
-  return RowFacts(title: title, detail: about.isEmpty ? null : about, basis: FoodScaling.describe(item, quantity, unit), calories: values['calories'], protein: values['protein']);
+  return RowFacts(title: title, detail: about.isEmpty ? null : about, basis: describeAmount(item, quantity, unit, common, lang), calories: values['calories'], protein: values['protein']);
+}
+
+/// [FoodScaling.describe], with a catalog food's start portion said in `lang` ("1 poitrine moyenne (120 g)"). Other
+/// units keep their source's label; the amount and its weight are the same in every language.
+String describeAmount(FoodItem item, double quantity, FoodUnit unit, CommonFood? common, String lang) {
+  final local = common == null || unit.label != common.portion ? null : common.portionIn(lang);
+  if (local == null || local == unit.label) return FoodScaling.describe(item, quantity, unit);
+  final text = quantity == 1 ? local : '${formatNumber2(quantity)} × $local', weighed = FoodScaling.measured(item, quantity, unit);
+  return weighed == null ? text : '$text ($weighed)';
 }
 
 /// The stated amount a row gives a food's values for: the catalog's chosen portion ("1 egg"), which is also

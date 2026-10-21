@@ -5,6 +5,8 @@ library;
 
 import 'dart:math';
 
+import '../../core/language.dart';
+
 enum PhaseKind { warmup, run, walk, cooldown }
 
 class IntervalPhase {
@@ -15,12 +17,7 @@ class IntervalPhase {
   /// 1-based round for run and walk phases.
   final int? round;
 
-  String get label => switch (kind) {
-        PhaseKind.warmup => 'Warm-up',
-        PhaseKind.run => 'Run',
-        PhaseKind.walk => 'Walk',
-        PhaseKind.cooldown => 'Cool-down',
-      };
+  String get label => phaseName(currentL10n, kind);
 }
 
 class IntervalPlan {
@@ -30,7 +27,6 @@ class IntervalPlan {
   /// Editable starting point, after week 1 of the NHS Couch to 5K plan: a 5-minute brisk walk, then 60 seconds of
   /// running and 90 seconds of walking, 8 times (20 minutes), then a 5-minute walk to cool down.
   static const preset = IntervalPlan(warmup: 300, run: 60, walk: 90, reps: 8, cooldown: 300);
-  static const presetName = 'Run 1 min, walk 1½ min, 8 times';
 
   static const maxPhase = 3600, maxWarm = 1800, maxReps = 30, minPhase = 10;
 
@@ -119,26 +115,35 @@ abstract final class IntervalClock {
   }
 }
 
-/// "1:30", "5:00", "45 s" for setup and the phase bar.
-String phaseClock(int seconds) => seconds < 60 ? '$seconds s' : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+/// "Warm-up", "Échauffement", "إحماء".
+String phaseName(AppLocalizations l, PhaseKind k) => switch (k) {
+      PhaseKind.warmup => l.runPhaseWarmup,
+      PhaseKind.run => l.runPhaseRun,
+      PhaseKind.walk => l.runPhaseWalk,
+      PhaseKind.cooldown => l.runPhaseCooldown,
+    };
 
-/// "2 minutes", "1 minute 30 seconds", "45 seconds" for speech and screen readers.
-String spokenDuration(int seconds) {
+/// "1:30", "5:00", "45 s" for setup and the phase bar.
+String phaseClock(int seconds) => seconds < 60 ? currentL10n.durationSeconds(seconds) : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+
+/// "2 minutes", "1 minute 30 seconds", "45 seconds" for speech and screen readers, in [l] (the resolved language).
+String spokenDuration(int seconds, [AppLocalizations? l]) {
+  l ??= currentL10n;
   final m = seconds ~/ 60, s = seconds % 60;
-  String n(int v, String unit) => '$v $unit${v == 1 ? '' : 's'}';
-  if (m == 0) return n(s, 'second');
-  return s == 0 ? n(m, 'minute') : '${n(m, 'minute')} ${n(s, 'second')}';
+  if (m == 0) return l.runSpokenSeconds(s);
+  return s == 0 ? l.runSpokenMinutes(m) : l.runSpokenMinutesSeconds(l.runSpokenMinutes(m), l.runSpokenSeconds(s));
 }
 
 /// What the coach says as a phase begins (docs/RUN_WALK.md › Intervals › Prompts).
-String phaseCue(IntervalPosition p) {
+String phaseCue(IntervalPosition p, [AppLocalizations? l]) {
+  l ??= currentL10n;
   final ph = p.phase;
-  if (ph == null) return 'Intervals finished.';
-  final d = spokenDuration(ph.seconds);
+  if (ph == null) return l.runCueIntervalsFinished;
+  final d = spokenDuration(ph.seconds, l);
   return switch (ph.kind) {
-    PhaseKind.warmup => 'Warm up: walk for $d.',
-    PhaseKind.run => p.isLastRound ? 'Final round. Run for $d.' : 'Run for $d.',
-    PhaseKind.walk => 'Walk and recover for $d.',
-    PhaseKind.cooldown => 'Cool down: walk for $d.',
+    PhaseKind.warmup => l.runCueWarmup(d),
+    PhaseKind.run => p.isLastRound ? l.runCueFinalRun(d) : l.runCueRun(d),
+    PhaseKind.walk => l.runCueWalk(d),
+    PhaseKind.cooldown => l.runCueCooldown(d),
   };
 }

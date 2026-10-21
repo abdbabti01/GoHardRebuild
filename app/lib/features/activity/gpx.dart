@@ -5,8 +5,9 @@ String _esc(String s) => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').repl
 
 /// GPX 1.1 of a saved activity (docs/RUN_WALK.md › History and export): the accepted fixes as recorded, a `<time>` on
 /// every point, `<ele>` only where altitude was measured, and one `<trkseg>` per segment so gaps and pauses are not
-/// joined. Nothing is smoothed, snapped or invented.
-String toGpx(Run run, Iterable<TrackEntry> entries) {
+/// joined. Nothing is smoothed, snapped or invented. [name] is the track name shown by other apps (the activity's
+/// displayed name); element names and values follow the GPX standard.
+String toGpx(Run run, Iterable<TrackEntry> entries, {String? name}) {
   final a = TrackAnalysis();
   final segments = <int, List<TrackEntry>>{};
   for (final e in entries) {
@@ -14,12 +15,12 @@ String toGpx(Run run, Iterable<TrackEntry> entries) {
     if (e.type == EntryType.fix && identical(a.lastAccepted, e)) (segments[a.segmentIndex] ??= []).add(e);
   }
   String time(int ms) => DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true).toIso8601String();
-  final name = _esc(run.title ?? (run.isWalk ? 'Walk' : 'Run'));
+  final title = _esc(name ?? run.title ?? (run.isWalk ? 'Walk' : 'Run'));
   final b = StringBuffer()
     ..writeln('<?xml version="1.0" encoding="UTF-8"?>')
     ..writeln('<gpx version="1.1" creator="GoHard" xmlns="http://www.topografix.com/GPX/1/1">')
-    ..writeln('  <metadata><name>$name</name><time>${_esc(run.startedAtUtc)}</time></metadata>')
-    ..writeln('  <trk><name>$name</name><type>${run.isWalk ? 'walking' : 'running'}</type>');
+    ..writeln('  <metadata><name>$title</name><time>${_esc(run.startedAtUtc)}</time></metadata>')
+    ..writeln('  <trk><name>$title</name><type>${run.isWalk ? 'walking' : 'running'}</type>');
   for (final seg in segments.values) {
     b.writeln('    <trkseg>');
     for (final p in seg) {

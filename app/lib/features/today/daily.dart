@@ -1,3 +1,4 @@
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../nutrition/nutrient_coverage.dart';
 import '../plans/plan_projection.dart';
@@ -6,17 +7,10 @@ export '../plans/plan_projection.dart' show occasionOutcome, openWorkoutFor, pla
 
 /// How one planned occasion reads today. Always shown as text, never by colour alone.
 enum OccasionStatus {
-  inProgress('In progress'),
-  finished('Completed'),
-  partial('Partial'),
-  skipped('Skipped'),
-  missed('Missed'),
-  due('Due'),
-  upcoming('Planned'),
-  paused('Paused');
+  inProgress, finished, partial, skipped, missed, due, upcoming, paused;
 
-  const OccasionStatus(this.label);
-  final String label;
+  /// The state in words, in the current language ("In progress", "Planned").
+  String get label => currentL10n.todayOccasionStatus(name);
 }
 
 OccasionStatus statusOf(Occasion o, Plan plan, String today, Iterable<Workout> workouts) {

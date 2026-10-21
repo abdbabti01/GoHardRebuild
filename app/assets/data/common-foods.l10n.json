@@ -1,0 +1,302 @@
+{
+  "version": 1,
+  "note": "French (fr-CA) and Arabic display names and search aliases for assets/data/common-foods.json, keyed by food id. Display and search only: nutrient values, portion weights, sourceId and provenance stay in the main file. 'portion' translates the main file's start portion label.",
+  "foods": {
+    "chicken-breast": {
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite au four ou rôtie · sans peau", "portion": "1 poitrine moyenne", "aliases": ["poulet grillé", "suprême de poulet"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "مخبوز أو محمّر · بدون جلد", "portion": "صدر متوسط واحد", "aliases": ["دجاج", "صدور دجاج", "صدر الدجاج", "دجاج مشوي", "فراخ", "صدر فراخ"]}
+    },
+    "eggs": {
+      "fr": {"name": "Œufs", "qualifier": "Entiers · crus", "portion": "1 œuf", "aliases": ["oeufs"]},
+      "ar": {"name": "بيض", "qualifier": "كامل · نيء", "portion": "بيضة واحدة", "aliases": ["بيضة", "بيض كامل", "البيض"]}
+    },
+    "salmon": {
+      "fr": {"name": "Saumon", "qualifier": "Atlantique, d'élevage · cuit", "portion": null, "aliases": ["saumon atlantique"]},
+      "ar": {"name": "سلمون", "qualifier": "أطلسي، مستزرع · مطبوخ", "portion": null, "aliases": ["سالمون", "سمك السلمون", "فيليه سلمون"]}
+    },
+    "ground-beef-90": {
+      "fr": {"name": "Bœuf haché maigre 90 %", "qualifier": "Galette · grillée", "portion": null, "aliases": ["boeuf haché extra-maigre", "galette de boeuf"]},
+      "ar": {"name": "لحم بقري مفروم قليل الدهن 90%", "qualifier": "قرص · مشوي", "portion": null, "aliases": ["لحم مفروم", "لحمة مفرومة", "لحم بقر مفروم", "لحم بقري مفروم", "همبرغر", "هامبرغر", "برغر"]}
+    },
+    "greek-yogurt": {
+      "fr": {"name": "Yogourt grec", "qualifier": "Nature · sans gras", "portion": "1 tasse", "aliases": ["yogourt grec nature"]},
+      "ar": {"name": "زبادي يوناني", "qualifier": "سادة · خالٍ من الدسم", "portion": "كوب واحد", "aliases": ["زبادي", "لبن زبادي", "يوغرت", "يوغورت", "روب", "زبادي يونانى"]}
+    },
+    "tofu": {
+      "fr": {"name": "Tofu", "qualifier": "Ferme · cru", "portion": null, "aliases": []},
+      "ar": {"name": "توفو", "qualifier": "صلب · نيء", "portion": null, "aliases": ["جبن الصويا", "توفو صلب", "توفو"]}
+    },
+    "tuna-canned-water": {
+      "fr": {"name": "Thon", "qualifier": "Pâle · en conserve dans l'eau, égoutté", "portion": null, "aliases": ["thon pâle"]},
+      "ar": {"name": "تونة", "qualifier": "فاتحة · معلّبة في الماء، مصفّاة", "portion": null, "aliases": ["تونا", "تونة معلبة", "تونة بالماء"]}
+    },
+    "turkey-breast": {
+      "fr": {"name": "Poitrine de dinde", "qualifier": "Rôtie · chair seulement", "portion": null, "aliases": []},
+      "ar": {"name": "صدر ديك رومي", "qualifier": "محمّر · لحم فقط", "portion": null, "aliases": ["ديك رومي", "حبش", "ديك حبش", "تركي"]}
+    },
+    "shrimp": {
+      "fr": {"name": "Crevettes", "qualifier": "Cuites", "portion": null, "aliases": ["crevettes cuites"]},
+      "ar": {"name": "روبيان", "qualifier": "مطبوخ", "portion": null, "aliases": ["جمبري", "قريدس", "ربيان", "جمبرى"]}
+    },
+    "cottage-cheese-low-fat": {
+      "fr": {"name": "Fromage cottage", "qualifier": "Faible en gras · 1 % M.G.", "portion": null, "aliases": ["cottage"]},
+      "ar": {"name": "جبن قريش", "qualifier": "قليل الدسم · 1% دهون الحليب", "portion": null, "aliases": ["جبنة قريش", "جبن كوتيج", "جبنة كوتيج", "كوتيج", "جبن قريش قليل الدسم"]}
+    },
+    "pork-tenderloin": {
+      "fr": {"name": "Filet de porc", "qualifier": "Rôti · maigre seulement", "portion": null, "aliases": []},
+      "ar": {"name": "فيليه لحم الخنزير", "qualifier": "محمّر · لحم صافٍ فقط", "portion": null, "aliases": ["لحم خنزير", "خنزير", "فيليه خنزير"]}
+    },
+    "egg-whites": {
+      "fr": {"name": "Blancs d'œufs", "qualifier": "Blancs seulement · crus", "portion": "1 blanc d'œuf", "aliases": ["blanc d'oeuf liquide"]},
+      "ar": {"name": "بياض البيض", "qualifier": "البياض فقط · نيء", "portion": "بياض بيضة واحدة", "aliases": ["بياض بيض", "زلال البيض", "بياض البيضة"]}
+    },
+    "tempeh": {
+      "fr": {"name": "Tempeh", "qualifier": "Soya fermenté", "portion": null, "aliases": []},
+      "ar": {"name": "تمبيه", "qualifier": "فول صويا مخمّر", "portion": null, "aliases": ["تيمبي", "تمبه", "تيمبيه"]}
+    },
+    "cod": {
+      "fr": {"name": "Morue", "qualifier": "Atlantique · cuite", "portion": null, "aliases": ["filet de morue"]},
+      "ar": {"name": "سمك القد", "qualifier": "أطلسي · مطبوخ", "portion": null, "aliases": ["قد", "سمك قد", "بكالاو", "بكلاه"]}
+    },
+    "whey-protein-powder": {
+      "fr": {"name": "Protéine de lactosérum en poudre", "qualifier": "À base de lactosérum · poudre sèche", "portion": null, "aliases": ["whey", "protéine whey"]},
+      "ar": {"name": "مسحوق بروتين مصل اللبن", "qualifier": "أساسه مصل اللبن · مسحوق جاف", "portion": null, "aliases": ["واي بروتين", "بروتين واي", "مسحوق بروتين", "بروتين", "مصل اللبن", "واي"]}
+    },
+    "brown-rice": {
+      "fr": {"name": "Riz brun", "qualifier": "Cuit · sans gras ajouté", "portion": "1 tasse, cuit", "aliases": []},
+      "ar": {"name": "أرز بني", "qualifier": "مطبوخ · بدون دهون مضافة", "portion": "كوب واحد، مطبوخ", "aliases": ["أرز", "رز", "رز بني", "أرز أسمر", "رز أسمر"]}
+    },
+    "oatmeal": {
+      "fr": {"name": "Flocons d'avoine", "qualifier": "Secs · non cuits", "portion": null, "aliases": []},
+      "ar": {"name": "شوفان", "qualifier": "جاف · غير مطبوخ", "portion": null, "aliases": ["رقائق الشوفان", "شوفان ملفوف", "حبوب الشوفان", "شوفان جاف"]}
+    },
+    "sweet-potato": {
+      "fr": {"name": "Patate douce", "qualifier": "Cuite au four · sans gras ajouté", "portion": "1 moyenne", "aliases": []},
+      "ar": {"name": "بطاطا حلوة", "qualifier": "مخبوزة · بدون دهون مضافة", "portion": "حبة متوسطة واحدة", "aliases": ["بطاطس حلوة", "بطاطا حلوه", "بطاطا"]}
+    },
+    "quinoa": {
+      "fr": {"name": "Quinoa", "qualifier": "Cuit · sans gras ajouté", "portion": "1 tasse, cuit", "aliases": []},
+      "ar": {"name": "كينوا", "qualifier": "مطبوخة · بدون دهون مضافة", "portion": "كوب واحد، مطبوخة", "aliases": ["كينوى", "كينوا مطبوخة", "كينوه"]}
+    },
+    "whole-wheat-bread": {
+      "fr": {"name": "Pain de blé entier", "qualifier": "Pain tranché", "portion": "1 tranche moyenne ou ordinaire", "aliases": ["pain brun", "rôtie", "toast"]},
+      "ar": {"name": "خبز القمح الكامل", "qualifier": "رغيف مقطّع شرائح", "portion": "شريحة متوسطة أو عادية واحدة", "aliases": ["خبز", "خبز أسمر", "خبز بر", "خبز حبوب كاملة", "توست أسمر", "توست", "عيش"]}
+    },
+    "white-rice": {
+      "fr": {"name": "Riz blanc", "qualifier": "Cuit · sans gras ajouté", "portion": "1 tasse, cuit", "aliases": []},
+      "ar": {"name": "أرز أبيض", "qualifier": "مطبوخ · بدون دهون مضافة", "portion": "كوب واحد، مطبوخ", "aliases": ["أرز", "رز", "رز أبيض", "أرز مطبوخ"]}
+    },
+    "whole-wheat-pasta": {
+      "fr": {"name": "Pâtes de blé entier", "qualifier": "Grains entiers · cuites", "portion": "1 tasse, cuites", "aliases": ["spaghetti de blé entier"]},
+      "ar": {"name": "معكرونة القمح الكامل", "qualifier": "حبوب كاملة · مطبوخة", "portion": "كوب واحد، مطبوخة", "aliases": ["معكرونة", "مكرونة", "باستا", "سباغيتي", "اسباغيتي", "مكرونة سمراء"]}
+    },
+    "potato": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Cuite au four · avec la pelure", "portion": "1 moyenne", "aliases": ["patate au four"]},
+      "ar": {"name": "بطاطس", "qualifier": "مخبوزة · بقشرها", "portion": "حبة متوسطة واحدة", "aliases": ["بطاطا", "بطاطس مخبوزة", "بطاطس مشوية", "بطاطة"]}
+    },
+    "black-beans": {
+      "fr": {"name": "Haricots noirs", "qualifier": "Cuits à partir de secs · sans gras ajouté", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "فاصوليا سوداء", "qualifier": "مطبوخة من المجففة · بدون دهون مضافة", "portion": "كوب واحد", "aliases": ["فاصولياء سوداء", "فاصوليا", "فاصولياء", "فول أسود"]}
+    },
+    "chickpeas": {
+      "fr": {"name": "Pois chiches", "qualifier": "Cuits à partir de secs · sans gras ajouté", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "حمص حب", "qualifier": "مطبوخ من المجفف · بدون دهون مضافة", "portion": "كوب واحد", "aliases": ["حمص مسلوق", "حب الحمص", "حمص", "حمص مطبوخ"]}
+    },
+    "lentils": {
+      "fr": {"name": "Lentilles", "qualifier": "Cuites à partir de sèches · sans gras ajouté", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "عدس", "qualifier": "مطبوخ من المجفف · بدون دهون مضافة", "portion": "كوب واحد", "aliases": ["عدس مطبوخ", "عدس مسلوق"]}
+    },
+    "banana": {
+      "fr": {"name": "Banane", "qualifier": "Crue", "portion": "1 banane", "aliases": []},
+      "ar": {"name": "موز", "qualifier": "طازج", "portion": "موزة واحدة", "aliases": ["موزة", "الموز"]}
+    },
+    "corn-tortilla": {
+      "fr": {"name": "Tortilla de maïs", "qualifier": "Maïs", "portion": "1 moyenne", "aliases": []},
+      "ar": {"name": "تورتيلا الذرة", "qualifier": "ذرة", "portion": "قطعة متوسطة واحدة", "aliases": ["تورتيلا", "خبز تورتيلا", "تورتيا", "تورتيلا ذرة"]}
+    },
+    "bagel": {
+      "fr": {"name": "Bagel", "qualifier": "Ordinaire", "portion": "1 ordinaire", "aliases": ["bagel nature"]},
+      "ar": {"name": "خبز البيغل", "qualifier": "عادي", "portion": "قطعة عادية واحدة", "aliases": ["بيغل", "بيجل", "بيقل", "بيغل سادة"]}
+    },
+    "english-muffin": {
+      "fr": {"name": "Muffin anglais", "qualifier": "Blé entier", "portion": "1 muffin", "aliases": []},
+      "ar": {"name": "مافن إنجليزي", "qualifier": "قمح كامل", "portion": "قطعة واحدة", "aliases": ["مافن", "مفن إنجليزي", "مافن انجليزي"]}
+    },
+    "broccoli": {
+      "fr": {"name": "Brocoli", "qualifier": "Cru", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "بروكلي", "qualifier": "نيء", "portion": "كوب واحد", "aliases": ["بروكولي", "بروكلى", "قرنبيط أخضر"]}
+    },
+    "spinach": {
+      "fr": {"name": "Épinards", "qualifier": "Crus", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "سبانخ", "qualifier": "نيئة", "portion": "كوب واحد", "aliases": ["سبانخ طازجة", "اسبانخ"]}
+    },
+    "kale": {
+      "fr": {"name": "Chou frisé (kale)", "qualifier": "Cru", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "كرنب أجعد", "qualifier": "نيء", "portion": "كوب واحد", "aliases": ["كيل", "كالي", "ملفوف أجعد", "كرنب"]}
+    },
+    "bell-pepper": {
+      "fr": {"name": "Poivron", "qualifier": "Rouge · cru", "portion": "1 ordinaire", "aliases": []},
+      "ar": {"name": "فلفل رومي", "qualifier": "أحمر · نيء", "portion": "حبة عادية واحدة", "aliases": ["فلفل حلو", "فلفل أحمر", "فليفلة", "فلفل بارد", "فلفل ألوان", "فلفل"]}
+    },
+    "carrots": {
+      "fr": {"name": "Carottes", "qualifier": "Crues", "portion": "1 carotte ordinaire", "aliases": []},
+      "ar": {"name": "جزر", "qualifier": "نيء", "portion": "جزرة عادية واحدة", "aliases": ["جزرة", "الجزر"]}
+    },
+    "cucumber": {
+      "fr": {"name": "Concombre", "qualifier": "Cru", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "خيار", "qualifier": "نيء", "portion": "كوب واحد", "aliases": ["خيارة", "خيار طازج"]}
+    },
+    "tomato": {
+      "fr": {"name": "Tomate", "qualifier": "Crue", "portion": "1 entière", "aliases": []},
+      "ar": {"name": "طماطم", "qualifier": "نيئة", "portion": "حبة كاملة واحدة", "aliases": ["بندورة", "طماطة", "طماطم طازجة", "بندوره"]}
+    },
+    "asparagus": {
+      "fr": {"name": "Asperges", "qualifier": "Cuites · sans gras ajouté", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "هليون", "qualifier": "مطبوخ · بدون دهون مضافة", "portion": "كوب واحد", "aliases": ["اسباراغوس", "أسباراجوس", "هليون مطبوخ"]}
+    },
+    "zucchini": {
+      "fr": {"name": "Courgette", "qualifier": "Crue · avec la pelure", "portion": null, "aliases": []},
+      "ar": {"name": "كوسا", "qualifier": "نيئة · بقشرها", "portion": null, "aliases": ["كوسة", "كوسى", "قرع"]}
+    },
+    "cauliflower": {
+      "fr": {"name": "Chou-fleur", "qualifier": "Cru", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "قرنبيط", "qualifier": "نيء", "portion": "كوب واحد", "aliases": ["زهرة", "قرنبيط أبيض", "قنبيط"]}
+    },
+    "green-beans": {
+      "fr": {"name": "Haricots verts", "qualifier": "Cuits · sans gras ajouté", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "فاصوليا خضراء", "qualifier": "مطبوخة · بدون دهون مضافة", "portion": "كوب واحد", "aliases": ["فاصولياء خضراء", "فاصوليا خضرا", "لوبيا"]}
+    },
+    "brussels-sprouts": {
+      "fr": {"name": "Choux de Bruxelles", "qualifier": "Cuits · sans gras ajouté", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "كرنب بروكسل", "qualifier": "مطبوخ · بدون دهون مضافة", "portion": "كوب واحد", "aliases": ["ملفوف بروكسل", "كرنب صغير", "ملفوف صغير"]}
+    },
+    "apple": {
+      "fr": {"name": "Pomme", "qualifier": "Crue", "portion": "1 moyenne", "aliases": []},
+      "ar": {"name": "تفاح", "qualifier": "طازج", "portion": "تفاحة متوسطة واحدة", "aliases": ["تفاحة", "التفاح"]}
+    },
+    "blueberries": {
+      "fr": {"name": "Bleuets", "qualifier": "Crus", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "توت أزرق", "qualifier": "طازج", "portion": "كوب واحد", "aliases": ["بلوبيري", "عنبية", "توت بري أزرق"]}
+    },
+    "orange": {
+      "fr": {"name": "Orange", "qualifier": "Crue", "portion": "1 fruit", "aliases": []},
+      "ar": {"name": "برتقال", "qualifier": "طازج", "portion": "برتقالة واحدة", "aliases": ["برتقالة", "البرتقال"]}
+    },
+    "avocado": {
+      "fr": {"name": "Avocat", "qualifier": "Cru", "portion": "1 fruit", "aliases": []},
+      "ar": {"name": "أفوكادو", "qualifier": "طازج", "portion": "حبة واحدة", "aliases": ["أفوكاتو", "افوكادو", "زبدية"]}
+    },
+    "strawberries": {
+      "fr": {"name": "Fraises", "qualifier": "Crues", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "فراولة", "qualifier": "طازجة", "portion": "كوب واحد", "aliases": ["فريز", "فراولا", "توت أرضي"]}
+    },
+    "grapes": {
+      "fr": {"name": "Raisins", "qualifier": "Crus", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "عنب", "qualifier": "طازج", "portion": "كوب واحد", "aliases": ["العنب", "حبات عنب"]}
+    },
+    "mango": {
+      "fr": {"name": "Mangue", "qualifier": "Crue", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "مانجو", "qualifier": "طازجة", "portion": "كوب واحد", "aliases": ["مانغو", "منجا", "مانجا", "منجو"]}
+    },
+    "pineapple": {
+      "fr": {"name": "Ananas", "qualifier": "Cru", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "أناناس", "qualifier": "طازج", "portion": "كوب واحد", "aliases": ["الأناناس"]}
+    },
+    "milk-2": {
+      "fr": {"name": "Lait 2 %", "qualifier": "Partiellement écrémé", "portion": "1 tasse", "aliases": ["lait partiellement écrémé"]},
+      "ar": {"name": "حليب 2%", "qualifier": "قليل الدسم", "portion": "كوب واحد", "aliases": ["حليب", "حليب قليل الدسم", "حليب نصف دسم"]}
+    },
+    "cheddar-cheese": {
+      "fr": {"name": "Fromage cheddar", "qualifier": "Ordinaire", "portion": "1 tranche", "aliases": []},
+      "ar": {"name": "جبن شيدر", "qualifier": "عادي", "portion": "شريحة واحدة", "aliases": ["شيدر", "جبنة شيدر", "جبن", "جبنة", "جبن شيدار"]}
+    },
+    "almond-milk-unsweetened": {
+      "fr": {"name": "Boisson d'amande", "qualifier": "Non sucrée", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "حليب اللوز", "qualifier": "غير محلّى", "portion": "كوب واحد", "aliases": ["حليب لوز", "مشروب اللوز", "حليب اللوز غير المحلى"]}
+    },
+    "mozzarella-cheese": {
+      "fr": {"name": "Mozzarella", "qualifier": "Partiellement écrémée", "portion": "1 tranche", "aliases": []},
+      "ar": {"name": "جبن موزاريلا", "qualifier": "نصف دسم", "portion": "شريحة واحدة", "aliases": ["موزاريلا", "موتزاريلا", "جبنة موزاريلا", "موزريلا", "جبن", "جبنة", "أصابع الجبن"]}
+    },
+    "skim-milk": {
+      "fr": {"name": "Lait écrémé", "qualifier": "Sans gras", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "حليب خالي الدسم", "qualifier": "خالٍ من الدسم", "portion": "كوب واحد", "aliases": ["حليب", "حليب منزوع الدسم", "حليب خالى الدسم"]}
+    },
+    "parmesan-cheese": {
+      "fr": {"name": "Parmesan", "qualifier": "Râpé sec", "portion": "1 cuillère à soupe", "aliases": []},
+      "ar": {"name": "جبن بارميزان", "qualifier": "مبشور جاف", "portion": "ملعقة كبيرة واحدة", "aliases": ["بارميزان", "بارمزان", "جبنة بارميزان", "جبن", "جبنة"]}
+    },
+    "butter": {
+      "fr": {"name": "Beurre", "qualifier": "En bâton", "portion": "1 cuillère à soupe", "aliases": []},
+      "ar": {"name": "زبدة", "qualifier": "قالب", "portion": "ملعقة كبيرة واحدة", "aliases": ["زبده", "الزبدة"]}
+    },
+    "cream-cheese": {
+      "fr": {"name": "Fromage à la crème", "qualifier": "Ordinaire · nature", "portion": "1 cuillère à soupe", "aliases": []},
+      "ar": {"name": "جبن كريمي", "qualifier": "عادي · سادة", "portion": "ملعقة كبيرة واحدة", "aliases": ["جبنة كريمية", "جبنة كريمة", "كريم تشيز"]}
+    },
+    "olive-oil": {
+      "fr": {"name": "Huile d'olive", "qualifier": "Huile", "portion": "1 cuillère à soupe", "aliases": ["huile d'olive extra vierge"]},
+      "ar": {"name": "زيت زيتون", "qualifier": "زيت", "portion": "ملعقة كبيرة واحدة", "aliases": ["زيت", "زيت الزيتون", "زيت زيتون بكر ممتاز"]}
+    },
+    "almonds": {
+      "fr": {"name": "Amandes", "qualifier": "Entières · crues", "portion": null, "aliases": []},
+      "ar": {"name": "لوز", "qualifier": "كامل · نيء", "portion": null, "aliases": ["لوزة", "اللوز", "لوز نيء"]}
+    },
+    "peanut-butter": {
+      "fr": {"name": "Beurre d'arachide", "qualifier": "Ordinaire", "portion": "1 cuillère à soupe", "aliases": []},
+      "ar": {"name": "زبدة الفول السوداني", "qualifier": "عادية", "portion": "ملعقة كبيرة واحدة", "aliases": ["زبدة فول سوداني", "زبدة الفستق", "زبدة فستق", "زبدة الفول"]}
+    },
+    "chia-seeds": {
+      "fr": {"name": "Graines de chia", "qualifier": "Graines", "portion": null, "aliases": []},
+      "ar": {"name": "بذور الشيا", "qualifier": "بذور", "portion": null, "aliases": ["شيا", "بذور شيا", "حبوب الشيا", "بذر الشيا"]}
+    },
+    "walnuts": {
+      "fr": {"name": "Noix de Grenoble", "qualifier": "Noix anglaises", "portion": null, "aliases": []},
+      "ar": {"name": "جوز", "qualifier": "جوز إنجليزي", "portion": null, "aliases": ["عين الجمل", "جوزة", "الجوز"]}
+    },
+    "coconut-oil": {
+      "fr": {"name": "Huile de coco", "qualifier": "Huile", "portion": "1 cuillère à soupe", "aliases": []},
+      "ar": {"name": "زيت جوز الهند", "qualifier": "زيت", "portion": "ملعقة كبيرة واحدة", "aliases": ["زيت", "زيت النارجيل", "زيت جوز هند", "زيت كوكو"]}
+    },
+    "hummus": {
+      "fr": {"name": "Houmous", "qualifier": "Nature", "portion": "1 cuillère à soupe", "aliases": []},
+      "ar": {"name": "حمص بالطحينة", "qualifier": "سادة", "portion": "ملعقة كبيرة واحدة", "aliases": ["حمص", "حمص بطحينة", "متبل حمص"]}
+    },
+    "dark-chocolate-70": {
+      "fr": {"name": "Chocolat noir", "qualifier": "70–85 % de cacao", "portion": null, "aliases": []},
+      "ar": {"name": "شوكولاتة داكنة", "qualifier": "70–85% كاكاو", "portion": null, "aliases": ["شوكولاتة", "شوكولا", "شيكولاتة", "شوكولاتة سوداء", "شوكولاته"]}
+    },
+    "rice-cakes": {
+      "fr": {"name": "Galettes de riz", "qualifier": "Riz brun · nature, non salées", "portion": null, "aliases": []},
+      "ar": {"name": "كعك الأرز", "qualifier": "أرز بني · سادة، بدون ملح", "portion": null, "aliases": ["كعكة أرز", "كعك أرز", "رقائق الأرز", "خبز الأرز"]}
+    },
+    "trail-mix": {
+      "fr": {"name": "Mélange du randonneur", "qualifier": "Ordinaire", "portion": null, "aliases": ["mélange de noix et fruits séchés"]},
+      "ar": {"name": "خليط المكسرات والفواكه المجففة", "qualifier": "عادي", "portion": null, "aliases": ["مكسرات مشكلة", "خليط مكسرات", "مكسرات"]}
+    },
+    "beef-jerky": {
+      "fr": {"name": "Bœuf séché", "qualifier": "Haché et façonné", "portion": null, "aliases": ["jerky"]},
+      "ar": {"name": "لحم بقري مجفف", "qualifier": "مفروم ومشكّل", "portion": null, "aliases": ["لحم مجفف", "جيركي", "لحم مقدد"]}
+    },
+    "popcorn-air-popped": {
+      "fr": {"name": "Maïs soufflé", "qualifier": "À l'air chaud · sans beurre", "portion": "1 tasse, éclaté", "aliases": ["popcorn"]},
+      "ar": {"name": "فشار", "qualifier": "بالهواء الساخن · بدون زبدة", "portion": "كوب واحد، مفرقع", "aliases": ["بوشار", "فوشار", "بوب كورن", "ذرة منفوشة"]}
+    },
+    "coffee-black": {
+      "fr": {"name": "Café", "qualifier": "Infusé", "portion": "1 tasse (8 oz liq.)", "aliases": []},
+      "ar": {"name": "قهوة", "qualifier": "مُحضّرة بالتقطير", "portion": "كوب واحد (8 أونصات سائلة)", "aliases": ["قهوة سوداء", "قهوة سادة", "قهوة أمريكية", "كوفي"]}
+    },
+    "green-tea": {
+      "fr": {"name": "Thé vert", "qualifier": "Chaud · infusé à partir de feuilles", "portion": "1 tasse", "aliases": []},
+      "ar": {"name": "شاي أخضر", "qualifier": "ساخن · منقوع من الأوراق", "portion": "كوب واحد", "aliases": ["شاي", "شاى أخضر", "شاي اخضر"]}
+    },
+    "orange-juice": {
+      "fr": {"name": "Jus d'orange", "qualifier": "100 % · fraîchement pressé", "portion": null, "aliases": []},
+      "ar": {"name": "عصير برتقال", "qualifier": "100% · معصور طازجًا", "portion": null, "aliases": ["عصير", "عصير البرتقال", "عصير برتقال طبيعي"]}
+    },
+    "coconut-water": {
+      "fr": {"name": "Eau de coco", "qualifier": "Non sucrée", "portion": null, "aliases": []},
+      "ar": {"name": "ماء جوز الهند", "qualifier": "غير محلّى", "portion": null, "aliases": ["ماء النارجيل", "مياه جوز الهند", "ماء جوز هند"]}
+    }
+  }
+}

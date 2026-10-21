@@ -5,6 +5,8 @@ import 'package:flutter/material.dart' show Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../core/language.dart' show currentL10n;
+
 /// What the phone's location is able to do right now. Always read from the device, never assumed.
 enum GpsAccess {
   /// Location services are switched off on the phone.
@@ -92,6 +94,7 @@ class DeviceLocationSource implements LocationSource {
 
   @override
   Stream<Reading> watch({required bool recording, String type = 'run'}) {
+    // The notification is in the language resolved when the recording starts.
     final LocationSettings settings = switch (defaultTargetPlatform) {
       TargetPlatform.android => AndroidSettings(
           accuracy: LocationAccuracy.best, distanceFilter: 0, intervalDuration: const Duration(seconds: 1),
@@ -99,9 +102,9 @@ class DeviceLocationSource implements LocationSource {
           forceLocationManager: true,
           foregroundNotificationConfig: recording
               ? ForegroundNotificationConfig(
-                  notificationTitle: 'GoHard is recording your $type',
-                  notificationText: 'Open GoHard to pause or finish. Location is used only for this $type.',
-                  notificationChannelName: 'Run / Walk recording',
+                  notificationTitle: currentL10n.runNotificationTitle(type),
+                  notificationText: currentL10n.runNotificationText(type),
+                  notificationChannelName: currentL10n.runNotificationChannel,
                   setOngoing: true, enableWakeLock: true, color: Colors.green.shade800)
               : null),
       TargetPlatform.iOS => AppleSettings(

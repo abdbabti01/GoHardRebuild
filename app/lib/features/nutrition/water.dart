@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
 import '../../app/providers.dart' show ownerProvider, profileProvider, profileRepositoryProvider;
 import '../../core/compatibility.dart';
+import '../../core/format.dart';
+import '../../core/language.dart';
+import '../../core/units.dart' show parseNonNegative, parsePositiveInt;
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../data/sync.dart';
@@ -14,11 +17,11 @@ import '../../data/sync.dart';
 /// with at most three decimals; fluid ounces exist only at the input and display boundary. Nothing is counted from
 /// foods or other drinks.
 enum VolumeUnit {
-  ml('Millilitres'),
-  flOz('US fluid ounces');
+  ml,
+  flOz;
 
-  const VolumeUnit(this.label);
-  final String label;
+  /// "Millilitres", "US fluid ounces", in the app's language. [name] stays the stored identifier.
+  String get label => this == ml ? currentL10n.waterUnitMlName : currentL10n.waterUnitFlOzName;
 
   /// One US fluid ounce in millilitres (exact by definition). A volume, not the ounce of weight.
   static const mlPerFlOz = 29.5735295625;
@@ -34,14 +37,19 @@ enum VolumeUnit {
   double toMl(double amount) => roundMl(this == ml ? amount : amount * mlPerFlOz);
 
   /// A typed amount in this unit as it is read back: whole millilitres, or ounces to one decimal.
-  String amount(double v) => this == ml ? _grouped(v.round()) : _trim(v.toStringAsFixed(1));
+  String amount(double v) => this == ml ? formatGrouped(v.round()) : localDecimal(_trim(v.toStringAsFixed(1)));
+
+  /// What was typed in this unit: "1,500", "1 500" and "١٥٠٠" mL are 1500; ounces may have a decimal mark ("8,5").
+  /// Null for blank, ambiguous or malformed input ([parseNonNegative]).
+  double? parseAmount(String raw) =>
+      (this == ml ? parsePositiveInt(raw, grouping: true)?.toDouble() : null) ?? parseNonNegative(raw, grouping: true);
 
   /// "250 mL", "2,000 mL", "8 fl oz": always the chosen unit, never switching to litres. The total is converted once
   /// from the stored millilitres, never summed from rounded figures.
-  String format(double ml) => '${number(ml)} $short';
+  String format(double ml) => withUnit(number(ml), short);
 
   /// The figure alone, in this unit: "1,250" or "42.3".
-  String number(double ml) => this == flOz ? _trim((ml / mlPerFlOz).toStringAsFixed(1)) : _grouped(ml.round());
+  String number(double ml) => this == flOz ? localDecimal(_trim((ml / mlPerFlOz).toStringAsFixed(1))) : formatGrouped(ml.round());
 
   /// "750 / 2,000 mL": what was logged against the goal, the real amount also above it.
   String progress(double ml, double goalMl) => '${number(ml)} / ${format(goalMl)}';
@@ -50,14 +58,13 @@ enum VolumeUnit {
   static const suggestedGoalMl = 2000;
 
   /// "mL" or "fl oz", for a field's suffix.
-  String get short => this == ml ? 'mL' : 'fl oz';
+  String get short => this == ml ? currentL10n.waterUnitMl : currentL10n.waterUnitFlOz;
 
   static VolumeUnit parse(String? name) => values.asNameMap()[name] ?? ml;
 }
 
 double roundMl(double ml) => (ml * 1000).round() / 1000;
 String _trim(String s) => s.contains('.') ? s.replaceFirst(RegExp(r'\.?0+$'), '') : s;
-String _grouped(int v) => '$v'.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
 /// One logged amount of water on a day.
 extension type WaterEntry(Json j) {
@@ -71,9 +78,14 @@ extension type WaterEntry(Json j) {
 /// The day's water: the exact sum of what was logged, in millilitres. Rounded only when shown.
 double waterTotal(Iterable<WaterEntry> entries) => roundMl(entries.where((e) => !e.isDeleted).fold(0.0, (s, e) => s + e.volumeMl));
 
+/// Why an amount of water cannot be logged; the screen says it in the app's language.
+enum WaterProblem { notAboveZero, overMax }
+
 class InvalidWater implements Exception {
-  const InvalidWater(this.message);
-  final String message;
+  const InvalidWater(this.problem);
+  final WaterProblem problem;
+  @override
+  String toString() => 'InvalidWater(${problem.name})';
 }
 
 /// The owner's water log, saved on this phone first and sent through the same outbox as food: a retry reuses its
@@ -88,8 +100,8 @@ class WaterRepository {
 
   static double validate(double ml) {
     final v = roundMl(ml);
-    if (!ml.isFinite || v <= 0) throw const InvalidWater('Enter an amount above zero.');
-    if (v > maxMl) throw const InvalidWater('One entry can be at most 5 L. Log a larger amount in parts.');
+    if (!ml.isFinite || v <= 0) throw const InvalidWater(WaterProblem.notAboveZero);
+    if (v > maxMl) throw const InvalidWater(WaterProblem.overMax);
     return v;
   }
 

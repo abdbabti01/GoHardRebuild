@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/device_prefs.dart';
+import '../../core/catalog_names.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../activity/activity_detail.dart';
@@ -45,13 +47,17 @@ class _WeeklyRecapScreenState extends ConsumerState<WeeklyRecapScreen> {
     final range = dateRange(week.monday, week.sunday);
     final isLast = i == 0;
     final runs = week.runs.length, walks = week.walks.length;
-    final activityLabel = runs == 0 ? (walks == 1 ? 'Walk' : 'Walks') : walks == 0 ? (runs == 1 ? 'Run' : 'Runs') : 'Runs and walks';
+    final l = context.l10n, mix = week.activityMix.name;
+    final activityLabel = runs == 0 ? l.progressRecapWalks(walks) : walks == 0 ? l.progressRecapRuns(runs) : l.progressRecapRunsAndWalks;
     final distance = week.distance, active = week.activeSeconds;
     final said = [
-      if (week.workoutCount > 0) plural(week.workoutCount, 'workout'),
-      if (runs > 0) plural(runs, 'run'),
-      if (walks > 0) plural(walks, 'walk'),
+      if (week.workoutCount > 0) l.progressWorkoutCount(week.workoutCount),
+      if (runs > 0) l.progressRunCount(runs),
+      if (walks > 0) l.progressWalkCount(walks),
     ];
+    // "a, b and c"
+    final list = said.length < 2 ? said.join() : l.progressListJoin(said.take(said.length - 1).join(l.workoutListSeparator), said.last);
+    final heading = isLast ? l.progressRecapLastWeek(range) : l.progressRecapWeekOf(range);
 
     // Built with the panel's own context, so the figures take its dark ink.
     Widget stat(BuildContext context, String key, String value, String label) => Column(key: Key(key), crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -59,45 +65,53 @@ class _WeeklyRecapScreenState extends ConsumerState<WeeklyRecapScreen> {
           Text(label, style: context.sansStyle(15, color: context.c.secondary)),
         ]);
 
-    return AppPage(title: 'Weekly recap', children: [
+    return AppPage(title: l.progressRecapTitle, children: [
       // Previous and next among completed weeks; the current week is never shown as finished.
       Row(children: [
-        IconButton(key: const Key('recap-previous'), tooltip: 'Previous week', onPressed: i + 1 < weeks.length ? () => setState(() => _monday = weeks[i + 1]) : null, icon: const Icon(Icons.chevron_left)),
-        Expanded(child: Text(isLast ? 'Last week · $range' : 'Week of $range', key: const Key('recap-range'), textAlign: TextAlign.center, style: context.sansStyle(16, weight: FontWeight.w600))),
-        IconButton(key: const Key('recap-next'), tooltip: 'Next week', onPressed: i > 0 ? () => setState(() => _monday = weeks[i - 1]) : null, icon: const Icon(Icons.chevron_right)),
+        IconButton(key: const Key('recap-previous'), tooltip: l.progressPreviousWeek, onPressed: i + 1 < weeks.length ? () => setState(() => _monday = weeks[i + 1]) : null, icon: const Icon(Icons.chevron_left)),
+        Expanded(child: Text(heading, key: const Key('recap-range'), textAlign: TextAlign.center, style: context.sansStyle(16, weight: FontWeight.w600))),
+        IconButton(key: const Key('recap-next'), tooltip: l.progressNextWeek, onPressed: i > 0 ? () => setState(() => _monday = weeks[i - 1]) : null, icon: const Icon(Icons.chevron_right)),
       ]),
       const SizedBox(height: 8),
       Semantics(
         container: true,
-        label: '${isLast ? 'Last week' : 'Week of'} $range. ${week.isEmpty ? 'No activity was recorded.' : '${said.join(', ')} recorded.'}'
-            '${week.activities.isEmpty ? '' : ' ${week.activityWord} distance ${distance.known ? unit.distance(distance.value) : 'not recorded'}${distance.incomplete ? ', some distances not recorded' : ''}. Active time ${active.known ? durationText(active.value.round()) : 'not recorded'}.'}',
+        label: [
+          isLast ? l.progressRecapSemLastWeek(range) : l.progressRecapSemWeekOf(range),
+          week.isEmpty ? l.progressRecapSemNoActivity : l.progressRecapSemRecorded(said.join(l.workoutListSeparator)),
+          if (week.activities.isNotEmpty) ...[
+            distance.incomplete
+                ? l.progressRecapSemDistanceIncomplete(mix, distance.known ? unit.distance(distance.value) : l.progressNotRecorded)
+                : l.progressRecapSemDistance(mix, distance.known ? unit.distance(distance.value) : l.progressNotRecorded),
+            l.progressRecapSemActive(active.known ? durationText(active.value.round()) : l.progressNotRecorded),
+          ],
+        ].join(' '),
         child: ExcludeSemantics(
           child: PhotoPanel(
             key: const Key('recap-panel'),
             photo: 'assets/images/workout-hero.webp',
             photoAlignment: const Alignment(1, 0.6),
             content: (context) => [
-              Overline(isLast ? 'Last week · $range' : 'Week of $range'),
+              Overline(heading),
               const SizedBox(height: 4),
-              Text('Your week, recorded', style: context.pageTitleStyle(28)),
+              Text(l.progressRecapHeading, style: context.pageTitleStyle(28)),
               const SizedBox(height: 10),
               if (week.isEmpty)
-                Text('No activity was recorded this week.', key: const Key('recap-empty'), style: context.sansStyle(16))
+                Text(l.progressRecapEmpty, key: const Key('recap-empty'), style: context.sansStyle(16))
               else ...[
                 Wrap(spacing: 28, runSpacing: 12, children: [
-                  stat(context, 'recap-workouts', '${week.workoutCount}', week.workoutCount == 1 ? 'Workout' : 'Workouts'),
+                  stat(context, 'recap-workouts', '${week.workoutCount}', l.progressRecapWorkoutsLabel(week.workoutCount)),
                   stat(context, 'recap-activities', '${week.activityCount}', activityLabel),
                 ]),
                 if (week.activities.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Wrap(spacing: 28, runSpacing: 12, children: [
-                    stat(context, 'recap-distance', distance.known ? unit.distance(distance.value) : '—', '${week.activityWord} distance'),
-                    stat(context, 'recap-active', active.known ? durationText(active.value.round()) : '—', '${week.activityWord} time'),
+                    stat(context, 'recap-distance', distance.known ? unit.distance(distance.value) : '—', l.progressRecapDistanceLabel(mix)),
+                    stat(context, 'recap-active', active.known ? durationText(active.value.round()) : '—', l.progressRecapTimeLabel(mix)),
                   ]),
                   if (distance.incomplete)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
-                      child: Text('${plural(distance.missing, 'activity', 'activities')} had no distance recorded and ${distance.missing == 1 ? 'is' : 'are'} not in the total.',
+                      child: Text(l.progressRecapIncomplete(distance.missing),
                           key: const Key('recap-incomplete'), style: context.sansStyle(13.5, color: context.c.secondary)),
                     ),
                 ],
@@ -107,24 +121,25 @@ class _WeeklyRecapScreenState extends ConsumerState<WeeklyRecapScreen> {
         ),
       ),
       const SizedBox(height: 26),
-      const SectionHeader('Your weekly targets'),
+      SectionHeader(l.progressRecapTargets),
       const SizedBox(height: 10),
       if (!week.hasGoals)
-        Panel(child: Text('No goals were set for this week.', key: const Key('recap-no-goals'), style: context.sansStyle(15, color: context.c.secondary)))
+        Panel(child: Text(l.progressRecapNoGoals, key: const Key('recap-no-goals'), style: context.sansStyle(15, color: context.c.secondary)))
       else
         GroupCard(children: [
-          if (week.workoutsTarget != null) _TargetRow(key: const Key('recap-goal-workouts'), icon: Icons.fitness_center, label: 'Workouts', count: week.workoutCount, target: week.workoutsTarget!),
-          if (week.runWalkTarget != null) _TargetRow(key: const Key('recap-goal-runwalk'), icon: Icons.directions_run, label: 'Run / Walk', count: week.activityCount, target: week.runWalkTarget!),
+          if (week.workoutsTarget != null) _TargetRow(key: const Key('recap-goal-workouts'), icon: Icons.fitness_center, label: l.progressWorkoutsLabel, count: week.workoutCount, target: week.workoutsTarget!),
+          if (week.runWalkTarget != null) _TargetRow(key: const Key('recap-goal-runwalk'), icon: Icons.directions_run, label: l.progressRunWalkLabel, count: week.activityCount, target: week.runWalkTarget!),
         ]),
       if (highlight != null) ...[
         const SizedBox(height: 26),
-        const SectionHeader('Strength highlight'),
+        SectionHeader(l.progressRecapHighlight),
         const SizedBox(height: 10),
         GroupCard(children: [
           GroupRow(
-            key: const Key('recap-highlight'), icon: Icons.show_chart, title: highlight.trend.name,
-            value: '${trendValue(highlight.trend, highlight.first, load)} → ${trendValue(highlight.trend, highlight.last, load)}',
-            subtitle: '${dayMonth(highlight.first.dayKey)} → ${dayMonth(highlight.last.dayKey)} · recorded at ${highlight.reps} reps',
+            key: const Key('recap-highlight'), icon: Icons.show_chart, title: ref.watch(exerciseNamesProvider).name(highlight.trend.key, highlight.trend.name, Localizations.localeOf(context)),
+            // Earlier → later, left to right in every language.
+            value: ltr('${trendValue(highlight.trend, highlight.first, load)} → ${trendValue(highlight.trend, highlight.last, load)}'),
+            subtitle: l.progressRecapHighlightSubtitle(ltr('${dayMonth(highlight.first.dayKey)} → ${dayMonth(highlight.last.dayKey)}'), highlight.reps),
             onTap: () => push(context, ExerciseTrendScreen(exerciseKey: highlight.trend.key)),
           ),
         ]),
@@ -134,21 +149,21 @@ class _WeeklyRecapScreenState extends ConsumerState<WeeklyRecapScreen> {
         const SizedBox(height: 22),
         CoachSpeaker(
           key: const Key('recap-coach'),
-          say: CoachSay(week.isEmpty ? 'No activity was recorded in the week of $range.' : 'You recorded ${said.length == 1 ? said.single : '${said.take(said.length - 1).join(', ')} and ${said.last}'} in the week of $range.',
-              ask: const CoachContext(label: 'Your progress')),
+          say: CoachSay(week.isEmpty ? l.progressRecapCoachEmpty(range) : l.progressRecapCoach(list, range),
+              ask: CoachContext(label: l.progressCoachContextLabel)),
         ),
       ],
       const SizedBox(height: 26),
-      SectionHeader('This week\'s sessions', detail: week.isEmpty ? null : '${week.workoutCount + week.activityCount}'),
+      SectionHeader(l.progressRecapSessions, detail: week.isEmpty ? null : '${week.workoutCount + week.activityCount}'),
       const SizedBox(height: 10),
       if (week.isEmpty)
-        Text('Nothing was recorded between ${longDate(week.monday)} and ${longDate(week.sunday)}.', style: context.caption)
+        Text(l.progressRecapNothingBetween(longDate(week.monday), longDate(week.sunday)), style: context.caption)
       else
         GroupCard(key: const Key('recap-sessions'), children: [
           for (final (_, row) in [
             for (final w in week.workouts)
               (w.startedAtUtc, GroupRow(key: Key('recap-workout-${w.id}'), icon: Icons.fitness_center, tone: Tone.neutral, title: w.title,
-                  subtitle: '${shortDate(w.dayKey)} · ${WorkoutResultRules.label(w.outcome)} · ${plural(w.performedSets, 'set')}',
+                  subtitle: '${shortDate(w.dayKey)} · ${outcomeLabel(l, w.outcome)} · ${l.workoutSetCount(w.performedSets)}',
                   onTap: () => push(context, WorkoutDetailScreen(workoutId: w.id)))),
             for (final r in week.activities)
               (r.startedAtUtc, GroupRow(key: Key('recap-run-${r.id}'), icon: r.isWalk ? Icons.directions_walk : Icons.directions_run, tone: Tone.neutral, title: r.title ?? activityTitle(r.activityType),
@@ -171,9 +186,9 @@ class _TargetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reached = count >= target;
+    final reached = count >= target, l = context.l10n;
     return Semantics(
-      container: true, label: '$label: $count of $target${reached ? ', reached' : ''}.',
+      container: true, label: reached ? l.progressTargetRowSemanticReached(label, count, target) : l.progressTargetRowSemantic(label, count, target),
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -186,10 +201,10 @@ class _TargetRow extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Wrap(spacing: 8, children: [
                   Text(label, style: context.sansStyle(16, weight: FontWeight.w600)),
-                  Text('$count of $target${reached ? ' · reached' : ''}', style: context.numStyle(15.5, color: context.c.secondary)),
+                  Text(reached ? l.progressCountOfTargetReached(count, target) : l.progressCountOfTarget(count, target), style: context.numStyle(15.5, color: context.c.secondary)),
                 ]),
                 const SizedBox(height: 6),
-                ProgressRail(count / target, label: '$label goal'),
+                ProgressRail(count / target, label: l.progressGoalRail(label)),
               ]),
             ),
           ]),

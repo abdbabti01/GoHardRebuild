@@ -141,3 +141,18 @@ reference boards are not used as images anywhere in the app.
     "sha256": "127a1459fd7ef866305c9eb4f41689b8452d1454fd59bdce00508382297a523b"
   }
 ]
+
+Update, 20 October 2026 (French and Arabic, docs/LOCALIZATION.md): Arabic fonts, bundled so Arabic never depends on
+the phone's own fallback. All SIL Open Font License 1.1, downloaded unchanged; each licence is kept beside its fonts.
+- IBM Plex Sans Arabic Regular, Medium, SemiBold, Bold (Arabic UI text, the fallback after Inter), from the official
+  Google Fonts repository `https://github.com/google/fonts/raw/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-<Weight>.ttf`;
+  licence `IBMPlexSansArabic-OFL.txt`. sha256: Regular 6f611412270a132bbac838da9259d4c68569b4175f3b3b8fa3fa36a30b56dab9,
+  Medium b8363ab9f733dfa4f8e96b8b2102c24b5cf4110fb96d1d3d9a9412f6fb49cf74, SemiBold
+  597bd5502e5997be4414e4c9c88834b30ff3784250c84f20bce2b20e53ebd467, Bold 691e0c891a38637ae6bbdb69700f8042cb0724a137bee615068ffdb92244f61f.
+- Noto Naskh Arabic SemiBold and Bold v2.021 (Arabic page titles, the counterpart of DM Serif Display), from the Noto
+  project's release `https://github.com/notofonts/arabic/releases/download/NotoNaskhArabic-v2.021/NotoNaskhArabic-v2.021.zip`
+  (`NotoNaskhArabic/unhinted/ttf/`); licence `NotoNaskhArabic-OFL.txt`. sha256: SemiBold
+  85c6a3c50b19179fe26f550d4e9a658cd8f0e74b25816e6da46b2ba8cdbc7673, Bold 380ac34b249d336e1a43c21053df440594e1e3db8f75fabd4d85b649ca1ea4c6.
+No images were added. `data/exercise-names.l10n.json`, `data/common-foods.l10n.json`, `data/coach-guide.{fr,ar}.json`
+and `data/plan-templates.{fr,ar}.json` are GoHard's own translations of GoHard's own labels and guide text; they add
+no third-party data (USDA values, portions and source IDs are untouched).

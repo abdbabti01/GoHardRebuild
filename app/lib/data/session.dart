@@ -31,6 +31,9 @@ class MemorySecretStore implements SecretStore {
   Future<void> delete(String key) async => values.remove(key);
 }
 
+/// Why the app signed out by itself; the sign-in screen says it in the current language.
+enum SignOutReason { expired, accountDeleted }
+
 /// Holds the current session and notifies listeners. Signing out is non-destructive: it only removes
 /// credentials and bumps the epoch. That owner's local records and pending commands stay on the phone,
 /// invisible to any other account, and resume syncing when the same owner signs in again.
@@ -41,7 +44,7 @@ class SessionManager {
   final _listeners = <void Function()>[];
   Session? _current;
   int _epoch = 0;
-  String? notice;
+  SignOutReason? notice;
 
   Session? get current => _current;
   int get epoch => _epoch;
@@ -103,11 +106,12 @@ class SessionManager {
     }
   }
 
-  Future<void> signOut({String? reason}) async {
+  /// [code]: why, when the app signs out by itself; shown on the sign-in screen.
+  Future<void> signOut({SignOutReason? code}) async {
     _current = null;
     _unsaved = false;
     _epoch++;
-    notice = reason;
+    notice = code;
     await _store.delete(_key);
     _notify();
   }
@@ -197,7 +201,7 @@ class Api {
     // of the refresh token the session still holds counts; server errors, rate limits and timeouts decide nothing.
     final now = _sessions.current;
     if (r.status == 401 && now != null && now.epoch == s.epoch && now.refreshToken == s.refreshToken) {
-      await _sessions.signOut(reason: 'Your sign-in expired. Sign in again to keep syncing; everything saved on this phone is still here.');
+      await _sessions.signOut(code: SignOutReason.expired);
     }
     return false;
   }

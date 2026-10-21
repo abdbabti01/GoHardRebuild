@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import 'coach_prefs.dart';
 
@@ -12,7 +13,13 @@ enum CoachGuide {
   leona('Leona', 'lioness');
 
   const CoachGuide(this.label, this.animal);
+
+  /// The English wording; shown text comes from [displayName] and [animalName].
   final String label, animal;
+
+  /// The name shown in [l]'s language (Leon / Leona; ليون / ليونا in Arabic). [name] stays the stored ID.
+  String displayName(AppLocalizations l) => switch (this) { leon => l.coachNameLeon, leona => l.coachNameLeona };
+  String animalName(AppLocalizations l) => switch (this) { leon => l.coachAnimalLion, leona => l.coachAnimalLioness };
 }
 
 /// Runtime art (scripts/build-coach-art.ps1): avatars 192 px square, full body 202 × 420. Static pictures: nothing

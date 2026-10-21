@@ -1,12 +1,30 @@
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import 'food_item.dart';
 
+/// Why food form input cannot be saved; the form says it in the app's language.
+enum FoodProblem { noName, noAmount, tooLong, noMeal, noQuantity, badValues, badValue, badSavedName }
+
 /// Food form input that cannot be saved. The draft stays on screen.
 class InvalidFood implements Exception {
-  const InvalidFood(this.message);
-  final String message;
+  const InvalidFood(this.problem, [this.nutrient]);
+  final FoodProblem problem;
+
+  /// For [FoodProblem.badValue]: the nutrient key ("protein").
+  final String? nutrient;
+  @override
+  String toString() => 'InvalidFood(${problem.name})';
 }
+
+/// A stored meal name ([meals]: "Breakfast" …) as it reads in the app's language. The stored name never changes.
+String mealLabel(AppLocalizations l, String meal) => switch (meal) {
+      'Breakfast' => l.mealBreakfast,
+      'Lunch' => l.mealLunch,
+      'Dinner' => l.mealDinner,
+      'Snack' => l.mealSnack,
+      _ => meal,
+    };
 
 /// One consumed food being added or edited. `dayKey` is pinned when the form opens, so midnight passing
 /// while it is open never moves the entry to another day.
@@ -51,13 +69,13 @@ class FoodRepository {
   final String _owner;
 
   static void validate(FoodDraft d) {
-    if (d.name.trim().isEmpty) throw const InvalidFood('Enter what you ate.');
-    if (d.amount.trim().isEmpty) throw const InvalidFood('Enter how much, in your own words.');
-    if (d.name.trim().length > 120 || d.amount.trim().length > 80) throw const InvalidFood('That text is too long.');
-    if (!meals.contains(d.meal)) throw const InvalidFood('Choose a meal.');
-    if (d.item != null && !((d.quantity ?? 0) > 0)) throw const InvalidFood('Enter how much you had, as a number above zero.');
+    if (d.name.trim().isEmpty) throw const InvalidFood(FoodProblem.noName);
+    if (d.amount.trim().isEmpty) throw const InvalidFood(FoodProblem.noAmount);
+    if (d.name.trim().length > 120 || d.amount.trim().length > 80) throw const InvalidFood(FoodProblem.tooLong);
+    if (!meals.contains(d.meal)) throw const InvalidFood(FoodProblem.noMeal);
+    if (d.item != null && !((d.quantity ?? 0) > 0)) throw const InvalidFood(FoodProblem.noQuantity);
     for (final v in [d.calories, d.protein, d.carbs, d.fat]) {
-      if (v != null && (!v.isFinite || v < 0 || v > 100000)) throw const InvalidFood('Nutrition values must be zero or more.');
+      if (v != null && (!v.isFinite || v < 0 || v > 100000)) throw const InvalidFood(FoodProblem.badValues);
     }
   }
 
@@ -128,7 +146,7 @@ class SavedFoodRepository {
   final String _owner;
 
   Future<Receipt> _put(String id, FoodItem item, bool isFavourite) {
-    if (item.name.trim().isEmpty || item.name.trim().length > 120) throw const InvalidFood('Give the food a name of up to 120 characters.');
+    if (item.name.trim().isEmpty || item.name.trim().length > 120) throw const InvalidFood(FoodProblem.badSavedName);
     return _sync.submit(_owner, kind: 'savedfood.put', method: 'PUT', path: '/saved-foods/$id', targetKind: Kinds.savedFood, targetId: id,
         writes: [LocalWrite(Kinds.savedFood, id, {'id': id, 'item': item.j, 'isFavourite': isFavourite, 'isDeleted': false})],
         // A food the account has never confirmed has revision 0, which is what creating one expects.

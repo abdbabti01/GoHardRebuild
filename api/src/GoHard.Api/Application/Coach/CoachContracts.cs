@@ -10,7 +10,8 @@ public sealed record CoachDraft(string? Title, int? DurationWeeks, int? TimeBudg
 /// <param name="Focus">plan | split | workout | exercise</param>
 public sealed record CoachContext(string? Label, string? Focus, string? TemplateId, Guid? WorkoutId, string? OccurrenceKey, string? CatalogKey,
     CoachDraft? Draft, string? DraftRevision);
-public sealed record CoachAskRequest(Guid RequestId, string? Question, List<CoachTurn>? History, CoachContext? Context);
+/// <param name="Language">Optional reply language: "en" | "fr-CA" | "ar". Missing or anything else: English, as before (never invalid).</param>
+public sealed record CoachAskRequest(Guid RequestId, string? Question, List<CoachTurn>? History, CoachContext? Context, string? Language = null);
 
 /// <param name="Operations">Each exactly as docs/COACH.md lists it for its op; built by the server, never passed through.</param>
 public sealed record CoachProposal(string Summary, string Scope, List<JsonObject> Operations);

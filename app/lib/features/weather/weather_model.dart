@@ -1,16 +1,17 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/language.dart';
 import '../../data/models.dart';
 
 /// Today background preference: a DEVICE setting, never part of the account, profile.update or the sync outbox.
-enum TodayBackground {
-  scenic('Scenic'),
-  weather('Weather'),
-  plain('Plain');
+enum TodayBackground { scenic, weather, plain }
 
-  const TodayBackground(this.label);
-  final String label;
-}
+/// "Scenic", "Weather", "Plain" in the current language; [TodayBackground.name] is what is stored.
+String todayBackgroundLabel(AppLocalizations l, TodayBackground b) => switch (b) {
+      TodayBackground.scenic => l.weatherBackgroundScenic,
+      TodayBackground.weather => l.weatherBackgroundWeather,
+      TodayBackground.plain => l.weatherBackgroundPlain,
+    };
 
 enum WeatherLocationMode { automatic, city }
 
@@ -104,9 +105,7 @@ class WeatherConditions {
 
   /// The credit the answering provider asks for.
   /// MET Norway's terms: credit, a link to the licence, and whether the data was changed (symbols are mapped to codes).
-  String get credit => source == 'met.no'
-      ? 'Data from MET Norway (api.met.no), CC BY 4.0: creativecommons.org/licenses/by/4.0. Its weather symbols are converted to WMO codes here.'
-      : 'Weather data by Open-Meteo.com, CC BY 4.0: creativecommons.org/licenses/by/4.0.';
+  String credit(AppLocalizations l) => source == 'met.no' ? l.weatherCreditMet : l.weatherCreditOpenMeteo;
 
   /// Null when the answer is not usable at all. An unrecognised family is kept as unknown, never guessed.
   static WeatherConditions? fromJson(Object? raw) {
@@ -167,15 +166,18 @@ abstract final class WeatherPolicy {
 /// What the backdrop paints. [key] names the treatment; the crossfade runs only when it changes.
 @immutable
 class SceneSpec {
-  const SceneSpec({required this.key, this.isWeather = false, this.label, this.family, this.isDay, this.fallback, this.temperatureC});
+  const SceneSpec({required this.key, this.isWeather = false, this.label, this.code, this.family, this.isDay, this.fallback, this.temperatureC});
   final String key;
   final bool isWeather;
 
   /// Why Weather mode is showing the decorative scene instead of weather; null for a weather scene, Scenic and Plain.
   final WeatherFallback? fallback;
 
-  /// The provider's own description, shown only for a real, fresh weather scene.
+  /// The provider's own description, shown only for a real, fresh weather scene (in English; [sceneLabel] translates).
   final String? label;
+
+  /// The WMO code of the same answer, which [sceneLabel] names in other languages.
+  final int? code;
   final String? family;
   final bool? isDay;
 
@@ -191,25 +193,24 @@ class SceneSpec {
   static const plain = SceneSpec(key: 'plain');
 
   @override
-  bool operator ==(Object other) => other is SceneSpec && other.key == key && other.label == label && other.fallback == fallback && other.temperatureC == temperatureC;
+  bool operator ==(Object other) => other is SceneSpec && other.key == key && other.label == label && other.code == code && other.fallback == fallback && other.temperatureC == temperatureC;
   @override
-  int get hashCode => Object.hash(key, label, fallback, temperatureC);
+  int get hashCode => Object.hash(key, label, code, fallback, temperatureC);
   @override
   String toString() => 'SceneSpec($key${label == null ? '' : ', $label'}${fallback == null ? '' : ', fallback: ${fallback!.name}'})';
 }
 
 /// Why Weather mode fell back to the decorative scene. Shown in words on Today and in the setting.
-enum WeatherFallback {
-  noAnswer('No weather yet'),
-  otherPlace('Weather is for another place'),
-  stale('Weather is out of date'),
-  ahead('Weather time is ahead'),
-  unknownCode('Unrecognised weather'),
-  noArt('No scene for this weather');
+enum WeatherFallback { noAnswer, otherPlace, stale, ahead, unknownCode, noArt }
 
-  const WeatherFallback(this.words);
-  final String words;
-}
+String weatherFallbackText(AppLocalizations l, WeatherFallback f) => switch (f) {
+      WeatherFallback.noAnswer => l.weatherFallbackNoAnswer,
+      WeatherFallback.otherPlace => l.weatherFallbackOtherPlace,
+      WeatherFallback.stale => l.weatherFallbackStale,
+      WeatherFallback.ahead => l.weatherFallbackAhead,
+      WeatherFallback.unknownCode => l.weatherFallbackUnknownCode,
+      WeatherFallback.noArt => l.weatherFallbackNoArt,
+    };
 
 /// Treatment keys that exist: every family in day, night and neutral (provider did not say) light.
 final Set<String> sceneKeys = {
@@ -238,12 +239,26 @@ SceneSpec resolveScene({required WeatherPrefs prefs, required WeatherEntry? entr
       if (!weatherFamilies.contains(family)) return fall(WeatherFallback.unknownCode);
       final key = '$family-${switch (c.isDay) { true => 'day', false => 'night', null => 'neutral' }}';
       if (!(available ?? sceneKeys).contains(key)) return fall(WeatherFallback.noArt);
-      return SceneSpec(key: key, isWeather: true, label: c.description ?? _familyLabel[family], family: family, isDay: c.isDay, temperatureC: c.temperatureC);
+      return SceneSpec(key: key, isWeather: true, label: c.description ?? _familyLabel[family], code: c.code, family: family, isDay: c.isDay, temperatureC: c.temperatureC);
   }
 }
 
 const _familyLabel = {'clear': 'Clear', 'partly': 'Partly cloudy', 'cloudy': 'Overcast', 'fog': 'Fog', 'rain': 'Rain', 'snow': 'Snow', 'storm': 'Thunderstorm'};
 
-/// "8°C", "-3°F", "0°C": the API's °C converted once and rounded to whole degrees (a rounded -0.4 is "0", never "-0").
-String formatTemperature(double celsius, {required bool fahrenheit}) =>
-    '${(fahrenheit ? celsius * 9 / 5 + 32 : celsius).round()}°${fahrenheit ? 'F' : 'C'}';
+/// "8°C", "-3°F", "0°C" ("8 °C" in French): the API's °C converted once and rounded to whole degrees (a rounded -0.4
+/// is "0", never "-0").
+String formatTemperature(double celsius, {required bool fahrenheit}) {
+  final degrees = (fahrenheit ? celsius * 9 / 5 + 32 : celsius).round();
+  return fahrenheit ? currentL10n.weatherTemperatureF(degrees) : currentL10n.weatherTemperatureC(degrees);
+}
+
+/// WMO codes the provider documents (OpenMeteoProvider.cs); each has its own wording in [AppLocalizations.weatherCondition].
+const _wmoCodes = {0, 1, 2, 3, 45, 48, 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 97, 99};
+
+/// A weather scene's condition in the current language, from the cached answer alone (a language change fetches
+/// nothing). English keeps the provider's own description; French and Arabic name the WMO code, else the family.
+String sceneLabel(AppLocalizations l, SceneSpec s) {
+  if (l.localeName == 'en' && s.label != null) return s.label!;
+  if (_wmoCodes.contains(s.code)) return l.weatherCondition('c${s.code}');
+  return l.weatherFamily(s.family ?? 'unknown');
+}

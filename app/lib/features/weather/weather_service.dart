@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:geolocator/geolocator.dart';
 
 import '../../app/providers.dart' show apiProvider, clockProvider;
+import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../nutrition/food_discovery.dart' show LookupFailure, LookupProblem;
@@ -76,12 +77,14 @@ class WeatherPrefsController extends Notifier<WeatherPrefs> {
 final weatherPrefsProvider = NotifierProvider<WeatherPrefsController, WeatherPrefs>(WeatherPrefsController.new);
 
 /// "Scenic" | "Weather · Montréal" | "Weather · Automatic" | "Plain", for the Appearance row.
+/// In the current language: a language change re-words it and asks the provider for nothing.
 final todayBackgroundSummaryProvider = Provider<String>((ref) {
   final p = ref.watch(weatherPrefsProvider);
-  if (p.background != TodayBackground.weather) return p.background.label;
+  final l = ref.watch(appL10nProvider);
+  if (p.background != TodayBackground.weather) return todayBackgroundLabel(l, p.background);
   return switch (p.mode) {
-    WeatherLocationMode.automatic => 'Weather · Automatic',
-    WeatherLocationMode.city => p.city == null ? 'Weather' : 'Weather · ${p.city!.name}',
+    WeatherLocationMode.automatic => l.weatherSummaryAutomatic,
+    WeatherLocationMode.city => p.city == null ? l.weatherBackgroundWeather : l.weatherSummaryCity(p.city!.name),
   };
 });
 

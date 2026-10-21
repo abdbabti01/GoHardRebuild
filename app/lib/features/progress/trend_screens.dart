@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/catalog_names.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
+import '../../core/search_fold.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../workout/workout_detail_screen.dart';
@@ -26,25 +29,27 @@ class _ExerciseListScreenState extends ConsumerState<ExerciseListScreen> {
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(trendIndexProvider).recent;
-    final q = _query.trim().toLowerCase();
-    final shown = [for (final t in all) if (q.isEmpty || t.name.toLowerCase().contains(q)) t];
-    return AppPage(title: 'Exercise trends', subtitle: 'Exercises you have recorded, most recent first', children: [
+    final names = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context), l = context.l10n;
+    // Found by the name shown, the stored name, or the catalog's names and aliases in any language.
+    final q = foldForSearch(_query.trim());
+    final shown = [for (final t in all) if (q.isEmpty || [names.name(t.key, t.name, locale), t.name, ...names.searchTerms(t.key)].any((n) => foldForSearch(n).contains(q))) t];
+    return AppPage(title: l.progressTrendsTitle, subtitle: l.progressTrendsSubtitle, children: [
       TextField(
         key: const Key('trends-search'),
-        decoration: const InputDecoration(labelText: 'Search your exercises', prefixIcon: Icon(Icons.search)),
+        decoration: InputDecoration(labelText: l.progressTrendsSearch, prefixIcon: const Icon(Icons.search)),
         onChanged: (v) => setState(() => _query = v),
       ),
       const SizedBox(height: 14),
       if (all.isEmpty)
-        const EmptyState('Nothing recorded yet', 'An exercise appears here once a finished workout has recorded sets of it.')
+        EmptyState(l.progressTrendsEmptyTitle, l.progressTrendsEmptyBody)
       else if (shown.isEmpty)
-        EmptyState('No match', 'None of your recorded exercises matches "${_query.trim()}".')
+        EmptyState(l.progressTrendsNoMatchTitle, l.progressTrendsNoMatchBody(_query.trim()))
       else
         GroupCard(children: [
           for (final t in shown)
             GroupRow(
-              key: Key('trend-row-${t.key}'), icon: Icons.show_chart, tone: Tone.neutral, title: t.name,
-              subtitle: '${plural(t.sessions.length, 'session')} · latest ${dayMonth(t.sessions.last.workout.dayKey)}',
+              key: Key('trend-row-${t.key}'), icon: Icons.show_chart, tone: Tone.neutral, title: names.name(t.key, t.name, locale),
+              subtitle: l.progressTrendRowSubtitle(t.sessions.length, dayMonth(t.sessions.last.workout.dayKey)),
               onTap: () => push(context, ExerciseTrendScreen(exerciseKey: t.key)),
             ),
         ]),
@@ -70,13 +75,14 @@ class _ExerciseTrendScreenState extends ConsumerState<ExerciseTrendScreen> {
   @override
   Widget build(BuildContext context) {
     final workouts = ref.watch(workoutsProvider), sets = ref.watch(allSetsProvider);
+    final l = context.l10n;
     if (workouts.hasError || sets.hasError) {
-      return const AppPage(title: 'Exercise trends', children: [EmptyState('This could not be read', 'Your records on this phone could not be read just now. Nothing was changed; try again.')]);
+      return AppPage(title: l.progressTrendsTitle, children: [EmptyState(l.progressReadErrorTitle, l.progressReadErrorBody)]);
     }
     if (!workouts.hasValue || !sets.hasValue) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final t = ref.watch(trendIndexProvider).trends[widget.exerciseKey];
     if (t == null) {
-      return const AppPage(title: 'Exercise trends', children: [EmptyState('No recorded sets', 'This exercise has no recorded sets in a finished workout any more.')]);
+      return AppPage(title: l.progressTrendsTitle, children: [EmptyState(l.progressNoRecordedSetsTitle, l.progressNoRecordedSetsBody)]);
     }
     final unit = ref.watch(loadUnitProvider);
     final today = ref.watch(todayKeyProvider);
@@ -85,43 +91,45 @@ class _ExerciseTrendScreenState extends ConsumerState<ExerciseTrendScreen> {
     final change = changeOf(pts);
     final latest = pts.lastOrNull;
     final catalog = ref.watch(exerciseChoicesProvider).where((c) => c.key == t.key).firstOrNull;
-    final overline = [if (catalog != null && catalog.equipment.isNotEmpty) catalog.equipment, if (catalog != null) catalog.category].join(' · ');
+    final names = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context);
+    final name = names.name(t.key, t.name, locale);
+    final overline = [if (catalog != null && catalog.equipment.isNotEmpty) names.equipment(catalog.equipment, locale), if (catalog != null) names.category(catalog.category, locale)].join(' · ');
     final days = {for (final p in pts) p.dayKey: pts.where((x) => x.dayKey == p.dayKey).length};
     String when(TrendPoint p) => '${shortDate(p.dayKey)}${(days[p.dayKey] ?? 0) > 1 ? ' · ${timeOf(p.startedAtUtc)}' : ''}';
     final label = metricLabel(t, reps);
-    final rangeWords = _range == TrendRange.all ? 'in all your history' : 'in the last ${_range.label}';
+    final rangeWords = l.progressRangeWords(_range.name);
 
-    return AppPage(title: 'Exercise trends', children: [
+    return AppPage(title: l.progressTrendsTitle, children: [
       PhotoPanel(
         key: const Key('trend-hero'),
         photo: 'assets/images/workout-hero.webp',
         photoAlignment: const Alignment(1, 0.6),
         content: (context) => [
           if (overline.isNotEmpty) Overline(overline),
-          Text(t.name, style: context.pageTitleStyle(30)),
+          Text(name, style: context.pageTitleStyle(30)),
           const SizedBox(height: 4),
           if (latest != null) ...[
-            Text('Latest recorded', style: context.sansStyle(15, color: context.c.secondary)),
+            Text(l.progressLatestRecorded, style: context.sansStyle(15, color: context.c.secondary)),
             Text(trendValue(t, latest, unit), key: const Key('trend-latest'), style: context.pageTitleStyle(36)),
             Text(when(latest), style: context.numStyle(15, weight: FontWeight.w500)),
           ] else
-            Text(t.metric == TrendMetric.none ? 'No comparable measure' : 'No session $rangeWords', style: context.sansStyle(15, color: context.c.secondary)),
+            Text(t.metric == TrendMetric.none ? l.progressMetricNone : l.progressNoSessionRange(rangeWords), style: context.sansStyle(15, color: context.c.secondary)),
         ],
       ),
       const SizedBox(height: 16),
       Segmented<TrendRange>(values: TrendRange.values, selected: _range, keyPrefix: 'trend-range', label: (r) => r.label, onChanged: (r) => setState(() => _range = r)),
       if (t.metric == TrendMetric.load && t.repOptions.length > 1) ...[
         const SizedBox(height: 12),
-        Text('Compare sets of', style: context.caption),
+        Text(l.progressCompareSetsOf, style: context.caption),
         const SizedBox(height: 6),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final r in t.repOptions)
-            ChoiceChip(key: Key('trend-reps-$r'), label: Text('$r reps'), selected: r == reps, onSelected: (_) => setState(() => _reps = r)),
+            ChoiceChip(key: Key('trend-reps-$r'), label: Text(l.progressRepsValue(r)), selected: r == reps, onSelected: (_) => setState(() => _reps = r)),
         ]),
       ],
       const SizedBox(height: 16),
       if (t.metric == TrendMetric.none)
-        Panel(child: Text('These sets have no reps with a load, no reps alone and no recorded time, so there is nothing comparable to chart. Every recorded session is listed below.', style: context.caption))
+        Panel(child: Text(l.progressNothingComparable, style: context.caption))
       else
         Panel(
           key: const Key('trend-chart-card'),
@@ -129,7 +137,7 @@ class _ExerciseTrendScreenState extends ConsumerState<ExerciseTrendScreen> {
             Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.start, spacing: 12, runSpacing: 8, children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 Text(label, key: const Key('trend-metric'), style: context.sansStyle(17, weight: FontWeight.w600)),
-                Text('Recorded sessions only', style: context.caption),
+                Text(l.progressRecordedOnly, style: context.caption),
               ]),
               if (change != null)
                 Container(
@@ -138,49 +146,49 @@ class _ExerciseTrendScreenState extends ConsumerState<ExerciseTrendScreen> {
                   decoration: BoxDecoration(color: context.c.sunken, borderRadius: BorderRadius.circular(Radii.field)),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                     Text(changeText(t, change, unit), style: context.numStyle(17)),
-                    Text('first to latest, this range', style: context.sansStyle(12.5, color: context.c.secondary)),
+                    Text(l.progressFirstToLatest, style: context.sansStyle(12.5, color: context.c.secondary)),
                   ]),
                 ),
             ]),
             const SizedBox(height: 12),
             if (pts.isEmpty)
-              Text(t.metric == TrendMetric.load ? 'No session with a set of $reps reps $rangeWords. Choose a longer range or another rep count.' : 'No session $rangeWords. Choose a longer range.',
+              Text(t.metric == TrendMetric.load ? l.progressEmptyRangeLoad(reps ?? 0, rangeWords) : l.progressEmptyRange(rangeWords),
                   key: const Key('trend-empty-range'), style: context.caption)
             else ...[
               TrendChart(
                 points: pts, axisLabel: (v) => axisValue(t, v, unit), onPoint: (p) => _open(p.workoutId),
-                semanticsLabel: '$label, $rangeWords: ${plural(pts.length, 'session')}. ${pts.map((p) => '${when(p)}, ${trendValue(t, p, unit)}').join('; ')}.',
+                semanticsLabel: l.progressChartSemantic(label, rangeWords, pts.length, pts.map((p) => '${when(p)}, ${trendValue(t, p, unit)}').join('; ')),
               ),
               if (pts.length == 1)
-                Padding(padding: const EdgeInsets.only(top: 8), child: Text('One comparable session so far. A change needs at least two.', key: const Key('trend-one-point'), style: context.caption)),
+                Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.progressOnePoint, key: const Key('trend-one-point'), style: context.caption)),
             ],
           ]),
         ),
       if (pts.isNotEmpty) ...[
         const SizedBox(height: 24),
-        const SectionHeader('Sessions in this range'),
+        SectionHeader(l.progressSessionsInRange),
         const SizedBox(height: 10),
         GroupCard(children: [
           for (final p in pts.reversed)
             GroupRow(key: Key('trend-session-${p.workoutId}'), title: when(p), value: trendValue(t, p, unit), onTap: () => _open(p.workoutId)),
         ]),
         const SizedBox(height: 8),
-        Text(t.metric == TrendMetric.load ? 'Each row is the heaviest set of $reps reps in that workout. Shown at the same rep count.' : 'Each row is that workout\'s best set by this measure.',
+        Text(t.metric == TrendMetric.load ? l.progressRowsExplainLoad(reps ?? 0) : l.progressRowsExplain,
             style: context.caption),
       ],
       if (t.excluded > 0)
         Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(switch (t.metric) {
-            TrendMetric.load => '${plural(t.excluded, 'recorded set')} without both reps and a load ${t.excluded == 1 ? 'is' : 'are'} not in this chart.',
-            TrendMetric.reps => '${plural(t.excluded, 'recorded set')} with a load or without reps ${t.excluded == 1 ? 'is' : 'are'} not in this chart.',
-            _ => '${plural(t.excluded, 'recorded set')} without a recorded time ${t.excluded == 1 ? 'is' : 'are'} not in this chart.',
+            TrendMetric.load => l.progressExcludedLoad(t.excluded),
+            TrendMetric.reps => l.progressExcludedReps(t.excluded),
+            _ => l.progressExcludedDuration(t.excluded),
           }, style: context.caption),
         ),
       const SizedBox(height: 14),
       Align(
         alignment: AlignmentDirectional.centerStart,
-        child: QuietLink('All ${plural(t.sessions.length, 'session')} and sets', key: const Key('trend-all-sessions'), onPressed: () => push(context, _AllSessions(exerciseKey: t.key))),
+        child: QuietLink(l.progressAllSessionsLink(t.sessions.length), key: const Key('trend-all-sessions'), onPressed: () => push(context, _AllSessions(exerciseKey: t.key))),
       ),
     ]);
   }
@@ -201,14 +209,15 @@ class _AllSessions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = ref.watch(trendIndexProvider).trends[exerciseKey];
     final unit = ref.watch(loadUnitProvider);
-    return AppPage(title: t?.name ?? 'Sessions', subtitle: 'Every recorded session, newest first', children: [
-      if (t == null) const EmptyState('No recorded sets', 'This exercise has no recorded sets any more.'),
+    final l = context.l10n;
+    return AppPage(title: t == null ? l.progressSessionsTitle : ref.watch(exerciseNamesProvider).name(t.key, t.name, Localizations.localeOf(context)), subtitle: l.progressAllSessionsSubtitle, children: [
+      if (t == null) EmptyState(l.progressNoRecordedSetsTitle, l.progressNoRecordedSetsAnyMore),
       if (t != null)
         GroupCard(children: [
           for (final s in t.sessions.reversed)
             GroupRow(
               key: Key('all-session-${s.workout.id}'), title: '${shortDate(s.workout.dayKey)} · ${s.workout.title}',
-              subtitle: s.sets.map((x) => setText(x, unit)).join(', '),
+              subtitle: s.sets.map((x) => setText(x, unit, l)).join(l.workoutListSeparator),
               onTap: () => push(context, WorkoutDetailScreen(workoutId: s.workout.id)),
             ),
         ]),
@@ -257,7 +266,8 @@ class PointChart<T> extends StatelessWidget {
     final scale = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
     final h = height + (compact ? 0 : 6 * scale.scale(1));
     final chart = LayoutBuilder(builder: (context, box) {
-      final layout = _ChartLayout([for (final p in points) (at(p), value(p), dayKey(p))], line, Size(box.maxWidth, h), axisLabel, style, scale, compact);
+      // Time runs left to right in every language; only the labels' own text follows the reading direction.
+      final layout = _ChartLayout([for (final p in points) (at(p), value(p), dayKey(p))], line, Size(box.maxWidth, h), axisLabel, style, scale, compact, Directionality.of(context));
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapUp: onPoint == null
@@ -274,13 +284,13 @@ class PointChart<T> extends StatelessWidget {
 }
 
 class _ChartLayout {
-  _ChartLayout(List<(DateTime, double, String)> points, List<(DateTime, double)>? line, this.size, String Function(double) label, TextStyle style, TextScaler scale, bool compact) {
+  _ChartLayout(List<(DateTime, double, String)> points, List<(DateTime, double)>? line, this.size, String Function(double) label, TextStyle style, TextScaler scale, bool compact, TextDirection direction) {
     final values = points.map((p) => p.$2);
     var lo = values.isEmpty ? 0.0 : values.reduce(math.min), hi = values.isEmpty ? 1.0 : values.reduce(math.max);
     // One level: a flat line in the middle, never an invented slope.
     this.lo = hi == lo ? lo - 1 : lo;
     this.hi = hi == lo ? hi + 1 : hi;
-    TextPainter text(String s) => TextPainter(text: TextSpan(text: s, style: style), textDirection: TextDirection.ltr, textScaler: scale)..layout();
+    TextPainter text(String s) => TextPainter(text: TextSpan(text: s, style: style), textDirection: direction, textScaler: scale)..layout();
     yLabels = [text(label(hi)), text(label(lo))];
     xLabels = compact || points.isEmpty ? const [] : [text(dayMonth(points.first.$3)), if (points.length > 1) text(dayMonth(points.last.$3))];
     final left = yLabels.map((t) => t.width).reduce(math.max) + 10;

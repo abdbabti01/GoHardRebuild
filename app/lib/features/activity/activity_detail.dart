@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../app/providers.dart';
 import '../../core/device_prefs.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -23,7 +24,7 @@ import 'recorder.dart' show recordCueProvider;
 import 'records.dart';
 import 'route_map.dart';
 import 'steps.dart';
-import 'run_walk_screens.dart' show StatFigure, activityNoun, activityTitle;
+import 'run_walk_screens.dart' show StatFigure, activityTitle;
 import 'track_math.dart';
 
 /// The stored route of a saved activity, analysed by the one pipeline. A route recorded on another phone is read
@@ -48,13 +49,14 @@ final routeSyncProvider = StreamProvider.autoDispose.family<Rec?, String>((ref, 
 });
 
 /// "Sat, Oct 17, 2026 · 7:20 AM"
-String activityWhen(Run run) {
+String activityWhen(BuildContext context, Run run) {
   final t = DateTime.parse(run.startedAtUtc).toLocal();
-  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-  return '${shortDate(run.dayKey)}, ${t.year} · $h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'AM' : 'PM'}';
+  final time = MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(t), alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context));
+  return context.l10n.runActivityWhen(shortDate(run.dayKey), '${t.year}', time);
 }
 
-String activityName(Run run) => run.title ?? (run.isWalk ? 'Walk' : 'Run');
+/// The person's title (user content, never translated), or the activity type for one saved without a title.
+String activityName(Run run) => run.title ?? activityTitle(run.activityType);
 
 class ActivityDetailScreen extends ConsumerStatefulWidget {
   const ActivityDetailScreen({super.key, required this.runId, this.justSaved = false});
@@ -87,32 +89,33 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final pace = moving != null && distance != null && distance >= 50 && moving >= 20 ? moving / distance * unit.meters : null;
     final gain = run.elevationGainMeters;
     final selected = _selectedIn(a, unit);
+    final l = context.l10n;
 
     return Scaffold(
       appBar: AppBar(actions: [
         PopupMenuButton<String>(
-          key: const Key('activity-menu'), tooltip: 'More',
+          key: const Key('activity-menu'), tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
           onSelected: (v) => switch (v) {
             'edit' => _edit(run, a),
             'gpx' => _export(run),
             _ => _delete(run),
           },
           itemBuilder: (_) => [
-            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-            if (hasRoute) const PopupMenuItem(value: 'gpx', child: Text('Export GPX')),
-            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            PopupMenuItem(value: 'edit', child: Text(l.actionEdit)),
+            if (hasRoute) PopupMenuItem(value: 'gpx', child: Text(l.runExportGpx)),
+            PopupMenuItem(value: 'delete', child: Text(l.actionDelete)),
           ],
         ),
         Padding(
-          padding: const EdgeInsets.only(right: 12, left: 4),
-          child: FilledButton(key: const Key('activity-done'), onPressed: () => Navigator.of(context).maybePop(), child: const Text('Done')),
+          padding: const EdgeInsetsDirectional.only(end: 12, start: 4),
+          child: FilledButton(key: const Key('activity-done'), onPressed: () => Navigator.of(context).maybePop(), child: Text(l.actionDone)),
         ),
       ]),
       body: SafeArea(
         child: ListView(padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 28), children: [
           Heading(activityName(run), size: 36, serif: true),
           const SizedBox(height: 4),
-          Text('${activityWhen(run)} · ${activityTitle(run.activityType)}${run.metrics['intervals'] != null ? ' · Intervals' : ''}', style: context.sansStyle(16, color: context.c.secondary)),
+          Text([activityWhen(context, run), activityTitle(run.activityType), if (run.metrics['intervals'] != null) l.runSetupIntervals].join(' · '), style: context.sansStyle(16, color: context.c.secondary)),
           ..._records(run),
           const SizedBox(height: 14),
           if (analysis.isLoading)
@@ -124,21 +127,22 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 key: const Key('activity-map'), segments: a.segments, controls: true,
                 highlight: selected == null ? null : (selected.startMeters, selected.endMeters),
                 onExpand: () => push(context, _FullMap(title: activityName(run), segments: a.segments, highlight: selected == null ? null : (selected.startMeters, selected.endMeters))),
-                semanticLabel: 'Recorded route',
+                semanticLabel: l.runRecordedRoute,
               ),
             )
           else
             _NoRoute(run: run),
           const SizedBox(height: 16),
-          StatFigure(distance == null ? '—' : unit.number(distance), unit.label, distance == null ? 'Distance not recorded' : run.distanceSource == 'manual' ? 'Distance (typed)' : run.distanceSource == 'corrected' ? 'Distance (corrected)' : 'Distance',
+          StatFigure(distance == null ? '—' : unit.number(distance), unit.label,
+              distance == null ? l.runDistanceNotRecorded : run.distanceSource == 'manual' ? l.runDistanceTyped : run.distanceSource == 'corrected' ? l.runDistanceCorrected : l.runDistance,
               key: const Key('activity-distance'), size: 52),
           const SizedBox(height: 10),
           Wrap(spacing: 28, runSpacing: 10, children: [
             if (moving != null)
-              StatFigure(clockText(moving), null, 'Moving time', said: 'Moving time ${durationText(moving)}')
+              StatFigure(clockText(moving), null, l.runMovingTime, said: l.runMovingTimeSaid(durationText(moving)))
             else
-              StatFigure(clockText(run.activeDurationSeconds ?? 0), null, 'Time', said: 'Time ${durationText(run.activeDurationSeconds ?? 0)}'),
-            if (!run.isLegacy) StatFigure(unit.paceNumber(pace), '/${unit.label}', 'Avg. moving pace'),
+              StatFigure(clockText(run.activeDurationSeconds ?? 0), null, l.runTime, said: l.runTimeSaid(durationText(run.activeDurationSeconds ?? 0))),
+            if (!run.isLegacy) StatFigure(unit.paceNumber(pace), '/${unit.label}', l.runAvgMovingPace),
           ]),
           if (!run.isLegacy) ...[
             const SizedBox(height: 12),
@@ -147,8 +151,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(Radii.field), border: Border.all(color: context.c.divider)),
               child: Text(
                 [
-                  'Elapsed ${clockText(run.elapsedSeconds ?? 0)}',
-                  gain == null ? 'Elevation gain not measured' : 'Elevation gain ${unit.elevation(gain)}',
+                  l.runElapsed(ltr(clockText(run.elapsedSeconds ?? 0))),
+                  gain == null ? l.runElevationGainNotMeasured : l.runElevationGain(unit.elevation(gain)),
                 ].join('  ·  '),
                 textAlign: TextAlign.center, style: context.sansStyle(14.5),
               ),
@@ -156,9 +160,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           ],
           const SizedBox(height: 16),
           Segmented<_Tab>(keyPrefix: 'activity-tab', values: _Tab.values, selected: _tab, label: (t) => switch (t) {
-                _Tab.overview => 'Overview',
-                _Tab.splits => 'Splits',
-                _Tab.charts => 'Charts',
+                _Tab.overview => l.runTabOverview,
+                _Tab.splits => l.runTabSplits,
+                _Tab.charts => l.runTabCharts,
               }, onChanged: (t) => setState(() => _tab = t)),
           const SizedBox(height: 14),
           ...switch (_tab) {
@@ -184,7 +188,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           padding: const EdgeInsets.only(top: 8),
           child: Wrap(spacing: 8, runSpacing: 6, children: [
             for (final b in held)
-              StatusPill('Personal best · ${b.benchmark.label}${b.benchmark.longest ? '' : ' ${b.benchmark.type}'}', key: Key('activity-best-${b.benchmark.id}'), icon: Icons.emoji_events_outlined, tone: Tone.accent),
+              StatusPill(context.l10n.runBestPill(benchmarkLabel(context.l10n, b.benchmark)), key: Key('activity-best-${b.benchmark.id}'), icon: Icons.emoji_events_outlined, tone: Tone.accent),
           ]),
         ),
       if (widget.justSaved && cue != null && cue.runId == run.id)
@@ -200,38 +204,40 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final m = run.metrics;
     final routeRec = ref.watch(routeSyncProvider(run.id)).value;
     final speed = run.movingSeconds != null && run.distanceMeters != null && run.movingSeconds! > 0 ? run.distanceMeters! / run.movingSeconds! : null;
+    final l = context.l10n;
     String summarySync() => switch (stored.rec.syncState) {
-          'pending' => 'Saved on this phone, waiting to sync',
-          'conflict' || 'rejected' => 'Needs your review in Me › Sync',
-          _ => 'Saved to your account',
+          'pending' => l.runSyncPending,
+          'conflict' || 'rejected' => l.runSyncReview,
+          _ => l.runSyncSaved,
         };
     String routeSync() {
-      if ((m['routeState'] ?? 'none') == 'none' && routeRec == null) return run.routeState == 'complete' ? 'Route saved to your account' : 'No route to sync';
-      if (routeRec == null) return run.routeState == 'complete' ? 'Route saved to your account' : 'Route kept on the phone that recorded it';
+      if ((m['routeState'] ?? 'none') == 'none' && routeRec == null) return run.routeState == 'complete' ? l.runRouteSyncSaved : l.runRouteSyncNone;
+      if (routeRec == null) return run.routeState == 'complete' ? l.runRouteSyncSaved : l.runRouteSyncKept;
       return switch (routeRec.syncState) {
-        'synced' => 'Route saved to your account',
-        'conflict' || 'rejected' => 'Route upload needs attention',
-        _ => 'Route on this phone, waiting to upload',
+        'synced' => l.runRouteSyncSaved,
+        'conflict' || 'rejected' => l.runRouteSyncAttention,
+        _ => l.runRouteSyncWaiting,
       };
     }
 
+    final rejected = (m['rejectedCount'] as num? ?? 0).toInt();
     final rows = <(String, String)>[
-      ('Active time', clockText(run.activeDurationSeconds ?? 0)),
-      ('Steps', stepsText(m)),
-      if (speed != null) ('Avg. speed', unit.speed(speed)),
-      if (m['elevationLossMeters'] != null) ('Elevation loss', unit.elevation((m['elevationLossMeters'] as num).toDouble())),
-      if (run.distanceSource == 'corrected' && m['gpsDistanceMeters'] != null) ('Measured by GPS', unit.distance((m['gpsDistanceMeters'] as num).toDouble())),
-      if (m['pointCount'] != null) ('GPS points used', '${m['pointCount']}${(m['rejectedCount'] ?? 0) > 0 ? ' (${m['rejectedCount']} left out as inaccurate)' : ''}'),
+      (l.runActiveTime, clockText(run.activeDurationSeconds ?? 0)),
+      (l.runSteps, stepsText(m)),
+      if (speed != null) (l.runAvgSpeed, unit.speed(speed)),
+      if (m['elevationLossMeters'] != null) (l.runElevationLoss, unit.elevation((m['elevationLossMeters'] as num).toDouble())),
+      if (run.distanceSource == 'corrected' && m['gpsDistanceMeters'] != null) (l.runMeasuredByGps, unit.distance((m['gpsDistanceMeters'] as num).toDouble())),
+      if (m['pointCount'] != null) (l.runGpsPointsUsed, rejected > 0 ? l.runGpsPointsRejected('${m['pointCount']}', rejected) : '${m['pointCount']}'),
       if ((m['gaps'] ?? 0) > 0 || (m['interrupted'] ?? 0) > 0)
-        ('Gaps', '${(m['gaps'] as int? ?? 0) + (m['interrupted'] as int? ?? 0)} stretch(es) without GPS, not counted'),
-      if (m['legacyDistanceMeters'] != null) ('Before routes were kept', '${unit.distance((m['legacyDistanceMeters'] as num).toDouble())} with no route'),
-      ('Summary', summarySync()),
-      ('Route', routeSync()),
+        (l.runGaps, l.runGapsValue((m['gaps'] as int? ?? 0) + (m['interrupted'] as int? ?? 0))),
+      if (m['legacyDistanceMeters'] != null) (l.runBeforeRoutes, l.runBeforeRoutesValue(unit.distance((m['legacyDistanceMeters'] as num).toDouble()))),
+      (l.runSummary, summarySync()),
+      (l.runRoute, routeSync()),
     ];
     return [
       if (run.notes != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(run.notes!, style: context.sansStyle(16))),
       if (run.metrics['routeState'] == 'partial')
-        const Padding(padding: EdgeInsets.only(bottom: 10), child: StatusLine(Icons.info_outline, 'Part of this route was not recorded. Distance and pace cover only what GPS measured.')),
+        Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.info_outline, l.runPartialRoute)),
       GroupCard(children: [for (final (k, v) in rows) GroupRow(title: k, value: v)]),
       ..._intervals(context, run),
     ];
@@ -245,17 +251,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final skips = [for (final v in (iv?['skips'] as List? ?? const [])) if (v is num) v.toInt()];
     final tl = IntervalClock.timeline(plan, skips, (run.activeDurationSeconds ?? 0) * 1000);
     final runs = tl.where((p) => p.phase.kind == PhaseKind.run && !p.skipped).length;
+    final l = context.l10n;
     return [
       const SizedBox(height: 16),
-      Text('Intervals', style: context.sansStyle(16, weight: FontWeight.w600)),
-      Text('${plan.reps} × run ${phaseClock(plan.run)}, walk ${phaseClock(plan.walk)} · $runs of ${plan.reps} runs completed', style: context.caption),
+      Text(l.runSetupIntervals, style: context.sansStyle(16, weight: FontWeight.w600)),
+      Text('${l.runPlanRepeats(plan.reps, phaseClock(plan.run), phaseClock(plan.walk))} · ${l.runIntervalsRunsCompleted(runs, plan.reps)}', style: context.caption),
       const SizedBox(height: 8),
       GroupCard(key: const Key('activity-intervals'), children: [
         for (final p in tl)
           GroupRow(
-            title: '${p.phase.label}${p.phase.round == null ? '' : ' ${p.phase.round}'}', icon: p.phase.kind == PhaseKind.run ? Icons.directions_run : Icons.directions_walk,
+            title: [phaseName(l, p.phase.kind), if (p.phase.round != null) '${p.phase.round}'].join(' '), icon: p.phase.kind == PhaseKind.run ? Icons.directions_run : Icons.directions_walk,
             tone: p.phase.kind == PhaseKind.run ? Tone.accent : Tone.neutral,
-            subtitle: p.skipped ? 'Ended early (planned ${phaseClock(p.phase.seconds)})' : null, value: phaseClock(p.seconds),
+            subtitle: p.skipped ? l.runEndedEarly(ltr(phaseClock(p.phase.seconds))) : null, value: phaseClock(p.seconds),
           ),
       ]),
     ];
@@ -263,16 +270,17 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   List<Widget> _splits(BuildContext context, TrackAnalysis? a, DistanceUnit unit) {
     final splits = a?.splits(unit.meters) ?? const <TrackSplit>[];
-    if (splits.isEmpty) return [Text('No splits: there is no GPS distance.', style: context.caption)];
+    final l = context.l10n;
+    if (splits.isEmpty) return [Text(l.runNoSplits, style: context.caption)];
     return [
-      Text('Select a split to see it on the map.', style: context.caption),
+      Text(l.runSelectSplit, style: context.caption),
       const SizedBox(height: 8),
       GroupCard(children: [
         for (final s in splits)
           GroupRow(
             key: Key('split-${s.number}'),
-            title: s.partial ? '${s.number} · last ${unit.distance(s.distanceMeters)}' : '${s.number}',
-            subtitle: s.partial ? 'Partial split' : s.number == _selectedNo ? 'Shown on the map' : null,
+            title: s.partial ? l.runSplitLast(s.number, unit.distance(s.distanceMeters)) : '${s.number}',
+            subtitle: s.partial ? l.runPartialSplit : s.number == _selectedNo ? l.runShownOnMap : null,
             icon: s.number == _selectedNo ? Icons.place : Icons.flag_outlined, tone: s.number == _selectedNo ? Tone.accent : Tone.neutral,
             value: unit.pace(s.paceFor(unit.meters)),
             onTap: () => setState(() => _selectedNo = s.number == _selectedNo ? null : s.number),
@@ -282,23 +290,24 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   }
 
   List<Widget> _charts(BuildContext context, TrackAnalysis? a, DistanceUnit unit) {
-    if (a == null || a.points.length < 2) return [Text('No charts: no GPS route was recorded.', style: context.caption)];
+    final l = context.l10n;
+    if (a == null || a.points.length < 2) return [Text(l.runNoCharts, style: context.caption)];
     final pace = a.paceProfile(unit.meters / 10, unit.meters);
     final ele = a.elevationProfile();
     final gl = a.elevationGainLoss();
     return [
-      Text('Pace', style: context.sansStyle(16, weight: FontWeight.w600)),
-      Text('Every ${unit == DistanceUnit.km ? '100 m' : '0.1 mi'}; faster is higher. Breaks are gaps or pauses.', style: context.caption),
+      Text(l.runChartPace, style: context.sansStyle(16, weight: FontWeight.w600)),
+      Text(l.runChartPaceNote(unit == DistanceUnit.km ? withUnit('100', l.unitMetre) : withUnit(localDecimal('0.1'), l.unitMi)), style: context.caption),
       const SizedBox(height: 8),
-      pace.isEmpty ? Text('Too little distance for a pace chart.', style: context.caption) : _Chart(key: const Key('chart-pace'), series: pace, unit: unit, invert: true, y: unit.paceNumber),
+      pace.isEmpty ? Text(l.runChartPaceTooShort, style: context.caption) : _Chart(key: const Key('chart-pace'), series: pace, unit: unit, invert: true, y: unit.paceNumber),
       const SizedBox(height: 20),
       Row(children: [
-        Expanded(child: Text('Elevation', style: context.sansStyle(16, weight: FontWeight.w600))),
-        Text(gl == null ? 'Gain not measured' : '${unit.elevation(gl.$1)} gain', style: context.caption),
+        Expanded(child: Text(l.runChartElevation, style: context.sansStyle(16, weight: FontWeight.w600))),
+        Text(gl == null ? l.runGainNotMeasured : l.runGainShort(unit.elevation(gl.$1)), style: context.caption),
       ]),
       const SizedBox(height: 8),
       ele.isEmpty
-          ? Text('This phone did not report altitude precise enough to chart.', style: context.caption)
+          ? Text(l.runNoAltitude, style: context.caption)
           : _Chart(key: const Key('chart-elevation'), series: ele, unit: unit, y: (v) => unit.elevation(v)),
     ];
   }
@@ -310,24 +319,25 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final distance = TextEditingController(text: run.distanceSource == 'gps' || run.distanceMeters == null ? '' : unit.number(run.distanceMeters!));
     var type = run.activityType;
     String? error;
-    await showGoSheet<void>(context, title: 'Edit', builder: (sheet) => StatefulBuilder(
+    final l = context.l10n;
+    await showGoSheet<void>(context, title: l.actionEdit, builder: (sheet) => StatefulBuilder(
           builder: (sheet, set) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Segmented<String>(keyPrefix: 'edit-type', values: const ['run', 'walk'], selected: type, label: activityTitle, onChanged: (t) => set(() => type = t)),
             const SizedBox(height: 12),
-            TextField(key: const Key('edit-title'), controller: title, maxLength: 80, decoration: const InputDecoration(labelText: 'Title')),
-            TextField(key: const Key('edit-notes'), controller: notes, maxLength: 1000, maxLines: 3, minLines: 1, decoration: const InputDecoration(labelText: 'Notes')),
+            TextField(key: const Key('edit-title'), controller: title, maxLength: 80, decoration: InputDecoration(labelText: l.runTitleField)),
+            TextField(key: const Key('edit-notes'), controller: notes, maxLength: 1000, maxLines: 3, minLines: 1, decoration: InputDecoration(labelText: l.runNotesField)),
             TextField(
               key: const Key('edit-distance'), controller: distance, keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                  labelText: gps == null ? 'Distance (optional)' : 'Correct the distance (optional)', suffixText: unit.label,
-                  helperText: gps == null ? 'Typed, not measured by GPS.' : 'Blank keeps the GPS measurement (${unit.distance(gps)}).', helperMaxLines: 2),
+                  labelText: gps == null ? l.runDistanceOptional : l.runCorrectDistance, suffixText: unit.label,
+                  helperText: gps == null ? l.runDistanceTypedHelper : l.runBlankKeepsGps(unit.distance(gps)), helperMaxLines: 2),
             ),
             if (error != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusLine(Icons.error_outline, error!, tone: Tone.error)),
             const SizedBox(height: 14),
-            PrimaryButton('Save changes', key: const Key('edit-save'), onPressed: () async {
+            PrimaryButton(l.runSaveChanges, key: const Key('edit-save'), onPressed: () async {
               final typed = parseNonNegative(distance.text);
-              if (distance.text.trim().isNotEmpty && (typed == null || typed > 1000)) return set(() => error = 'Enter the distance as a number, or leave it blank.');
-              if (title.text.trim().isEmpty) return set(() => error = 'Give it a title.');
+              if (distance.text.trim().isNotEmpty && (typed == null || typed > 1000)) return set(() => error = l.runDistanceInvalid);
+              if (title.text.trim().isEmpty) return set(() => error = l.runTitleRequired);
               final meters = typed == null ? gps : typed * unit.meters;
               final source = typed == null ? (gps == null ? 'none' : 'gps') : (gps == null ? 'manual' : 'corrected');
               try {
@@ -335,7 +345,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                     distanceMeters: meters == null ? null : (meters * 10).round() / 10, metrics: {...run.metrics, 'distanceSource': source});
                 if (sheet.mounted) Navigator.pop(sheet);
               } on LocalSaveFailure {
-                set(() => error = 'That could not be saved on this phone. Your changes are still here.');
+                set(() => error = l.runEditSaveFailed);
               }
             }),
           ]),
@@ -343,31 +353,31 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   }
 
   Future<void> _delete(Run run) async {
-    final noun = activityNoun(run.activityType);
-    if (!await confirm(context, title: 'Delete this $noun?', body: 'The $noun from ${longDate(run.dayKey)} and its route are deleted from this phone and your account.',
-        action: 'Delete $noun', destructive: true)) {
+    final type = run.activityType, l = context.l10n;
+    if (!await confirm(context, title: l.runDeleteTitle(type), body: l.runDeleteBody(type, longDate(run.dayKey)), action: l.runDeleteAction(type), destructive: true)) {
       return;
     }
     try {
       await ref.read(runRepositoryProvider).delete(run);
       if (mounted) Navigator.of(context).maybePop();
     } on LocalSaveFailure {
-      if (mounted) toast(context, 'It could not be deleted on this phone. Nothing changed.');
+      if (mounted) toast(context, l.runDeleteFailed);
     }
   }
 
   Future<void> _export(Run run) async {
     final owner = ref.read(ownerProvider);
     if (owner == null) return;
+    final failed = context.l10n.runGpxFailed;
     try {
       final entries = await ref.read(trackStoreProvider).all(owner, run.id);
       final dir = await getTemporaryDirectory();
       final name = activityName(run).replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim();
       final file = File('${dir.path}/${name.isEmpty ? 'activity' : name} ${run.dayKey}.gpx');
-      await file.writeAsBytes(utf8.encode(toGpx(run, entries)));
+      await file.writeAsBytes(utf8.encode(toGpx(run, entries, name: activityName(run))));
       await SharePlus.instance.share(ShareParams(files: [XFile(file.path, mimeType: 'application/gpx+xml')], subject: activityName(run)));
     } on Object {
-      if (mounted) toast(context, 'The GPX file could not be made on this phone.');
+      if (mounted) toast(context, failed);
     }
   }
 }
@@ -384,13 +394,13 @@ class _NoRoute extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.route_outlined, color: context.c.secondary),
           const SizedBox(height: 6),
-          Text('Route not recorded', style: context.sansStyle(16, weight: FontWeight.w600)),
+          Text(context.l10n.runRouteNotRecorded, style: context.sansStyle(16, weight: FontWeight.w600)),
           Text(
               run.isLegacy
-                  ? 'Recorded before GoHard kept routes. Its time and distance are as they were saved.'
+                  ? context.l10n.runNoRouteLegacy
                   : run.distanceSource == 'manual'
-                      ? 'Timed without GPS; the distance was typed.'
-                      : 'No GPS position was recorded for this ${activityNoun(run.activityType)}.',
+                      ? context.l10n.runNoRouteManual
+                      : context.l10n.runNoRoutePositions(run.activityType),
               textAlign: TextAlign.center, style: context.caption),
         ]),
       );
@@ -408,7 +418,7 @@ class _FullMap extends StatelessWidget {
         body: SafeArea(
           child: Padding(
             padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 12),
-            child: RouteMap(key: const Key('activity-map-full'), segments: segments, controls: true, zoomButtons: true, highlight: highlight, semanticLabel: 'Recorded route'),
+            child: RouteMap(key: const Key('activity-map-full'), segments: segments, controls: true, zoomButtons: true, highlight: highlight, semanticLabel: context.l10n.runRecordedRoute),
           ),
         ),
       );
@@ -429,9 +439,13 @@ class _Chart extends StatelessWidget {
     final maxX = all.map((p) => p.$1).reduce(max);
     final top = invert ? lo : hi, bottom = invert ? hi : lo;
     return Semantics(
-      label: 'Chart from ${y(bottom)} to ${y(top)} over ${unit.distance(maxX)}',
+      label: context.l10n.runChartSaid(y(bottom), y(top), unit.distance(maxX)),
       child: ExcludeSemantics(
-        child: SizedBox(
+        // Distance runs left to right in every language; the labels stay at the data they name (0 at its left end,
+        // the total at its right, the values on the right edge).
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: SizedBox(
           height: 150,
           child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Expanded(
@@ -444,6 +458,7 @@ class _Chart extends StatelessWidget {
             const SizedBox(width: 8),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(y(top), style: context.caption), const Spacer(), Text(y(bottom), style: context.caption), const SizedBox(height: 20)]),
           ]),
+        ),
         ),
       ),
     );

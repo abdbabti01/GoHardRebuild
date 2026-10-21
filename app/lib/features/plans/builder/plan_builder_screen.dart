@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/format.dart';
+import '../../../core/language.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../data/models.dart';
@@ -14,13 +15,18 @@ import '../../coach/coach_contract.dart';
 import '../../shell/home_shell.dart';
 import '../plan_actions.dart' show runPlanDecision;
 import '../plan_draft.dart';
+import '../plan_l10n.dart';
 import '../plan_repository.dart';
-import '../plan_rules.dart';
 import 'builder_steps.dart';
 import 'review_step.dart';
 import 'workout_editor.dart';
 
-const _stepNames = ['Availability', 'Structure', 'Workouts', 'Review'];
+String _stepName(AppLocalizations l, int step) => switch (step) {
+      0 => l.builderStepAvailability,
+      1 => l.builderStepStructure,
+      2 => l.builderStepWorkouts,
+      _ => l.builderStepReview,
+    };
 
 /// Train › Plan › Create plan: "Guide me" (answers, then a suggested starting plan) or "I know what I want" (a
 /// template or my own), both into the same four-step builder. A plan in progress (saved on the phone after every
@@ -44,14 +50,14 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
   }
 
   Future<void> _begin(String path, {bool guided = false}) async {
-    final d = PlanDraft.fresh(today: ref.read(todayKeyProvider), path: path, guided: guided);
+    final d = PlanDraft.fresh(today: ref.read(todayKeyProvider), path: path, guided: guided, customTitle: context.l10n.planDefaultTitle);
     await ref.read(planRepositoryProvider).saveBuilderDraft(d);
     if (mounted) setState(() => _open = d);
   }
 
   Future<void> _discard() async {
-    final ok = await confirm(context, title: 'Start over?', action: 'Discard it', destructive: true,
-        body: 'The plan in progress is deleted from this phone. Nothing else changes: no plan was created from it.');
+    final l = context.l10n;
+    final ok = await confirm(context, title: l.builderStartOverTitle, action: l.builderDiscardAction, destructive: true, body: l.builderDiscardBody);
     if (!ok || !mounted) return;
     await ref.read(planRepositoryProvider).discardBuilderDraft('new');
     if (mounted) setState(() => _saved = null);
@@ -62,35 +68,36 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
     if (_open != null) return PlanBuilder(initial: _open!);
     if (!_loaded) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final saved = _saved;
-    return AppPage(title: 'Create plan', children: [
+    final l = context.l10n;
+    return AppPage(title: l.builderCreatePlan, children: [
       if (saved != null) ...[
         // The plan in progress as a pale panel: its name in the serif, where it stopped, Continue and Start over.
         // Start over asks from the page's own context ([_discard]), never the panel's.
         PhotoPanel(
           content: (context) => [
-            const Overline('Plan in progress'),
+            Overline(l.planStartInProgressTitle),
             const SizedBox(height: 4),
-            Text(saved.title.trim().isEmpty ? 'Untitled plan' : saved.title.trim(), style: context.pageTitleStyle(28)),
+            Text(saved.title.trim().isEmpty ? l.builderUntitled : saved.title.trim(), style: context.pageTitleStyle(28)),
             const SizedBox(height: 4),
-            Text('Step ${saved.step.clamp(0, 3) + 1} of 4 · ${_stepNames[saved.step.clamp(0, 3)]}. Saved on this phone; nothing is active yet.', style: context.caption),
+            Text(l.builderStepSaved(saved.step.clamp(0, 3) + 1, _stepName(l, saved.step.clamp(0, 3))), style: context.caption),
           ],
           actions: (_) => [
-            PrimaryButton('Continue this plan', key: const Key('plan-draft-resume'), expand: false, onPressed: () => setState(() => _open = saved)),
-            QuietLink('Start over', key: const Key('plan-draft-discard'), said: 'Start over and discard this plan in progress', onPressed: _discard),
+            PrimaryButton(l.builderContinuePlan, key: const Key('plan-draft-resume'), expand: false, onPressed: () => setState(() => _open = saved)),
+            QuietLink(l.builderStartOver, key: const Key('plan-draft-discard'), said: l.builderStartOverSaid, onPressed: _discard),
           ],
         ),
       ] else ...[
-        Text('Both ways make a plan of your own that you can change at any time.', style: context.sansStyle(16, color: context.c.secondary)),
+        Text(l.builderBothWays, style: context.sansStyle(16, color: context.c.secondary)),
         const SizedBox(height: 16),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           for (final (i, (key, label, about, icon, selected, onTap)) in [
-            ('plan-path-guided', 'Guide me', 'Help me choose a starting plan.', Icons.explore_outlined, false, () => _begin('template', guided: true)),
-            ('plan-path-direct', 'I know what I want', 'Choose a template or build my own.', Icons.tune, _direct, () => setState(() => _direct = true)),
+            ('plan-path-guided', l.builderGuideMe, l.builderGuideMeAbout, Icons.explore_outlined, false, () => _begin('template', guided: true)),
+            ('plan-path-direct', l.builderKnowWhat, l.builderKnowWhatAbout, Icons.tune, _direct, () => setState(() => _direct = true)),
           ].indexed) ...[
             if (i > 0) const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                ChoiceCard(key: Key(key), label: label, semanticLabel: '$label. $about', leading: Icon(icon), selected: selected, onTap: onTap),
+                ChoiceCard(key: Key(key), label: label, semanticLabel: l.builderChoiceSemantics(label, about), leading: Icon(icon), selected: selected, onTap: onTap),
                 const SizedBox(height: 6),
                 ExcludeSemantics(child: Text(about, textAlign: TextAlign.center, style: context.caption)),
               ]),
@@ -102,12 +109,12 @@ class _CreatePlanScreenState extends ConsumerState<CreatePlanScreen> {
         const SizedBox(height: 18),
         GroupCard(children: [
           GroupRow(
-            key: const Key('plan-path-template'), icon: Icons.view_week_outlined, title: 'Start from a template',
-            subtitle: 'Preview a familiar split such as Upper / Lower or Push / Pull / Legs, then make it yours.', onTap: () => _begin('template'),
+            key: const Key('plan-path-template'), icon: Icons.view_week_outlined, title: l.builderFromTemplate,
+            subtitle: l.builderFromTemplateSubtitle, onTap: () => _begin('template'),
           ),
           GroupRow(
-            key: const Key('plan-path-custom'), icon: Icons.edit_note, title: 'Build my own',
-            subtitle: 'Name your workouts, add exercises and arrange your week.', onTap: () => _begin('custom'),
+            key: const Key('plan-path-custom'), icon: Icons.edit_note, title: l.builderBuildOwn,
+            subtitle: l.builderBuildOwnSubtitle, onTap: () => _begin('custom'),
           ),
         ]),
       ],
@@ -125,6 +132,7 @@ class _StepIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final l = context.l10n;
     Widget mark(int i) {
       final done = i < step, now = i == step;
       return Container(
@@ -145,7 +153,7 @@ class _StepIndicator extends StatelessWidget {
     TextStyle style(int i) => context.sansStyle(12.5, weight: i == step ? FontWeight.w700 : FontWeight.w400, color: i == step ? c.text : c.secondary);
     // The names show only when all four fit at the reader's text size; otherwise the line above names the step.
     double width(int i) {
-      final p = TextPainter(text: TextSpan(text: _stepNames[i], style: style(i)), textDirection: TextDirection.ltr, textScaler: MediaQuery.textScalerOf(context))..layout();
+      final p = TextPainter(text: TextSpan(text: _stepName(l, i), style: style(i)), textDirection: Directionality.of(context), textScaler: MediaQuery.textScalerOf(context))..layout();
       final w = p.width;
       p.dispose();
       return w;
@@ -157,7 +165,7 @@ class _StepIndicator extends StatelessWidget {
       ]),
       if ([for (var i = 0; i < 4; i++) width(i)].fold(0.0, (a, b) => a + b) + 3 * 12 <= box.maxWidth) ...[
         const SizedBox(height: 4),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [for (var i = 0; i < 4; i++) Text(_stepNames[i], style: style(i))]),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [for (var i = 0; i < 4; i++) Text(_stepName(l, i), style: style(i))]),
       ],
     ]));
   }
@@ -167,22 +175,23 @@ class _StepIndicator extends StatelessWidget {
 Future<void> openPlanEditor(BuildContext context, WidgetRef ref, Plan plan, {bool duplicate = false}) async {
   final repo = ref.read(planRepositoryProvider);
   final today = ref.read(todayKeyProvider);
+  final l = context.l10n;
   final existing = await repo.builderDraft(duplicate ? 'new' : plan.id);
   if (!context.mounted) return;
   PlanDraft? draft;
   if (existing != null && !duplicate && existing.baseRevision != null && existing.baseRevision != plan.revision) {
     // The plan changed since these unsaved edits began (another device, an accepted swap): they are not offered again.
-    toast(context, 'This plan changed since you last edited it, so you start from the plan as it is now.');
+    toast(context, l.builderPlanChanged);
   } else if (existing != null && !duplicate) {
-    final resume = await confirm(context, title: 'Continue your changes?', action: 'Continue changes', cancel: 'Start from the saved plan',
-        body: 'You were changing "${plan.title}" and did not save. Continue where you left off, or start again from the plan as it is now.');
+    final resume = await confirm(context, title: l.builderContinueChangesTitle, action: l.builderContinueChanges, cancel: l.builderStartFromSaved,
+        body: l.builderContinueChangesBody(plan.title));
     if (resume) draft = existing;
   } else if (existing != null) {
-    final replace = await confirm(context, title: 'Replace your plan in progress?', action: 'Replace it',
-        body: '"${existing.title.trim().isEmpty ? 'Untitled plan' : existing.title.trim()}" is not finished. Duplicating "${plan.title}" replaces it on this phone.');
+    final replace = await confirm(context, title: l.builderReplaceInProgressTitle, action: l.builderReplaceIt,
+        body: l.builderReplaceInProgressBody(existing.title.trim().isEmpty ? l.builderUntitled : existing.title.trim(), plan.title));
     if (!replace) return;
   }
-  draft ??= PlanDraft.fromPlan(plan, duplicate: duplicate, today: today);
+  draft ??= PlanDraft.fromPlan(plan, duplicate: duplicate, today: today, copyName: l.planCopyName);
   if (draft.effectiveDate != null && draft.effectiveDate!.compareTo(today) < 0) draft.effectiveDate = today;
   await repo.saveBuilderDraft(draft);
   if (context.mounted) await push<void>(context, PlanBuilder(initial: draft, editing: duplicate ? null : plan));
@@ -230,7 +239,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     _saving = _saving.then((_) => repo.saveBuilderDraft(snapshot)).then((_) => _saveFailed = false, onError: (Object _) {
       if (!mounted || _saveFailed) return;
       _saveFailed = true;
-      toast(context, 'The latest change could not be saved on this phone. Keep this screen open and try again.');
+      toast(context, context.l10n.builderSaveFailed);
     });
   }
 
@@ -265,7 +274,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     final id = draft.templateId;
     if (t != null && id != null && id != 'custom') return t.byId(id).name;
     if (t != null && draft.guided && draft.workouts.isEmpty) return t.byId(suggestTemplate(draft.days.length).templateId).name;
-    return draft.title.trim().isEmpty ? 'My plan' : draft.title.trim();
+    return draft.title.trim().isEmpty ? context.l10n.planDefaultTitle : draft.title.trim();
   }
 
   /// What the coach says on each step (docs/COACH.md › Companion › Where it speaks), with Ask me about the draft and,
@@ -273,29 +282,29 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
   ({String id, String label, CoachSay say})? _help(int step) {
     CoachContext ask(String label, CoachFocus focus) =>
         CoachContext(label: label, focus: focus, templateId: draft.templateId, draft: () => draft, applyToDraft: _applyFromCoach);
+    final l = context.l10n;
     switch (step) {
       case 0:
         return (
-          id: 'builder.preferences', label: 'Help with your training week',
-          say: CoachSay('Pick the days you can train and your equipment. The next step suggests a starting point from these answers.',
-              ask: ask('Your training week', CoachFocus.plan)),
+          id: 'builder.preferences', label: l.builderHelpWeek,
+          say: CoachSay(l.builderCoachWeek, ask: ask(l.builderAskWeek, CoachFocus.plan)),
         );
       case 1:
         final templates = ref.watch(planTemplatesProvider).value, guide = ref.watch(coachGuideProvider).value;
         final s = guidedSuggestion(draft.days.length, draft.equipment, experience: draft.experience);
         return (
-          id: 'builder.structure', label: 'Help with choosing a split',
-          say: CoachSay('Unsure which split fits your week? Let\'s compare your options.',
-              ask: ask('Choosing a split', CoachFocus.split),
+          id: 'builder.structure', label: l.builderHelpSplit,
+          say: CoachSay(l.builderCoachSplit,
+              ask: ask(l.builderAskSplit, CoachFocus.split),
               guide: templates == null || guide == null || draft.path != 'template'
                   ? null
-                  : (label: 'Compare splits', key: const Key('coach-compare'), onPressed: () => showCompareSplits(context,
+                  : (label: l.builderCompareSplits, key: const Key('coach-compare'), onPressed: () => showCompareSplits(context,
                       guide: guide, templates: templates, draft: draft, templateIds: [s.templateId, ...s.alternatives], suggestedId: s.templateId))),
         );
       case 2:
         return (
-          id: 'builder.workouts', label: 'Help with these workouts',
-          say: CoachSay('Questions about sets, reps or a movement? The info button beside each exercise has the built-in guide.',
+          id: 'builder.workouts', label: l.builderHelpWorkouts,
+          say: CoachSay(l.builderCoachWorkouts,
               ask: ask(draft.title.trim().isEmpty ? _splitLabel : draft.title.trim(), CoachFocus.workout)),
         );
       default:
@@ -307,20 +316,20 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
 
   /// What stops the user leaving this step, in words.
   List<String> get _blocking {
-    if (_step == 0) return draft.days.isEmpty ? const ['Choose at least one day.'] : const [];
-    if (_step == 1 && draft.guided && draft.workouts.isEmpty) return const ['Choose a starting plan to continue.'];
-    return [for (final code in draft.errors) PlanRules.describe(code)];
+    final l = context.l10n;
+    if (_step == 0) return draft.days.isEmpty ? [l.builderChooseDay] : const [];
+    if (_step == 1 && draft.guided && draft.workouts.isEmpty) return [l.builderChooseStarting];
+    return [for (final code in draft.errors) planErrorText(l, code)];
   }
 
   Future<void> _activate() async {
     final primary = ref.read(primaryPlanProvider);
     final replaces = primary != null && primary.id != draft.planId ? primary : null;
+    final l = context.l10n;
     if (replaces != null) {
       final open = ref.read(workoutListProvider).where((w) => w.isOpen && w.planId == replaces.id).firstOrNull;
-      final ok = await confirm(context, title: 'Pause ${replaces.title} and activate this plan?', action: 'Pause and activate',
-          body: '"${replaces.title}" will be paused, not deleted. Its history and recorded workouts are kept, and you can resume it later. '
-              '"${draft.title.trim()}" becomes your plan from ${longDate(draft.startDate)}.'
-              '${open == null ? '' : '\n\nYour open workout "${open.title}" stays open with its recorded sets.'}');
+      final ok = await confirm(context, title: l.builderPauseActivateTitle(replaces.title), action: l.builderPauseActivate,
+          body: [l.builderPauseActivateBody(replaces.title, draft.title.trim(), longDate(draft.startDate)), if (open != null) l.builderOpenWorkoutStays(open.title)].join('\n\n'));
       if (!ok || !mounted) return;
     }
     setState(() => _busy = true);
@@ -330,7 +339,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
     final shell = ref.read(shellProvider.notifier);
-    final message = draft.startDate.compareTo(today) > 0 ? '"${draft.title.trim()}" is active. It starts ${shortDate(draft.startDate)}.' : '"${draft.title.trim()}" is active.';
+    final message = draft.startDate.compareTo(today) > 0 ? l.builderActiveStarts(draft.title.trim(), shortDate(draft.startDate)) : l.builderActive(draft.title.trim());
     final done = await runPlanDecision(context, () => ref.read(planRepositoryProvider).createAndActivate(draft, today: today, replacePrimaryId: replaces?.id), saved: '');
     if (!mounted) return;
     setState(() => _busy = false);
@@ -346,8 +355,9 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     await _saving;
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
+    final text = context.l10n.builderDraftSaved;
     Navigator.pop(context);
-    messenger.showSnackBar(const SnackBar(content: Text('Draft saved on this phone. Nothing is active yet.'), duration: Duration(milliseconds: 2200)));
+    messenger.showSnackBar(SnackBar(content: Text(text), duration: const Duration(milliseconds: 2200)));
   }
 
   Future<void> _saveChanges() async {
@@ -357,45 +367,47 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     final plan = ref.read(planListProvider).where((p) => p.id == widget.editing!.id).firstOrNull ?? widget.editing!;
     final today = ref.read(todayKeyProvider);
     final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
     try {
       await ref.read(planRepositoryProvider).revise(plan, draft, workouts: ref.read(workoutListProvider), today: today);
       if (!mounted) return;
       Navigator.pop(context);
       messenger.showSnackBar(SnackBar(
-          content: Text(plan.isDraft ? 'Changes saved.' : 'Changes saved from ${shortDate(draft.effectiveDate ?? today)}.'), duration: const Duration(milliseconds: 2200)));
+          content: Text(plan.isDraft ? l.builderChangesSaved : l.builderChangesSavedFrom(shortDate(draft.effectiveDate ?? today))), duration: const Duration(milliseconds: 2200)));
     } on ScheduleRefused catch (e) {
-      if (mounted) setState(() { _busy = false; _error = e.message; });
+      if (mounted) setState(() { _busy = false; _error = planErrorText(l, e.codes.first); });
     } on LocalSaveFailure {
-      if (mounted) setState(() { _busy = false; _error = 'That could not be saved on this phone. Nothing changed.'; });
+      if (mounted) setState(() { _busy = false; _error = l.planLocalSaveFailed; });
     }
   }
 
   Widget _bottom() {
     final blocking = _blocking;
+    final l = context.l10n;
     final notes = [
       for (final m in {...blocking, ?_error}) Padding(padding: const EdgeInsets.only(bottom: 8), child: StatusLine(Icons.error_outline, m, tone: Tone.error)),
     ];
-    final back = SecondaryButton('Back', key: const Key('builder-back'), onPressed: _busy ? null : _back);
+    final back = SecondaryButton(l.builderBack, key: const Key('builder-back'), onPressed: _busy ? null : _back);
     Widget pair(Widget a, Widget b) => Row(children: [Expanded(child: a), const SizedBox(width: 10), Expanded(child: b)]);
     if (_step < 3) {
       return Column(mainAxisSize: MainAxisSize.min, children: [
         ...notes,
-        pair(back, PrimaryButton('Next', key: const Key('builder-next'), onPressed: blocking.isEmpty ? _next : null)),
+        pair(back, PrimaryButton(l.builderNext, key: const Key('builder-next'), onPressed: blocking.isEmpty ? _next : null)),
       ]);
     }
     if (widget.editing != null) {
       return Column(mainAxisSize: MainAxisSize.min, children: [
         ...notes,
-        pair(back, PrimaryButton('Save changes', key: const Key('plan-save-changes'), busy: _busy, onPressed: blocking.isEmpty ? _saveChanges : null)),
+        pair(back, PrimaryButton(l.builderSaveChanges, key: const Key('plan-save-changes'), busy: _busy, onPressed: blocking.isEmpty ? _saveChanges : null)),
       ]);
     }
     return Column(mainAxisSize: MainAxisSize.min, children: [
       ...notes,
       if (draft.isUsable) ...[
-        PrimaryButton('Activate plan', key: const Key('plan-activate'), busy: _busy, onPressed: _activate),
+        PrimaryButton(l.builderActivate, key: const Key('plan-activate'), busy: _busy, onPressed: _activate),
         const SizedBox(height: 8),
       ],
-      pair(back, SecondaryButton('Save draft', key: const Key('plan-save-draft'), onPressed: _busy ? null : _saveDraft)),
+      pair(back, SecondaryButton(l.builderSaveDraft, key: const Key('plan-save-draft'), onPressed: _busy ? null : _saveDraft)),
     ]);
   }
 
@@ -406,9 +418,10 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     // Read when activating or saving changes: kept loaded from the start.
     ref.watch(primaryPlanProvider);
     ref.watch(workoutListProvider);
-    final title = switch (draft.mode) { 'edit' => 'Edit plan', 'duplicate' => 'Duplicate plan', _ => 'Create plan' };
+    final l = context.l10n;
+    final title = switch (draft.mode) { 'edit' => l.planEdit, 'duplicate' => l.planDuplicate, _ => l.builderCreatePlan };
     final help = _help(step);
-    final progress = 'Step ${step + 1} of 4: ${_stepNames[step]}';
+    final progress = l.builderProgressSemantics(step + 1, _stepName(l, step));
     return PopScope(
       canPop: step <= _first,
       onPopInvokedWithResult: (didPop, _) {
@@ -425,7 +438,7 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
                 key: const Key('builder-progress'), label: progress, container: true,
                 child: ExcludeSemantics(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    Overline('Step ${step + 1} of 4 · ${_stepNames[step]}'),
+                    Overline(l.builderProgressOverline(step + 1, _stepName(l, step))),
                     const SizedBox(height: 10),
                     _StepIndicator(step),
                   ]),

@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/format.dart' show formatGrouped;
+import '../../core/language.dart' show currentL10n;
 import 'move_prefs.dart';
 
 /// Whether this phone can count steps for GoHard.
@@ -33,10 +35,11 @@ class DailyLoading extends DailySteps {
   const DailyLoading();
 }
 
-/// No source on this phone (no motion hardware, or Health Connect missing). [why] says what is needed.
+/// No source on this phone (no motion hardware, or Health Connect missing). [why] says what is needed, in the app language.
 class DailyUnavailable extends DailySteps {
-  const DailyUnavailable(this.why);
-  final String why;
+  const DailyUnavailable({required this.ios});
+  final bool ios;
+  String get why => ios ? currentL10n.stepsDailyUnavailableIos : currentL10n.stepsDailyUnavailableAndroid;
 }
 
 class DailyNotAllowed extends DailySteps {
@@ -127,7 +130,7 @@ class DeviceStepSource implements StepSource {
   }
 
   @override
-  String get dailySource => defaultTargetPlatformIsIOS ? 'This iPhone' : 'Health Connect';
+  String get dailySource => defaultTargetPlatformIsIOS ? currentL10n.stepsSourceIphone : 'Health Connect';
 
   @override
   Future<void> vibrate() async {
@@ -171,7 +174,7 @@ class SimulatedStepSource implements StepSource {
   @override
   Future<StepAccess> dailyRequest() => request();
   @override
-  String get dailySource => 'This phone (simulated)';
+  String get dailySource => currentL10n.stepsSourceSimulated;
   @override
   Future<({int steps, bool recorded})?> daily(DateTime from, DateTime to) async => (steps: dailyTotal, recorded: true);
   @override
@@ -262,24 +265,17 @@ class StepTally {
 /// Activities saved before steps existed have none of these: their steps are unknown, never zero.
 String stepsText(Map<String, dynamic> metrics) => switch (metrics['stepsState']) {
       'measured' => _n(metrics['steps']),
-      'partial' => '${_n(metrics['steps'])} (part of the time)',
-      'denied' => 'Not counted: motion access is off',
-      'unavailable' => 'Not counted: no step sensor',
-      'off' => 'Not counted',
-      _ => 'Not recorded',
+      'partial' => currentL10n.stepsPartOfTime(_n(metrics['steps'])),
+      'denied' => currentL10n.stepsNotCountedMotion,
+      'unavailable' => currentL10n.stepsNotCountedSensor,
+      'off' => currentL10n.stepsNotCounted,
+      _ => currentL10n.stepsNotRecorded,
     };
 
 String _n(Object? v) => formatSteps((v as num?)?.toInt() ?? 0);
 
-String formatSteps(int v) {
-  final s = v.toString();
-  final b = StringBuffer();
-  for (var i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
-    b.write(s[i]);
-  }
-  return b.toString();
-}
+/// "1,234", "1 234": grouped in the app language.
+String formatSteps(int v) => formatGrouped(v, decimals: 0);
 
 /// Today's steps for the signed-in account, when it turned them on. Read when watched and when the row showing it asks
 /// ([refresh]: on the app's return to the foreground and every few minutes while shown). Local calendar day from
@@ -302,7 +298,7 @@ class DailyStepsController extends Notifier<DailySteps> {
     if (!ref.mounted) return;
     switch (access) {
       case StepAccess.unavailable:
-        state = DailyUnavailable(defaultTargetPlatformIsIOS ? 'This iPhone cannot count steps.' : 'Daily steps on Android come from Health Connect, which is not available on this phone.');
+        state = DailyUnavailable(ios: defaultTargetPlatformIsIOS);
         return;
       case StepAccess.notAllowed || StepAccess.blocked:
         state = DailyNotAllowed(blocked: access == StepAccess.blocked);

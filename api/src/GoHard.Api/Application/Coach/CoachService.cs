@@ -299,8 +299,19 @@ public sealed class CoachService
         if (r.History is { Count: > 0 } history)
             user.Add("<earlier_conversation>\n" + string.Join("\n", history.Select(t => $"{t.Role}: {Untrusted(t.Text!)}")) + "\n</earlier_conversation>");
         user.Add($"<question>\n{Untrusted(question)}\n</question>");
-        return ([Instructions, refs.ToString()], user);
+        return (ReplyLanguage(r.Language) is { } lang ? [Instructions, refs.ToString(), lang] : [Instructions, refs.ToString()], user);
     }
+
+    /// <summary>
+    /// The app's language, allowlisted: a trusted instruction of our own, never the sent text. English, a missing value
+    /// or anything else adds nothing, so the request is exactly what an older client gets.
+    /// </summary>
+    internal static string? ReplyLanguage(string? language) => language switch
+    {
+        "fr-CA" => "Reply language: write the answer and the proposal summary in Canadian French, addressing the person as \"tu\". Keep catalogKey, workoutId, occurrenceKey and source ID values exactly as given.",
+        "ar" => "Reply language: write the answer and the proposal summary in Modern Standard Arabic, without dialect. Keep catalogKey, workoutId, occurrenceKey and source ID values exactly as given.",
+        _ => null,
+    };
 
     private static string DraftText(CoachDraft d, CoachContext c)
     {

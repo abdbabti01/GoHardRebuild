@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import '../../core/clock.dart';
+import '../../core/language.dart' show currentL10n;
 import '../../data/db.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import 'plan_draft.dart';
+import 'plan_l10n.dart';
 import 'plan_projection.dart';
 import 'plan_rules.dart';
 import 'schedule_rules.dart';
@@ -25,7 +27,8 @@ class PlanAnswer {
 class ScheduleRefused implements Exception {
   const ScheduleRefused(this.codes);
   final List<String> codes;
-  String get message => ScheduleRules.describe(codes.first);
+  /// The first code in words, in the app's language. Widgets with a context use [planErrorText].
+  String get message => planErrorText(currentL10n, codes.first);
 }
 
 /// Projects a plan's occasions for validation. An occasion is open while an unfinished workout is attached.

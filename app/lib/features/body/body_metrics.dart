@@ -1,4 +1,6 @@
 import '../../core/clock.dart';
+import '../../core/format.dart' show localDecimal, ltr, withUnit;
+import '../../core/language.dart';
 import '../../core/units.dart';
 import '../../data/models.dart';
 import '../progress/trends.dart' show TrendRange;
@@ -10,20 +12,19 @@ enum BodyDimension { mass, length, percent }
 
 /// The measurements a check-in can hold. Left and right are separate fields and are never combined or swapped.
 enum BodyField {
-  weight('weightKg', 'Weight', BodyDimension.mass),
-  waist('waistCm', 'Waist', BodyDimension.length),
-  chest('chestCm', 'Chest', BodyDimension.length),
-  leftUpperArm('leftUpperArmCm', 'Left upper arm', BodyDimension.length),
-  rightUpperArm('rightUpperArmCm', 'Right upper arm', BodyDimension.length),
-  leftThigh('leftThighCm', 'Left thigh', BodyDimension.length),
-  rightThigh('rightThighCm', 'Right thigh', BodyDimension.length),
-  bodyFat('bodyFatPercent', 'Body fat', BodyDimension.percent);
+  weight('weightKg', BodyDimension.mass),
+  waist('waistCm', BodyDimension.length),
+  chest('chestCm', BodyDimension.length),
+  leftUpperArm('leftUpperArmCm', BodyDimension.length),
+  rightUpperArm('rightUpperArmCm', BodyDimension.length),
+  leftThigh('leftThighCm', BodyDimension.length),
+  rightThigh('rightThighCm', BodyDimension.length),
+  bodyFat('bodyFatPercent', BodyDimension.percent);
 
-  const BodyField(this.key, this.label, this.dimension);
+  const BodyField(this.key, this.dimension);
 
   /// The wire and storage key of the canonical value (kg, cm or %).
   final String key;
-  final String label;
   final BodyDimension dimension;
 
   /// The same input bounds as the account (not health ranges): weight above 0 and at most 700 kg, circumferences above
@@ -38,14 +39,26 @@ enum BodyField {
   bool get needsMeasurementsServer => dimension == BodyDimension.length;
 }
 
+/// A field's name in the app's language. Left and right are the person's own (anatomical) sides, in every language.
+String bodyFieldLabel(AppLocalizations l, BodyField f) => switch (f) {
+      BodyField.weight => l.bodyFieldWeight,
+      BodyField.waist => l.bodyFieldWaist,
+      BodyField.chest => l.bodyFieldChest,
+      BodyField.leftUpperArm => l.bodyFieldLeftUpperArm,
+      BodyField.rightUpperArm => l.bodyFieldRightUpperArm,
+      BodyField.leftThigh => l.bodyFieldLeftThigh,
+      BodyField.rightThigh => l.bodyFieldRightThigh,
+      BodyField.bodyFat => l.bodyFieldBodyFat,
+    };
+
 const maxNoteLength = 200;
 
 enum LengthUnit {
-  cm('cm'),
-  inch('in');
+  cm,
+  inch;
 
-  const LengthUnit(this.label);
-  final String label;
+  /// Shown in the app's language ("cm", "سم"); [name] stays the stored identifier.
+  String get label => this == cm ? currentL10n.bodyUnitCm : currentL10n.bodyUnitIn;
 }
 
 /// One inch is exactly 2.54 cm.
@@ -66,7 +79,7 @@ class BodyUnits {
   final LoadUnit mass;
   final LengthUnit length;
 
-  String label(BodyField f) => switch (f.dimension) { BodyDimension.mass => mass.name, BodyDimension.length => length.label, BodyDimension.percent => '%' };
+  String label(BodyField f) => switch (f.dimension) { BodyDimension.mass => mass.label, BodyDimension.length => length.label, BodyDimension.percent => '%' };
 
   double toDisplay(BodyField f, double canonical) => switch (f.dimension) {
         BodyDimension.mass => loadKgToDisplay(canonical, mass),
@@ -80,17 +93,17 @@ class BodyUnits {
         BodyDimension.percent => shown,
       });
 
-  /// The number as it goes into a field: "35.5".
-  String number(BodyField f, double canonical) => bodyNumber(toDisplay(f, canonical));
+  /// The number as it goes into a field: "35.5" ("35,5" in French; [readField] takes either).
+  String number(BodyField f, double canonical) => localDecimal(bodyNumber(toDisplay(f, canonical)));
 
   /// "35.5 in", "21.5 %", or "—" when not recorded.
-  String value(BodyField f, double? canonical) => canonical == null ? '—' : '${number(f, canonical)} ${label(f)}';
+  String value(BodyField f, double? canonical) => canonical == null ? '—' : withUnit(number(f, canonical), label(f));
 
   /// To minus From, neutral: "−0.5 in", "+0.25 in", "0.0 in". Body fat is in percentage points.
   String change(BodyField f, double from, double to) {
     final d = double.parse((toDisplay(f, to) - toDisplay(f, from)).toStringAsFixed(2));
-    final unit = f.dimension == BodyDimension.percent ? 'pts' : label(f);
-    return '${d > 0 ? '+' : d < 0 ? '−' : ''}${bodyNumber(d.abs())} $unit';
+    final unit = f.dimension == BodyDimension.percent ? currentL10n.bodyUnitPoints : label(f);
+    return withUnit(ltr('${d > 0 ? '+' : d < 0 ? '−' : ''}${localDecimal(bodyNumber(d.abs()))}'), unit);
   }
 }
 
@@ -102,22 +115,27 @@ class FieldAnchor {
   final double canonical;
 }
 
+/// Why a field's text cannot be saved; the form says it in words ([bodyFieldErrorText]).
+enum BodyFieldError { notANumber, outOfRange }
+
+String bodyFieldErrorText(AppLocalizations l, BodyField f, BodyFieldError e) => e == BodyFieldError.notANumber
+    ? l.bodyErrorNotANumber
+    : switch (f.dimension) {
+        BodyDimension.mass => l.bodyErrorWeightRange,
+        BodyDimension.length => l.bodyErrorLengthRange,
+        BodyDimension.percent => l.bodyErrorFatRange,
+      };
+
 /// A field's text read as a canonical number: blank is (null, null), typed text that is not a number is an error.
-/// [checkRange] false is for converting between units, where an out-of-range number still converts.
-({double? value, String? error}) readField(BodyField f, String text, FieldAnchor? anchor, BodyUnits units, {bool checkRange = true}) {
+/// Typed in any of the app's languages ("82,5", "٨٢٫٥"), never with grouping. [checkRange] false is for converting
+/// between units, where an out-of-range number still converts.
+({double? value, BodyFieldError? error}) readField(BodyField f, String text, FieldAnchor? anchor, BodyUnits units, {bool checkRange = true}) {
   if (anchor != null && text == anchor.text) return (value: anchor.canonical, error: null);
-  final t = text.trim().replaceAll(',', '.');
-  if (t.isEmpty) return (value: null, error: null);
-  final shown = RegExp(r'^\d*\.?\d+$|^\d+\.$').hasMatch(t) ? double.tryParse(t) : null;
-  if (shown == null) return (value: null, error: 'Enter a number, or leave it blank.');
+  if (text.trim().isEmpty) return (value: null, error: null);
+  final shown = parseNonNegative(text);
+  if (shown == null) return (value: null, error: BodyFieldError.notANumber);
   final v = units.toCanonical(f, shown);
-  if (checkRange && !f.accepts(v)) {
-    return (value: null, error: switch (f.dimension) {
-      BodyDimension.mass => 'Weight is above 0 and at most 700 kg (1,543 lb).',
-      BodyDimension.length => 'Use a value above 0 and at most 500 cm (196.85 in).',
-      BodyDimension.percent => 'Body fat is from 0 to 100 %.',
-    });
-  }
+  if (checkRange && !f.accepts(v)) return (value: null, error: BodyFieldError.outOfRange);
   return (value: v, error: null);
 }
 

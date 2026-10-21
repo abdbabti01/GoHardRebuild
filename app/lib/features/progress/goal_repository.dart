@@ -1,7 +1,11 @@
+import '../../core/units.dart' show parsePositiveInt;
 import '../../data/db.dart' show Cmd;
 import '../../data/models.dart';
 import '../../data/sync.dart';
 import 'weekly.dart';
+
+/// Why a weekly target was refused: not a whole number from 1 to 21.
+enum GoalInputError { outOfRange }
 
 /// Weekly activity targets through the outbox (docs/PROGRESS.md › Weekly goals). A save writes the record of the
 /// week it was made in; queued, it keeps that week however late it reaches the account.
@@ -16,12 +20,12 @@ class GoalRepository {
   static bool serverTakes(Cmd cmd, Set<String>? capabilities) => !cmd.kind.startsWith('weeklygoal.') || (capabilities?.contains(capability) ?? false);
 
   /// A field's text as a target: blank is no target. Whole numbers 1 to 21 only; anything else is refused with the
-  /// same rule the account applies.
-  static (int?, String?) parse(String raw) {
+  /// same rule the account applies. Digits may be typed in any of the app's languages ("٣"); the form words the error.
+  static (int?, GoalInputError?) parse(String raw) {
     final t = raw.trim();
     if (t.isEmpty) return (null, null);
-    final v = RegExp(r'^\d{1,3}$').hasMatch(t) ? int.parse(t) : null;
-    if (v == null || v < goalRange.$1 || v > goalRange.$2) return (null, 'Use a whole number from ${goalRange.$1} to ${goalRange.$2}, or leave it blank.');
+    final v = parsePositiveInt(t);
+    if (v == null || v < goalRange.$1 || v > goalRange.$2) return (null, GoalInputError.outOfRange);
     return (v, null);
   }
 

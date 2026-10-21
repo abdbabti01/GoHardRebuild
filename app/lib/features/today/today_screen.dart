@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/appearance.dart';
 import '../../core/clock.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
@@ -66,6 +67,7 @@ class TodayScreen extends ConsumerWidget {
     final localError = [ref.watch(plansProvider), ref.watch(workoutsProvider), ref.watch(contextRowProvider)].any((a) => a.hasError);
     final foodError = ref.watch(foodProvider(day)).hasError;
     final finishedRuns = [for (final r in snapshot?.runs ?? const <Run>[]) if (!r.isOpen) r];
+    final l = context.l10n;
     const gap = SizedBox(height: 12);
 
     // The scene fills the whole tab, behind the status bar and the floating bar, and stays put while the page
@@ -87,9 +89,9 @@ class TodayScreen extends ConsumerWidget {
                     if (reachable == false) ...[const PanelSurface(child: _ConnectionStatus()), gap],
                     // A nutrition problem never hides training, and the reverse.
                     if (localError)
-                      const PanelSurface(child: StatusLine(Icons.error_outline, 'Your training could not be read from this phone. Pull down to try again.', tone: Tone.error))
+                      PanelSurface(child: StatusLine(Icons.error_outline, l.todayTrainingError, tone: Tone.error))
                     else if (snapshot == null)
-                      const PanelSurface(child: StatusLine(Icons.hourglass_empty, 'Loading your training…'))
+                      PanelSurface(child: StatusLine(Icons.hourglass_empty, l.todayTrainingLoading))
                     else
                       _TrainingSection(snapshot),
                     gap,
@@ -184,6 +186,7 @@ class _HeaderState extends ConsumerState<_Header> {
       if (_stepsIntro!) WidgetsBinding.instance.addPostFrameCallback((_) => prefs.markSeen(owner, 'today.steps'));
     }
     final intro = _stepsIntro == true && !ref.watch(stepsEnabledProvider);
+    final l = context.l10n;
     return Theme(
       key: const Key('today-header'),
       // The header's text and scrim follow the sky (see [_skyTheme]).
@@ -193,7 +196,7 @@ class _HeaderState extends ConsumerState<_Header> {
           // The scene runs to the top edge, behind the status bar; the lines start below it.
           padding: EdgeInsets.fromLTRB(context.inset, TabHeader.topInset(context), context.inset, 8),
           child: TabHeader(
-            title: 'Today', overline: longDate(day), onBackdrop: true,
+            title: l.navToday, overline: longDate(day), onBackdrop: true,
             below: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (slot == null)
                 _Greeting(greeting)
@@ -201,9 +204,9 @@ class _HeaderState extends ConsumerState<_Header> {
                 CoachSpeech(
                   key: const Key('today-coach'),
                   say: intro
-                      ? CoachSay('Want to track your daily movement? Enable steps here.', title: greeting.title,
-                          guide: (label: 'Enable steps', key: const Key('today-coach-steps'), onPressed: () => showStepsSheet(context)))
-                      : CoachSay(greeting.line ?? 'Need a hand with today?', title: greeting.title, ask: ask),
+                      ? CoachSay(l.todayCoachStepsIntro, title: greeting.title,
+                          guide: (label: l.todayCoachEnableSteps, key: const Key('today-coach-steps'), onPressed: () => showStepsSheet(context)))
+                      : CoachSay(greeting.line ?? l.todayCoachNeedHand, title: greeting.title, ask: ask),
                   portrait: slot, frame: RigFrame.edge, bleed: context.inset,
                   greet: !busy && coach.mayGreet(owner, day), ack: _ack,
                   onGreeted: () => prefs.markGreeted(owner, day), // after the frame, so not through ref
@@ -228,34 +231,36 @@ class _HeaderState extends ConsumerState<_Header> {
 class _SkyLine extends ConsumerWidget {
   const _SkyLine();
 
-  static String _issue(WeatherIssue i) => switch (i) {
-        WeatherIssue.needsPermission => 'Location not allowed yet',
-        WeatherIssue.denied || WeatherIssue.deniedForever => 'Location not allowed',
-        WeatherIssue.servicesOff => 'Location is off',
-        WeatherIssue.timeout => 'No location in time',
-        WeatherIssue.offline => 'Weather could not be reached',
-        WeatherIssue.unavailable => 'Weather unavailable',
-        WeatherIssue.noCity => 'Choose a city',
+  static String _issue(AppLocalizations l, WeatherIssue i) => switch (i) {
+        WeatherIssue.needsPermission => l.todaySkyNeedsPermission,
+        WeatherIssue.denied || WeatherIssue.deniedForever => l.todaySkyDenied,
+        WeatherIssue.servicesOff => l.todaySkyServicesOff,
+        WeatherIssue.timeout => l.todaySkyTimeout,
+        WeatherIssue.offline => l.todaySkyOffline,
+        WeatherIssue.unavailable => l.todaySkyUnavailable,
+        WeatherIssue.noCity => l.todaySkyNoCity,
       };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scene = ref.watch(todaySceneProvider);
     final issue = ref.watch(weatherProvider.select((w) => w.issue));
+    final l = context.l10n;
     final String text;
     final IconData icon;
     if (scene.isWeather) {
-      final t = scene.temperatureC;
-      text = t == null ? scene.label! : '${formatTemperature(t, fahrenheit: ref.watch(weatherPrefsProvider.select((p) => p.fahrenheit)))} · ${scene.label}';
+      // Worked out from the cached answer's code: a new language asks the provider for nothing.
+      final t = scene.temperatureC, condition = sceneLabel(l, scene);
+      text = t == null ? condition : l.todaySkyWeather(formatTemperature(t, fahrenheit: ref.watch(weatherPrefsProvider.select((p) => p.fahrenheit))), condition);
       icon = Icons.cloud_outlined;
     } else if (scene.fallback != null) {
-      text = 'Scenic view · ${issue == null ? scene.fallback!.words : _issue(issue)}';
+      text = l.todaySkyScenic(issue == null ? weatherFallbackText(l, scene.fallback!) : _issue(l, issue));
       icon = Icons.landscape_outlined;
     } else {
       return const SizedBox.shrink();
     }
     return Semantics(
-      button: true, hint: 'Opens the Today background setting',
+      button: true, hint: l.todaySkyHint,
       child: InkWell(
         key: const Key('today-sky-line'),
         borderRadius: BorderRadius.circular(Radii.field),
@@ -281,11 +286,11 @@ typedef _TodayGreeting = ({String title, String? line, bool day});
 
 _TodayGreeting _greeting(BuildContext context, WidgetRef ref, {required bool justSaved}) {
   final hour = ref.watch(clockProvider).utcNow().toLocal().hour;
-  final words = partOfDay(hour);
+  final l = context.l10n;
   final name = firstName(ref.watch(profileProvider).value?.j['displayName'] as String?);
   final snapshot = ref.watch(dailySnapshotProvider);
-  final line = snapshot == null || MediaQuery.textScalerOf(context).scale(10) > 13 ? null : todayLine(snapshot, ref.watch(workoutListProvider), justSaved: justSaved);
-  return (title: name == null ? '$words!' : '$words, $name!', line: line, day: hour >= 5 && hour < 18);
+  final line = snapshot == null || MediaQuery.textScalerOf(context).scale(10) > 13 ? null : todayLine(l, snapshot, ref.watch(workoutListProvider), justSaved: justSaved);
+  return (title: greetingTitle(l, hour, name), line: line, day: hour >= 5 && hour < 18);
 }
 
 /// The greeting without the guide (Show coach on Today off, hidden for the day, a narrow phone or large text): the
@@ -336,7 +341,7 @@ class _ConnectionStatusState extends ConsumerState<_ConnectionStatus> {
             constraints: const BoxConstraints(minHeight: Targets.minimum),
             child: Row(children: [
               Expanded(
-                child: StatusLine(Icons.cloud_off, '$cantSyncLabel${pending == 0 ? '' : ' · ${waitingToSync(pending)}'}', tone: Tone.warning),
+                child: StatusLine(Icons.cloud_off, pending == 0 ? context.l10n.shellCantSyncLabel : context.l10n.shellCantSyncWaiting(pending), tone: Tone.warning),
               ),
               Icon(_open ? Icons.expand_less : Icons.expand_more, size: 22, color: c.secondary),
             ]),
@@ -344,10 +349,8 @@ class _ConnectionStatusState extends ConsumerState<_ConnectionStatus> {
         ),
       ),
       if (_open) ...[
-        Text(
-            '$cantSyncDetail You are seeing what is saved on this phone. ${pending == 0 ? 'Nothing is waiting to sync.' : 'Your changes are kept here and sync by themselves once the account answers.'}',
-            style: context.caption),
-        Align(alignment: Alignment.centerLeft, child: TextButton(key: const Key('today-connection-retry'), onPressed: () => refreshFromAccount(ref), child: const Text('Try again'))),
+        Text(pending == 0 ? context.l10n.todayCantSyncDetailNothingWaiting : context.l10n.todayCantSyncDetailWaiting, style: context.caption),
+        Align(alignment: AlignmentDirectional.centerStart, child: TextButton(key: const Key('today-connection-retry'), onPressed: () => refreshFromAccount(ref), child: Text(context.l10n.actionTryAgain))),
       ],
     ]);
   }
@@ -364,12 +367,15 @@ typedef _Status = (String label, IconData icon, Tone tone);
 /// photograph has faded out of; the button row may reach further, over the faint start of the fade. Heights follow
 /// the content. With large text the photograph gives its room to the words, and the button and link wrap.
 class _Module extends StatelessWidget {
-  const _Module({super.key, required this.label, this.showLabel = true, this.status, this.head = const [], this.body = const [], this.footer, this.photo, this.photoAlignment = Alignment.center,
+  const _Module({super.key, required this.label, required this.photoId, this.showLabel = true, this.status, this.head = const [], this.body = const [], this.footer, this.photo, this.photoAlignment = Alignment.center,
       required this.action, this.quiet, this.below = const []});
 
   /// The overline, and always the panel's heading for a screen reader. The workout panel does not show it: its badge
   /// and its name say what it is, as in the approved design.
   final String label;
+
+  /// Names the photograph's key (`today-photo-<photoId>`), never the displayed label.
+  final String photoId;
   final bool showLabel;
   final _Status? status;
   final List<Widget> head, body;
@@ -392,10 +398,10 @@ class _Module extends StatelessWidget {
     final words = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [labelRow, ...head, ...body, ?footer]);
     // A fraction of the width, not a LayoutBuilder, so two tiles can be measured and made the same height.
     return PanelSurface(
-      photo: pictured ? PanelPhoto(photo!, key: Key('today-photo-${label.toLowerCase().split(' ').first}'), alignment: photoAlignment) : null,
+      photo: pictured ? PanelPhoto(photo!, key: Key('today-photo-$photoId'), alignment: photoAlignment) : null,
       below: below,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        FractionallySizedBox(widthFactor: pictured ? PanelSurface.wordsShare : 1, alignment: Alignment.centerLeft, child: words),
+        FractionallySizedBox(widthFactor: pictured ? PanelSurface.wordsShare : 1, alignment: AlignmentDirectional.centerStart, child: words),
         const SizedBox(height: 14),
         Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [action, ?quiet]),
       ]),
@@ -412,23 +418,22 @@ class _TrainingSection extends ConsumerWidget {
   const _TrainingSection(this.snapshot);
   final DailySnapshot snapshot;
 
-  static String _count(int n, String one) => '$n ${n == 1 ? one : '${one}s'}';
-
   /// Today's state of a planned occurrence, in words with an icon (never colour alone).
-  static _Status _todayStatus(OccasionStatus s) => switch (s) {
-        OccasionStatus.inProgress => ('In progress', Icons.timelapse, Tone.accent),
-        OccasionStatus.finished => ('Completed', Icons.check_circle, Tone.success),
-        OccasionStatus.partial => ('Partly completed', Icons.check_circle_outline, Tone.neutral),
-        OccasionStatus.skipped => ('Skipped today', Icons.skip_next_outlined, Tone.neutral),
-        OccasionStatus.missed => ('Missed', Icons.error_outline, Tone.warning),
-        OccasionStatus.paused => ('Paused', Icons.pause_circle_outline, Tone.neutral),
-        OccasionStatus.due || OccasionStatus.upcoming => ('Due today', Icons.today, Tone.accent),
+  static _Status _todayStatus(AppLocalizations l, OccasionStatus s) => switch (s) {
+        OccasionStatus.inProgress => (l.todayStatusInProgress, Icons.timelapse, Tone.accent),
+        OccasionStatus.finished => (l.todayStatusCompleted, Icons.check_circle, Tone.success),
+        OccasionStatus.partial => (l.todayStatusPartly, Icons.check_circle_outline, Tone.neutral),
+        OccasionStatus.skipped => (l.todayStatusSkipped, Icons.skip_next_outlined, Tone.neutral),
+        OccasionStatus.missed => (l.todayStatusMissed, Icons.error_outline, Tone.warning),
+        OccasionStatus.paused => (l.todayStatusPaused, Icons.pause_circle_outline, Tone.neutral),
+        OccasionStatus.due || OccasionStatus.upcoming => (l.todayStatusDue, Icons.today, Tone.accent),
       };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final a = snapshot.training;
     final c = context.c;
+    final l = context.l10n;
     final app = appContext(context);
     final today = snapshot.dayKey;
     final all = ref.watch(workoutListProvider);
@@ -437,25 +442,25 @@ class _TrainingSection extends ConsumerWidget {
     // "Next: Pull · Wednesday" on its real date. A rotation names its next workout; it has a day only when the plan
     // has training days to put it on.
     String nextText(Plan plan, Occasion? next) => next == null
-        ? 'No further workout is scheduled in this block.'
+        ? l.todayNextNone
         : plan.isRotating
-            ? 'Next in your rotation: ${next.title}${(plan.schedule?.trainingDays ?? const []).isEmpty ? '' : ' · ${when(next)}'}.'
-            : 'Next: ${next.title} · ${when(next)}.';
+            ? (plan.schedule?.trainingDays ?? const []).isEmpty ? l.todayNextRotation(next.title) : l.todayNextRotationDay(next.title, when(next))
+            : l.todayNext(next.title, when(next));
     void openPlan() => ref.read(shellProvider.notifier).switchTab(1, trainView: TrainView.plan);
     // Details is the workout itself in Train › Workouts: its preview before Start (nothing is created), the open workout
     // as it is (paused or saved for later stays so), or what was recorded.
     void preview(Plan plan, Occasion o) => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.preview(plan.id, o.id));
     // The workout's name in the serif, as the approved design has it; a long name wraps.
     Widget title(String text) => Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: context.pageTitleStyle(36)));
-    Widget line(String text, {double top = 4}) => Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: context.sansStyle(15, color: c.secondary)));
-    Widget details(VoidCallback onPressed) => QuietLink('Details', key: const Key('today-details'), said: 'Workout details', onPressed: onPressed);
+    Widget line(String text, {double top = 4}) => Padding(padding: EdgeInsetsDirectional.only(top: top), child: Text(text, style: context.sansStyle(15, color: c.secondary)));
+    Widget details(VoidCallback onPressed) => QuietLink(l.todayDetailsLink, key: const Key('today-details'), said: l.todayDetailsSaid, onPressed: onPressed);
     // Under the lead workout in the same panel: other workouts today, missed ones, a manual workout, saved for later.
     // Set before the lead is built (below).
     var extras = const <Widget>[];
 
     /// A day with a workout to do: the only variant with the training photograph.
     Widget workout({required _Status status, required String name, List<Widget> head = const [], required List<Widget> body, Widget? footer, required Widget action, required VoidCallback onDetails}) => _Module(
-        key: const Key('today-module-workout'), label: 'Workout', showLabel: false, status: status,
+        key: const Key('today-module-workout'), label: l.todayWorkoutLabel, photoId: 'workout', showLabel: false, status: status,
         head: [title(name), ...head], body: body, footer: footer,
         // The dumbbells sit low and right in the picture.
         photo: _Photos.workout, photoAlignment: const Alignment(1, 0.6), action: action, quiet: details(onDetails), below: extras);
@@ -463,7 +468,7 @@ class _TrainingSection extends ConsumerWidget {
     /// Rest, skipped, completed, paused, not started, nothing planned: the same panel in words only. A picture of
     /// training must not sit beside "Rest day" or "No plan yet".
     Widget plain({_Status? status, required String name, required String text, required Widget action, VoidCallback? onDetails, Widget? quiet}) => _Module(
-        key: const Key('today-module-workout'), label: 'Workout', showLabel: false, status: status, head: [title(name)], body: [line(text, top: 6)],
+        key: const Key('today-module-workout'), label: l.todayWorkoutLabel, photoId: 'workout', showLabel: false, status: status, head: [title(name)], body: [line(text, top: 6)],
         action: action, quiet: quiet ?? (onDetails == null ? null : details(onDetails)), below: extras);
 
     /// One of today's planned occurrences with its workout open: the sets recorded against its plan. Saved for later,
@@ -474,21 +479,21 @@ class _TrainingSection extends ConsumerWidget {
       final parked = ref.watch(parkedIdsProvider).contains(w.id);
       void resume() => resumeWorkout(app, ref, w);
       return workout(
-        status: parked ? ('Saved for later', Icons.bookmark_outline, Tone.neutral) : _todayStatus(OccasionStatus.inProgress), name: w.title,
+        status: parked ? (l.todayStatusSavedForLater, Icons.bookmark_outline, Tone.neutral) : _todayStatus(l, OccasionStatus.inProgress), name: w.title,
         // With a planned total the summary takes the full width and the ring sits beside the photograph.
-        head: [if (sets.planned != null) line('${_count(n, 'exercise')} · ${sets.planned} planned sets')],
+        head: [if (sets.planned != null) line('${l.todayExerciseCount(n)} · ${l.todayPlannedSets(sets.planned!)}')],
         body: [
-          if (sets.planned == null) line(n == 0 ? 'No exercise added yet' : _count(n, 'exercise')),
+          if (sets.planned == null) line(n == 0 ? l.todayNoExercise : l.todayExerciseCount(n)),
           // Recorded is a count of sets, never a claim that a movement or the workout is complete.
           if (sets.planned != null)
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Row(children: [
                 ProgressRing(
-                  value: sets.fraction, size: MediaQuery.textScalerOf(context).scale(10) > 13 ? 104 : 76, stroke: 7, label: '${sets.counted} of ${sets.planned} planned sets recorded',
+                  value: sets.fraction, size: MediaQuery.textScalerOf(context).scale(10) > 13 ? 104 : 76, stroke: 7, label: l.todaySetsRingLabel(sets.counted, sets.planned!),
                   center: Column(mainAxisSize: MainAxisSize.min, children: [
                     Text('${sets.counted}', style: context.titleStyle(22)),
-                    Text('of ${sets.planned} sets', style: context.sansStyle(12.5, color: c.secondary)),
+                    Text(l.todayOfSets(sets.planned!), style: context.sansStyle(12.5, color: c.secondary)),
                   ]),
                 ),
                 const SizedBox(width: 14),
@@ -496,20 +501,20 @@ class _TrainingSection extends ConsumerWidget {
                 Flexible(
                   child: ExcludeSemantics(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${(sets.fraction * 100).round()}%', style: context.numStyle(21, color: c.accent, weight: FontWeight.w700)),
-                      Text('recorded', style: context.sansStyle(14, color: c.secondary)),
+                      Text(formatPercent((sets.fraction * 100).round() / 100), style: context.numStyle(21, color: c.accent, weight: FontWeight.w700)),
+                      Text(l.todayRecordedCaption, style: context.sansStyle(14, color: c.secondary)),
                     ]),
                   ),
                 ),
               ]),
             )
           else if (sets.recorded > 0)
-            Padding(padding: const EdgeInsets.only(top: 8), child: Text('${_count(sets.recorded, 'set')} recorded', style: context.numStyle(16))),
+            Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.todaySetsRecorded(sets.recorded), style: context.numStyle(16))),
         ],
         onDetails: () => ref.read(shellProvider.notifier).openWorkout(WorkoutFocus.session(w.id)),
         action: parked
-            ? SecondaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume)
-            : PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume),
+            ? SecondaryButton(l.todayResumeWorkout, key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume)
+            : PrimaryButton(l.todayResumeWorkout, key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: resume),
       );
     }
 
@@ -522,20 +527,20 @@ class _TrainingSection extends ConsumerWidget {
       // A rotation's next workout says where it is in the cycle; a fixed day says its plan week.
       final rotation = plan.isRotating ? rotationOf(plan, planOccasions(plan, today, all), all) : null;
       final where = rotation != null && rotation.next?.id == occasion.id
-          ? 'Step ${rotation.position + 1} of ${rotation.cycle.length}'
-          : occasion.sequenceIndex != null ? 'Session ${occasion.sequenceIndex! + 1}' : 'Week ${occasion.weekNumber}';
+          ? l.todayRotationStep(rotation.position + 1, rotation.cycle.length)
+          : occasion.sequenceIndex != null ? l.todaySessionNumber(occasion.sequenceIndex! + 1) : l.todayWeekNumber(occasion.weekNumber);
       void start() => startPlannedWorkout(app, ref, plan, occasion);
       return workout(
         // The exercise and set counts under the name, then where it is in the plan.
-        status: _todayStatus(OccasionStatus.due), name: occasion.title,
+        status: _todayStatus(l, OccasionStatus.due), name: occasion.title,
         body: [
-          line('${_count(occasion.prescription.length, 'exercise')}${sets == 0 ? '' : ' · $sets planned sets'}'),
-          line('$where${minutes == null ? '' : ' · $minutes min planned'}', top: 2),
+          line([l.todayExerciseCount(occasion.prescription.length), if (sets != 0) l.todayPlannedSets(sets)].join(' · ')),
+          line([where, if (minutes != null) l.todayMinutesPlanned(minutes)].join(' · '), top: 2),
         ],
         onDetails: () => preview(plan, occasion),
         action: quietStart
-            ? SecondaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, expand: false, onPressed: start)
-            : PrimaryButton('Start workout', key: const Key('today-start'), icon: Icons.play_arrow_rounded, expand: false, onPressed: start),
+            ? SecondaryButton(l.todayStartWorkout, key: const Key('today-start'), icon: Icons.play_arrow_rounded, expand: false, onPressed: start)
+            : PrimaryButton(l.todayStartWorkout, key: const Key('today-start'), icon: Icons.play_arrow_rounded, expand: false, onPressed: start),
       );
     }
 
@@ -543,27 +548,27 @@ class _TrainingSection extends ConsumerWidget {
     /// today's, under its own name; the next workout is named beside it, never in its place.
     Widget resolved(Plan plan, Occasion o, OccasionStatus s, Occasion? next, bool blockDone) {
       final what = switch (s) {
-        OccasionStatus.skipped => 'Skipped: nothing was recorded for it and it does not count as training.',
-        OccasionStatus.finished => 'Finished: all planned sets recorded.',
-        _ => 'Finished partially: some planned work was not recorded.',
+        OccasionStatus.skipped => l.todayResolvedSkipped,
+        OccasionStatus.finished => l.todayResolvedFinished,
+        _ => l.todayResolvedPartial,
       };
       final undo = s == OccasionStatus.skipped && !o.isVirtual && PlanRepository.canUnskip(plan, o.id, all);
       return plain(
-        status: _todayStatus(s), name: o.title,
-        text: '$what ${blockDone ? 'That was the last workout of this block.' : nextText(plan, next)}',
+        status: _todayStatus(l, s), name: o.title,
+        text: '$what ${blockDone ? l.todayBlockLast : nextText(plan, next)}',
         onDetails: () => preview(plan, o),
         quiet: undo
             ? TextButton(
                 key: const Key('today-undo-skip'),
-                onPressed: () => runPlanDecision(app, () => ref.read(planRepositoryProvider).unskip(plan, o.id, workouts: all), saved: 'No longer skipped.'),
-                child: const Text('Undo skip'))
+                onPressed: () => runPlanDecision(app, () => ref.read(planRepositoryProvider).unskip(plan, o.id, workouts: all), saved: l.todayUnskipSaved),
+                child: Text(l.todayUndoSkip))
             : null,
         action: blockDone
-            ? PrimaryButton('Review this block', key: const Key('today-block-review'), expand: false, onPressed: () => push(context, BlockReviewScreen(planId: plan.id)))
+            ? PrimaryButton(l.todayReviewBlock, key: const Key('today-block-review'), expand: false, onPressed: () => push(context, BlockReviewScreen(planId: plan.id)))
             // A rotation's next workout can be done now, as an explicit choice; skipping alone never puts it on today.
             : plan.isRotating && next != null && plan.isActive
-                ? SecondaryButton('Train this now', key: const Key('today-train-now'), icon: Icons.play_arrow_rounded, expand: false, onPressed: () => startPlannedWorkout(app, ref, plan, next))
-                : SecondaryButton('View plan', expand: false, onPressed: openPlan),
+                ? SecondaryButton(l.todayTrainNow, key: const Key('today-train-now'), icon: Icons.play_arrow_rounded, expand: false, onPressed: () => startPlannedWorkout(app, ref, plan, next))
+                : SecondaryButton(l.todayViewPlan, expand: false, onPressed: openPlan),
       );
     }
 
@@ -587,13 +592,13 @@ class _TrainingSection extends ConsumerWidget {
                   for (final o in others)
                     GroupRow(
                         key: Key('today-also-${o.id}'), icon: Icons.fitness_center, tone: Tone.neutral, title: o.title,
-                        subtitle: 'Also today · ${_todayStatus(status[o.id]!).$1}', onTap: () => preview(plan, o)),
+                        subtitle: l.todayAlsoToday(_todayStatus(l, status[o.id]!).$1), onTap: () => preview(plan, o)),
                 ]),
               if (missed.isNotEmpty)
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: TextButton(key: const Key('today-missed'), onPressed: openPlan,
-                      child: Text('${missed.length} earlier workout${missed.length == 1 ? ' is' : 's are'} unresolved')),
+                      child: Text(l.todayMissedUnresolved(missed.length))),
                 ),
             ],
             () => open != null
@@ -607,59 +612,58 @@ class _TrainingSection extends ConsumerWidget {
           snapshot.inProgress.isEmpty,
           const <Widget>[],
           () => plain(
-                status: ('Planned rest day', Icons.spa_outlined, Tone.neutral), name: 'Rest day',
-                text: '${chosen ? 'You chose to rest today. Nothing was skipped and your rotation waits for you. ' : ''}${nextText(plan, next)}'
-                    '${missed.isEmpty ? '' : ' ${missed.length} earlier workout${missed.length == 1 ? ' is' : 's are'} unresolved; move or skip ${missed.length == 1 ? 'it' : 'them'} when you choose.'}',
+                status: (l.todayStatusRestDay, Icons.spa_outlined, Tone.neutral), name: l.todayRestDayTitle,
+                text: [if (chosen) l.todayRestChosen, nextText(plan, next), if (missed.isNotEmpty) l.todayRestMissed(missed.length)].join(' '),
                 action: missed.isEmpty
-                    ? SecondaryButton('View plan', expand: false, onPressed: openPlan)
-                    : SecondaryButton('Resolve missed training', key: const Key('today-missed'), expand: false, onPressed: openPlan),
+                    ? SecondaryButton(l.todayViewPlan, expand: false, onPressed: openPlan)
+                    : SecondaryButton(l.todayResolveMissed, key: const Key('today-missed'), expand: false, onPressed: openPlan),
                 quiet: chosen
-                    ? TextButton(key: const Key('today-undo-rest'), onPressed: () => ref.read(planRepositoryProvider).setRestDay(plan, today, rest: false), child: const Text('Train today'))
+                    ? TextButton(key: const Key('today-undo-rest'), onPressed: () => ref.read(planRepositoryProvider).setRestDay(plan, today, rest: false), child: Text(l.todayTrainToday))
                     : null,
               ),
         ),
       PlanPausedAction(:final plan) => (
           snapshot.inProgress.isEmpty,
           const <Widget>[],
-          () => plain(status: ('Plan paused', Icons.pause_circle_outline, Tone.neutral), name: plan.title, text: 'No workouts are expected while the plan is paused, and nothing counts as missed.',
-              action: PrimaryButton('Resume plan', expand: false, onPressed: () => push(context, ResumeReviewScreen(planId: plan.id)))),
+          () => plain(status: (l.todayStatusPlanPaused, Icons.pause_circle_outline, Tone.neutral), name: plan.title, text: l.todayPausedText,
+              action: PrimaryButton(l.todayResumePlan, expand: false, onPressed: () => push(context, ResumeReviewScreen(planId: plan.id)))),
         ),
       StartsLater(:final plan, :final first) => (
           snapshot.inProgress.isEmpty,
           const <Widget>[],
-          () => plain(status: ('Starts ${shortDate(plan.startDate)}', Icons.event, Tone.neutral), name: first.title, text: 'Your plan begins on ${longDate(first.scheduledDate)}. Nothing is due before then.',
-              action: SecondaryButton('View plan', expand: false, onPressed: openPlan)),
+          () => plain(status: (l.todayStatusStarts(shortDate(plan.startDate)), Icons.event, Tone.neutral), name: first.title, text: l.todayStartsLaterText(longDate(first.scheduledDate)),
+              action: SecondaryButton(l.todayViewPlan, expand: false, onPressed: openPlan)),
         ),
       BlockReviewDue(:final plan) => (
           snapshot.inProgress.isEmpty,
           const <Widget>[],
-          () => plain(status: ('Block ready to review', Icons.flag_outlined, Tone.accent), name: plan.title,
-              text: 'This block has reached its end or has nothing left to do. Review what was actually recorded and choose what comes next.',
-              action: PrimaryButton('Review this block', key: const Key('today-block-review'), expand: false, onPressed: () => push(context, BlockReviewScreen(planId: plan.id)))),
+          () => plain(status: (l.todayStatusBlockReview, Icons.flag_outlined, Tone.accent), name: plan.title,
+              text: l.todayBlockReviewText,
+              action: PrimaryButton(l.todayReviewBlock, key: const Key('today-block-review'), expand: false, onPressed: () => push(context, BlockReviewScreen(planId: plan.id)))),
         ),
       ReviewDraft(:final draft) => (
           snapshot.inProgress.isEmpty,
           const <Widget>[],
-          () => plain(status: ('Your plan is ready to review', Icons.fact_check_outlined, Tone.accent), name: draft.title, text: 'This draft has not started. Nothing is scheduled until you start it.',
-              action: PrimaryButton('Review your plan', key: const Key('today-review-draft'), expand: false, onPressed: () => push(context, PlanReviewScreen(planId: draft.id)))),
+          () => plain(status: (l.todayStatusDraftReview, Icons.fact_check_outlined, Tone.accent), name: draft.title, text: l.todayDraftText,
+              action: PrimaryButton(l.todayReviewPlan, key: const Key('today-review-draft'), expand: false, onPressed: () => push(context, PlanReviewScreen(planId: draft.id)))),
         ),
       CreatePlan() => (
           snapshot.inProgress.isEmpty,
           const <Widget>[],
-          () => plain(name: 'No active plan', text: 'Start from a familiar split or build your own and review it before you commit, or just train manually today.',
-              action: PrimaryButton('Create my plan', key: const Key('today-create-plan'), expand: false, onPressed: () => push(context, const CreatePlanScreen()))),
+          () => plain(name: l.todayNoPlanTitle, text: l.todayNoPlanText,
+              action: PrimaryButton(l.todayCreatePlan, key: const Key('today-create-plan'), expand: false, onPressed: () => push(context, const CreatePlanScreen()))),
         ),
     };
     extras = [
       ...own,
-      if (offerManual) Align(alignment: Alignment.centerLeft, child: TextButton(key: const Key('today-manual'), onPressed: () => startManualWorkout(app, ref), child: const Text('Start a manual workout'))),
+      if (offerManual) Align(alignment: AlignmentDirectional.centerStart, child: TextButton(key: const Key('today-manual'), onPressed: () => startManualWorkout(app, ref), child: Text(l.todayStartManual))),
       // Workouts saved for later stay recoverable without taking over the day.
       if (snapshot.parked.isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(top: 4),
           child: GroupCard(children: [
             for (final w in snapshot.parked)
-              GroupRow(icon: Icons.bookmark_outline, tone: Tone.neutral, title: w.title, subtitle: 'Saved for later · started ${shortDate(w.dayKey)}', onTap: () => resumeWorkout(app, ref, w)),
+              GroupRow(icon: Icons.bookmark_outline, tone: Tone.neutral, title: w.title, subtitle: l.todayParkedSubtitle(shortDate(w.dayKey)), onTap: () => resumeWorkout(app, ref, w)),
           ]),
         ),
     ];
@@ -682,24 +686,25 @@ class _OpenWorkout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sets = SetProgress.of(w, ref.watch(trustedSetsProvider));
     final n = w.exercises.length;
-    final what = w.isManual ? 'Manual workout' : 'Planned workout from ${shortDate(w.dayKey)}';
+    final l = context.l10n;
+    final what = w.isManual ? l.todayManualWorkout : l.todayPlannedWorkoutFrom(shortDate(w.dayKey));
     final app = appContext(context);
     return PanelSurface(
       key: Key('today-open-${w.id}'),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
             Semantics(header: true, child: Overline(what)),
-            const StatusPill('In progress', icon: Icons.timelapse, tone: Tone.accent),
+            StatusPill(l.todayStatusInProgress, icon: Icons.timelapse, tone: Tone.accent),
           ]),
           Padding(padding: const EdgeInsets.only(top: 6), child: Text(w.title, style: context.pageTitleStyle(30))),
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Text(n == 0 ? 'No exercise added yet' : _TrainingSection._count(n, 'exercise'), style: context.sansStyle(15, color: context.c.secondary)),
+            child: Text(n == 0 ? l.todayNoExercise : l.todayExerciseCount(n), style: context.sansStyle(15, color: context.c.secondary)),
           ),
           // No planned total exists for a manual workout, so there is a count and no percentage.
-          if (sets.recorded > 0) Padding(padding: const EdgeInsets.only(top: 4), child: Text('${_TrainingSection._count(sets.recorded, 'set')} recorded', style: context.numStyle(16))),
+          if (sets.recorded > 0) Padding(padding: const EdgeInsets.only(top: 4), child: Text(l.todaySetsRecorded(sets.recorded), style: context.numStyle(16))),
           const SizedBox(height: 14),
-          PrimaryButton('Resume workout', key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: () => resumeWorkout(app, ref, w)),
+          PrimaryButton(l.todayResumeWorkout, key: const Key('today-resume'), icon: Icons.play_arrow_rounded, expand: false, onPressed: () => resumeWorkout(app, ref, w)),
         ]),
     );
   }
@@ -751,7 +756,8 @@ class _RunCardState extends ConsumerState<_RunCard> {
       _minute = null;
     }
 
-    String time(int seconds) => seconds < 60 ? 'Under 1 min' : durationText(seconds);
+    final l = context.l10n;
+    String time(int seconds) => seconds < 60 ? l.todayUnderOneMinute : durationText(seconds);
     final unit = ref.watch(devicePrefsProvider.select((p) => p.distance));
     final stacked = MediaQuery.textScalerOf(context).scale(10) > 13 || MediaQuery.sizeOf(context).width < 350;
     final pair = widget.steps && !stacked;
@@ -763,45 +769,45 @@ class _RunCardState extends ConsumerState<_RunCard> {
     Widget figure(String text) => Builder(
           builder: (context) => Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(text, key: const Key('today-run-figure'), style: context.pageTitleStyle(34))),
+            child: FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart, child: Text(text, key: const Key('today-run-figure'), style: context.pageTitleStyle(34))),
           ),
         );
     Widget support(String text) => Builder(builder: (context) => Text(text, style: context.sansStyle(16, color: context.c.secondary)));
     if (open != null) {
       final a = owned?.analysis;
       final now = ref.read(clockProvider).utcNow().millisecondsSinceEpoch;
-      final noun = activityTitle(open.activityType);
+      final kind = open.activityType == 'walk' ? 'walk' : 'run';
       final (String words, IconData icon, Tone tone) = switch (owned?.state) {
-        RecState.paused || RecState.autoPaused => ('$noun paused', Icons.pause_rounded, Tone.neutral),
-        RecState.interrupted => ('$noun interrupted', Icons.warning_amber_rounded, Tone.warning),
-        RecState.review => ('$noun not saved yet', Icons.edit_note, Tone.neutral),
-        _ => ('$noun in progress', Icons.timelapse, Tone.neutral),
+        RecState.paused || RecState.autoPaused => (l.todayActivityPaused(kind), Icons.pause_rounded, Tone.neutral),
+        RecState.interrupted => (l.todayActivityInterrupted(kind), Icons.warning_amber_rounded, Tone.warning),
+        RecState.review => (l.todayActivityNotSaved(kind), Icons.edit_note, Tone.neutral),
+        _ => (l.todayActivityInProgress(kind), Icons.timelapse, Tone.neutral),
       };
       body = [
-        _TileState(icon, words, tone: tone, sub: open.dayKey == widget.today ? null : 'Started ${shortDate(open.dayKey)}'),
+        _TileState(icon, words, tone: tone, sub: open.dayKey == widget.today ? null : l.todayStartedOn(shortDate(open.dayKey))),
         if (a != null && (a.measured || a.hasLegacy)) figure(unit.distance(a.distance + a.legacyDistance)),
-        if (a != null) support(time(a.activeMs(now) ~/ 1000)) else if (open.dayKey == widget.today) Padding(padding: const EdgeInsets.only(top: 6), child: support('Started today')),
+        if (a != null) support(time(a.activeMs(now) ~/ 1000)) else if (open.dayKey == widget.today) Padding(padding: const EdgeInsets.only(top: 6), child: support(l.todayStartedToday)),
       ];
-      action = 'Resume';
+      action = l.todayRunResume;
     } else if (widget.finishedToday.isNotEmpty) {
       final last = widget.finishedToday.last;
       final t = last.movingSeconds ?? last.activeDurationSeconds;
       body = [
-        _TileState(Icons.check_rounded, '${activityTitle(last.activityType)} completed', sub: 'today'),
+        _TileState(Icons.check_rounded, l.todayActivityCompleted(last.activityType == 'walk' ? 'walk' : 'run'), sub: l.todayCompletedWhen),
         if (last.distanceMeters != null) figure(unit.distance(last.distanceMeters)),
         if (t != null) Padding(padding: EdgeInsets.only(top: last.distanceMeters == null ? 8 : 0), child: support(time(t))),
       ];
-      action = 'Start new';
+      action = l.todayRunStartNew;
     } else {
-      body = [support('No run or walk today')];
-      action = 'Start';
+      body = [support(l.todayNoRunWalk)];
+      action = l.todayRunStart;
     }
     // Its one action: Start, Resume (the same activity) or Start new; the full history is in Train.
     final app = context;
     final tile = PanelTheme(
       child: Builder(
         builder: (context) => _HeaderTile(
-          key: const Key('today-module-run'), label: 'Run / Walk', fill: pair,
+          key: const Key('today-module-run'), label: l.todayRunWalkLabel, photoId: 'run', fill: pair,
           // The near shoe on the path, at the strip's trailing side.
           photo: _Photos.run, photoAlignment: const Alignment(1, 0.35),
           body: body,
@@ -825,8 +831,11 @@ class _RunCardState extends ConsumerState<_RunCard> {
 /// the bottom. Two tiles side by side are made the same height ([fill]); the header has a fixed height and the content
 /// grows, so large text is never clipped. Built under [PanelTheme], like the other Today panels.
 class _HeaderTile extends StatelessWidget {
-  const _HeaderTile({super.key, required this.label, required this.photo, required this.photoAlignment, required this.body, this.action, this.fill = false});
+  const _HeaderTile({super.key, required this.label, required this.photoId, required this.photo, required this.photoAlignment, required this.body, this.action, this.fill = false});
   final String label, photo;
+
+  /// Names the photograph's key (`today-photo-<photoId>`), never the displayed label.
+  final String photoId;
   final Alignment photoAlignment;
   final List<Widget> body;
   final Widget? action;
@@ -850,23 +859,23 @@ class _HeaderTile extends StatelessWidget {
             child: Stack(fit: StackFit.expand, children: [
               // The photograph takes the strip's trailing side; the label's side is the panel tint, blending into it.
               FractionallySizedBox(
-                alignment: Alignment.centerRight, widthFactor: 0.72,
-                child: PanelPhoto(photo, key: Key('today-photo-${label.toLowerCase().split(' ').first}'), alignment: photoAlignment),
+                alignment: AlignmentDirectional.centerEnd, widthFactor: 0.72,
+                child: PanelPhoto(photo, key: Key('today-photo-$photoId'), alignment: photoAlignment),
               ),
               DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [c.page, c.page, c.page.withValues(alpha: 0.55), c.page.withValues(alpha: 0)], stops: const [0, 0.28, 0.45, 0.7]),
+                  gradient: LinearGradient(begin: AlignmentDirectional.centerStart, end: AlignmentDirectional.centerEnd, colors: [c.page, c.page, c.page.withValues(alpha: 0.55), c.page.withValues(alpha: 0)], stops: const [0, 0.28, 0.45, 0.7]),
                 ),
               ),
-              Positioned(left: 16, top: 14, right: 12, child: Semantics(header: true, child: Overline(label))),
+              PositionedDirectional(start: 16, top: 14, end: 12, child: Semantics(header: true, child: Overline(label))),
             ]),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 14, 0),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 14, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: body),
           ),
           if (fill) const Spacer(),
-          if (action != null) Padding(padding: const EdgeInsets.fromLTRB(14, 12, 14, 14), child: Align(alignment: Alignment.centerLeft, child: action)) else const SizedBox(height: 14),
+          if (action != null) Padding(padding: const EdgeInsets.fromLTRB(14, 12, 14, 14), child: Align(alignment: AlignmentDirectional.centerStart, child: action)) else const SizedBox(height: 14),
         ]),
       ),
     );
@@ -950,52 +959,54 @@ class _StepsCardState extends ConsumerState<_StepsCard> with WidgetsBindingObser
     final goal = ref.watch(stepGoalProvider);
     final src = ref.read(stepSourceProvider);
     final app = appContext(context);
+    final l = context.l10n;
     // The read time in the phone's own clock format ("12:19 PM", "12:19"), kept on one line with its word.
     String at(DateTime t) => MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(t), alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context)).replaceAll(' ', '\u00a0').replaceAll('\u202f', '\u00a0');
     Widget button(String label, Key key, VoidCallback onPressed) => PrimaryButton(label, key: key, expand: false, onPressed: onPressed);
     // The goal is set and changed in the Steps sheet; never set here, never a default.
-    Widget goalLink(String label) => QuietLink(label, key: const Key('today-steps-goal-link'), said: label == 'Set a goal' ? 'Set a steps goal' : 'Edit steps goal', onPressed: () => showStepsSheet(app));
+    Widget goalLink() => QuietLink(goal == null ? l.todayStepsSetGoal : l.todayStepsEditGoal, key: const Key('today-steps-goal-link'),
+        said: goal == null ? l.todayStepsSetGoalSaid : l.todayStepsEditGoalSaid, onPressed: () => showStepsSheet(app));
     // (headline, lines under it, action): the headline is a real count only when there is one.
     final (String head, List<String> lines, Widget? action) = switch (d) {
-      DailyOff() => ('Track your steps', const ['Count with your phone.'], button('Enable', const Key('today-steps-enable'), () => enableSteps(ref))),
-      DailyLoading() => ('…', const ['Reading steps'], null),
+      DailyOff() => (l.todayStepsTrack, [l.todayStepsCountWithPhone], button(l.todayStepsEnable, const Key('today-steps-enable'), () => enableSteps(ref))),
+      DailyLoading() => ('…', [l.todayStepsReading], null),
       DailyValue(:final steps, :final source, at: final t, :final recorded) => recorded
-          ? (formatSteps(steps), [source, 'Updated\u00a0${at(t)}'], goalLink(goal == null ? 'Set a goal' : 'Edit goal'))
-          : ('—', ['No steps recorded today', source], goalLink(goal == null ? 'Set a goal' : 'Edit goal')),
-      DailyNotAllowed(:final blocked) => ('—', [blocked ? 'Access is off. Allow it in Settings.' : 'Allow access to see today\'s steps.'],
-          blocked ? button('Settings', const Key('today-steps-settings'), () => src.openSettings()) : button('Allow', const Key('today-steps-allow'), () => enableSteps(ref))),
+          ? (formatSteps(steps), [source, l.todayStepsUpdated(at(t))], goalLink())
+          : ('—', [l.todayStepsNone, source], goalLink()),
+      DailyNotAllowed(:final blocked) => ('—', [blocked ? l.todayStepsBlocked : l.todayStepsAllowHint],
+          blocked ? button(l.todayStepsSettings, const Key('today-steps-settings'), () => src.openSettings()) : button(l.todayStepsAllow, const Key('today-steps-allow'), () => enableSteps(ref))),
       DailyUnavailable(:final why) => ('—', [why], null),
-      DailyFailed() => ('—', const ['Could not read steps just now.'], button('Try again', const Key('today-steps-retry'), () => ref.read(dailyStepsProvider.notifier).refresh())),
+      DailyFailed() => ('—', [l.todayStepsFailed], button(l.actionTryAgain, const Key('today-steps-retry'), () => ref.read(dailyStepsProvider.notifier).refresh())),
     };
     final count = d is DailyValue && d.recorded;
     final progress = count && goal != null ? (d.steps / goal).clamp(0.0, 1.0) : null;
-    final said = d is DailyOff ? 'Steps. Track your steps: count with your phone.' : 'Steps today: ${head == '—' || head == '…' ? 'not known' : head}. ${lines.join('. ')}';
+    final said = d is DailyOff ? l.todayStepsOffSaid : l.todayStepsSaid(head == '—' || head == '…' ? l.todayStepsNotKnown : head, lines.join('. '));
     final tile = PanelTheme(
       child: Builder(
         builder: (context) => _HeaderTile(
-          key: const Key('today-steps'), label: 'Steps', fill: widget.fill,
+          key: const Key('today-steps'), label: l.todayStepsLabel, photoId: 'steps', fill: widget.fill,
           // The strip shows the nearest tread impressions (the right half of the photograph).
           photo: _Photos.steps, photoAlignment: const Alignment(0.8, 0.55),
           body: [
             GoIcon(GoGlyph.steps, size: 26, color: context.c.accent),
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+              child: FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart,
                   child: Text(head, key: const Key('today-steps-value'), style: context.pageTitleStyle(d is DailyOff ? 24 : 34))),
             ),
             // The goal and its bar only when a goal is set; then where and when it was read, each on its own line.
             if (progress != null) ...[
-              Text('of ${formatSteps(goal!)}', key: const Key('today-steps-goal'), style: context.sansStyle(15, color: context.c.secondary)),
-              Padding(padding: const EdgeInsets.only(top: 4, bottom: 4), child: ProgressRail(progress, label: 'Steps goal')),
+              Text(l.todayStepsOfGoal(formatSteps(goal!)), key: const Key('today-steps-goal'), style: context.sansStyle(15, color: context.c.secondary)),
+              Padding(padding: const EdgeInsets.only(top: 4, bottom: 4), child: ProgressRail(progress, label: l.todayStepsGoalLabel)),
             ],
             for (final line in lines) Text(line, style: context.sansStyle(15, color: context.c.secondary)),
-            if (src.simulated && on) Text('Simulated (test build)', style: context.caption),
+            if (src.simulated && on) Text(l.todayStepsSimulated, style: context.caption),
           ],
           action: action,
         ),
       ),
     );
-    return Pressable(onTap: () => showStepsSheet(app), semanticLabel: '$said Opens Steps.', child: tile);
+    return Pressable(onTap: () => showStepsSheet(app), semanticLabel: l.todayStepsOpens(said), child: tile);
   }
 }
 
@@ -1017,18 +1028,19 @@ class _NutritionCard extends ConsumerWidget {
     final goals = NutritionSummary.goalsText(profile?.calorieGoal, profile?.proteinGoal);
     final logged = !failed && s != null && s.food.isNotEmpty;
     void openEat() => ref.read(shellProvider.notifier).switchTab(2);
+    final l = context.l10n;
     Widget line(String text) => Padding(padding: const EdgeInsets.only(top: 2), child: Text(text, style: context.sansStyle(15, color: context.c.secondary)));
     return _Module(
-      key: const Key('today-module-nutrition'), label: 'Nutrition',
+      key: const Key('today-module-nutrition'), label: l.todayNutritionLabel, photoId: 'nutrition',
       body: [
         if (failed)
-          const Padding(padding: EdgeInsets.only(top: 6), child: StatusLine(Icons.error_outline, 'Today\'s food could not be read from this phone.', tone: Tone.error))
+          Padding(padding: const EdgeInsets.only(top: 6), child: StatusLine(Icons.error_outline, l.todayFoodError, tone: Tone.error))
         else if (s == null)
-          line('Loading…')
+          line(l.todayLoading)
         else if (s.food.isEmpty) ...[
           // Nothing logged is not zero eaten: words, never "0 kcal".
-          Padding(padding: const EdgeInsets.only(top: 6), child: Text('No food logged today', style: context.pageTitleStyle(28))),
-          if (goals != null) line('Your daily goal: $goals'),
+          Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.todayNoFood, style: context.pageTitleStyle(28))),
+          if (goals != null) line(l.todayDailyGoal(goals)),
         ] else
           Padding(padding: const EdgeInsets.only(top: 4), child: NutritionSummary(coverage: s.coverage, calorieGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal)),
       ],
@@ -1036,8 +1048,8 @@ class _NutritionCard extends ConsumerWidget {
       footer: logged ? NutritionMissingNote(coverage: s.coverage, onDetails: openEat) : null,
       // The bowl at the trailing side.
       photo: _Photos.nutrition, photoAlignment: const Alignment(0.7, 0),
-      action: PrimaryButton('Log food', key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(appContext(context), dayKey: day)),
-      quiet: QuietLink('Journal', key: const Key('today-open-eat'), said: 'Food journal', onPressed: openEat),
+      action: PrimaryButton(l.todayLogFood, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(appContext(context), dayKey: day)),
+      quiet: QuietLink(l.todayJournal, key: const Key('today-open-eat'), said: l.todayJournalSaid, onPressed: openEat),
       // Under the figures, quieter than them: the day's water when it is tracked, then Customize tracking. Goals are
       // shown here as progress only; they are set and edited in Eat. Sheets open in the app's own look.
       // Today's water when it is tracked. Goals and Customize tracking belong to Eat.
@@ -1058,12 +1070,13 @@ class _ActivitySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Padding(padding: const EdgeInsets.only(left: 4, bottom: 8), child: Semantics(header: true, child: const Overline('Recorded today'))),
+        Padding(padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8), child: Semantics(header: true, child: Overline(context.l10n.todayRecordedTodayOverline))),
         GroupCard(children: [
           for (final w in snapshot.recordedToday)
             GroupRow(
               icon: Icons.fitness_center, tone: Tone.neutral, title: w.title,
-              subtitle: '${w.isManual ? 'Manual workout' : 'Planned workout'} · ${WorkoutResultRules.label(w.outcome)}${w.performedSets > 0 ? ' · ${w.performedSets} set${w.performedSets == 1 ? '' : 's'}' : ''}',
+              subtitle: [w.isManual ? context.l10n.todayManualWorkout : context.l10n.todayPlannedWorkout, outcomeLabel(context.l10n, w.outcome),
+                if (w.performedSets > 0) context.l10n.todaySetCount(w.performedSets)].join(' · '),
               onTap: () => push(context, WorkoutDetailScreen(workoutId: w.id)),
             ),
           if (finishedRuns.length > 1)

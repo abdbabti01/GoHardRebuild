@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart' show ownerProvider;
 import '../../core/go_icon.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
+import '../../core/units.dart' show parsePositiveInt;
 import '../../core/widgets.dart';
 import 'move_prefs.dart';
 import 'steps.dart';
@@ -34,15 +36,19 @@ Future<void> enableSteps(WidgetRef ref) async {
 
 /// The fix for the access state, as one action: ask (not asked yet) or the phone's settings (refused).
 ({String label, Future<void> Function() run})? stepsFix(WidgetRef ref, StepAccess access) => switch (access) {
-      StepAccess.notAllowed => (label: 'Allow', run: () async {
+      StepAccess.notAllowed => (label: ref.read(appL10nProvider).stepsAllow, run: () async {
           await ref.read(stepSourceProvider).request();
           ref.invalidate(stepAccessProvider);
         }),
-      StepAccess.blocked => (label: 'Settings', run: () => ref.read(stepSourceProvider).openSettings()),
+      StepAccess.blocked => (label: ref.read(appL10nProvider).stepsSettings, run: () => ref.read(stepSourceProvider).openSettings()),
       _ => null,
     };
 
-Future<void> showStepsSheet(BuildContext context) => showGoSheet<void>(appContext(context), title: 'Steps', builder: (_) => const _StepsSheet());
+Future<void> showStepsSheet(BuildContext context) => showGoSheet<void>(appContext(context), title: context.l10n.stepsTitle, builder: (_) => const _StepsSheet());
+
+/// A supplied glyph that points along the reading direction (back, chevron): mirrored in Arabic. [GoIcon] itself
+/// never mirrors.
+Widget directionalGlyph(BuildContext context, GoIcon icon) => context.isRtl ? Transform.flip(flipX: true, child: icon) : icon;
 
 class _StepsSheet extends ConsumerStatefulWidget {
   const _StepsSheet();
@@ -72,11 +78,12 @@ class _StepsSheetState extends ConsumerState<_StepsSheet> {
     final src = ref.watch(stepSourceProvider);
     final access = on ? ref.watch(stepAccessProvider).value : null;
     final fix = access == null ? null : stepsFix(ref, access);
+    final l = context.l10n;
     Widget toggle(String key, String title, String subtitle, bool value, ValueChanged<bool>? changed) => SwitchListTile(
         key: Key(key), contentPadding: EdgeInsets.zero, value: value, onChanged: changed,
         title: Text(title, style: context.sansStyle(16, weight: FontWeight.w600)), subtitle: Text(subtitle, style: context.caption));
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-      toggle('track-steps', 'Count steps', 'With this phone\'s motion sensor: during a run or walk, and today\'s total. Walking without your phone is not counted.',
+      toggle('track-steps', l.stepsCount, l.stepsCountSubtitle,
           on, owner == null ? null : (v) => v ? enableSteps(ref) : ref.read(movePrefsProvider.notifier).setSteps(owner, false)),
       if (on && access != null && access != StepAccess.allowed)
         Padding(
@@ -84,9 +91,9 @@ class _StepsSheetState extends ConsumerState<_StepsSheet> {
           child: Row(children: [
             Expanded(
               child: StatusLine(Icons.info_outline, switch (access) {
-                StepAccess.notAllowed => 'Motion access is not allowed yet.',
-                StepAccess.blocked => 'Motion access is off for GoHard. Turn it on in the phone\'s settings.',
-                _ => 'This phone has no step counter. Run / Walk records everything else.',
+                StepAccess.notAllowed => l.stepsMotionNotAllowed,
+                StepAccess.blocked => l.stepsMotionBlocked,
+                _ => l.stepsNoCounter,
               }, tone: Tone.warning),
             ),
             if (fix != null) TextButton(key: const Key('steps-fix'), onPressed: fix.run, child: Text(fix.label)),
@@ -95,14 +102,13 @@ class _StepsSheetState extends ConsumerState<_StepsSheet> {
       if (on)
         TextField(
           key: const Key('steps-goal'), controller: _goal, keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Daily steps goal (optional)', helperText: 'Your own number. Leave it blank for none.'),
-          onChanged: (t) => ref.read(movePrefsProvider.notifier).setStepGoal(owner!, int.tryParse(t.trim().replaceAll(',', ''))),
+          decoration: InputDecoration(labelText: l.stepsGoalLabel, helperText: l.stepsGoalHelper),
+          onChanged: (t) => ref.read(movePrefsProvider.notifier).setStepGoal(owner!, parsePositiveInt(t, grouping: true)),
         ),
-      toggle('steps-on-today', 'Show Steps on Today', 'Only what Today shows. Counting and access are not changed.', ref.watch(stepsOnTodayProvider),
+      toggle('steps-on-today', l.stepsOnToday, l.stepsOnTodaySubtitle, ref.watch(stepsOnTodayProvider),
           owner == null ? null : (v) => ref.read(movePrefsProvider.notifier).setStepsOnToday(owner, v)),
       const SizedBox(height: 4),
-      Text("Today's total is read from ${src.dailySource} and stays on this phone: it is never sent to your account. "
-          'The steps of a run or walk are saved with it and sync with your account. The two are never added together.', style: context.caption),
+      Text(l.stepsFooter(src.dailySource), style: context.caption),
     ]);
   }
 }
@@ -136,11 +142,11 @@ class SetupRow extends StatelessWidget {
                     GoIcon(glyph, size: 24, color: context.c.accent),
                     const SizedBox(width: 12),
                     Expanded(child: Text(label, style: context.sansStyle(16, weight: FontWeight.w600))),
-                    GoIcon(GoGlyph.chevronRight, size: 20, color: context.c.secondary),
+                    directionalGlyph(context, GoIcon(GoGlyph.chevronRight, size: 20, color: context.c.secondary)),
                   ]),
                   if (value.isNotEmpty || action != null)
                     Padding(
-                      padding: const EdgeInsets.only(left: 36, top: 4),
+                      padding: const EdgeInsetsDirectional.only(start: 36, top: 4),
                       child: Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [if (value.isNotEmpty) valueText, ?action]),
                     ),
                 ])
@@ -153,7 +159,7 @@ class SetupRow extends StatelessWidget {
             ConstrainedBox(constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.4), child: valueText),
             if (action != null) ...[const SizedBox(width: 8), action!],
             const SizedBox(width: 4),
-            GoIcon(GoGlyph.chevronRight, size: 20, color: context.c.secondary),
+            directionalGlyph(context, GoIcon(GoGlyph.chevronRight, size: 20, color: context.c.secondary)),
           ]),
         ),
       );
@@ -186,14 +192,15 @@ class StepsSetupRow extends ConsumerWidget {
     final on = ref.watch(stepsEnabledProvider);
     final access = on ? ref.watch(stepAccessProvider).value : null;
     final fix = access == null ? null : stepsFix(ref, access);
+    final l = context.l10n;
     final (String label, String value) = !on
-        ? ('Steps off', '')
+        ? (l.stepsOff, '')
         : switch (access) {
-            null => ('Steps', 'Checking…'),
-            StepAccess.allowed => ('Steps on', ref.read(stepSourceProvider).simulated ? 'Simulated (test build)' : 'Counted with this phone'),
-            StepAccess.notAllowed => ('Steps', 'Motion access needed'),
-            StepAccess.blocked => ('Steps', 'Motion access off'),
-            StepAccess.unavailable => ('Steps', 'Not on this phone'),
+            null => (l.stepsTitle, l.stepsChecking),
+            StepAccess.allowed => (l.stepsOn, ref.read(stepSourceProvider).simulated ? l.stepsSimulated : l.stepsCounted),
+            StepAccess.notAllowed => (l.stepsTitle, l.stepsMotionNeeded),
+            StepAccess.blocked => (l.stepsTitle, l.stepsMotionOff),
+            StepAccess.unavailable => (l.stepsTitle, l.stepsNotOnPhone),
           };
     Widget pill(String text, Key key, VoidCallback onPressed) => FilledButton.tonal(
         key: key, onPressed: onPressed,
@@ -202,7 +209,7 @@ class StepsSetupRow extends ConsumerWidget {
     return SetupGroup(children: [
       SetupRow(
         key: const Key('runwalk-steps-row'), glyph: GoGlyph.steps, label: label, value: value, onTap: () => showStepsSheet(context),
-        action: !on ? pill('Enable', const Key('runwalk-steps-enable'), () => enableSteps(ref)) : fix == null ? null : pill(fix.label, const Key('runwalk-steps-fix'), fix.run),
+        action: !on ? pill(l.stepsEnable, const Key('runwalk-steps-enable'), () => enableSteps(ref)) : fix == null ? null : pill(fix.label, const Key('runwalk-steps-fix'), fix.run),
       ),
     ]);
   }

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../core/go_icon.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import 'track_math.dart';
 
@@ -32,7 +33,7 @@ typedef Here = ({double lat, double lon, double acc});
 /// map, so they never scroll the page or drag a sheet.
 class RouteMap extends ConsumerStatefulWidget {
   const RouteMap({super.key, required this.segments, this.here, this.live = false, this.controls = false, this.zoomButtons = false,
-      this.highlight, this.overlayPadding = EdgeInsets.zero, this.onExpand, this.semanticLabel = 'Route map'});
+      this.highlight, this.overlayPadding = EdgeInsets.zero, this.onExpand, this.semanticLabel});
   final List<List<TrackPoint>> segments;
   final Here? here;
   final bool live, controls, zoomButtons;
@@ -43,7 +44,8 @@ class RouteMap extends ConsumerStatefulWidget {
   /// Space covered by the page's own overlays, kept clear of Google's logo and notices.
   final EdgeInsets overlayPadding;
   final VoidCallback? onExpand;
-  final String semanticLabel;
+  /// Null: "Route map" in the app language.
+  final String? semanticLabel;
 
   @override
   ConsumerState<RouteMap> createState() => _RouteMapState();
@@ -229,19 +231,20 @@ class _RouteMapState extends ConsumerState<RouteMap> {
   @override
   Widget build(BuildContext context) {
     final maps = ref.watch(mapsAvailableProvider).value ?? false;
+    final l = context.l10n;
     // As on the approved board: zoom top right, Expand map bottom right, recenter (and Fit route) bottom left.
     final left = <Widget>[
-      if (widget.controls && widget.live) _MapButton(GoGlyph.recenter, _camera == _Camera.follow ? 'Following your position' : 'Recenter', _recenter, key: const Key('map-recenter'), on: _camera == _Camera.follow),
-      if (widget.controls && _all.length > 1) _MapButton(Icons.fit_screen_outlined, 'Fit route', _fit, key: const Key('map-fit')),
+      if (widget.controls && widget.live) _MapButton(GoGlyph.recenter, _camera == _Camera.follow ? l.runMapFollowing : l.runMapRecenter, _recenter, key: const Key('map-recenter'), on: _camera == _Camera.follow),
+      if (widget.controls && _all.length > 1) _MapButton(Icons.fit_screen_outlined, l.runMapFit, _fit, key: const Key('map-fit')),
     ];
     final zoom = <Widget>[
       if (widget.zoomButtons) ...[
-        _MapButton(GoGlyph.plus, 'Zoom in', () => _zoom(true), key: const Key('map-zoom-in')),
-        _MapButton(GoGlyph.minus, 'Zoom out', () => _zoom(false), key: const Key('map-zoom-out')),
+        _MapButton(GoGlyph.plus, l.runMapZoomIn, () => _zoom(true), key: const Key('map-zoom-in')),
+        _MapButton(GoGlyph.minus, l.runMapZoomOut, () => _zoom(false), key: const Key('map-zoom-out')),
       ],
     ];
     return Semantics(
-      label: widget.semanticLabel,
+      label: widget.semanticLabel ?? l.runMapRoute,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(Radii.panel),
         child: Stack(children: [
@@ -249,13 +252,13 @@ class _RouteMapState extends ConsumerState<RouteMap> {
           if (!maps)
             Positioned(
               left: 10 + left.length * 56.0, bottom: 8 + widget.overlayPadding.bottom,
-              child: ExcludeSemantics(child: Text('Route drawn without a map', style: context.sansStyle(11.5, color: context.c.secondary))),
+              child: ExcludeSemantics(child: Text(l.runMapNoTiles, style: context.sansStyle(11.5, color: context.c.secondary))),
             ),
           if (zoom.isNotEmpty)
             // Side by side, so a compact map still has room for Expand map below them.
             Positioned(top: 8, right: 8, child: Row(mainAxisSize: MainAxisSize.min, children: [zoom[1], const SizedBox(width: 6), zoom[0]])),
           if (widget.onExpand != null)
-            Positioned(bottom: 8 + widget.overlayPadding.bottom, right: 8, child: _MapButton(GoGlyph.expandMap, 'Expand map', widget.onExpand!, key: const Key('map-expand'), label: true)),
+            Positioned(bottom: 8 + widget.overlayPadding.bottom, right: 8, child: _MapButton(GoGlyph.expandMap, l.runMapExpand, widget.onExpand!, key: const Key('map-expand'), label: true)),
           if (left.isNotEmpty)
             Positioned(
               left: 8, bottom: 8 + widget.overlayPadding.bottom,

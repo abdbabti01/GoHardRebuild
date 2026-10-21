@@ -7,8 +7,8 @@ import '../../app/providers.dart';
 import '../../core/clock.dart';
 import '../../core/format.dart';
 import '../../core/go_icon.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
-import '../../core/units.dart' show formatNumber;
 import '../../core/widgets.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
@@ -18,33 +18,34 @@ import 'water.dart';
 
 /// "2,230 kcal", "140.5 g", "1,250 mL": from the exact stored sum, rounded only here.
 String intakeAmount(IntakeMetric m, double v, VolumeUnit unit) => switch (m) {
-      IntakeMetric.calories => '${formatKcal(v)} kcal',
+      IntakeMetric.calories => currentL10n.eatKcalValue(formatKcal(v)),
       IntakeMetric.water => unit.format(v),
-      _ => '${_grams(v)} g',
+      _ => currentL10n.eatGramsValue(_grams(v)),
     };
 
-String _grams(double v) => formatNumber((v * 10).round() / 10).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+String _grams(double v) => formatGrouped((v * 10).round() / 10);
 
 /// What one day holds for the metric, in words; the same words on the chart's day panel and in the list.
 String intakeDayText(IntakeDay d, IntakeMetric m, VolumeUnit unit) {
-  final sync = d.review ? ' · needs review' : d.pending ? ' · sync pending' : '';
-  final foods = _plural(d.foods, 'food');
+  final l = currentL10n;
+  final sync = d.review ? ' · ${l.eatNeedsReview}' : d.pending ? ' · ${l.eatSyncPendingShort}' : '';
+  final foods = l.trendsFoodCount(d.foods);
   return switch (d.state) {
-    DayState.future => 'Future',
-    DayState.notLogged => m == IntakeMetric.water ? 'No water logged' : 'No food logged',
-    DayState.unknown => '${m.label} not entered · $foods logged$sync',
-    DayState.partial => '${intakeAmount(m, d.value!, unit)} known · ${d.unknownFoods} of $foods without ${m.noun} values$sync',
-    DayState.recorded when d.isZero => '${intakeAmount(m, 0, unit)} recorded$sync',
+    DayState.future => l.trendsFuture,
+    DayState.notLogged => m == IntakeMetric.water ? l.waterNoneLogged : l.trendsNoFoodLogged,
+    DayState.unknown => '${l.trendsDayUnknown(intakeMetricLabel(l, m), foods)}$sync',
+    DayState.partial => '${l.trendsDayPartial(intakeAmount(m, d.value!, unit), d.unknownFoods, foods, intakeMetricNoun(l, m))}$sync',
+    DayState.recorded when d.isZero => '${l.trendsDayZero(intakeAmount(m, 0, unit))}$sync',
     DayState.recorded => '${intakeAmount(m, d.value!, unit)}${m == IntakeMetric.water ? '' : ' · $foods'}$sync',
   };
 }
 
-String _plural(int n, String one) => '$n ${n == 1 ? one : '${one}s'}';
-
-/// "Oct 12 – 18, 2026", "Sep 28 – Oct 4, 2026", "Dec 29, 2025 – Jan 4, 2026", "October 2026".
+/// "Oct 12 – 18, 2026", "Sep 28 – Oct 4, 2026", "Dec 29, 2025 – Jan 4, 2026", "October 2026"; in French and
+/// Arabic each end is a localized date ("12 oct. – 18 oct. 2026").
 String periodLabel(Period p) {
   final a = parseDayKey(p.start), b = parseDayKey(p.end);
-  if (p.kind == PeriodKind.month) return '${monthName(a.month)} ${a.year}';
+  if (p.kind == PeriodKind.month) return monthYear(a.year, a.month);
+  if (currentLocale.languageCode != 'en') return '${a.year != b.year ? dayMonthYear(p.start) : dayMonth(p.start)} – ${dayMonthYear(p.end)}';
   if (a.year != b.year) return '${dayMonth(p.start)}, ${a.year} – ${dayMonth(p.end)}, ${b.year}';
   return '${dayMonth(p.start)} – ${a.month == b.month ? '${b.day}' : dayMonth(p.end)}, ${b.year}';
 }
@@ -122,10 +123,7 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
 
   void _select(String day) => _set(selected: day, anchor: day);
 
-  static void _help(BuildContext context) => showCoachHelpSheet(context, title: 'History & trends', say: const CoachSay(
-      'Each bar is one day\'s logged total. Tap or slide across the chart to choose a day, then View day opens its meals and water. '
-      'A dash means nothing was logged that day; a question mark means foods were logged without this value; a star means some foods have no value, so the sum is what is known. '
-      'Averages use only days with a known value.'));
+  static void _help(BuildContext context) => showCoachHelpSheet(context, title: context.l10n.eatHistoryTrends, say: CoachSay(context.l10n.trendsHelpBody));
 
   @override
   Widget build(BuildContext context) {
@@ -151,10 +149,11 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
     final summary = IntakeSummary.build(period, metric, today: today, food: food, water: water);
     final earliest = [...food.keys, ...water.keys, addDays(today, -365)].reduce((a, b) => a.compareTo(b) < 0 ? a : b);
     final c = context.c;
+    final l = context.l10n;
 
-    final heading = Heading('History & trends', size: 36, serif: true);
-    final coach = TabCoach(key: const Key('trends-coach'), id: 'eat.trends', avatarLabel: 'Help with History & trends',
-        say: const CoachSay('Tap a day to see what you logged.'), onAvatarTap: () => _help(context));
+    final heading = Heading(l.eatHistoryTrends, size: 36, serif: true);
+    final coach = TabCoach(key: const Key('trends-coach'), id: 'eat.trends', avatarLabel: l.trendsHelpLabel,
+        say: CoachSay(l.trendsCoachSay), onAvatarTap: () => _help(context));
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
@@ -168,7 +167,7 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
             heading,
           const SizedBox(height: 14),
           Segmented<PeriodKind>(
-            keyPrefix: 'trends-kind', values: PeriodKind.values, selected: _kind, label: (k) => k == PeriodKind.week ? 'Week' : 'Month',
+            keyPrefix: 'trends-kind', values: PeriodKind.values, selected: _kind, label: (k) => k == PeriodKind.week ? l.trendsWeek : l.trendsMonth,
             onChanged: (k) => _set(kind: k, anchor: selected),
           ),
           const SizedBox(height: 10),
@@ -178,7 +177,7 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
             onNext: summary.current ? null : () => _shift(period, 1, today),
             onPick: () async {
               final d = await showDatePicker(context: context, initialDate: parseDayKey(selected), firstDate: parseDayKey(earliest), lastDate: parseDayKey(today),
-                  currentDate: parseDayKey(today), helpText: 'Choose a day');
+                  currentDate: parseDayKey(today), helpText: l.trendsChooseDay);
               if (d != null) _select(dayKeyOf(d));
             },
             onToday: summary.current ? null : () => _select(today),
@@ -186,28 +185,28 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final m in metrics)
-              ChoiceChip(key: Key('trends-metric-${m.name}'), label: Text(m.label), selected: m == metric, onSelected: (_) => _set(metric: m)),
+              ChoiceChip(key: Key('trends-metric-${m.name}'), label: Text(intakeMetricLabel(l, m)), selected: m == metric, onSelected: (_) => _set(metric: m)),
           ]),
           const SizedBox(height: 16),
           if (source.hasError)
-            Panel(child: StatusLine(Icons.error_outline, metric == IntakeMetric.water ? 'Your water could not be read from this phone.' : 'Your food journal could not be read from this phone.', tone: Tone.error))
+            Panel(child: StatusLine(Icons.error_outline, metric == IntakeMetric.water ? l.trendsWaterReadError : l.trendsFoodReadError, tone: Tone.error))
           else if (!source.hasValue)
-            const Panel(child: StatusLine(Icons.hourglass_empty, 'Reading your journal on this phone…'))
+            Panel(child: StatusLine(Icons.hourglass_empty, l.trendsReading))
           else ...[
             _Totals(summary: summary, unit: unit),
             const SizedBox(height: 16),
             Panel(
               key: const Key('trends-chart-card'),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Text('${metric.label} by day', style: context.pageTitleStyle(22)),
-                Text(metric == IntakeMetric.water ? unit.short : metric == IntakeMetric.calories ? 'kcal' : 'g', style: context.caption),
+                Text(l.trendsByDay(intakeMetricLabel(l, metric)), style: context.pageTitleStyle(22)),
+                Text(metric == IntakeMetric.water ? unit.short : metric == IntakeMetric.calories ? l.eatUnitKcal : l.eatUnitGram, style: context.caption),
                 const SizedBox(height: 8),
                 IntakeChart(summary: summary, selected: selected, unit: unit, onSelect: (d) => _set(selected: d)),
                 const SizedBox(height: 10),
                 Wrap(spacing: 16, runSpacing: 4, children: [
-                  _Key('–', metric == IntakeMetric.water ? 'No water logged' : 'Not logged'),
-                  if (metric != IntakeMetric.water) ...[const _Key('?', 'Not entered'), const _Key('★', 'Some values missing')],
-                  const _Key('○', 'Recorded zero'),
+                  _Key('–', metric == IntakeMetric.water ? l.waterNoneLogged : l.trendsLegendNotLogged),
+                  if (metric != IntakeMetric.water) ...[_Key('?', l.trendsLegendNotEntered), _Key('★', l.trendsLegendPartial)],
+                  _Key('○', l.trendsLegendZero),
                 ]),
               ]),
             ),
@@ -222,16 +221,16 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
             ],
           ],
           const SizedBox(height: 24),
-          SectionHeader('Days in this period',
-              trailing: QuietLink('Calendar', key: const Key('trends-calendar'), said: 'Calendar and all days with entries', onPressed: () async {
+          SectionHeader(l.trendsDaysInPeriod,
+              trailing: QuietLink(l.trendsCalendar, key: const Key('trends-calendar'), said: l.trendsCalendarSaid, onPressed: () async {
                 final day = await push<String>(context, NutritionDaysScreen(selected: selected));
                 if (day != null) _open(day);
               })),
           const SizedBox(height: 10),
           if (foodDays.hasError || waterDays.hasError)
-            Padding(padding: const EdgeInsets.only(bottom: 8), child: StatusLine(Icons.error_outline, foodDays.hasError ? 'Food could not be read from this phone; water is shown.' : 'Water could not be read from this phone; food is shown.', tone: Tone.error)),
+            Padding(padding: const EdgeInsets.only(bottom: 8), child: StatusLine(Icons.error_outline, foodDays.hasError ? l.trendsFoodErrorWaterShown : l.trendsWaterErrorFoodShown, tone: Tone.error)),
           if (!foodDays.hasValue && !foodDays.hasError)
-            const StatusLine(Icons.hourglass_empty, 'Reading your journal on this phone…')
+            StatusLine(Icons.hourglass_empty, l.trendsReading)
           else
             GroupCard(children: [
               for (final d in summary.elapsed.reversed)
@@ -240,12 +239,12 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
                   child: ColoredBox(
                     color: d.dayKey == selected ? c.accentSoft : Colors.transparent,
                     child: GroupRow(
-                      key: Key('trends-day-${d.dayKey}'), title: d.dayKey == today ? 'Today' : shortDate(d.dayKey),
+                      key: Key('trends-day-${d.dayKey}'), title: d.dayKey == today ? l.eatTodayCaption : shortDate(d.dayKey),
                       value: d.hasValue ? intakeAmount(metric, d.value!, unit) : '—',
                       subtitle: [
                         intakeDayText(d, metric, unit),
-                        if (metric != IntakeMetric.water && d.waterEntries > 0 && display.water) '${unit.format(waterTotal([for (final w in water[d.dayKey]!) w.value]))} water',
-                        if (metric == IntakeMetric.water && d.foods > 0) '${_plural(d.foods, 'food')} logged',
+                        if (metric != IntakeMetric.water && d.waterEntries > 0 && display.water) l.eatWaterValue(unit.format(waterTotal([for (final w in water[d.dayKey]!) w.value]))),
+                        if (metric == IntakeMetric.water && d.foods > 0) l.trendsFoodsLogged(l.trendsFoodCount(d.foods)),
                       ].join(' · '),
                       onTap: () => _open(d.dayKey),
                     ),
@@ -253,8 +252,7 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
                 ),
             ]),
           const SizedBox(height: 8),
-          Text('Totals add up only what was logged. A day with nothing logged, or a food without a value, is never counted as zero. Goals are not shown here: earlier days\' goals were not kept.',
-              style: context.caption),
+          Text(l.trendsFootnote, style: context.caption),
         ]),
       ),
     );
@@ -273,16 +271,18 @@ class _PeriodBar extends StatelessWidget {
     final p = summary.period;
     final week = p.kind == PeriodKind.week;
     final today = summary.today;
-    final through = p.start == today ? dayMonth(today) : '${dayMonth(p.start)} – ${p.start.substring(0, 7) == today.substring(0, 7) ? parseDayKey(today).day : dayMonth(today)}';
-    final sub = summary.current ? '${week ? 'This week so far' : 'Month to date'} · $through' : null;
+    final l = context.l10n;
+    final sameMonth = p.start.substring(0, 7) == today.substring(0, 7) && currentLocale.languageCode == 'en';
+    final through = p.start == today ? dayMonth(today) : '${dayMonth(p.start)} – ${sameMonth ? parseDayKey(today).day : dayMonth(today)}';
+    final sub = summary.current ? (week ? l.trendsWeekSoFar(through) : l.trendsMonthToDate(through)) : null;
     return Container(
       decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(Radii.field + 1), border: Border.all(color: context.c.divider)),
       child: Column(children: [
         Row(children: [
-          IconButton(key: const Key('trends-previous'), tooltip: week ? 'Previous week' : 'Previous month', icon: const Icon(Icons.chevron_left), onPressed: onPrevious),
+          IconButton(key: const Key('trends-previous'), tooltip: week ? l.trendsPreviousWeek : l.trendsPreviousMonth, icon: const Icon(Icons.chevron_left), onPressed: onPrevious),
           Expanded(
             child: Semantics(
-              button: true, label: 'Choose a day. Showing ${periodLabel(p)}${sub == null ? '' : ', $sub'}', excludeSemantics: true,
+              button: true, label: sub == null ? l.trendsPeriodSaid(periodLabel(p)) : l.trendsPeriodSaidSub(periodLabel(p), sub), excludeSemantics: true,
               child: InkWell(
                 key: const Key('trends-period'),
                 onTap: onPick,
@@ -299,12 +299,12 @@ class _PeriodBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(key: const Key('trends-next'), tooltip: week ? 'Next week' : 'Next month', icon: const Icon(Icons.chevron_right), onPressed: onNext),
+          IconButton(key: const Key('trends-next'), tooltip: week ? l.trendsNextWeek : l.trendsNextMonth, icon: const Icon(Icons.chevron_right), onPressed: onNext),
         ]),
         if (onToday != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: TextButton.icon(key: const Key('trends-current'), onPressed: onToday, icon: const Icon(Icons.today, size: 18), label: Text(week ? 'This week' : 'This month')),
+            child: TextButton.icon(key: const Key('trends-current'), onPressed: onToday, icon: const Icon(Icons.today, size: 18), label: Text(week ? l.trendsThisWeek : l.trendsThisMonth)),
           ),
       ]),
     );
@@ -319,36 +319,41 @@ class _Totals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final s = summary, m = s.metric;
     final water = m == IntakeMetric.water;
     final elapsed = s.elapsed.length;
-    final valueDays = water ? 'days with water logged' : 'days with ${m.noun} values';
+    final label = intakeMetricLabel(l, m), noun = intakeMetricNoun(l, m);
     final partial = s.partialDays > 0;
     return PhotoPanel(
       key: const Key('trends-totals'),
       content: (context) => [
-        Overline(partial ? 'Known ${m.label} logged' : '${m.label} logged'),
+        Overline(partial ? l.trendsKnownLogged(label) : l.trendsLogged(label)),
         const SizedBox(height: 4),
-        Text(s.total == null ? (water ? 'No water logged' : 'No ${m.noun} values') : intakeAmount(m, s.total!, unit), key: const Key('trends-total'), style: context.pageTitleStyle(s.total == null ? 26 : 38)),
-        Text('${s.known.length} of $elapsed $valueDays${s.current ? ' so far' : ''}', key: const Key('trends-coverage'), style: context.sansStyle(15.5)),
+        Text(s.total == null ? (water ? l.waterNoneLogged : l.trendsNoValues(noun)) : intakeAmount(m, s.total!, unit), key: const Key('trends-total'), style: context.pageTitleStyle(s.total == null ? 26 : 38)),
+        Text(
+            water
+                ? (s.current ? l.trendsCoverageWaterSoFar(s.known.length, elapsed) : l.trendsCoverageWater(s.known.length, elapsed))
+                : (s.current ? l.trendsCoverageSoFar(s.known.length, elapsed, noun) : l.trendsCoverage(s.known.length, elapsed, noun)),
+            key: const Key('trends-coverage'), style: context.sansStyle(15.5)),
         if (!water && s.loggedDays != s.known.length)
-          Text('${_plural(s.loggedDays, 'day')} with food logged${s.unknownDays > 0 ? ' · ${s.unknownDays} without any ${m.noun} value' : ''}', key: const Key('trends-logged'), style: context.caption),
+          Text([l.trendsDaysWithFood(s.loggedDays), if (s.unknownDays > 0) l.trendsDaysWithoutValue(s.unknownDays, noun)].join(' · '), key: const Key('trends-logged'), style: context.caption),
         if (s.average != null) ...[
           const SizedBox(height: 12),
           Divider(height: 1, color: context.c.text.withValues(alpha: 0.15)),
           const SizedBox(height: 12),
           Wrap(spacing: 20, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.end, children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text(partial ? 'Daily average, known values' : 'Daily average', style: context.sansStyle(15)),
+              Text(partial ? l.trendsAverageKnown : l.trendsAverage, style: context.sansStyle(15)),
               Text(intakeAmount(m, s.average!, unit), key: const Key('trends-average'), style: context.pageTitleStyle(28)),
             ]),
-            Text('Across the ${s.known.length == 1 ? 'one day' : '${s.known.length} days'}${valueDays.substring(4)}', key: const Key('trends-average-days'),
+            Text(water ? l.trendsAcrossWater(s.known.length) : l.trendsAcross(s.known.length, noun), key: const Key('trends-average-days'),
                 style: context.sansStyle(14.5, color: context.c.secondary)),
           ]),
           if (partial)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text('Includes ${_plural(s.partialDays, 'day')} where some foods have no ${m.noun} value: only the known part is added.', key: const Key('trends-partial-note'), style: context.caption),
+              child: Text(l.trendsPartialNote(s.partialDays, noun), key: const Key('trends-partial-note'), style: context.caption),
             ),
         ],
       ],
@@ -379,10 +384,10 @@ class _DayPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Panel(
         key: const Key('trends-selected'),
-        padding: const EdgeInsets.fromLTRB(4, 8, 8, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(4, 8, 8, 8).resolve(Directionality.of(context)),
         child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, runSpacing: 4, children: [
           Row(mainAxisSize: MainAxisSize.min, children: [
-            IconButton(key: const Key('trends-day-previous'), tooltip: 'Previous day', icon: const Icon(Icons.chevron_left), onPressed: onPrevious),
+            IconButton(key: const Key('trends-day-previous'), tooltip: context.l10n.eatPreviousDay, icon: const Icon(Icons.chevron_left), onPressed: onPrevious),
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 150),
               child: Semantics(
@@ -393,9 +398,9 @@ class _DayPanel extends StatelessWidget {
                 ]),
               ),
             ),
-            IconButton(key: const Key('trends-day-next'), tooltip: 'Next day', icon: const Icon(Icons.chevron_right), onPressed: onNext),
+            IconButton(key: const Key('trends-day-next'), tooltip: context.l10n.eatNextDay, icon: const Icon(Icons.chevron_right), onPressed: onNext),
           ]),
-          QuietLink('View day', key: const Key('trends-view-day'), said: 'View ${longDate(day.dayKey)}', onPressed: onView),
+          QuietLink(context.l10n.trendsViewDay, key: const Key('trends-view-day'), said: context.l10n.trendsViewDaySaid(longDate(day.dayKey)), onPressed: onView),
         ]),
       );
 }
@@ -419,11 +424,14 @@ class IntakeChart extends StatelessWidget {
     final m = summary.metric;
     String axis(double v) => m == IntakeMetric.water ? unit.number(v) : m == IntakeMetric.calories ? formatKcal(v) : _grams(v);
     final known = summary.known;
+    // Time runs left to right in every language: the plot is laid out left to right, labels stay under their bars.
     return Semantics(
       container: true,
-      label: '${m.label} by day, ${periodLabel(summary.period)}: ${known.length} of ${summary.elapsed.length} days with a value. Each day is in the list of days below.',
+      label: context.l10n.trendsChartSaid(intakeMetricLabel(context.l10n, m), periodLabel(summary.period), known.length, summary.elapsed.length),
       child: ExcludeSemantics(
-        child: SizedBox(
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: SizedBox(
           key: const Key('trends-chart'),
           height: height + 16 * scale.scale(1),
           child: LayoutBuilder(builder: (context, box) {
@@ -441,6 +449,7 @@ class IntakeChart extends StatelessWidget {
               child: CustomPaint(size: l.size, painter: _BarPainter(l, selected, context.c)),
             );
           }),
+          ),
         ),
       ),
     );
@@ -463,7 +472,7 @@ class _BarLayout {
     xLabels = [
       for (final (i, d) in s.days.indexed)
         if (week || _labelled(i, s.days.length))
-          (i, text(week ? '${weekdayShort(weekdayOf(d.dayKey)).substring(0, letters)}\n${parseDayKey(d.dayKey).day}' : '${parseDayKey(d.dayKey).day}')),
+          (i, text(week ? '${_weekday(weekdayOf(d.dayKey), letters)}\n${parseDayKey(d.dayKey).day}' : '${parseDayKey(d.dayKey).day}')),
     ];
     final bottom = (week ? text('M\n1').height : text('1').height) + 8;
     plot = Rect.fromLTRB(left, 14, size.width - 4, size.height - bottom);
@@ -480,6 +489,14 @@ class _BarLayout {
   late final Rect plot;
 
   TextPainter text(String t, [TextStyle? st]) => TextPainter(text: TextSpan(text: t, style: st ?? style), textAlign: TextAlign.center, textDirection: TextDirection.ltr, textScaler: scale)..layout();
+
+  /// A weekday under its bar: "Mon" or "M" in English (as before), the locale's short or narrow form otherwise
+  /// (Arabic has no short form, so its one-letter form is used).
+  static String _weekday(int iso, int letters) => switch (currentLocale.languageCode) {
+        'en' => weekdayShort(iso).substring(0, letters),
+        'fr' when letters == 3 => weekdayShort(iso),
+        _ => weekdayNarrow(iso),
+      };
 
   /// Month labels: the 1st, every fifth day, and the last day when it is not crowded.
   static bool _labelled(int i, int n) => i == 0 || (i + 1) % 5 == 0 && n - (i + 1) >= 3 || i == n - 1;
@@ -585,34 +602,37 @@ class NutritionDaysScreen extends ConsumerWidget {
     final first = days.isEmpty || days.last.compareTo(addDays(today, -365)) > 0 ? addDays(today, -365) : days.last;
     void open(String day) => Navigator.of(context).pop(day);
 
+    final l = context.l10n;
     String summary(String day) {
       final d = intakeDay(day, IntakeMetric.calories, today: today, food: f, water: w);
       return [
-        if (d.foods > 0) _plural(d.foods, 'food'),
-        if (d.foods > 0) d.hasValue ? '${formatKcal(d.value!)} kcal${d.state == DayState.partial ? ' known' : ''}' : 'calories unknown',
-        if (d.waterEntries > 0) '${unit.format(waterTotal([for (final r in w[day]!) r.value]))} water',
+        if (d.foods > 0) l.trendsFoodCount(d.foods),
+        if (d.foods > 0) !d.hasValue ? l.trendsCaloriesUnknownLower : d.state == DayState.partial ? l.eatKcalKnown(formatKcal(d.value!)) : l.eatKcalValue(formatKcal(d.value!)),
+        if (d.waterEntries > 0) l.eatWaterValue(unit.format(waterTotal([for (final r in w[day]!) r.value]))),
       ].join(' · ');
     }
 
     final c = context.c;
     return AppPage(
-      title: 'Calendar',
-      subtitle: 'Your meals and water, by day',
+      title: l.trendsCalendar,
+      subtitle: l.trendsCalendarSubtitle,
       children: [
-        Text('Choose a day to see what was logged on it.', style: context.caption),
+        Text(l.trendsCalendarCaption, style: context.caption),
+        // Material's month grid in the app's language: its first weekday and, in Arabic, right-to-left order follow
+        // the locale; each date stays in its own cell, and a tap returns that day's key.
         CalendarDatePicker(
           key: const Key('history-calendar'),
           initialDate: parseDayKey(selected), firstDate: parseDayKey(first), lastDate: parseDayKey(today), currentDate: parseDayKey(today),
           onDateChanged: (d) => open(dayKeyOf(d)),
         ),
         const SizedBox(height: 8),
-        Text('Days with entries', style: context.label),
+        Text(l.trendsDaysWithEntries, style: context.label),
         const SizedBox(height: 8),
-        if (food.hasError) const StatusLine(Icons.error_outline, 'Your food journal could not be read from this phone.', tone: Tone.error),
+        if (food.hasError) StatusLine(Icons.error_outline, l.trendsFoodReadError, tone: Tone.error),
         if (!loaded && !food.hasError)
-          const StatusLine(Icons.hourglass_empty, 'Reading your journal on this phone…')
+          StatusLine(Icons.hourglass_empty, l.trendsReading)
         else if (loaded && days.isEmpty)
-          const EmptyState('Nothing logged yet', 'Days you log food or water on are listed here.')
+          EmptyState(l.foodRecentEmptyTitle, l.trendsNothingYetBody)
         else
           // One list item per day, so a long history is laid out only as it scrolls into view.
           for (final (i, day) in days.indexed)
@@ -625,7 +645,7 @@ class NutritionDaysScreen extends ConsumerWidget {
               clipBehavior: Clip.antiAlias,
               child: GroupRow(
                 key: Key('history-day-$day'), leading: const GoIcon(GoGlyph.history),
-                title: day == today ? 'Today' : longDate(day), subtitle: summary(day),
+                title: day == today ? l.eatTodayCaption : longDate(day), subtitle: summary(day),
                 onTap: () => open(day),
               ),
             ),

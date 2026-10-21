@@ -1,0 +1,1830 @@
+{
+  "version": 1,
+  "note": "Routines de départ à ajuster, pas des prescriptions individuelles. Aucune charge. Les séries, répétitions et repos suivent la prise de position de l'ACSM (2009) sur la progression en musculation; le choix de la répartition suit la disponibilité, car une répartition et un entraînement corps entier à volume égal ont donné des résultats semblables (PubMed 38595233). Voir docs/TRAINING_PLANS.md.",
+  "swaps": {
+    "back-squat": {
+      "dumbbells": "goblet-squat",
+      "bodyweight": "bodyweight-squat"
+    },
+    "bench-press": {
+      "dumbbells": "dumbbell-bench-press",
+      "bodyweight": "push-up"
+    },
+    "barbell-row": {
+      "dumbbells": "dumbbell-row",
+      "bodyweight": "inverted-row"
+    },
+    "deadlift": {
+      "dumbbells": "dumbbell-romanian-deadlift",
+      "bodyweight": "single-leg-glute-bridge"
+    },
+    "overhead-press": {
+      "dumbbells": "dumbbell-shoulder-press",
+      "bodyweight": "pike-push-up"
+    },
+    "lat-pulldown": {
+      "dumbbells": "dumbbell-pullover",
+      "bodyweight": "pull-up"
+    },
+    "romanian-deadlift": {
+      "dumbbells": "dumbbell-romanian-deadlift",
+      "bodyweight": "glute-bridge"
+    },
+    "leg-press": {
+      "dumbbells": "bulgarian-split-squat",
+      "bodyweight": "reverse-lunge"
+    },
+    "leg-curl": {
+      "dumbbells": "single-leg-glute-bridge",
+      "bodyweight": "single-leg-glute-bridge"
+    },
+    "leg-extension": {
+      "dumbbells": "goblet-squat",
+      "bodyweight": "bodyweight-squat"
+    },
+    "incline-dumbbell-press": {
+      "bodyweight": "feet-elevated-push-up"
+    },
+    "seated-cable-row": {
+      "dumbbells": "dumbbell-row",
+      "bodyweight": "inverted-row"
+    },
+    "lateral-raise": {
+      "bodyweight": null
+    },
+    "triceps-pushdown": {
+      "dumbbells": "overhead-triceps-extension",
+      "bodyweight": "bench-dip"
+    },
+    "overhead-triceps-extension": {
+      "bodyweight": "bench-dip"
+    },
+    "biceps-curl": {
+      "bodyweight": "chin-up"
+    },
+    "hammer-curl": {
+      "bodyweight": null
+    },
+    "barbell-curl": {
+      "dumbbells": "biceps-curl",
+      "bodyweight": "chin-up"
+    },
+    "face-pull": {
+      "dumbbells": "rear-delt-fly",
+      "bodyweight": null
+    },
+    "rear-delt-fly": {
+      "bodyweight": null
+    },
+    "cable-fly": {
+      "dumbbells": "dumbbell-fly",
+      "bodyweight": "feet-elevated-push-up"
+    },
+    "calf-raise": {
+      "dumbbells": "single-leg-calf-raise",
+      "bodyweight": "single-leg-calf-raise"
+    },
+    "hip-thrust": {
+      "dumbbells": "glute-bridge",
+      "bodyweight": "glute-bridge"
+    },
+    "bulgarian-split-squat": {
+      "bodyweight": "reverse-lunge"
+    },
+    "walking-lunge": {
+      "bodyweight": "reverse-lunge"
+    },
+    "goblet-squat": {
+      "bodyweight": "bodyweight-squat"
+    },
+    "dumbbell-shoulder-press": {
+      "bodyweight": "pike-push-up"
+    },
+    "dumbbell-row": {
+      "bodyweight": "inverted-row"
+    },
+    "dumbbell-bench-press": {
+      "bodyweight": "push-up"
+    },
+    "dip": {
+      "dumbbells": "overhead-triceps-extension",
+      "bodyweight": "bench-dip"
+    },
+    "hanging-leg-raise": {
+      "dumbbells": "dead-bug",
+      "bodyweight": "dead-bug"
+    },
+    "farmer-carry": {
+      "bodyweight": "side-plank"
+    }
+  },
+  "swapNames": {
+    "goblet-squat": {
+      "name": "Goblet squat",
+      "isTimed": false
+    },
+    "bodyweight-squat": {
+      "name": "Bodyweight squat",
+      "isTimed": false
+    },
+    "dumbbell-bench-press": {
+      "name": "Dumbbell bench press",
+      "isTimed": false
+    },
+    "push-up": {
+      "name": "Push-up",
+      "isTimed": false
+    },
+    "dumbbell-row": {
+      "name": "Dumbbell row",
+      "isTimed": false
+    },
+    "inverted-row": {
+      "name": "Inverted row",
+      "isTimed": false
+    },
+    "dumbbell-romanian-deadlift": {
+      "name": "Dumbbell Romanian deadlift",
+      "isTimed": false
+    },
+    "single-leg-glute-bridge": {
+      "name": "Single-leg glute bridge",
+      "isTimed": false
+    },
+    "dumbbell-shoulder-press": {
+      "name": "Dumbbell shoulder press",
+      "isTimed": false
+    },
+    "pike-push-up": {
+      "name": "Pike push-up",
+      "isTimed": false
+    },
+    "dumbbell-pullover": {
+      "name": "Dumbbell pullover",
+      "isTimed": false
+    },
+    "pull-up": {
+      "name": "Pull-up",
+      "isTimed": false
+    },
+    "glute-bridge": {
+      "name": "Glute bridge",
+      "isTimed": false
+    },
+    "bulgarian-split-squat": {
+      "name": "Bulgarian split squat",
+      "isTimed": false
+    },
+    "reverse-lunge": {
+      "name": "Reverse lunge",
+      "isTimed": false
+    },
+    "feet-elevated-push-up": {
+      "name": "Feet-elevated push-up",
+      "isTimed": false
+    },
+    "overhead-triceps-extension": {
+      "name": "Overhead triceps extension",
+      "isTimed": false
+    },
+    "bench-dip": {
+      "name": "Bench dip",
+      "isTimed": false
+    },
+    "chin-up": {
+      "name": "Chin-up",
+      "isTimed": false
+    },
+    "biceps-curl": {
+      "name": "Biceps curl",
+      "isTimed": false
+    },
+    "rear-delt-fly": {
+      "name": "Rear delt fly",
+      "isTimed": false
+    },
+    "dumbbell-fly": {
+      "name": "Dumbbell fly",
+      "isTimed": false
+    },
+    "single-leg-calf-raise": {
+      "name": "Single-leg calf raise",
+      "isTimed": false
+    },
+    "dead-bug": {
+      "name": "Dead bug",
+      "isTimed": false
+    },
+    "side-plank": {
+      "name": "Side plank",
+      "isTimed": true
+    }
+  },
+  "templates": [
+    {
+      "id": "full-body",
+      "name": "Corps entier",
+      "summary": "Chaque séance fait travailler tout le corps : jambes, une poussée, un tirage et le tronc.",
+      "detail": "Deux ou trois séances par semaine. A, B et C utilisent des exercices différents pour les mêmes schémas de mouvement.",
+      "workouts": [
+        {
+          "key": "a",
+          "name": "Corps entier A",
+          "exercises": [
+            {
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "barbell-row",
+              "name": "Barbell row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "plank",
+              "name": "Plank",
+              "isTimed": true,
+              "targetSets": 3,
+              "targetRepsMin": null,
+              "targetRepsMax": null,
+              "targetDurationSeconds": 40,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "b",
+          "name": "Corps entier B",
+          "exercises": [
+            {
+              "catalogKey": "romanian-deadlift",
+              "name": "Romanian deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "overhead-press",
+              "name": "Overhead press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "lat-pulldown",
+              "name": "Lat pulldown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "walking-lunge",
+              "name": "Walking lunge",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "side-plank",
+              "name": "Side plank",
+              "isTimed": true,
+              "targetSets": 2,
+              "targetRepsMin": null,
+              "targetRepsMax": null,
+              "targetDurationSeconds": 30,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "c",
+          "name": "Corps entier C",
+          "exercises": [
+            {
+              "catalogKey": "leg-press",
+              "name": "Leg press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "incline-dumbbell-press",
+              "name": "Incline dumbbell press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "seated-cable-row",
+              "name": "Seated cable row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "leg-curl",
+              "name": "Leg curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "name": "Hanging leg raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        }
+      ],
+      "sequences": {
+        "2": [
+          "a",
+          "b"
+        ],
+        "3": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "defaultSessions": 3
+    },
+    {
+      "id": "upper-lower",
+      "name": "Haut / Bas",
+      "summary": "Les journées haut du corps et bas du corps alternent : chaque moitié travaille deux fois en quatre séances.",
+      "detail": "Haut A, Bas A, Haut B, Bas B. Avec moins de jours par semaine, les quatre alternent d'une semaine à l'autre.",
+      "workouts": [
+        {
+          "key": "upper-a",
+          "name": "Haut A",
+          "exercises": [
+            {
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "barbell-row",
+              "name": "Barbell row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "overhead-press",
+              "name": "Overhead press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "lat-pulldown",
+              "name": "Lat pulldown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "biceps-curl",
+              "name": "Biceps curl",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "triceps-pushdown",
+              "name": "Triceps pushdown",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "lower-a",
+          "name": "Bas A",
+          "exercises": [
+            {
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "romanian-deadlift",
+              "name": "Romanian deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "leg-press",
+              "name": "Leg press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "leg-curl",
+              "name": "Leg curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "calf-raise",
+              "name": "Standing calf raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "plank",
+              "name": "Plank",
+              "isTimed": true,
+              "targetSets": 3,
+              "targetRepsMin": null,
+              "targetRepsMax": null,
+              "targetDurationSeconds": 40,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "upper-b",
+          "name": "Haut B",
+          "exercises": [
+            {
+              "catalogKey": "incline-dumbbell-press",
+              "name": "Incline dumbbell press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "pull-up",
+              "name": "Pull-up",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "dumbbell-shoulder-press",
+              "name": "Dumbbell shoulder press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "seated-cable-row",
+              "name": "Seated cable row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "lateral-raise",
+              "name": "Lateral raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "hammer-curl",
+              "name": "Hammer curl",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "lower-b",
+          "name": "Bas B",
+          "exercises": [
+            {
+              "catalogKey": "deadlift",
+              "name": "Deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 5,
+              "targetRepsMax": 8,
+              "targetDurationSeconds": null,
+              "restSeconds": 180
+            },
+            {
+              "catalogKey": "bulgarian-split-squat",
+              "name": "Bulgarian split squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "leg-extension",
+              "name": "Leg extension",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "hip-thrust",
+              "name": "Barbell hip thrust",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "calf-raise",
+              "name": "Standing calf raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "name": "Hanging leg raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        }
+      ],
+      "sequences": {
+        "2": [
+          "upper-a",
+          "lower-a"
+        ],
+        "4": [
+          "upper-a",
+          "lower-a",
+          "upper-b",
+          "lower-b"
+        ]
+      },
+      "defaultSessions": 4
+    },
+    {
+      "id": "push-pull-legs",
+      "name": "Poussée / Tirage / Jambes",
+      "summary": "La poussée, le tirage et les jambes ont chacun leur journée.",
+      "detail": "Trois séances. Fais-les une fois par semaine, ou répète les trois pour six séances.",
+      "workouts": [
+        {
+          "key": "push",
+          "name": "Poussée",
+          "exercises": [
+            {
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "overhead-press",
+              "name": "Overhead press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "incline-dumbbell-press",
+              "name": "Incline dumbbell press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "lateral-raise",
+              "name": "Lateral raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "triceps-pushdown",
+              "name": "Triceps pushdown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "overhead-triceps-extension",
+              "name": "Overhead triceps extension",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "pull",
+          "name": "Tirage",
+          "exercises": [
+            {
+              "catalogKey": "pull-up",
+              "name": "Pull-up",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "barbell-row",
+              "name": "Barbell row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "seated-cable-row",
+              "name": "Seated cable row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "face-pull",
+              "name": "Face pull",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "biceps-curl",
+              "name": "Biceps curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "hammer-curl",
+              "name": "Hammer curl",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "legs",
+          "name": "Jambes",
+          "exercises": [
+            {
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "romanian-deadlift",
+              "name": "Romanian deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "leg-press",
+              "name": "Leg press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "leg-curl",
+              "name": "Leg curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "calf-raise",
+              "name": "Standing calf raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "plank",
+              "name": "Plank",
+              "isTimed": true,
+              "targetSets": 3,
+              "targetRepsMin": null,
+              "targetRepsMax": null,
+              "targetDurationSeconds": 40,
+              "restSeconds": 60
+            }
+          ]
+        }
+      ],
+      "sequences": {
+        "3": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "6": [
+          "push",
+          "pull",
+          "legs",
+          "push",
+          "pull",
+          "legs"
+        ]
+      },
+      "defaultSessions": 3
+    },
+    {
+      "id": "push-pull",
+      "name": "Poussée / Tirage, jambes incluses",
+      "summary": "Deux types de journée. Les journées poussée portent le travail de jambes dominé par le genou, les journées tirage celui dominé par la hanche.",
+      "detail": "Poussée A, Tirage A, Poussée B, Tirage B. Squats, presse à jambes et squats fendus vont aux journées poussée; soulevés de terre roumains, soulevés de terre, poussées de hanches et flexions des jambes aux journées tirage.",
+      "workouts": [
+        {
+          "key": "push-a",
+          "name": "Poussée A",
+          "exercises": [
+            {
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "overhead-press",
+              "name": "Overhead press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "leg-extension",
+              "name": "Leg extension",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "triceps-pushdown",
+              "name": "Triceps pushdown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "pull-a",
+          "name": "Tirage A",
+          "exercises": [
+            {
+              "catalogKey": "romanian-deadlift",
+              "name": "Romanian deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "barbell-row",
+              "name": "Barbell row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "lat-pulldown",
+              "name": "Lat pulldown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "leg-curl",
+              "name": "Leg curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "biceps-curl",
+              "name": "Biceps curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "push-b",
+          "name": "Poussée B",
+          "exercises": [
+            {
+              "catalogKey": "incline-dumbbell-press",
+              "name": "Incline dumbbell press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "leg-press",
+              "name": "Leg press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "bulgarian-split-squat",
+              "name": "Bulgarian split squat",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "lateral-raise",
+              "name": "Lateral raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "dip",
+              "name": "Dip",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "calf-raise",
+              "name": "Standing calf raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "pull-b",
+          "name": "Tirage B",
+          "exercises": [
+            {
+              "catalogKey": "deadlift",
+              "name": "Deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 5,
+              "targetRepsMax": 8,
+              "targetDurationSeconds": null,
+              "restSeconds": 180
+            },
+            {
+              "catalogKey": "pull-up",
+              "name": "Pull-up",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "seated-cable-row",
+              "name": "Seated cable row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "hip-thrust",
+              "name": "Barbell hip thrust",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "face-pull",
+              "name": "Face pull",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "hammer-curl",
+              "name": "Hammer curl",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        }
+      ],
+      "sequences": {
+        "2": [
+          "push-a",
+          "pull-a"
+        ],
+        "4": [
+          "push-a",
+          "pull-a",
+          "push-b",
+          "pull-b"
+        ]
+      },
+      "defaultSessions": 4
+    },
+    {
+      "id": "upper-lower-ppl",
+      "name": "Haut / Bas + Poussée / Tirage / Jambes",
+      "summary": "Cinq séances : une journée haut du corps et une bas du corps, puis poussée, tirage et jambes.",
+      "detail": "Chaque groupe musculaire travaille environ deux fois au fil des cinq séances.",
+      "workouts": [
+        {
+          "key": "upper",
+          "name": "Haut",
+          "exercises": [
+            {
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "barbell-row",
+              "name": "Barbell row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "overhead-press",
+              "name": "Overhead press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "lat-pulldown",
+              "name": "Lat pulldown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "biceps-curl",
+              "name": "Biceps curl",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "triceps-pushdown",
+              "name": "Triceps pushdown",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "lower",
+          "name": "Bas",
+          "exercises": [
+            {
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "romanian-deadlift",
+              "name": "Romanian deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "leg-press",
+              "name": "Leg press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "leg-curl",
+              "name": "Leg curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "calf-raise",
+              "name": "Standing calf raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "plank",
+              "name": "Plank",
+              "isTimed": true,
+              "targetSets": 3,
+              "targetRepsMin": null,
+              "targetRepsMax": null,
+              "targetDurationSeconds": 40,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "push",
+          "name": "Poussée",
+          "exercises": [
+            {
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "overhead-press",
+              "name": "Overhead press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "incline-dumbbell-press",
+              "name": "Incline dumbbell press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "lateral-raise",
+              "name": "Lateral raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "triceps-pushdown",
+              "name": "Triceps pushdown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "overhead-triceps-extension",
+              "name": "Overhead triceps extension",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "pull",
+          "name": "Tirage",
+          "exercises": [
+            {
+              "catalogKey": "pull-up",
+              "name": "Pull-up",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "barbell-row",
+              "name": "Barbell row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "seated-cable-row",
+              "name": "Seated cable row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "face-pull",
+              "name": "Face pull",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "biceps-curl",
+              "name": "Biceps curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "hammer-curl",
+              "name": "Hammer curl",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "legs",
+          "name": "Jambes",
+          "exercises": [
+            {
+              "catalogKey": "deadlift",
+              "name": "Deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 5,
+              "targetRepsMax": 8,
+              "targetDurationSeconds": null,
+              "restSeconds": 180
+            },
+            {
+              "catalogKey": "bulgarian-split-squat",
+              "name": "Bulgarian split squat",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "leg-extension",
+              "name": "Leg extension",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "leg-curl",
+              "name": "Leg curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "calf-raise",
+              "name": "Standing calf raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "hanging-leg-raise",
+              "name": "Hanging leg raise",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        }
+      ],
+      "sequences": {
+        "5": [
+          "upper",
+          "lower",
+          "push",
+          "pull",
+          "legs"
+        ]
+      },
+      "defaultSessions": 5
+    },
+    {
+      "id": "body-part",
+      "name": "Répartition par région du corps",
+      "summary": "Une zone principale par séance : pectoraux, dos, jambes, épaules et bras.",
+      "detail": "Cinq séances, chaque groupe musculaire une fois par semaine avec plus de séries dans sa séance.",
+      "workouts": [
+        {
+          "key": "chest",
+          "name": "Pectoraux",
+          "exercises": [
+            {
+              "catalogKey": "bench-press",
+              "name": "Bench press",
+              "isTimed": false,
+              "targetSets": 4,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "incline-dumbbell-press",
+              "name": "Incline dumbbell press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "cable-fly",
+              "name": "Cable fly",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "dip",
+              "name": "Dip",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "push-up",
+              "name": "Push-up",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 8,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "back",
+          "name": "Dos",
+          "exercises": [
+            {
+              "catalogKey": "deadlift",
+              "name": "Deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 5,
+              "targetRepsMax": 8,
+              "targetDurationSeconds": null,
+              "restSeconds": 180
+            },
+            {
+              "catalogKey": "pull-up",
+              "name": "Pull-up",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "barbell-row",
+              "name": "Barbell row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "seated-cable-row",
+              "name": "Seated cable row",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "face-pull",
+              "name": "Face pull",
+              "isTimed": false,
+              "targetSets": 2,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "legs",
+          "name": "Jambes",
+          "exercises": [
+            {
+              "catalogKey": "back-squat",
+              "name": "Back squat",
+              "isTimed": false,
+              "targetSets": 4,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "romanian-deadlift",
+              "name": "Romanian deadlift",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "leg-press",
+              "name": "Leg press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 120
+            },
+            {
+              "catalogKey": "leg-curl",
+              "name": "Leg curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "calf-raise",
+              "name": "Standing calf raise",
+              "isTimed": false,
+              "targetSets": 4,
+              "targetRepsMin": 10,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            }
+          ]
+        },
+        {
+          "key": "shoulders",
+          "name": "Épaules",
+          "exercises": [
+            {
+              "catalogKey": "overhead-press",
+              "name": "Overhead press",
+              "isTimed": false,
+              "targetSets": 4,
+              "targetRepsMin": 6,
+              "targetRepsMax": 10,
+              "targetDurationSeconds": null,
+              "restSeconds": 150
+            },
+            {
+              "catalogKey": "dumbbell-shoulder-press",
+              "name": "Dumbbell shoulder press",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 90
+            },
+            {
+              "catalogKey": "lateral-raise",
+              "name": "Lateral raise",
+              "isTimed": false,
+              "targetSets": 4,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "rear-delt-fly",
+              "name": "Rear delt fly",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 12,
+              "targetRepsMax": 15,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "farmer-carry",
+              "name": "Farmer carry",
+              "isTimed": true,
+              "targetSets": 3,
+              "targetRepsMin": null,
+              "targetRepsMax": null,
+              "targetDurationSeconds": 40,
+              "restSeconds": 90
+            }
+          ]
+        },
+        {
+          "key": "arms",
+          "name": "Bras",
+          "exercises": [
+            {
+              "catalogKey": "barbell-curl",
+              "name": "Barbell curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 8,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "triceps-pushdown",
+              "name": "Triceps pushdown",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "hammer-curl",
+              "name": "Hammer curl",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "overhead-triceps-extension",
+              "name": "Overhead triceps extension",
+              "isTimed": false,
+              "targetSets": 3,
+              "targetRepsMin": 10,
+              "targetRepsMax": 12,
+              "targetDurationSeconds": null,
+              "restSeconds": 60
+            },
+            {
+              "catalogKey": "plank",
+              "name": "Plank",
+              "isTimed": true,
+              "targetSets": 3,
+              "targetRepsMin": null,
+              "targetRepsMax": null,
+              "targetDurationSeconds": 40,
+              "restSeconds": 60
+            }
+          ]
+        }
+      ],
+      "sequences": {
+        "5": [
+          "chest",
+          "back",
+          "legs",
+          "shoulders",
+          "arms"
+        ]
+      },
+      "defaultSessions": 5
+    },
+    {
+      "id": "custom",
+      "name": "Personnalisé",
+      "summary": "Tes propres noms de séances, exercices et ordre.",
+      "detail": "Pars d'une structure vide et construis-la toi-même.",
+      "workouts": [],
+      "sequences": {},
+      "defaultSessions": 0
+    }
+  ]
+}

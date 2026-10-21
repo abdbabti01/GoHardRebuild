@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/clock.dart';
 import '../../core/device_prefs.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
@@ -49,16 +50,19 @@ WeekState weekStateOf(PlanWeek week, Plan plan, String today, Iterable<Workout> 
 }
 
 /// The words, icon and tone of a week's state. A partly recorded week says how much ("2 of 3").
-(String, IconData, Tone) weekLook(WeekState state, Completion done) => switch (state) {
-      WeekState.done => ('Done', Icons.check_circle, Tone.success),
-      WeekState.current => ('Current', Icons.circle, Tone.accent),
-      WeekState.partial => ('${done.completed} of ${done.eligible}', Icons.incomplete_circle, Tone.neutral),
-      WeekState.missed => ('Missed', Icons.error_outline, Tone.warning),
-      WeekState.paused => ('Paused', Icons.pause_circle_outline, Tone.neutral),
-      WeekState.skipped => ('Skipped', Icons.remove_circle_outline, Tone.neutral),
-      WeekState.upcoming => ('Upcoming', Icons.radio_button_unchecked, Tone.neutral),
-      WeekState.empty => ('No workouts', Icons.remove, Tone.neutral),
-    };
+(String, IconData, Tone) weekLook(WeekState state, Completion done, [AppLocalizations? l10n]) {
+  final l = l10n ?? currentL10n;
+  return switch (state) {
+    WeekState.done => (l.planWeekDone, Icons.check_circle, Tone.success),
+    WeekState.current => (l.planWeekCurrent, Icons.circle, Tone.accent),
+    WeekState.partial => (l.planWeekPartial(done.completed, done.eligible), Icons.incomplete_circle, Tone.neutral),
+    WeekState.missed => (l.planWeekMissed, Icons.error_outline, Tone.warning),
+    WeekState.paused => (l.planPaused, Icons.pause_circle_outline, Tone.neutral),
+    WeekState.skipped => (l.planWeekSkipped, Icons.remove_circle_outline, Tone.neutral),
+    WeekState.upcoming => (l.planWeekUpcoming, Icons.radio_button_unchecked, Tone.neutral),
+    WeekState.empty => (l.planWeekEmpty, Icons.remove, Tone.neutral),
+  };
+}
 
 /// The seven days of one plan week with what each day holds. A day without a workout is a rest day.
 class WeekDayStrip extends StatelessWidget {
@@ -94,7 +98,8 @@ class WeekDayStrip extends StatelessWidget {
                 _ => Icon(Icons.radio_button_unchecked, size: 24, color: c.accent),
               };
               return Semantics(
-                label: '${longDate(day)}${isToday ? ', today' : ''}, ${occasion == null ? 'rest day' : '${occasion.title}, ${status!.label}'}',
+                label: [longDate(day), if (isToday) context.l10n.planTodayLower, ...occasion == null ? [context.l10n.planRestDayLower] : [occasion.title, status!.label]]
+                    .join(context.l10n.planListComma),
                 child: ExcludeSemantics(
                   child: Column(children: [
                     SizedBox(height: 26, child: Center(child: mark)),
@@ -165,13 +170,14 @@ class _WeekTile extends StatelessWidget {
   Widget _tile(BuildContext context) {
     final c = context.c;
     final done = week.completion;
-    final (label, icon, tone) = weekLook(state, done);
+    final l = context.l10n;
+    final (label, icon, tone) = weekLook(state, done, l);
     final color = switch (tone) { Tone.success => c.success, Tone.accent => c.accent, Tone.warning => c.warning, _ => c.secondary };
     return Semantics(
       button: true, selected: selected,
       // "this week" is the calendar; "selected" is the choice; the value is the state. Three separate facts.
-      label: 'Week ${week.number}, ${week.range}${week.isCurrent ? ', this week' : ''}, '
-          '${done.eligible == 0 ? 'no workouts' : '${done.completed} of ${done.eligible} workouts completed'}',
+      label: [l.planWeekN(week.number), week.range, if (week.isCurrent) l.planThisWeekLower,
+        done.eligible == 0 ? l.planNoWorkoutsLower : l.planWorkoutsCompletedOf(done.completed, done.eligible)].join(l.planListComma),
       value: label,
       child: Material(
         // Selection is the pale tint and the deep border. The current week is said in words, so the two never look alike.
@@ -190,12 +196,12 @@ class _WeekTile extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: wide ? 14 : 8, vertical: 12),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Week ${week.number}', style: context.numStyle(15, weight: FontWeight.w700)),
+                  Text(l.planWeekN(week.number), style: context.numStyle(15, weight: FontWeight.w700)),
                   const SizedBox(height: 1),
                   Text(week.range, style: context.numStyle(12.5, color: c.secondary, weight: FontWeight.w400)),
                   const SizedBox(height: 6),
                   Row(children: [
-                    Padding(padding: const EdgeInsets.only(right: 5), child: Icon(icon, size: 16, color: color)),
+                    Padding(padding: const EdgeInsetsDirectional.only(end: 5), child: Icon(icon, size: 16, color: color)),
                     Flexible(child: Text(label, style: context.numStyle(13, color: tone == Tone.neutral ? c.secondary : color))),
                   ]),
                 ]),

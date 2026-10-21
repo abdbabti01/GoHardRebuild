@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/appearance.dart';
 import '../../core/device_prefs.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../me/me_screen.dart';
 import '../me/sync_review_screen.dart';
@@ -93,7 +94,7 @@ class HomeShell extends ConsumerWidget {
                 onTap: () => push(context, const SyncReviewScreen()),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                  child: StatusLine(Icons.rule, '${issues.length} saved ${issues.length == 1 ? 'change needs' : 'changes need'} your review. Nothing was lost. Tap to review.', tone: Tone.warning),
+                  child: StatusLine(Icons.rule, context.l10n.shellReviewBanner(issues.length), tone: Tone.warning),
                 ),
               ),
             ),
@@ -198,17 +199,21 @@ class GoNavigationBar extends StatelessWidget {
   /// Space between the bar and the screen's side edges.
   static const margin = 12.0;
 
-  // (label, unselected, selected): the selected destination is filled, heavier and in the accent.
+  // (id, unselected, selected): the selected destination is filled, heavier and in the accent. The id keys the item;
+  // the label is the destination's name in the current language. Today leads: the right-hand end in Arabic.
   static const _items = [
-    ('Today', Icons.home_outlined, Icons.home_rounded),
-    ('Train', Icons.fitness_center_outlined, Icons.fitness_center),
-    ('Eat', Icons.restaurant_outlined, Icons.restaurant),
-    ('Me', Icons.person_outline_rounded, Icons.person_rounded),
+    ('today', Icons.home_outlined, Icons.home_rounded),
+    ('train', Icons.fitness_center_outlined, Icons.fitness_center),
+    ('eat', Icons.restaurant_outlined, Icons.restaurant),
+    ('me', Icons.person_outline_rounded, Icons.person_rounded),
   ];
+
+  static String _label(AppLocalizations l, String id) => switch (id) { 'today' => l.navToday, 'train' => l.navTrain, 'eat' => l.navEat, _ => l.navMe };
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final l = context.l10n;
     final bottom = MediaQuery.paddingOf(context).bottom;
     final radius = BorderRadius.circular(26);
     return Padding(
@@ -226,9 +231,9 @@ class GoNavigationBar extends StatelessWidget {
             for (final (i, item) in _items.indexed)
               Expanded(
                 child: Semantics(
-                  selected: i == currentIndex, button: true, label: item.$1,
+                  selected: i == currentIndex, button: true, label: _label(l, item.$1),
                   child: InkWell(
-                    key: Key('nav-${item.$1.toLowerCase()}'),
+                    key: Key('nav-${item.$1}'),
                     onTap: () => onTap(i),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(minHeight: Targets.navigation + 6),
@@ -239,7 +244,7 @@ class GoNavigationBar extends StatelessWidget {
                             // Train's dumbbell lies flat, as in the approved boards (the Material glyph is drawn diagonally).
                             Transform.rotate(angle: i == 1 ? -math.pi / 4 : 0, child: Icon(i == currentIndex ? item.$3 : item.$2, size: 25, color: i == currentIndex ? c.accent : c.secondary)),
                             const SizedBox(height: 4),
-                            Text(item.$1, maxLines: 1, overflow: TextOverflow.ellipsis,
+                            Text(_label(l, item.$1), maxLines: 1, overflow: TextOverflow.ellipsis,
                                 style: context.sansStyle(12.5, color: i == currentIndex ? c.accent : c.secondary, weight: i == currentIndex ? FontWeight.w700 : FontWeight.w500)),
                           ]),
                         ),

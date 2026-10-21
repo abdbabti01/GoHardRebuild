@@ -148,17 +148,15 @@ class _UpdateRequiredScreenState extends ConsumerState<UpdateRequiredScreen> {
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(context.inset),
-          child: _Notice(title: 'Update GoHard to continue', icon: Icons.system_update_outlined, children: [
-            Text('This version of the app is too old for your account\'s server, so it has stopped syncing.', style: context.body),
+          child: _Notice(title: context.l10n.shellUpdateTitle, icon: Icons.system_update_outlined, children: [
+            Text(context.l10n.shellUpdateBody, style: context.body),
             const SizedBox(height: 14),
             Panel(
               padding: const EdgeInsets.all(14),
-              child: StatusLine(Icons.phone_iphone, pending == 0
-                  ? 'Everything you saved on this phone is still here.'
-                  : 'Everything you saved on this phone is still here, including $pending change${pending == 1 ? '' : 's'} waiting to sync. They will sync after you update.'),
+              child: StatusLine(Icons.phone_iphone, pending == 0 ? context.l10n.shellUpdateSavedHere : context.l10n.shellUpdateSavedPending(pending)),
             ),
             const SizedBox(height: 22),
-            SecondaryButton('Check again', key: const Key('compat-recheck'), onPressed: _checking
+            SecondaryButton(context.l10n.shellUpdateCheckAgain, key: const Key('compat-recheck'), onPressed: _checking
                 ? null
                 : () async {
                     setState(() => _checking = true);
@@ -205,10 +203,10 @@ class _ConfigProblem extends StatelessWidget {
         body: SafeArea(
           child: Padding(
             padding: EdgeInsets.all(context.inset),
-            child: _Notice(title: 'Not configured', icon: Icons.settings_outlined, children: [
+            child: _Notice(title: context.l10n.shellConfigTitle, icon: Icons.settings_outlined, children: [
               Text(problem, style: context.body),
               const SizedBox(height: 12),
-              Text('This build has no default server on purpose. Start it with the development script so it knows which API to use.', style: context.caption),
+              Text(context.l10n.shellConfigBody, style: context.caption),
             ]),
           ),
         ),

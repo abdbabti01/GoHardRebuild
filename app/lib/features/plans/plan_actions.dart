@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/clock.dart';
+import '../../core/catalog_names.dart';
 import '../../core/format.dart';
+import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets.dart';
@@ -13,6 +15,7 @@ import '../today/daily.dart';
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import 'builder/plan_builder_screen.dart';
+import 'plan_l10n.dart';
 import 'plan_progress.dart';
 import 'plan_projection.dart';
 import 'plan_repository.dart';
@@ -34,24 +37,24 @@ Future<bool> runPlanDecision(BuildContext context, Future<Receipt> Function() de
     if (context.mounted && saved.isNotEmpty) toast(context, saved);
     return true;
   } on ScheduleRefused catch (e) {
-    if (context.mounted) toast(context, e.codes.first == 'PRIMARY_EXISTS' ? 'Another plan is already your primary plan. Review the replacement first.' : e.message);
+    if (context.mounted) toast(context, planErrorText(context.l10n, e.codes.first));
   } on LocalSaveFailure {
-    if (context.mounted) toast(context, 'That could not be saved on this phone. Nothing changed.');
+    if (context.mounted) toast(context, context.l10n.planLocalSaveFailed);
   }
   return false;
 }
 
 Future<void> pausePlanFlow(BuildContext context, WidgetRef ref, Plan plan) async {
   final open = ref.read(workoutListProvider).where((w) => w.isOpen && w.planId == plan.id).firstOrNull;
+  final l = context.l10n;
   if (!await confirm(context,
-      title: 'Pause ${plan.title}?',
-      body: 'Future workouts stop being expected from today, and nothing will count as missed while it is paused. Your history and remaining workouts are kept.'
-          '${open == null ? '' : '\n\nYour open workout "${open.title}" is not affected: its clock keeps running and you can still finish it.'}',
-      action: 'Pause this plan') ||
+      title: l.planPauseTitle(plan.title),
+      body: [l.planPauseBody, if (open != null) l.planPauseOpenWorkout(open.title)].join('\n\n'),
+      action: l.planPauseAction) ||
       !context.mounted) {
     return;
   }
-  await runPlanDecision(context, () => ref.read(planRepositoryProvider).pause(plan, today: ref.read(todayKeyProvider)), saved: 'Plan paused.');
+  await runPlanDecision(context, () => ref.read(planRepositoryProvider).pause(plan, today: ref.read(todayKeyProvider)), saved: l.planPausedToast);
 }
 
 /// Whether [o] can be started now, by the same rules as the occurrence sheet's Start: an active plan, the occurrence
@@ -89,28 +92,27 @@ Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, 
         final isNext = rotation == null || rotation.next?.id == o.id;
         // Read when an action needs it: showing a workout must not depend on the store being ready.
         PlanRepository repo() => ref.read(planRepositoryProvider);
+        final l = context.l10n;
+        final names = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context);
 
         Future<void> move() async {
-          final to = await pickDay(context, initial: o.scheduledDate.compareTo(today) < 0 ? today : o.scheduledDate, first: today, help: 'Move ${o.title} to');
+          final to = await pickDay(context, initial: o.scheduledDate.compareTo(today) < 0 ? today : o.scheduledDate, first: today, help: l.planMoveHelp(o.title));
           if (to == null || to == o.scheduledDate || !context.mounted) return;
           final v = ScheduleRules.validate(schedule, [ScheduleChange(o.id, o.scheduledDate, to)], current.minRecoveryDays);
-          if (!v.isValid) return toast(context, ScheduleRules.describe(v.errors.first));
+          if (!v.isValid) return toast(context, planErrorText(l, v.errors.first));
           final ok = await confirm(context,
-              title: 'Move this workout?',
-              body: 'Workout: ${o.title} (week ${o.weekNumber})\nCurrent date: ${longDate(o.scheduledDate)}\nProposed date: ${longDate(to)}\nOriginally planned: ${longDate(o.originalDate)}\n'
-                  'Block ends: ${longDate(v.blockEnd!)}\n\nIt stays the same workout in the same training week. No other workout changes, and the repeating schedule stays as it is.',
-              action: 'Move workout', cancel: 'Keep current dates');
-          if (ok && context.mounted) await runPlanDecision(context, () => repo().move(current, schedule, o.id, to), saved: 'Moved to ${shortDate(to)}.');
+              title: l.planMoveTitle,
+              body: l.planMoveBody(o.title, o.weekNumber, longDate(o.scheduledDate), longDate(to), longDate(o.originalDate), longDate(v.blockEnd!)),
+              action: l.planMoveAction, cancel: l.planMoveCancel);
+          if (ok && context.mounted) await runPlanDecision(context, () => repo().move(current, schedule, o.id, to), saved: l.planMovedToast(shortDate(to)));
         }
 
         Future<void> skip() async {
           final ok = await confirm(context,
-              title: 'Skip ${o.title}?',
-              body: current.isRotating
-                  ? '${o.title} will be marked Skipped today and the rotation moves on to the workout after it. That next workout is not put on today: it comes up on your next training day, or you can start it now. No workout, sets or completion credit are created.'
-                  : 'The workout planned for ${longDate(o.scheduledDate)} will be marked Skipped. No workout, sets or completion credit are created, and it will not count as training.',
-              action: 'Skip this workout', cancel: 'Keep it');
-          if (ok && context.mounted) await runPlanDecision(context, () => repo().skipOccurrence(current, workouts, o, today: today), saved: 'Marked as skipped.');
+              title: l.planSkipTitle(o.title),
+              body: current.isRotating ? l.planSkipBodyRotation(o.title) : l.planSkipBodyFixed(longDate(o.scheduledDate)),
+              action: l.planSkipAction, cancel: l.planSkipCancel);
+          if (ok && context.mounted) await runPlanDecision(context, () => repo().skipOccurrence(current, workouts, o, today: today), saved: l.planSkippedToast);
         }
 
         void start() {
@@ -120,11 +122,13 @@ Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, 
 
         final k = o.sequenceIndex;
         final where = k != null && cycleLength > 0
-            ? 'Session ${k + 1}${rotation != null && o.id == rotation.next?.id ? ' · step ${rotation.position + 1} of $cycleLength, cycle ${rotation.cyclesDone + 1}' : ''}'
-            : 'Week ${o.weekNumber}';
+            ? rotation != null && o.id == rotation.next?.id
+                ? l.planSessionStep(k + 1, rotation.position + 1, cycleLength, rotation.cyclesDone + 1)
+                : l.planSessionN(k + 1)
+            : l.planWeekN(o.weekNumber);
         final when = o.isVirtual
-            ? 'Planned for ${longDate(o.scheduledDate)}. A rotation has no fixed dates: this is when it comes up if you keep to your training days.'
-            : '${longDate(o.scheduledDate)}${o.wasMoved ? ' · originally ${shortDate(o.originalDate)}' : ''}';
+            ? l.planVirtualWhen(longDate(o.scheduledDate))
+            : o.wasMoved ? l.planDateOriginally(longDate(o.scheduledDate), shortDate(o.originalDate)) : longDate(o.scheduledDate);
 
         return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
               Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Overline(where), OccasionPill(status)]),
@@ -143,11 +147,11 @@ Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, 
                       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         // The target shares the name's line while both fit, and drops under it when they do not.
                         Wrap(alignment: WrapAlignment.spaceBetween, spacing: 10, children: [
-                          Text(e.name, style: context.sansStyle(16)),
+                          Text(names.name(e.catalogKey, e.name, locale), style: context.sansStyle(16)),
                           Text(prescriptionOf(e), style: context.numStyle(15, color: context.c.secondary, weight: FontWeight.w500)),
                         ]),
                         // The user's own target, not a record and not the last performance.
-                        if (e.targetLoadKg != null) Text('Target ${formatLoad(e.targetLoadKg, unit)}', style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w400)),
+                        if (e.targetLoadKg != null) Text(l.planTargetLoad(formatLoad(e.targetLoadKg, unit)), style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w400)),
                         if ((e.notes ?? '').trim().isNotEmpty) Text(e.notes!.trim(), style: context.caption),
                       ]),
                     ),
@@ -156,51 +160,51 @@ Future<void> showOccasionSheet(BuildContext host, WidgetRef hostRef, Plan plan, 
               const Rule(),
               const SizedBox(height: 16),
               if (open != null)
-                PrimaryButton('Resume workout', key: const Key('occasion-resume'), onPressed: () {
+                PrimaryButton(l.planResumeWorkout, key: const Key('occasion-resume'), onPressed: () {
                   Navigator.pop(sheet);
                   resumeWorkout(host, hostRef, open);
                 })
               else if (recorded != null || o.resultWorkoutId != null)
-                SecondaryButton('View what was recorded', onPressed: () {
+                SecondaryButton(l.planViewRecorded, onPressed: () {
                   Navigator.pop(sheet);
                   push(host, WorkoutDetailScreen(workoutId: recorded?.id ?? o.resultWorkoutId!));
                 })
               else if (o.isSkipped)
                 (PlanRepository.canUnskip(current, o.id, workouts)
-                    ? SecondaryButton('Undo skip', key: const Key('occasion-unskip'), onPressed: () => runPlanDecision(context, () => repo().unskip(current, o.id, workouts: workouts), saved: 'No longer skipped.'))
-                    : const StatusLine(Icons.info_outline, 'Skipped. The rotation has moved on past it, so it stays skipped.'))
+                    ? SecondaryButton(l.planUndoSkip, key: const Key('occasion-unskip'), onPressed: () => runPlanDecision(context, () => repo().unskip(current, o.id, workouts: workouts), saved: l.planUnskippedToast))
+                    : StatusLine(Icons.info_outline, l.planSkippedStays))
               else if (current.isPaused)
-                const StatusLine(Icons.pause_circle_outline, 'The plan is paused. Resume the plan to start or reschedule its workouts.')
+                StatusLine(Icons.pause_circle_outline, l.planPausedNoStart)
               else if (eligible && current.isActive && current.isRotating) ...[
                 if (isNext) ...[
-                  PrimaryButton(status == OccasionStatus.upcoming ? 'Start this workout now' : 'Start workout', key: const Key('occasion-start'), onPressed: start),
+                  PrimaryButton(status == OccasionStatus.upcoming ? l.planStartNowRotation : l.planStartWorkout, key: const Key('occasion-start'), onPressed: start),
                   const SizedBox(height: 4),
                   Wrap(children: [
-                    TextButton(key: const Key('occasion-skip'), onPressed: skip, child: const Text('Skip this workout')),
+                    TextButton(key: const Key('occasion-skip'), onPressed: skip, child: Text(l.planSkipAction)),
                     // A rest day the person chooses: nothing is skipped, credited or moved on; the workout waits.
                     if (o.isVirtual && o.scheduledDate == today && status == OccasionStatus.due)
                       TextButton(key: const Key('occasion-rest'), onPressed: () async {
                         await repo().setRestDay(current, today, rest: true);
                         if (sheet.mounted) Navigator.pop(sheet);
-                        if (host.mounted) toast(host, 'Rest day. Nothing was skipped: ${o.title} waits for your next training day.');
-                      }, child: const Text('Rest today instead')),
+                        if (host.mounted) toast(host, l.planRestToast(o.title));
+                      }, child: Text(l.planRestInstead)),
                   ]),
-                  Text('A rotation has no dates to move: this workout waits for you until you do it or skip it.', style: context.caption),
+                  Text(l.planRotationNoMove, style: context.caption),
                 ] else
-                  StatusLine(Icons.low_priority, 'Comes after ${rotation.next?.title ?? 'the workouts before it'}. A rotation runs in order: do or skip the next one first.'),
+                  StatusLine(Icons.low_priority, rotation.next == null ? l.planComesAfterEarlier : l.planComesAfter(rotation.next!.title)),
               ] else if (eligible && current.isActive) ...[
                 if (status == OccasionStatus.missed)
-                  Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, 'Missed on ${longDate(o.scheduledDate)}. Move it, skip it or do it now. It is never marked done by itself.', tone: Tone.warning)),
-                PrimaryButton(switch (status) { OccasionStatus.missed => 'Start now', OccasionStatus.upcoming => 'Start this workout early', _ => 'Start workout' }, key: const Key('occasion-start'), onPressed: start),
+                  Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, l.planMissedOn(longDate(o.scheduledDate)), tone: Tone.warning)),
+                PrimaryButton(switch (status) { OccasionStatus.missed => l.planStartNowMissed, OccasionStatus.upcoming => l.planStartEarly, _ => l.planStartWorkout }, key: const Key('occasion-start'), onPressed: start),
                 const SizedBox(height: 4),
                 Wrap(children: [
-                  TextButton(key: const Key('occasion-move'), onPressed: move, child: const Text('Move to another date')),
-                  TextButton(key: const Key('occasion-skip'), onPressed: skip, child: const Text('Skip this workout')),
+                  TextButton(key: const Key('occasion-move'), onPressed: move, child: Text(l.planMoveDate)),
+                  TextButton(key: const Key('occasion-skip'), onPressed: skip, child: Text(l.planSkipAction)),
                   if (current.isBuilt)
                     TextButton(key: const Key('occasion-edit-one'), onPressed: () {
                       Navigator.pop(sheet);
                       openOccurrenceEditor(host, hostRef, current, o);
-                    }, child: const Text('Edit this workout only')),
+                    }, child: Text(l.planEditOnlyThis)),
                 ]),
               ],
             ]);

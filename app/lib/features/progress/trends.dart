@@ -1,4 +1,5 @@
 import '../../core/clock.dart';
+import '../../core/language.dart' show currentL10n;
 import '../../data/models.dart';
 import '../workout/progress.dart';
 import '../workout/result_rules.dart';
@@ -12,12 +13,14 @@ import '../workout/result_rules.dart';
 enum TrendMetric { load, reps, duration, none }
 
 enum TrendRange {
-  weeks4('4 weeks', 28),
-  weeks12('12 weeks', 84),
-  all('All', null);
+  weeks4(28),
+  weeks12(84),
+  all(null);
 
-  const TrendRange(this.label, this.days);
-  final String label;
+  const TrendRange(this.days);
+
+  /// "4 weeks", "12 weeks", "All" in the resolved app language; [name] stays the identifier.
+  String get label => switch (this) { weeks4 => currentL10n.progressRange4Weeks, weeks12 => currentL10n.progressRange12Weeks, all => currentL10n.progressRangeAll };
 
   /// Calendar days including today; null = all history.
   final int? days;
