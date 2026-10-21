@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
+import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/l10n/app_localizations.dart';
 import 'package:gohard_rebuild/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
@@ -43,7 +44,7 @@ void main() {
     }
 
     List<(double?, int?)> sets(String workoutId) =>
-        [for (final s in scope().read(allSetsProvider).value ?? const []) if (s.value.workoutId == workoutId && !s.value.isDeleted) (s.value.loadKg, s.value.reps)];
+        [for (final s in scope().read(allSetsProvider).value ?? const <Stored<WorkoutSet>>[]) if (s.value.workoutId == workoutId && !s.value.isDeleted) (s.value.loadKg, s.value.reps)];
 
     if (_phase == '1') {
       await app.main();

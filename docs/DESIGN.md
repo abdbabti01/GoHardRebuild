@@ -7,7 +7,8 @@ of Today (15 October 2026: full-screen weather; the other tabs sit on calm page 
 Today, Train › Plan, Eat, Me, Add food, the portion form, Appearance; shown in Pink + Dark). It follows "Calm
 Momentum" (12–13 October 2026), whose structure it keeps. The references are concepts with sample data; where they
 and real data, accessibility or truthfulness disagree, the app follows the latter, and the differences are listed at
-the end. Weather behaviour, provider and limits: `docs/WEATHER.md`.
+the end. Weather behaviour, provider and limits: `docs/WEATHER.md`. French and Arabic (Arabic fonts, line height,
+right-to-left layout and what is never mirrored): `docs/LOCALIZATION.md`.
 
 ## Where things live
 

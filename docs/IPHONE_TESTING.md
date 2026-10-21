@@ -133,6 +133,13 @@ not in the profile: add the device, regenerate the profile, update the secret an
 
 ## Test checklist on the iPhone
 
+- [ ] **French and Arabic** (docs/LOCALIZATION.md): on the sign-in screen choose Français, then العربية; Me › Language
+      → System follows the phone. Arabic: tabs right to left with Today on the right, the guide on the left with its
+      bubble pointing at it, photos not mirrored. Type 82,5 (French keyboard) and ٨٢٫٥ (Arabic keyboard) as a load: both
+      record 82.5 kg. Change language mid-workout: exercise, typed values and the timers stay. Search "poulet" / "دجاج"
+      and "développé couché". Charts and dates; VoiceOver in French and Arabic; a spoken cue with an installed offline
+      voice (and the message when none is installed); the camera and location prompts in the phone's language.
+
 - [ ] **Sign up** with a new email and a password of 8+ characters. Today shows "No plan yet" and no invented data.
 - [ ] **Today:** create a plan (include today among the training days), start the workout, record two sets, finish.
       Today shows "Done for today".

@@ -2042,3 +2042,24 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
 - CI run 123 on `b44efb0`: **passed**. Unsigned IPA run 46 on `feature/workout-progression` (`b44efb0`), artifact
   `GoHard-Dev-unsigned-ipa`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39496397224). `main`,
   Railway, Cloudflare and the exercise-video branches unchanged; not merged.
+
+## 21 Oct 2026 — French and Arabic (`feature/localization-fr-ar`)
+
+- Base: `feature/workout-progression` at `225c7b3` (code `b44efb0`), **unmerged**, used as a reported dependency because
+  its progression panel is part of the surface; `main` (`4871cc2`) is its ancestor. Spec: GoHard_French_Arabic_Claude_Prompt.md.
+- What: English, Canadian French and Modern Standard Arabic (RTL) app-wide — docs/LOCALIZATION.md (inventory in
+  docs/LOCALIZATION_INVENTORY.md). 2,424 messages; device-only language choice (sign-in, setup, Me › Language);
+  locale-aware formats; numeric input accepting French commas and Arabic digits; bundled Arabic fonts; translated
+  exercise names, common foods, plan templates and coach guide; offline-voice speech in the app language; localized
+  reminders and permission purpose strings; Ask GoHard reply language (additive optional API field).
+- Checks: `check-l10n.mjs` OK (new, in CI); `flutter analyze` no issues; `flutter test` **691 passed**; API **200
+  passed**. Renders (fixtures) in docs/evidence/localization/{fr,ar}; they found and fixed Arabic-Indic digits in
+  dates, Arabic phase times shown in the wrong order, the run dial overflowing at 2× text, and long French one-word
+  titles and tab names breaking or being cut. French renders had first come out in English (a test harness mapping,
+  fixed and re-rendered).
+- Native: `journey_language_test` partly verified (docs/LOCALIZATION.md › Verification): every step through the
+  mid-workout switch to Arabic passed with the draft kept; reruns of the fixed test failed in the test driver
+  ("Service has disappeared") four times, so the rest is covered by widget tests only. Captures and recording in
+  docs/evidence/localization/native.
+- **Not reviewed by a fluent French or Arabic speaker.** Not verified on a physical phone. Hosted API: deploy needed only
+  for French/Arabic AI replies. Not merged; Railway, Cloudflare and exercise-video work untouched.

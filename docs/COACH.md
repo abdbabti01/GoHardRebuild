@@ -74,6 +74,10 @@ no verified technique information.
 //                        Try again in a moment." Question and Retry kept. Not COACH_LIMIT (that is the person's own limit).
 ```
 
+Optional request field `"language"` (21 Oct 2026, docs/LOCALIZATION.md › Coach): `"fr-CA"` or `"ar"` adds one trusted
+instruction to reply (and summarize a proposal) in Canadian French or Modern Standard Arabic; `"en"`, a missing field or
+any other value leaves the request exactly as before. The question is never translated.
+
 ### Provider and configuration
 
 Section `Coach`; environment variables use the `GOHARD_` prefix and `__` for `:` (Program.cs:
