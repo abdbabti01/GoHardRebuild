@@ -2090,3 +2090,36 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
 - CI run 127 on `c5c5e7d`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39669382810). Unsigned
   IPA run 48 on `feature/original-branding` (`c5c5e7d`), artifact `GoHard-Dev-unsigned-ipa`: **passed**
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39669435464).
+
+## 21 Oct 2026 — Authentication email: reset, verification, password change (`feature/auth-recovery-verification`)
+
+- Base: `main` at `2ff9a9d`. Spec: GoHard_Authentication_Claude_Prompt.md. Code commit `4cce829`. Guide:
+  docs/AUTHENTICATION_EMAIL.md. Already present and kept: registration, sign-in, hashing, rotating refresh with the
+  recovery window, logout, password-confirmed erasure. Added: forgot/reset by emailed code, email verification and
+  resend, signed-in password change. Resend is the one provider adapter; a capture transport exists for
+  Development/Testing only. Migration `AddAccountEmail` (additive). Password policy for new passwords raised from 8
+  to 15 characters (NIST SP 800-63B rev. 4, OWASP); existing passwords keep working.
+- API: `AccountEmailTests` 14 passed (disclosure, purpose/account binding, expiry, attempts, cooldown and resend abuse,
+  concurrent single use, restart persistence, reset token is not a session, old credentials and refresh recovery
+  defeated, stamp race, wrong current password changes nothing, verification state and older clients, erasure,
+  provider failure and ambiguous retry with one idempotency key, expired mail not sent, log redaction, capture refused
+  in Production, limits). Full suite (Release) 214 passed.
+- App: `flutter analyze` no issues; `account_security_test` 11 passed (forms and navigation, pasted/Arabic digits with
+  leading zeros, errors vs no connection, unconfirmed reset, unavailable sender, older server, offline change,
+  fr/ar at 320 px with 2× text, no credential in the outbox, same account keeps its pending work); `me_ui_test`,
+  `brand_test`, `widget_test`, `check-l10n` (2,479 messages) passed.
+- Native (Android emulator, capture API on a disposable database, disposable accounts): `journey_auth_test` was run
+  ten times. Verified on the device: registration, Setup offering verification, the captured 8-digit code entered in
+  the code field, the server marking the address verified, the offer disappearing (runs 7 and 8; two accounts
+  verified in the database). The runs found and fixed two real problems (the capture route's code pattern, and the
+  Setup offer requiring a confirmed capability where the app treats unknown as supported) and two journey-script
+  mistakes. **Not verified on a device**: Me showing *Verified*, the signed-in password change, old-password
+  rejection, sign-in with the new password keeping the open workout, and the forgot-password flow. Those runs were
+  stopped by the emulator itself (INSUFFICIENT_STORAGE after each install, and driver attach failures "Service has
+  disappeared" / "GetHealth … Collected" / attach hangs); the same steps are covered by the widget and data tests
+  above. Disposable database dropped; no account remains.
+- **Not done:** real email (no provider, DNS or Railway configuration exists; owner steps in the guide § 4 and § 8),
+  iPhone. Not merged, not deployed; Railway, Resend and Cloudflare untouched.
+- CI run 130 on `4cce829`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39697196717).
+  Unsigned IPA run 49 on `feature/auth-recovery-verification` (`4cce829`), artifact `GoHard-Dev-unsigned-ipa`:
+  **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39697208591).
