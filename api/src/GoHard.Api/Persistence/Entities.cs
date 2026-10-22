@@ -25,6 +25,9 @@ public class User
     public int Revision { get; set; } = 1;
     public string SecurityStamp { get; set; } = "";
     public DateTime CreatedAtUtc { get; set; }
+    /// <summary>When the person proved they receive mail at <see cref="Email"/>. Server-owned; null = not verified
+    /// (every account from before verification existed).</summary>
+    public DateTime? EmailVerifiedAtUtc { get; set; }
 }
 
 public class RefreshToken
@@ -37,6 +40,54 @@ public class RefreshToken
     /// <summary>Set when revoked by rotation (not by logout): the row that replaced it. Marks the immediate predecessor that
     /// may recover its unused replacement within the recovery window (AuthService.RefreshAsync).</summary>
     public Guid? ReplacedById { get; set; }
+    /// <summary>The account's security stamp when this token was issued; a refresh under any other stamp is refused.
+    /// Null on rows from before the column (they are revoked by any password change).</summary>
+    public string? SecurityStamp { get; set; }
+}
+
+/// <summary>One emailed code (docs/AUTHENTICATION_EMAIL.md). The code itself is derived from the id, never stored.
+/// An address without an account gets a row too (UserId null) so both paths look the same from outside.</summary>
+public class AuthChallenge
+{
+    public Guid Id { get; set; }
+    public Guid? UserId { get; set; }
+    /// <summary>password-reset | email-verification</summary>
+    public string Purpose { get; set; } = "";
+    /// <summary>Keyed hash of the normalized address: the address is not stored here.</summary>
+    public string EmailKey { get; set; } = "";
+    /// <summary>The account's security stamp at creation: a later password change voids the challenge.</summary>
+    public string? SecurityStamp { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime ExpiresAtUtc { get; set; }
+    public int Attempts { get; set; }
+    public int SendCount { get; set; }
+    public DateTime LastSentAtUtc { get; set; }
+    public DateTime? VerifiedAtUtc { get; set; }
+    /// <summary>SHA-256 of the one-time reset authorization issued after a correct reset code.</summary>
+    public string? GrantHash { get; set; }
+    public DateTime? GrantExpiresAtUtc { get; set; }
+    public DateTime? ConsumedAtUtc { get; set; }
+    public DateTime? InvalidatedAtUtc { get; set; }
+}
+
+/// <summary>The outbox: one message to send to an account's current address. No address, code or body is stored.</summary>
+public class MailMessage
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid? ChallengeId { get; set; }
+    /// <summary>password-reset | email-verification | password-changed</summary>
+    public string Kind { get; set; } = "";
+    public string Language { get; set; } = "en";
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime NextAttemptAtUtc { get; set; }
+    public DateTime ExpiresAtUtc { get; set; }
+    public int Attempts { get; set; }
+    /// <summary>pending | sent | failed | expired | cancelled</summary>
+    public string State { get; set; } = "pending";
+    public DateTime? SentAtUtc { get; set; }
+    public string? ProviderId { get; set; }
+    public string? LastError { get; set; }
 }
 
 /// <summary>Terminal record of one owner-scoped command. Retained so a lost response can be replayed.</summary>

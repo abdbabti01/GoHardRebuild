@@ -2043,7 +2043,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountErrorWeakPassword =>
-      'Use a password of at least 8 characters.';
+      'Use a password of at least 15 characters.';
 
   @override
   String get accountErrorInvalidEmail => 'Enter a valid email address.';
@@ -7063,9 +7063,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authPasswordLabel => 'Password';
 
   @override
-  String get authPasswordHelper => 'At least 8 characters';
-
-  @override
   String get authHidePassword => 'Hide password';
 
   @override
@@ -9982,4 +9979,203 @@ class AppLocalizationsEn extends AppLocalizations {
   String progressTargetRowSemanticReached(String label, int count, int target) {
     return '$label: $count of $target, reached.';
   }
+
+  @override
+  String get accountErrorPasswordTooLong =>
+      'That password is longer than 256 characters. Use a shorter one.';
+
+  @override
+  String get accountErrorPasswordMismatch =>
+      'The two new passwords are not the same.';
+
+  @override
+  String get accountErrorCodeIncomplete => 'Enter all 8 digits of the code.';
+
+  @override
+  String get accountErrorCodeInvalid =>
+      'That code isn\'t right. Check the latest email from GoHard, or ask for a new code.';
+
+  @override
+  String get accountErrorCodeExpired =>
+      'That code has expired. Ask for a new one.';
+
+  @override
+  String get accountErrorCodeAttempts =>
+      'Too many tries for this code. Ask for a new code.';
+
+  @override
+  String accountErrorCooldown(int seconds) {
+    return 'Please wait $seconds s before asking for another code.';
+  }
+
+  @override
+  String get accountEmailUnavailable =>
+      'Email recovery isn\'t available yet. Your account and data are safe; try again later.';
+
+  @override
+  String get accountErrorEmailBusy =>
+      'GoHard is sending too many emails right now. Try again in a few minutes.';
+
+  @override
+  String get accountErrorResetExpired =>
+      'This reset has expired or was already used. Ask for a new code to start again.';
+
+  @override
+  String get accountErrorNotSupported =>
+      'Your account\'s server doesn\'t offer this yet. Nothing was changed.';
+
+  @override
+  String get accountErrorUncertainReset =>
+      'We couldn\'t confirm the change. Try signing in with your new password; if that doesn\'t work, ask for a new code.';
+
+  @override
+  String get accountErrorUncertainChange =>
+      'We couldn\'t confirm whether your password changed. Nothing on this phone was lost. If you\'re asked to sign in, try the new password first.';
+
+  @override
+  String get codeFieldLabel => '8-digit code';
+
+  @override
+  String get codeFieldHelper =>
+      'From the email GoHard sent you. You can paste it.';
+
+  @override
+  String get codeResend => 'Resend code';
+
+  @override
+  String codeResendIn(int seconds) {
+    return 'Resend in $seconds s';
+  }
+
+  @override
+  String get codeDeliveryNote =>
+      'It can take a minute to arrive. Check spam or junk too.';
+
+  @override
+  String get newPasswordLabel => 'New password';
+
+  @override
+  String get newPasswordConfirmLabel => 'Confirm new password';
+
+  @override
+  String get currentPasswordLabel => 'Current password';
+
+  @override
+  String get passwordRule =>
+      'At least 15 characters. A few unrelated words work well; any characters are fine.';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authNoticePasswordChanged =>
+      'Your password was changed. Sign in with your new password; everything on this phone is still here.';
+
+  @override
+  String get resetTitle => 'Reset password';
+
+  @override
+  String get resetEmailLead =>
+      'Enter your account\'s email. If an account uses it, we\'ll send it a reset code.';
+
+  @override
+  String get resetSendCode => 'Send code';
+
+  @override
+  String get resetCodeTitle => 'Enter the code';
+
+  @override
+  String resetCodeLead(String email) {
+    return 'If an account uses $email, we\'ve sent it an 8-digit code. It\'s valid for 10 minutes.';
+  }
+
+  @override
+  String get resetUseAnotherEmail => 'Use a different email';
+
+  @override
+  String get resetPasswordTitle => 'New password';
+
+  @override
+  String get resetPasswordLead =>
+      'Choose your new password. Every device will be signed out.';
+
+  @override
+  String get resetSetPassword => 'Set new password';
+
+  @override
+  String get resetGoToSignIn => 'Go to sign in';
+
+  @override
+  String get changePasswordTitle => 'Change password';
+
+  @override
+  String get changePasswordLead =>
+      'Your current password is checked by GoHard before anything changes.';
+
+  @override
+  String get changePasswordSignsOut =>
+      'Changing it signs you out on every device, this one too. Your data stays on this phone and syncs again when you sign in.';
+
+  @override
+  String get changePasswordButton => 'Change password';
+
+  @override
+  String get changePasswordConfirmTitle => 'Sign out everywhere?';
+
+  @override
+  String get changePasswordConfirmBody =>
+      'After the change you\'ll sign in again with the new password, on this phone and every other device.';
+
+  @override
+  String get changePasswordOffline =>
+      'Changing your password needs a connection. Nothing is saved for later.';
+
+  @override
+  String get verifyTitle => 'Verify email';
+
+  @override
+  String verifyLead(String email) {
+    return 'We\'ll send an 8-digit code to $email to confirm it\'s yours.';
+  }
+
+  @override
+  String get verifySend => 'Send code';
+
+  @override
+  String get verifyConfirm => 'Verify';
+
+  @override
+  String get verifyLater => 'Later';
+
+  @override
+  String get verifyOptional =>
+      'Verifying is optional for now. It only confirms this address; it changes nothing else.';
+
+  @override
+  String get verifyVerified => 'Your email is verified.';
+
+  @override
+  String get verifyDone => 'Email verified';
+
+  @override
+  String get meEmail => 'Email';
+
+  @override
+  String get meEmailVerified => 'Verified';
+
+  @override
+  String get meEmailNotVerified => 'Not verified';
+
+  @override
+  String get mePassword => 'Password';
+
+  @override
+  String get mePasswordSubtitle => 'Change password';
+
+  @override
+  String get setupVerifyTitle => 'Verify your email';
+
+  @override
+  String get setupVerifySubtitle =>
+      'We sent you a code. Optional: you can also do it later in Me.';
 }

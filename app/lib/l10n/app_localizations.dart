@@ -3223,7 +3223,7 @@ abstract class AppLocalizations {
   /// Server code WEAK_PASSWORD.
   ///
   /// In en, this message translates to:
-  /// **'Use a password of at least 8 characters.'**
+  /// **'Use a password of at least 15 characters.'**
   String get accountErrorWeakPassword;
 
   /// Server code INVALID_EMAIL.
@@ -10700,12 +10700,6 @@ abstract class AppLocalizations {
   /// **'Password'**
   String get authPasswordLabel;
 
-  /// Helper text under the new password field.
-  ///
-  /// In en, this message translates to:
-  /// **'At least 8 characters'**
-  String get authPasswordHelper;
-
   /// Tooltip of the password visibility button while the password is shown.
   ///
   /// In en, this message translates to:
@@ -14735,6 +14729,342 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{label}: {count} of {target}, reached.'**
   String progressTargetRowSemanticReached(String label, int count, int target);
+
+  /// Server code PASSWORD_TOO_LONG, or the same local check.
+  ///
+  /// In en, this message translates to:
+  /// **'That password is longer than 256 characters. Use a shorter one.'**
+  String get accountErrorPasswordTooLong;
+
+  /// New password and its confirmation differ.
+  ///
+  /// In en, this message translates to:
+  /// **'The two new passwords are not the same.'**
+  String get accountErrorPasswordMismatch;
+
+  /// The code field does not hold 8 digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter all 8 digits of the code.'**
+  String get accountErrorCodeIncomplete;
+
+  /// Server code INVALID_CODE: wrong code (or no code was sent to this address).
+  ///
+  /// In en, this message translates to:
+  /// **'That code isn\'t right. Check the latest email from GoHard, or ask for a new code.'**
+  String get accountErrorCodeInvalid;
+
+  /// Server code CODE_EXPIRED.
+  ///
+  /// In en, this message translates to:
+  /// **'That code has expired. Ask for a new one.'**
+  String get accountErrorCodeExpired;
+
+  /// Server code TOO_MANY_ATTEMPTS: the code is locked after too many tries.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many tries for this code. Ask for a new code.'**
+  String get accountErrorCodeAttempts;
+
+  /// Server code EMAIL_COOLDOWN. seconds = wait before another code (s = seconds, short unit).
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait {seconds} s before asking for another code.'**
+  String accountErrorCooldown(int seconds);
+
+  /// Server has no email sender configured (EMAIL_UNAVAILABLE). Said before promising any email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email recovery isn\'t available yet. Your account and data are safe; try again later.'**
+  String get accountEmailUnavailable;
+
+  /// Server code EMAIL_BUSY: the global email budget is used up for now.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard is sending too many emails right now. Try again in a few minutes.'**
+  String get accountErrorEmailBusy;
+
+  /// Server code INVALID_RESET_TOKEN: the reset step timed out or was already used.
+  ///
+  /// In en, this message translates to:
+  /// **'This reset has expired or was already used. Ask for a new code to start again.'**
+  String get accountErrorResetExpired;
+
+  /// The account server is older than this feature (404).
+  ///
+  /// In en, this message translates to:
+  /// **'Your account\'s server doesn\'t offer this yet. Nothing was changed.'**
+  String get accountErrorNotSupported;
+
+  /// No answer to "set new password": it may or may not have changed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t confirm the change. Try signing in with your new password; if that doesn\'t work, ask for a new code.'**
+  String get accountErrorUncertainReset;
+
+  /// No answer to "change password" while signed in.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t confirm whether your password changed. Nothing on this phone was lost. If you\'re asked to sign in, try the new password first.'**
+  String get accountErrorUncertainChange;
+
+  /// Label of the one field for an emailed 8-digit code.
+  ///
+  /// In en, this message translates to:
+  /// **'8-digit code'**
+  String get codeFieldLabel;
+
+  /// Helper under the code field.
+  ///
+  /// In en, this message translates to:
+  /// **'From the email GoHard sent you. You can paste it.'**
+  String get codeFieldHelper;
+
+  /// Button: send the code again.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get codeResend;
+
+  /// Disabled resend button while the cooldown runs. s = seconds (short unit).
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds} s'**
+  String codeResendIn(int seconds);
+
+  /// Under the code field: a sent request is not proof of delivery.
+  ///
+  /// In en, this message translates to:
+  /// **'It can take a minute to arrive. Check spam or junk too.'**
+  String get codeDeliveryNote;
+
+  /// Field: the new password.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPasswordLabel;
+
+  /// Field: the new password again.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get newPasswordConfirmLabel;
+
+  /// Field: the password in use now.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get currentPasswordLabel;
+
+  /// The one password rule, shown beside every new-password field.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 15 characters. A few unrelated words work well; any characters are fine.'**
+  String get passwordRule;
+
+  /// Sign-in: link to password recovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgotPassword;
+
+  /// Sign-in notice after a password reset or change.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password was changed. Sign in with your new password; everything on this phone is still here.'**
+  String get authNoticePasswordChanged;
+
+  /// Forgot password, step 1 title.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get resetTitle;
+
+  /// Forgot password, step 1. Does not say whether an account exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your account\'s email. If an account uses it, we\'ll send it a reset code.'**
+  String get resetEmailLead;
+
+  /// Button: request a reset code.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get resetSendCode;
+
+  /// Forgot password, step 2 title.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code'**
+  String get resetCodeTitle;
+
+  /// Step 2. email = the address typed (user content). Acknowledges a request, not delivery.
+  ///
+  /// In en, this message translates to:
+  /// **'If an account uses {email}, we\'ve sent it an 8-digit code. It\'s valid for 10 minutes.'**
+  String resetCodeLead(String email);
+
+  /// Button: go back and correct the email.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different email'**
+  String get resetUseAnotherEmail;
+
+  /// Forgot password, step 3 title.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get resetPasswordTitle;
+
+  /// Step 3 lead.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your new password. Every device will be signed out.'**
+  String get resetPasswordLead;
+
+  /// Button: save the new password.
+  ///
+  /// In en, this message translates to:
+  /// **'Set new password'**
+  String get resetSetPassword;
+
+  /// Button after an unconfirmed reset: go and try signing in.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to sign in'**
+  String get resetGoToSignIn;
+
+  /// Me › Password page title.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePasswordTitle;
+
+  /// Change password lead.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current password is checked by GoHard before anything changes.'**
+  String get changePasswordLead;
+
+  /// Warning before changing the password.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing it signs you out on every device, this one too. Your data stays on this phone and syncs again when you sign in.'**
+  String get changePasswordSignsOut;
+
+  /// Button: change the password.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePasswordButton;
+
+  /// Confirmation dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out everywhere?'**
+  String get changePasswordConfirmTitle;
+
+  /// Confirmation dialog body.
+  ///
+  /// In en, this message translates to:
+  /// **'After the change you\'ll sign in again with the new password, on this phone and every other device.'**
+  String get changePasswordConfirmBody;
+
+  /// Change password needs a connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing your password needs a connection. Nothing is saved for later.'**
+  String get changePasswordOffline;
+
+  /// Verify email page title.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email'**
+  String get verifyTitle;
+
+  /// Verify email lead. email = the account address (user content).
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send an 8-digit code to {email} to confirm it\'s yours.'**
+  String verifyLead(String email);
+
+  /// Button: send a verification code.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get verifySend;
+
+  /// Button: confirm with the code.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyConfirm;
+
+  /// Button: leave without verifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get verifyLater;
+
+  /// Under the verify form: verification is optional in the testing release.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying is optional for now. It only confirms this address; it changes nothing else.'**
+  String get verifyOptional;
+
+  /// The server confirms the address is verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email is verified.'**
+  String get verifyVerified;
+
+  /// Toast after verifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified'**
+  String get verifyDone;
+
+  /// Me › Account row title.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get meEmail;
+
+  /// Me › Email value when verified by the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get meEmailVerified;
+
+  /// Me › Email value when not verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Not verified'**
+  String get meEmailNotVerified;
+
+  /// Me › Account row title.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get mePassword;
+
+  /// Me › Password row subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get mePasswordSubtitle;
+
+  /// Setup › features: verify the email of the new account.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email'**
+  String get setupVerifyTitle;
+
+  /// Setup row subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent you a code. Optional: you can also do it later in Me.'**
+  String get setupVerifySubtitle;
 }
 
 class _AppLocalizationsDelegate

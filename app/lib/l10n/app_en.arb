@@ -3039,7 +3039,7 @@
   "@accountErrorEmailInUse": {
     "description": "Server code EMAIL_IN_USE on registration."
   },
-  "accountErrorWeakPassword": "Use a password of at least 8 characters.",
+  "accountErrorWeakPassword": "Use a password of at least 15 characters.",
   "@accountErrorWeakPassword": {
     "description": "Server code WEAK_PASSWORD."
   },
@@ -9911,10 +9911,6 @@
   "@authPasswordLabel": {
     "description": "Password field label."
   },
-  "authPasswordHelper": "At least 8 characters",
-  "@authPasswordHelper": {
-    "description": "Helper text under the new password field."
-  },
   "authHidePassword": "Hide password",
   "@authHidePassword": {
     "description": "Tooltip of the password visibility button while the password is shown."
@@ -13965,5 +13961,249 @@
         "type": "int"
       }
     }
+  },
+  "accountErrorPasswordTooLong": "That password is longer than 256 characters. Use a shorter one.",
+  "@accountErrorPasswordTooLong": {
+    "description": "Server code PASSWORD_TOO_LONG, or the same local check."
+  },
+  "accountErrorPasswordMismatch": "The two new passwords are not the same.",
+  "@accountErrorPasswordMismatch": {
+    "description": "New password and its confirmation differ."
+  },
+  "accountErrorCodeIncomplete": "Enter all 8 digits of the code.",
+  "@accountErrorCodeIncomplete": {
+    "description": "The code field does not hold 8 digits."
+  },
+  "accountErrorCodeInvalid": "That code isn't right. Check the latest email from GoHard, or ask for a new code.",
+  "@accountErrorCodeInvalid": {
+    "description": "Server code INVALID_CODE: wrong code (or no code was sent to this address)."
+  },
+  "accountErrorCodeExpired": "That code has expired. Ask for a new one.",
+  "@accountErrorCodeExpired": {
+    "description": "Server code CODE_EXPIRED."
+  },
+  "accountErrorCodeAttempts": "Too many tries for this code. Ask for a new code.",
+  "@accountErrorCodeAttempts": {
+    "description": "Server code TOO_MANY_ATTEMPTS: the code is locked after too many tries."
+  },
+  "accountErrorCooldown": "Please wait {seconds} s before asking for another code.",
+  "@accountErrorCooldown": {
+    "description": "Server code EMAIL_COOLDOWN. seconds = wait before another code (s = seconds, short unit).",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "accountEmailUnavailable": "Email recovery isn't available yet. Your account and data are safe; try again later.",
+  "@accountEmailUnavailable": {
+    "description": "Server has no email sender configured (EMAIL_UNAVAILABLE). Said before promising any email."
+  },
+  "accountErrorEmailBusy": "GoHard is sending too many emails right now. Try again in a few minutes.",
+  "@accountErrorEmailBusy": {
+    "description": "Server code EMAIL_BUSY: the global email budget is used up for now."
+  },
+  "accountErrorResetExpired": "This reset has expired or was already used. Ask for a new code to start again.",
+  "@accountErrorResetExpired": {
+    "description": "Server code INVALID_RESET_TOKEN: the reset step timed out or was already used."
+  },
+  "accountErrorNotSupported": "Your account's server doesn't offer this yet. Nothing was changed.",
+  "@accountErrorNotSupported": {
+    "description": "The account server is older than this feature (404)."
+  },
+  "accountErrorUncertainReset": "We couldn't confirm the change. Try signing in with your new password; if that doesn't work, ask for a new code.",
+  "@accountErrorUncertainReset": {
+    "description": "No answer to \"set new password\": it may or may not have changed."
+  },
+  "accountErrorUncertainChange": "We couldn't confirm whether your password changed. Nothing on this phone was lost. If you're asked to sign in, try the new password first.",
+  "@accountErrorUncertainChange": {
+    "description": "No answer to \"change password\" while signed in."
+  },
+  "codeFieldLabel": "8-digit code",
+  "@codeFieldLabel": {
+    "description": "Label of the one field for an emailed 8-digit code."
+  },
+  "codeFieldHelper": "From the email GoHard sent you. You can paste it.",
+  "@codeFieldHelper": {
+    "description": "Helper under the code field."
+  },
+  "codeResend": "Resend code",
+  "@codeResend": {
+    "description": "Button: send the code again."
+  },
+  "codeResendIn": "Resend in {seconds} s",
+  "@codeResendIn": {
+    "description": "Disabled resend button while the cooldown runs. s = seconds (short unit).",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "codeDeliveryNote": "It can take a minute to arrive. Check spam or junk too.",
+  "@codeDeliveryNote": {
+    "description": "Under the code field: a sent request is not proof of delivery."
+  },
+  "newPasswordLabel": "New password",
+  "@newPasswordLabel": {
+    "description": "Field: the new password."
+  },
+  "newPasswordConfirmLabel": "Confirm new password",
+  "@newPasswordConfirmLabel": {
+    "description": "Field: the new password again."
+  },
+  "currentPasswordLabel": "Current password",
+  "@currentPasswordLabel": {
+    "description": "Field: the password in use now."
+  },
+  "passwordRule": "At least 15 characters. A few unrelated words work well; any characters are fine.",
+  "@passwordRule": {
+    "description": "The one password rule, shown beside every new-password field."
+  },
+  "authForgotPassword": "Forgot password?",
+  "@authForgotPassword": {
+    "description": "Sign-in: link to password recovery."
+  },
+  "authNoticePasswordChanged": "Your password was changed. Sign in with your new password; everything on this phone is still here.",
+  "@authNoticePasswordChanged": {
+    "description": "Sign-in notice after a password reset or change."
+  },
+  "resetTitle": "Reset password",
+  "@resetTitle": {
+    "description": "Forgot password, step 1 title."
+  },
+  "resetEmailLead": "Enter your account's email. If an account uses it, we'll send it a reset code.",
+  "@resetEmailLead": {
+    "description": "Forgot password, step 1. Does not say whether an account exists."
+  },
+  "resetSendCode": "Send code",
+  "@resetSendCode": {
+    "description": "Button: request a reset code."
+  },
+  "resetCodeTitle": "Enter the code",
+  "@resetCodeTitle": {
+    "description": "Forgot password, step 2 title."
+  },
+  "resetCodeLead": "If an account uses {email}, we've sent it an 8-digit code. It's valid for 10 minutes.",
+  "@resetCodeLead": {
+    "description": "Step 2. email = the address typed (user content). Acknowledges a request, not delivery.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resetUseAnotherEmail": "Use a different email",
+  "@resetUseAnotherEmail": {
+    "description": "Button: go back and correct the email."
+  },
+  "resetPasswordTitle": "New password",
+  "@resetPasswordTitle": {
+    "description": "Forgot password, step 3 title."
+  },
+  "resetPasswordLead": "Choose your new password. Every device will be signed out.",
+  "@resetPasswordLead": {
+    "description": "Step 3 lead."
+  },
+  "resetSetPassword": "Set new password",
+  "@resetSetPassword": {
+    "description": "Button: save the new password."
+  },
+  "resetGoToSignIn": "Go to sign in",
+  "@resetGoToSignIn": {
+    "description": "Button after an unconfirmed reset: go and try signing in."
+  },
+  "changePasswordTitle": "Change password",
+  "@changePasswordTitle": {
+    "description": "Me › Password page title."
+  },
+  "changePasswordLead": "Your current password is checked by GoHard before anything changes.",
+  "@changePasswordLead": {
+    "description": "Change password lead."
+  },
+  "changePasswordSignsOut": "Changing it signs you out on every device, this one too. Your data stays on this phone and syncs again when you sign in.",
+  "@changePasswordSignsOut": {
+    "description": "Warning before changing the password."
+  },
+  "changePasswordButton": "Change password",
+  "@changePasswordButton": {
+    "description": "Button: change the password."
+  },
+  "changePasswordConfirmTitle": "Sign out everywhere?",
+  "@changePasswordConfirmTitle": {
+    "description": "Confirmation dialog title."
+  },
+  "changePasswordConfirmBody": "After the change you'll sign in again with the new password, on this phone and every other device.",
+  "@changePasswordConfirmBody": {
+    "description": "Confirmation dialog body."
+  },
+  "changePasswordOffline": "Changing your password needs a connection. Nothing is saved for later.",
+  "@changePasswordOffline": {
+    "description": "Change password needs a connection."
+  },
+  "verifyTitle": "Verify email",
+  "@verifyTitle": {
+    "description": "Verify email page title."
+  },
+  "verifyLead": "We'll send an 8-digit code to {email} to confirm it's yours.",
+  "@verifyLead": {
+    "description": "Verify email lead. email = the account address (user content).",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "verifySend": "Send code",
+  "@verifySend": {
+    "description": "Button: send a verification code."
+  },
+  "verifyConfirm": "Verify",
+  "@verifyConfirm": {
+    "description": "Button: confirm with the code."
+  },
+  "verifyLater": "Later",
+  "@verifyLater": {
+    "description": "Button: leave without verifying."
+  },
+  "verifyOptional": "Verifying is optional for now. It only confirms this address; it changes nothing else.",
+  "@verifyOptional": {
+    "description": "Under the verify form: verification is optional in the testing release."
+  },
+  "verifyVerified": "Your email is verified.",
+  "@verifyVerified": {
+    "description": "The server confirms the address is verified."
+  },
+  "verifyDone": "Email verified",
+  "@verifyDone": {
+    "description": "Toast after verifying."
+  },
+  "meEmail": "Email",
+  "@meEmail": {
+    "description": "Me › Account row title."
+  },
+  "meEmailVerified": "Verified",
+  "@meEmailVerified": {
+    "description": "Me › Email value when verified by the server."
+  },
+  "meEmailNotVerified": "Not verified",
+  "@meEmailNotVerified": {
+    "description": "Me › Email value when not verified."
+  },
+  "mePassword": "Password",
+  "@mePassword": {
+    "description": "Me › Account row title."
+  },
+  "mePasswordSubtitle": "Change password",
+  "@mePasswordSubtitle": {
+    "description": "Me › Password row subtitle."
+  },
+  "setupVerifyTitle": "Verify your email",
+  "@setupVerifyTitle": {
+    "description": "Setup › features: verify the email of the new account."
+  },
+  "setupVerifySubtitle": "We sent you a code. Optional: you can also do it later in Me.",
+  "@setupVerifySubtitle": {
+    "description": "Setup row subtitle."
   }
 }

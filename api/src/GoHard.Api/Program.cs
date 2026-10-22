@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using GoHard.Api.Application;
+using GoHard.Api.Application.AccountEmail;
 using GoHard.Api.Endpoints;
 using GoHard.Api.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,6 +29,7 @@ builder.Services.AddSingleton(auth);
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<CommandRunner>();
 builder.Services.AddGoHardModules(builder.Configuration);
+builder.Services.AddAccountEmail(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<ReadinessGate>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -65,6 +67,10 @@ builder.Services.AddRateLimiter(o =>
         {
             PermitLimit = builder.Configuration.GetValue("Auth:RateLimitPerMinute", 30), Window = TimeSpan.FromMinutes(1),
         }));
+    // Emailed-code routes, per address on top of the per-address and per-code limits kept in the database.
+    o.AddPolicy("auth-email", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "local",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("Email:PerIpPerHour", 60), Window = TimeSpan.FromHours(1) }));
 });
 
 var app = builder.Build();

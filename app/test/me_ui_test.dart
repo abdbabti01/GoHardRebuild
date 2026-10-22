@@ -41,7 +41,7 @@ class _NoReminders implements ReminderScheduler {
 
 Rec _issue(String id) => Rec(ownerId: 'one', kind: Kinds.food, id: id, body: '{}', revision: 1, localRevision: 1, syncState: 'conflict');
 
-Future<ProviderContainer> _openMe(WidgetTester tester, List<Override> overrides, {Size size = const Size(390, 1500), double textScale = 1}) async {
+Future<ProviderContainer> _openMe(WidgetTester tester, List<Override> overrides, {Size size = const Size(390, 1700), double textScale = 1}) async {
   final container = await pumpApp(tester, [...overrides, reminderSchedulerProvider.overrideWithValue(_NoReminders())], size: size, textScale: textScale);
   await tester.tap(find.byKey(const Key('nav-me')));
   await tester.pumpAndSettle();

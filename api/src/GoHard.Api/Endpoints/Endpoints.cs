@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using GoHard.Api.Application;
+using GoHard.Api.Application.AccountEmail;
 using GoHard.Api.Application.Coach;
 using GoHard.Api.Application.FoodDiscovery;
 using GoHard.Api.Application.Weather;
@@ -21,7 +22,7 @@ public static class GoHardEndpoints
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
         "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes", WeeklyGoalService.Capability,
-        ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability,
+        ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability, AccountEmailRegistration.Capability,
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -50,28 +51,79 @@ public static class GoHardEndpoints
         _ => Results.Json(new { code = "PROVIDER_UNAVAILABLE" }, statusCode: 503),
     };
 
+    private static IResult Requested(CodeRequestResult r) => r.Status switch
+    {
+        CodeRequestStatus.Accepted => Results.Json(new { cooldownSeconds = r.Seconds }, statusCode: 202),
+        CodeRequestStatus.InvalidEmail => Results.Json(new AuthError("INVALID_EMAIL"), statusCode: 400),
+        CodeRequestStatus.Cooldown => Results.Json(new { code = "EMAIL_COOLDOWN", retryAfterSeconds = r.Seconds }, statusCode: 429),
+        CodeRequestStatus.AlreadyVerified => Results.Json(new AuthError("ALREADY_VERIFIED"), statusCode: 409),
+        CodeRequestStatus.Busy => Results.Json(new AuthError("EMAIL_BUSY"), statusCode: 503),
+        _ => Results.Json(new AuthError("EMAIL_UNAVAILABLE"), statusCode: 503),
+    };
+
+    private static IResult Checked(CodeCheckStatus s) => s switch
+    {
+        CodeCheckStatus.Expired => Results.Json(new AuthError("CODE_EXPIRED"), statusCode: 400),
+        CodeCheckStatus.TooManyAttempts => Results.Json(new AuthError("TOO_MANY_ATTEMPTS"), statusCode: 429),
+        CodeCheckStatus.Unavailable => Results.Json(new AuthError("EMAIL_UNAVAILABLE"), statusCode: 503),
+        _ => Results.Json(new AuthError("INVALID_CODE"), statusCode: 400),
+    };
+
+    private static IResult Changed(string? error) => error is null ? Results.NoContent()
+        : Results.Json(new AuthError(error), statusCode: error == "EMAIL_UNAVAILABLE" ? 503 : 400);
+
     public static void MapGoHardEndpoints(this WebApplication app)
     {
         var api = app.MapGroup("/api/v1");
         // minimumClientContract rises only for a change an older app cannot live with. Added optional fields are not one.
-        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach) => Results.Ok(new
+        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach, EmailOptions email) => Results.Ok(new
         {
             contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 1),
             capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
                 .Concat(weather.Enabled ? [WeatherRegistration.Capability] : [])
-                .Concat(coach.Enabled ? [CoachService.Capability] : []).ToArray(),
+                .Concat(coach.Enabled ? [CoachService.Capability] : [])
+                .Concat(email.Configured ? [AccountEmailRegistration.DeliveryCapability] : []).ToArray(),
         }));
 
         var auth = api.MapGroup("/auth").RequireRateLimiting("auth");
-        auth.MapPost("/register", async (RegisterRequest r, AuthService s, CancellationToken ct) =>
+        auth.MapPost("/register", async (RegisterRequest r, AuthService s, AccountEmailService email, CancellationToken ct) =>
         {
             var (ok, error) = await s.RegisterAsync(r, ct);
-            return ok is not null ? Results.Ok(ok) : Results.Json(new AuthError(error!), statusCode: error == "EMAIL_IN_USE" ? 409 : 400);
+            if (ok is null) return Results.Json(new AuthError(error!), statusCode: error == "EMAIL_IN_USE" ? 409 : 400);
+            await email.OfferVerificationAsync(ok.Profile.UserId, r.Language); // queued only; never fails the registration
+            return Results.Ok(ok);
         });
         auth.MapPost("/login", async (LoginRequest r, AuthService s, CancellationToken ct) =>
             await s.LoginAsync(r, ct) is { } ok ? Results.Ok(ok) : Results.Json(new AuthError("INVALID_CREDENTIALS"), statusCode: 401));
         auth.MapPost("/refresh", async (RefreshRequest r, AuthService s, CancellationToken ct) =>
             await s.RefreshAsync(r.RefreshToken, ct) is { } ok ? Results.Ok(ok) : Results.Json(new AuthError("INVALID_REFRESH_TOKEN"), statusCode: 401));
+
+        // Emailed codes and password changes (docs/AUTHENTICATION_EMAIL.md). None of these answers is a session.
+        var codes = api.MapGroup("").RequireRateLimiting("auth-email");
+        codes.MapPost("/auth/password-reset/request", async (CodeRequest r, AccountEmailService s, CancellationToken ct) =>
+            Requested(await s.RequestResetAsync(r.Email, r.Language, ct)));
+        codes.MapPost("/auth/password-reset/verify", async (CodeVerifyRequest r, AccountEmailService s, CancellationToken ct) =>
+        {
+            var (status, grant) = await s.VerifyResetAsync(r.Email, r.Code, ct);
+            return grant is not null ? Results.Ok(grant) : Checked(status);
+        });
+        codes.MapPost("/auth/password-reset/complete", async (ResetCompleteRequest r, AccountEmailService s, CancellationToken ct) =>
+            Changed(await s.CompleteResetAsync(r.ResetToken, r.NewPassword, r.Language, ct)));
+        var signedCodes = codes.MapGroup("").RequireAuthorization();
+        signedCodes.MapPost("/account/email-verification/request", async (LanguageRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
+            Requested(await s.RequestVerificationAsync(u.UserId(), r.Language, ct)));
+        signedCodes.MapPost("/account/email-verification/confirm", async (CodeConfirmRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
+        {
+            var (status, profile) = await s.ConfirmVerificationAsync(u.UserId(), r.Code, ct);
+            return profile is not null ? Results.Ok(profile) : Checked(status);
+        });
+        signedCodes.MapPost("/account/password", async (PasswordChangeRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
+            Changed(await s.ChangePasswordAsync(u.UserId(), r.CurrentPassword, r.NewPassword, r.Language, ct)));
+        // Local mail capture (Development/Testing only; refused at startup anywhere else): the newest message to an address.
+        if (app.Services.GetRequiredService<EmailOptions>().Provider == EmailOptions.Capture)
+            app.MapGet("/dev/mail/latest", (string to, CaptureMailbox box) => box.Latest(to) is { } m
+                ? Results.Ok(new { m.Subject, m.Text, code = System.Text.RegularExpressions.Regex.Match(m.Text, @"\b\d{8}\b").Value })
+                : Results.NotFound());
 
         var me = api.MapGroup("").RequireAuthorization();
         me.MapPost("/auth/logout", async (RefreshRequest r, ClaimsPrincipal u, AuthService s, CancellationToken ct) =>

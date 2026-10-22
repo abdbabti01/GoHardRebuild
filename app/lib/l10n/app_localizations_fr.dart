@@ -2073,7 +2073,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get accountErrorWeakPassword =>
-      'Utilise un mot de passe d\'au moins 8 caractères.';
+      'Utilise un mot de passe d\'au moins 15 caractères.';
 
   @override
   String get accountErrorInvalidEmail => 'Entre une adresse courriel valide.';
@@ -7201,9 +7201,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get authPasswordLabel => 'Mot de passe';
 
   @override
-  String get authPasswordHelper => 'Au moins 8 caractères';
-
-  @override
   String get authHidePassword => 'Masquer le mot de passe';
 
   @override
@@ -10163,6 +10160,205 @@ class AppLocalizationsFr extends AppLocalizations {
   String progressTargetRowSemanticReached(String label, int count, int target) {
     return '$label : $count sur $target, atteint.';
   }
+
+  @override
+  String get accountErrorPasswordTooLong =>
+      'Ce mot de passe dépasse 256 caractères. Utilise-en un plus court.';
+
+  @override
+  String get accountErrorPasswordMismatch =>
+      'Les deux nouveaux mots de passe ne sont pas identiques.';
+
+  @override
+  String get accountErrorCodeIncomplete => 'Entre les 8 chiffres du code.';
+
+  @override
+  String get accountErrorCodeInvalid =>
+      'Ce code n\'est pas le bon. Vérifie le dernier courriel de GoHard ou demande un nouveau code.';
+
+  @override
+  String get accountErrorCodeExpired =>
+      'Ce code a expiré. Demandes-en un nouveau.';
+
+  @override
+  String get accountErrorCodeAttempts =>
+      'Trop d\'essais pour ce code. Demande un nouveau code.';
+
+  @override
+  String accountErrorCooldown(int seconds) {
+    return 'Attends $seconds s avant de demander un autre code.';
+  }
+
+  @override
+  String get accountEmailUnavailable =>
+      'La récupération par courriel n\'est pas encore offerte. Ton compte et tes données sont en sécurité; réessaie plus tard.';
+
+  @override
+  String get accountErrorEmailBusy =>
+      'GoHard envoie trop de courriels en ce moment. Réessaie dans quelques minutes.';
+
+  @override
+  String get accountErrorResetExpired =>
+      'Cette réinitialisation a expiré ou a déjà servi. Demande un nouveau code pour recommencer.';
+
+  @override
+  String get accountErrorNotSupported =>
+      'Le serveur de ton compte n\'offre pas encore cette fonction. Rien n\'a été modifié.';
+
+  @override
+  String get accountErrorUncertainReset =>
+      'Impossible de confirmer le changement. Essaie de te connecter avec ton nouveau mot de passe; si ça ne fonctionne pas, demande un nouveau code.';
+
+  @override
+  String get accountErrorUncertainChange =>
+      'Impossible de confirmer si ton mot de passe a changé. Rien n\'a été perdu sur ce téléphone. S\'il faut te reconnecter, essaie d\'abord le nouveau mot de passe.';
+
+  @override
+  String get codeFieldLabel => 'Code à 8 chiffres';
+
+  @override
+  String get codeFieldHelper =>
+      'Dans le courriel que GoHard t\'a envoyé. Tu peux le coller.';
+
+  @override
+  String get codeResend => 'Renvoyer le code';
+
+  @override
+  String codeResendIn(int seconds) {
+    return 'Renvoyer dans $seconds s';
+  }
+
+  @override
+  String get codeDeliveryNote =>
+      'Il peut prendre une minute à arriver. Vérifie aussi les indésirables.';
+
+  @override
+  String get newPasswordLabel => 'Nouveau mot de passe';
+
+  @override
+  String get newPasswordConfirmLabel => 'Confirme le nouveau mot de passe';
+
+  @override
+  String get currentPasswordLabel => 'Mot de passe actuel';
+
+  @override
+  String get passwordRule =>
+      'Au moins 15 caractères. Quelques mots sans lien entre eux font très bien l\'affaire; tous les caractères sont permis.';
+
+  @override
+  String get authForgotPassword => 'Mot de passe oublié?';
+
+  @override
+  String get authNoticePasswordChanged =>
+      'Ton mot de passe a été changé. Connecte-toi avec le nouveau; tout ce qui est sur ce téléphone est toujours là.';
+
+  @override
+  String get resetTitle => 'Réinitialiser le mot de passe';
+
+  @override
+  String get resetEmailLead =>
+      'Entre l\'adresse courriel de ton compte. Si un compte l\'utilise, nous y enverrons un code de réinitialisation.';
+
+  @override
+  String get resetSendCode => 'Envoyer le code';
+
+  @override
+  String get resetCodeTitle => 'Entre le code';
+
+  @override
+  String resetCodeLead(String email) {
+    return 'Si un compte utilise $email, nous y avons envoyé un code à 8 chiffres. Il est valide 10 minutes.';
+  }
+
+  @override
+  String get resetUseAnotherEmail => 'Utiliser une autre adresse';
+
+  @override
+  String get resetPasswordTitle => 'Nouveau mot de passe';
+
+  @override
+  String get resetPasswordLead =>
+      'Choisis ton nouveau mot de passe. Tous les appareils seront déconnectés.';
+
+  @override
+  String get resetSetPassword => 'Enregistrer le mot de passe';
+
+  @override
+  String get resetGoToSignIn => 'Aller à la connexion';
+
+  @override
+  String get changePasswordTitle => 'Changer le mot de passe';
+
+  @override
+  String get changePasswordLead =>
+      'GoHard vérifie ton mot de passe actuel avant de changer quoi que ce soit.';
+
+  @override
+  String get changePasswordSignsOut =>
+      'Le changer te déconnecte sur tous les appareils, celui-ci compris. Tes données restent sur ce téléphone et se synchronisent de nouveau à la connexion.';
+
+  @override
+  String get changePasswordButton => 'Changer le mot de passe';
+
+  @override
+  String get changePasswordConfirmTitle => 'Te déconnecter partout?';
+
+  @override
+  String get changePasswordConfirmBody =>
+      'Après le changement, tu te reconnecteras avec le nouveau mot de passe, sur ce téléphone et tous les autres appareils.';
+
+  @override
+  String get changePasswordOffline =>
+      'Changer ton mot de passe demande une connexion. Rien n\'est gardé pour plus tard.';
+
+  @override
+  String get verifyTitle => 'Confirmer le courriel';
+
+  @override
+  String verifyLead(String email) {
+    return 'Nous enverrons un code à 8 chiffres à $email pour confirmer que c\'est bien ton adresse.';
+  }
+
+  @override
+  String get verifySend => 'Envoyer le code';
+
+  @override
+  String get verifyConfirm => 'Confirmer';
+
+  @override
+  String get verifyLater => 'Plus tard';
+
+  @override
+  String get verifyOptional =>
+      'La confirmation est facultative pour le moment. Elle confirme seulement cette adresse et ne change rien d\'autre.';
+
+  @override
+  String get verifyVerified => 'Ton courriel est confirmé.';
+
+  @override
+  String get verifyDone => 'Courriel confirmé';
+
+  @override
+  String get meEmail => 'Courriel';
+
+  @override
+  String get meEmailVerified => 'Confirmé';
+
+  @override
+  String get meEmailNotVerified => 'Non confirmé';
+
+  @override
+  String get mePassword => 'Mot de passe';
+
+  @override
+  String get mePasswordSubtitle => 'Changer le mot de passe';
+
+  @override
+  String get setupVerifyTitle => 'Confirme ton courriel';
+
+  @override
+  String get setupVerifySubtitle =>
+      'Nous t\'avons envoyé un code. Facultatif : tu peux aussi le faire plus tard dans Profil.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

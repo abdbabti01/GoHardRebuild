@@ -32,7 +32,7 @@ class MemorySecretStore implements SecretStore {
 }
 
 /// Why the app signed out by itself; the sign-in screen says it in the current language.
-enum SignOutReason { expired, accountDeleted }
+enum SignOutReason { expired, accountDeleted, passwordChanged }
 
 /// Holds the current session and notifies listeners. Signing out is non-destructive: it only removes
 /// credentials and bumps the epoch. That owner's local records and pending commands stay on the phone,
@@ -45,6 +45,9 @@ class SessionManager {
   Session? _current;
   int _epoch = 0;
   SignOutReason? notice;
+
+  /// The address to put back on the sign-in screen after a sign-out that asks to sign in again (a password change).
+  String? retainedEmail;
 
   Session? get current => _current;
   int get epoch => _epoch;
@@ -108,6 +111,7 @@ class SessionManager {
 
   /// [code]: why, when the app signs out by itself; shown on the sign-in screen.
   Future<void> signOut({SignOutReason? code}) async {
+    retainedEmail = code == SignOutReason.passwordChanged ? _current?.email : null;
     _current = null;
     _unsaved = false;
     _epoch++;

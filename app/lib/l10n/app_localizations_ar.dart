@@ -2137,7 +2137,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get accountErrorWeakPassword =>
-      'استخدم كلمة مرور من 8 أحرف على الأقل.';
+      'استخدم كلمة مرور من 15 حرفًا على الأقل.';
 
   @override
   String get accountErrorInvalidEmail => 'أدخل عنوان بريد إلكتروني صالحًا.';
@@ -7364,9 +7364,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get authPasswordLabel => 'كلمة المرور';
 
   @override
-  String get authPasswordHelper => '8 أحرف على الأقل';
-
-  @override
   String get authHidePassword => 'إخفاء كلمة المرور';
 
   @override
@@ -10460,4 +10457,203 @@ class AppLocalizationsAr extends AppLocalizations {
   String progressTargetRowSemanticReached(String label, int count, int target) {
     return '$label: $count من $target، تحقّق.';
   }
+
+  @override
+  String get accountErrorPasswordTooLong =>
+      'كلمة المرور هذه أطول من 256 حرفًا. استخدم كلمة أقصر.';
+
+  @override
+  String get accountErrorPasswordMismatch =>
+      'كلمتا المرور الجديدتان غير متطابقتين.';
+
+  @override
+  String get accountErrorCodeIncomplete => 'أدخل أرقام الرمز الثمانية كلها.';
+
+  @override
+  String get accountErrorCodeInvalid =>
+      'هذا الرمز غير صحيح. تحقّق من آخر رسالة من GoHard أو اطلب رمزًا جديدًا.';
+
+  @override
+  String get accountErrorCodeExpired =>
+      'انتهت صلاحية هذا الرمز. اطلب رمزًا جديدًا.';
+
+  @override
+  String get accountErrorCodeAttempts =>
+      'محاولات كثيرة جدًا لهذا الرمز. اطلب رمزًا جديدًا.';
+
+  @override
+  String accountErrorCooldown(int seconds) {
+    return 'انتظر $seconds ث قبل طلب رمز آخر.';
+  }
+
+  @override
+  String get accountEmailUnavailable =>
+      'الاسترداد عبر البريد الإلكتروني غير متاح بعد. حسابك وبياناتك في أمان؛ حاول لاحقًا.';
+
+  @override
+  String get accountErrorEmailBusy =>
+      'يرسل GoHard رسائل كثيرة جدًا الآن. حاول مرة أخرى بعد بضع دقائق.';
+
+  @override
+  String get accountErrorResetExpired =>
+      'انتهت صلاحية إعادة التعيين هذه أو استُخدمت من قبل. اطلب رمزًا جديدًا للبدء من جديد.';
+
+  @override
+  String get accountErrorNotSupported =>
+      'خادم حسابك لا يوفّر هذه الميزة بعد. لم يتغيّر شيء.';
+
+  @override
+  String get accountErrorUncertainReset =>
+      'تعذّر تأكيد التغيير. جرّب تسجيل الدخول بكلمة المرور الجديدة؛ وإن لم ينجح ذلك فاطلب رمزًا جديدًا.';
+
+  @override
+  String get accountErrorUncertainChange =>
+      'تعذّر التأكد من تغيير كلمة المرور. لم يُفقد شيء على هذا الهاتف. إذا طُلب منك تسجيل الدخول، فجرّب كلمة المرور الجديدة أولًا.';
+
+  @override
+  String get codeFieldLabel => 'الرمز المكوَّن من 8 أرقام';
+
+  @override
+  String get codeFieldHelper =>
+      'من الرسالة التي أرسلها إليك GoHard. يمكنك لصقه.';
+
+  @override
+  String get codeResend => 'إعادة إرسال الرمز';
+
+  @override
+  String codeResendIn(int seconds) {
+    return 'إعادة الإرسال بعد $seconds ث';
+  }
+
+  @override
+  String get codeDeliveryNote =>
+      'قد يستغرق وصوله دقيقة. تحقّق من مجلد الرسائل غير المرغوب فيها أيضًا.';
+
+  @override
+  String get newPasswordLabel => 'كلمة المرور الجديدة';
+
+  @override
+  String get newPasswordConfirmLabel => 'تأكيد كلمة المرور الجديدة';
+
+  @override
+  String get currentPasswordLabel => 'كلمة المرور الحالية';
+
+  @override
+  String get passwordRule =>
+      '15 حرفًا على الأقل. بضع كلمات غير مترابطة تفي بالغرض؛ وكل الأحرف مسموح بها.';
+
+  @override
+  String get authForgotPassword => 'نسيت كلمة المرور؟';
+
+  @override
+  String get authNoticePasswordChanged =>
+      'تم تغيير كلمة مرورك. سجّل الدخول بكلمة المرور الجديدة؛ كل ما على هذا الهاتف لا يزال موجودًا.';
+
+  @override
+  String get resetTitle => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get resetEmailLead =>
+      'أدخل البريد الإلكتروني لحسابك. إذا كان هناك حساب يستخدمه، فسنرسل إليه رمز إعادة التعيين.';
+
+  @override
+  String get resetSendCode => 'إرسال الرمز';
+
+  @override
+  String get resetCodeTitle => 'أدخل الرمز';
+
+  @override
+  String resetCodeLead(String email) {
+    return 'إذا كان هناك حساب يستخدم $email، فقد أرسلنا إليه رمزًا من 8 أرقام. وهو صالح لمدة 10 دقائق.';
+  }
+
+  @override
+  String get resetUseAnotherEmail => 'استخدام بريد إلكتروني آخر';
+
+  @override
+  String get resetPasswordTitle => 'كلمة مرور جديدة';
+
+  @override
+  String get resetPasswordLead =>
+      'اختر كلمة مرورك الجديدة. سيتم تسجيل الخروج من جميع الأجهزة.';
+
+  @override
+  String get resetSetPassword => 'حفظ كلمة المرور';
+
+  @override
+  String get resetGoToSignIn => 'الانتقال إلى تسجيل الدخول';
+
+  @override
+  String get changePasswordTitle => 'تغيير كلمة المرور';
+
+  @override
+  String get changePasswordLead =>
+      'يتحقّق GoHard من كلمة مرورك الحالية قبل تغيير أي شيء.';
+
+  @override
+  String get changePasswordSignsOut =>
+      'تغييرها يسجّل خروجك من كل الأجهزة، ومنها هذا الهاتف. تبقى بياناتك على هذا الهاتف وتُزامَن مجددًا عند تسجيل الدخول.';
+
+  @override
+  String get changePasswordButton => 'تغيير كلمة المرور';
+
+  @override
+  String get changePasswordConfirmTitle => 'تسجيل الخروج من كل مكان؟';
+
+  @override
+  String get changePasswordConfirmBody =>
+      'بعد التغيير ستسجّل الدخول مجددًا بكلمة المرور الجديدة، على هذا الهاتف وكل الأجهزة الأخرى.';
+
+  @override
+  String get changePasswordOffline =>
+      'يتطلّب تغيير كلمة المرور اتصالًا. لا يُحفَظ شيء لوقت لاحق.';
+
+  @override
+  String get verifyTitle => 'تأكيد البريد الإلكتروني';
+
+  @override
+  String verifyLead(String email) {
+    return 'سنرسل رمزًا من 8 أرقام إلى $email لتأكيد أنه يخصّك.';
+  }
+
+  @override
+  String get verifySend => 'إرسال الرمز';
+
+  @override
+  String get verifyConfirm => 'تأكيد';
+
+  @override
+  String get verifyLater => 'لاحقًا';
+
+  @override
+  String get verifyOptional =>
+      'التأكيد اختياري حاليًا. إنه يؤكّد هذا العنوان فقط ولا يغيّر شيئًا آخر.';
+
+  @override
+  String get verifyVerified => 'تم تأكيد بريدك الإلكتروني.';
+
+  @override
+  String get verifyDone => 'تم تأكيد البريد الإلكتروني';
+
+  @override
+  String get meEmail => 'البريد الإلكتروني';
+
+  @override
+  String get meEmailVerified => 'مؤكَّد';
+
+  @override
+  String get meEmailNotVerified => 'غير مؤكَّد';
+
+  @override
+  String get mePassword => 'كلمة المرور';
+
+  @override
+  String get mePasswordSubtitle => 'تغيير كلمة المرور';
+
+  @override
+  String get setupVerifyTitle => 'أكّد بريدك الإلكتروني';
+
+  @override
+  String get setupVerifySubtitle =>
+      'أرسلنا إليك رمزًا. اختياري: يمكنك فعل ذلك لاحقًا من «حسابي».';
 }

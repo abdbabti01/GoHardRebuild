@@ -283,6 +283,9 @@ extension type Profile(Json j) {
   bool? get showCarbs => j['showCarbs'] as bool?;
   bool? get showFat => j['showFat'] as bool?;
   int get revision => j['revision'] as int? ?? 0;
+
+  /// The server says the account's email is verified. Null: a server from before verification (say nothing).
+  bool? get emailVerified => j['emailVerified'] as bool?;
 }
 
 /// Weekly activity targets effective from [weekStart] (a Monday) until a later record. Null = no target; both null

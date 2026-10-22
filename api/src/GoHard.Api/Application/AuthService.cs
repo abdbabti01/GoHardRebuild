@@ -26,12 +26,13 @@ public sealed class AuthOptions
     public SymmetricSecurityKey Key => new(Encoding.UTF8.GetBytes(SigningKey));
 }
 
-public sealed record RegisterRequest(string Email, string Password, string DisplayName);
+/// <param name="Language">Optional (en, fr-CA, ar): the language of the verification email. Older apps omit it.</param>
+public sealed record RegisterRequest(string Email, string Password, string DisplayName, string? Language = null);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 public sealed record ProfileDto(Guid UserId, string Email, string DisplayName, string Appearance, string LoadUnit,
     bool RemindersEnabled, string? ReminderLocalTime, int Revision, int? CalorieGoal = null, int? ProteinGoal = null,
-    int? WaterGoalMl = null, bool? ShowWater = null, bool? ShowCarbs = null, bool? ShowFat = null);
+    int? WaterGoalMl = null, bool? ShowWater = null, bool? ShowCarbs = null, bool? ShowFat = null, bool EmailVerified = false);
 public sealed record AuthResponse(string AccessToken, DateTime AccessTokenExpiresAtUtc, string RefreshToken, ProfileDto Profile);
 public sealed record AuthError(string Code);
 
@@ -42,14 +43,18 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
 
     public static ProfileDto ToProfile(User u) =>
         new(u.Id, u.Email, u.DisplayName, u.Appearance, u.LoadUnit, u.RemindersEnabled, u.ReminderLocalTime, u.Revision, u.CalorieGoal, u.ProteinGoalG, u.WaterGoalMl,
-            u.ShowWater, u.ShowCarbs, u.ShowFat);
+            u.ShowWater, u.ShowCarbs, u.ShowFat, u.EmailVerifiedAtUtc != null);
+
+    /// <summary>The one sign-in identifier form, used by every account flow.</summary>
+    public static string NormalizeEmail(string? email) => (email ?? "").Trim().ToLowerInvariant();
+    public static bool PlausibleEmail(string email) => email.Length is >= 3 and <= 320 && email.Contains('@');
 
     public async Task<(AuthResponse? Ok, string? Error)> RegisterAsync(RegisterRequest r, CancellationToken ct)
     {
-        var email = (r.Email ?? "").Trim().ToLowerInvariant();
+        var email = NormalizeEmail(r.Email);
         var name = (r.DisplayName ?? "").Trim();
-        if (email.Length is < 3 or > 320 || !email.Contains('@')) return (null, "INVALID_EMAIL");
-        if ((r.Password ?? "").Length < 8) return (null, "WEAK_PASSWORD");
+        if (!PlausibleEmail(email)) return (null, "INVALID_EMAIL");
+        if (PasswordPolicy.Check(r.Password) is { } weak) return (null, weak);
         if (name.Length is 0 or > 80) return (null, "INVALID_DISPLAY_NAME");
         if (await db.Users.AnyAsync(u => u.Email == email, ct)) return (null, "EMAIL_IN_USE");
 
@@ -68,11 +73,13 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest r, CancellationToken ct)
     {
-        var email = (r.Email ?? "").Trim().ToLowerInvariant();
+        var email = NormalizeEmail(r.Email);
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
         if (user is null || !VerifyPassword(user, r.Password)) return null;
         return await IssueAsync(user, ct);
     }
+
+    public static string HashPassword(User user, string password) => Hasher.HashPassword(user, password);
 
     public static bool VerifyPassword(User user, string? password) =>
         !string.IsNullOrEmpty(password) &&
@@ -93,7 +100,8 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
         var token = await db.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(t => t.TokenHash == HashToken(presented), ct);
         if (token is null || token.ExpiresAtUtc <= now) return null;
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == token.UserId, ct);
-        if (user is null) return null;
+        // Issued under another security stamp: the password changed since (docs/AUTHENTICATION_EMAIL.md › Sessions).
+        if (user is null || (token.SecurityStamp is not null && token.SecurityStamp != user.SecurityStamp)) return null;
         var replacement = Successor(presented);
         var replacementHash = HashToken(replacement);
 
@@ -109,6 +117,7 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
                 db.RefreshTokens.Add(new RefreshToken
                 {
                     Id = replacementId, UserId = user.Id, TokenHash = replacementHash, ExpiresAtUtc = now.AddDays(options.RefreshTokenDays),
+                    SecurityStamp = user.SecurityStamp,
                 });
                 await db.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
@@ -122,7 +131,8 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
         if (token.ReplacedById is not { } replacedBy || token.RevokedAtUtc is not { } rotatedAt
             || options.RefreshRecoverySeconds <= 0 || now - rotatedAt > TimeSpan.FromSeconds(options.RefreshRecoverySeconds)) return null;
         var next = await db.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(t => t.Id == replacedBy, ct);
-        if (next is null || next.RevokedAtUtc is not null || next.ExpiresAtUtc <= now || next.UserId != token.UserId || next.TokenHash != replacementHash)
+        if (next is null || next.RevokedAtUtc is not null || next.ExpiresAtUtc <= now || next.UserId != token.UserId || next.TokenHash != replacementHash
+            || (next.SecurityStamp is not null && next.SecurityStamp != user.SecurityStamp))
             return null;
         return Issue(user, replacement);
     }
@@ -146,7 +156,7 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
         db.RefreshTokens.Add(new RefreshToken
         {
             Id = Guid.NewGuid(), UserId = user.Id, TokenHash = HashToken(refresh),
-            ExpiresAtUtc = DateTime.UtcNow.AddDays(options.RefreshTokenDays),
+            ExpiresAtUtc = DateTime.UtcNow.AddDays(options.RefreshTokenDays), SecurityStamp = user.SecurityStamp,
         });
         await db.SaveChangesAsync(ct);
         return Issue(user, refresh);
@@ -162,6 +172,26 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
         return new(new JwtSecurityTokenHandler().WriteToken(jwt), expires, refresh, ToProfile(user));
     }
 
-    private static string NewSecret() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-    private static string HashToken(string token) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+    public static string NewSecret() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    public static string HashToken(string token) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+}
+
+/// <summary>
+/// The one policy for every NEW password (registration, reset, change). Existing passwords keep signing in unchanged.
+/// NIST SP 800-63B rev. 4 §3.1.1.2 and the OWASP Authentication Cheat Sheet (read 21 Oct 2026): at least 15 characters
+/// for a password that is the only factor (it is here), allow at least 64, no composition rules, never truncate, count
+/// each Unicode code point as one character. 256 is the ceiling so a request cannot make hashing arbitrarily expensive;
+/// longer is refused, never cut. Not done: a breached-password blocklist (needs an outside corpus) and NFC
+/// normalization (would change how existing passwords verify).
+/// </summary>
+public static class PasswordPolicy
+{
+    public const int MinLength = 15, MaxLength = 256;
+
+    /// <summary>An error code, or null when the password is acceptable.</summary>
+    public static string? Check(string? password)
+    {
+        var length = (password ?? "").EnumerateRunes().Count();
+        return length < MinLength ? "WEAK_PASSWORD" : length > MaxLength ? "PASSWORD_TOO_LONG" : null;
+    }
 }

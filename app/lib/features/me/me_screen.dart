@@ -15,6 +15,7 @@ import '../../core/units.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../auth/account_security.dart';
 import '../activity/move_prefs.dart' show stepsEnabledProvider;
 import '../activity/steps_ui.dart' show showStepsSheet;
 import '../body/body_prefs.dart';
@@ -269,6 +270,17 @@ class MeScreen extends ConsumerWidget {
 
         _Group(l.meGroupAccount),
         GroupCard(children: [
+          // The address and what the server says about it; a server from before verification says nothing, so neither does Me.
+          if (profile?.emailVerified case final verified? when session != null)
+            GroupRow(
+              key: const Key('me-email'), icon: verified ? Icons.verified_outlined : Icons.mark_email_unread_outlined,
+              tone: verified ? Tone.success : Tone.warning, title: l.meEmail, subtitle: ltr(session.email),
+              value: verified ? l.meEmailVerified : l.meEmailNotVerified,
+              onTap: verified ? null : () => push(context, const VerifyEmailScreen()),
+            ),
+          if (ref.watch(compatibilityProvider).supports(securityCapability))
+            GroupRow(key: const Key('me-password'), icon: Icons.password, title: l.mePassword, subtitle: l.mePasswordSubtitle,
+                onTap: () => push(context, const ChangePasswordScreen())),
           // The same words as Today's notice. Tapping the row opens the review, or asks the account again.
           GroupRow(
             key: const Key('me-sync'), icon: syncIcon, tone: syncTone, title: l.meSyncStatus, subtitle: syncDetail, value: syncWord,

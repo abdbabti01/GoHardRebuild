@@ -24,6 +24,8 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<WeeklyGoal> WeeklyGoals => Set<WeeklyGoal>();
     public DbSet<ExerciseIncrement> ExerciseIncrements => Set<ExerciseIncrement>();
     public DbSet<Proposal> Proposals => Set<Proposal>();
+    public DbSet<AuthChallenge> AuthChallenges => Set<AuthChallenge>();
+    public DbSet<MailMessage> MailMessages => Set<MailMessage>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -123,6 +125,23 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
             e.Property(x => x.Revision).IsConcurrencyToken();
         });
         Owned<Proposal>(b, x => x.UserId).HasOne<Plan>().WithMany().HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Cascade);
+
+        // Account email (docs/AUTHENTICATION_EMAIL.md). Both go with the account; unknown-address challenges have no owner.
+        Owned<AuthChallenge>(b, x => x.UserId).HasIndex(x => new { x.EmailKey, x.Purpose, x.CreatedAtUtc });
+        b.Entity<AuthChallenge>(e =>
+        {
+            e.Property(x => x.Purpose).HasMaxLength(32);
+            e.Property(x => x.EmailKey).HasMaxLength(64);
+            e.HasIndex(x => x.GrantHash).IsUnique();
+        });
+        Owned<MailMessage>(b, x => x.UserId).HasIndex(x => new { x.State, x.NextAttemptAtUtc });
+        b.Entity<MailMessage>(e =>
+        {
+            e.Property(x => x.Kind).HasMaxLength(32);
+            e.Property(x => x.Language).HasMaxLength(8);
+            e.Property(x => x.State).HasMaxLength(16);
+            e.HasOne<AuthChallenge>().WithMany().HasForeignKey(x => x.ChallengeId).OnDelete(DeleteBehavior.Cascade);
+        });
     }
 
     /// <summary>Every owned row is indexed by owner and erased with the account.</summary>

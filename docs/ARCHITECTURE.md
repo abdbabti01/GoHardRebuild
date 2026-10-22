@@ -43,6 +43,11 @@ retries with the current token); only a rejection of the refresh token the sessi
 that cannot be saved is kept in memory and saved on the next foreground; the keychain is "after first unlock" so a
 rotation during a locked-screen run can be saved (docs/PROGRESS_LEDGER.md, 19 Oct 2026).
 
+**Password changes** (reset by emailed code, or change while signed in; docs/AUTHENTICATION_EMAIL.md) give the account a
+new security stamp and revoke every refresh token. Refresh tokens also record the stamp they were issued under (since
+`AddAccountEmail`; older rows have none) and are refused under any other, so neither a refresh racing the change nor the
+recovery below can revive a session.
+
 **Refresh recovery** (`Auth:RefreshRecoverySeconds`, default 300; 0 turns it off). A rotated refresh token's replacement
 is HMAC(server-only key derived from the signing key, previous token), so only hashes are stored and every instance and
 restart derives the same value. If the phone presents the immediately previous token (revoked by rotation, not by

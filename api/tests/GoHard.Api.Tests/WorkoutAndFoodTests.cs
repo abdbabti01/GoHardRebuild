@@ -201,7 +201,8 @@ public class WorkoutAndFoodTests(PostgresFixture pg)
         {
             await using var api = new ApiFactory(cs);
             Assert.Equal(HttpStatusCode.OK, (await api.CreateClient().GetAsync("/health/ready")).StatusCode);
-            // No hosted background service exists that could reap, complete or rewrite workouts.
+            // No hosted background service exists that could reap, complete or rewrite workouts. (The account-mail sender
+            // is the only one, and only where a sender is configured; it touches nothing but its own outbox.)
             Assert.DoesNotContain(api.Services.GetServices<Microsoft.Extensions.Hosting.IHostedService>(), s => s.GetType().Assembly == typeof(Program).Assembly);
         }
 

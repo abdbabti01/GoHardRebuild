@@ -9,6 +9,7 @@ import '../../core/widgets.dart';
 import '../../data/session.dart' show SignOutReason;
 import '../coach/coach_prefs.dart';
 import '../me/account_repository.dart';
+import 'account_security.dart';
 
 /// Sign in or create an account. Typed values are kept through any failure.
 class AuthScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _register = false, _busy = false, _showPassword = false;
   /// Worded at build time, so an error on screen follows a language change.
   String Function(AppLocalizations)? _error;
+
+  /// Set when a password reset just finished here.
+  bool _passwordReset = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // After a password change the address that was signed in is filled in again.
+    _email.text = ref.read(sessionsProvider).retainedEmail ?? '';
+  }
+
+  Future<void> _forgot() async {
+    final email = await push<String>(context, ForgotPasswordScreen(email: _email.text.trim()));
+    if (email == null || !mounted) return;
+    setState(() {
+      _email.text = email;
+      _password.clear();
+      _register = false;
+      _error = null;
+      _passwordReset = true;
+    });
+  }
 
   @override
   void dispose() {
@@ -58,7 +81,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final notice = switch (ref.watch(sessionsProvider).notice) {
       SignOutReason.expired => l.authNoticeExpired,
       SignOutReason.accountDeleted => l.authNoticeAccountDeleted,
-      null => null,
+      SignOutReason.passwordChanged => l.authNoticePasswordChanged,
+      null => _passwordReset ? l.authNoticePasswordChanged : null,
     };
     return Scaffold(
       body: SafeArea(
@@ -99,7 +123,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             TextField(key: const Key('auth-password'), controller: _password, obscureText: !_showPassword, autocorrect: false, enableSuggestions: false, onSubmitted: (_) => _submit(),
                 autofillHints: [_register ? AutofillHints.newPassword : AutofillHints.password],
                 decoration: InputDecoration(
-                  labelText: l.authPasswordLabel, helperText: _register ? l.authPasswordHelper : null,
+                  labelText: l.authPasswordLabel, helperText: _register ? l.passwordRule : null, helperMaxLines: 3,
                   // The one visibility control: a labelled button that says what it will do.
                   suffixIcon: IconButton(
                     key: const Key('auth-show-password'), tooltip: _showPassword ? l.authHidePassword : l.authShowPassword,
@@ -107,6 +131,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     onPressed: () => setState(() => _showPassword = !_showPassword),
                   ),
                 )),
+            // Recovery where it is needed: under the password, on sign-in only.
+            if (!_register)
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(key: const Key('auth-forgot'), onPressed: _busy ? null : _forgot, child: Text(l.authForgotPassword)),
+              ),
             const SizedBox(height: 16),
             if (_error != null) ...[StatusLine(Icons.error_outline, _error!(l), tone: Tone.error), const SizedBox(height: 14)],
             PrimaryButton(_register ? l.authCreateAccountButton : l.authSignInButton, key: const Key('auth-submit'), onPressed: _submit, busy: _busy),
