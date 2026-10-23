@@ -288,6 +288,20 @@ public class SavedFood
     public DateTime? DeletedAtUtc { get; set; }
 }
 
+/// <summary>
+/// A saved meal (foods with default amounts) or a recipe (a batch with its yield). A template: saving, editing or
+/// deleting one never records, changes or removes anything eaten. Logged food keeps its own snapshot.
+/// </summary>
+public class SavedMeal
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string BodyJson { get; set; } = "{}";
+    public int Revision { get; set; } = 1;
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+}
+
 /// <summary>An exercise the person defined. Private to its owner; prescriptions name it as "custom:&lt;id&gt;".</summary>
 public class CustomExercise
 {

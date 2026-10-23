@@ -47,6 +47,10 @@ abstract final class Kinds {
   /// What the server last said about this owner's access (id = the owner): required verification and a legacy grace
   /// deadline. Local only, written only from server answers; never a code or a password. docs/AUTHENTICATION_EMAIL.md.
   static const accountAccess = 'account_access';
+  /// Saved meals and recipes: templates, never food eaten (features/nutrition/saved_meals.dart).
+  static const savedMeal = 'saved_meal';
+  /// An unfinished saved meal or recipe being edited (id = the definition's ID, or `new:meal` / `new:recipe`). Local only.
+  static const mealDraft = 'meal_draft';
 }
 
 /// The server's word on whether this account may use its data (docs/AUTHENTICATION_EMAIL.md › Required verification).
@@ -274,7 +278,15 @@ extension type FoodEntry(Json j) {
 
   /// Where the values came from when this was logged: `{item, quantity, unit}`. Null when typed by hand.
   /// It is this entry's own copy; nothing that happens to the food later changes it.
+  /// A recipe portion's is `{recipe, portion, partial}` instead (features/nutrition/saved_meals.dart).
   Json? get source => j['source'] as Json?;
+
+  /// One portion of a recipe, with the frozen batch it was taken from.
+  bool get isRecipePortion => source?['recipe'] is Map;
+
+  /// For a nutrient some ingredient has no value for: the sum of the values that are known. Its `macros` value is
+  /// null (unknown), so an app that does not read this never takes a partial sum for a total.
+  double? partial(String key) => _d((source?['partial'] as Map?)?[key]);
 }
 
 const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];

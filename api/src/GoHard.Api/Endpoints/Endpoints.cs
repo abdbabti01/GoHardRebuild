@@ -22,7 +22,7 @@ public static class GoHardEndpoints
         "workouts.sets", "workouts.finish", "food.nullable-nutrients", "runs.manual", "body-metrics", "account.erasure",
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
         "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes", WeeklyGoalService.Capability,
-        ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability, AccountEmailRegistration.Capability,
+        ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability, AccountEmailRegistration.Capability, SavedMealService.Capability,
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -33,7 +33,7 @@ public static class GoHardEndpoints
         .AddFoodDiscovery(config)
         .AddWeather(config)
         .AddCoach(config)
-        .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<WaterService>()
+        .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<SavedMealService>().AddScoped<WaterService>()
         .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>().AddScoped<WeeklyGoalService>()
         .AddScoped<ExerciseIncrementService>();
 
@@ -143,7 +143,7 @@ public static class GoHardEndpoints
             await s.DeleteOwnAccountAsync(u.UserId(), r.Password, ct) ? Results.NoContent() : Results.Json(new AuthError("WRONG_PASSWORD"), statusCode: 400));
 
         me.MapGet("/sync/snapshot", async (ClaimsPrincipal u, GoHardDb db, AccountAccess access, PlanService plans, WorkoutService workouts, FoodService food,
-            ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, WaterService water, WeeklyGoalService goals, ExerciseIncrementService increments, CancellationToken ct) =>
+            ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, WaterService water, WeeklyGoalService goals, ExerciseIncrementService increments, SavedMealService savedMeals, CancellationToken ct) =>
         {
             var id = u.UserId();
             return Results.Ok(new SnapshotDto(
@@ -154,7 +154,7 @@ public static class GoHardEndpoints
                 await proposals.ListAsync(id, ct),
                 await db.CatalogExercises.AsNoTracking().OrderBy(c => c.Name).Select(c => new CatalogExerciseDto(c.Key, c.Name, c.Category, c.Equipment, c.IsTimed)).ToListAsync(ct),
                 DateTime.UtcNow, await saved.ListAsync(id, ct), await custom.ListAsync(id, ct),
-                await water.ListAsync(id, null, ct), await goals.ListAsync(id, ct), await increments.ListAsync(id, ct)));
+                await water.ListAsync(id, null, ct), await goals.ListAsync(id, ct), await increments.ListAsync(id, ct), await savedMeals.ListAsync(id, ct)));
         });
 
         // Plans
@@ -216,6 +216,9 @@ public static class GoHardEndpoints
         me.MapGet("/food-entries", async (DateOnly date, ClaimsPrincipal u, FoodService s, CancellationToken ct) => Results.Ok(await s.ListAsync(u.UserId(), date, ct)));
         me.MapPost("/food-entries", (FoodCreateRequest r, ClaimsPrincipal u, CommandRunner run, FoodService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "food.create", r, () => s.CreateAsync(u.UserId(), r, ct), ct));
+        // A saved meal logged as one operation: all of its entries or none (docs/FOOD_DATA.md › Saved meals and recipes).
+        me.MapPost("/food-entries/batch", (FoodBatchRequest r, ClaimsPrincipal u, CommandRunner run, FoodService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "food.batch", r, () => s.CreateManyAsync(u.UserId(), r, ct), ct));
         me.MapPut("/food-entries/{id:guid}", (Guid id, FoodUpdateRequest r, ClaimsPrincipal u, CommandRunner run, FoodService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "food.update", new { id, r }, () => s.UpdateAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/food-entries/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, FoodService s, CancellationToken ct) =>
@@ -243,6 +246,12 @@ public static class GoHardEndpoints
             run.RunAsync(u.UserId(), r.OperationId, "savedfood.put", new { id, r }, () => s.PutAsync(u.UserId(), id, r, ct), ct));
         me.MapPost("/saved-foods/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, SavedFoodService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "savedfood.delete", new { id, r }, () => s.DeleteAsync(u.UserId(), id, r, ct), ct));
+
+        // Saved meals and recipes: templates, never food eaten
+        me.MapPut("/saved-meals/{id:guid}", (Guid id, SavedMealPutRequest r, ClaimsPrincipal u, CommandRunner run, SavedMealService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "savedmeal.put", new { id, r }, () => s.PutAsync(u.UserId(), id, r, ct), ct));
+        me.MapPost("/saved-meals/{id:guid}/delete", (Guid id, RevisionCommand r, ClaimsPrincipal u, CommandRunner run, SavedMealService s, CancellationToken ct) =>
+            run.RunAsync(u.UserId(), r.OperationId, "savedmeal.delete", new { id, r }, () => s.DeleteAsync(u.UserId(), id, r, ct), ct));
 
         // Food data from outside providers. Reading only: nothing here records anything as eaten.
         var foods = me.MapGroup("/foods").RequireRateLimiting("food-data");

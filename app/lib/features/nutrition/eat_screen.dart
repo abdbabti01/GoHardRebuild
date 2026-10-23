@@ -21,6 +21,7 @@ import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
 import 'nutrition_tools.dart';
+import 'saved_meals_screens.dart';
 import 'water.dart';
 
 /// The dated food journal: the day's overview, one Log food action, then Breakfast, Lunch, Dinner and Snack,
@@ -89,8 +90,20 @@ class _EatScreenState extends ConsumerState<EatScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
       }
     }
+    // Saved meals & recipes, once, to someone who logs food (after the hints above have had their turn).
+    if (_hint == '' && inView && logged) {
+      const id = 'eat.meals';
+      if (ref.read(coachPrefsProvider).mayIntroduce(owner, id)) {
+        _hint = id;
+        WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
+      }
+    }
     final l = context.l10n;
     if (_hint == 'eat.history') return CoachSay(l.eatHintHistory);
+    if (_hint == 'eat.meals') {
+      return CoachSay(l.eatHintMeals,
+          guide: (label: l.mealsLibraryTitle, key: const Key('eat-coach-meals'), onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))));
+    }
     if (_hint == 'eat.saved.new') return CoachSay(l.eatHintSavedNew);
     if (_hint != 'eat.saved.shortcut') return null;
     final fav = saved.any((s) => s.isFavourite);
@@ -108,17 +121,22 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     return CoachSay(hasGoal ? (water ? l.eatSayGoalWater : l.eatSayGoal) : (water ? l.eatSayNoGoalWater : l.eatSayNoGoal));
   }
 
-  /// The portion as it was saved, then the macros that are known, then how the record stands with the account.
+  /// The portion as it was saved, then the macros that are known (a recipe portion's partial sums marked "known"), then
+  /// how the record stands with the account.
   static String _detail(AppLocalizations l, Stored<FoodEntry> r) {
     final e = r.value;
+    String? macro(double? v, String key, String Function(String) say) {
+      final known = v ?? e.partial(key);
+      return known == null ? null : v != null ? say(formatNumber(v)) : '${say(formatNumber(known))} (${l.eatKnown})';
+    }
     final macros = [
-      if (e.protein != null) l.eatMacroProtein(formatNumber(e.protein!)),
-      if (e.carbs != null) l.eatMacroCarbs(formatNumber(e.carbs!)),
-      if (e.fat != null) l.eatMacroFat(formatNumber(e.fat!)),
+      ?macro(e.protein, 'protein', l.eatMacroProtein),
+      ?macro(e.carbs, 'carbs', l.eatMacroCarbs),
+      ?macro(e.fat, 'fat', l.eatMacroFat),
     ];
     return [
       e.amountDescription,
-      if (macros.isNotEmpty) macros.join(' · ') else if (e.calories == null) l.eatNoNutritionEntered,
+      if (macros.isNotEmpty) macros.join(' · ') else if (e.calories == null && e.partial('calories') == null) l.eatNoNutritionEntered,
       if (r.needsReview) l.eatNeedsReview else if (r.isPending) l.eatSyncPendingShort,
     ].join(' · ');
   }
@@ -194,7 +212,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                   entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: day == today ? profile?.calorieGoal : null, proteinGoal: day == today ? profile?.proteinGoal : null, pending: live.any((r) => r.isPending),
                   showCarbs: display.carbs, showFat: display.fat,
                   footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
-                  action: PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
+                  // Log food, and beside it the way to several foods at once: the same day, the meal of the time of day.
+                  action: Wrap(spacing: 4, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                    PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
+                    TextButton.icon(key: const Key('eat-saved-meals'), icon: const Icon(Icons.menu_book_outlined, size: 20), label: Text(l.mealsLibraryTitle),
+                        onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
+                  ]),
                 ),
                 const SizedBox(height: 16),
                 // The one way to History & trends (charts by week and month, the calendar, the days with entries): under
@@ -227,7 +250,19 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         ]),
                       ),
                       for (final r in mine) _EntryRow(r, indent: indent, detail: _detail(l, r), onTap: () => openFoodForm(context, dayKey: day, entry: r.value)),
-                      _AddFood(key: Key('eat-add-$label'), meal: meal, indent: indent, onTap: () => openFoodForm(context, dayKey: day, meal: meal)),
+                      Row(children: [
+                        Expanded(child: _AddFood(key: Key('eat-add-$label'), meal: meal, indent: indent, onTap: () => openFoodForm(context, dayKey: day, meal: meal))),
+                        // Quiet, beside Add food: this meal's foods copied into a new saved meal. Nothing is logged again.
+                        if (mine.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 6),
+                            child: TextButton(
+                              key: Key('eat-save-meal-$label'),
+                              onPressed: () => saveAsMeal(context, dayKey: day, meal: meal, entries: [for (final r in mine) r.value]),
+                              child: Text(l.mealsSaveAsMeal, semanticsLabel: l.mealsSaveAsMealSaid(mealLabel(l, meal))),
+                            ),
+                          ),
+                      ]),
                     ]);
                   }(),
                   const SizedBox(height: 12),
@@ -289,7 +324,8 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = r.value;
     final name = Text(e.name, style: context.sansStyle(15.5, weight: FontWeight.w500));
-    final kcal = Text(context.l10n.eatKcalValue(e.calories == null ? '—' : formatKcal(e.calories!)), style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
+    final part = e.partial('calories');
+    final kcal = Text(e.calories == null && part != null ? context.l10n.eatKcalKnown(formatKcal(part)) : context.l10n.eatKcalValue(e.calories == null ? '—' : formatKcal(e.calories!)), style: context.numStyle(14.5, color: context.c.secondary, weight: FontWeight.w500));
     return Semantics(
       button: true,
       child: InkWell(

@@ -14277,5 +14277,499 @@
   "trainViewAllHistorySaid": "View all workout history",
   "@trainViewAllHistorySaid": {
     "description": "Screen-reader label of View all history."
+  },
+  "mealsLibraryTitle": "Saved meals & recipes",
+  "@mealsLibraryTitle": {
+    "description": "Title of the saved meals and recipes library, and the links to it from Eat and Add food."
+  },
+  "mealsFromAddFoodSubtitle": "Several foods at once, with the amounts checked first",
+  "@mealsFromAddFoodSubtitle": {
+    "description": "Add food: subtitle of the row that opens Saved meals & recipes."
+  },
+  "mealsForContext": "Logs to {meal} · {date}",
+  "@mealsForContext": {
+    "description": "Library subtitle: the meal and day a log starts on.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsTabMeals": "Meals",
+  "@mealsTabMeals": {
+    "description": "Library tab: saved meals."
+  },
+  "mealsTabRecipes": "Recipes",
+  "@mealsTabRecipes": {
+    "description": "Library tab: recipes."
+  },
+  "mealsNewMeal": "New meal",
+  "@mealsNewMeal": {
+    "description": "Button and editor title: create a saved meal."
+  },
+  "mealsNewRecipe": "New recipe",
+  "@mealsNewRecipe": {
+    "description": "Button and editor title: create a recipe."
+  },
+  "mealsEditMeal": "Edit meal",
+  "@mealsEditMeal": {
+    "description": "Editor title for an existing saved meal."
+  },
+  "mealsEditRecipe": "Edit recipe",
+  "@mealsEditRecipe": {
+    "description": "Editor title for an existing recipe, and the review link to it."
+  },
+  "mealsSearchHint": "Search by name",
+  "@mealsSearchHint": {
+    "description": "Library search field hint."
+  },
+  "mealsNoMatch": "Nothing saved matches “{query}”.",
+  "@mealsNoMatch": {
+    "description": "Library search with no result.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsEmptyMealsTitle": "No saved meals yet",
+  "@mealsEmptyMealsTitle": {
+    "description": "Empty state title, Meals tab."
+  },
+  "mealsEmptyMealsBody": "A saved meal keeps several foods with their usual amounts, like 2 eggs and 60 g of oats. When you log it, you can change the amounts first.",
+  "@mealsEmptyMealsBody": {
+    "description": "Empty state body, Meals tab: what a saved meal is."
+  },
+  "mealsEmptyRecipesTitle": "No recipes yet",
+  "@mealsEmptyRecipesTitle": {
+    "description": "Empty state title, Recipes tab."
+  },
+  "mealsEmptyRecipesBody": "A recipe is a whole batch of ingredients and the number of servings it makes. You log the portion you had.",
+  "@mealsEmptyRecipesBody": {
+    "description": "Empty state body, Recipes tab: what a recipe is."
+  },
+  "mealsUntitled": "Untitled",
+  "@mealsUntitled": {
+    "description": "Name of an unsaved draft with no name yet."
+  },
+  "mealsUnsavedDraft": "Unsaved changes",
+  "@mealsUnsavedDraft": {
+    "description": "Marks a definition with an unfinished edit on this phone."
+  },
+  "mealsFoodsCount": "{count, plural, =1{1 food} other{{count} foods}}",
+  "@mealsFoodsCount": {
+    "description": "Number of foods in a saved meal.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mealsIngredientsCount": "{count, plural, =1{1 ingredient} other{{count} ingredients}}",
+  "@mealsIngredientsCount": {
+    "description": "Number of ingredients in a recipe.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mealsMakesServings": "{count, plural, =1{makes 1 serving} other{makes {value} servings}}",
+  "@mealsMakesServings": {
+    "description": "How many servings a recipe batch makes. count is the number, value the same number formatted.",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsServingsAmount": "{count, plural, =1{1 serving} other{{value} servings}}",
+  "@mealsServingsAmount": {
+    "description": "A logged recipe portion in servings (\"1.5 servings\"). Kept with the entry as written.",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsPerServing": "{value} per serving",
+  "@mealsPerServing": {
+    "description": "Energy of one serving of a recipe.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsMenuLabel": "Options for {name}",
+  "@mealsMenuLabel": {
+    "description": "Tooltip of a library row's menu.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsDuplicate": "Duplicate",
+  "@mealsDuplicate": {
+    "description": "Library row menu: make a copy as a new definition."
+  },
+  "mealsCopyName": "{name} (copy)",
+  "@mealsCopyName": {
+    "description": "Name proposed for a copy.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsDeleteTitle": "Delete {name}?",
+  "@mealsDeleteTitle": {
+    "description": "Confirm deleting a saved meal or recipe.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsDeleteBody": "It is removed from Saved meals & recipes. Food you already logged from it stays exactly as it is.",
+  "@mealsDeleteBody": {
+    "description": "Confirm deleting: history is not touched."
+  },
+  "mealsDeleted": "Deleted. Your logged food is unchanged.",
+  "@mealsDeleted": {
+    "description": "Toast after deleting a definition."
+  },
+  "mealsServerUnavailable": "Your account’s server doesn’t take saved meals and recipes yet. Drafts stay on this phone; saving and logging them wait until it does.",
+  "@mealsServerUnavailable": {
+    "description": "Shown when the server has said it has no saved meals capability."
+  },
+  "mealsHelpLabel": "Help with saved meals and recipes",
+  "@mealsHelpLabel": {
+    "description": "Screen-reader label of the coach help button."
+  },
+  "mealsCoachLibrary": "A saved meal keeps foods and their usual amounts. When you log it, you can halve, double or change any of them first.",
+  "@mealsCoachLibrary": {
+    "description": "Coach bubble in the library, Meals tab."
+  },
+  "mealsCoachRecipe": "A recipe divides a whole batch into the servings you choose.",
+  "@mealsCoachRecipe": {
+    "description": "Coach bubble about recipes."
+  },
+  "eatHintMeals": "Eat this often? Save the meal and adjust the amounts next time.",
+  "@eatHintMeals": {
+    "description": "One-time Eat coach hint about saved meals."
+  },
+  "mealsSaved": "Your meal is in Saved meals & recipes.",
+  "@mealsSaved": {
+    "description": "Toast after saving a meal. Nothing was logged."
+  },
+  "mealsSavedRecipe": "Your recipe is in Saved meals & recipes.",
+  "@mealsSavedRecipe": {
+    "description": "Toast after saving a recipe."
+  },
+  "mealsSaveAsMeal": "Save as meal",
+  "@mealsSaveAsMeal": {
+    "description": "Quiet button on a journal meal group."
+  },
+  "mealsSaveAsMealSaid": "Save {meal} as a saved meal",
+  "@mealsSaveAsMealSaid": {
+    "description": "Screen-reader label of Save as meal.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsNameLabel": "Name",
+  "@mealsNameLabel": {
+    "description": "Name field of a meal or recipe."
+  },
+  "mealsFoodsHeading": "Foods",
+  "@mealsFoodsHeading": {
+    "description": "Heading over a meal's foods."
+  },
+  "mealsIngredientsHeading": "Ingredients (whole batch)",
+  "@mealsIngredientsHeading": {
+    "description": "Heading over a recipe's ingredients."
+  },
+  "mealsAddFood": "Add food",
+  "@mealsAddFood": {
+    "description": "Adds a food to a meal (nothing is logged)."
+  },
+  "mealsAddIngredient": "Add ingredient",
+  "@mealsAddIngredient": {
+    "description": "Adds an ingredient to a recipe."
+  },
+  "mealsRemoveFood": "Remove {name}",
+  "@mealsRemoveFood": {
+    "description": "Tooltip: remove one food from a meal or recipe.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsServingsLabel": "Servings the batch makes",
+  "@mealsServingsLabel": {
+    "description": "Recipe yield field."
+  },
+  "mealsServingsHelper": "However many you divide it into. Nothing is guessed.",
+  "@mealsServingsHelper": {
+    "description": "Helper under the yield field."
+  },
+  "mealsWeightLabel": "Weight of the finished batch (optional)",
+  "@mealsWeightLabel": {
+    "description": "Optional prepared weight field."
+  },
+  "mealsWeightHelper": "Weigh it once it’s made to log portions in grams. The raw ingredients’ weight is never used for this.",
+  "@mealsWeightHelper": {
+    "description": "Helper under the prepared weight field."
+  },
+  "mealsTotalHeading": "Whole meal",
+  "@mealsTotalHeading": {
+    "description": "Nutrition panel title for a meal."
+  },
+  "mealsBatchHeading": "Whole batch",
+  "@mealsBatchHeading": {
+    "description": "Nutrition panel title for a recipe batch."
+  },
+  "mealsPerServingHeading": "One serving",
+  "@mealsPerServingHeading": {
+    "description": "Nutrition panel title for one recipe serving."
+  },
+  "mealsSomeMissing": "Some foods have no value for a nutrient: figures marked “known” are sums of what is known, not full totals.",
+  "@mealsSomeMissing": {
+    "description": "Note under a composite nutrition panel with missing values."
+  },
+  "mealsSaveAsNew": "Save as new",
+  "@mealsSaveAsNew": {
+    "description": "Saves a separate definition; the original stays."
+  },
+  "mealsDiscard": "Discard changes",
+  "@mealsDiscard": {
+    "description": "Throws away the editor draft."
+  },
+  "mealsDiscardTitle": "Discard your changes?",
+  "@mealsDiscardTitle": {
+    "description": "Confirm discarding a draft."
+  },
+  "mealsDiscardBody": "The saved version stays as it was.",
+  "@mealsDiscardBody": {
+    "description": "Confirm discarding a draft of an existing definition."
+  },
+  "mealsDiscardBodyNew": "This unsaved meal is removed from this phone.",
+  "@mealsDiscardBodyNew": {
+    "description": "Confirm discarding a draft of a new definition."
+  },
+  "mealsResumed": "Your unsaved changes from before are back.",
+  "@mealsResumed": {
+    "description": "Editor: a kept draft was restored."
+  },
+  "mealsChangedElsewhereTitle": "Changed on another device",
+  "@mealsChangedElsewhereTitle": {
+    "description": "Conflict dialog title."
+  },
+  "mealsChangedElsewhereBody": "This was changed on another device since you started. Save your version over it?",
+  "@mealsChangedElsewhereBody": {
+    "description": "Conflict dialog body."
+  },
+  "mealsSaveMine": "Save mine",
+  "@mealsSaveMine": {
+    "description": "Conflict dialog action."
+  },
+  "mealsDeletedElsewhere": "This was deleted on another device. Use Save as new to keep it.",
+  "@mealsDeletedElsewhere": {
+    "description": "Editor: the definition was deleted elsewhere."
+  },
+  "mealsProblemNoName": "Give it a name.",
+  "@mealsProblemNoName": {
+    "description": "Validation: no name."
+  },
+  "mealsProblemNameTooLong": "The name is too long (120 characters at most).",
+  "@mealsProblemNameTooLong": {
+    "description": "Validation: name too long."
+  },
+  "mealsProblemNoFoods": "Add at least one food.",
+  "@mealsProblemNoFoods": {
+    "description": "Validation: no foods."
+  },
+  "mealsProblemTooMany": "30 foods at most.",
+  "@mealsProblemTooMany": {
+    "description": "Validation: too many foods."
+  },
+  "mealsProblemBadQuantity": "Every amount must be more than 0.",
+  "@mealsProblemBadQuantity": {
+    "description": "Validation: a quantity is zero, negative or invalid."
+  },
+  "mealsProblemBadServings": "Enter how many servings the batch makes (more than 0, at most 1,000).",
+  "@mealsProblemBadServings": {
+    "description": "Validation: recipe yield."
+  },
+  "mealsProblemBadWeight": "Enter the finished weight in grams (more than 0), or leave it empty.",
+  "@mealsProblemBadWeight": {
+    "description": "Validation: prepared weight."
+  },
+  "mealsProblemTooLarge": "This is too large to save. Remove some foods.",
+  "@mealsProblemTooLarge": {
+    "description": "Validation: definition too large."
+  },
+  "mealsProblemBadMultiplier": "Enter a multiplier above 0, at most 20.",
+  "@mealsProblemBadMultiplier": {
+    "description": "Validation: custom multiplier."
+  },
+  "mealsProblemBadPortion": "Enter how much you had (more than 0).",
+  "@mealsProblemBadPortion": {
+    "description": "Validation: recipe portion."
+  },
+  "foodProblemTooLarge": "This food’s details are too large to save.",
+  "@foodProblemTooLarge": {
+    "description": "Food form: snapshot over its size bound."
+  },
+  "mealsUseAmount": "Use this amount",
+  "@mealsUseAmount": {
+    "description": "Amount form in selection mode: confirms a food for a meal or recipe (logs nothing)."
+  },
+  "mealsReviewNote": "Check the amounts. Nothing is logged until you confirm.",
+  "@mealsReviewNote": {
+    "description": "Subtitle of the log review."
+  },
+  "mealsAmountsHeading": "Amounts this time",
+  "@mealsAmountsHeading": {
+    "description": "Heading over the review's foods."
+  },
+  "mealsMultiplierCustom": "Other…",
+  "@mealsMultiplierCustom": {
+    "description": "Chip opening a custom multiplier."
+  },
+  "mealsMultiplierTitle": "Multiply every amount",
+  "@mealsMultiplierTitle": {
+    "description": "Custom multiplier dialog title."
+  },
+  "mealsMultiplierLabel": "Multiplier",
+  "@mealsMultiplierLabel": {
+    "description": "Custom multiplier field."
+  },
+  "mealsMultiplierSaid": "{value} times every amount",
+  "@mealsMultiplierSaid": {
+    "description": "Tooltip / screen reader of a multiplier chip.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsLogMeal": "Log meal",
+  "@mealsLogMeal": {
+    "description": "Review main action for a meal."
+  },
+  "mealsLogPortion": "Log portion",
+  "@mealsLogPortion": {
+    "description": "Review main action for a recipe portion."
+  },
+  "mealsLogged": "Logged to {meal}.",
+  "@mealsLogged": {
+    "description": "Toast after logging.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsPortionChanged": "Portion updated.",
+  "@mealsPortionChanged": {
+    "description": "Toast after changing a logged recipe portion."
+  },
+  "mealsUpdateSaved": "Update saved meal",
+  "@mealsUpdateSaved": {
+    "description": "Review: replace the saved meal's amounts with those shown."
+  },
+  "mealsUpdateTitle": "Update the saved meal?",
+  "@mealsUpdateTitle": {
+    "description": "Confirm Update saved meal."
+  },
+  "mealsUpdateBody": "The amounts shown become {name}’s saved amounts, as one meal. Nothing is logged, and food you logged before doesn’t change.",
+  "@mealsUpdateBody": {
+    "description": "Confirm Update saved meal.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsUpdated": "Saved meal updated. Nothing was logged.",
+  "@mealsUpdated": {
+    "description": "Toast after Update saved meal."
+  },
+  "mealsSaveAsNewTitle": "Save as a new meal",
+  "@mealsSaveAsNewTitle": {
+    "description": "Dialog title."
+  },
+  "mealsSaveAsNewBody": "The amounts shown are saved as one new meal. {name} stays as it is, and nothing is logged.",
+  "@mealsSaveAsNewBody": {
+    "description": "Dialog body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsSavedNew": "Saved as a new meal. Nothing was logged.",
+  "@mealsSavedNew": {
+    "description": "Toast after Save as new from the review."
+  },
+  "mealsPortionHeading": "How much you had",
+  "@mealsPortionHeading": {
+    "description": "Recipe review heading."
+  },
+  "mealsPortionAmount": "Amount",
+  "@mealsPortionAmount": {
+    "description": "Recipe portion field."
+  },
+  "mealsMeasureServings": "Servings",
+  "@mealsMeasureServings": {
+    "description": "Recipe portion measure."
+  },
+  "mealsMeasureGrams": "Grams",
+  "@mealsMeasureGrams": {
+    "description": "Recipe portion measure (finished batch)."
+  },
+  "mealsNoWeight": "To log grams, add the finished batch’s weight to the recipe.",
+  "@mealsNoWeight": {
+    "description": "Recipe review: why grams are not offered."
+  },
+  "mealsThisPortion": "This portion: {amount}",
+  "@mealsThisPortion": {
+    "description": "Nutrition panel title for the portion being logged.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsThisTimeIngredients": "Ingredients this time (whole batch)",
+  "@mealsThisTimeIngredients": {
+    "description": "Recipe review: the batch copy for this portion."
+  },
+  "mealsThisTimeNote": "Changes here are for this portion only. The saved recipe stays as it is.",
+  "@mealsThisTimeNote": {
+    "description": "Recipe review note."
+  },
+  "mealsThisTimeChanged": "Changed for this portion only. To change the recipe itself, use Edit recipe.",
+  "@mealsThisTimeChanged": {
+    "description": "Recipe review note after a change."
+  },
+  "mealsThisTimeTotal": "This time",
+  "@mealsThisTimeTotal": {
+    "description": "Meal review nutrition panel title."
   }
 }

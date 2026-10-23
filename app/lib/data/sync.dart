@@ -63,13 +63,15 @@ List<ServerRec> recordsFromAck(String kind, dynamic data, String owner) {
   return switch (kind.split('.').first) {
     'set' => [ServerRec(Kinds.set, j['id'] as String, j, j['revision'] as int, parentId: j['workoutId'] as String)],
     'workout' || 'exercise' => _workout(j),
-    'food' => [_simple(Kinds.food, j)],
+    // A saved meal logged at once answers with all of its entries.
+    'food' => kind == 'food.batch' ? [for (final e in j['entries'] as List? ?? const []) _simple(Kinds.food, e as Json)] : [_simple(Kinds.food, j)],
     'water' => [_simple(Kinds.water, j)],
     'run' => [_simple(Kinds.run, j)],
     // route.complete answers with the activity (its routeState); a chunk's answer changes no record.
     'route' => kind == 'route.complete' ? [_simple(Kinds.run, j)] : const [],
     'metric' => [_simple(Kinds.metric, j)],
     'savedfood' => [_simple(Kinds.savedFood, j)],
+    'savedmeal' => [_simple(Kinds.savedMeal, j)],
     'customexercise' => [_simple(Kinds.customExercise, j)],
     'weeklygoal' => [_simple(Kinds.weeklyGoal, j, idField: 'weekStart')],
     'exerciseincrement' => [_simple(Kinds.exerciseIncrement, j, idField: 'exerciseKey')],
@@ -101,6 +103,8 @@ List<ServerRec> recordsFromSnapshot(Json s, String owner) => [
       for (final g in s['weeklyGoals'] as List? ?? const []) _simple(Kinds.weeklyGoal, g as Json, idField: 'weekStart'),
       // Absent on a server from before equipment increments.
       for (final x in s['exerciseIncrements'] as List? ?? const []) _simple(Kinds.exerciseIncrement, x as Json, idField: 'exerciseKey'),
+      // Absent on a server from before saved meals and recipes.
+      for (final m in s['savedMeals'] as List? ?? const []) _simple(Kinds.savedMeal, m as Json),
     ];
 
 /// Local-first persistence and synchronization.

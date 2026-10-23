@@ -313,6 +313,92 @@ The three display choices are on the account where the server declares `profile.
   a stale revision; the one-time upload; omitted fields; another account) and `WaterTests.Tracking_display_*`.
 - The water goal is edited in the same goals form as calories and protein, and only sent while that form shows it.
 
+## Saved meals and recipes (23 Oct 2026, GoHard_Saved_Meals_Recipes_Claude_Prompt)
+
+Four things stay distinct, in storage and on screen:
+
+| Thing | What it is | Where |
+|---|---|---|
+| Favourite / My food | one reusable food (unchanged) | `saved_food` records, Add food lists |
+| Saved meal | several foods with default amounts (2 eggs + 60 g oats) | `saved_meal` record, `kind: meal` |
+| Recipe | a whole batch of ingredients and the servings it makes, optionally its weighed finished weight | `saved_meal` record, `kind: recipe` |
+| Logged food | what was eaten on a day | `food` records (the journal) |
+
+A saved meal or recipe is a **template**. Browsing, creating, editing, previewing, duplicating or deleting one logs
+nothing. Logging copies; it never links history to the template.
+
+**Where.** Eat: "Saved meals & recipes" beside Log food in the day's panel (History & trends stays as it was); each
+meal group with food has a quiet **Save as meal** beside + Add food (copies those entries' snapshots and amounts into
+a new editor; logs nothing again). Add food: a "Saved meals & recipes" row in its bottom card, which keeps the day and
+the meal chosen there. The library has Meals / Recipes, New meal / New recipe, search (from 4 items), honest empty
+states, rows with the count and a truthful energy line ("370 kcal", "400 kcal known"), and a menu with Edit, Duplicate
+and Delete (delete is confirmed; history stays).
+
+**Editor** (`MealEditorScreen`): name; foods added through Add food in its **selection mode** (`LogFoodScreen(pick:
+true)` → `FoodFormScreen(pick: true)`, "Use this amount"; no meal or date is asked and nothing is written to the
+journal); each food's amount and unit changed in that same amount form (same units and conversions, so 1 serving never
+becomes 1 g); remove; for a recipe the servings the batch makes and an optional finished weight; totals (meal, or
+batch and one serving). Save is the main action; Save as new on an existing one; Discard changes (confirmed) on a
+changed one. Every change is kept at once as this account's `meal_draft` (local only), so back, a language change or
+a restart loses nothing; unsaved new ones are listed in the library. A value corrected in the amount form is kept by
+rebasing it onto the food's basis and crediting the food as the person's own (as My foods does). Each component keeps
+its food snapshot (identity, basis, values, portions, source; the photograph and long description are dropped to keep
+definitions bounded), `quantity` and `unit` id, and the amount in words as it was said.
+
+**Review before logging** (`MealReviewScreen`) works on a copy taken when it opened, so an edit from another phone
+never changes what is on screen. Meal: ½×, 1×, 1½×, 2× or Other… (above 0, at most 20), always from the saved amounts
+(no drift); any food changed, removed or added for this time only. Recipe: servings, or grams of the finished batch
+when it was weighed (switching converts through the person's own servings and weight; without a weight grams are not
+offered, and the raw ingredients' weight is never used); the batch's ingredients can be changed for this portion only.
+The day and meal can be changed; that records nothing. **Log meal / Log portion** is the only action that records food.
+**Update saved meal** (confirmed: "the amounts shown become the saved amounts, as one meal") and **Save as new** (asks a
+name) change templates only. For a recipe, **Edit recipe** opens the full batch definition; a portion never guesses how
+a batch should change. Cancelling or leaving records nothing.
+
+**Logging.** A saved meal becomes one ordinary entry per food (its own snapshot `{item, quantity, unit}`, values
+rounded to two decimals like every entry), no total entry. The entries and ONE command `food.batch` (`POST
+/food-entries/batch`) are written in one local transaction; the server records all of them in the command's
+transaction or none (any invalid entry, a reused ID or more than 30 refuses the whole meal). The review owns one
+operation ID, so rapid taps and retries after a lost answer replay the same operation; the outbox keeps the exact bytes.
+The other entries carry `parentId` = the first, so a refused meal is reviewed and removed as one. A recipe portion is
+ONE entry named after the recipe whose `source` is `{recipe: <the whole batch, with its id and revision as
+provenance>, portion: {quantity, unit: serving|g}, partial?}`, sent as `food.recipe.create`/`.update` (same
+endpoints). Its ingredients are never logged as separate entries. Changing a logged portion opens it on its own
+snapshot: new amounts are worked out from that frozen batch, never from the recipe as it is now. Editing or deleting a
+template, a provider change or a custom-food change touch no logged entry. Recipes are not nested: a recipe portion in
+a saved meal is a frozen food of its own.
+
+**Coverage rules.** One path for every screen: `NutrientCoverage` (`calculate` for entries, `ofParts` for a meal's
+foods or a batch's ingredients; `NutrientTotal.times` for a share or a multiplier). Per nutrient: a stated zero is a
+known zero; no value is unknown; a known sum with some parts missing is shown "… known" and is never complete; complete
+only when every part is known. For a recipe portion with a partial nutrient, `macros` holds **null** (unknown) and
+`source.partial` holds the known part. Compatibility rule: an older app ignores `partial` and therefore sees
+"unknown", never a partial sum as a total; this app adds the known part to the day's known total and keeps the day
+incomplete (Today, Eat, the meal subtotal, the entry row, History & trends, and the goal line, which states no
+remainder while incomplete).
+
+**Sync and compatibility.** `saved_meal` records: owned, revisioned, tombstoned (`PUT /saved-meals/{id}`, `POST
+/saved-meals/{id}/delete`, snapshot `savedMeals`), conflicts held for review like saved foods. An editor or a review
+compares the definition's content (canonicalised, so the account's jsonb echo of our own save is not a change) with
+what it started from and asks before saving over a change made on another phone; a deleted one can only be saved as
+new. Capability **`food.saved-meals`** covers definitions, `food.batch` and recipe portions: until the server
+declares it (unknown waits too) those commands stay pending and nothing unsupported is sent; ordinary entries still go.
+If the server has said it lacks it, the screens say so and Save/Log are disabled while drafts stay on the phone. A known
+compatible account works offline. Client contract stays 2 (only additive fields). Bounds, on both sides: 30
+components, names ≤ 120, quantities > 0 and ≤ 100,000, yield > 0 and ≤ 1,000, prepared weight > 0 and ≤ 100,000 g,
+definition and recipe-portion snapshot ≤ 48,000 characters (ordinary snapshots stay ≤ 16,000). Account erasure
+cascades `SavedMeals`; drafts are local and owner-scoped.
+
+**Deployment order.** The API migration `AddSavedMeals` (additive: one table) and the capability must be deployed
+(push to `main` → Railway pre-deploy migrates) before the IPA's saved meals reach the hosted account. Until then the
+hosted API does not declare `food.saved-meals`, so an IPA keeps those changes on the phone and says so.
+
+Code: app `features/nutrition/saved_meals.dart` (model, `MealMath`, repository), `saved_meals_screens.dart`,
+`food_repository.dart` (`logMeal`, recipe drafts), `nutrient_coverage.dart`, `data/sync.dart`; API
+`SavedMealService`, `FoodService.CreateManyAsync`, `Endpoints.cs`. Tests: `test/saved_meals_test.dart`,
+`test/saved_meals_ui_test.dart` (renders with `GOHARD_RENDER`), API `SavedMealTests`, native
+`journey_meals_test`.
+
 ## Compatibility gate
 
 On start and on resume the app asks `/capabilities` once, waiting at most 6 seconds. If the server's

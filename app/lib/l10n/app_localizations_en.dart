@@ -10227,4 +10227,386 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainViewAllHistorySaid => 'View all workout history';
+
+  @override
+  String get mealsLibraryTitle => 'Saved meals & recipes';
+
+  @override
+  String get mealsFromAddFoodSubtitle =>
+      'Several foods at once, with the amounts checked first';
+
+  @override
+  String mealsForContext(String meal, String date) {
+    return 'Logs to $meal · $date';
+  }
+
+  @override
+  String get mealsTabMeals => 'Meals';
+
+  @override
+  String get mealsTabRecipes => 'Recipes';
+
+  @override
+  String get mealsNewMeal => 'New meal';
+
+  @override
+  String get mealsNewRecipe => 'New recipe';
+
+  @override
+  String get mealsEditMeal => 'Edit meal';
+
+  @override
+  String get mealsEditRecipe => 'Edit recipe';
+
+  @override
+  String get mealsSearchHint => 'Search by name';
+
+  @override
+  String mealsNoMatch(String query) {
+    return 'Nothing saved matches “$query”.';
+  }
+
+  @override
+  String get mealsEmptyMealsTitle => 'No saved meals yet';
+
+  @override
+  String get mealsEmptyMealsBody =>
+      'A saved meal keeps several foods with their usual amounts, like 2 eggs and 60 g of oats. When you log it, you can change the amounts first.';
+
+  @override
+  String get mealsEmptyRecipesTitle => 'No recipes yet';
+
+  @override
+  String get mealsEmptyRecipesBody =>
+      'A recipe is a whole batch of ingredients and the number of servings it makes. You log the portion you had.';
+
+  @override
+  String get mealsUntitled => 'Untitled';
+
+  @override
+  String get mealsUnsavedDraft => 'Unsaved changes';
+
+  @override
+  String mealsFoodsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count foods',
+      one: '1 food',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsIngredientsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ingredients',
+      one: '1 ingredient',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsMakesServings(num count, String value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'makes $value servings',
+      one: 'makes 1 serving',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsServingsAmount(num count, String value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$value servings',
+      one: '1 serving',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsPerServing(String value) {
+    return '$value per serving';
+  }
+
+  @override
+  String mealsMenuLabel(String name) {
+    return 'Options for $name';
+  }
+
+  @override
+  String get mealsDuplicate => 'Duplicate';
+
+  @override
+  String mealsCopyName(String name) {
+    return '$name (copy)';
+  }
+
+  @override
+  String mealsDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get mealsDeleteBody =>
+      'It is removed from Saved meals & recipes. Food you already logged from it stays exactly as it is.';
+
+  @override
+  String get mealsDeleted => 'Deleted. Your logged food is unchanged.';
+
+  @override
+  String get mealsServerUnavailable =>
+      'Your account’s server doesn’t take saved meals and recipes yet. Drafts stay on this phone; saving and logging them wait until it does.';
+
+  @override
+  String get mealsHelpLabel => 'Help with saved meals and recipes';
+
+  @override
+  String get mealsCoachLibrary =>
+      'A saved meal keeps foods and their usual amounts. When you log it, you can halve, double or change any of them first.';
+
+  @override
+  String get mealsCoachRecipe =>
+      'A recipe divides a whole batch into the servings you choose.';
+
+  @override
+  String get eatHintMeals =>
+      'Eat this often? Save the meal and adjust the amounts next time.';
+
+  @override
+  String get mealsSaved => 'Your meal is in Saved meals & recipes.';
+
+  @override
+  String get mealsSavedRecipe => 'Your recipe is in Saved meals & recipes.';
+
+  @override
+  String get mealsSaveAsMeal => 'Save as meal';
+
+  @override
+  String mealsSaveAsMealSaid(String meal) {
+    return 'Save $meal as a saved meal';
+  }
+
+  @override
+  String get mealsNameLabel => 'Name';
+
+  @override
+  String get mealsFoodsHeading => 'Foods';
+
+  @override
+  String get mealsIngredientsHeading => 'Ingredients (whole batch)';
+
+  @override
+  String get mealsAddFood => 'Add food';
+
+  @override
+  String get mealsAddIngredient => 'Add ingredient';
+
+  @override
+  String mealsRemoveFood(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get mealsServingsLabel => 'Servings the batch makes';
+
+  @override
+  String get mealsServingsHelper =>
+      'However many you divide it into. Nothing is guessed.';
+
+  @override
+  String get mealsWeightLabel => 'Weight of the finished batch (optional)';
+
+  @override
+  String get mealsWeightHelper =>
+      'Weigh it once it’s made to log portions in grams. The raw ingredients’ weight is never used for this.';
+
+  @override
+  String get mealsTotalHeading => 'Whole meal';
+
+  @override
+  String get mealsBatchHeading => 'Whole batch';
+
+  @override
+  String get mealsPerServingHeading => 'One serving';
+
+  @override
+  String get mealsSomeMissing =>
+      'Some foods have no value for a nutrient: figures marked “known” are sums of what is known, not full totals.';
+
+  @override
+  String get mealsSaveAsNew => 'Save as new';
+
+  @override
+  String get mealsDiscard => 'Discard changes';
+
+  @override
+  String get mealsDiscardTitle => 'Discard your changes?';
+
+  @override
+  String get mealsDiscardBody => 'The saved version stays as it was.';
+
+  @override
+  String get mealsDiscardBodyNew =>
+      'This unsaved meal is removed from this phone.';
+
+  @override
+  String get mealsResumed => 'Your unsaved changes from before are back.';
+
+  @override
+  String get mealsChangedElsewhereTitle => 'Changed on another device';
+
+  @override
+  String get mealsChangedElsewhereBody =>
+      'This was changed on another device since you started. Save your version over it?';
+
+  @override
+  String get mealsSaveMine => 'Save mine';
+
+  @override
+  String get mealsDeletedElsewhere =>
+      'This was deleted on another device. Use Save as new to keep it.';
+
+  @override
+  String get mealsProblemNoName => 'Give it a name.';
+
+  @override
+  String get mealsProblemNameTooLong =>
+      'The name is too long (120 characters at most).';
+
+  @override
+  String get mealsProblemNoFoods => 'Add at least one food.';
+
+  @override
+  String get mealsProblemTooMany => '30 foods at most.';
+
+  @override
+  String get mealsProblemBadQuantity => 'Every amount must be more than 0.';
+
+  @override
+  String get mealsProblemBadServings =>
+      'Enter how many servings the batch makes (more than 0, at most 1,000).';
+
+  @override
+  String get mealsProblemBadWeight =>
+      'Enter the finished weight in grams (more than 0), or leave it empty.';
+
+  @override
+  String get mealsProblemTooLarge =>
+      'This is too large to save. Remove some foods.';
+
+  @override
+  String get mealsProblemBadMultiplier =>
+      'Enter a multiplier above 0, at most 20.';
+
+  @override
+  String get mealsProblemBadPortion => 'Enter how much you had (more than 0).';
+
+  @override
+  String get foodProblemTooLarge =>
+      'This food’s details are too large to save.';
+
+  @override
+  String get mealsUseAmount => 'Use this amount';
+
+  @override
+  String get mealsReviewNote =>
+      'Check the amounts. Nothing is logged until you confirm.';
+
+  @override
+  String get mealsAmountsHeading => 'Amounts this time';
+
+  @override
+  String get mealsMultiplierCustom => 'Other…';
+
+  @override
+  String get mealsMultiplierTitle => 'Multiply every amount';
+
+  @override
+  String get mealsMultiplierLabel => 'Multiplier';
+
+  @override
+  String mealsMultiplierSaid(String value) {
+    return '$value times every amount';
+  }
+
+  @override
+  String get mealsLogMeal => 'Log meal';
+
+  @override
+  String get mealsLogPortion => 'Log portion';
+
+  @override
+  String mealsLogged(String meal) {
+    return 'Logged to $meal.';
+  }
+
+  @override
+  String get mealsPortionChanged => 'Portion updated.';
+
+  @override
+  String get mealsUpdateSaved => 'Update saved meal';
+
+  @override
+  String get mealsUpdateTitle => 'Update the saved meal?';
+
+  @override
+  String mealsUpdateBody(String name) {
+    return 'The amounts shown become $name’s saved amounts, as one meal. Nothing is logged, and food you logged before doesn’t change.';
+  }
+
+  @override
+  String get mealsUpdated => 'Saved meal updated. Nothing was logged.';
+
+  @override
+  String get mealsSaveAsNewTitle => 'Save as a new meal';
+
+  @override
+  String mealsSaveAsNewBody(String name) {
+    return 'The amounts shown are saved as one new meal. $name stays as it is, and nothing is logged.';
+  }
+
+  @override
+  String get mealsSavedNew => 'Saved as a new meal. Nothing was logged.';
+
+  @override
+  String get mealsPortionHeading => 'How much you had';
+
+  @override
+  String get mealsPortionAmount => 'Amount';
+
+  @override
+  String get mealsMeasureServings => 'Servings';
+
+  @override
+  String get mealsMeasureGrams => 'Grams';
+
+  @override
+  String get mealsNoWeight =>
+      'To log grams, add the finished batch’s weight to the recipe.';
+
+  @override
+  String mealsThisPortion(String amount) {
+    return 'This portion: $amount';
+  }
+
+  @override
+  String get mealsThisTimeIngredients => 'Ingredients this time (whole batch)';
+
+  @override
+  String get mealsThisTimeNote =>
+      'Changes here are for this portion only. The saved recipe stays as it is.';
+
+  @override
+  String get mealsThisTimeChanged =>
+      'Changed for this portion only. To change the recipe itself, use Edit recipe.';
+
+  @override
+  String get mealsThisTimeTotal => 'This time';
 }

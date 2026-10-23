@@ -19,6 +19,7 @@ import 'food_form.dart';
 import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
+import 'saved_meals_screens.dart' show openMealsLibrary;
 
 /// The lists a food can be picked from. Search covers everyday foods and the owner's own; the others are theirs.
 enum FoodScope { search, recent, favourites, mine }
@@ -29,7 +30,11 @@ enum FoodScope { search, recent, favourites, mine }
 /// The day is carried into the form, and so is the meal, which can be changed here first. What was typed, the
 /// list and category chosen and the scroll position are still here on return.
 class LogFoodScreen extends ConsumerStatefulWidget {
-  const LogFoodScreen({super.key, required this.dayKey, required this.meal, this.scope = FoodScope.search});
+  const LogFoodScreen({super.key, required this.dayKey, required this.meal, this.scope = FoodScope.search, this.pick = false});
+
+  /// Selection only (a saved meal's or recipe's editor): the chosen food and its confirmed amount are returned as a
+  /// [FoodDraft]. Nothing is logged, and no meal or date is asked for.
+  final bool pick;
 
   /// The list it opens on (Eat's coach opens Favourites or My foods directly).
   final FoodScope scope;
@@ -80,6 +85,11 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
 
   /// Opens the shared form. When it logged something, this screen is done too and returns to where logging began.
   Future<void> _open(FoodDraft draft) async {
+    if (widget.pick) {
+      final chosen = await push<FoodDraft>(context, FoodFormScreen(draft: draft, pick: true));
+      if (chosen != null && mounted) Navigator.pop(context, chosen);
+      return;
+    }
     final logged = await push<bool>(context, FoodFormScreen(draft: draft));
     if (logged == true && mounted) Navigator.pop(context, true);
   }
@@ -101,6 +111,12 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
         ? FoodDraft.of(_withPortions(s.item), dayKey: widget.dayKey, meal: _meal, name: common?.nameIn(foodLang(context.l10n)), unitId: common?.unitId)
         : FoodDraft(dayKey: widget.dayKey, meal: _meal, name: e.name, amount: e.amountDescription, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat,
             item: e.source == null ? null : s.item, quantity: (e.source?['quantity'] as num?)?.toDouble(), unitId: e.source?['unit'] as String?));
+  }
+
+  /// Saved meals & recipes for this day and meal. When something was logged there, this screen is done too.
+  Future<void> _openMeals() async {
+    final logged = await openMealsLibrary(context, dayKey: widget.dayKey, meal: _meal);
+    if (logged == true && mounted) Navigator.pop(context, true);
   }
 
   /// What the wider search would be asked now: the typed words, normalized. Empty while it does not apply: in
@@ -326,10 +342,11 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
           Expanded(child: Heading(l.foodAddTitle, size: 40, serif: true)),
           CoachHelpEntry(id: 'food.search', label: l.foodHelpSearch),
         ]),
-        Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
-          _MealSelector(meal: _meal, onChanged: (m) => setState(() => _meal = m)),
-          Text('· ${longDate(widget.dayKey)}', style: context.caption),
-        ]),
+        if (!widget.pick)
+          Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
+            _MealSelector(meal: _meal, onChanged: (m) => setState(() => _meal = m)),
+            Text('· ${longDate(widget.dayKey)}', style: context.caption),
+          ]),
         const SizedBox(height: 8),
         TextField(
           key: const Key('food-search'), controller: _query, textInputAction: TextInputAction.search, autocorrect: false,
@@ -394,6 +411,12 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             key: const Key('food-manual'), icon: Icons.edit_outlined, title: l.foodManualTitle, subtitle: l.foodManualSubtitle,
             onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
           ),
+          // Several foods at once, for this day and the meal chosen above. Not offered while picking one food for a meal.
+          if (!widget.pick)
+            GroupRow(
+              key: const Key('food-saved-meals'), icon: Icons.menu_book_outlined, title: l.mealsLibraryTitle, subtitle: l.mealsFromAddFoodSubtitle,
+              onTap: _openMeals,
+            ),
         ]),
       ),
       Padding(

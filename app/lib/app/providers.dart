@@ -20,6 +20,7 @@ import '../features/me/account_repository.dart';
 import '../features/nutrition/food_discovery.dart';
 import '../features/nutrition/food_item.dart';
 import '../features/nutrition/food_repository.dart';
+import '../features/nutrition/saved_meals.dart';
 import '../features/nutrition/food_search.dart';
 import '../features/nutrition/nutrient_coverage.dart';
 import '../features/nutrition/water.dart';
@@ -49,7 +50,7 @@ final syncProvider = Provider<SyncEngine>((ref) {
   engine.mayDispatch = (cmd) {
     final capabilities = ref.read(compatibilityProvider).capabilities;
     final ok = RunRepository.serverTakes(cmd, capabilities) && GoalRepository.serverTakes(cmd, capabilities) && BodyRepository.serverTakes(cmd, capabilities) &&
-        ProgressionRepository.serverTakes(cmd, capabilities);
+        ProgressionRepository.serverTakes(cmd, capabilities) && SavedMealRepository.serverTakes(cmd, capabilities);
     // Held only because the server has not answered yet (the app started offline): ask again (one check at a time),
     // and send once an answer arrives. No answer leaves it waiting, with no retry loop.
     if (!ok && capabilities == null) {
@@ -134,6 +135,10 @@ final waterEntriesProvider = StreamProvider<List<Stored<WaterEntry>>>((ref) => _
 /// Every food entry of the owner, for "recent": the journal itself is the history of what was eaten.
 final foodJournalProvider = StreamProvider<List<Stored<FoodEntry>>>((ref) => _rows(ref, Kinds.food, FoodEntry.new));
 final savedFoodsProvider = StreamProvider<List<Stored<SavedFood>>>((ref) => _rows(ref, Kinds.savedFood, SavedFood.new));
+/// Saved meals and recipes, deleted ones included (the readers leave them out).
+final savedMealsProvider = StreamProvider<List<Stored<SavedMeal>>>((ref) => _rows(ref, Kinds.savedMeal, SavedMeal.new));
+/// Unfinished saved-meal and recipe editors on this phone, by draft key.
+final mealDraftsProvider = StreamProvider<Map<String, MealBody>>((ref) => _rows(ref, Kinds.mealDraft, (j) => MealBody(j['body'] as Json)).map((l) => {for (final r in l) r.rec.id: r.value}));
 /// Provider foods kept on this phone for this owner, newest first.
 final seenFoodsProvider = StreamProvider<List<FoodItem>>((ref) => _rows(ref, Kinds.foodCache, (j) => j).map((rows) =>
     [for (final r in [...rows]..sort((a, b) => (b.value['cachedAtUtc'] as String).compareTo(a.value['cachedAtUtc'] as String))) FoodItem(r.value['item'] as Json)]));
@@ -224,6 +229,10 @@ final planRepositoryProvider = Provider((ref) => _owned(ref, PlanRepository.new)
 final foodRepositoryProvider = Provider((ref) => _owned(ref, FoodRepository.new));
 final waterRepositoryProvider = Provider((ref) => _owned(ref, WaterRepository.new));
 final savedFoodRepositoryProvider = Provider((ref) => _owned(ref, SavedFoodRepository.new));
+final savedMealRepositoryProvider = Provider((ref) => _owned(ref, SavedMealRepository.new));
+/// Whether saved meals and recipes reach the account: false only once its server has said it has none (unknown is not
+/// "unsupported", so an account known to work keeps working offline).
+final savedMealsSupportedProvider = Provider<bool>((ref) => ref.watch(compatibilityProvider).supports(SavedMealRepository.capability));
 final foodDiscoveryProvider = Provider((ref) => _owned(ref, (s, o) => FoodDiscovery(ref.watch(apiProvider), s, o, ref.watch(clockProvider))));
 final profileRepositoryProvider = Provider((ref) => _owned(ref, ProfileRepository.new));
 final workoutRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => WorkoutRepository(s, o, ref.watch(clockProvider))));

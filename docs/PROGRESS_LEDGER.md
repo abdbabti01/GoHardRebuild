@@ -2168,3 +2168,44 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   deploy), `/capabilities` contract 2 / minimum 2 with `account.email`; an unauthenticated snapshot still 401. No hosted
   account was created (that would send real email to an invented address). **Pending (owner):** the iPhone checklist
   with an address you choose (docs/AUTHENTICATION_EMAIL.md › 8), using IPA run 51; older installs now show Update GoHard.
+
+## 23 Oct 2026 — Saved meals and recipes (`feature/saved-meals-recipes`)
+
+- Base: `main` at `3a36aa7`. Spec: GoHard_Saved_Meals_Recipes_Claude_Prompt.md. Guide: docs/FOOD_DATA.md › Saved meals and
+  recipes (model, logging, coverage rule, compatibility, deployment order); hints in docs/COACH.md. Favourites and My
+  foods unchanged. Additive migration `AddSavedMeals` (table `SavedMeals`), capability `food.saved-meals`, routes
+  `PUT /saved-meals/{id}`, `POST /saved-meals/{id}/delete`, `POST /food-entries/batch`; recipe-portion snapshots
+  may be up to 48,000 characters (ordinary ones stay 16,000). Client contract unchanged (2).
+- API: `SavedMealTests` (14, real PostgreSQL): owned/revisioned/tombstoned definitions, other accounts get 404, erasure
+  cascades, 9 invalid bodies refused, 30-component and size bounds, atomic batch (one invalid or reused ID records
+  none; a replay returns the first answer byte for byte; order kept), recipe snapshot bound, template edit/delete leaves
+  the logged entry byte-identical, capability declared. `VerificationPolicyTests` cover the new routes automatically
+  (403 for a waiting account). Full suite once: 231 of 232; the failure was real (batch entries 100 ns apart collapse
+  to the same microsecond in PostgreSQL, so their order was arbitrary), fixed to 1 µs steps, `SavedMealTests` then
+  passed three runs in a row.
+- App: `flutter analyze` no issues; `check-l10n` 2,591 messages (100 new, en/fr/ar). `saved_meals_test` (13: scaling
+  without drift, unit conversion, yield/fractions/prepared weight, partial vs complete vs zero through a portion and a
+  day, Save as meal copies, limits; on the real Drift database: save/update/save-as-new/drafts log nothing, atomic
+  local write, invalid component writes nothing, rapid taps and a lost answer give one operation and the same bytes,
+  offline + restart keep the past day and reconcile without duplicates, unsupported/unknown server receives none of the
+  commands, account isolation, template edit/delete leaves history intact, a changed portion uses its own snapshot,
+  revision conflict held, our own echoed save is not a conflict). `saved_meals_ui_test` (6: Eat → library → review →
+  1½× → Log once despite a double tap, back on Eat, template untouched; Update saved meal / Save as new explicit and
+  logging nothing, leaving logs nothing; recipe portion with a French decimal comma, servings → grams through the
+  weighed batch, "known" calories; editor validation; Arabic RTL and French at 320 px, 1.6× text, keyboard open, main
+  action above it, remove button's spoken name). Affected suites run once together (food, food UI, Eat UI, trends,
+  data layer, projection, l10n Eat, coach companion, localization): 169 passed.
+- Renders (Flutter widgets, FIXTURE meals): docs/evidence/saved-meals (library light/dark and Recipes tab, meal editor,
+  recipe editor, meal review at 1½×, recipe review, 320 px at 2× text, 320 px with the keyboard, Eat's entry) and
+  docs/evidence/localization/{fr,ar}/saved-meals. Reviewed by eye; found and fixed: multiplier chip keys depended on
+  the language ("1,5"), the missing-values note repeated in both recipe panels. Not fixed: English food names logged
+  before stay English in Arabic (stored words never change, as elsewhere).
+- Native (Pixel_7 emulator, branch API on 127.0.0.1:5136 with captured mail, disposable database dropped afterwards):
+  `journey_meals_test` **passed** on the second run (first run: the journey tapped the catalog row of a food that,
+  once logged, is listed under Your foods; fixed in the journey). Made a 2-food meal from common foods (no provider),
+  logged it at 1½× once, Update saved meal at 2×, Save as new, a 4-serving recipe and 1.5 servings of it, then with
+  Wi-Fi and data really off logged the variation ("sync pending"), back online: the account's own snapshot held 5
+  entries (nothing twice), 3 definitions, the updated one at revision 2, the portion "1.5 servings"; account deleted.
+  Captures docs/evidence/screenshots/sm-01…08. **Not verified on the device:** a restart while offline (one process:
+  the emulator cannot take a phase-2 reinstall); covered by `saved_meals_test` on the real database.
+- Not done here: merge, deploy, Railway/Resend/Cloudflare, an iPhone, a fluent review of the new fr/ar strings.

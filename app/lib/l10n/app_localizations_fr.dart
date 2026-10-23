@@ -10409,6 +10409,394 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get trainViewAllHistorySaid => 'Voir tout l\'historique des séances';
+
+  @override
+  String get mealsLibraryTitle => 'Repas et recettes enregistrés';
+
+  @override
+  String get mealsFromAddFoodSubtitle =>
+      'Plusieurs aliments d’un coup, quantités vérifiées d’abord';
+
+  @override
+  String mealsForContext(String meal, String date) {
+    return 'Consigné dans : $meal · $date';
+  }
+
+  @override
+  String get mealsTabMeals => 'Repas';
+
+  @override
+  String get mealsTabRecipes => 'Recettes';
+
+  @override
+  String get mealsNewMeal => 'Nouveau repas';
+
+  @override
+  String get mealsNewRecipe => 'Nouvelle recette';
+
+  @override
+  String get mealsEditMeal => 'Modifier le repas';
+
+  @override
+  String get mealsEditRecipe => 'Modifier la recette';
+
+  @override
+  String get mealsSearchHint => 'Chercher par nom';
+
+  @override
+  String mealsNoMatch(String query) {
+    return 'Rien d’enregistré ne correspond à « $query ».';
+  }
+
+  @override
+  String get mealsEmptyMealsTitle => 'Aucun repas enregistré';
+
+  @override
+  String get mealsEmptyMealsBody =>
+      'Un repas enregistré garde plusieurs aliments avec leurs quantités habituelles, comme 2 œufs et 60 g d’avoine. Quand tu le consignes, tu peux d’abord changer les quantités.';
+
+  @override
+  String get mealsEmptyRecipesTitle => 'Aucune recette';
+
+  @override
+  String get mealsEmptyRecipesBody =>
+      'Une recette est une fournée entière d’ingrédients et le nombre de portions qu’elle donne. Tu consignes la portion que tu as mangée.';
+
+  @override
+  String get mealsUntitled => 'Sans nom';
+
+  @override
+  String get mealsUnsavedDraft => 'Modifications non enregistrées';
+
+  @override
+  String mealsFoodsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count aliments',
+      one: '$count aliment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsIngredientsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ingrédients',
+      one: '$count ingrédient',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsMakesServings(num count, String value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'donne $value portions',
+      one: 'donne $value portion',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsServingsAmount(num count, String value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$value portions',
+      one: '$value portion',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsPerServing(String value) {
+    return '$value par portion';
+  }
+
+  @override
+  String mealsMenuLabel(String name) {
+    return 'Options pour $name';
+  }
+
+  @override
+  String get mealsDuplicate => 'Dupliquer';
+
+  @override
+  String mealsCopyName(String name) {
+    return '$name (copie)';
+  }
+
+  @override
+  String mealsDeleteTitle(String name) {
+    return 'Supprimer $name ?';
+  }
+
+  @override
+  String get mealsDeleteBody =>
+      'Il est retiré des repas et recettes enregistrés. Ce que tu as déjà consigné reste exactement tel quel.';
+
+  @override
+  String get mealsDeleted => 'Supprimé. Ce que tu as consigné ne change pas.';
+
+  @override
+  String get mealsServerUnavailable =>
+      'Le serveur de ton compte ne prend pas encore les repas et recettes enregistrés. Les brouillons restent sur ce téléphone; enregistrer et consigner attendent qu’il le fasse.';
+
+  @override
+  String get mealsHelpLabel => 'Aide sur les repas et recettes';
+
+  @override
+  String get mealsCoachLibrary =>
+      'Un repas enregistré garde des aliments et leurs quantités habituelles. En le consignant, tu peux d’abord diviser, doubler ou changer chacune.';
+
+  @override
+  String get mealsCoachRecipe =>
+      'Une recette divise une fournée entière en autant de portions que tu choisis.';
+
+  @override
+  String get eatHintMeals =>
+      'Tu manges souvent ça? Enregistre le repas et ajuste les quantités la prochaine fois.';
+
+  @override
+  String get mealsSaved => 'Ton repas est dans Repas et recettes enregistrés.';
+
+  @override
+  String get mealsSavedRecipe =>
+      'Ta recette est dans Repas et recettes enregistrés.';
+
+  @override
+  String get mealsSaveAsMeal => 'Enregistrer comme repas';
+
+  @override
+  String mealsSaveAsMealSaid(String meal) {
+    return 'Enregistrer $meal comme repas';
+  }
+
+  @override
+  String get mealsNameLabel => 'Nom';
+
+  @override
+  String get mealsFoodsHeading => 'Aliments';
+
+  @override
+  String get mealsIngredientsHeading => 'Ingrédients (fournée entière)';
+
+  @override
+  String get mealsAddFood => 'Ajouter un aliment';
+
+  @override
+  String get mealsAddIngredient => 'Ajouter un ingrédient';
+
+  @override
+  String mealsRemoveFood(String name) {
+    return 'Retirer $name';
+  }
+
+  @override
+  String get mealsServingsLabel => 'Portions que donne la fournée';
+
+  @override
+  String get mealsServingsHelper =>
+      'Autant que tu la partages. Rien n’est deviné.';
+
+  @override
+  String get mealsWeightLabel => 'Poids de la fournée cuite (facultatif)';
+
+  @override
+  String get mealsWeightHelper =>
+      'Pèse-la une fois prête pour consigner des portions en grammes. Le poids des ingrédients crus n’est jamais utilisé pour ça.';
+
+  @override
+  String get mealsTotalHeading => 'Repas entier';
+
+  @override
+  String get mealsBatchHeading => 'Fournée entière';
+
+  @override
+  String get mealsPerServingHeading => 'Une portion';
+
+  @override
+  String get mealsSomeMissing =>
+      'Certains aliments n’ont pas de valeur pour un nutriment : les chiffres marqués « connu » sont des sommes de ce qui est connu, pas des totaux complets.';
+
+  @override
+  String get mealsSaveAsNew => 'Enregistrer comme nouveau';
+
+  @override
+  String get mealsDiscard => 'Abandonner les modifications';
+
+  @override
+  String get mealsDiscardTitle => 'Abandonner tes modifications?';
+
+  @override
+  String get mealsDiscardBody => 'La version enregistrée reste telle quelle.';
+
+  @override
+  String get mealsDiscardBodyNew =>
+      'Ce repas non enregistré est retiré de ce téléphone.';
+
+  @override
+  String get mealsResumed =>
+      'Tes modifications non enregistrées sont de retour.';
+
+  @override
+  String get mealsChangedElsewhereTitle => 'Modifié sur un autre appareil';
+
+  @override
+  String get mealsChangedElsewhereBody =>
+      'Ceci a été modifié sur un autre appareil depuis que tu as commencé. Enregistrer ta version par-dessus?';
+
+  @override
+  String get mealsSaveMine => 'Garder la mienne';
+
+  @override
+  String get mealsDeletedElsewhere =>
+      'Ceci a été supprimé sur un autre appareil. Utilise Enregistrer comme nouveau pour le garder.';
+
+  @override
+  String get mealsProblemNoName => 'Donne-lui un nom.';
+
+  @override
+  String get mealsProblemNameTooLong =>
+      'Le nom est trop long (120 caractères au plus).';
+
+  @override
+  String get mealsProblemNoFoods => 'Ajoute au moins un aliment.';
+
+  @override
+  String get mealsProblemTooMany => '30 aliments au plus.';
+
+  @override
+  String get mealsProblemBadQuantity =>
+      'Chaque quantité doit être supérieure à 0.';
+
+  @override
+  String get mealsProblemBadServings =>
+      'Indique combien de portions donne la fournée (plus de 0, au plus 1 000).';
+
+  @override
+  String get mealsProblemBadWeight =>
+      'Indique le poids final en grammes (plus de 0), ou laisse vide.';
+
+  @override
+  String get mealsProblemTooLarge =>
+      'C’est trop gros pour être enregistré. Retire quelques aliments.';
+
+  @override
+  String get mealsProblemBadMultiplier =>
+      'Indique un multiplicateur supérieur à 0, au plus 20.';
+
+  @override
+  String get mealsProblemBadPortion =>
+      'Indique combien tu en as pris (plus de 0).';
+
+  @override
+  String get foodProblemTooLarge =>
+      'Les détails de cet aliment sont trop gros pour être enregistrés.';
+
+  @override
+  String get mealsUseAmount => 'Utiliser cette quantité';
+
+  @override
+  String get mealsReviewNote =>
+      'Vérifie les quantités. Rien n’est consigné avant que tu confirmes.';
+
+  @override
+  String get mealsAmountsHeading => 'Quantités cette fois';
+
+  @override
+  String get mealsMultiplierCustom => 'Autre…';
+
+  @override
+  String get mealsMultiplierTitle => 'Multiplier chaque quantité';
+
+  @override
+  String get mealsMultiplierLabel => 'Multiplicateur';
+
+  @override
+  String mealsMultiplierSaid(String value) {
+    return '$value fois chaque quantité';
+  }
+
+  @override
+  String get mealsLogMeal => 'Consigner le repas';
+
+  @override
+  String get mealsLogPortion => 'Consigner la portion';
+
+  @override
+  String mealsLogged(String meal) {
+    return 'Consigné dans : $meal.';
+  }
+
+  @override
+  String get mealsPortionChanged => 'Portion mise à jour.';
+
+  @override
+  String get mealsUpdateSaved => 'Mettre à jour le repas';
+
+  @override
+  String get mealsUpdateTitle => 'Mettre à jour le repas enregistré?';
+
+  @override
+  String mealsUpdateBody(String name) {
+    return 'Les quantités affichées deviennent celles de $name, pour un repas. Rien n’est consigné, et ce que tu as consigné avant ne change pas.';
+  }
+
+  @override
+  String get mealsUpdated => 'Repas mis à jour. Rien n’a été consigné.';
+
+  @override
+  String get mealsSaveAsNewTitle => 'Enregistrer comme nouveau repas';
+
+  @override
+  String mealsSaveAsNewBody(String name) {
+    return 'Les quantités affichées sont enregistrées comme un nouveau repas. $name reste tel quel, et rien n’est consigné.';
+  }
+
+  @override
+  String get mealsSavedNew =>
+      'Enregistré comme nouveau repas. Rien n’a été consigné.';
+
+  @override
+  String get mealsPortionHeading => 'Combien tu en as pris';
+
+  @override
+  String get mealsPortionAmount => 'Quantité';
+
+  @override
+  String get mealsMeasureServings => 'Portions';
+
+  @override
+  String get mealsMeasureGrams => 'Grammes';
+
+  @override
+  String get mealsNoWeight =>
+      'Pour consigner des grammes, ajoute le poids de la fournée cuite à la recette.';
+
+  @override
+  String mealsThisPortion(String amount) {
+    return 'Cette portion : $amount';
+  }
+
+  @override
+  String get mealsThisTimeIngredients =>
+      'Ingrédients cette fois (fournée entière)';
+
+  @override
+  String get mealsThisTimeNote =>
+      'Ce que tu changes ici vaut pour cette portion seulement. La recette enregistrée reste telle quelle.';
+
+  @override
+  String get mealsThisTimeChanged =>
+      'Changé pour cette portion seulement. Pour changer la recette elle-même, utilise Modifier la recette.';
+
+  @override
+  String get mealsThisTimeTotal => 'Cette fois';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

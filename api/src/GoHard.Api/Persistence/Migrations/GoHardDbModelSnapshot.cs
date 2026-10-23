@@ -769,6 +769,36 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("SavedFoods");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.SavedMeal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BodyJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SavedMeals");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.TrainingContext", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1244,6 +1274,15 @@ namespace GoHard.Api.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.SavedFood", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.SavedMeal", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()

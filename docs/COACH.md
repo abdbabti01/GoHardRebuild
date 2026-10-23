@@ -343,14 +343,23 @@ What it says is fixed words chosen from the real state (`train_screen.dart` `_co
 
 #### Saved foods (18 Oct 2026)
 
-GoHard has no "saved meals" or "recipes" (checked on every branch, worktree and handoff on 18 Oct 2026). What exists
-and is guided to: **Favourites** (any found food starred on its amount page) and **My foods** (foods the person wrote
+Since 23 Oct 2026 saved meals and recipes exist (docs/FOOD_DATA.md › Saved meals and recipes); see the next section. Saved
+foods are guided to as before: **Favourites** (any found food starred on its amount page) and **My foods** (foods the person wrote
 or corrected), both lists in Add food. Eat's coach gives one saved-foods hint per stage (`eat.saved.new`, then
 `eat.saved.shortcut`), chosen once for the screen's life and marked seen as it is shown; a first visit with nothing
 logged keeps "Log a meal". Show coaching hints again brings them back; Coaching hints off hides them. The Eat help
 (the bust, or the small avatar when the coach is off) explains the two lists and always offers Open Favourites. A
 hint, the shortcut or the help never logs food: choosing a food opens its amount page, and only its own confirm logs
 it; old journal entries are never rewritten. Food names and values are never read aloud.
+
+#### Saved meals and recipes (23 Oct 2026)
+
+Built-in words only, no AI request. On Eat, once the hints above have had their turn and food has been logged:
+`eat.meals` "Eat this often? Save the meal and adjust the amounts next time." with the guide action Saved meals &
+recipes (opens the library for the day shown). In the library, introduced once each when in view: `meals.library`
+(what a saved meal is, and that amounts can be changed before logging) and `meals.recipes` ("A recipe divides a whole
+batch into the servings you choose."), also behind the help entry in the app bar and in the recipe editor. After a save
+a short toast says "Your meal is in Saved meals & recipes." A hint or shortcut never saves or logs.
 
 #### Run / Walk and Steps (18 Oct 2026; corrected the same day)
 

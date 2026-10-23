@@ -26,10 +26,20 @@ class RecordingJournal implements FoodRepository {
   Completer<void>? hold;
 
   @override
-  Future<Receipt> save(FoodDraft d) async {
+  Future<Receipt> save(FoodDraft d, {String? operationId}) async {
     FoodRepository.validate(d);
     await hold?.future;
     saved.add(d);
+    return _receipt;
+  }
+
+  /// Saved meals logged at once, as the drafts of each.
+  final meals = <List<FoodDraft>>[];
+
+  @override
+  Future<Receipt> logMeal(List<FoodDraft> drafts, {required String operationId}) async {
+    drafts.forEach(FoodRepository.validate);
+    meals.add(drafts);
     return _receipt;
   }
 

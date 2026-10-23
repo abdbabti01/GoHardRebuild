@@ -15137,6 +15137,606 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View all workout history'**
   String get trainViewAllHistorySaid;
+
+  /// Title of the saved meals and recipes library, and the links to it from Eat and Add food.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved meals & recipes'**
+  String get mealsLibraryTitle;
+
+  /// Add food: subtitle of the row that opens Saved meals & recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Several foods at once, with the amounts checked first'**
+  String get mealsFromAddFoodSubtitle;
+
+  /// Library subtitle: the meal and day a log starts on.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs to {meal} · {date}'**
+  String mealsForContext(String meal, String date);
+
+  /// Library tab: saved meals.
+  ///
+  /// In en, this message translates to:
+  /// **'Meals'**
+  String get mealsTabMeals;
+
+  /// Library tab: recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes'**
+  String get mealsTabRecipes;
+
+  /// Button and editor title: create a saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'New meal'**
+  String get mealsNewMeal;
+
+  /// Button and editor title: create a recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'New recipe'**
+  String get mealsNewRecipe;
+
+  /// Editor title for an existing saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit meal'**
+  String get mealsEditMeal;
+
+  /// Editor title for an existing recipe, and the review link to it.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit recipe'**
+  String get mealsEditRecipe;
+
+  /// Library search field hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name'**
+  String get mealsSearchHint;
+
+  /// Library search with no result.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved matches “{query}”.'**
+  String mealsNoMatch(String query);
+
+  /// Empty state title, Meals tab.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved meals yet'**
+  String get mealsEmptyMealsTitle;
+
+  /// Empty state body, Meals tab: what a saved meal is.
+  ///
+  /// In en, this message translates to:
+  /// **'A saved meal keeps several foods with their usual amounts, like 2 eggs and 60 g of oats. When you log it, you can change the amounts first.'**
+  String get mealsEmptyMealsBody;
+
+  /// Empty state title, Recipes tab.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipes yet'**
+  String get mealsEmptyRecipesTitle;
+
+  /// Empty state body, Recipes tab: what a recipe is.
+  ///
+  /// In en, this message translates to:
+  /// **'A recipe is a whole batch of ingredients and the number of servings it makes. You log the portion you had.'**
+  String get mealsEmptyRecipesBody;
+
+  /// Name of an unsaved draft with no name yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled'**
+  String get mealsUntitled;
+
+  /// Marks a definition with an unfinished edit on this phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved changes'**
+  String get mealsUnsavedDraft;
+
+  /// Number of foods in a saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 food} other{{count} foods}}'**
+  String mealsFoodsCount(int count);
+
+  /// Number of ingredients in a recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 ingredient} other{{count} ingredients}}'**
+  String mealsIngredientsCount(int count);
+
+  /// How many servings a recipe batch makes. count is the number, value the same number formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{makes 1 serving} other{makes {value} servings}}'**
+  String mealsMakesServings(num count, String value);
+
+  /// A logged recipe portion in servings ("1.5 servings"). Kept with the entry as written.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 serving} other{{value} servings}}'**
+  String mealsServingsAmount(num count, String value);
+
+  /// Energy of one serving of a recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} per serving'**
+  String mealsPerServing(String value);
+
+  /// Tooltip of a library row's menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Options for {name}'**
+  String mealsMenuLabel(String name);
+
+  /// Library row menu: make a copy as a new definition.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get mealsDuplicate;
+
+  /// Name proposed for a copy.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (copy)'**
+  String mealsCopyName(String name);
+
+  /// Confirm deleting a saved meal or recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String mealsDeleteTitle(String name);
+
+  /// Confirm deleting: history is not touched.
+  ///
+  /// In en, this message translates to:
+  /// **'It is removed from Saved meals & recipes. Food you already logged from it stays exactly as it is.'**
+  String get mealsDeleteBody;
+
+  /// Toast after deleting a definition.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted. Your logged food is unchanged.'**
+  String get mealsDeleted;
+
+  /// Shown when the server has said it has no saved meals capability.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account’s server doesn’t take saved meals and recipes yet. Drafts stay on this phone; saving and logging them wait until it does.'**
+  String get mealsServerUnavailable;
+
+  /// Screen-reader label of the coach help button.
+  ///
+  /// In en, this message translates to:
+  /// **'Help with saved meals and recipes'**
+  String get mealsHelpLabel;
+
+  /// Coach bubble in the library, Meals tab.
+  ///
+  /// In en, this message translates to:
+  /// **'A saved meal keeps foods and their usual amounts. When you log it, you can halve, double or change any of them first.'**
+  String get mealsCoachLibrary;
+
+  /// Coach bubble about recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'A recipe divides a whole batch into the servings you choose.'**
+  String get mealsCoachRecipe;
+
+  /// One-time Eat coach hint about saved meals.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat this often? Save the meal and adjust the amounts next time.'**
+  String get eatHintMeals;
+
+  /// Toast after saving a meal. Nothing was logged.
+  ///
+  /// In en, this message translates to:
+  /// **'Your meal is in Saved meals & recipes.'**
+  String get mealsSaved;
+
+  /// Toast after saving a recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recipe is in Saved meals & recipes.'**
+  String get mealsSavedRecipe;
+
+  /// Quiet button on a journal meal group.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as meal'**
+  String get mealsSaveAsMeal;
+
+  /// Screen-reader label of Save as meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {meal} as a saved meal'**
+  String mealsSaveAsMealSaid(String meal);
+
+  /// Name field of a meal or recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get mealsNameLabel;
+
+  /// Heading over a meal's foods.
+  ///
+  /// In en, this message translates to:
+  /// **'Foods'**
+  String get mealsFoodsHeading;
+
+  /// Heading over a recipe's ingredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients (whole batch)'**
+  String get mealsIngredientsHeading;
+
+  /// Adds a food to a meal (nothing is logged).
+  ///
+  /// In en, this message translates to:
+  /// **'Add food'**
+  String get mealsAddFood;
+
+  /// Adds an ingredient to a recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ingredient'**
+  String get mealsAddIngredient;
+
+  /// Tooltip: remove one food from a meal or recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}'**
+  String mealsRemoveFood(String name);
+
+  /// Recipe yield field.
+  ///
+  /// In en, this message translates to:
+  /// **'Servings the batch makes'**
+  String get mealsServingsLabel;
+
+  /// Helper under the yield field.
+  ///
+  /// In en, this message translates to:
+  /// **'However many you divide it into. Nothing is guessed.'**
+  String get mealsServingsHelper;
+
+  /// Optional prepared weight field.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight of the finished batch (optional)'**
+  String get mealsWeightLabel;
+
+  /// Helper under the prepared weight field.
+  ///
+  /// In en, this message translates to:
+  /// **'Weigh it once it’s made to log portions in grams. The raw ingredients’ weight is never used for this.'**
+  String get mealsWeightHelper;
+
+  /// Nutrition panel title for a meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole meal'**
+  String get mealsTotalHeading;
+
+  /// Nutrition panel title for a recipe batch.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole batch'**
+  String get mealsBatchHeading;
+
+  /// Nutrition panel title for one recipe serving.
+  ///
+  /// In en, this message translates to:
+  /// **'One serving'**
+  String get mealsPerServingHeading;
+
+  /// Note under a composite nutrition panel with missing values.
+  ///
+  /// In en, this message translates to:
+  /// **'Some foods have no value for a nutrient: figures marked “known” are sums of what is known, not full totals.'**
+  String get mealsSomeMissing;
+
+  /// Saves a separate definition; the original stays.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as new'**
+  String get mealsSaveAsNew;
+
+  /// Throws away the editor draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get mealsDiscard;
+
+  /// Confirm discarding a draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard your changes?'**
+  String get mealsDiscardTitle;
+
+  /// Confirm discarding a draft of an existing definition.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved version stays as it was.'**
+  String get mealsDiscardBody;
+
+  /// Confirm discarding a draft of a new definition.
+  ///
+  /// In en, this message translates to:
+  /// **'This unsaved meal is removed from this phone.'**
+  String get mealsDiscardBodyNew;
+
+  /// Editor: a kept draft was restored.
+  ///
+  /// In en, this message translates to:
+  /// **'Your unsaved changes from before are back.'**
+  String get mealsResumed;
+
+  /// Conflict dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed on another device'**
+  String get mealsChangedElsewhereTitle;
+
+  /// Conflict dialog body.
+  ///
+  /// In en, this message translates to:
+  /// **'This was changed on another device since you started. Save your version over it?'**
+  String get mealsChangedElsewhereBody;
+
+  /// Conflict dialog action.
+  ///
+  /// In en, this message translates to:
+  /// **'Save mine'**
+  String get mealsSaveMine;
+
+  /// Editor: the definition was deleted elsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'This was deleted on another device. Use Save as new to keep it.'**
+  String get mealsDeletedElsewhere;
+
+  /// Validation: no name.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it a name.'**
+  String get mealsProblemNoName;
+
+  /// Validation: name too long.
+  ///
+  /// In en, this message translates to:
+  /// **'The name is too long (120 characters at most).'**
+  String get mealsProblemNameTooLong;
+
+  /// Validation: no foods.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one food.'**
+  String get mealsProblemNoFoods;
+
+  /// Validation: too many foods.
+  ///
+  /// In en, this message translates to:
+  /// **'30 foods at most.'**
+  String get mealsProblemTooMany;
+
+  /// Validation: a quantity is zero, negative or invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Every amount must be more than 0.'**
+  String get mealsProblemBadQuantity;
+
+  /// Validation: recipe yield.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter how many servings the batch makes (more than 0, at most 1,000).'**
+  String get mealsProblemBadServings;
+
+  /// Validation: prepared weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the finished weight in grams (more than 0), or leave it empty.'**
+  String get mealsProblemBadWeight;
+
+  /// Validation: definition too large.
+  ///
+  /// In en, this message translates to:
+  /// **'This is too large to save. Remove some foods.'**
+  String get mealsProblemTooLarge;
+
+  /// Validation: custom multiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a multiplier above 0, at most 20.'**
+  String get mealsProblemBadMultiplier;
+
+  /// Validation: recipe portion.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter how much you had (more than 0).'**
+  String get mealsProblemBadPortion;
+
+  /// Food form: snapshot over its size bound.
+  ///
+  /// In en, this message translates to:
+  /// **'This food’s details are too large to save.'**
+  String get foodProblemTooLarge;
+
+  /// Amount form in selection mode: confirms a food for a meal or recipe (logs nothing).
+  ///
+  /// In en, this message translates to:
+  /// **'Use this amount'**
+  String get mealsUseAmount;
+
+  /// Subtitle of the log review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the amounts. Nothing is logged until you confirm.'**
+  String get mealsReviewNote;
+
+  /// Heading over the review's foods.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts this time'**
+  String get mealsAmountsHeading;
+
+  /// Chip opening a custom multiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Other…'**
+  String get mealsMultiplierCustom;
+
+  /// Custom multiplier dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiply every amount'**
+  String get mealsMultiplierTitle;
+
+  /// Custom multiplier field.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiplier'**
+  String get mealsMultiplierLabel;
+
+  /// Tooltip / screen reader of a multiplier chip.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} times every amount'**
+  String mealsMultiplierSaid(String value);
+
+  /// Review main action for a meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Log meal'**
+  String get mealsLogMeal;
+
+  /// Review main action for a recipe portion.
+  ///
+  /// In en, this message translates to:
+  /// **'Log portion'**
+  String get mealsLogPortion;
+
+  /// Toast after logging.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged to {meal}.'**
+  String mealsLogged(String meal);
+
+  /// Toast after changing a logged recipe portion.
+  ///
+  /// In en, this message translates to:
+  /// **'Portion updated.'**
+  String get mealsPortionChanged;
+
+  /// Review: replace the saved meal's amounts with those shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Update saved meal'**
+  String get mealsUpdateSaved;
+
+  /// Confirm Update saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the saved meal?'**
+  String get mealsUpdateTitle;
+
+  /// Confirm Update saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'The amounts shown become {name}’s saved amounts, as one meal. Nothing is logged, and food you logged before doesn’t change.'**
+  String mealsUpdateBody(String name);
+
+  /// Toast after Update saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved meal updated. Nothing was logged.'**
+  String get mealsUpdated;
+
+  /// Dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as a new meal'**
+  String get mealsSaveAsNewTitle;
+
+  /// Dialog body.
+  ///
+  /// In en, this message translates to:
+  /// **'The amounts shown are saved as one new meal. {name} stays as it is, and nothing is logged.'**
+  String mealsSaveAsNewBody(String name);
+
+  /// Toast after Save as new from the review.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as a new meal. Nothing was logged.'**
+  String get mealsSavedNew;
+
+  /// Recipe review heading.
+  ///
+  /// In en, this message translates to:
+  /// **'How much you had'**
+  String get mealsPortionHeading;
+
+  /// Recipe portion field.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get mealsPortionAmount;
+
+  /// Recipe portion measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Servings'**
+  String get mealsMeasureServings;
+
+  /// Recipe portion measure (finished batch).
+  ///
+  /// In en, this message translates to:
+  /// **'Grams'**
+  String get mealsMeasureGrams;
+
+  /// Recipe review: why grams are not offered.
+  ///
+  /// In en, this message translates to:
+  /// **'To log grams, add the finished batch’s weight to the recipe.'**
+  String get mealsNoWeight;
+
+  /// Nutrition panel title for the portion being logged.
+  ///
+  /// In en, this message translates to:
+  /// **'This portion: {amount}'**
+  String mealsThisPortion(String amount);
+
+  /// Recipe review: the batch copy for this portion.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients this time (whole batch)'**
+  String get mealsThisTimeIngredients;
+
+  /// Recipe review note.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes here are for this portion only. The saved recipe stays as it is.'**
+  String get mealsThisTimeNote;
+
+  /// Recipe review note after a change.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed for this portion only. To change the recipe itself, use Edit recipe.'**
+  String get mealsThisTimeChanged;
+
+  /// Meal review nutrition panel title.
+  ///
+  /// In en, this message translates to:
+  /// **'This time'**
+  String get mealsThisTimeTotal;
 }
 
 class _AppLocalizationsDelegate

@@ -13,8 +13,17 @@ public sealed class FoodService(GoHardDb db)
         new(f.Calories, f.ProteinG, f.CarbsG, f.FatG), new(f.CaloriesSource, f.ProteinSource, f.CarbsSource, f.FatSource),
         f.Revision, f.DeletedAtUtc != null, f.SourceJson is null ? null : JsonSerializer.Deserialize<JsonElement>(f.SourceJson));
 
+    public const int SnapshotLimit = 16000;
+
+    /// <summary>A recipe portion carries its whole batch (ingredients, yield, portion), so it may be larger; it is still bounded.</summary>
+    public const int CompositeSnapshotLimit = 48000;
+
+    /// <summary>The most entries one atomic log may hold (a saved meal's components).</summary>
+    public const int MaxBatchEntries = 30;
+
     /// <summary>A snapshot is the owner's own record of where values came from: an object of bounded size, stored as given.</summary>
-    public static bool ValidSnapshot(JsonElement? e) => e is null || (e.Value.ValueKind == JsonValueKind.Object && e.Value.GetRawText().Length <= 16000);
+    public static bool ValidSnapshot(JsonElement? e) => e is null || (e.Value.ValueKind == JsonValueKind.Object &&
+        e.Value.GetRawText().Length <= (e.Value.TryGetProperty("recipe", out _) ? CompositeSnapshotLimit : SnapshotLimit));
 
     private static bool Valid(string meal, string name, string amount, Macros? m, JsonElement? source, MacroProvenance? p) =>
         Meals.Contains(meal) && name?.Trim().Length is > 0 and <= 120 && amount?.Trim().Length is > 0 and <= 80 && m is not null &&
@@ -44,6 +53,30 @@ public sealed class FoodService(GoHardDb db)
         db.FoodEntries.Add(entry);
         await db.SaveChangesAsync(ct);
         return Outcome.Accepted(entry.Revision, ToDto(entry));
+    }
+
+    /// <summary>
+    /// A saved meal logged as one operation (inside the command's transaction): every entry is checked first, and one
+    /// invalid entry or a reused ID records none of them.
+    /// </summary>
+    public async Task<Outcome<FoodBatchResult>> CreateManyAsync(Guid userId, FoodBatchRequest r, CancellationToken ct)
+    {
+        if (r.Entries is not { Count: > 0 and <= MaxBatchEntries } || r.Entries.Select(e => e.EntryId).Distinct().Count() != r.Entries.Count ||
+            r.Entries.Any(e => e is null || e.EntryId == Guid.Empty || !Valid(e.Meal, e.Name, e.AmountDescription, e.Macros, e.Source, e.Provenance)))
+            return Outcome.Rejected<FoodBatchResult>(Ack.Invalid);
+        var ids = r.Entries.Select(e => e.EntryId).ToList();
+        if (await db.FoodEntries.AnyAsync(f => ids.Contains(f.Id), ct)) return Outcome.Conflict<FoodBatchResult>("DUPLICATE_ID");
+        var made = new List<FoodEntry>();
+        var now = DateTime.UtcNow;
+        foreach (var e in r.Entries)
+        {
+            var entry = new FoodEntry { Id = e.EntryId, UserId = userId, CreatedAtUtc = now.AddTicks(made.Count * 10) }; // 1 µs apart (the database keeps microseconds): the meal's order
+            Apply(entry, e.DayKey, e.Meal, e.Name, e.AmountDescription, e.Macros, e.Source, e.Provenance);
+            made.Add(entry);
+        }
+        db.FoodEntries.AddRange(made);
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(1, new FoodBatchResult(made.Select(ToDto).ToList()));
     }
 
     public async Task<Outcome<FoodEntryDto>> UpdateAsync(Guid userId, Guid id, FoodUpdateRequest r, CancellationToken ct)
@@ -163,6 +196,73 @@ public sealed class SavedFoodService(GoHardDb db)
 
     public async Task<List<SavedFoodDto>> ListAsync(Guid userId, CancellationToken ct) =>
         (await db.SavedFoods.AsNoTracking().Where(f => f.UserId == userId).OrderBy(f => f.CreatedAtUtc).ToListAsync(ct)).Select(ToDto).ToList();
+}
+
+/// <summary>
+/// Saved meals and recipes (docs/FOOD_DATA.md › Saved meals and recipes). Owned, revision-checked templates with
+/// tombstones, like saved foods. Never a record of anything eaten, and never read to work out logged food.
+/// </summary>
+public sealed class SavedMealService(GoHardDb db)
+{
+    public const string Capability = "food.saved-meals";
+    public const int MaxComponents = 30, BodyLimit = FoodService.CompositeSnapshotLimit;
+
+    public static SavedMealDto ToDto(SavedMeal m) => new(m.Id, JsonSerializer.Deserialize<JsonElement>(m.BodyJson), m.Revision, m.DeletedAtUtc != null);
+
+    private static bool Positive(JsonElement e, string name, decimal max, bool optional = false) =>
+        !e.TryGetProperty(name, out var v) || v.ValueKind == JsonValueKind.Null
+            ? optional
+            : v.ValueKind == JsonValueKind.Number && v.TryGetDecimal(out var d) && d > 0 && d <= max;
+
+    /// <summary>A meal or a recipe with a name, 1–30 components (each a food snapshot with a positive amount and a unit),
+    /// and for a recipe a positive yield; an optional prepared weight is positive too. Bounded in size.</summary>
+    public static bool Valid(JsonElement body)
+    {
+        if (body.ValueKind != JsonValueKind.Object || body.GetRawText().Length > BodyLimit) return false;
+        if (!body.TryGetProperty("kind", out var kind) || kind.GetString() is not ("meal" or "recipe")) return false;
+        if (!body.TryGetProperty("name", out var name) || name.ValueKind != JsonValueKind.String || name.GetString()!.Trim().Length is 0 or > 120) return false;
+        if (!body.TryGetProperty("components", out var parts) || parts.ValueKind != JsonValueKind.Array || parts.GetArrayLength() is 0 or > MaxComponents) return false;
+        foreach (var p in parts.EnumerateArray())
+        {
+            if (p.ValueKind != JsonValueKind.Object || !p.TryGetProperty("item", out var item) || item.ValueKind != JsonValueKind.Object ||
+                !item.TryGetProperty("name", out var n) || n.ValueKind != JsonValueKind.String || !Positive(p, "quantity", 100000) ||
+                !p.TryGetProperty("unit", out var unit) || unit.ValueKind != JsonValueKind.String) return false;
+        }
+        return kind.GetString() == "meal" || (Positive(body, "servings", 1000) && Positive(body, "preparedWeightG", 100000, optional: true));
+    }
+
+    public async Task<Outcome<SavedMealDto>> PutAsync(Guid userId, Guid id, SavedMealPutRequest r, CancellationToken ct)
+    {
+        if (id == Guid.Empty || !Valid(r.Body)) return Outcome.Rejected<SavedMealDto>(Ack.Invalid);
+        var meal = await db.SavedMeals.FirstOrDefaultAsync(m => m.Id == id, ct);
+        if (meal is not null && meal.UserId != userId) return Outcome.NotFound<SavedMealDto>();
+        if (meal is null)
+        {
+            if (r.ExpectedRevision != 0) return Outcome.NotFound<SavedMealDto>();
+            meal = new SavedMeal { Id = id, UserId = userId, CreatedAtUtc = DateTime.UtcNow, Revision = 0 };
+            db.SavedMeals.Add(meal);
+        }
+        else if (meal.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, meal.Revision, ToDto(meal));
+        else if (meal.DeletedAtUtc != null) return Outcome.Conflict("ENTRY_DELETED", meal.Revision, ToDto(meal));
+        meal.BodyJson = r.Body.GetRawText();
+        meal.Revision++;
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(meal.Revision, ToDto(meal));
+    }
+
+    /// <summary>Removes it from future use. Food logged from it keeps its own snapshot and is untouched.</summary>
+    public async Task<Outcome<SavedMealDto>> DeleteAsync(Guid userId, Guid id, RevisionCommand r, CancellationToken ct)
+    {
+        var meal = await db.SavedMeals.FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId, ct);
+        if (meal is null) return Outcome.NotFound<SavedMealDto>();
+        if (meal.DeletedAtUtc != null || meal.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, meal.Revision, ToDto(meal));
+        meal.DeletedAtUtc = DateTime.UtcNow; meal.Revision++;
+        await db.SaveChangesAsync(ct);
+        return Outcome.Accepted(meal.Revision, ToDto(meal));
+    }
+
+    public async Task<List<SavedMealDto>> ListAsync(Guid userId, CancellationToken ct) =>
+        (await db.SavedMeals.AsNoTracking().Where(m => m.UserId == userId).OrderBy(m => m.CreatedAtUtc).ToListAsync(ct)).Select(ToDto).ToList();
 }
 
 /// <summary>Supporting activity records: Run / Walk activities with their routes (docs/RUN_WALK.md) and optional body measurements.</summary>

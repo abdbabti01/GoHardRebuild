@@ -144,7 +144,7 @@ try {
                 }
             }
         }
-        if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test') {
+        if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_meals_test') {
             # The journey prints GOHARD_NET:off / GOHARD_NET:on; this switches the device's Wi-Fi and mobile data to match,
             # so the middle of the journey is genuinely offline. The connection is always restored afterwards.
             & $Adb -s $device logcat -c
@@ -254,7 +254,7 @@ try {
                 Stop-Job $feeder; Remove-Job $feeder
                 if ($journey -eq 'journey_runwalk_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
-                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_progress_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
+                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_progress_test', 'journey_meals_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

@@ -165,7 +165,8 @@ List<Suggestion> localSuggestions({required List<Json> saved, required List<Food
   }
   final newestFirst = [...journal]..sort((a, b) => b.dayKey.compareTo(a.dayKey));
   for (final e in newestFirst) {
-    if (e.isDeleted) continue;
+    // A recipe portion is logged again from Saved meals & recipes, where its batch and yield are.
+    if (e.isDeleted || e.isRecipePortion) continue;
     final source = e.source?['item'];
     // An entry typed by hand has no food behind it; it is offered as itself, with the amount it was logged with.
     final item = source is Map ? FoodItem(source as Json) : FoodItem({'source': 'user', 'name': e.name, 'basis': FoodItem.perServing, 'nutrients': e.macros, 'servings': [{'label': e.amountDescription}]});

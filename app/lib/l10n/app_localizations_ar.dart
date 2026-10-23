@@ -10705,4 +10705,397 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get trainViewAllHistorySaid => 'عرض سجل الحصص كله';
+
+  @override
+  String get mealsLibraryTitle => 'الوجبات والوصفات المحفوظة';
+
+  @override
+  String get mealsFromAddFoodSubtitle =>
+      'عدة أطعمة دفعة واحدة، مع مراجعة الكميات أولًا';
+
+  @override
+  String mealsForContext(String meal, String date) {
+    return 'يُسجَّل في $meal · $date';
+  }
+
+  @override
+  String get mealsTabMeals => 'الوجبات';
+
+  @override
+  String get mealsTabRecipes => 'الوصفات';
+
+  @override
+  String get mealsNewMeal => 'وجبة جديدة';
+
+  @override
+  String get mealsNewRecipe => 'وصفة جديدة';
+
+  @override
+  String get mealsEditMeal => 'تعديل الوجبة';
+
+  @override
+  String get mealsEditRecipe => 'تعديل الوصفة';
+
+  @override
+  String get mealsSearchHint => 'ابحث بالاسم';
+
+  @override
+  String mealsNoMatch(String query) {
+    return 'لا شيء محفوظ يطابق «$query».';
+  }
+
+  @override
+  String get mealsEmptyMealsTitle => 'لا وجبات محفوظة بعد';
+
+  @override
+  String get mealsEmptyMealsBody =>
+      'تحفظ الوجبة عدة أطعمة بكمياتها المعتادة، مثل بيضتين و60 غ من الشوفان. عند تسجيلها يمكنك تغيير الكميات أولًا.';
+
+  @override
+  String get mealsEmptyRecipesTitle => 'لا وصفات بعد';
+
+  @override
+  String get mealsEmptyRecipesBody =>
+      'الوصفة هي كمية كاملة من المكونات وعدد الحصص التي تعطيها. تسجّل الحصة التي تناولتها.';
+
+  @override
+  String get mealsUntitled => 'بلا اسم';
+
+  @override
+  String get mealsUnsavedDraft => 'تغييرات غير محفوظة';
+
+  @override
+  String mealsFoodsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count طعام',
+      many: '$count طعامًا',
+      few: '$count أطعمة',
+      two: 'طعامان',
+      one: 'طعام واحد',
+      zero: 'لا أطعمة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsIngredientsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكوّن',
+      many: '$count مكوّنًا',
+      few: '$count مكونات',
+      two: 'مكوّنان',
+      one: 'مكوّن واحد',
+      zero: 'لا مكونات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsMakesServings(num count, String value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تعطي $value حصة',
+      many: 'تعطي $value حصة',
+      few: 'تعطي $value حصص',
+      two: 'تعطي حصتين',
+      one: 'تعطي حصة واحدة',
+      zero: 'تعطي $value حصة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsServingsAmount(num count, String value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$value حصة',
+      many: '$value حصة',
+      few: '$value حصص',
+      two: 'حصتان',
+      one: 'حصة واحدة',
+      zero: '$value حصة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mealsPerServing(String value) {
+    return '$value لكل حصة';
+  }
+
+  @override
+  String mealsMenuLabel(String name) {
+    return 'خيارات $name';
+  }
+
+  @override
+  String get mealsDuplicate => 'تكرار';
+
+  @override
+  String mealsCopyName(String name) {
+    return '$name (نسخة)';
+  }
+
+  @override
+  String mealsDeleteTitle(String name) {
+    return 'حذف $name؟';
+  }
+
+  @override
+  String get mealsDeleteBody =>
+      'ستُزال من الوجبات والوصفات المحفوظة. ما سجّلته منها من قبل يبقى كما هو تمامًا.';
+
+  @override
+  String get mealsDeleted => 'حُذفت. ما سجّلته لم يتغيّر.';
+
+  @override
+  String get mealsServerUnavailable =>
+      'خادم حسابك لا يدعم الوجبات والوصفات المحفوظة بعد. تبقى المسودات على هذا الهاتف، وينتظر الحفظ والتسجيل حتى يدعمها.';
+
+  @override
+  String get mealsHelpLabel => 'مساعدة حول الوجبات والوصفات';
+
+  @override
+  String get mealsCoachLibrary =>
+      'تحفظ الوجبة الأطعمة وكمياتها المعتادة. عند تسجيلها يمكنك أولًا تنصيف أي منها أو مضاعفته أو تغييره.';
+
+  @override
+  String get mealsCoachRecipe =>
+      'الوصفة تقسم الكمية الكاملة إلى عدد الحصص الذي تختاره.';
+
+  @override
+  String get eatHintMeals =>
+      'تأكل هذا كثيرًا؟ احفظ الوجبة وعدّل الكميات في المرة القادمة.';
+
+  @override
+  String get mealsSaved => 'وجبتك في «الوجبات والوصفات المحفوظة».';
+
+  @override
+  String get mealsSavedRecipe => 'وصفتك في «الوجبات والوصفات المحفوظة».';
+
+  @override
+  String get mealsSaveAsMeal => 'حفظ كوجبة';
+
+  @override
+  String mealsSaveAsMealSaid(String meal) {
+    return 'حفظ $meal كوجبة محفوظة';
+  }
+
+  @override
+  String get mealsNameLabel => 'الاسم';
+
+  @override
+  String get mealsFoodsHeading => 'الأطعمة';
+
+  @override
+  String get mealsIngredientsHeading => 'المكونات (الكمية كاملة)';
+
+  @override
+  String get mealsAddFood => 'إضافة طعام';
+
+  @override
+  String get mealsAddIngredient => 'إضافة مكوّن';
+
+  @override
+  String mealsRemoveFood(String name) {
+    return 'إزالة $name';
+  }
+
+  @override
+  String get mealsServingsLabel => 'عدد الحصص التي تعطيها الكمية';
+
+  @override
+  String get mealsServingsHelper => 'بقدر ما تقسمها. لا يُخمَّن شيء.';
+
+  @override
+  String get mealsWeightLabel => 'وزن الكمية بعد التحضير (اختياري)';
+
+  @override
+  String get mealsWeightHelper =>
+      'زِنها بعد تحضيرها لتسجيل الحصص بالغرامات. لا يُستخدم وزن المكونات النيئة لذلك أبدًا.';
+
+  @override
+  String get mealsTotalHeading => 'الوجبة كاملة';
+
+  @override
+  String get mealsBatchHeading => 'الكمية كاملة';
+
+  @override
+  String get mealsPerServingHeading => 'حصة واحدة';
+
+  @override
+  String get mealsSomeMissing =>
+      'بعض الأطعمة بلا قيمة لعنصر غذائي: الأرقام الموسومة «معروف» هي مجموع المعروف، وليست مجاميع كاملة.';
+
+  @override
+  String get mealsSaveAsNew => 'حفظ كجديد';
+
+  @override
+  String get mealsDiscard => 'تجاهل التغييرات';
+
+  @override
+  String get mealsDiscardTitle => 'تجاهل تغييراتك؟';
+
+  @override
+  String get mealsDiscardBody => 'تبقى النسخة المحفوظة كما كانت.';
+
+  @override
+  String get mealsDiscardBodyNew =>
+      'ستُزال هذه الوجبة غير المحفوظة من هذا الهاتف.';
+
+  @override
+  String get mealsResumed => 'عادت تغييراتك غير المحفوظة السابقة.';
+
+  @override
+  String get mealsChangedElsewhereTitle => 'تغيّر على جهاز آخر';
+
+  @override
+  String get mealsChangedElsewhereBody =>
+      'تغيّر هذا على جهاز آخر منذ أن بدأت. هل تحفظ نسختك فوقه؟';
+
+  @override
+  String get mealsSaveMine => 'احفظ نسختي';
+
+  @override
+  String get mealsDeletedElsewhere =>
+      'حُذف هذا على جهاز آخر. استخدم «حفظ كجديد» للاحتفاظ به.';
+
+  @override
+  String get mealsProblemNoName => 'أعطها اسمًا.';
+
+  @override
+  String get mealsProblemNameTooLong =>
+      'الاسم طويل جدًا (120 حرفًا على الأكثر).';
+
+  @override
+  String get mealsProblemNoFoods => 'أضف طعامًا واحدًا على الأقل.';
+
+  @override
+  String get mealsProblemTooMany => '30 طعامًا على الأكثر.';
+
+  @override
+  String get mealsProblemBadQuantity => 'يجب أن تكون كل كمية أكبر من 0.';
+
+  @override
+  String get mealsProblemBadServings =>
+      'أدخل عدد الحصص التي تعطيها الكمية (أكثر من 0، وحتى 1000).';
+
+  @override
+  String get mealsProblemBadWeight =>
+      'أدخل الوزن النهائي بالغرامات (أكثر من 0) أو اتركه فارغًا.';
+
+  @override
+  String get mealsProblemTooLarge => 'هذا أكبر من أن يُحفظ. أزل بعض الأطعمة.';
+
+  @override
+  String get mealsProblemBadMultiplier => 'أدخل مضاعِفًا أكبر من 0، وحتى 20.';
+
+  @override
+  String get mealsProblemBadPortion => 'أدخل الكمية التي تناولتها (أكثر من 0).';
+
+  @override
+  String get foodProblemTooLarge => 'تفاصيل هذا الطعام أكبر من أن تُحفظ.';
+
+  @override
+  String get mealsUseAmount => 'استخدم هذه الكمية';
+
+  @override
+  String get mealsReviewNote => 'راجع الكميات. لا يُسجَّل شيء حتى تؤكّد.';
+
+  @override
+  String get mealsAmountsHeading => 'الكميات هذه المرة';
+
+  @override
+  String get mealsMultiplierCustom => 'غير ذلك…';
+
+  @override
+  String get mealsMultiplierTitle => 'ضاعف كل الكميات';
+
+  @override
+  String get mealsMultiplierLabel => 'المضاعِف';
+
+  @override
+  String mealsMultiplierSaid(String value) {
+    return '$value ضعف كل كمية';
+  }
+
+  @override
+  String get mealsLogMeal => 'سجّل الوجبة';
+
+  @override
+  String get mealsLogPortion => 'سجّل الحصة';
+
+  @override
+  String mealsLogged(String meal) {
+    return 'سُجّل في $meal.';
+  }
+
+  @override
+  String get mealsPortionChanged => 'حُدّثت الحصة.';
+
+  @override
+  String get mealsUpdateSaved => 'حدّث الوجبة المحفوظة';
+
+  @override
+  String get mealsUpdateTitle => 'تحديث الوجبة المحفوظة؟';
+
+  @override
+  String mealsUpdateBody(String name) {
+    return 'تصبح الكميات المعروضة كميات $name المحفوظة، كوجبة واحدة. لا يُسجَّل شيء، ولا يتغيّر ما سجّلته من قبل.';
+  }
+
+  @override
+  String get mealsUpdated => 'حُدّثت الوجبة المحفوظة. لم يُسجَّل شيء.';
+
+  @override
+  String get mealsSaveAsNewTitle => 'حفظ كوجبة جديدة';
+
+  @override
+  String mealsSaveAsNewBody(String name) {
+    return 'تُحفظ الكميات المعروضة كوجبة جديدة واحدة. تبقى $name كما هي، ولا يُسجَّل شيء.';
+  }
+
+  @override
+  String get mealsSavedNew => 'حُفظت كوجبة جديدة. لم يُسجَّل شيء.';
+
+  @override
+  String get mealsPortionHeading => 'الكمية التي تناولتها';
+
+  @override
+  String get mealsPortionAmount => 'الكمية';
+
+  @override
+  String get mealsMeasureServings => 'حصص';
+
+  @override
+  String get mealsMeasureGrams => 'غرامات';
+
+  @override
+  String get mealsNoWeight =>
+      'لتسجيل الغرامات، أضف وزن الكمية بعد التحضير إلى الوصفة.';
+
+  @override
+  String mealsThisPortion(String amount) {
+    return 'هذه الحصة: $amount';
+  }
+
+  @override
+  String get mealsThisTimeIngredients => 'المكونات هذه المرة (الكمية كاملة)';
+
+  @override
+  String get mealsThisTimeNote =>
+      'التغييرات هنا لهذه الحصة فقط. تبقى الوصفة المحفوظة كما هي.';
+
+  @override
+  String get mealsThisTimeChanged =>
+      'تغيّر لهذه الحصة فقط. لتغيير الوصفة نفسها استخدم «تعديل الوصفة».';
+
+  @override
+  String get mealsThisTimeTotal => 'هذه المرة';
 }

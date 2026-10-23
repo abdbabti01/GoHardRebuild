@@ -44,7 +44,7 @@ Json authFor(String owner) => {
 class FakeServer implements Transport {
   final calls = <({String method, String path, String body, String? bearer})>[];
   final operations = <String, (String body, ApiResponse response)>{};
-  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{}, weeklyGoals = <String, Json>{}, bodyMetrics = <String, Json>{}, exerciseIncrements = <String, Json>{};
+  final sets = <String, Json>{}, food = <String, Json>{}, workouts = <String, Json>{}, savedFoods = <String, Json>{}, water = <String, Json>{}, weeklyGoals = <String, Json>{}, bodyMetrics = <String, Json>{}, exerciseIncrements = <String, Json>{}, savedMeals = <String, Json>{};
 
   /// The next plan edit is refused as if the plan had been changed on another phone first.
   bool planChangedElsewhere = false;
@@ -83,7 +83,7 @@ class FakeServer implements Transport {
         'profile': profile, 'context': {'contextRevision': 1, 'primaryPlanId': null, 'plans': []},
         'workouts': [for (final w in workouts.values) {...w, 'exercises': [for (final e in w['exercises'] as List) {...e as Json, 'sets': [for (final s in sets.values) if (s['exerciseId'] == e['id']) s]}]}],
         'foodEntries': food.values.toList(), 'runs': [], 'bodyMetrics': bodyMetrics.values.toList(), 'proposals': [], 'catalog': [], 'savedFoods': savedFoods.values.toList(), 'waterEntries': water.values.toList(),
-        'weeklyGoals': weeklyGoals.values.toList(), 'exerciseIncrements': exerciseIncrements.values.toList(),
+        'weeklyGoals': weeklyGoals.values.toList(), 'exerciseIncrements': exerciseIncrements.values.toList(), 'savedMeals': savedMeals.values.toList(),
       });
     }
     if (path == '/capabilities') return ApiResponse(200, capabilities);
@@ -133,6 +133,25 @@ class FakeServer implements Transport {
         final f = {...d, 'id': d['entryId'], 'revision': 1, 'isDeleted': false}..remove('operationId')..remove('entryId');
         food[f['id'] as String] = f;
         return _ack(op, 'accepted', 1, Map.of(f));
+      // A saved meal logged at once: every entry or none, as the real server's transaction does.
+      case ['food-entries', 'batch']:
+        final entries = [for (final e in d['entries'] as List) e as Json];
+        bool bad(Json e) => ((e['macros'] as Map).values).any((v) => v != null && (v as num) < 0);
+        if (entries.isEmpty || entries.length > 30 || entries.any(bad)) return _ack(op, 'rejected', 0, null, 'VALIDATION_FAILED');
+        if (entries.any((e) => food.containsKey(e['entryId']))) return _ack(op, 'conflict', 0, null, 'DUPLICATE_ID');
+        final made = [for (final e in entries) {...e, 'id': e['entryId'], 'revision': 1, 'isDeleted': false}..remove('entryId')];
+        for (final f in made) {
+          food[f['id'] as String] = f;
+        }
+        return _ack(op, 'accepted', 1, {'entries': [for (final f in made) Map.of(f)]});
+      case ['saved-meals', final id] when method == 'PUT':
+        final row = savedMeals[id];
+        if ((row?['revision'] ?? 0) != d['expectedRevision']) return row == null ? const ApiResponse(404, null) : _ack(op, 'conflict', row['revision'] as int, Map.of(row), 'REVISION_CONFLICT');
+        final next = {'id': id, 'body': d['body'], 'revision': ((row?['revision'] as int?) ?? 0) + 1, 'isDeleted': false};
+        savedMeals[id] = next;
+        return _ack(op, 'accepted', next['revision'] as int, Map.of(next));
+      case ['saved-meals', final id, 'delete']:
+        return _revisioned(savedMeals, id, d, op, (r) => r['isDeleted'] = true);
       case ['food-entries', final id] when method == 'PUT':
         return _revisioned(food, id, d, op, (r) => r.addAll({for (final k in ['dayKey', 'meal', 'name', 'amountDescription', 'macros', 'source', 'provenance']) k: d[k]}));
       case ['food-entries', final id, 'delete']:

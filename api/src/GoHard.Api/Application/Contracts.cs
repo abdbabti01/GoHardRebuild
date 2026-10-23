@@ -112,6 +112,19 @@ public sealed record SavedFoodDto(Guid Id, JsonElement Item, bool IsFavourite, i
 /// <param name="ExpectedRevision">0 creates the food; otherwise the revision being replaced.</param>
 public sealed record SavedFoodPutRequest(Guid OperationId, int ExpectedRevision, JsonElement Item, bool IsFavourite);
 
+/// <summary>A saved meal or recipe (docs/FOOD_DATA.md › Saved meals and recipes): a template, never a record of food eaten.
+/// `Body` is the definition as the app wrote it (kind, name, components, servings, prepared weight), validated and stored whole.</summary>
+public sealed record SavedMealDto(Guid Id, JsonElement Body, int Revision, bool IsDeleted);
+/// <param name="ExpectedRevision">0 creates the definition; otherwise the revision being replaced.</param>
+public sealed record SavedMealPutRequest(Guid OperationId, int ExpectedRevision, JsonElement Body);
+/// <summary>One entry of an atomic multi-food log: the same fields as <see cref="FoodCreateRequest"/>.</summary>
+public sealed record FoodBatchEntry(Guid EntryId, DateOnly DayKey, string Meal, string Name, string AmountDescription, Macros Macros,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Source = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] MacroProvenance? Provenance = null);
+/// <summary>A saved meal logged as one operation: every entry is recorded, or none is.</summary>
+public sealed record FoodBatchRequest(Guid OperationId, List<FoodBatchEntry> Entries);
+public sealed record FoodBatchResult(List<FoodEntryDto> Entries);
+
 /// <param name="VolumeMl">Canonical millilitres, above 0 and at most 5,000 per entry, up to 3 decimals.</param>
 public sealed record WaterEntryDto(Guid Id, DateOnly DayKey, decimal VolumeMl, int Revision, bool IsDeleted);
 public sealed record WaterCreateRequest(Guid OperationId, Guid EntryId, DateOnly DayKey, decimal VolumeMl);
@@ -216,4 +229,4 @@ public sealed record CatalogExerciseDto(string Key, string Name, string Category
 public sealed record SnapshotDto(ProfileDto Profile, PlanContextDto Context, List<WorkoutDto> Workouts, List<FoodEntryDto> FoodEntries,
     List<RunDto> Runs, List<BodyMetricDto> BodyMetrics, List<ProposalDto> Proposals, List<CatalogExerciseDto> Catalog, DateTime ServerTimeUtc, List<SavedFoodDto>? SavedFoods = null,
     List<CustomExerciseDto>? CustomExercises = null, List<WaterEntryDto>? WaterEntries = null, List<WeeklyGoalDto>? WeeklyGoals = null,
-    List<ExerciseIncrementDto>? ExerciseIncrements = null);
+    List<ExerciseIncrementDto>? ExerciseIncrements = null, List<SavedMealDto>? SavedMeals = null);

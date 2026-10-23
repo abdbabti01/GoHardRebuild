@@ -15,6 +15,7 @@ import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
 import 'log_food_screen.dart';
+import 'saved_meals_screens.dart' show MealReviewScreen;
 import 'nutrition_surface.dart' show formatKcal;
 
 /// Why a food could not be saved, in [l]'s language.
@@ -27,6 +28,8 @@ String foodProblemText(AppLocalizations l, InvalidFood e) => switch (e.problem) 
       FoodProblem.badValues => l.foodProblemBadValues,
       FoodProblem.badValue => l.foodProblemBadValue(nutrientLabel(l, e.nutrient ?? '')),
       FoodProblem.badSavedName => l.foodProblemBadSavedName,
+      FoodProblem.tooLarge => l.foodProblemTooLarge,
+      FoodProblem.mealSize => l.mealsProblemTooMany,
     };
 
 /// A nutrient key ("protein") as it is named in [l]'s language ("Protein").
@@ -41,14 +44,21 @@ String nutrientLabel(AppLocalizations l, String key) => switch (key) {
 /// Logging food from Today or Eat. A new entry starts at the place where a food is found (search, scan, saved,
 /// recent or manual entry); an existing one opens straight in the form. Either way nothing is logged until the
 /// form's own button is pressed, and the user comes back to where they started.
+/// A logged recipe portion opens on its own frozen batch instead (features/nutrition/saved_meals_screens.dart).
 Future<void> openFoodForm(BuildContext context, {required String dayKey, FoodEntry? entry, String? meal}) => entry == null
     ? push(context, LogFoodScreen(dayKey: dayKey, meal: meal ?? 'Breakfast'))
-    : push(context, FoodFormScreen(draft: FoodDraft.edit(entry), existing: entry));
+    : entry.isRecipePortion
+        ? push(context, MealReviewScreen.entry(entry))
+        : push(context, FoodFormScreen(draft: FoodDraft.edit(entry), existing: entry));
 
 /// The one form every way of finding a food leads to: review the food and its source, say how much, pick the
 /// meal and date, then confirm. Pops `true` when an entry was logged or changed.
 class FoodFormScreen extends ConsumerStatefulWidget {
-  const FoodFormScreen({super.key, required this.draft, this.existing});
+  const FoodFormScreen({super.key, required this.draft, this.existing, this.pick = false});
+
+  /// Selection only: confirming pops the reviewed [FoodDraft] (a food for a saved meal or recipe) and logs nothing.
+  /// The meal and date are not asked for.
+  final bool pick;
 
   /// The date in this draft was pinned when the form opened. Midnight passing does not change it.
   final FoodDraft draft;
@@ -196,6 +206,11 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
 
   Future<void> _save() async {
     if (_busy) return; // a second tap while the first is saving must not log the food twice
+    if (widget.pick) {
+      FoodDraft? chosen;
+      if (await _guarded(() async => FoodRepository.validate(chosen = _draft())) && mounted) Navigator.pop(context, chosen);
+      return;
+    }
     if (await _guarded(() => ref.read(foodRepositoryProvider).save(_draft())) && mounted) Navigator.pop(context, true);
   }
 
@@ -333,11 +348,11 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
       ],
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-        PrimaryButton(editing ? l.foodSaveChanges : l.foodLogButton, key: const Key('food-save'), onPressed: _save, busy: _busy),
+        PrimaryButton(widget.pick ? l.mealsUseAmount : editing ? l.foodSaveChanges : l.foodLogButton, key: const Key('food-save'), onPressed: _save, busy: _busy),
         TextButton(key: const Key('food-cancel'), onPressed: () => Navigator.pop(context), child: Text(editing ? l.foodCancelKeep : l.actionCancel)),
       ]),
       children: [
-        if (item == null) ...[nameField, const SizedBox(height: 14), ...mealAndDate],
+        if (item == null) ...[nameField, const SizedBox(height: 14), if (!widget.pick) ...mealAndDate],
         if (item != null) ...[
           pair(
             TextField(
@@ -381,8 +396,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
             say: CoachSay(l.foodPortionCoach),
           ),
           const SizedBox(height: 8),
-          ...mealAndDate,
-          const Rule(),
+          if (!widget.pick) ...[...mealAndDate, const Rule()],
         ] else ...[
           TextField(key: const Key('food-amount'), controller: _amount, textInputAction: TextInputAction.next,
               decoration: InputDecoration(labelText: l.foodHowMuch, helperText: l.foodHowMuchHelper)),

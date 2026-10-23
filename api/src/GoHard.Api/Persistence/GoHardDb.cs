@@ -15,6 +15,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<WorkoutSet> WorkoutSets => Set<WorkoutSet>();
     public DbSet<FoodEntry> FoodEntries => Set<FoodEntry>();
     public DbSet<SavedFood> SavedFoods => Set<SavedFood>();
+    public DbSet<SavedMeal> SavedMeals => Set<SavedMeal>();
     public DbSet<WaterEntry> WaterEntries => Set<WaterEntry>();
     public DbSet<CustomExercise> CustomExercises => Set<CustomExercise>();
     public DbSet<CatalogExercise> CatalogExercises => Set<CatalogExercise>();
@@ -84,6 +85,8 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         });
         Owned<SavedFood>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
         b.Entity<SavedFood>().Property(x => x.ItemJson).HasColumnType("jsonb");
+        Owned<SavedMeal>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
+        b.Entity<SavedMeal>().Property(x => x.BodyJson).HasColumnType("jsonb");
         b.Entity<CatalogExercise>().HasKey(x => x.Key);
         Owned<CustomExercise>(b, x => x.UserId).Property(x => x.Revision).IsConcurrencyToken();
         b.Entity<CustomExercise>(e =>
