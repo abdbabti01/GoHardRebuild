@@ -2162,3 +2162,9 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   IPA run 51 on `c4ff4a3`, artifact `GoHard-Dev-unsigned-ipa`: **passed**
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39994700234). Against the hosted API as it is now (contract 1)
   this IPA shows no verification step (that server declares none); verification needs the deploy first.
+- 23 Oct 2026, owner approved: `main` fast-forwarded to `5ea68e7` and pushed. CI run 136 on `main`: **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40002550143). Railway (devoted-caring) deployed it:
+  `/health/ready` Ready with 13 migrations (incl. `AddVerificationGrace`: the legacy 14-day grace starts at this
+  deploy), `/capabilities` contract 2 / minimum 2 with `account.email`; an unauthenticated snapshot still 401. No hosted
+  account was created (that would send real email to an invented address). **Pending (owner):** the iPhone checklist
+  with an address you choose (docs/AUTHENTICATION_EMAIL.md › 8), using IPA run 51; older installs now show Update GoHard.
