@@ -2213,3 +2213,13 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   IPA run 52 on `f2c1904` (branch `feature/saved-meals-recipes`), artifact `GoHard-Dev-unsigned-ipa`: **passed**
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40019230261). Against the hosted API as it is now (no
   `food.saved-meals`) this IPA keeps saved meals and meal logs on the phone and says so; they need the deploy first.
+- 23 Oct 2026, owner approved: `main` fast-forwarded from `3a36aa7` to `13dcc7b` and pushed (app/API code identical to
+  `f2c1904`, so IPA 52 stands; no new build). CI run 141 on `main`: **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40034345006). Railway (devoted-caring) deployment of `13dcc7b`:
+  **success** (22:34 UTC). Hosted: `/health/ready` Ready with 14 migrations (`AddSavedMeals` applied), `/capabilities`
+  contract 2 / minimum 2 and declares `food.saved-meals` (and `account.email`); `PUT /saved-meals/{id}` and the snapshot
+  answer 401 without a session. **Not run on the hosted API:** the data checks (template saves no entry, meal logged
+  once per component, retry without duplicates, template edit/delete leaves history, another account cannot read
+  definitions). They need verified accounts, and hosted registration sends a real verification email; by the
+  owner's decision no account was created and verification was not weakened. These behaviours are verified locally
+  (`SavedMealTests` on PostgreSQL, `saved_meals_test`, `journey_meals_test`) and are left to the owner's iPhone test.
