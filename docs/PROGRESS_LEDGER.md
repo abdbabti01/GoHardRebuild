@@ -2154,3 +2154,11 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   reinstall (`INSTALL_FAILED_INSUFFICIENT_STORAGE`, 491 MB free); stopped there. Restart persistence is covered by
   `verification_gate_test` (real Drift file, restart).
 - Not done here: merge, deploy, Railway/Resend/Cloudflare changes, real email, iPhone.
+- CI run 133 on `42f3647` (code): **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39992757093).
+  Unsigned IPA run 50 on `42f3647` **failed before building**: its pre-check required the app's contract (2) to equal
+  the hosted API's (1, not deployed). `c4ff4a3` changes only that check to the app's own rule (the API's
+  `minimumClientContract`, 1, must not exceed the app's contract); app and API code are identical to `42f3647`.
+  CI run 134 on `c4ff4a3`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39994700269). Unsigned
+  IPA run 51 on `c4ff4a3`, artifact `GoHard-Dev-unsigned-ipa`: **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39994700234). Against the hosted API as it is now (contract 1)
+  this IPA shows no verification step (that server declares none); verification needs the deploy first.
