@@ -2209,3 +2209,7 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   Captures docs/evidence/screenshots/sm-01…08. **Not verified on the device:** a restart while offline (one process:
   the emulator cannot take a phase-2 reinstall); covered by `saved_meals_test` on the real database.
 - Not done here: merge, deploy, Railway/Resend/Cloudflare, an iPhone, a fluent review of the new fr/ar strings.
+- CI run 139 on `f2c1904` (code): **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40017471403). Unsigned
+  IPA run 52 on `f2c1904` (branch `feature/saved-meals-recipes`), artifact `GoHard-Dev-unsigned-ipa`: **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40019230261). Against the hosted API as it is now (no
+  `food.saved-meals`) this IPA keeps saved meals and meal logs on the phone and says so; they need the deploy first.
