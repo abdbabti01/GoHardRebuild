@@ -167,13 +167,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                 IconButton(tooltip: l.eatNextDay, icon: const Icon(Icons.chevron_right), onPressed: day.compareTo(today) >= 0 ? null : () => setState(() => _picked = addDays(day, 1) == today ? null : addDays(day, 1))),
               ]),
               below: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      // Under the date, named: History & trends (charts by week and month, the calendar and the days with entries; the arrows stay for a day
-                      // either side) and, on an earlier day, Back to today. They wrap rather than squeeze.
-                      Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                        TextButton.icon(key: const Key('eat-history'), onPressed: () => _openHistory(day, today), icon: const GoIcon(GoGlyph.history, size: 20), label: Text(l.eatHistoryTrends)),
-                        if (day != today)
-                          TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: Text(l.eatBackToToday)),
-                      ]),
+                      // Under the date, on an earlier day: Back to today (the arrows stay for a day either side).
+                      if (day != today)
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: Text(l.eatBackToToday)),
+                        ),
                       if (coachOn)
                         TabCoach(key: const Key('eat-coach'), id: 'eat',
                             say: _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
@@ -196,6 +195,13 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                   showCarbs: display.carbs, showFat: display.fat,
                   footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
                   action: PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
+                ),
+                const SizedBox(height: 16),
+                // The one way to History & trends (charts by week and month, the calendar, the days with entries): under
+                // the day's summary, secondary to Log food. It opens the history on the day shown and changes nothing.
+                PanelLink(
+                  key: const Key('eat-history'), icon: const GoIcon(GoGlyph.history), title: l.eatHistoryTrends, subtitle: l.eatHistoryTrendsSubtitle,
+                  semanticLabel: l.eatHistoryTrendsSaid, onTap: () => _openHistory(day, today),
                 ),
                 const SizedBox(height: 28),
                 Heading(day == today ? l.eatTodaysMeals : l.eatMeals, size: 20),

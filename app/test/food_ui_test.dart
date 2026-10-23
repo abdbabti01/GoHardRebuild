@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/compatibility.dart';
+import 'package:gohard_rebuild/core/config.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/db.dart';
@@ -837,7 +838,7 @@ void main() {
 
   testWidgets('a build the server no longer accepts is blocked over the open form, and the form is intact when the block lifts', (tester) async {
     final fakes = FoodFakes();
-    final server = FakeServer()..capabilities = {'contractVersion': 2, 'minimumClientContract': 2, 'capabilities': []};
+    final server = FakeServer()..capabilities = {'contractVersion': AppConfig.contractVersion + 1, 'minimumClientContract': AppConfig.contractVersion + 1, 'capabilities': []};
     final db = AppDb(NativeDatabase.memory());
     addTearDown(db.close);
     final container = await pumpApp(tester, [...await _overrides(tester, fakes), transportProvider.overrideWithValue(server), dbProvider.overrideWithValue(db)],
@@ -851,7 +852,7 @@ void main() {
     expect(find.textContaining('still here'), findsOneWidget);
     expect(find.byKey(const Key('food-save')).hitTestable(), findsNothing, reason: 'nothing underneath can be pressed');
 
-    server.capabilities = {'contractVersion': 2, 'minimumClientContract': 1, 'capabilities': []};
+    server.capabilities = {'contractVersion': AppConfig.contractVersion + 1, 'minimumClientContract': 1, 'capabilities': []};
     await tester.runAsync(() async {
       await tester.tap(find.byKey(const Key('compat-recheck')));
       await Future<void>.delayed(const Duration(milliseconds: 50));

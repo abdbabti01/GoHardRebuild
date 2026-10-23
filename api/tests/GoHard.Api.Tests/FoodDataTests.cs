@@ -373,7 +373,7 @@ public class FoodDataTests(PostgresFixture pg)
         Assert.Contains("food.barcode", declared);
         Assert.Contains("profile.nutrition-goals", declared);
         Assert.DoesNotContain("food.search", declared);
-        Assert.Equal(1, capabilities.GetProperty("minimumClientContract").GetInt32());   // additive fields do not raise it
+        Assert.Equal(2, capabilities.GetProperty("minimumClientContract").GetInt32());   // additive fields do not raise it (2 = required verification)
 
         // A server with a key declares search and answers it; the same database, a separate host.
         await using var keyed = new ApiFactory(pg.Api.ConnectionString)

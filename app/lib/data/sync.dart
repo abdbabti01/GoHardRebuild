@@ -311,9 +311,44 @@ class SyncEngine {
     return {for (final e in node.entries) e.key as String: await _resolve(owner, e.value)};
   }
 
+  // ---------------------------------------------------------------- account access (required verification)
+
+  static bool _verificationRequired(ApiResponse r) => r.status == 403 && r.data is Map && (r.data as Map)['code'] == 'EMAIL_VERIFICATION_REQUIRED';
+
+  /// Keeps what a server answer says about [owner]'s access. A server from before required verification says nothing,
+  /// and nothing is written; no answer at all never downgrades anything.
+  Future<void> adoptAccess(String owner, Json profile) async {
+    if (profile['verificationRequired'] is! bool) return;
+    await putLocal(owner, LocalWrite(Kinds.accountAccess, owner,
+        {'required': profile['verificationRequired'], 'verified': profile['emailVerified'], 'dueAtUtc': profile['verificationDueAtUtc']}));
+  }
+
+  Future<bool> _accessPaused(String owner) async {
+    final r = await get(owner, Kinds.accountAccess, owner);
+    return r != null && AccountAccess(jsonDecode(r.body) as Json).required;
+  }
+
+  /// Asks the account (`/me`, open while verification is pending) and keeps its answer. True when it answered.
+  Future<bool> refreshAccess() async {
+    final s = _sessions.current;
+    if (s == null) return false;
+    final ApiResponse r;
+    try {
+      r = await _api.send('GET', '/me');
+    } on TransportFailure {
+      return false;
+    }
+    if (!r.ok || r.data is! Json || _sessions.current?.epoch != s.epoch) return false;
+    await adoptAccess(s.ownerId, r.data as Json);
+    if (!await _accessPaused(s.ownerId)) kick(); // verified elsewhere: the waiting changes can go
+    return true;
+  }
+
   Future<void> _drain() async {
     final s = _sessions.current;
     if (s == null || isBlocked()) return;
+    // Waiting for verification: every command stays pending, untouched, and goes once the account may take it.
+    if (await _accessPaused(s.ownerId)) return;
     while (!_disposed) {
       if (_sessions.current?.epoch != s.epoch) return;
       final cmd = await _nextDispatchable(s.ownerId);
@@ -337,6 +372,10 @@ class SyncEngine {
       // The account changed while this was in flight: publish nothing. The command stays pending for its owner.
       if (_sessions.current?.epoch != s.epoch) return;
       if (r.status == 401) return;
+      if (_verificationRequired(r)) {
+        await refreshAccess(); // pauses the outbox; this command was not taken and stays as it is
+        return;
+      }
       if (r.ack == null && (r.status >= 500 || r.status == 429 || r.status == 408)) {
         await _attempt(cmd, 'HTTP_${r.status}');
         return;
@@ -439,12 +478,19 @@ class SyncEngine {
     } on TransportFailure {
       return false;
     }
+    if (_verificationRequired(r) && _sessions.current?.epoch == s.epoch) {
+      await refreshAccess();
+      return false;
+    }
     if (!r.ok || _sessions.current?.epoch != s.epoch) return false; // late response for a previous owner is dropped
+    final paused = await _accessPaused(s.ownerId);
     await db.transaction(() async {
       for (final rec in recordsFromSnapshot(r.data as Json, s.ownerId)) {
         await _merge(s.ownerId, rec);
       }
+      await adoptAccess(s.ownerId, (r.data as Json)['profile'] as Json);
     });
+    if (paused) kick(); // the account may take its waiting changes again
     return true;
   }
 

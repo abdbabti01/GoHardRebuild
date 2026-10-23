@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
 import 'package:gohard_rebuild/core/compatibility.dart';
+import 'package:gohard_rebuild/core/config.dart';
 import 'package:gohard_rebuild/core/units.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
@@ -443,9 +444,9 @@ void main() {
 
         // The server now requires a newer contract than this build has.
         h.server.offline = false;
-        h.server.capabilities = {...h.server.capabilities, 'minimumClientContract': 2};
+        h.server.capabilities = {...h.server.capabilities, 'minimumClientContract': AppConfig.contractVersion + 1};
         await c.read(compatibilityProvider.notifier).check();
-        expect((c.read(compatibilityProvider).blocked, c.read(compatibilityProvider).requiredContract), (true, 2));
+        expect((c.read(compatibilityProvider).blocked, c.read(compatibilityProvider).requiredContract), (true, AppConfig.contractVersion + 1));
         await c.read(syncProvider).flush();
         expect(await c.read(syncProvider).pull(), false);
         expect(h.server.callsTo('/food-entries'), isEmpty, reason: 'nothing is sent while blocked');

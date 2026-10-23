@@ -116,6 +116,9 @@ Stream<List<Stored<T>>> _rows<T>(Ref ref, String kind, T Function(Json) wrap, {S
 }
 
 final profileProvider = StreamProvider<Profile?>((ref) => _rows(ref, Kinds.profile, Profile.new).map((l) => l.firstOrNull?.value));
+/// What the server last said about this account's access (required verification, a legacy deadline). Null: nothing
+/// said (a verified account from before, or a server from before required verification).
+final accountAccessProvider = StreamProvider<AccountAccess?>((ref) => _rows(ref, Kinds.accountAccess, AccountAccess.new).map((l) => l.firstOrNull?.value));
 final contextRowProvider = StreamProvider<Stored<TrainingCtx>?>((ref) => _rows(ref, Kinds.context, TrainingCtx.new).map((l) => l.firstOrNull));
 final plansProvider = StreamProvider<List<Stored<Plan>>>((ref) => _rows(ref, Kinds.plan, Plan.new));
 final workoutsProvider = StreamProvider<List<Stored<Workout>>>((ref) => _rows(ref, Kinds.workout, Workout.new));

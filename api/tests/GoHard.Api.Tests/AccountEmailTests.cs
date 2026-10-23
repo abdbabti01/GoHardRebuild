@@ -97,7 +97,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Requests_look_the_same_for_existing_unknown_and_never_disclose_an_account()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
         await e.Deliver(); // the registration's own verification email
 
@@ -141,7 +141,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Reset_sets_the_password_ends_every_session_and_defeats_refresh_recovery()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
         // A rotated pair: the predecessor would normally still recover its replacement within the window.
         var rotated = (await (await e.Refresh(a.Auth.RefreshToken)).Content.ReadFromJsonAsync<AuthResponse>(Json))!;
@@ -185,7 +185,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         // The race: a refresh that read the account before a password change inserts its replacement after the reset
         // revoked everything. Its stamp is the old one, so it never works.
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         string oldStamp;
         await using (var db = PostgresFixture.NewDb(e.Api.ConnectionString)) oldStamp = (await db.Users.SingleAsync(u => u.Id == a.UserId)).SecurityStamp;
         var change = await e.Post("/account/password", new { currentPassword = a.Password, newPassword = NewPassword }, a.Auth.AccessToken);
@@ -203,8 +203,8 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Codes_are_bound_to_their_purpose_and_account_and_verification_changes_nothing_else()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
-        var b = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
+        var b = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
         var verifyCode = await e.CodeFor(email, reset: false); // queued at registration
         Assert.Equal("Verify your GoHard email", e.Box.Latest(email)!.Subject);
@@ -230,7 +230,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Expiry_attempt_limit_and_cooldown()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
         await e.RequestReset(email);
         var code = await e.CodeFor(email);
@@ -254,7 +254,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Asking_again_resends_the_same_code_so_nobody_can_void_or_reset_a_live_one()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
         await e.RequestReset(email);
         var first = await e.CodeFor(email);
@@ -282,7 +282,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task A_code_and_a_reset_authorization_are_each_spent_once_under_concurrency()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
         await e.RequestReset(email);
         var code = await e.CodeFor(email);
@@ -305,7 +305,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         string email, code, password;
         await using (var e = await Start(cs: cs, time: time))
         {
-            var a = await Account.RegisterAsync(e.Api);
+            var a = await Account.RegisterAsync(e.Api, verify: false);
             (email, password) = (a.Auth.Profile.Email, a.Password);
             await e.RequestReset(email);
             code = await e.CodeFor(email);
@@ -322,7 +322,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Change_password_checks_the_current_one_and_ends_every_session()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
 
         var wrong = await e.Post("/account/password", new { currentPassword = "not the password at all", newPassword = NewPassword }, a.Auth.AccessToken);
@@ -351,21 +351,25 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Verification_is_server_owned_and_older_clients_neither_clear_nor_grant_it()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api); // no language: an older app
+        var a = await Account.RegisterAsync(e.Api, verify: false); // no language: an older app
         Assert.False(a.Auth.Profile.EmailVerified);
-        // A profile update that tries to claim it, and one that predates it: neither changes it.
+        Assert.True(a.Auth.Profile.VerificationRequired);
+        // A profile update that tries to claim it (or a deadline) is refused like any data change, and changes nothing.
         var claim = await a.Http.PutAsync("/api/v1/me", JsonContent.Create(new
         {
-            operationId = Guid.NewGuid(), expectedRevision = 1, displayName = "Claims", appearance = "dark", loadUnit = "kg", remindersEnabled = false, emailVerified = true,
+            operationId = Guid.NewGuid(), expectedRevision = 1, displayName = "Claims", appearance = "dark", loadUnit = "kg", remindersEnabled = false,
+            emailVerified = true, verificationRequired = false, verificationDueAtUtc = "2099-01-01T00:00:00Z", verificationGraceFromUtc = "2099-01-01T00:00:00Z",
         }));
-        Assert.Equal(HttpStatusCode.OK, claim.StatusCode);
-        Assert.False((await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!.EmailVerified);
+        Assert.Equal((HttpStatusCode.Forbidden, "EMAIL_VERIFICATION_REQUIRED"), (claim.StatusCode, await Code(claim)));
+        var before = (await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!;
+        Assert.Equal((false, true, null, "Test Person"), (before.EmailVerified, before.VerificationRequired, before.VerificationDueAtUtc, before.DisplayName));
+        Assert.Equal(HttpStatusCode.Forbidden, (await a.Http.GetAsync("/api/v1/sync/snapshot")).StatusCode);
 
         var code = await e.CodeFor(a.Auth.Profile.Email, reset: false);
         Assert.Equal(HttpStatusCode.OK, (await e.Post("/account/email-verification/confirm", new { code = ToArabic(code) }, a.Auth.AccessToken)).StatusCode);
         var older = await a.Http.PutAsync("/api/v1/me", JsonContent.Create(new
         {
-            operationId = Guid.NewGuid(), expectedRevision = 2, displayName = "Older app", appearance = "dark", loadUnit = "kg", remindersEnabled = false,
+            operationId = Guid.NewGuid(), expectedRevision = 1, displayName = "Older app", appearance = "dark", loadUnit = "kg", remindersEnabled = false,
         }));
         Assert.Equal(HttpStatusCode.OK, older.StatusCode);
         Assert.True((await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!.EmailVerified);
@@ -378,7 +382,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Account_erasure_removes_its_challenges_and_unsent_mail()
     {
         await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         await e.RequestReset(a.Auth.Profile.Email); // two codes and two queued messages, none sent
         var del = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/account") { Content = JsonContent.Create(new { password = a.Password }),
             Headers = { Authorization = new("Bearer", a.Auth.AccessToken) } };
@@ -403,7 +407,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         {
             ["Email:Provider"] = "Resend", ["Email:ResendApiKey"] = "re_test_secret_key_value", ["Email:FromAddress"] = "noreply@auth.example.test",
         }, provider: resend);
-        var a = await Account.RegisterAsync(e.Api);
+        var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
 
         // Ambiguous: the connection drops (perhaps sent), then a 500, then success. One key, one content, three calls.
@@ -459,20 +463,22 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Without_a_sender_every_address_hears_unavailable_and_capture_is_refused_in_production()
     {
         var cs = await pg.CreateDatabaseAsync(migrate: true);
-        await using (var plain = new ApiFactory(cs))
+        await using (var plain = new ApiFactory(cs) { Settings = new() { ["Email:Provider"] = "" } })
         {
             var http = plain.CreateClient();
             var caps = await http.GetStringAsync("/api/v1/capabilities");
             Assert.Contains("account.security", caps);
             Assert.DoesNotContain("\"account.email\"", caps);
-            var a = await Account.RegisterAsync(plain);
-            foreach (var address in new[] { a.Auth.Profile.Email, "unknown@example.test" })
+            // A new account could never verify, so none is created: verification is not silently turned off.
+            var register = await http.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest("new@example.test", "correct horse battery", "New"));
+            Assert.Equal((HttpStatusCode.ServiceUnavailable, "EMAIL_UNAVAILABLE"), (register.StatusCode, await Code(register)));
+            foreach (var address in new[] { "new@example.test", "unknown@example.test" })
             {
                 var r = await http.PostAsJsonAsync("/api/v1/auth/password-reset/request", new { email = address });
                 Assert.Equal((HttpStatusCode.ServiceUnavailable, "EMAIL_UNAVAILABLE"), (r.StatusCode, await Code(r)));
             }
             await using var db = PostgresFixture.NewDb(cs);
-            Assert.Equal(0, await db.MailMessages.CountAsync()); // registration queued nothing
+            Assert.Equal((0, 0), (await db.Users.CountAsync(), await db.MailMessages.CountAsync()));
         }
 
         foreach (var settings in new Dictionary<string, string>[]
@@ -495,7 +501,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     public async Task Per_address_ip_and_global_limits()
     {
         await using var e = await Start(new() { ["Email:PerIpPerHour"] = "3", ["Email:DeliveryBudgetPerHour"] = "1" });
-        var a = await Account.RegisterAsync(e.Api); // its verification email uses the one message of the budget
+        var a = await Account.RegisterAsync(e.Api, verify: false); // its verification email uses the one message of the budget
         // The global budget: busy for a known and an unknown address alike.
         Assert.Equal("EMAIL_BUSY", await Code(await e.RequestReset(a.Auth.Profile.Email)));
         Assert.Equal("EMAIL_BUSY", await Code(await e.RequestReset("unknown@example.test")));

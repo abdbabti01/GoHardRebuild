@@ -18,6 +18,9 @@ if (Test-PortInUse $ApiPort) { Fail "Port $ApiPort is already in use. Is the API
 $bind = if ($Lan) { "http://0.0.0.0:$ApiPort" } else { "http://127.0.0.1:$ApiPort" }
 Step "Starting API on $bind (readiness: $bind/health/ready)"
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
+# New accounts must verify their email (docs/AUTHENTICATION_EMAIL.md), so the local API keeps its mail in memory
+# (GET /dev/mail/latest). Loopback only: with -Lan there is no capture, and registration needs a real sender.
+if (-not $Lan -and -not $env:GOHARD_Email__Provider) { $env:GOHARD_Email__Provider = 'Capture' }
 $fixtures = $null
 if ($FoodFixtures) {
     if (Test-PortInUse 5132) { Fail 'Port 5132 (recorded food responses) is already in use.' }

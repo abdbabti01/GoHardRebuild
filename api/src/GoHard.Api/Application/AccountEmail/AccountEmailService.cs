@@ -105,7 +105,7 @@ public static class AccountEmailRegistration
 /// Emailed codes for password reset and email verification, and the password changes they lead to
 /// (docs/AUTHENTICATION_EMAIL.md). Requests only queue mail; <see cref="MailWorker"/> sends it.
 /// </summary>
-public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeProvider time, ILogger<AccountEmailService> log)
+public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeProvider time, AccountAccess access, ILogger<AccountEmailService> log)
 {
     public const string Reset = "password-reset", Verify = "email-verification", Changed = "password-changed";
     /// <summary>A live code with less time left than this is replaced rather than sent again.</summary>
@@ -337,7 +337,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     {
         if (!options.Configured) return (CodeCheckStatus.Unavailable, null);
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
-        if (user.EmailVerifiedAtUtc is not null) return (CodeCheckStatus.Ok, AuthService.ToProfile(user));
+        if (user.EmailVerifiedAtUtc is not null) return (CodeCheckStatus.Ok, access.Profile(user));
         var (status, c) = await CheckCodeAsync(Verify, EmailKey(user.Email), userId, code, ct);
         if (status != CodeCheckStatus.Ok) return (status, null);
         var now = Now;
@@ -348,6 +348,6 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
         await db.Users.Where(u => u.Id == userId && u.Email == user.Email).ExecuteUpdateAsync(s => s.SetProperty(u => u.EmailVerifiedAtUtc, now), ct);
         await tx.CommitAsync(ct);
         user.EmailVerifiedAtUtc = now;
-        return (CodeCheckStatus.Ok, AuthService.ToProfile(user));
+        return (CodeCheckStatus.Ok, access.Profile(user));
     }
 }

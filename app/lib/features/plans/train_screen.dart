@@ -150,16 +150,6 @@ Column _section(List<Widget> children) => Column(crossAxisAlignment: CrossAxisAl
 
 const _gap = SizedBox(height: 10), _between = SizedBox(height: 28);
 
-/// The two histories. Workout history is always here, whatever has or has not been recorded.
-class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({this.runs = false});
-  final bool runs;
-  @override
-  Widget build(BuildContext context) => GroupCard(children: [
-        GroupRow(key: Key(runs ? 'train-history' : 'progress-history'), icon: Icons.history, title: context.l10n.trainWorkoutHistory, subtitle: context.l10n.trainWorkoutHistorySubtitle, onTap: () => push(context, const WorkoutHistoryScreen())),
-      ]);
-}
-
 class _WorkoutsView extends ConsumerWidget {
   const _WorkoutsView();
   @override
@@ -211,17 +201,22 @@ class _WorkoutsView extends ConsumerWidget {
             onTap: () => push(context, const ActivityHistoryScreen())),
       ]),
       _between,
-      SectionHeader(l.trainRecent),
-      if (done.isEmpty)
-        EmptyState(l.trainRecentEmptyTitle, l.trainRecentEmptyBody)
-      else ...[
-        _gap,
-        GroupCard(children: [for (final w in done.take(5)) WorkoutRow(w, grouped: true)]),
-      ],
-      _between,
-      SectionHeader(l.trainHistory),
+      // The one home for recorded sessions: the latest three (a closed session keeps its own outcome label), and the
+      // whole history from the header, there even before anything is recorded.
+      SectionHeader(l.trainRecentWorkouts,
+          trailing: QuietLink(l.trainViewAllHistory, key: const Key('train-history'), said: l.trainViewAllHistorySaid, onPressed: () => push(context, const WorkoutHistoryScreen()))),
       _gap,
-      const _HistoryCard(runs: true),
+      if (done.isEmpty)
+        Panel(
+          key: const Key('train-recent-empty'),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.trainRecentEmptyTitle, style: context.sansStyle(16, weight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(l.trainRecentEmptyBody, style: context.caption),
+          ]),
+        )
+      else
+        GroupCard(key: const Key('train-recent'), children: [for (final w in done.take(3)) WorkoutRow(w, grouped: true)]),
     ]);
   }
 }

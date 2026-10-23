@@ -1,5 +1,5 @@
 {
-  "contractVersion": 1,
+  "contractVersion": 2,
   "note": "Single source of truth read by both the .NET and Dart test suites. Synthetic data only: fixed IDs, reviewed Friday 2026-10-09.",
   "schedule": [
     {

@@ -196,7 +196,7 @@ public class FoundationTests(PostgresFixture pg)
     public async Task Capabilities_are_public_and_versioned()
     {
         var body = await pg.Api.CreateClient().GetStringAsync("/api/v1/capabilities");
-        Assert.Contains("\"contractVersion\":1", body);
+        Assert.Contains("\"contractVersion\":2", body);
         Assert.Contains("food.nullable-nutrients", body);
     }
 }

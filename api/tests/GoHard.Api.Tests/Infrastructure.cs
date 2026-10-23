@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using GoHard.Api.Application;
+using GoHard.Api.Application.AccountEmail;
 using GoHard.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -72,6 +73,15 @@ public sealed class ApiFactory(string connectionString) : WebApplicationFactory<
         builder.UseSetting("ConnectionStrings:Default", connectionString);
         builder.UseSetting("Auth:SigningKey", "test-only-signing-key-0123456789-0123456789-abcdef");
         builder.UseSetting("Auth:RateLimitPerMinute", "1000000");
+        // New accounts must verify their address (docs/AUTHENTICATION_EMAIL.md), so every API here has a sender: the
+        // in-memory capture, its worker off, a known code secret. A test that needs no sender says Email:Provider="".
+        if (Environment is null or "Development" or "Testing")
+        {
+            builder.UseSetting("Email:Provider", "Capture");
+            builder.UseSetting("Email:WorkerEnabled", "false");
+            builder.UseSetting("Email:CodeSecret", "test-only-code-secret-0123456789-abcdefghij");
+            builder.UseSetting("Email:PerIpPerHour", "1000000");
+        }
         foreach (var (key, value) in Settings ?? []) builder.UseSetting(key, value);
         // Outside providers are always replaced: by default with a recorded product, so no test run touches the network.
         builder.ConfigureServices(s => s.ConfigureAll<Microsoft.Extensions.Http.HttpClientFactoryOptions>(o =>
@@ -101,7 +111,9 @@ public sealed class Account(HttpClient http, AuthResponse auth, string password)
     public string Password => password;
     public Guid UserId => auth.Profile.UserId;
 
-    public static async Task<Account> RegisterAsync(ApiFactory api, string? name = null)
+    /// <summary>A new account. [verify] (the default) confirms its address through the real confirmation route with the
+    /// code of the challenge registration created, as the person would; false leaves it waiting for verification.</summary>
+    public static async Task<Account> RegisterAsync(ApiFactory api, string? name = null, bool verify = true)
     {
         var http = api.CreateClient();
         var password = "correct horse battery";
@@ -110,7 +122,20 @@ public sealed class Account(HttpClient http, AuthResponse auth, string password)
         response.EnsureSuccessStatusCode();
         var auth = (await response.Content.ReadFromJsonAsync<AuthResponse>(Json))!;
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+        if (verify) auth = auth with { Profile = await VerifyAsync(api, http, auth.Profile.UserId) };
         return new Account(http, auth, password);
+    }
+
+    public static async Task<ProfileDto> VerifyAsync(ApiFactory api, HttpClient http, Guid userId)
+    {
+        Guid challenge;
+        await using (var db = PostgresFixture.NewDb(api.ConnectionString))
+            challenge = await db.AuthChallenges.Where(c => c.UserId == userId && c.Purpose == AccountEmailService.Verify)
+                .OrderByDescending(c => c.CreatedAtUtc).Select(c => c.Id).FirstAsync();
+        var code = AccountEmailService.CodeFor(api.Services.GetRequiredService<EmailOptions>().CodeSecret, challenge);
+        var confirmed = await http.PostAsJsonAsync("/api/v1/account/email-verification/confirm", new { code });
+        confirmed.EnsureSuccessStatusCode();
+        return (await confirmed.Content.ReadFromJsonAsync<ProfileDto>(Json))!;
     }
 
     public async Task<AckResult<T>> SendAsync<T>(HttpMethod method, string path, object body)

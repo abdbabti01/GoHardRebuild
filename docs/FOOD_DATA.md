@@ -253,7 +253,7 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
 
 ### History & trends (20 Oct 2026, GoHard_Nutrition_Trends_Claude_Handoff)
 
-Eat's **History & trends** (under the date, key `eat-history`; it replaces the History screen) shows what was logged
+Eat's **History & trends** (since 23 Oct 2026 a full-width panel under the day's summary, above the meals, key `eat-history`; it replaces the History screen) shows what was logged
 per day, week and month. Code: `intake_history.dart` (the pure projection), `nutrition_history.dart` (the screen,
 the bar chart and the calendar). No API change, migration, dependency or permission: it reads the same local records
 as Eat (`foodJournalProvider`, `waterEntriesProvider`), grouped by day once per change of the records

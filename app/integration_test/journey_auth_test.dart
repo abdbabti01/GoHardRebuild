@@ -11,7 +11,7 @@ import 'support.dart';
 /// Account email (docs/AUTHENTICATION_EMAIL.md) on a device, against a local API that CAPTURES mail instead of sending
 /// it (Email:Provider=Capture, Development only). Codes are read from the API's /dev/mail/latest. Not in the default
 /// run: `scripts\test-android.ps1 -Only journey_auth_test -ApiBase http://10.0.2.2:PORT`, PORT being a capture API.
-/// A disposable account: verify at setup, an open workout as local data, change the password in Me, the old password
+/// A disposable account: verify before setup (required), an open workout as local data, change the password in Me, the old password
 /// refused, sign in with the new one (workout still there), forgot password by code, sign in again, delete the account.
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -43,7 +43,7 @@ void main() {
 
     ProviderContainer container() => ProviderScope.containerOf(tester.element(find.byType(Scaffold).first));
 
-    // 1. Register; setup offers verification (the first code was sent at registration).
+    // 1. Register: the verification step comes first (the first code was sent at registration), then setup.
     await app.main();
     await binding.convertFlutterSurfaceToImage();
     await j.tapKey('auth-toggle');
@@ -51,17 +51,12 @@ void main() {
     await j.type('auth-email', email);
     await j.type('auth-password', j.password);
     await j.tapKey('auth-submit');
-    await j.tapKey('setup-continue');
-    await j.waitFor(find.byKey(const Key('setup-verify-email')), what: 'the verify row in setup');
-    await j.shot('auth-01-setup-verify-offer');
-    await j.tapKey('setup-verify-email');
+    await j.waitFor(find.byKey(const Key('verify-gate')), what: 'the verification step');
+    await j.shot('auth-01-verify-gate');
     await j.type('code-field', await code('Verify'));
     await j.shot('auth-02-verify-code');
     await j.tapKey('verify-confirm');
-    // Verified: the page closes and setup no longer offers it. Wait for that before tapping Done under it.
-    await j.waitUntil(() async => find.byKey(const Key('code-field')).evaluate().isEmpty && find.byKey(const Key('setup-verify-email')).evaluate().isEmpty,
-        what: 'the verify page closed and the offer gone');
-    await j.settle(8);
+    await j.tapKey('setup-continue');
     await j.tapKey('setup-done');
     await j.tapKey('nav-me');
     await j.reveal(find.byKey(const Key('me-email')));

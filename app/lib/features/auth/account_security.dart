@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/compatibility.dart';
-import '../../core/format.dart' show ltr;
+import '../../core/clock.dart' show dayKeyOf;
+import '../../core/format.dart' show longDate, ltr;
 import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -371,18 +372,23 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 }
 
 /// Signed in: send a code to the account's address and enter it. Proves the address only; nothing else changes.
+///
+/// [gate]: the new account's step before anything else (docs/AUTHENTICATION_EMAIL.md › Required verification). It is
+/// the app's home then, so there is no Later and no Back: the ways out are verifying, Check again (verified elsewhere)
+/// and signing out to use another account. Registration already sent the first code; opening it sends nothing.
 class VerifyEmailScreen extends ConsumerStatefulWidget {
-  const VerifyEmailScreen({super.key, this.alreadySent = false});
+  const VerifyEmailScreen({super.key, this.alreadySent = false, this.gate = false});
 
   /// Right after registration the first code was sent by the server.
   final bool alreadySent;
+  final bool gate;
   @override
   ConsumerState<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
 }
 
 class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> with _Cooldown {
   final _code = TextEditingController();
-  late bool _sent = widget.alreadySent;
+  late bool _sent = widget.alreadySent || widget.gate;
   bool _busy = false;
   AuthFailure? _error;
 
@@ -424,44 +430,83 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> with _Coo
         await auth.confirmVerification(_code.text);
         if (!mounted) return;
         toast(context, context.l10n.verifyDone);
-        Navigator.pop(context);
+        // As the gate the app moves on by itself (setup, or Today); elsewhere this page closes.
+        if (!widget.gate) Navigator.pop(context);
       });
+
+  Future<void> _checkAgain() => _run((auth) async {
+        await auth.checkAccess();
+        if (mounted && !(ref.read(accountAccessProvider).value?.required ?? false)) toast(context, context.l10n.verifyDone);
+      });
+
+  Future<void> _signOut() async {
+    final l = context.l10n;
+    if (!await confirm(context, title: l.verifyGateSignOutTitle, body: l.verifyGateSignOutBody, action: l.meSignOut)) return;
+    await ref.read(authRepositoryProvider).signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final email = ref.watch(sessionProvider)?.email ?? '';
-    final verified = ref.watch(profileProvider).value?.emailVerified == true;
+    final access = ref.watch(accountAccessProvider).value;
+    final verified = ref.watch(profileProvider).value?.emailVerified == true || (access?.verified ?? false);
     final blocked = emailCodesBlocked(l, ref.watch(compatibilityProvider));
-    return AppPage(
-      title: l.verifyTitle,
-      subtitle: l.verifyLead(ltr(email)),
-      bottom: verified
-          ? PrimaryButton(l.actionDone, onPressed: () => Navigator.pop(context))
-          : Column(mainAxisSize: MainAxisSize.min, children: [
-              if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!.text(l), tone: Tone.error)),
-              if (_sent) ...[
-                PrimaryButton(l.verifyConfirm, key: const Key('verify-confirm'), busy: _busy, onPressed: _confirm),
-                TextButton(key: const Key('verify-resend'), onPressed: _busy || cooldownLeft > 0 || blocked != null ? null : _send,
-                    child: Text(cooldownLeft > 0 ? l.codeResendIn(cooldownLeft) : l.codeResend)),
-              ] else
-                PrimaryButton(l.verifySend, key: const Key('verify-send'), busy: _busy, onPressed: blocked != null ? null : _send),
-              TextButton(onPressed: () => Navigator.pop(context), child: Text(l.verifyLater)),
-            ]),
-      children: [
-        if (verified)
-          StatusLine(Icons.verified_outlined, l.verifyVerified, tone: Tone.success)
-        else ...[
-          if (blocked != null) Padding(padding: const EdgeInsets.only(bottom: 14), child: StatusLine(Icons.mail_lock_outlined, blocked, tone: Tone.warning)),
-          if (_sent) ...[
-            CodeField(controller: _code, onSubmitted: _confirm),
+    final due = access?.dueAt;
+    final gate = widget.gate;
+    return PopScope(
+      canPop: !gate,
+      child: AppPage(
+        title: gate ? l.verifyGateTitle : l.verifyTitle,
+        subtitle: gate ? l.verifyGateLead(ltr(email)) : l.verifyLead(ltr(email)),
+        // The compact mark of the sign-in screen: the same account flow, one step on.
+        above: gate
+            ? Row(key: const Key('verify-gate'), children: [
+                const BrandBadge(width: 32),
+                const SizedBox(width: 10),
+                Flexible(child: Text(l.brandName, style: context.pageTitleStyle(24, color: context.c.accent))),
+              ])
+            : null,
+        bottom: verified && !gate
+            ? PrimaryButton(l.actionDone, onPressed: () => Navigator.pop(context))
+            : Column(mainAxisSize: MainAxisSize.min, children: [
+                if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!.text(l), tone: Tone.error)),
+                if (_sent) ...[
+                  PrimaryButton(l.verifyConfirm, key: const Key('verify-confirm'), busy: _busy, onPressed: _confirm),
+                  TextButton(key: const Key('verify-resend'), onPressed: _busy || cooldownLeft > 0 || blocked != null ? null : _send,
+                      child: Text(cooldownLeft > 0 ? l.codeResendIn(cooldownLeft) : l.codeResend)),
+                ] else
+                  PrimaryButton(l.verifySend, key: const Key('verify-send'), busy: _busy, onPressed: blocked != null ? null : _send),
+                if (gate) ...[
+                  // Verified on another phone, or a confirmation whose answer never came back: ask, without a code.
+                  TextButton(key: const Key('verify-check-again'), onPressed: _busy ? null : _checkAgain, child: Text(l.verifyCheckAgain)),
+                  TextButton(key: const Key('verify-sign-out'), onPressed: _busy ? null : _signOut, child: Text(l.verifyGateSignOut)),
+                ] else
+                  TextButton(onPressed: () => Navigator.pop(context), child: Text(l.verifyLater)),
+              ]),
+        children: [
+          if (verified && !gate)
+            StatusLine(Icons.verified_outlined, l.verifyVerified, tone: Tone.success)
+          else ...[
+            if (blocked != null) Padding(padding: const EdgeInsets.only(bottom: 14), child: StatusLine(Icons.mail_lock_outlined, blocked, tone: Tone.warning)),
+            if (_sent) ...[
+              CodeField(controller: _code, onSubmitted: _confirm),
+              const SizedBox(height: 14),
+              StatusLine(Icons.mark_email_unread_outlined, l.codeDeliveryNote),
+            ],
             const SizedBox(height: 14),
-            StatusLine(Icons.mark_email_unread_outlined, l.codeDeliveryNote),
+            Text(
+                gate
+                    ? l.verifyGateWhy
+                    : access?.required ?? false
+                        ? l.verifyPausedWhy
+                        : due != null
+                            ? l.verifyGraceWhy(longDate(dayKeyOf(due)))
+                            : l.verifyScope,
+                style: context.caption),
           ],
-          const SizedBox(height: 14),
-          Text(l.verifyOptional, style: context.caption),
         ],
-      ],
+      ),
     );
   }
 }

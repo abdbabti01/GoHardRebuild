@@ -4081,13 +4081,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Enregistre ta propre séance ici. Un programme peut les prévoir pour toi.';
 
   @override
-  String get trainWorkoutHistory => 'Historique des séances';
-
-  @override
-  String get trainWorkoutHistorySubtitle =>
-      'Toutes les séances que tu as enregistrées';
-
-  @override
   String get trainScheduledToday => 'Prévu aujourd\'hui';
 
   @override
@@ -4120,18 +4113,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Chaque course et marche, trajets et records personnels';
 
   @override
-  String get trainRecent => 'Récentes';
-
-  @override
   String get trainRecentEmptyTitle =>
       'Aucune séance enregistrée pour l\'instant';
 
   @override
   String get trainRecentEmptyBody =>
       'Quand tu termines une séance, ce que tu as vraiment fait s\'affiche ici.';
-
-  @override
-  String get trainHistory => 'Historique';
 
   @override
   String get trainSavedForLater => 'Gardée pour plus tard';
@@ -9536,12 +9523,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get progressRecentWorkouts => 'Séances récentes';
-
-  @override
-  String get progressHistorySubtitle => 'Chaque séance que tu as enregistrée';
-
-  @override
   String get progressWorkoutsLabel => 'Séances';
 
   @override
@@ -10329,10 +10310,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get verifyLater => 'Plus tard';
 
   @override
-  String get verifyOptional =>
-      'La confirmation est facultative pour le moment. Elle confirme seulement cette adresse et ne change rien d\'autre.';
-
-  @override
   String get verifyVerified => 'Ton courriel est confirmé.';
 
   @override
@@ -10354,11 +10331,84 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mePasswordSubtitle => 'Changer le mot de passe';
 
   @override
-  String get setupVerifyTitle => 'Confirme ton courriel';
+  String get accountErrorRegistrationUnavailable =>
+      'Impossible de créer un compte pour le moment, car la confirmation par courriel n\'est pas offerte. Rien n\'a été créé; réessaie plus tard.';
 
   @override
-  String get setupVerifySubtitle =>
-      'Nous t\'avons envoyé un code. Facultatif : tu peux aussi le faire plus tard dans Profil.';
+  String get verifyGateTitle => 'Confirme ton courriel';
+
+  @override
+  String verifyGateLead(String email) {
+    return 'Entre le code à 8 chiffres envoyé à $email.';
+  }
+
+  @override
+  String get verifyGateWhy =>
+      'La confirmation de ton courriel est nécessaire pour terminer la création de ton compte. Elle confirme que cette adresse est bien la tienne et ne change rien d\'autre.';
+
+  @override
+  String get verifyCheckAgain => 'Vérifier de nouveau';
+
+  @override
+  String get verifyGateSignOut => 'Me déconnecter ou utiliser un autre compte';
+
+  @override
+  String get verifyGateSignOutTitle => 'Te déconnecter?';
+
+  @override
+  String get verifyGateSignOutBody =>
+      'Ce compte reste tel quel, en attente de confirmation. Reconnecte-toi quand tu veux pour le confirmer.';
+
+  @override
+  String get verifyScope =>
+      'La confirmation prouve que cette adresse est la tienne. Elle ne change rien d\'autre.';
+
+  @override
+  String verifyGraceWhy(String date) {
+    return 'Confirme-le d\'ici le $date pour continuer la synchronisation. Cela confirme que cette adresse est la tienne et ne change rien d\'autre.';
+  }
+
+  @override
+  String get verifyPausedWhy =>
+      'La synchronisation est en pause jusqu\'à la confirmation. Tout ce que tu enregistres reste sur ce téléphone et sera envoyé une fois confirmé.';
+
+  @override
+  String todayVerifyBy(String date) {
+    return 'Confirme ton courriel d\'ici le $date pour continuer la synchronisation.';
+  }
+
+  @override
+  String get todayVerifyPaused =>
+      'Confirme ton courriel pour synchroniser de nouveau. Ce que tu enregistres reste sur ce téléphone.';
+
+  @override
+  String get todayVerifyAction => 'Confirmer';
+
+  @override
+  String meEmailVerifyBy(String date) {
+    return 'À confirmer d\'ici le $date';
+  }
+
+  @override
+  String get meEmailPaused =>
+      'Synchronisation en pause jusqu\'à la confirmation';
+
+  @override
+  String get eatHistoryTrendsSubtitle =>
+      'Revois tes apports par semaine ou par mois';
+
+  @override
+  String get eatHistoryTrendsSaid =>
+      'Historique et tendances. Revois tes apports par semaine ou par mois';
+
+  @override
+  String get trainRecentWorkouts => 'Séances récentes';
+
+  @override
+  String get trainViewAllHistory => 'Voir tout l\'historique';
+
+  @override
+  String get trainViewAllHistorySaid => 'Voir tout l\'historique des séances';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

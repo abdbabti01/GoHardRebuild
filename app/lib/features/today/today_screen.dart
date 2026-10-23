@@ -13,6 +13,7 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../core/device_prefs.dart';
 import '../activity/activity_detail.dart';
+import '../auth/account_security.dart' show VerifyEmailScreen;
 import '../../core/go_icon.dart';
 import '../activity/move_prefs.dart' show stepGoalProvider, stepsEnabledProvider, stepsOnTodayProvider;
 import '../activity/steps.dart';
@@ -87,6 +88,7 @@ class TodayScreen extends ConsumerWidget {
                 PanelTheme(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     if (reachable == false) ...[const PanelSurface(child: _ConnectionStatus()), gap],
+                    if (ref.watch(accountAccessProvider).value case final a? when !a.verified && a.dueAt != null) ...[PanelSurface(child: _VerifyNotice(a)), gap],
                     // A nutrition problem never hides training, and the reverse.
                     if (localError)
                       PanelSurface(child: StatusLine(Icons.error_outline, l.todayTrainingError, tone: Tone.error))
@@ -107,6 +109,27 @@ class TodayScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    ]);
+  }
+}
+
+/// An account from before required verification (docs/AUTHENTICATION_EMAIL.md): the server's real deadline and one way
+/// to the shared form. Past it, uploads wait and it says so; what is saved on this phone stays. Shown here only, never
+/// as a popup.
+class _VerifyNotice extends StatelessWidget {
+  const _VerifyNotice(this.access);
+  final AccountAccess access;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Column(key: const Key('today-verify-notice'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+      StatusLine(Icons.mark_email_unread_outlined, access.required ? l.todayVerifyPaused : l.todayVerifyBy(longDate(dayKeyOf(access.dueAt!))),
+          tone: access.required ? Tone.warning : Tone.neutral),
+      Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: QuietLink(l.todayVerifyAction, key: const Key('today-verify'), onPressed: () => push(context, const VerifyEmailScreen())),
       ),
     ]);
   }

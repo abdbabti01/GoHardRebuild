@@ -9,6 +9,8 @@ enum AuthError {
   // Emailed codes and password changes (docs/AUTHENTICATION_EMAIL.md).
   passwordTooLong, passwordMismatch, codeIncomplete, codeInvalid, codeExpired, codeAttempts, cooldown, emailUnavailable, emailBusy, resetExpired, notSupported,
   uncertainReset, uncertainChange,
+  // Required verification: a new account cannot be created without a sender.
+  registrationUnavailable,
 }
 
 class AuthFailure implements Exception {
@@ -52,6 +54,7 @@ class AuthFailure implements Exception {
         AuthError.notSupported => l.accountErrorNotSupported,
         AuthError.uncertainReset => l.accountErrorUncertainReset,
         AuthError.uncertainChange => l.accountErrorUncertainChange,
+        AuthError.registrationUnavailable => l.accountErrorRegistrationUnavailable,
       };
 }
 
@@ -91,7 +94,10 @@ class AuthRepository {
       throw const AuthFailure.of(AuthError.unreachable);
     }
     if (!r.ok) throw _authFailure(r);
-    onCreated?.call(((r.data as Json)['profile'] as Json)['userId'] as String); // before the app switches to the account
+    final profile = (r.data as Json)['profile'] as Json;
+    onCreated?.call(profile['userId'] as String); // before the app switches to the account
+    // Also before: a new account opens on its verification, never on Today first.
+    await _sync.adoptAccess(profile['userId'] as String, profile);
     final session = await _sessions.signIn(r.data as Json);
     // Resume only this owner's queue, then load their account state.
     await _sync.flush();
@@ -99,8 +105,14 @@ class AuthRepository {
   }
 
   /// [onCreated] hears the new account's owner id before its session starts (setup is queued for it).
-  Future<void> register(String email, String password, String displayName, {void Function(String ownerId)? onCreated}) =>
-      _enter('/auth/register', {'email': email.trim(), 'password': password, 'displayName': displayName.trim(), 'language': mailLanguage}, onCreated);
+  /// Without a sender the server creates no account (it could never be verified): said as such, not as "recovery".
+  Future<void> register(String email, String password, String displayName, {void Function(String ownerId)? onCreated}) async {
+    try {
+      await _enter('/auth/register', {'email': email.trim(), 'password': password, 'displayName': displayName.trim(), 'language': mailLanguage}, onCreated);
+    } on AuthFailure catch (e) {
+      throw e.code == AuthError.emailUnavailable ? const AuthFailure.of(AuthError.registrationUnavailable) : e;
+    }
+  }
   Future<void> signIn(String email, String password) => _enter('/auth/login', {'email': email.trim(), 'password': password});
 
   /// Ends the session without deleting anything: this owner's records and pending work stay on the phone,
@@ -171,10 +183,20 @@ class AuthRepository {
     return (r.data as Json)['cooldownSeconds'] as int? ?? 60;
   }
 
-  /// Confirms the address; the profile is then read again so Me shows what the server now says.
+  /// Confirms the address and keeps the server's answer (the account may now use its data, waiting changes go), then
+  /// reads the account again so Me shows what the server now says.
   Future<void> confirmVerification(String code) async {
     final r = await _call('/account/email-verification/confirm', {'code': code}, auth: true);
     if (!r.ok) throw _authFailure(r);
+    final owner = _sessions.current?.ownerId;
+    if (owner != null && r.data is Json) await _sync.adoptAccess(owner, r.data as Json);
+    _sync.kick();
+    await _sync.pull();
+  }
+
+  /// "Check again": verified on another phone, or a confirmation whose answer was lost. Asks the account; no code.
+  Future<void> checkAccess() async {
+    if (!await _sync.refreshAccess()) throw const AuthFailure.of(AuthError.unreachable);
     await _sync.pull();
   }
 

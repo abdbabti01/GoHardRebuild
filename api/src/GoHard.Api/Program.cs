@@ -5,6 +5,8 @@ using GoHard.Api.Application.AccountEmail;
 using GoHard.Api.Endpoints;
 using GoHard.Api.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -30,6 +32,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<CommandRunner>();
 builder.Services.AddGoHardModules(builder.Configuration);
 builder.Services.AddAccountEmail(builder.Configuration, builder.Environment);
+builder.Services.AddSingleton<AccountAccess>();
 builder.Services.AddSingleton<ReadinessGate>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -40,20 +43,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidIssuer = auth.Issuer, ValidAudience = auth.Audience, IssuerSigningKey = auth.Key,
         ValidateIssuerSigningKey = true, ClockSkew = TimeSpan.FromSeconds(30),
     };
-    // A token only works while its account still exists with the same security stamp.
+    // A token only works while its account still exists with the same security stamp. The same read decides, from the
+    // database alone, whether this request may use the account's data (AccountAccess): a claim that lives only for
+    // this request, never in a token.
     o.Events = new JwtBearerEvents
     {
         OnTokenValidated = async ctx =>
         {
             var db = ctx.HttpContext.RequestServices.GetRequiredService<GoHardDb>();
-            var stamp = Guid.TryParse(ctx.Principal?.FindFirstValue("sub"), out var id)
-                ? await db.Users.Where(u => u.Id == id).Select(u => u.SecurityStamp).FirstOrDefaultAsync(ctx.HttpContext.RequestAborted)
+            var row = Guid.TryParse(ctx.Principal?.FindFirstValue("sub"), out var id)
+                ? await db.Users.Where(u => u.Id == id).Select(u => new { u.SecurityStamp, u.EmailVerifiedAtUtc, u.VerificationGraceFromUtc })
+                    .FirstOrDefaultAsync(ctx.HttpContext.RequestAborted)
                 : null;
-            if (stamp is null || stamp != ctx.Principal!.FindFirstValue(AuthService.StampClaim)) ctx.Fail("Account is no longer valid.");
+            if (row is null || row.SecurityStamp != ctx.Principal!.FindFirstValue(AuthService.StampClaim)) { ctx.Fail("Account is no longer valid."); return; }
+            var identity = (ClaimsIdentity)ctx.Principal!.Identity!;
+            foreach (var forged in identity.FindAll(AccountAccess.EligibleClaim).ToList()) identity.RemoveClaim(forged);
+            if (ctx.HttpContext.RequestServices.GetRequiredService<AccountAccess>().MayUseData(row.EmailVerifiedAtUtc, row.VerificationGraceFromUtc))
+                identity.AddClaim(new Claim(AccountAccess.EligibleClaim, "1"));
         },
     };
 });
-builder.Services.AddAuthorization();
+// Every RequireAuthorization() route needs an eligible account; the identity routes name the account policy instead.
+builder.Services.AddAuthorizationBuilder()
+    .SetDefaultPolicy(new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme).RequireAuthenticatedUser().RequireClaim(AccountAccess.EligibleClaim).Build())
+    .AddPolicy(AccountAccess.IdentityPolicy, p => p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme).RequireAuthenticatedUser());
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, VerificationRequiredHandler>();
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -130,6 +144,23 @@ app.Use(async (ctx, next) =>
 app.MapGoHardEndpoints();
 await app.RunAsync();
 return 0;
+
+/// <summary>A valid, signed-in account refused only for lack of verification hears so in words the app knows (403), never
+/// as an expired session (401), so it neither refreshes nor signs out.</summary>
+public sealed class VerificationRequiredHandler : IAuthorizationMiddlewareResultHandler
+{
+    private readonly AuthorizationMiddlewareResultHandler _default = new();
+
+    public Task HandleAsync(RequestDelegate next, HttpContext context, AuthorizationPolicy policy, PolicyAuthorizationResult result)
+    {
+        if (result.Forbidden && context.User.Identity?.IsAuthenticated == true && !context.User.HasClaim(c => c.Type == AccountAccess.EligibleClaim))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return context.Response.WriteAsJsonAsync(new AuthError(AccountAccess.Required));
+        }
+        return _default.HandleAsync(next, context, policy, result);
+    }
+}
 
 /// <summary>Caches a Ready result; while not ready it re-reads so an explicit migration is noticed without a restart.</summary>
 public sealed class ReadinessGate

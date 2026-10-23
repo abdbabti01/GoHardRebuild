@@ -23,7 +23,33 @@ public sealed class AuthOptions
     /// Counted from the rotation; retries do not extend it. 0 turns recovery off. docs/ARCHITECTURE.md › Sessions.
     /// </summary>
     public int RefreshRecoverySeconds { get; set; } = 300;
+
+    /// <summary>How long an account that existed unverified when verification became required may still use its data
+    /// (counted from its persisted <see cref="User.VerificationGraceFromUtc"/>). docs/AUTHENTICATION_EMAIL.md.</summary>
+    public int VerificationGraceDays { get; set; } = 14;
     public SymmetricSecurityKey Key => new(Encoding.UTF8.GetBytes(SigningKey));
+}
+
+/// <summary>
+/// Who may use their data: the one eligibility rule, read from the database on every request (never from a token or
+/// a client field). A verified account may; an unverified one only inside its legacy grace period. An ineligible
+/// account keeps a valid identity for the <see cref="IdentityPolicy"/> routes (verification, password, sign-out,
+/// deletion, its own profile). docs/AUTHENTICATION_EMAIL.md › Required verification.
+/// </summary>
+public sealed class AccountAccess(AuthOptions options, TimeProvider time)
+{
+    public const string EligibleClaim = "gohard.eligible", IdentityPolicy = "account", Required = "EMAIL_VERIFICATION_REQUIRED";
+
+    public DateTime? DueAt(DateTime? verifiedAt, DateTime? graceFrom) =>
+        verifiedAt is null && graceFrom is { } from ? from.AddDays(options.VerificationGraceDays) : null;
+
+    public bool MayUseData(DateTime? verifiedAt, DateTime? graceFrom) =>
+        verifiedAt is not null || DueAt(verifiedAt, graceFrom) > time.GetUtcNow().UtcDateTime;
+
+    public ProfileDto Profile(User u) =>
+        new(u.Id, u.Email, u.DisplayName, u.Appearance, u.LoadUnit, u.RemindersEnabled, u.ReminderLocalTime, u.Revision, u.CalorieGoal, u.ProteinGoalG, u.WaterGoalMl,
+            u.ShowWater, u.ShowCarbs, u.ShowFat, u.EmailVerifiedAtUtc != null,
+            !MayUseData(u.EmailVerifiedAtUtc, u.VerificationGraceFromUtc), DueAt(u.EmailVerifiedAtUtc, u.VerificationGraceFromUtc));
 }
 
 /// <param name="Language">Optional (en, fr-CA, ar): the language of the verification email. Older apps omit it.</param>
@@ -32,18 +58,15 @@ public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 public sealed record ProfileDto(Guid UserId, string Email, string DisplayName, string Appearance, string LoadUnit,
     bool RemindersEnabled, string? ReminderLocalTime, int Revision, int? CalorieGoal = null, int? ProteinGoal = null,
-    int? WaterGoalMl = null, bool? ShowWater = null, bool? ShowCarbs = null, bool? ShowFat = null, bool EmailVerified = false);
+    int? WaterGoalMl = null, bool? ShowWater = null, bool? ShowCarbs = null, bool? ShowFat = null, bool EmailVerified = false,
+    bool VerificationRequired = false, DateTime? VerificationDueAtUtc = null);
 public sealed record AuthResponse(string AccessToken, DateTime AccessTokenExpiresAtUtc, string RefreshToken, ProfileDto Profile);
 public sealed record AuthError(string Code);
 
-public sealed class AuthService(GoHardDb db, AuthOptions options)
+public sealed class AuthService(GoHardDb db, AuthOptions options, AccountAccess access)
 {
     public const string StampClaim = "stamp";
     private static readonly PasswordHasher<User> Hasher = new();
-
-    public static ProfileDto ToProfile(User u) =>
-        new(u.Id, u.Email, u.DisplayName, u.Appearance, u.LoadUnit, u.RemindersEnabled, u.ReminderLocalTime, u.Revision, u.CalorieGoal, u.ProteinGoalG, u.WaterGoalMl,
-            u.ShowWater, u.ShowCarbs, u.ShowFat, u.EmailVerifiedAtUtc != null);
 
     /// <summary>The one sign-in identifier form, used by every account flow.</summary>
     public static string NormalizeEmail(string? email) => (email ?? "").Trim().ToLowerInvariant();
@@ -169,7 +192,7 @@ public sealed class AuthService(GoHardDb db, AuthOptions options)
         var jwt = new JwtSecurityToken(options.Issuer, options.Audience,
             [new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()), new Claim(StampClaim, user.SecurityStamp)],
             expires: expires, signingCredentials: new SigningCredentials(options.Key, SecurityAlgorithms.HmacSha256));
-        return new(new JwtSecurityTokenHandler().WriteToken(jwt), expires, refresh, ToProfile(user));
+        return new(new JwtSecurityTokenHandler().WriteToken(jwt), expires, refresh, access.Profile(user));
     }
 
     public static string NewSecret() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));

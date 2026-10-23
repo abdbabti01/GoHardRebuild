@@ -7,7 +7,8 @@ import '../../core/appearance.dart';
 import '../../core/compatibility.dart';
 import '../../core/config.dart';
 import '../../core/device_prefs.dart';
-import '../../core/format.dart' show ltr;
+import '../../core/clock.dart' show dayKeyOf;
+import '../../core/format.dart' show longDate, ltr;
 import '../../core/language.dart';
 import '../../core/language_picker.dart';
 import '../../core/theme.dart';
@@ -274,7 +275,13 @@ class MeScreen extends ConsumerWidget {
           if (profile?.emailVerified case final verified? when session != null)
             GroupRow(
               key: const Key('me-email'), icon: verified ? Icons.verified_outlined : Icons.mark_email_unread_outlined,
-              tone: verified ? Tone.success : Tone.warning, title: l.meEmail, subtitle: ltr(session.email),
+              tone: verified ? Tone.success : Tone.warning, title: l.meEmail,
+              // The same server-owned state as Today's notice: the deadline, or that uploads wait for verification.
+              subtitle: switch (ref.watch(accountAccessProvider).value) {
+                final a? when !verified && a.required => '${ltr(session.email)}\n${l.meEmailPaused}',
+                final a? when !verified && a.dueAt != null => '${ltr(session.email)}\n${l.meEmailVerifyBy(longDate(dayKeyOf(a.dueAt!)))}',
+                _ => ltr(session.email),
+              },
               value: verified ? l.meEmailVerified : l.meEmailNotVerified,
               onTap: verified ? null : () => push(context, const VerifyEmailScreen()),
             ),

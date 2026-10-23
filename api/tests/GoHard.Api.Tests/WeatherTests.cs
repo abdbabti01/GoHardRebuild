@@ -322,7 +322,7 @@ public class WeatherEndpointTests(PostgresFixture pg)
         Assert.Equal((HttpStatusCode.ServiceUnavailable, "PROVIDER_UNAVAILABLE"), (status, body.GetProperty("code").GetString()));
         Assert.Equal(HttpStatusCode.OK, (await api.CreateClient().GetAsync("/health/ready")).StatusCode);
         var capabilities = await a.Http.GetFromJsonAsync<JsonElement>("/api/v1/capabilities");
-        Assert.Equal((1, 1), (capabilities.GetProperty("contractVersion").GetInt32(), capabilities.GetProperty("minimumClientContract").GetInt32()));
+        Assert.Equal((2, 2), (capabilities.GetProperty("contractVersion").GetInt32(), capabilities.GetProperty("minimumClientContract").GetInt32()));
         Assert.Equal(HttpStatusCode.OK, (await a.Http.GetAsync("/api/v1/sync/snapshot")).StatusCode);
 
         await using var disabled = new ApiFactory(pg.Api.ConnectionString) { Settings = new() { ["Weather:Enabled"] = "false" }, Provider = Recordings() };

@@ -374,7 +374,7 @@ public sealed class ActivityService(GoHardDb db)
     }
 }
 
-public sealed class AccountService(GoHardDb db)
+public sealed class AccountService(GoHardDb db, AccountAccess access)
 {
     public async Task<Outcome<ProfileDto>> UpdateProfileAsync(Guid userId, ProfileUpdateRequest r, CancellationToken ct)
     {
@@ -384,7 +384,7 @@ public sealed class AccountService(GoHardDb db)
             (r.ReminderLocalTime is not null && !TimeOnly.TryParseExact(r.ReminderLocalTime, "HH:mm", out _)) ||
             r.CalorieGoal.Value is < 500 or > 10000 || r.ProteinGoal.Value is < 10 or > 500 || r.WaterGoalMl.Value is < 100 or > 10000)
             return Outcome.Rejected<ProfileDto>(Ack.Invalid);
-        if (user.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, user.Revision, AuthService.ToProfile(user));
+        if (user.Revision != r.ExpectedRevision) return Outcome.Conflict(Ack.RevisionConflict, user.Revision, access.Profile(user));
         (user.DisplayName, user.Appearance, user.LoadUnit, user.RemindersEnabled, user.ReminderLocalTime) =
             (name, r.Appearance, r.LoadUnit, r.RemindersEnabled, r.ReminderLocalTime);
         // A client that predates goals does not send them, and so cannot erase them.
@@ -394,7 +394,7 @@ public sealed class AccountService(GoHardDb db)
         (user.ShowWater, user.ShowCarbs, user.ShowFat) = (r.ShowWater ?? user.ShowWater, r.ShowCarbs ?? user.ShowCarbs, r.ShowFat ?? user.ShowFat);
         user.Revision++;
         await db.SaveChangesAsync(ct);
-        return Outcome.Accepted(user.Revision, AuthService.ToProfile(user));
+        return Outcome.Accepted(user.Revision, access.Profile(user));
     }
 
     /// <summary>

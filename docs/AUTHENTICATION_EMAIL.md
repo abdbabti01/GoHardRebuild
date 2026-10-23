@@ -1,7 +1,8 @@
 # Authentication email: password reset, email verification, password change
 
-Branch `feature/auth-recovery-verification` (21 Oct 2026). Status: code and local verification with **captured** mail.
-No real email has been sent; nothing is configured on Railway, Resend or Cloudflare yet (section 8).
+Branch `feature/auth-recovery-verification` (21 Oct 2026, merged 23 Oct); required verification since branch
+`feature/verification-navigation` (23 Oct 2026, section 10; not merged or deployed). Local verification uses
+**captured** mail only; the owner reports real registration emails arrive from the hosted API (section 8 is theirs).
 
 ## 1. What the person sees
 
@@ -30,15 +31,21 @@ address: signing in again (same account) finds its local data, pending changes, 
 run where they were. A different account stays strictly separate (unchanged). An unconfirmed answer says so, discards
 nothing and does not retry; if the change did happen the next request is refused and the app asks to sign in.
 
-**Verify email** (Me › Account › *Email*: the address and *Verified* / *Not verified*, from the server only; a server
-from before verification shows no row). The same code field. After registration the server sends the first code (only
-when a sender is configured) and Setup › step 2 offers *Verify your email*; it is optional.
+**Verify email** (Me › Account › *Email*: the address and *Verified* / *Not verified*, from the server only, with the
+deadline or "Syncing paused until verified" when that applies; a server from before verification shows no row). The
+same code field. Verification proves ownership of the account's current address and changes nothing else (no password,
+session or address change, no sign-in).
 
-**Private-beta verification policy.** Verification is **not required** in this testing release: unverified accounts
-work exactly as before; nobody is locked out; existing accounts stay unverified (no evidence they own their address) and
-no mass verification email is sent. Verification proves ownership of the account's current address and changes
-nothing else (no password, session or address change, no sign-in). This is **not** a public-launch decision: requiring
-verified ownership later needs its own enforcement and compatibility decision (section 9).
+**Verification is required** (since branch `feature/verification-navigation`, 23 Oct 2026; section 10):
+
+- **New accounts** verify before anything else: *Create account* → *Verify your email* (the code registration sent;
+  Resend with the server's cooldown; *Check again*; *Sign out or use another account*; no Later, no Back) → coach
+  setup → Today. A restart, an expired token or no connection brings a waiting account back to this step.
+- **Accounts that existed unverified at the rollout** get **14 days** (persisted, server-owned) to verify. Today shows a
+  compact notice with the real deadline and one *Verify*; Me shows the same. No popup, no bulk email.
+- **After that deadline** the app stays usable on the phone (saved data, an open workout or run, timers, local saves),
+  uploads wait with a notice, and verifying sends the waiting changes once. Signing in works and says what is needed.
+- **Verified accounts** are unaffected.
 
 ## 2. API, storage, limits, sessions
 
@@ -207,9 +214,10 @@ Without `CodeSecret` a capture API makes a random one per process. Captured mail
 Only after section 4 and a deploy, with addresses **you** choose (never addresses found in logs or the database):
 
 1. `GET https://gohardrebuild-production.up.railway.app/api/v1/capabilities` lists `account.security` and `account.email`.
-2. New test account on your iPhone (unsigned IPA via Sideloadly) with an address you read. Setup › *Verify your email*:
-   the email arrives (check spam), from "GoHard <noreply@auth.lesdeserts.ca>", in the app's language; the code
-   autofills or pastes; Me shows *Verified*.
+2. New test account on your iPhone (unsigned IPA via Sideloadly) with an address you read: the app goes straight to
+   *Verify your email* (no Today first). The email arrives (check spam), from "GoHard <noreply@auth.lesdeserts.ca>", in
+   the app's language; force-quit and reopen: still the verification step; the code autofills or pastes; then coach
+   setup, then Today; Me shows *Verified*.
 3. Me › *Password*: change it; you are signed out; sign in with the new one; your data is there. A *password changed*
    email arrives.
 4. Sign out › *Forgot password?*: the code arrives; set a new password; the old one is refused; the new one works.
@@ -221,14 +229,84 @@ Only after section 4 and a deploy, with addresses **you** choose (never addresse
 ## 9. Before public testing / launch
 
 - Configure and verify real sending (sections 4 and 8); until then the app says recovery isn't available.
-- **Verification enforcement**: decide whether and when verified ownership is required, what older builds and existing
-  unverified accounts see, and how they are given time to verify. Not done here on purpose.
+- **Verification enforcement**: done (section 10); a public launch still needs the real-email checks of section 8.
 - Signing and distribution: this build is an unsigned IPA (Sideloadly); TestFlight/App Store needs the paid Apple
   Developer Program and a separate signing step.
 - Consider: a breached-password check, a second factor, an email-change flow (not built: the sign-in address cannot be
   changed), per-account sign-in attempt limits (sign-in is limited per IP only), naming Resend as a processor in the
   privacy notice, and watching DMARC reports.
 - The IP limit is per API instance (in memory); per-address limits and attempts are in the database.
+
+## 10. Required verification: boundary, migration, rollout
+
+**API boundary.** One rule (`AccountAccess.MayUseData`, read from the database on every request): verified, or
+unverified inside a legacy grace period. Every `RequireAuthorization()` route needs it (the default policy); a
+signed-in account that fails it gets **403 `{"code":"EMAIL_VERIFICATION_REQUIRED"}`**, never 401. Still open to it,
+by name (policy `account`): `GET /me`, `POST /auth/logout`, `DELETE /account`, `POST /account/email-verification/request`,
+`POST /account/email-verification/confirm`, `POST /account/password`. Public: health, `/capabilities`, register,
+login, refresh, password reset. Invalid, expired or revoked tokens keep their 401. Login and refresh still answer a
+waiting account (with the profile that says what is needed). `VerificationPolicyTests` walks every mapped signed-in route
+with a waiting account's token and expects exactly that list to be open.
+
+**Contract.** `ProfileDto` gains `verificationRequired` (data refused now) and `verificationDueAtUtc` (a legacy
+account's deadline; null otherwise). Nothing a client sends can set them or `emailVerified`. `contractVersion` and the
+default `Compatibility:MinimumClientContract` are now **2**: an app from before this branch shows the existing *Update
+GoHard* screen (its outbox kept) instead of meeting 403s it cannot explain.
+
+**Registration without a sender** (`Email:Provider` empty): `POST /auth/register` answers 503 `EMAIL_UNAVAILABLE`
+before any row is written ("New accounts can't be created right now…"). Verification is never silently turned off. An
+account created while the provider later fails keeps its pending state; *Resend* and the outbox retries apply.
+
+**Migration `AddVerificationGrace`** (additive): `Users.VerificationGraceFromUtc`, set **once, by the migration**, to
+the database's `now()` on every account unverified at that moment. Deadline = that + `Auth:VerificationGraceDays`
+(**14**, configurable: `GOHARD_Auth__VerificationGraceDays`; changing it moves every legacy deadline alike, it never
+grants verification). New accounts never get the column, whichever instance creates them (an old instance during the
+deploy overlap included): null + unverified = verify now. Logins, refreshes, resends, restarts and redeploys never write
+it. **Rollback**: rolling back *code* is safe (old code ignores the column; it then also stops enforcing). Do **not** run
+the migration's `Down`: re-applying `Up` would start every grace period again from that day.
+
+**Exact order (owner, after approval):**
+1. Check Railway has the Email variables (section 3) and `GET /api/v1/capabilities` lists `account.email`. Without a
+   sender, sign-up is refused (on purpose).
+2. Merge; Railway's pre-deploy runs `migrate seed-catalog` (13 migrations) and the cutoff is recorded then.
+3. Install the new IPA (contract 2). Older installs see *Update GoHard* from this deploy on.
+4. Leave `Compatibility:MinimumClientContract` unset (default 2). Nothing else changes; no session is invalidated.
+
+**On the phone.** One local-only, per-account record (`account_access`) from server answers only (sign-in, `/me`,
+snapshot, confirm); no code or password is stored. A 403 `EMAIL_VERIFICATION_REQUIRED` pauses the outbox (commands stay
+pending, untouched, same operation ids, no retry counted) and asks `/me`; the next successful pull or a confirmation
+resumes it. No answer never changes the record. Local dev: `scripts\start-api.ps1` now uses the capture mailbox unless
+`-Lan` (then registration needs a real sender).
+
+## Design note: required verification (written before implementation, 23 Oct 2026)
+
+- **Eligibility policy.** One rule, `AccountAccess.MayUseData`: verified, or an unverified account still inside a legacy
+  grace period. The JWT handler already reads the account row for every request (stamp check); it now also reads
+  `EmailVerifiedAtUtc` and `VerificationGraceFromUtc` and adds a request-only `gohard.eligible` claim when the rule
+  holds (never issued in a token, so no old token or client field can carry it). The **default** authorization policy
+  requires that claim, so every `RequireAuthorization()` route is covered, including routes added later. A small
+  `account` policy (signed in only) is used by name for the exempt list: `GET /me`, `POST /auth/logout`,
+  `DELETE /account`, `POST /account/email-verification/{request,confirm}`, `POST /account/password`. A signed-in but
+  ineligible caller gets **403 `EMAIL_VERIFICATION_REQUIRED`** (never 401, so no refresh/sign-out loop).
+- **Migration / cutoff.** Additive column `Users.VerificationGraceFromUtc`. The migration sets it to the migration's
+  own `now()` for every account that is unverified at that moment; nothing else ever writes it. Deadline =
+  that instant + `Auth:VerificationGraceDays` (14). New accounts never get it (null + unverified = required now).
+  Accounts created by an old instance after the migration ran are new accounts (required). Redeploys and restarts do
+  not re-run the migration, so the deadline never moves; do not run its `Down` (it would forget the cutoff).
+- **Account transitions.** Register (refused with 503 `EMAIL_UNAVAILABLE` when no sender is configured, before any
+  row is written) → session + profile with `verificationRequired: true` → the app's gate (the shared verify form) →
+  confirm → the profile says eligible → setup → Today. Login and refresh still work for an ineligible account (they
+  answer with the profile that explains what is required). `ProfileDto` gains `verificationRequired` and
+  `verificationDueAtUtc` (additive). `minimumClientContract` and the contract become 2, so an older app shows the
+  existing update screen instead of an endless sync error.
+- **Offline preservation.** The app keeps one local-only, account-scoped record (`account_access`) written only from
+  server answers (register/login, `/me`, snapshot, confirm). A 403 `EMAIL_VERIFICATION_REQUIRED` pauses the outbox
+  (commands stay pending, untouched, same operation ids) and refreshes that record from `/me`. A new account's gate
+  survives restarts and offline; a legacy account past its deadline keeps its shell, its recorder, timers and local
+  saves, with uploads paused and a notice that opens the same form. No code or password is stored.
+- **Navigation.** Eat: one full-width History & trends panel under the day's summary (the old text link removed).
+  Train › Workouts: one Recent workouts section (latest 3) with *View all history* in its header; the separate
+  History card goes. Progress: its Recent workouts list and Workout history card go.
 
 ## Design note (written before implementation)
 

@@ -14,7 +14,7 @@ namespace GoHard.Api.Endpoints;
 
 public static class GoHardEndpoints
 {
-    public const int ContractVersion = 1;
+    public const int ContractVersion = 2;
     /// <summary>What this build really supports. Clients gate features on these, never on assumptions.</summary>
     public static readonly string[] Capabilities =
     [
@@ -76,9 +76,10 @@ public static class GoHardEndpoints
     {
         var api = app.MapGroup("/api/v1");
         // minimumClientContract rises only for a change an older app cannot live with. Added optional fields are not one.
+        // 2: required email verification (an app before it cannot show the verification step; docs/AUTHENTICATION_EMAIL.md).
         api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach, EmailOptions email) => Results.Ok(new
         {
-            contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 1),
+            contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 2),
             capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
                 .Concat(weather.Enabled ? [WeatherRegistration.Capability] : [])
                 .Concat(coach.Enabled ? [CoachService.Capability] : [])
@@ -86,8 +87,10 @@ public static class GoHardEndpoints
         }));
 
         var auth = api.MapGroup("/auth").RequireRateLimiting("auth");
-        auth.MapPost("/register", async (RegisterRequest r, AuthService s, AccountEmailService email, CancellationToken ct) =>
+        auth.MapPost("/register", async (RegisterRequest r, AuthService s, AccountEmailService email, EmailOptions sender, CancellationToken ct) =>
         {
+            // A new account must verify its address before it can use the app, so without a sender none is created.
+            if (!sender.Configured) return Results.Json(new AuthError("EMAIL_UNAVAILABLE"), statusCode: 503);
             var (ok, error) = await s.RegisterAsync(r, ct);
             if (ok is null) return Results.Json(new AuthError(error!), statusCode: error == "EMAIL_IN_USE" ? 409 : 400);
             await email.OfferVerificationAsync(ok.Profile.UserId, r.Language); // queued only; never fails the registration
@@ -109,7 +112,8 @@ public static class GoHardEndpoints
         });
         codes.MapPost("/auth/password-reset/complete", async (ResetCompleteRequest r, AccountEmailService s, CancellationToken ct) =>
             Changed(await s.CompleteResetAsync(r.ResetToken, r.NewPassword, r.Language, ct)));
-        var signedCodes = codes.MapGroup("").RequireAuthorization();
+        // Signed in, verified or not: these are how an account becomes verified or recovers.
+        var signedCodes = codes.MapGroup("").RequireAuthorization(AccountAccess.IdentityPolicy);
         signedCodes.MapPost("/account/email-verification/request", async (LanguageRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
             Requested(await s.RequestVerificationAsync(u.UserId(), r.Language, ct)));
         signedCodes.MapPost("/account/email-verification/confirm", async (CodeConfirmRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
@@ -125,22 +129,25 @@ public static class GoHardEndpoints
                 ? Results.Ok(new { m.Subject, m.Text, code = System.Text.RegularExpressions.Regex.Match(m.Text, @"\b\d{8}\b").Value })
                 : Results.NotFound());
 
+        // The identity routes an account waiting for verification keeps (docs/AUTHENTICATION_EMAIL.md › Required verification).
+        // Everything else is `me`: the default policy, which needs an eligible account.
+        var identity = api.MapGroup("").RequireAuthorization(AccountAccess.IdentityPolicy);
         var me = api.MapGroup("").RequireAuthorization();
-        me.MapPost("/auth/logout", async (RefreshRequest r, ClaimsPrincipal u, AuthService s, CancellationToken ct) =>
+        identity.MapPost("/auth/logout", async (RefreshRequest r, ClaimsPrincipal u, AuthService s, CancellationToken ct) =>
         { await s.LogoutAsync(u.UserId(), r.RefreshToken, ct); return Results.NoContent(); });
-        me.MapGet("/me", async (ClaimsPrincipal u, GoHardDb db, CancellationToken ct) =>
-            Results.Ok(AuthService.ToProfile(await db.Users.AsNoTracking().FirstAsync(x => x.Id == u.UserId(), ct))));
+        identity.MapGet("/me", async (ClaimsPrincipal u, GoHardDb db, AccountAccess access, CancellationToken ct) =>
+            Results.Ok(access.Profile(await db.Users.AsNoTracking().FirstAsync(x => x.Id == u.UserId(), ct))));
         me.MapPut("/me", (ProfileUpdateRequest r, ClaimsPrincipal u, CommandRunner run, AccountService s, CancellationToken ct) =>
             run.RunAsync(u.UserId(), r.OperationId, "profile.update", r, () => s.UpdateProfileAsync(u.UserId(), r, ct), ct));
-        me.MapDelete("/account", async ([FromBody] DeleteAccountRequest r, ClaimsPrincipal u, AccountService s, CancellationToken ct) =>
+        identity.MapDelete("/account", async ([FromBody] DeleteAccountRequest r, ClaimsPrincipal u, AccountService s, CancellationToken ct) =>
             await s.DeleteOwnAccountAsync(u.UserId(), r.Password, ct) ? Results.NoContent() : Results.Json(new AuthError("WRONG_PASSWORD"), statusCode: 400));
 
-        me.MapGet("/sync/snapshot", async (ClaimsPrincipal u, GoHardDb db, PlanService plans, WorkoutService workouts, FoodService food,
+        me.MapGet("/sync/snapshot", async (ClaimsPrincipal u, GoHardDb db, AccountAccess access, PlanService plans, WorkoutService workouts, FoodService food,
             ProposalService proposals, SavedFoodService saved, CustomExerciseService custom, WaterService water, WeeklyGoalService goals, ExerciseIncrementService increments, CancellationToken ct) =>
         {
             var id = u.UserId();
             return Results.Ok(new SnapshotDto(
-                AuthService.ToProfile(await db.Users.AsNoTracking().FirstAsync(x => x.Id == id, ct)),
+                access.Profile(await db.Users.AsNoTracking().FirstAsync(x => x.Id == id, ct)),
                 await plans.ContextAsync(id, ct), await workouts.ListAsync(id, ct), await food.ListAsync(id, null, ct),
                 (await db.Runs.AsNoTracking().Where(x => x.UserId == id).OrderBy(x => x.StartedAtUtc).ToListAsync(ct)).Select(ActivityService.ToDto).ToList(),
                 (await db.BodyMetrics.AsNoTracking().Where(x => x.UserId == id).OrderBy(x => x.DayKey).ToListAsync(ct)).Select(ActivityService.ToDto).ToList(),

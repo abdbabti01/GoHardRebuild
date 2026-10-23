@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../core/compatibility.dart';
 import '../../core/language.dart';
 import '../../core/language_picker.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
-import '../auth/account_security.dart';
 import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_companion.dart';
@@ -17,7 +15,7 @@ import '../me/me_screen.dart' show CoachChoice, setReminders;
 import '../weather/weather.dart';
 
 /// The short setup after creating an account on this phone (docs/COACH.md › Setup): choose the coach, then the
-/// optional features. Its step is kept per account in the coach preferences, so a restart resumes where it was and
+/// optional features. A new account reaches it only once its email is verified (docs/AUTHENTICATION_EMAIL.md). Its step is kept per account in the coach preferences, so a restart resumes where it was and
 /// finishing or skipping ends it for good; accounts that only sign in never see it. Nothing here asks the phone for
 /// access: each feature asks when the person turns it on or uses it. It ends on Today.
 class SetupScreen extends ConsumerWidget {
@@ -99,12 +97,6 @@ class _Features extends ConsumerWidget {
       bottom: PrimaryButton(l.actionDone, key: const Key('setup-done'), onPressed: () => done.finishSetup(owner)),
       children: [
         GroupCard(children: [
-          // The new account's first code was sent at registration when the server has a sender. Optional, now or later in Me.
-          if (profile?.emailVerified == false && ref.watch(compatibilityProvider).supports(emailCapability))
-            GroupRow(
-              key: const Key('setup-verify-email'), icon: Icons.mark_email_unread_outlined, title: l.setupVerifyTitle,
-              subtitle: l.setupVerifySubtitle, onTap: () => push(context, const VerifyEmailScreen(alreadySent: true)),
-            ),
           GroupRow(
             key: const Key('setup-weather'), icon: Icons.wb_twilight_outlined, title: l.setupWeatherTitle,
             subtitle: l.setupWeatherSubtitle, value: ref.watch(todayBackgroundSummaryProvider),

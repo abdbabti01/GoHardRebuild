@@ -6099,18 +6099,6 @@ abstract class AppLocalizations {
   /// **'Record a workout of your own here. A plan can schedule them for you.'**
   String get trainCoachWorkoutsNoPlan;
 
-  /// Row: workout history.
-  ///
-  /// In en, this message translates to:
-  /// **'Workout history'**
-  String get trainWorkoutHistory;
-
-  /// Row subtitle: workout history.
-  ///
-  /// In en, this message translates to:
-  /// **'Every workout you recorded'**
-  String get trainWorkoutHistorySubtitle;
-
   /// Section header: planned workouts due today.
   ///
   /// In en, this message translates to:
@@ -6165,12 +6153,6 @@ abstract class AppLocalizations {
   /// **'Every run and walk, routes and personal bests'**
   String get trainRunWalkHistorySubtitle;
 
-  /// Section header: recently recorded workouts.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent'**
-  String get trainRecent;
-
   /// Empty state.
   ///
   /// In en, this message translates to:
@@ -6182,12 +6164,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'When you finish a workout, what you actually did shows up here.'**
   String get trainRecentEmptyBody;
-
-  /// Section header: histories.
-  ///
-  /// In en, this message translates to:
-  /// **'History'**
-  String get trainHistory;
 
   /// State of an open workout saved for later.
   ///
@@ -14029,18 +14005,6 @@ abstract class AppLocalizations {
   /// **'Training days per week, oldest first: {days}'**
   String progressConsistencySemantic(String days);
 
-  /// Section header.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent workouts'**
-  String get progressRecentWorkouts;
-
-  /// Subtitle of the workout history row.
-  ///
-  /// In en, this message translates to:
-  /// **'Every workout you recorded'**
-  String get progressHistorySubtitle;
-
   /// Weekly goal row label.
   ///
   /// In en, this message translates to:
@@ -15006,12 +14970,6 @@ abstract class AppLocalizations {
   /// **'Later'**
   String get verifyLater;
 
-  /// Under the verify form: verification is optional in the testing release.
-  ///
-  /// In en, this message translates to:
-  /// **'Verifying is optional for now. It only confirms this address; it changes nothing else.'**
-  String get verifyOptional;
-
   /// The server confirms the address is verified.
   ///
   /// In en, this message translates to:
@@ -15054,17 +15012,131 @@ abstract class AppLocalizations {
   /// **'Change password'**
   String get mePasswordSubtitle;
 
-  /// Setup › features: verify the email of the new account.
+  /// Sign-up refused: the server has no email sender, so a new account could never be verified. No account exists.
+  ///
+  /// In en, this message translates to:
+  /// **'New accounts can\'t be created right now because email verification isn\'t available. Nothing was created; please try again later.'**
+  String get accountErrorRegistrationUnavailable;
+
+  /// Title of the step every new account completes before setup.
   ///
   /// In en, this message translates to:
   /// **'Verify your email'**
-  String get setupVerifyTitle;
+  String get verifyGateTitle;
 
-  /// Setup row subtitle.
+  /// Under the title: where the code went (the registered address).
   ///
   /// In en, this message translates to:
-  /// **'We sent you a code. Optional: you can also do it later in Me.'**
-  String get setupVerifySubtitle;
+  /// **'Enter the 8-digit code we sent to {email}.'**
+  String verifyGateLead(String email);
+
+  /// Why the step is required (new account).
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying your email is needed to finish setting up your account. It confirms this address is yours and changes nothing else.'**
+  String get verifyGateWhy;
+
+  /// Button: ask the server whether the address was verified meanwhile (on another device).
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get verifyCheckAgain;
+
+  /// Quiet button on the verification step.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out or use another account'**
+  String get verifyGateSignOut;
+
+  /// Confirmation title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get verifyGateSignOutTitle;
+
+  /// Confirmation body: signing out deletes nothing and does not change the pending account.
+  ///
+  /// In en, this message translates to:
+  /// **'This account stays as it is, waiting for verification. Sign in again any time to verify it.'**
+  String get verifyGateSignOutBody;
+
+  /// Under the verify form when nothing is due.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying confirms this address is yours. It changes nothing else.'**
+  String get verifyScope;
+
+  /// Under the verify form for an existing account in its grace period: the server's deadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify by {date} to keep syncing. It confirms this address is yours and changes nothing else.'**
+  String verifyGraceWhy(String date);
+
+  /// Under the verify form for an existing account past its deadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing is paused until you verify. Everything you save stays on this phone and goes up once you verify.'**
+  String get verifyPausedWhy;
+
+  /// Today notice for an existing account in its grace period (the server's deadline).
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email by {date} to keep syncing.'**
+  String todayVerifyBy(String date);
+
+  /// Today notice for an existing account past its deadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email to sync again. What you save stays on this phone.'**
+  String get todayVerifyPaused;
+
+  /// The one action of the Today notice: opens the verification form.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get todayVerifyAction;
+
+  /// Me › Email second line: the grace deadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify by {date}'**
+  String meEmailVerifyBy(String date);
+
+  /// Me › Email second line past the deadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing paused until verified'**
+  String get meEmailPaused;
+
+  /// Eat › History & trends panel subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review your intake by week or month'**
+  String get eatHistoryTrendsSubtitle;
+
+  /// Screen-reader label of the whole Eat › History & trends panel.
+  ///
+  /// In en, this message translates to:
+  /// **'History and trends. Review your intake by week or month'**
+  String get eatHistoryTrendsSaid;
+
+  /// Train › Workouts section header: the latest recorded sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent workouts'**
+  String get trainRecentWorkouts;
+
+  /// Link in the Recent workouts header: opens Workout history.
+  ///
+  /// In en, this message translates to:
+  /// **'View all history'**
+  String get trainViewAllHistory;
+
+  /// Screen-reader label of View all history.
+  ///
+  /// In en, this message translates to:
+  /// **'View all workout history'**
+  String get trainViewAllHistorySaid;
 }
 
 class _AppLocalizationsDelegate

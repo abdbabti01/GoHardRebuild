@@ -2123,3 +2123,34 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
 - CI run 130 on `4cce829`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39697196717).
   Unsigned IPA run 49 on `feature/auth-recovery-verification` (`4cce829`), artifact `GoHard-Dev-unsigned-ipa`:
   **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/39697208591).
+
+## 23 Oct 2026 — Required email verification, Eat History & trends panel, one home for past workouts
+
+- Base: `main` at `6c0cc79`. Spec: GoHard_Verification_Eat_Train_Claude_Prompt.md. Branch `feature/verification-navigation`.
+  Guide: docs/AUTHENTICATION_EMAIL.md › 10 (boundary, migration `AddVerificationGrace`, rollout order). Contract and
+  default `minimumClientContract` now 2 (older apps show *Update GoHard*). Registration without a sender is refused (503).
+- API: `VerificationPolicyTests` 4 passed: a waiting account's token on every mapped signed-in route (over 40) gets 403
+  `EMAIL_VERIFICATION_REQUIRED` except exactly the six identity routes; verification opens the data; a correctly signed
+  token carrying the eligibility claim itself is still refused; refresh, sign-in, password change (15-character rule
+  kept) and reset do not bypass it; legacy grace set by the real migration on unverified accounts only, unchanged by
+  sign-in, refresh, resend and a new process, expired after 14 days, never marking anyone verified; a new account after
+  the rollout has none. `AccountEmailTests` updated (forged profile fields refused, no account without a sender).
+  Full suite (Debug, local) 218 passed. The shared test account fixture verifies through the real confirm route.
+- App: `flutter analyze` no issues; `check-l10n` 2,491 messages; full `flutter test` passed after one contract-number
+  fix in `food_ui_test` (713 + that file's 40). New: `verification_gate_test` (a 403 pauses the outbox untouched,
+  survives a restart and lost answers, verifying sends the change once with its operation id, no downgrade offline;
+  a new account's gate is stored before its session starts, per account), gate and sign-up widget tests, Eat panel
+  placement/semantics/no-entries test, Train three-item preview + history action + empty case, Progress without the
+  duplicates.
+- Renders (Flutter widgets, fixture data): docs/evidence/verification-navigation/{before,after,after-fr,after-ar}:
+  Eat, Train › Workouts (and empty), Progress in light/dark, 320 px at 2× text; the gate and Today's grace notice.
+  "Before" made from `main` with the same render file. Reviewed by eye; found and fixed: the gate's brand under the
+  title (moved above), and the panel link (also the existing recap link) exposing no tap action to screen readers.
+- Native (Pixel_7 emulator, capture API on a disposable database, dropped afterwards): `journey_verify_nav_test`
+  **passed**: registration lands on the code step with no frame of the app, the API refuses that account's snapshot
+  (403), the captured code verifies, setup once, Today, snapshot 200, Eat panel → History & trends, Train › Workouts
+  empty state → Workout history, Progress without them; account deleted. Captures docs/evidence/screenshots/vn-*.
+  **Not verified on the device:** the restart of a waiting account. Three two-phase attempts failed on the emulator's
+  reinstall (`INSTALL_FAILED_INSUFFICIENT_STORAGE`, 491 MB free); stopped there. Restart persistence is covered by
+  `verification_gate_test` (real Drift file, restart).
+- Not done here: merge, deploy, Railway/Resend/Cloudflare changes, real email, iPhone.

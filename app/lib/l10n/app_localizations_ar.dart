@@ -4207,12 +4207,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'سجّل حصة خاصة بك هنا. يمكن للخطة أن تجدولها لك.';
 
   @override
-  String get trainWorkoutHistory => 'سجل الحصص';
-
-  @override
-  String get trainWorkoutHistorySubtitle => 'كل حصة سجّلتها';
-
-  @override
   String get trainScheduledToday => 'مجدولة اليوم';
 
   @override
@@ -4244,17 +4238,11 @@ class AppLocalizationsAr extends AppLocalizations {
       'كل جري ومشي، المسارات وأفضل الأرقام الشخصية';
 
   @override
-  String get trainRecent => 'الأحدث';
-
-  @override
   String get trainRecentEmptyTitle => 'لم تُسجَّل أي حصة بعد';
 
   @override
   String get trainRecentEmptyBody =>
       'عندما تُنهي حصة، يظهر هنا ما أدّيته فعلًا.';
-
-  @override
-  String get trainHistory => 'السجل';
 
   @override
   String get trainSavedForLater => 'محفوظة لوقت لاحق';
@@ -9787,12 +9775,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get progressRecentWorkouts => 'الحصص الأخيرة';
-
-  @override
-  String get progressHistorySubtitle => 'كل حصة سجّلتها';
-
-  @override
   String get progressWorkoutsLabel => 'الحصص التدريبية';
 
   @override
@@ -10626,10 +10608,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get verifyLater => 'لاحقًا';
 
   @override
-  String get verifyOptional =>
-      'التأكيد اختياري حاليًا. إنه يؤكّد هذا العنوان فقط ولا يغيّر شيئًا آخر.';
-
-  @override
   String get verifyVerified => 'تم تأكيد بريدك الإلكتروني.';
 
   @override
@@ -10651,9 +10629,80 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mePasswordSubtitle => 'تغيير كلمة المرور';
 
   @override
-  String get setupVerifyTitle => 'أكّد بريدك الإلكتروني';
+  String get accountErrorRegistrationUnavailable =>
+      'لا يمكن إنشاء حساب جديد الآن لأن تأكيد البريد الإلكتروني غير متاح. لم يُنشأ أي شيء؛ حاول لاحقًا.';
 
   @override
-  String get setupVerifySubtitle =>
-      'أرسلنا إليك رمزًا. اختياري: يمكنك فعل ذلك لاحقًا من «حسابي».';
+  String get verifyGateTitle => 'أكّد بريدك الإلكتروني';
+
+  @override
+  String verifyGateLead(String email) {
+    return 'أدخل الرمز المكوّن من 8 أرقام الذي أرسلناه إلى $email.';
+  }
+
+  @override
+  String get verifyGateWhy =>
+      'تأكيد بريدك الإلكتروني ضروري لإكمال إعداد حسابك. إنه يؤكّد أن هذا العنوان يخصّك ولا يغيّر شيئًا آخر.';
+
+  @override
+  String get verifyCheckAgain => 'التحقّق مجددًا';
+
+  @override
+  String get verifyGateSignOut => 'تسجيل الخروج أو استخدام حساب آخر';
+
+  @override
+  String get verifyGateSignOutTitle => 'تسجيل الخروج؟';
+
+  @override
+  String get verifyGateSignOutBody =>
+      'يبقى هذا الحساب كما هو بانتظار التأكيد. سجّل الدخول مجددًا في أي وقت لتأكيده.';
+
+  @override
+  String get verifyScope =>
+      'التأكيد يُثبت أن هذا العنوان يخصّك. لا يغيّر شيئًا آخر.';
+
+  @override
+  String verifyGraceWhy(String date) {
+    return 'أكّده قبل $date لتستمر المزامنة. إنه يؤكّد أن هذا العنوان يخصّك ولا يغيّر شيئًا آخر.';
+  }
+
+  @override
+  String get verifyPausedWhy =>
+      'المزامنة متوقفة حتى تؤكّد. كل ما تحفظه يبقى على هذا الهاتف ويُرسَل بعد التأكيد.';
+
+  @override
+  String todayVerifyBy(String date) {
+    return 'أكّد بريدك الإلكتروني قبل $date لتستمر المزامنة.';
+  }
+
+  @override
+  String get todayVerifyPaused =>
+      'أكّد بريدك الإلكتروني لتستأنف المزامنة. ما تحفظه يبقى على هذا الهاتف.';
+
+  @override
+  String get todayVerifyAction => 'تأكيد';
+
+  @override
+  String meEmailVerifyBy(String date) {
+    return 'يجب التأكيد قبل $date';
+  }
+
+  @override
+  String get meEmailPaused => 'المزامنة متوقفة حتى التأكيد';
+
+  @override
+  String get eatHistoryTrendsSubtitle => 'راجع ما تتناوله أسبوعيًا أو شهريًا';
+
+  @override
+  String get eatHistoryTrendsSaid =>
+      'السجل والاتجاهات. راجع ما تتناوله أسبوعيًا أو شهريًا';
+
+  @override
+  String get trainRecentWorkouts => 'الحصص الأخيرة';
+
+  @override
+  String get trainViewAllHistory => 'عرض السجل كله';
+
+  @override
+  String get trainViewAllHistorySaid => 'عرض سجل الحصص كله';
 }

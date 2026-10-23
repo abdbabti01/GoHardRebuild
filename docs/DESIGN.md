@@ -242,7 +242,7 @@ Superseded on the same day by Today option 2 above (the photo-header tiles and t
   960 × 640, JPEG 82), through the same `PanelPhoto` fade into the theme's tint. In a paired tile the words may use 85 %
   of the width over the photograph's faded side.
 - Today has no Run / Walk History link: the tile's one action is Start / Resume. **Run / Walk history** is in Train ›
-  Workouts, beside Run / Walk. Nutrition history is **History** in Eat, under the date.
+  Workouts, beside Run / Walk. Nutrition history is **History & trends** in Eat: since 23 Oct 2026 a full-width pale panel (history glyph, serif title, "Review your intake by week or month", chevron) under the day's summary and above the meals, the one entry.
 - The Nutrition panel on Today: the words, Log food, Journal, and (when water is tracked) the water line with **+250 mL**
   and **Other amount**; no goals link and no sliders icon (both in Eat, Customize tracking now labelled).
 - Renders: `docs/evidence/today-history-water/`; device captures `docs/evidence/screenshots/thw-01…08`.
@@ -346,8 +346,9 @@ Plan / Progress kept in `shellProvider`.
   workout has a recorded result**; Current; "X of Y"; Missed; Paused; Upcoming. Selection is the accent border;
   "Current" is a word. The selected week lists weekday and date, a round icon, name, "N exercises · M planned sets"
   and a state pill with an icon and a word.
-- **Workouts.** Open workouts, start a manual workout or a run, recent workouts, and History (Workout history, Run
-  history), always there. **Progress** keeps its real counts.
+- **Workouts.** Open workouts, start a manual workout, Run / Walk and Run / Walk history, then **Recent workouts**
+  (the latest three) with **View all history** in its header, there even when nothing is recorded (23 Oct 2026: the one
+  home for past sessions; the separate History card is gone). **Progress** keeps its real counts.
 - Recording, detail, plan setup and review, pickers and the occasion sheet use the shared system; behaviour, keys,
   timers and rules are unchanged.
 
@@ -439,8 +440,8 @@ date range in figures, Set weekly goals / Edit goals as the panel's quiet link) 
 photograph: an outlined icon, the label, "n of target" (or "n recorded" with no bar) and a 10 px rail capped at full.
 Then **Strength trends** (up to two recently recorded exercises: name, latest result in the serif, date, a small chart;
 See all → a searchable list), **Am I following my plan?** (unchanged figures, "View your plan"), **Last week's recap**
-(a pale card with a calendar icon), then the quieter consistency bars, recent workouts, Workout history and personal
-bests. The goal form is a sheet: one sentence ("These are weekly activity targets. Your training plan stays the same."),
+(a pale card with a calendar icon), then the quieter consistency bars and personal bests (since 23 Oct 2026 recent workouts
+and Workout history are only in Workouts; chart points and recap sessions still open their workout). The goal form is a sheet: one sentence ("These are weekly activity targets. Your training plan stays the same."),
 two numeric fields with helper text, Save goals.
 
 The **exercise trend** page: the photo panel (equipment · category, name, Latest recorded, the result, its date),

@@ -11,6 +11,7 @@ import '../core/device_prefs.dart';
 import '../core/language.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
+import '../features/auth/account_security.dart' show VerifyEmailScreen;
 import '../features/auth/auth_screen.dart';
 import '../features/coach/coach_prefs.dart';
 import '../features/me/reminders.dart';
@@ -77,6 +78,9 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
     final owner = ref.watch(ownerProvider);
     // A new account's setup, until it is finished or skipped (docs/COACH.md › Setup).
     final setup = owner == null ? null : ref.watch(coachPrefsProvider.select((p) => p.setup[owner]));
+    // A new account verifies its address before anything else (docs/AUTHENTICATION_EMAIL.md › Required verification).
+    // Kept per account on the phone, so a restart, an expired token or no connection brings it back here.
+    final access = owner == null ? null : ref.watch(accountAccessProvider);
     final appearance = ref.watch(appearanceProvider);
     ref.listen(profileProvider, (_, next) => ref.read(appearanceProvider.notifier).adoptAccountAppearance(next.value?.appearance));
     final accent = appearance.accent;
@@ -112,7 +116,12 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
           : owner == null
               ? const AuthScreen()
               // Keyed by owner: switching accounts rebuilds the whole shell with none of the previous owner's state.
-              : setup != null
+              // While the account's access is still being read, nothing of it is shown (no Today before the gate).
+              : !access!.hasValue && !access.hasError
+                  ? const Scaffold()
+                  : access.value?.mustVerifyFirst ?? false
+                  ? VerifyEmailScreen(key: ValueKey('verify-$owner'), gate: true)
+                  : setup != null
                   ? SetupScreen(key: ValueKey('setup-$owner'), owner: owner, step: setup)
                   : HomeShell(key: ValueKey(owner)),
     );

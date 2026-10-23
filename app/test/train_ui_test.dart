@@ -6,6 +6,7 @@ import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
+import 'package:gohard_rebuild/features/body/body_screens.dart' show BodyProgressScreen;
 import 'package:gohard_rebuild/features/plans/plan_progress.dart';
 import 'package:gohard_rebuild/features/plans/plan_screens.dart';
 import 'package:gohard_rebuild/features/workout/workout_flow.dart';
@@ -204,8 +205,8 @@ void main() {
     expect(Theme.of(tester.element(find.text('Am I following my plan?'))).extension<GoColors>()!.accent, GoColors.of(Accent.green, Brightness.dark).accent);
     expect(container.read(shellProvider).trainView, TrainView.progress);
 
-    await _tap(tester, 'progress-history');
-    expect(find.byType(WorkoutHistoryScreen), findsOneWidget);
+    await _tap(tester, 'progress-body');
+    expect(find.byType(BodyProgressScreen), findsOneWidget);
     container.read(appearanceProvider.notifier).setAccent(Accent.pink);
     await tester.pumpAndSettle();
     await tester.pageBack();
@@ -216,29 +217,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Workout history is offered in Workouts and in Progress, with and without recorded training', (tester) async {
-    for (final workouts in [const <Json>[], [_finished('m1', '2026-10-09')]]) {
+  testWidgets('Workouts is the one home for past sessions: the latest three and View all history, also when empty; Progress repeats neither', (tester) async {
+    final four = [for (var i = 1; i <= 4; i++) {..._finished('m$i', '2026-10-0${i + 5}'), 'title': 'Session $i'}];
+    for (final workouts in [const <Json>[], four]) {
       await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, workouts: workouts)))!, size: const Size(390, 1400));
       await _openTrain(tester, 'workouts');
       expect(find.byKey(const Key('start-manual')), findsOneWidget);
       expect(find.descendant(of: find.byKey(const Key('train-start-run')), matching: find.text('Run / Walk')), findsOneWidget);
       expect(find.text('Run / Walk history'), findsOneWidget);
-      expect(find.text(workouts.isEmpty ? 'No workouts recorded yet' : 'Push day'), findsOneWidget);
+      expect(find.text('Recent workouts'), findsOneWidget);
+      if (workouts.isEmpty) {
+        expect(find.descendant(of: find.byKey(const Key('train-recent-empty')), matching: find.text('No workouts recorded yet')), findsOneWidget);
+      } else {
+        // Newest first, three of them; the oldest is only in the history.
+        final recent = find.byKey(const Key('train-recent'));
+        expect([for (final i in [4, 3, 2, 1]) find.descendant(of: recent, matching: find.text('Session $i')).evaluate().length], [1, 1, 1, 0]);
+      }
+      expect(find.byKey(const Key('train-history')), findsOneWidget, reason: 'one history action, in the section header');
+      expect(find.text('Workout history'), findsNothing, reason: 'no separate history card');
       await _tap(tester, 'train-history');
       expect(find.byType(WorkoutHistoryScreen), findsOneWidget);
+      if (workouts.isNotEmpty) expect(find.text('Session 1'), findsOneWidget);
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      // The route the native journeys take: Train, Progress, the row that reads "Workout history".
       await _tap(tester, 'train-progress');
       expect(find.text(workouts.isEmpty ? 'No training recorded yet' : 'Am I consistent?'), findsOneWidget);
-      await tester.ensureVisible(find.text('Workout history'));
+      await tester.scrollUntilVisible(find.byKey(const Key('progress-recap')), 200, scrollable: find.byType(Scrollable).first);
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -2000));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Workout history'));
-      await tester.pumpAndSettle();
-      expect(find.byType(WorkoutHistoryScreen), findsOneWidget);
-      await tester.pageBack();
-      await tester.pumpAndSettle();
+      for (final gone in ['Recent workouts', 'Workout history', 'Session 4']) {
+        expect(find.text(gone), findsNothing, reason: '$gone lives in Workouts only');
+      }
+      expect(find.byKey(const Key('progress-history')), findsNothing);
       await tester.pumpWidget(const SizedBox());
     }
   });

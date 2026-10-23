@@ -980,8 +980,11 @@ class PassCard extends StatelessWidget {
 
 /// Secondary page: back, large title, one scroll view that respects keyboard and safe areas.
 class AppPage extends StatelessWidget {
-  const AppPage({super.key, required this.title, required this.children, this.actions, this.bottom, this.subtitle});
+  const AppPage({super.key, required this.title, required this.children, this.actions, this.bottom, this.subtitle, this.above});
   final String title;
+
+  /// Over the title (the compact brand on a page that stands in for the app, such as the verification step).
+  final Widget? above;
   final String? subtitle;
   final List<Widget> children;
   final List<Widget>? actions;
@@ -993,6 +996,7 @@ class AppPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = EdgeInsets.fromLTRB(context.inset, 0, context.inset, 28);
     final content = [
+      if (above != null) ...[above!, const SizedBox(height: 18)],
       Heading(title, size: 36, serif: true),
       if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(subtitle!, style: context.sansStyle(16, color: context.c.secondary))),
       const SizedBox(height: 18),
@@ -1108,4 +1112,43 @@ class BrandBadge extends StatelessWidget {
   final double width;
   @override
   Widget build(BuildContext context) => Image.asset('assets/images/gohard-badge.png', width: width, excludeFromSemantics: true);
+}
+
+/// A substantial way to another page, in the pale panel: an icon, a title in the serif, a line saying what is there,
+/// and a chevron that points the reading way. The whole panel is one target, read out as [semanticLabel]; its words
+/// wrap with large text and long translations.
+class PanelLink extends StatelessWidget {
+  const PanelLink({super.key, required this.icon, required this.title, required this.subtitle, required this.semanticLabel, required this.onTap});
+  final Widget icon;
+  final String title, subtitle, semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true, label: semanticLabel, onTap: onTap,
+        child: ExcludeSemantics(
+          child: Pressable(
+            borderRadius: BorderRadius.circular(Radii.panel),
+            onTap: onTap,
+            child: PanelTheme(
+              child: Builder(
+                builder: (context) => PanelSurface(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                  child: Row(children: [
+                    IconTheme.merge(data: IconThemeData(size: 26, color: context.c.text), child: icon),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(title, style: context.pageTitleStyle(21)),
+                        Text(subtitle, style: context.sansStyle(15, color: context.c.secondary)),
+                      ]),
+                    ),
+                    Icon(Icons.chevron_right, color: context.c.text),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }

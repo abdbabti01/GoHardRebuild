@@ -3979,12 +3979,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Record a workout of your own here. A plan can schedule them for you.';
 
   @override
-  String get trainWorkoutHistory => 'Workout history';
-
-  @override
-  String get trainWorkoutHistorySubtitle => 'Every workout you recorded';
-
-  @override
   String get trainScheduledToday => 'Scheduled today';
 
   @override
@@ -4017,17 +4011,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Every run and walk, routes and personal bests';
 
   @override
-  String get trainRecent => 'Recent';
-
-  @override
   String get trainRecentEmptyTitle => 'No workouts recorded yet';
 
   @override
   String get trainRecentEmptyBody =>
       'When you finish a workout, what you actually did shows up here.';
-
-  @override
-  String get trainHistory => 'History';
 
   @override
   String get trainSavedForLater => 'Saved for later';
@@ -9374,12 +9362,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get progressRecentWorkouts => 'Recent workouts';
-
-  @override
-  String get progressHistorySubtitle => 'Every workout you recorded';
-
-  @override
   String get progressWorkoutsLabel => 'Workouts';
 
   @override
@@ -10148,10 +10130,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verifyLater => 'Later';
 
   @override
-  String get verifyOptional =>
-      'Verifying is optional for now. It only confirms this address; it changes nothing else.';
-
-  @override
   String get verifyVerified => 'Your email is verified.';
 
   @override
@@ -10173,9 +10151,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mePasswordSubtitle => 'Change password';
 
   @override
-  String get setupVerifyTitle => 'Verify your email';
+  String get accountErrorRegistrationUnavailable =>
+      'New accounts can\'t be created right now because email verification isn\'t available. Nothing was created; please try again later.';
 
   @override
-  String get setupVerifySubtitle =>
-      'We sent you a code. Optional: you can also do it later in Me.';
+  String get verifyGateTitle => 'Verify your email';
+
+  @override
+  String verifyGateLead(String email) {
+    return 'Enter the 8-digit code we sent to $email.';
+  }
+
+  @override
+  String get verifyGateWhy =>
+      'Verifying your email is needed to finish setting up your account. It confirms this address is yours and changes nothing else.';
+
+  @override
+  String get verifyCheckAgain => 'Check again';
+
+  @override
+  String get verifyGateSignOut => 'Sign out or use another account';
+
+  @override
+  String get verifyGateSignOutTitle => 'Sign out?';
+
+  @override
+  String get verifyGateSignOutBody =>
+      'This account stays as it is, waiting for verification. Sign in again any time to verify it.';
+
+  @override
+  String get verifyScope =>
+      'Verifying confirms this address is yours. It changes nothing else.';
+
+  @override
+  String verifyGraceWhy(String date) {
+    return 'Verify by $date to keep syncing. It confirms this address is yours and changes nothing else.';
+  }
+
+  @override
+  String get verifyPausedWhy =>
+      'Syncing is paused until you verify. Everything you save stays on this phone and goes up once you verify.';
+
+  @override
+  String todayVerifyBy(String date) {
+    return 'Verify your email by $date to keep syncing.';
+  }
+
+  @override
+  String get todayVerifyPaused =>
+      'Verify your email to sync again. What you save stays on this phone.';
+
+  @override
+  String get todayVerifyAction => 'Verify';
+
+  @override
+  String meEmailVerifyBy(String date) {
+    return 'Verify by $date';
+  }
+
+  @override
+  String get meEmailPaused => 'Syncing paused until verified';
+
+  @override
+  String get eatHistoryTrendsSubtitle => 'Review your intake by week or month';
+
+  @override
+  String get eatHistoryTrendsSaid =>
+      'History and trends. Review your intake by week or month';
+
+  @override
+  String get trainRecentWorkouts => 'Recent workouts';
+
+  @override
+  String get trainViewAllHistory => 'View all history';
+
+  @override
+  String get trainViewAllHistorySaid => 'View all workout history';
 }

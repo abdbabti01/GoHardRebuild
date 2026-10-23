@@ -28,6 +28,10 @@ public class User
     /// <summary>When the person proved they receive mail at <see cref="Email"/>. Server-owned; null = not verified
     /// (every account from before verification existed).</summary>
     public DateTime? EmailVerifiedAtUtc { get; set; }
+    /// <summary>Set once, by migration AddVerificationGrace, on accounts that existed unverified when verification
+    /// became required: their grace period runs from here (Auth:VerificationGraceDays). Null on every account created
+    /// later, which must verify at once. Nothing in the app writes it. docs/AUTHENTICATION_EMAIL.md.</summary>
+    public DateTime? VerificationGraceFromUtc { get; set; }
 }
 
 public class RefreshToken

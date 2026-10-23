@@ -852,6 +852,9 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<string>("TrainingSetupJson")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("VerificationGraceFromUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int?>("WaterGoalMl")
                         .HasColumnType("integer");
 

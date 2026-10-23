@@ -5599,14 +5599,6 @@
   "@trainCoachWorkoutsNoPlan": {
     "description": "Coach line on Workouts without a plan."
   },
-  "trainWorkoutHistory": "Workout history",
-  "@trainWorkoutHistory": {
-    "description": "Row: workout history."
-  },
-  "trainWorkoutHistorySubtitle": "Every workout you recorded",
-  "@trainWorkoutHistorySubtitle": {
-    "description": "Row subtitle: workout history."
-  },
   "trainScheduledToday": "Scheduled today",
   "@trainScheduledToday": {
     "description": "Section header: planned workouts due today."
@@ -5648,10 +5640,6 @@
   "@trainRunWalkHistorySubtitle": {
     "description": "Row subtitle."
   },
-  "trainRecent": "Recent",
-  "@trainRecent": {
-    "description": "Section header: recently recorded workouts."
-  },
   "trainRecentEmptyTitle": "No workouts recorded yet",
   "@trainRecentEmptyTitle": {
     "description": "Empty state."
@@ -5659,10 +5647,6 @@
   "trainRecentEmptyBody": "When you finish a workout, what you actually did shows up here.",
   "@trainRecentEmptyBody": {
     "description": "Empty state."
-  },
-  "trainHistory": "History",
-  "@trainHistory": {
-    "description": "Section header: histories."
   },
   "trainSavedForLater": "Saved for later",
   "@trainSavedForLater": {
@@ -13106,14 +13090,6 @@
       }
     }
   },
-  "progressRecentWorkouts": "Recent workouts",
-  "@progressRecentWorkouts": {
-    "description": "Section header."
-  },
-  "progressHistorySubtitle": "Every workout you recorded",
-  "@progressHistorySubtitle": {
-    "description": "Subtitle of the workout history row."
-  },
   "progressWorkoutsLabel": "Workouts",
   "@progressWorkoutsLabel": {
     "description": "Weekly goal row label."
@@ -14166,10 +14142,6 @@
   "@verifyLater": {
     "description": "Button: leave without verifying."
   },
-  "verifyOptional": "Verifying is optional for now. It only confirms this address; it changes nothing else.",
-  "@verifyOptional": {
-    "description": "Under the verify form: verification is optional in the testing release."
-  },
   "verifyVerified": "Your email is verified.",
   "@verifyVerified": {
     "description": "The server confirms the address is verified."
@@ -14198,12 +14170,112 @@
   "@mePasswordSubtitle": {
     "description": "Me › Password row subtitle."
   },
-  "setupVerifyTitle": "Verify your email",
-  "@setupVerifyTitle": {
-    "description": "Setup › features: verify the email of the new account."
+  "accountErrorRegistrationUnavailable": "New accounts can't be created right now because email verification isn't available. Nothing was created; please try again later.",
+  "@accountErrorRegistrationUnavailable": {
+    "description": "Sign-up refused: the server has no email sender, so a new account could never be verified. No account exists."
   },
-  "setupVerifySubtitle": "We sent you a code. Optional: you can also do it later in Me.",
-  "@setupVerifySubtitle": {
-    "description": "Setup row subtitle."
+  "verifyGateTitle": "Verify your email",
+  "@verifyGateTitle": {
+    "description": "Title of the step every new account completes before setup."
+  },
+  "verifyGateLead": "Enter the 8-digit code we sent to {email}.",
+  "@verifyGateLead": {
+    "description": "Under the title: where the code went (the registered address).",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "you@example.com"
+      }
+    }
+  },
+  "verifyGateWhy": "Verifying your email is needed to finish setting up your account. It confirms this address is yours and changes nothing else.",
+  "@verifyGateWhy": {
+    "description": "Why the step is required (new account)."
+  },
+  "verifyCheckAgain": "Check again",
+  "@verifyCheckAgain": {
+    "description": "Button: ask the server whether the address was verified meanwhile (on another device)."
+  },
+  "verifyGateSignOut": "Sign out or use another account",
+  "@verifyGateSignOut": {
+    "description": "Quiet button on the verification step."
+  },
+  "verifyGateSignOutTitle": "Sign out?",
+  "@verifyGateSignOutTitle": {
+    "description": "Confirmation title."
+  },
+  "verifyGateSignOutBody": "This account stays as it is, waiting for verification. Sign in again any time to verify it.",
+  "@verifyGateSignOutBody": {
+    "description": "Confirmation body: signing out deletes nothing and does not change the pending account."
+  },
+  "verifyScope": "Verifying confirms this address is yours. It changes nothing else.",
+  "@verifyScope": {
+    "description": "Under the verify form when nothing is due."
+  },
+  "verifyGraceWhy": "Verify by {date} to keep syncing. It confirms this address is yours and changes nothing else.",
+  "@verifyGraceWhy": {
+    "description": "Under the verify form for an existing account in its grace period: the server's deadline.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Friday, November 6"
+      }
+    }
+  },
+  "verifyPausedWhy": "Syncing is paused until you verify. Everything you save stays on this phone and goes up once you verify.",
+  "@verifyPausedWhy": {
+    "description": "Under the verify form for an existing account past its deadline."
+  },
+  "todayVerifyBy": "Verify your email by {date} to keep syncing.",
+  "@todayVerifyBy": {
+    "description": "Today notice for an existing account in its grace period (the server's deadline).",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Friday, November 6"
+      }
+    }
+  },
+  "todayVerifyPaused": "Verify your email to sync again. What you save stays on this phone.",
+  "@todayVerifyPaused": {
+    "description": "Today notice for an existing account past its deadline."
+  },
+  "todayVerifyAction": "Verify",
+  "@todayVerifyAction": {
+    "description": "The one action of the Today notice: opens the verification form."
+  },
+  "meEmailVerifyBy": "Verify by {date}",
+  "@meEmailVerifyBy": {
+    "description": "Me › Email second line: the grace deadline.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Friday, November 6"
+      }
+    }
+  },
+  "meEmailPaused": "Syncing paused until verified",
+  "@meEmailPaused": {
+    "description": "Me › Email second line past the deadline."
+  },
+  "eatHistoryTrendsSubtitle": "Review your intake by week or month",
+  "@eatHistoryTrendsSubtitle": {
+    "description": "Eat › History & trends panel subtitle."
+  },
+  "eatHistoryTrendsSaid": "History and trends. Review your intake by week or month",
+  "@eatHistoryTrendsSaid": {
+    "description": "Screen-reader label of the whole Eat › History & trends panel."
+  },
+  "trainRecentWorkouts": "Recent workouts",
+  "@trainRecentWorkouts": {
+    "description": "Train › Workouts section header: the latest recorded sessions."
+  },
+  "trainViewAllHistory": "View all history",
+  "@trainViewAllHistory": {
+    "description": "Link in the Recent workouts header: opens Workout history."
+  },
+  "trainViewAllHistorySaid": "View all workout history",
+  "@trainViewAllHistorySaid": {
+    "description": "Screen-reader label of View all history."
   }
 }

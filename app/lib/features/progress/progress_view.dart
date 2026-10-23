@@ -16,7 +16,6 @@ import '../activity/move_widgets.dart' show PersonalBestsCard;
 import '../body/body_screens.dart' show BodyProgressScreen;
 import '../plans/plan_progress.dart' show dateRange;
 import '../shell/home_shell.dart';
-import '../workout/workout_detail_screen.dart';
 import '../workout/workout_flow.dart';
 import 'goal_repository.dart';
 import 'recap_screen.dart';
@@ -25,7 +24,9 @@ import 'trends.dart';
 import 'weekly.dart';
 
 /// Train › Progress (docs/PROGRESS.md): this week's activity against the goals the person chose, strength trends,
-/// plan adherence, last week's recap, then the quieter history. Everything is computed from local records.
+/// plan adherence, last week's recap, consistency and personal bests. Recorded sessions themselves live in Train ›
+/// Workouts (Recent workouts and the full history); a chart point or a recap opens the workout it came from.
+/// Everything is computed from local records.
 
 final weeklyGoalListProvider = Provider<List<WeeklyGoal>>((ref) => [for (final r in ref.watch(weeklyGoalsProvider).value ?? const <Stored<WeeklyGoal>>[]) r.value]);
 final _runListProvider = Provider<List<Run>>((ref) => [for (final r in ref.watch(runsProvider).value ?? const <Stored<Run>>[]) r.value]);
@@ -60,7 +61,6 @@ class ProgressView extends ConsumerWidget {
     final primary = ref.watch(primaryPlanProvider);
     final index = ref.watch(trendIndexProvider);
     final weeks = ref.watch(completedWeeksProvider);
-    final recent = ([for (final w in ref.watch(workoutListProvider)) if (!w.isDeleted && !w.isOpen) w]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc))).take(3).toList();
     final previews = [for (final t in index.recent) if (t.metric != TrendMetric.none) t].take(2).toList();
     final most = p.weeks.fold<int>(1, (m, w) => w.$2 > m ? w.$2 : m);
     const gap = SizedBox(height: 10), between = SizedBox(height: 28);
@@ -137,16 +137,6 @@ class ProgressView extends ConsumerWidget {
           ),
         ]),
       ),
-      if (recent.isNotEmpty) ...[
-        between,
-        SectionHeader(l.progressRecentWorkouts),
-        gap,
-        GroupCard(children: [for (final w in recent) WorkoutRow(w, grouped: true)]),
-      ],
-      between,
-      GroupCard(children: [
-        GroupRow(key: const Key('progress-history'), icon: Icons.history, title: l.workoutHistoryTitle, subtitle: l.progressHistorySubtitle, onTap: () => push(context, const WorkoutHistoryScreen())),
-      ]),
       // Run / Walk personal bests, once something is saved: the same projection History shows.
       if (ref.watch(_runListProvider).any((r) => !r.isDeleted && !r.isOpen)) ...[between, const PersonalBestsCard()],
     ]);
@@ -334,33 +324,12 @@ class _RecapLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final range = dateRange(monday, addDays(monday, 6));
-    return Semantics(
-      button: true, label: older > 0 ? context.l10n.progressRecapLinkSemanticOlder(range) : context.l10n.progressRecapLinkSemantic(range),
-      child: ExcludeSemantics(
-        child: Pressable(
-          key: const Key('progress-recap'),
-          borderRadius: BorderRadius.circular(Radii.panel),
-          onTap: () => push(context, WeeklyRecapScreen(monday: monday)),
-          child: PanelTheme(
-            child: Builder(
-              builder: (context) => PanelSurface(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 12, 14).resolve(Directionality.of(context)),
-                child: Row(children: [
-                  Icon(Icons.event_available_outlined, size: 26, color: context.c.text),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(context.l10n.progressRecapLinkTitle, style: context.pageTitleStyle(21)),
-                      Text(older > 0 ? context.l10n.progressRecapLinkOlder(range) : range, style: context.sansStyle(15, color: context.c.secondary)),
-                    ]),
-                  ),
-                  Icon(Icons.chevron_right, color: context.c.text),
-                ]),
-              ),
-            ),
-          ),
-        ),
-      ),
+    final l = context.l10n;
+    return PanelLink(
+      key: const Key('progress-recap'), icon: const Icon(Icons.event_available_outlined), title: l.progressRecapLinkTitle,
+      subtitle: older > 0 ? l.progressRecapLinkOlder(range) : range,
+      semanticLabel: older > 0 ? l.progressRecapLinkSemanticOlder(range) : l.progressRecapLinkSemantic(range),
+      onTap: () => push(context, WeeklyRecapScreen(monday: monday)),
     );
   }
 }

@@ -44,6 +44,22 @@ abstract final class Kinds {
   /// Next-target history for one plan exercise (id = `planId|workoutId|occurrenceKey`): the suggestion kept as it is,
   /// and the target before an accepted one. Local only (docs/PROGRESSION.md).
   static const progression = 'progression';
+  /// What the server last said about this owner's access (id = the owner): required verification and a legacy grace
+  /// deadline. Local only, written only from server answers; never a code or a password. docs/AUTHENTICATION_EMAIL.md.
+  static const accountAccess = 'account_access';
+}
+
+/// The server's word on whether this account may use its data (docs/AUTHENTICATION_EMAIL.md › Required verification).
+extension type AccountAccess(Json j) {
+  /// The server refuses this account's data until it verifies its address.
+  bool get required => j['required'] as bool? ?? false;
+  bool get verified => j['verified'] as bool? ?? false;
+
+  /// The end of a legacy account's grace period; null for a new account (verify at once) and a verified one.
+  DateTime? get dueAt => DateTime.tryParse(j['dueAtUtc'] as String? ?? '')?.toLocal();
+
+  /// A new account: nothing of the app until it verifies. A legacy account past its deadline keeps the app, paused.
+  bool get mustVerifyFirst => required && dueAt == null;
 }
 
 extension type Prescription(Json j) {

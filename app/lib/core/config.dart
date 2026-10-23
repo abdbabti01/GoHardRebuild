@@ -3,7 +3,8 @@
 /// silently talking to some other server.
 class AppConfig {
   static const apiBase = String.fromEnvironment('GOHARD_API_BASE');
-  static const contractVersion = 1;
+  /// 2: required email verification (docs/AUTHENTICATION_EMAIL.md); a server asking for more shows the update notice.
+  static const contractVersion = 2;
 
   /// Which build this is, stamped by the iOS workflow (commit and workflow run number); 'dev' for a local build.
   static const commit = String.fromEnvironment('GOHARD_COMMIT', defaultValue: 'dev');

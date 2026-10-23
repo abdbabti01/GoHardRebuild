@@ -24,7 +24,7 @@ import 'ui_support.dart';
 class _Accounts implements Transport {
   final code = '01234567';
   final calls = <({String path, Object? data})>[];
-  bool offline = false, loseComplete = false;
+  bool offline = false, loseComplete = false, noSender = false;
   List<String> capabilities = ['account.security', 'account.email'];
   String? password = 'the old long passphrase';
 
@@ -35,6 +35,8 @@ class _Accounts implements Transport {
     if (offline) throw const TransportFailure('offline');
     final d = data is Map ? data : const {};
     switch (path) {
+      case '/auth/register' when noSender:
+        return const ApiResponse(503, {'code': 'EMAIL_UNAVAILABLE'});
       case '/auth/password-reset/request':
         return const ApiResponse(202, {'cooldownSeconds': 60});
       case '/auth/password-reset/verify':
@@ -257,6 +259,44 @@ void main() {
     await _type(tester, 'code-field', '01234567');
     await _tap(tester, 'verify-confirm');
     expect(server.calls.map((c) => c.path), containsAllInOrder(['/account/email-verification/request', '/account/email-verification/confirm']));
+  });
+
+  testWidgets('the new-account gate: the code field at once, nothing sent on opening, no Later or Back, Check again and sign out', (tester) async {
+    final (container, server) = await _open(tester, home: const VerifyEmailScreen(gate: true), signedIn: true, profile: {'emailVerified': false});
+    expect(find.byKey(const Key('verify-gate')), findsOneWidget);
+    expect(find.text('Verify your email'), findsOneWidget);
+    expect(find.textContaining('one@example.test'), findsOneWidget, reason: 'the registered address');
+    expect(find.byKey(const Key('code-field')), findsOneWidget, reason: 'registration already sent the code');
+    expect(server.calls.map((c) => c.path), isNot(contains('/account/email-verification/request')), reason: 'opening sends nothing');
+    expect(find.text('Later'), findsNothing);
+    expect(find.byType(BackButton), findsNothing);
+    expect(tester.widget<PopScope>(find.byType(PopScope).first).canPop, isFalse);
+
+    // A wrong code says so; offline says the server cannot be reached, not "wrong".
+    await _type(tester, 'code-field', '99999999');
+    await _tap(tester, 'verify-confirm');
+    expect(find.textContaining("That code isn't right"), findsOneWidget);
+    server.offline = true;
+    await _tap(tester, 'verify-confirm');
+    expect(find.textContaining('cannot be reached'), findsOneWidget);
+    server.offline = false;
+
+    await _tap(tester, 'verify-sign-out');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign out').last);
+    await tester.pumpAndSettle();
+    expect(container.read(sessionsProvider).current, isNull, reason: 'the pending account is left as it is, nothing deleted');
+    expect(server.calls.map((c) => c.path), isNot(contains('/account')));
+  });
+
+  testWidgets('without a sender, creating an account says why and that nothing was created', (tester) async {
+    final (container, _) = await _open(tester, server: _Accounts()..noSender = true);
+    await _tap(tester, 'auth-toggle');
+    await _type(tester, 'auth-name', 'New');
+    await _type(tester, 'auth-email', 'new@example.test');
+    await _type(tester, 'auth-password', 'a long enough passphrase');
+    await _tap(tester, 'auth-submit');
+    expect(find.textContaining("New accounts can't be created right now"), findsOneWidget);
+    expect(container.read(sessionsProvider).current, isNull);
   });
 
   for (final language in ['fr', 'ar']) {

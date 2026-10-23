@@ -4,8 +4,8 @@ Added 19 Oct 2026 from `GoHard_Progress_Claude_Handoff` (branch `feature/trainin
 `feature/workout-workspace`). Three connected views, all computed on the phone from the account's own records:
 
 1. **Weekly progress** (Train › Progress): this week's date range, Set weekly goals / Edit goals, Workouts and
-   Run / Walk with real counts, strength-trend previews, plan adherence, last week's recap, then the quieter history
-   (consistency, recent workouts, workout history, Run / Walk personal bests).
+   Run / Walk with real counts, strength-trend previews, plan adherence, last week's recap, then consistency and Run / Walk
+   personal bests. Recent workouts and the workout history live in Train › Workouts only (since 23 Oct 2026).
 2. **Exercise trends** (a preview, or See all → a searchable list of recorded exercises): one exercise's comparable
    results with 4 weeks / 12 weeks / All, the chart, the change, and the sessions behind every point.
 3. **Weekly recap** (last week's card): one completed Monday–Sunday week, with previous/next among completed weeks.
