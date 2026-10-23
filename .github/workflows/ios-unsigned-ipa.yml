@@ -27,9 +27,11 @@ jobs:
           ready=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' "$base/health/ready")
           [ "$ready" = "200" ] || { echo "::error::Testing API is not ready ($ready) at $base/health/ready"; exit 1; }
           app_contract=$(sed -n 's/.*contractVersion = \([0-9]*\).*/\1/p' app/lib/core/config.dart)
-          api_contract=$(curl -sS -m 30 "$base/api/v1/capabilities" | sed -n 's/.*"contractVersion":\([0-9]*\).*/\1/p')
-          echo "App contract $app_contract; API contract $api_contract"
-          [ "$app_contract" = "$api_contract" ] || { echo "::error::App and testing API are not compatible"; exit 1; }
+          # The app's own rule (core/compatibility.dart): it works with a server whose minimumClientContract is not above
+          # its contract. A newer app on an older server is fine: it treats what the server does not declare as absent.
+          minimum=$(curl -sS -m 30 "$base/api/v1/capabilities" | sed -n 's/.*"minimumClientContract":\([0-9]*\).*/\1/p')
+          echo "App contract $app_contract; API minimum client contract $minimum"
+          [ -n "$minimum" ] && [ "$app_contract" -ge "$minimum" ] || { echo "::error::The testing API does not accept this app's contract"; exit 1; }
 
       - uses: subosito/flutter-action@v2
         with: { channel: stable, flutter-version: 3.47.6, cache: true }
