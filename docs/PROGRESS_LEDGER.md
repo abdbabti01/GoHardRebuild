@@ -2263,3 +2263,11 @@ docs/RESTAURANT_SOURCES.md.
   the widget renders). **Not verified on the device:** a restart (one process; covered by `eating_out_test`).
 - **Live AI:** no Groq key on this machine; no live request made. Hosted (key configured) after an approved deploy.
 - Not done here: merge, deploy, an iPhone, a fluent review of the new fr/ar strings.
+- CI run 143 on `1663d25`: **failed**, one API test: the "no injected value reaches the phone" check searched the whole
+  body and the random request ID happened to contain "590" (test flaw, not a feature fault). Fixed in `fc7eddc` (distinct
+  injected values, only the intent searched). CI run 144 on `fc7eddc` (tested code commit): **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40256329141). Unsigned IPA run 53 on `fc7eddc` (branch
+  `feature/eating-out`), artifact `GoHard-Dev-unsigned-ipa`: **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40257479054). Against the hosted API as it is now (no
+  `restaurants.*` capabilities) this IPA browses the bundled catalog, builds, suggests and logs; asking in words says it is
+  not available until the API is deployed. `main` and Railway unchanged, awaiting the owner's approval.
