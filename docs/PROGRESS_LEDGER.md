@@ -2295,3 +2295,9 @@ docs/RESTAURANT_SOURCES.md.
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40263214913). Unsigned IPA run 54 on `a100461`, artifact
   `GoHard-Dev-unsigned-ipa`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40318077683).
   `main` and Railway unchanged.
+- 26 Oct 2026, owner approved: size guard added (`8458563`: a size the request names is never replaced; API test
+  `A_size_that_is_not_listed_is_never_replaced_by_another_size`; coach + Eating out API tests 29 passed; branch CI 148
+  passed). `main` fast-forwarded 2397b0d → 8458563 and pushed; CI 149 on `main` passed; Railway devoted-caring deployed
+  8458563 (success 12:19 UTC); hosted Ready with 14 migrations, declares `restaurants.catalog`, `restaurants.interpret`,
+  `coach.ask`; new routes 401 without a session. IPA 54 reused (app unchanged). **Pending:** live AI and hosted data
+  checks on the owner's iPhone (no hosted accounts by the owner's rule).
