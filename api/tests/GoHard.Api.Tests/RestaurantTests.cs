@@ -137,6 +137,38 @@ public partial class CoachTests
     }
 
     [Fact]
+    public async Task A_size_that_is_not_listed_is_never_replaced_by_another_size()
+    {
+        const string Mini = "mcdonalds-ca:fries-mini", Coke = "mcdonalds-ca:coca-cola-medium";
+        var fake = new FakeAnthropic();
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = On, Provider = fake.Handler() };
+        var a = await Account.RegisterAsync(api);
+        async Task<JsonNode> Ask(string question)
+        {
+            // A model that maps whatever was asked to the Mini fries and the medium Coke.
+            fake.Respond = _ => Task.FromResult(Message(Intent(maxCalories: 600, minProtein: null, keep: [new { itemId = Mini, quantity = (int?)1 }, new { itemId = Coke, quantity = (int?)1 }], prefer: [])));
+            var (status, body) = await PostInterpret(a, Interpret(question, chain: "mcdonalds-ca", order: []));
+            Assert.Equal(HttpStatusCode.OK, status);
+            return JsonNode.Parse(body.GetProperty("intent").GetRawText())!;
+        }
+        Assert.Contains(Coke, JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data", "restaurant-catalog.json")))!.ToJsonString());
+
+        var small = await Ask("McDonald's for lunch, around 600 calories, keep small fries and a medium coke");
+        Assert.Equal([Coke], small["keep"]!.AsArray().Select(k => k!["itemId"]!.GetValue<string>()));
+        Assert.Contains("small World Famous Fries", small["unknownItems"]!.AsArray().Select(u => u!.GetValue<string>()));
+        Assert.Contains("size", small["dropped"]!.AsArray().Select(d => d!.GetValue<string>()));
+        var french = await Ask("McDo, environ 600 calories, garde les petites frites");
+        Assert.DoesNotContain(Mini, french["keep"]!.ToJsonString());
+
+        var mini = await Ask("around 600 calories, keep the mini fries and a medium coke");
+        Assert.Equal([Mini, Coke], mini["keep"]!.AsArray().Select(k => k!["itemId"]!.GetValue<string>()));
+        var noSize = await Ask("around 600 calories, keep the fries");
+        Assert.Equal(2, noSize["keep"]!.AsArray().Count);                                  // no size asked: nothing to contradict, the chip shows the size
+        var system = string.Join("\n", JsonNode.Parse(fake.Calls[^1].Body)!["system"]!.AsArray().Select(b => b!["text"]!.GetValue<string>()));
+        Assert.Contains("Sizes are exact", system);
+    }
+
+    [Fact]
     public async Task Eating_out_and_ask_gohard_share_one_daily_allowance_and_one_call_per_request_id()
     {
         var fake = new FakeAnthropic { Respond = n => Task.FromResult(Message(n == 1 ? Structured("Fine.", []) : Intent())) };

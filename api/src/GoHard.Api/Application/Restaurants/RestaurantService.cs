@@ -103,7 +103,7 @@ public sealed class RestaurantService
         var (output, failure) = await _coach.CallAsync(userId, system, user, Format, ct);
         if (output is not { } o)
             return failure?.Status == CoachStatus.Busy ? new(RestaurantStatus.Busy, RetryAfterSeconds: failure.RetryAfterSeconds) : new(RestaurantStatus.Unavailable);
-        if (Check(o, catalog, chain) is not { } intent)
+        if (Check(o, catalog, chain, r.Question) is not { } intent)
         {
             _log.LogInformation("Restaurant interpretation dropped: it did not follow the schema");
             return new(RestaurantStatus.Unavailable);
@@ -134,6 +134,7 @@ public sealed class RestaurantService
         Rules:
         - Return the complete preferences after this request: start from <current_preferences> and apply only what the person changes now. A follow-up such as "keep the fries" adds to what is already there.
         - Use only item IDs listed in <menu> for the chain shown there. Never invent an item, a size or an ID. A name you cannot match to exactly one listed item goes in unknownItems (as the person wrote it).
+        - Sizes are exact. If the person asks for a size that is not listed for that item (for example small fries when only mini and medium are listed), put it in unknownItems as they wrote it and do not choose another size.
         - Numbers you return are the person's own targets, taken from their words: maxCalories, minCalories (both kcal for the whole meal) and minProtein (grams). Do not invent a target they did not state. "More protein" or "lower calories" without a number is a priority, not a number.
         - Never state or estimate calories, protein, prices, ingredients, health effects or links. GoHard calculates every value itself from verified data.
         - "Budget" or "cheap" may mean money or calories: GoHard has no prices, so ask (kind "clarify") unless calories are clearly meant.
@@ -213,8 +214,22 @@ public sealed class RestaurantService
     /// Unknown properties are ignored (a model cannot add a calorie value by adding a field); an unknown ID or an
     /// out-of-range number is dropped and named in Dropped.
     /// </summary>
-    internal static RestaurantIntent? Check(JsonElement o, RestaurantCatalog catalog, RestaurantChain chain)
+    // Size words a request or an item name can carry, by the size they mean (English, French, Arabic).
+    private static readonly (string Size, Regex Words)[] Sizes =
+    [
+        ("small", new(@"\b(small|petite?s?)\b|صغير", RegexOptions.IgnoreCase)),
+        ("mini", new(@"\bmini\b", RegexOptions.IgnoreCase)),
+        ("medium", new(@"\b(medium|moyens?|moyennes?)\b|متوسط", RegexOptions.IgnoreCase)),
+        ("large", new(@"\b(large|grande?s?)\b|كبير", RegexOptions.IgnoreCase)),
+        ("regular", new(@"\b(regular|régulier|réguliers|ordinaire)\b|عادي", RegexOptions.IgnoreCase)),
+    ];
+    private static HashSet<string> SizesIn(string s) => [.. Sizes.Where(x => x.Words.IsMatch(s)).Select(x => x.Size)];
+
+    internal static RestaurantIntent? Check(JsonElement o, RestaurantCatalog catalog, RestaurantChain chain, string? question = null)
     {
+        // A size the person asked for is never swapped for another: a kept item whose own stated size is none of the
+        // sizes the request names is dropped and reported as not found (e.g. "small fries" when only Mini and Medium exist).
+        var asked = SizesIn(question ?? "");
         try
         {
             string? S(string n) => o.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
@@ -240,11 +255,24 @@ public sealed class RestaurantService
 
             var items = chain.Items.ToDictionary(i => i.Id);
             var keep = new List<KeepLine>();
+            var sizeMisses = new List<string>();
             foreach (var k in A("keep").Take(MaxKeep))
             {
                 var id = k.ValueKind == JsonValueKind.Object && k.TryGetProperty("itemId", out var x) && x.ValueKind == JsonValueKind.String ? x.GetString() : null;
                 var q = k.ValueKind == JsonValueKind.Object && k.TryGetProperty("quantity", out var y) && y.ValueKind == JsonValueKind.Number && y.TryGetInt32(out var n) ? n : (int?)null;
                 if (id is null || !items.ContainsKey(id)) { dropped.Add("item"); continue; }
+                var stated = SizesIn(items[id].Name);
+                if (asked.Count > 0 && stated.Count > 0 && !stated.Overlaps(asked))
+                {
+                    dropped.Add("size");
+                    // Named by the size the product is not listed in ("small World Famous Fries"), not every size the request named.
+                    static string Base(string name) => Regex.Replace(name, @"\s*[-,]\s*(Mini|Medium|Large|Small|Regular)\b.*$", "", RegexOptions.IgnoreCase);
+                    var product = Base(items[id].Name);
+                    var offered = chain.Items.Where(i => Base(i.Name) == product).SelectMany(i => SizesIn(i.Name)).ToHashSet();
+                    var missing = asked.Except(offered).Order().ToList();
+                    sizeMisses.Add($"{string.Join("/", missing.Count > 0 ? missing : asked.Order())} {product}");
+                    continue;
+                }
                 if (q is < 1 or > 6) { dropped.Add("quantity"); q = null; }
                 if (keep.All(l => l.ItemId != id)) keep.Add(new(id, q ?? 1));
             }
@@ -255,7 +283,7 @@ public sealed class RestaurantService
             List<string> KindsOf(string n) => [.. A(n).Where(v => v.ValueKind == JsonValueKind.String && Kinds.Contains(v.GetString())).Select(v => v.GetString()!).Distinct().Take(Kinds.Length)];
             var (prefer, avoid) = (KindsOf("prefer"), KindsOf("avoid"));
             var priority = S("priority") is "protein" or "calories" or "closest" ? S("priority") : null;
-            var unknown = A("unknownItems").Where(v => v.ValueKind == JsonValueKind.String).Select(v => CoachService.Untrusted(v.GetString()!.Trim())).Where(s => s.Length is > 0 and <= 60).Distinct().Take(MaxNames).ToList();
+            var unknown = A("unknownItems").Where(v => v.ValueKind == JsonValueKind.String).Select(v => CoachService.Untrusted(v.GetString()!.Trim())).Where(s => s.Length is > 0 and <= 60).Concat(sizeMisses).Distinct().Take(MaxNames).ToList();
 
             var clarification = kind == "clarify" ? S("clarification")?.Trim() : null;
             if (clarification is { Length: 0 or > 240 } || clarification is not null && Figure.IsMatch(clarification)) clarification = null;

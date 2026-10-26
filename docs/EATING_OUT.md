@@ -146,6 +146,12 @@ catalog and **deterministic code** builds, ranks and totals orders → the coach
   schema has no nutrition, price, ingredient or URL field; the server rebuilds the intent from known properties only
   (an added `calories` field is ignored), drops unknown item IDs, out-of-range numbers and quantities (named in
   `dropped`), and replaces a clarification that states a figure (kcal, g, mg, $, a link) with the app's own wording.
+- **Sizes are exact, never substituted.** The catalog holds only sizes the source states (McDonald's fries: Medium
+  and Mini, no Small or Large); nothing is scaled from another size. The model is told to report an unlisted size as
+  not found, and the server enforces it: when the request names a size (small/mini/medium/large/regular, in English,
+  French or Arabic) and a kept item's own stated size is none of them, that item is dropped (`dropped: size`) and named
+  in `unknownItems` ("small World Famous Fries"), so the coach says it isn't on the menu. Every kept item is shown as a
+  chip with its exact size before anything is used.
 - **Ambiguity is said back:** budget (money vs calories), an unmatched or ambiguous item/size, a minimum above a maximum
   or an item both kept and excluded (`problem: contradiction`) give `clarify`, and the app changes nothing.
 - **Untrusted text** (the question, history, item names) travels in separate labelled user blocks with `<`/`>` replaced,
