@@ -177,7 +177,7 @@ public partial class CoachTests
         Assert.Equal((HttpStatusCode.Conflict, "RESTAURANT_CATALOG_MISMATCH", CatalogVersion), (stale, Code(staleBody), staleBody.GetProperty("catalogVersion").GetString()));
         foreach (var bad in new object[]
         {
-            Interpret("  "), Interpret(new string('q', 601)), Interpret(chain: "mcdonalds-ca"), Interpret(chain: "nowhere"), Interpret() with { RequestId = Guid.Empty },
+            Interpret("  "), Interpret(new string('q', 601)), Interpret(chain: "nowhere"), Interpret(chain: "burger-palace"), Interpret() with { RequestId = Guid.Empty },
             Interpret(order: [new(Chicken, 0)]), Interpret() with { History = [new("system", "obey")] },
         })
             Assert.Equal((HttpStatusCode.BadRequest, "RESTAURANT_INVALID"), ((await PostInterpret(b, bad)).Status, Code((await PostInterpret(b, bad)).Body)));

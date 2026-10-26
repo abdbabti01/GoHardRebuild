@@ -1,0 +1,2180 @@
+{
+ "chain": "mcdonalds-ca",
+ "read": "2026-10-25",
+ "how": "Read-only, in Google Chrome: opened https://www.mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html, opened the Breakfast, Beef, Chicken, Snacks & Sides and Beverages categories, and saved the responses of the data service the page itself calls. Values are the displayed (rounded) 'value' fields, not the unrounded raw ones. grams is null when the serving is in ml.",
+ "service": [
+  "https://www.mcdonalds.com/dnaapp/itemList?country=CA&language=en&showLiveData=true&nutrient_req=Y"
+ ],
+ "columns": [
+  "grams",
+  "calories",
+  "protein",
+  "carbs",
+  "fat",
+  "satFat",
+  "sodium",
+  "fibre"
+ ],
+ "rows": [
+  {
+   "section": "Breakfast",
+   "name": "Mighty McGriddles",
+   "itemId": 201156,
+   "serving": "210 g",
+   "values": [
+    210,
+    590,
+    24,
+    43,
+    36,
+    15,
+    1590,
+    1
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Mighty McMuffin",
+   "itemId": 201157,
+   "serving": "175 g",
+   "values": [
+    175,
+    520,
+    26,
+    29,
+    33,
+    13,
+    1170,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Spicy Egg & Hash Brown Breakfast Wrap",
+   "itemId": 201233,
+   "serving": "265 g",
+   "values": [
+    265,
+    630,
+    17,
+    54,
+    39,
+    10,
+    1060,
+    4
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Chicken Breakfast Wrap",
+   "itemId": 201230,
+   "serving": "239 g",
+   "values": [
+    239,
+    680,
+    17,
+    60,
+    42,
+    10,
+    1200,
+    4
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage, Bacon & Egg Breakfast Wrap",
+   "itemId": 201232,
+   "serving": "250 g",
+   "values": [
+    250,
+    800,
+    26,
+    53,
+    54,
+    16,
+    1500,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg 'N Cheese McMuffin",
+   "itemId": 201227,
+   "serving": "120 g",
+   "values": [
+    120,
+    280,
+    14,
+    28,
+    12,
+    5,
+    510,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg 'N Cheese McGriddles",
+   "itemId": 201228,
+   "serving": "154 g",
+   "values": [
+    154,
+    340,
+    12,
+    41,
+    14,
+    7,
+    920,
+    1
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg BLT McMuffin",
+   "itemId": 200887,
+   "serving": "154 g",
+   "values": [
+    154,
+    360,
+    16,
+    29,
+    19,
+    7,
+    700,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg BLT McMuffin with Shredded Lettuce (McDonald's in Walmart)",
+   "itemId": 201199,
+   "serving": "165 g",
+   "values": [
+    165,
+    360,
+    16,
+    30,
+    19,
+    7,
+    700,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Chicken McMuffin",
+   "itemId": 200964,
+   "serving": "125 g",
+   "values": [
+    125,
+    360,
+    14,
+    35,
+    18,
+    6,
+    730,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg McMuffin",
+   "itemId": 200049,
+   "serving": "133 g",
+   "values": [
+    133,
+    290,
+    16,
+    28,
+    11,
+    5,
+    750,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage 'N Egg McMuffin",
+   "itemId": 200059,
+   "serving": "158 g",
+   "values": [
+    158,
+    440,
+    20,
+    29,
+    26,
+    11,
+    880,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Bacon 'N Egg McMuffin",
+   "itemId": 200041,
+   "serving": "124 g",
+   "values": [
+    124,
+    310,
+    16,
+    28,
+    15,
+    6,
+    670,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage McMuffin",
+   "itemId": 200062,
+   "serving": "111 g",
+   "values": [
+    111,
+    370,
+    15,
+    28,
+    22,
+    9,
+    820,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Plain Bagel With Butter",
+   "itemId": 200686,
+   "serving": "104 g",
+   "values": [
+    104,
+    320,
+    10,
+    54,
+    7,
+    4.5,
+    370,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Everything Bagel with Butter",
+   "itemId": 200677,
+   "serving": "102 g",
+   "values": [
+    102,
+    330,
+    10,
+    52,
+    9,
+    4.5,
+    340,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sesame Bagel with Butter",
+   "itemId": 200685,
+   "serving": "103 g",
+   "values": [
+    103,
+    330,
+    10,
+    54,
+    9,
+    4.5,
+    380,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Plain Bagel With Regular Cream Cheese Product",
+   "itemId": 200674,
+   "serving": "136 g",
+   "values": [
+    136,
+    370,
+    12,
+    58,
+    10,
+    6,
+    490,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Everything Bagel With Regular Cream Cheese Product",
+   "itemId": 200669,
+   "serving": "134 g",
+   "values": [
+    134,
+    380,
+    13,
+    55,
+    12,
+    7,
+    460,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sesame Bagel With Regular Cream Cheese Product",
+   "itemId": 200683,
+   "serving": "135 g",
+   "values": [
+    135,
+    380,
+    13,
+    57,
+    11,
+    6,
+    500,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg BLT Bagel with Plain Bagel",
+   "itemId": 200709,
+   "serving": "208 g",
+   "values": [
+    208,
+    550,
+    23,
+    57,
+    27,
+    10,
+    860,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg BLT Bagel with Everything Bagel",
+   "itemId": 200695,
+   "serving": "206 g",
+   "values": [
+    206,
+    560,
+    23,
+    55,
+    29,
+    10,
+    820,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Egg BLT Bagel with Sesame Bagel",
+   "itemId": 200703,
+   "serving": "207 g",
+   "values": [
+    207,
+    570,
+    23,
+    57,
+    28,
+    10,
+    870,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Bacon ‘N Egg Bagel with Plain Bagel",
+   "itemId": 200706,
+   "serving": "186 g",
+   "values": [
+    186,
+    540,
+    25,
+    57,
+    24,
+    11,
+    990,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Bacon ‘N Egg Bagel with Everything Bagel",
+   "itemId": 200699,
+   "serving": "184 g",
+   "values": [
+    184,
+    550,
+    26,
+    54,
+    26,
+    11,
+    950,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Bacon ‘N Egg Bagel with Sesame Bagel",
+   "itemId": 200707,
+   "serving": "185 g",
+   "values": [
+    185,
+    550,
+    26,
+    57,
+    25,
+    11,
+    990,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage ‘N Egg Bagel with Plain Bagel",
+   "itemId": 200705,
+   "serving": "210 g",
+   "values": [
+    210,
+    610,
+    26,
+    56,
+    31,
+    14,
+    990,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage ‘N Egg Bagel with Everything Bagel",
+   "itemId": 200698,
+   "serving": "208 g",
+   "values": [
+    208,
+    620,
+    27,
+    54,
+    33,
+    14,
+    950,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage ‘N Egg Bagel with Sesame Bagel",
+   "itemId": 200700,
+   "serving": "209 g",
+   "values": [
+    209,
+    620,
+    26,
+    56,
+    33,
+    14,
+    990,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Chicken McGriddles",
+   "itemId": 200963,
+   "serving": "143 g",
+   "values": [
+    143,
+    360,
+    10,
+    47,
+    14,
+    4.5,
+    960,
+    1
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Bacon, Egg & Cheese McGriddles",
+   "itemId": 200044,
+   "serving": "159 g",
+   "values": [
+    159,
+    380,
+    14,
+    42,
+    18,
+    8,
+    1080,
+    1
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage, Egg & Cheese McGriddles",
+   "itemId": 200063,
+   "serving": "193 g",
+   "values": [
+    193,
+    510,
+    19,
+    42,
+    29,
+    12,
+    1290,
+    1
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Sausage McGriddles",
+   "itemId": 200061,
+   "serving": "133 g",
+   "values": [
+    133,
+    390,
+    10,
+    41,
+    21,
+    8,
+    1050,
+    1
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Breakfast Burrito",
+   "itemId": 200610,
+   "serving": "114 g",
+   "values": [
+    114,
+    290,
+    13,
+    23,
+    16,
+    7,
+    570,
+    1
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "English Muffin with Butter",
+   "itemId": 200052,
+   "serving": "58 g",
+   "values": [
+    58,
+    170,
+    5,
+    27,
+    4,
+    2,
+    280,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Hash Browns",
+   "itemId": 200054,
+   "serving": "55 g",
+   "values": [
+    55,
+    160,
+    1,
+    16,
+    10,
+    1.5,
+    360,
+    2
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Hotcakes with Syrup and Butter",
+   "itemId": 200055,
+   "serving": "206 g",
+   "values": [
+    206,
+    550,
+    8,
+    93,
+    16,
+    6,
+    660,
+    3
+   ]
+  },
+  {
+   "section": "Breakfast",
+   "name": "Hotcakes",
+   "itemId": 200619,
+   "serving": "153 g",
+   "values": [
+    153,
+    350,
+    8,
+    60,
+    9,
+    1.5,
+    600,
+    3
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "McExtreme Pulled Pork",
+   "itemId": 201453,
+   "serving": "253 g",
+   "values": [
+    253,
+    750,
+    39,
+    49,
+    44,
+    15,
+    1380,
+    3
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Cheeseburger Deluxe",
+   "itemId": 201240,
+   "serving": "154 g",
+   "values": [
+    154,
+    340,
+    15,
+    33,
+    17,
+    6,
+    800,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Double Hamburger",
+   "itemId": 201073,
+   "serving": "130 g",
+   "values": [
+    130,
+    320,
+    18,
+    32,
+    14,
+    6,
+    610,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Big Mac",
+   "itemId": 200944,
+   "serving": "216 g",
+   "values": [
+    216,
+    570,
+    24,
+    46,
+    32,
+    10,
+    920,
+    3
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Double Big Mac",
+   "itemId": 200946,
+   "serving": "289 g",
+   "values": [
+    289,
+    740,
+    38,
+    48,
+    44,
+    16,
+    1020,
+    3
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Hamburger",
+   "itemId": 200154,
+   "serving": "100 g",
+   "values": [
+    100,
+    240,
+    12,
+    32,
+    8,
+    3,
+    490,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "McDouble",
+   "itemId": 200155,
+   "serving": "149 g",
+   "values": [
+    149,
+    380,
+    21,
+    34,
+    18,
+    8,
+    840,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Cheeseburger",
+   "itemId": 200140,
+   "serving": "113 g",
+   "values": [
+    113,
+    290,
+    14,
+    32,
+    12,
+    5,
+    670,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Double Cheeseburger",
+   "itemId": 200147,
+   "serving": "161 g",
+   "values": [
+    161,
+    420,
+    24,
+    34,
+    21,
+    11,
+    1010,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Quarter Pounder with Cheese",
+   "itemId": 200159,
+   "serving": "201 g",
+   "values": [
+    201,
+    530,
+    29,
+    41,
+    27,
+    13,
+    1050,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Quarter Pounder without Cheese",
+   "itemId": 200160,
+   "serving": "172 g",
+   "values": [
+    172,
+    430,
+    24,
+    40,
+    20,
+    8,
+    660,
+    2
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Double Quarter Pounder with Cheese",
+   "itemId": 200149,
+   "serving": "278 g",
+   "values": [
+    278,
+    750,
+    47,
+    42,
+    44,
+    21,
+    1210,
+    3
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Double Quarter Pounder without Cheese",
+   "itemId": 200150,
+   "serving": "251 g",
+   "values": [
+    251,
+    650,
+    42,
+    40,
+    37,
+    16,
+    840,
+    3
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Quarter Pounder BLT",
+   "itemId": 200158,
+   "serving": "231 g",
+   "values": [
+    231,
+    610,
+    31,
+    43,
+    35,
+    14,
+    1190,
+    3
+   ]
+  },
+  {
+   "section": "Beef",
+   "name": "Double Quarter Pounder BLT",
+   "itemId": 201002,
+   "serving": "309 g",
+   "values": [
+    309,
+    830,
+    49,
+    43,
+    52,
+    21,
+    1300,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Caesar and Bacon McCrispy",
+   "itemId": 201462,
+   "serving": "239 g",
+   "values": [
+    239,
+    600,
+    35,
+    51,
+    30,
+    6,
+    1300,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Caesar and Bacon McWrap with Crispy Chicken",
+   "itemId": 201464,
+   "serving": "253 g",
+   "values": [
+    253,
+    630,
+    32,
+    54,
+    32,
+    8,
+    1270,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Caesar and Bacon McWrap with Grilled Chicken",
+   "itemId": 201465,
+   "serving": "237 g",
+   "values": [
+    237,
+    490,
+    32,
+    43,
+    21,
+    6,
+    1060,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Chicken Parmi Burger",
+   "itemId": 201448,
+   "serving": "261 g",
+   "values": [
+    261,
+    630,
+    37,
+    49,
+    33,
+    8,
+    1500,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "6 Garlic & Black Pepper Chicken McNuggets",
+   "itemId": 201444,
+   "serving": "96 g",
+   "values": [
+    96,
+    260,
+    16,
+    17,
+    15,
+    2.5,
+    400,
+    1
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "10 Garlic & Black Pepper Chicken McNuggets",
+   "itemId": 201446,
+   "serving": "160 g",
+   "values": [
+    160,
+    430,
+    26,
+    28,
+    25,
+    4,
+    670,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "20 Garlic & Black Pepper Chicken McNuggets",
+   "itemId": 201450,
+   "serving": "320 g",
+   "values": [
+    320,
+    860,
+    52,
+    55,
+    49,
+    8,
+    1340,
+    5
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Creamy Chipotle Chicken McWrap - Crispy",
+   "itemId": 201306,
+   "serving": "273 g",
+   "values": [
+    273,
+    680,
+    28,
+    53,
+    39,
+    8,
+    1020,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Creamy Chipotle Chicken McWrap - Grilled",
+   "itemId": 201304,
+   "serving": "257 g",
+   "values": [
+    257,
+    550,
+    31,
+    41,
+    29,
+    6,
+    830,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Sweet Chili Junior Chicken",
+   "itemId": 201195,
+   "serving": "148 g",
+   "values": [
+    148,
+    410,
+    12,
+    43,
+    21,
+    4,
+    710,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Chicken McMuffin",
+   "itemId": 200964,
+   "serving": "125 g",
+   "values": [
+    125,
+    360,
+    14,
+    35,
+    18,
+    6,
+    730,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "McCrispy",
+   "itemId": 201086,
+   "serving": "205 g",
+   "values": [
+    205,
+    520,
+    29,
+    44,
+    26,
+    4.5,
+    840,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy McCrispy",
+   "itemId": 201093,
+   "serving": "209 g",
+   "values": [
+    209,
+    510,
+    29,
+    44,
+    24,
+    3.5,
+    870,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy Bacon Deluxe McCrispy Sandwich",
+   "itemId": 201101,
+   "serving": "240 g",
+   "values": [
+    240,
+    580,
+    34,
+    46,
+    30,
+    5,
+    1120,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "McCrispy Bacon Deluxe",
+   "itemId": 201087,
+   "serving": "236 g",
+   "values": [
+    236,
+    590,
+    34,
+    45,
+    32,
+    6,
+    1090,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Grilled Chicken Sandwich",
+   "itemId": 201088,
+   "serving": "189 g",
+   "values": [
+    189,
+    400,
+    31,
+    32,
+    16,
+    3,
+    650,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Bacon Deluxe Grilled Chicken Sandwich",
+   "itemId": 201085,
+   "serving": "220 g",
+   "values": [
+    220,
+    470,
+    36,
+    33,
+    22,
+    5,
+    900,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy Grilled Chicken Sandwich",
+   "itemId": 201153,
+   "serving": "193 g",
+   "values": [
+    193,
+    380,
+    31,
+    32,
+    14,
+    2.5,
+    680,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy Bacon Deluxe Grilled Chicken Sandwich",
+   "itemId": 201152,
+   "serving": "224 g",
+   "values": [
+    224,
+    450,
+    36,
+    34,
+    20,
+    4,
+    930,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy Habanero McChicken",
+   "itemId": 200880,
+   "serving": "179 g",
+   "values": [
+    179,
+    470,
+    16,
+    45,
+    25,
+    4,
+    680,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Chicken McGriddles",
+   "itemId": 200963,
+   "serving": "143 g",
+   "values": [
+    143,
+    360,
+    10,
+    47,
+    14,
+    4.5,
+    960,
+    1
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "McChicken",
+   "itemId": 200187,
+   "serving": "175 g",
+   "values": [
+    175,
+    480,
+    16,
+    45,
+    27,
+    4.5,
+    650,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Junior Chicken",
+   "itemId": 200186,
+   "serving": "132 g",
+   "values": [
+    132,
+    380,
+    12,
+    36,
+    21,
+    3.5,
+    570,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "4 Chicken McNuggets",
+   "itemId": 200351,
+   "serving": "64 g",
+   "values": [
+    64,
+    170,
+    10,
+    10,
+    9,
+    1.5,
+    300,
+    0
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "6 Chicken McNuggets",
+   "itemId": 200352,
+   "serving": "95 g",
+   "values": [
+    95,
+    250,
+    16,
+    15,
+    14,
+    2.5,
+    450,
+    0
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "10 Chicken McNuggets",
+   "itemId": 200349,
+   "serving": "159 g",
+   "values": [
+    159,
+    410,
+    26,
+    26,
+    23,
+    4,
+    750,
+    0
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "20 Chicken McNuggets",
+   "itemId": 200350,
+   "serving": "318 g",
+   "values": [
+    318,
+    830,
+    52,
+    51,
+    46,
+    8,
+    1490,
+    0
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy Buffalo Chicken Poutine - Cripsy",
+   "itemId": 200961,
+   "serving": "324 g",
+   "values": [
+    324,
+    1010,
+    31,
+    122,
+    46,
+    14,
+    3630,
+    6
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Chicken Snack Wrap Happy Meal with Crispy Chicken",
+   "itemId": 201151,
+   "serving": "118 g",
+   "values": [
+    118,
+    290,
+    14,
+    27,
+    14,
+    3.5,
+    410,
+    1
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy Buffalo Chicken Snack Wrap with Grilled Chicken",
+   "itemId": 201138,
+   "serving": "124 g",
+   "values": [
+    124,
+    240,
+    18,
+    21,
+    10,
+    4.5,
+    550,
+    1
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Spicy Buffalo Chicken Snack Wrap with Crispy Chicken",
+   "itemId": 201144,
+   "serving": "132 g",
+   "values": [
+    132,
+    310,
+    17,
+    27,
+    15,
+    5,
+    650,
+    1
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Sweet Chili McWrap - Grilled",
+   "itemId": 201143,
+   "serving": "234 g",
+   "values": [
+    234,
+    460,
+    30,
+    45,
+    18,
+    5,
+    840,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Sweet Chili McWrap - Crispy",
+   "itemId": 201148,
+   "serving": "250 g",
+   "values": [
+    250,
+    590,
+    28,
+    56,
+    28,
+    6,
+    1030,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Chicken & Bacon McWrap - Crispy",
+   "itemId": 201147,
+   "serving": "258 g",
+   "values": [
+    258,
+    610,
+    31,
+    49,
+    32,
+    8,
+    1040,
+    3
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Chicken & Bacon McWrap - Grilled",
+   "itemId": 201141,
+   "serving": "242 g",
+   "values": [
+    242,
+    480,
+    33,
+    37,
+    22,
+    6,
+    850,
+    2
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Ranch Chicken Snack Wrap with Grilled Chicken 2023",
+   "itemId": 201145,
+   "serving": "124 g",
+   "values": [
+    124,
+    260,
+    18,
+    22,
+    11,
+    4.5,
+    420,
+    1
+   ]
+  },
+  {
+   "section": "Chicken",
+   "name": "Ranch Chicken Snack Wrap with Crispy Chicken",
+   "itemId": 201142,
+   "serving": "132 g",
+   "values": [
+    132,
+    320,
+    17,
+    28,
+    16,
+    5,
+    510,
+    1
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Cheesy Bacon McFlavour Fries",
+   "itemId": 201445,
+   "serving": "155 g",
+   "values": [
+    155,
+    550,
+    9,
+    48,
+    36,
+    6,
+    760,
+    4
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Baked Strawberry Pie",
+   "itemId": 200836,
+   "serving": "85 g",
+   "values": [
+    85,
+    300,
+    3,
+    35,
+    16,
+    9,
+    160,
+    1
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Chewy Chocolate Chunk Cookie",
+   "itemId": 201390,
+   "serving": "54 g",
+   "values": [
+    54,
+    250,
+    3,
+    35,
+    11,
+    6,
+    150,
+    1
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Rainbow Sprinkle Cookie",
+   "itemId": 201389,
+   "serving": "55 g",
+   "values": [
+    55,
+    250,
+    3,
+    36,
+    10,
+    6,
+    170,
+    1
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Toasted S’mores Cookie",
+   "itemId": 201391,
+   "serving": "55 g",
+   "values": [
+    55,
+    240,
+    3,
+    36,
+    10,
+    4.5,
+    210,
+    1
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Chocolate Chip Muffin",
+   "itemId": 201393,
+   "serving": "125 g",
+   "values": [
+    125,
+    440,
+    8,
+    71,
+    14,
+    3,
+    330,
+    3
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Apple Slices",
+   "itemId": 200164,
+   "serving": "68 g",
+   "values": [
+    68,
+    35,
+    0.1,
+    9,
+    0,
+    0,
+    2,
+    1
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "World Famous Fries - Medium",
+   "itemId": 200169,
+   "serving": "110 g",
+   "values": [
+    110,
+    350,
+    4,
+    46,
+    17,
+    2,
+    260,
+    4
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "World Famous Fries - Mini",
+   "itemId": 200172,
+   "serving": "38 g",
+   "values": [
+    38,
+    120,
+    1,
+    16,
+    6,
+    0.5,
+    90,
+    1
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Poutine",
+   "itemId": 200180,
+   "serving": "254 g",
+   "values": [
+    254,
+    870,
+    21,
+    113,
+    37,
+    13,
+    3170,
+    5
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Spicy Buffalo Chicken Poutine - Cripsy",
+   "itemId": 200961,
+   "serving": "324 g",
+   "values": [
+    324,
+    1010,
+    31,
+    122,
+    46,
+    14,
+    3630,
+    6
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Fruit & Fibre Muffin",
+   "itemId": 201054,
+   "serving": "123 g",
+   "values": [
+    123,
+    380,
+    7,
+    60,
+    14,
+    1.5,
+    480,
+    6
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Chocolate Brownie Muffin",
+   "itemId": 201231,
+   "serving": "125 g",
+   "values": [
+    125,
+    380,
+    6,
+    57,
+    15,
+    3,
+    360,
+    3
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Blueberry Muffin",
+   "itemId": 201055,
+   "serving": "122 g",
+   "values": [
+    122,
+    430,
+    7,
+    66,
+    17,
+    1.5,
+    360,
+    3
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Carrot Muffin",
+   "itemId": 201056,
+   "serving": "130 g",
+   "values": [
+    130,
+    440,
+    7,
+    70,
+    16,
+    1.5,
+    370,
+    2
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Cranberry Orange Muffin",
+   "itemId": 201057,
+   "serving": "124 g",
+   "values": [
+    124,
+    380,
+    5,
+    71,
+    9,
+    1.5,
+    410,
+    2
+   ]
+  },
+  {
+   "section": "Snacks & Sides",
+   "name": "Baked Apple Pie",
+   "itemId": 200084,
+   "serving": "79 g",
+   "values": [
+    79,
+    270,
+    3,
+    34,
+    13,
+    9,
+    135,
+    1
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Red Bull Dragonberry Energizer",
+   "itemId": 201454,
+   "serving": "485 ml",
+   "values": [
+    null,
+    180,
+    0.4,
+    43,
+    0,
+    0,
+    110,
+    1
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Red Bull Tropicberry Energizer",
+   "itemId": 201457,
+   "serving": "485 ml",
+   "values": [
+    null,
+    170,
+    0.2,
+    41,
+    0,
+    0,
+    120,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Red Bull Zero Dragonberry Energizer",
+   "itemId": 201455,
+   "serving": "485 ml",
+   "values": [
+    null,
+    70,
+    0.4,
+    20,
+    0,
+    0,
+    25,
+    1
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Red Bull Zero Tropicberry Energizer",
+   "itemId": 201461,
+   "serving": "485 ml",
+   "values": [
+    null,
+    60,
+    0.2,
+    18,
+    0,
+    0,
+    35,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Orange Dream - Medium",
+   "itemId": 201412,
+   "serving": "485 ml",
+   "values": [
+    null,
+    340,
+    0.4,
+    65,
+    10,
+    9,
+    80,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Sprite® Berry Bliss - Medium",
+   "itemId": 201423,
+   "serving": "485 ml",
+   "values": [
+    null,
+    320,
+    0.4,
+    62,
+    9,
+    9,
+    75,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Creamy Strawberry Coke® - Medium",
+   "itemId": 201418,
+   "serving": "485 ml",
+   "values": [
+    null,
+    280,
+    0.4,
+    50,
+    9,
+    9,
+    40,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Strawberry Watermelon Refresher - Medium",
+   "itemId": 201413,
+   "serving": "485 ml",
+   "values": [
+    null,
+    160,
+    0.4,
+    40,
+    0,
+    0,
+    25,
+    1
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Mango Pineapple Refresher - Medium",
+   "itemId": 201435,
+   "serving": "485 ml",
+   "values": [
+    null,
+    180,
+    0.4,
+    45,
+    0,
+    0,
+    30,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Blackberry Passionfruit Refresher - Medium",
+   "itemId": 201419,
+   "serving": "485 ml",
+   "values": [
+    null,
+    170,
+    1,
+    41,
+    0,
+    0,
+    25,
+    1
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Strawberry & Banana Real Fruit Smoothie - Medium",
+   "itemId": 200292,
+   "serving": "427 ml",
+   "values": [
+    null,
+    270,
+    4,
+    63,
+    1,
+    0,
+    55,
+    3
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Blueberry Pomegranate Real Fruit Smoothie - Medium",
+   "itemId": 200197,
+   "serving": "426 ml",
+   "values": [
+    null,
+    320,
+    3,
+    74,
+    0.5,
+    0,
+    50,
+    4
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Mango Pineapple Real Fruit Smoothie - Medium",
+   "itemId": 200268,
+   "serving": "428 ml",
+   "values": [
+    null,
+    280,
+    3,
+    66,
+    1,
+    0,
+    40,
+    3
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Fuze Iced Tea - Medium",
+   "itemId": 201257,
+   "serving": "570 ml",
+   "values": [
+    null,
+    150,
+    0,
+    41,
+    0,
+    0,
+    60,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Fruitopia Strawberry Passion Awareness - Medium",
+   "itemId": 200027,
+   "serving": "570 ml",
+   "values": [
+    null,
+    170,
+    0,
+    48,
+    0,
+    0,
+    60,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Fruitopia Orange Groove - Medium",
+   "itemId": 200023,
+   "serving": "570 ml",
+   "values": [
+    null,
+    170,
+    0.1,
+    48,
+    0,
+    0,
+    55,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Coca-Cola Zero - Medium",
+   "itemId": 200015,
+   "serving": "570 ml",
+   "values": [
+    null,
+    1,
+    0.1,
+    2,
+    0,
+    0,
+    90,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Coca-Cola - Medium",
+   "itemId": 200011,
+   "serving": "570 ml",
+   "values": [
+    null,
+    190,
+    0,
+    52,
+    0,
+    0,
+    45,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Diet Coke - Medium",
+   "itemId": 200019,
+   "serving": "570 ml",
+   "values": [
+    null,
+    1,
+    0,
+    0,
+    0,
+    0,
+    70,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Sprite - Medium",
+   "itemId": 200039,
+   "serving": "570 ml",
+   "values": [
+    null,
+    190,
+    0,
+    51,
+    0,
+    0,
+    90,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Barq's Root Beer - Medium",
+   "itemId": 200007,
+   "serving": "570 ml",
+   "values": [
+    null,
+    210,
+    0,
+    60,
+    0,
+    0,
+    90,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Minute Maid Orange Juice - Medium",
+   "itemId": 200035,
+   "serving": "380 ml",
+   "values": [
+    null,
+    180,
+    0,
+    42,
+    0,
+    0,
+    4,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Minute Maid Apple Juice - Medium",
+   "itemId": 200003,
+   "serving": "380 ml",
+   "values": [
+    null,
+    160,
+    1,
+    40,
+    0,
+    0,
+    35,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "1% Partly Skimmed Milk - 250 ml",
+   "itemId": 200001,
+   "serving": "250 ml",
+   "values": [
+    null,
+    110,
+    9,
+    12,
+    2.5,
+    1.5,
+    120,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "1% Partly Skimmed Chocolate Milk - 250 ml",
+   "itemId": 200948,
+   "serving": "250 ml",
+   "values": [
+    null,
+    150,
+    8,
+    25,
+    2.5,
+    1.5,
+    130,
+    1
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Red Bull Energy Drink",
+   "itemId": 201456,
+   "serving": "250 ml",
+   "values": [
+    null,
+    110,
+    0,
+    27,
+    0,
+    0,
+    105,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Red Bull Zero Energy Drink",
+   "itemId": 201458,
+   "serving": "250 ml",
+   "values": [
+    null,
+    5,
+    0,
+    4,
+    0,
+    0,
+    20,
+    0
+   ]
+  },
+  {
+   "section": "Beverages",
+   "name": "Dasani Water",
+   "itemId": 200343,
+   "serving": "591 ml",
+   "values": [
+    null,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ ]
+}

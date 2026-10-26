@@ -27,13 +27,20 @@ void main() {
       expect(catalogText, File('../api/src/GoHard.Api/Data/restaurant-catalog.json').readAsStringSync());
     });
 
-    test('four Canadian chains; the two without imported data offer nothing and say why', () {
+    test('four Canadian chains, each from its own official source, with honest dates', () {
       expect([for (final c in catalog.chains) (c.id, c.j['country'], c.available)],
-          [('mcdonalds-ca', 'CA', false), ('timhortons-ca', 'CA', false), ('subway-ca', 'CA', true), ('pizzapizza-ca', 'CA', true)]);
-      for (final c in catalog.chains.where((c) => !c.available)) {
-        expect(c.items, isEmpty, reason: c.id);
-        expect(c.unavailable, contains('2026-10-25'), reason: c.id);
-      }
+          [('mcdonalds-ca', 'CA', true), ('timhortons-ca', 'CA', true), ('subway-ca', 'CA', true), ('pizzapizza-ca', 'CA', true)]);
+      final mcd = catalog.chain('mcdonalds-ca')!, tims = catalog.chain('timhortons-ca')!;
+      expect(mcd.sources.single['url'], startsWith('https://www.mcdonalds.com/ca/en-ca/'));
+      expect(mcd.sources.single['published'], isNull, reason: 'the calculator states no date: unknown, never invented');
+      expect((tims.sources.single['published'], tims.sources.single['checked']), ('2026-07', '2026-10-25'), reason: 'publication and check dates kept apart');
+      // Sizes are the source's own stated variants, never a scaled guess: Mini and Medium fries are separate records.
+      final mini = mcd.items.firstWhere((i) => i.id == 'mcdonalds-ca:fries-mini'), medium = mcd.items.firstWhere((i) => i.id == 'mcdonalds-ca:world-famous-fries-medium');
+      expect((mini.nutrient('calories'), medium.nutrient('calories'), mini.group == medium.group), (120, 350, true));
+      // A Double Double is offered only because Tim Hortons states its values; the black coffee stays black.
+      expect(tims.item('timhortons-ca:medium-double-double')!.nutrient('calories'), 200);
+      expect(tims.item('timhortons-ca:medium-coffee-original')!.nutrient('calories'), 4);
+      expect(mcd.items.where((i) => i.role == 'drink' && i.grams != null), isEmpty, reason: 'drinks are stated in mL, not grams');
     });
 
     test('every offered item has a real source, stable ID, exact portion and plausible stated values', () {
@@ -171,6 +178,20 @@ void main() {
         expect(s.order.quantityOf(rings), 1);
         bounded(s, p, subway);
       }
+    });
+
+    test("McDonald's around 600 kcal with more protein, keeping the mini fries: every suggestion keeps them and fits", () {
+      final mcd = catalog.chain('mcdonalds-ca')!;
+      const p = OrderPreferences(maxCalories: 600, priority: OrderPriority.protein, keep: {'mcdonalds-ca:fries-mini': 1});
+      final r = OrderPlanner.suggest(mcd, p);
+      expect(r.fits, isNotEmpty);
+      for (final s in r.fits) {
+        bounded(s, p, mcd);
+        expect(s.calories, lessThanOrEqualTo(600));
+      }
+      final proteins = [for (final s in r.fits) s.protein];
+      expect(proteins, [...proteins]..sort((a, b) => b.compareTo(a)));
+      expect(r.fits.first.order.lines.map((l) => l.itemId), isNot(contains('mcdonalds-ca:world-famous-fries-medium')), reason: 'kept is the size kept');
     });
 
     test('contradictions are not guessed away', () {

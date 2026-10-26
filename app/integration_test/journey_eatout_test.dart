@@ -40,7 +40,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('eatout-ask')), what: 'Subway');
 
     // Asked in words (stub provider): the interpreted targets are shown and editable.
-    await j.type('eatout-ask', "McDonald's isn't here, so Subway for lunch, around 600 calories, more protein, keep the potato rings");
+    await j.type('eatout-ask', 'Subway for lunch, around 600 calories, more protein, keep the potato rings');
     await j.tapKey('eatout-send');
     await j.waitFor(find.byKey(const Key('eatout-chip-max')), what: 'the interpreted targets');
     await j.shot('eo-02-interpreted');

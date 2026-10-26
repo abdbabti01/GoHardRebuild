@@ -1,38 +1,675 @@
 {
-  "version": "2026-10-25.1",
+  "version": "2026-10-25.2",
   "checked": "2026-10-25",
   "chains": [
     {
       "id": "mcdonalds-ca",
       "name": "McDonald's",
-      "status": "unavailable",
-      "unavailable": "The official Canadian nutrition calculator and product pages refused automated access (HTTP 403) on 2026-10-25. No values were imported; nothing is offered until an official document is read in.",
+      "status": "available",
+      "adapter": "rows",
+      "file": "mcdonalds-ca-2026-10-25.json",
       "sources": [
         {
           "id": "mcdonalds-ca-calculator",
-          "title": "McDonald's Canada nutrition calculator",
+          "title": "McDonald's Canada Nutrition Calculator (values loaded by the official calculator page)",
           "url": "https://www.mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html",
+          "page": "https://www.mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html",
           "published": null,
+          "publishedNote": "Not stated by the calculator; values as shown on 2026-10-25 (country CA, language en)",
           "checked": "2026-10-25"
         }
       ],
-      "items": []
+      "builds": {
+        "calculator": "McDonald's Canada's item as listed in its nutrition calculator, using the values it displays (already rounded by McDonald's). Customizations and other sizes cannot be calculated here.",
+        "drink": "As listed in the calculator for that size and volume. A weight in grams is not stated."
+      },
+      "items": [
+        {
+          "id": "big-mac",
+          "section": "Beef",
+          "row": "Big Mac",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 burger",
+          "group": "big-mac",
+          "build": "calculator"
+        },
+        {
+          "id": "quarter-pounder-with-cheese",
+          "section": "Beef",
+          "row": "Quarter Pounder with Cheese",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 burger",
+          "group": "quarter-pounder-with-cheese",
+          "build": "calculator"
+        },
+        {
+          "id": "double-quarter-pounder-with-cheese",
+          "section": "Beef",
+          "row": "Double Quarter Pounder with Cheese",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 burger",
+          "group": "double-quarter-pounder-with-cheese",
+          "build": "calculator"
+        },
+        {
+          "id": "mcdouble",
+          "section": "Beef",
+          "row": "McDouble",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 burger",
+          "group": "mcdouble",
+          "build": "calculator"
+        },
+        {
+          "id": "cheeseburger",
+          "section": "Beef",
+          "row": "Cheeseburger",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 burger",
+          "group": "cheeseburger",
+          "build": "calculator"
+        },
+        {
+          "id": "hamburger",
+          "section": "Beef",
+          "row": "Hamburger",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 burger",
+          "group": "hamburger",
+          "build": "calculator"
+        },
+        {
+          "id": "mcchicken",
+          "section": "Chicken",
+          "row": "McChicken",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sandwich",
+          "group": "mcchicken",
+          "build": "calculator"
+        },
+        {
+          "id": "mccrispy",
+          "section": "Chicken",
+          "row": "McCrispy",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sandwich",
+          "group": "mccrispy",
+          "build": "calculator"
+        },
+        {
+          "id": "grilled-chicken-sandwich",
+          "section": "Chicken",
+          "row": "Grilled Chicken Sandwich",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sandwich",
+          "group": "grilled-chicken-sandwich",
+          "build": "calculator"
+        },
+        {
+          "id": "chicken-bacon-mcwrap-grilled",
+          "section": "Chicken",
+          "row": "Chicken & Bacon McWrap - Grilled",
+          "role": "main",
+          "kind": "wrap",
+          "portion": "1 wrap",
+          "group": "chicken-bacon-mcwrap-grilled",
+          "build": "calculator"
+        },
+        {
+          "id": "6-chicken-mcnuggets",
+          "section": "Chicken",
+          "row": "6 Chicken McNuggets",
+          "role": "main",
+          "kind": "chicken",
+          "portion": "1 order (6 McNuggets)",
+          "group": "6-chicken-mcnuggets",
+          "build": "calculator"
+        },
+        {
+          "id": "10-chicken-mcnuggets",
+          "section": "Chicken",
+          "row": "10 Chicken McNuggets",
+          "role": "main",
+          "kind": "chicken",
+          "portion": "1 order (10 McNuggets)",
+          "group": "10-chicken-mcnuggets",
+          "build": "calculator"
+        },
+        {
+          "id": "egg-mcmuffin",
+          "section": "Breakfast",
+          "row": "Egg McMuffin",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich",
+          "group": "egg-mcmuffin",
+          "build": "calculator"
+        },
+        {
+          "id": "sausage-n-egg-mcmuffin",
+          "section": "Breakfast",
+          "row": "Sausage 'N Egg McMuffin",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich",
+          "group": "sausage-n-egg-mcmuffin",
+          "build": "calculator"
+        },
+        {
+          "id": "bacon-n-egg-mcmuffin",
+          "section": "Breakfast",
+          "row": "Bacon 'N Egg McMuffin",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich",
+          "group": "bacon-n-egg-mcmuffin",
+          "build": "calculator"
+        },
+        {
+          "id": "hash-browns",
+          "section": "Breakfast",
+          "row": "Hash Browns",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 hash brown",
+          "group": "hash-browns",
+          "build": "calculator"
+        },
+        {
+          "id": "world-famous-fries-medium",
+          "section": "Snacks & Sides",
+          "row": "World Famous Fries - Medium",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 order (medium)",
+          "group": "fries",
+          "build": "calculator"
+        },
+        {
+          "id": "fries-mini",
+          "section": "Snacks & Sides",
+          "row": "World Famous Fries - Mini",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 order (mini)",
+          "group": "fries",
+          "build": "calculator",
+          "name": "World Famous Fries - Mini"
+        },
+        {
+          "id": "apple-slices",
+          "section": "Snacks & Sides",
+          "row": "Apple Slices",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 serving",
+          "group": "apple-slices",
+          "build": "calculator"
+        },
+        {
+          "id": "baked-apple-pie",
+          "section": "Snacks & Sides",
+          "row": "Baked Apple Pie",
+          "role": "dessert",
+          "kind": "dessert",
+          "portion": "1 pie",
+          "group": "baked-apple-pie",
+          "build": "calculator"
+        },
+        {
+          "id": "coca-cola-medium",
+          "section": "Beverages",
+          "row": "Coca-Cola - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium, 570 mL)",
+          "group": "coca-cola-medium",
+          "build": "drink"
+        },
+        {
+          "id": "coca-cola-zero-medium",
+          "section": "Beverages",
+          "row": "Coca-Cola Zero - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium, 570 mL)",
+          "group": "coca-cola-zero-medium",
+          "build": "drink"
+        },
+        {
+          "id": "diet-coke-medium",
+          "section": "Beverages",
+          "row": "Diet Coke - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium, 570 mL)",
+          "group": "diet-coke-medium",
+          "build": "drink"
+        },
+        {
+          "id": "sprite-medium",
+          "section": "Beverages",
+          "row": "Sprite - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium, 570 mL)",
+          "group": "sprite-medium",
+          "build": "drink"
+        },
+        {
+          "id": "minute-maid-orange-juice-medium",
+          "section": "Beverages",
+          "row": "Minute Maid Orange Juice - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium, 380 mL)",
+          "group": "minute-maid-orange-juice-medium",
+          "build": "drink"
+        },
+        {
+          "id": "1pct-partly-skimmed-milk-250-ml",
+          "section": "Beverages",
+          "row": "1% Partly Skimmed Milk - 250 ml",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (250 mL)",
+          "group": "1pct-partly-skimmed-milk-250-ml",
+          "build": "drink"
+        },
+        {
+          "id": "dasani-water",
+          "section": "Beverages",
+          "row": "Dasani Water",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (591 mL)",
+          "group": "dasani-water",
+          "build": "drink"
+        }
+      ]
     },
     {
       "id": "timhortons-ca",
       "name": "Tim Hortons",
-      "status": "unavailable",
-      "unavailable": "The official Canadian nutrition page is built in the browser and its text holds no values; the data service behind it is not a documented public source. No values were imported on 2026-10-25.",
+      "status": "available",
+      "adapter": "rows",
+      "file": "timhortons-ca-2026-07.json",
       "sources": [
         {
-          "id": "timhortons-ca-nutrition",
-          "title": "Tim Hortons Canada nutrition and allergens",
-          "url": "https://www.timhortons.ca/nutrition-and-allergens",
-          "published": null,
+          "id": "timhortons-ca-nutrition-2026-07",
+          "title": "Tim Hortons Canada Nutrition Information (PDF linked from timhortons.ca/nutrition-and-allergens)",
+          "url": "https://cdn.sanity.io/files/czqk28jt/prod_th_ca/147e592c99c865b50aca61832fa8ce3975cb0da5.pdf",
+          "page": "https://www.timhortons.ca/nutrition-and-allergens",
+          "published": "2026-07",
+          "publishedNote": "\"This document reflects information for our products as of July 2026\"; file Last-Modified 10 Jul 2026",
+          "sha256": "71cdd67b9380cd2de96dd75dcbfa7457fc4a0f1490c39d7c9e3a9b2875881f9f",
           "checked": "2026-10-25"
         }
       ],
-      "items": []
+      "builds": {
+        "standard": "Standard product formulation as listed by Tim Hortons Canada; values may vary with suppliers and assembly (as the document states). Changes to bread, cheese, sauce or meat are not calculated.",
+        "coffee": "Original Blend brewed coffee as listed, black: no cream, milk or sugar.",
+        "doubledouble": "Double Double as listed by Tim Hortons: its stated values include the standard cream and sugar. Other amounts are not calculated.",
+        "espresso": "Standard recipe as listed, with its default milk. Other milks, syrups or extra shots are not calculated.",
+        "drink": "As listed. Tim Hortons names the size; the cup volume is not stated.",
+        "baked": "As listed; the document notes that baked goods may vary in size.",
+        "plain": null
+      },
+      "items": [
+        {
+          "id": "medium-coffee-original",
+          "section": "Brewed Coffee",
+          "row": "Original Blend Coffee - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "coffee",
+          "build": "coffee",
+          "name": "Original Blend Coffee, medium"
+        },
+        {
+          "id": "medium-double-double",
+          "section": "Brewed Coffee",
+          "row": "Double Double Coffee - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "double-double",
+          "build": "doubledouble",
+          "name": "Double Double Coffee, medium"
+        },
+        {
+          "id": "medium-latte",
+          "section": "Espresso Beverages",
+          "row": "Latte - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "latte",
+          "build": "espresso",
+          "name": "Latte, medium"
+        },
+        {
+          "id": "medium-protein-latte",
+          "section": "Espresso Beverages",
+          "row": "Protein Latte - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "protein-latte",
+          "build": "espresso",
+          "name": "Protein Latte, medium"
+        },
+        {
+          "id": "steeped-tea",
+          "section": "Tea & Tea Lattes",
+          "row": "Steeped Tea",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink",
+          "group": "tea",
+          "build": "drink"
+        },
+        {
+          "id": "medium-hot-chocolate",
+          "section": "Specialty Beverages",
+          "row": "Hot Chocolate - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "hot-chocolate",
+          "build": "drink",
+          "name": "Hot Chocolate, medium"
+        },
+        {
+          "id": "medium-iced-coffee",
+          "section": "Iced Coffee & Cold Brew",
+          "row": "Original Iced Coffee - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "iced-coffee",
+          "build": "drink",
+          "name": "Original Iced Coffee, medium"
+        },
+        {
+          "id": "medium-iced-capp",
+          "section": "Iced Capps",
+          "row": "Original Iced Capp - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "iced-capp",
+          "build": "drink",
+          "name": "Original Iced Capp, medium"
+        },
+        {
+          "id": "medium-light-iced-capp",
+          "section": "Iced Capps",
+          "row": "Light Iced Capp - Medium",
+          "role": "drink",
+          "kind": "drink",
+          "portion": "1 drink (medium)",
+          "group": "light-iced-capp",
+          "build": "drink",
+          "name": "Light Iced Capp, medium"
+        },
+        {
+          "id": "bacon-english-muffin",
+          "section": "Classic Breakfast Sandwiches",
+          "row": "Bacon English Muffin",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich",
+          "group": "bacon-muffin",
+          "build": "standard"
+        },
+        {
+          "id": "sausage-english-muffin",
+          "section": "Classic Breakfast Sandwiches",
+          "row": "Sausage English Muffin",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich",
+          "group": "sausage-muffin",
+          "build": "standard"
+        },
+        {
+          "id": "egg-cheese-english-muffin",
+          "section": "Classic Breakfast Sandwiches",
+          "row": "Egg & Cheese English Muffin",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich",
+          "group": "egg-cheese-muffin",
+          "build": "standard"
+        },
+        {
+          "id": "protein-bagel-belt",
+          "section": "Bagel BELT Breakfast Sandwiches",
+          "row": "Protein Bagel BELT Sandwich",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich",
+          "group": "protein-belt",
+          "build": "standard"
+        },
+        {
+          "id": "bacon-breakfast-wrap",
+          "section": "Breakfast Wraps",
+          "row": "Bacon Breakfast Wrap",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 wrap",
+          "group": "bacon-breakfast-wrap",
+          "build": "standard"
+        },
+        {
+          "id": "bacon-farmers-wrap",
+          "section": "Breakfast Wraps",
+          "row": "Bacon Farmer's Wrap",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 wrap",
+          "group": "farmers-wrap",
+          "build": "standard"
+        },
+        {
+          "id": "spinach-egg-white-omelette-bites",
+          "section": "Omelette Bites",
+          "row": "Spinach & Egg White Omelette Bites",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 serving",
+          "group": "omelette-bites-spinach",
+          "build": "standard"
+        },
+        {
+          "id": "sausage-cheese-omelette-bites",
+          "section": "Omelette Bites",
+          "row": "Sausage & Four Cheese Omelette Bites",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 serving",
+          "group": "omelette-bites-sausage",
+          "build": "standard"
+        },
+        {
+          "id": "hash-brown",
+          "section": "Other",
+          "row": "Hash Brown",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 hash brown",
+          "group": "hash-brown",
+          "build": "plain"
+        },
+        {
+          "id": "yogurt-parfait",
+          "section": "Other",
+          "row": "Yogurt Parfait",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 parfait",
+          "group": "parfait",
+          "build": "standard"
+        },
+        {
+          "id": "turkey-bacon-club",
+          "section": "Sandwiches",
+          "row": "Turkey Bacon Club Sandwich",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sandwich",
+          "group": "turkey-club",
+          "build": "standard"
+        },
+        {
+          "id": "crispy-chicken-sandwich",
+          "section": "Sandwiches",
+          "row": "Crispy Chicken Sandwich",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sandwich",
+          "group": "crispy-chicken",
+          "build": "standard"
+        },
+        {
+          "id": "chicken-bacon-ranch-wrap",
+          "section": "Wraps",
+          "row": "Chicken Bacon Ranch Wrap",
+          "role": "main",
+          "kind": "wrap",
+          "portion": "1 wrap",
+          "group": "cbr-wrap",
+          "build": "standard"
+        },
+        {
+          "id": "cilantro-lime-chicken-bowl",
+          "section": "Loaded Bowls",
+          "row": "Cilantro Lime Chicken Loaded Bowl",
+          "role": "main",
+          "kind": "bowl",
+          "portion": "1 bowl",
+          "group": "cilantro-chicken-bowl",
+          "build": "standard"
+        },
+        {
+          "id": "habanero-chicken-bowl",
+          "section": "Loaded Bowls",
+          "row": "Habanero Chicken Loaded Bowl",
+          "role": "main",
+          "kind": "bowl",
+          "portion": "1 bowl",
+          "group": "habanero-chicken-bowl",
+          "build": "standard"
+        },
+        {
+          "id": "habanero-veggie-bowl",
+          "section": "Loaded Bowls",
+          "row": "Habanero Veggie Loaded Bowl",
+          "role": "main",
+          "kind": "bowl",
+          "portion": "1 bowl",
+          "group": "habanero-veggie-bowl",
+          "build": "standard"
+        },
+        {
+          "id": "grilled-cheese-melt",
+          "section": "Melts",
+          "row": "Grilled Cheese Melt",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sandwich",
+          "group": "grilled-cheese",
+          "build": "standard"
+        },
+        {
+          "id": "chicken-noodle-soup-regular",
+          "section": "Soups & Chili",
+          "row": "Chicken Noodle Soup - Regular",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 soup (regular)",
+          "group": "chicken-noodle",
+          "build": "standard",
+          "name": "Chicken Noodle Soup, regular"
+        },
+        {
+          "id": "chili-regular",
+          "section": "Soups & Chili",
+          "row": "Chili - Regular",
+          "role": "main",
+          "kind": "bowl",
+          "portion": "1 chili (regular)",
+          "group": "chili",
+          "build": "standard",
+          "name": "Chili, regular",
+          "size": "regular"
+        },
+        {
+          "id": "chili-large",
+          "section": "Soups & Chili",
+          "row": "Chili - Large",
+          "role": "main",
+          "kind": "bowl",
+          "portion": "1 chili (large)",
+          "group": "chili",
+          "build": "standard",
+          "name": "Chili, large",
+          "size": "large"
+        },
+        {
+          "id": "honey-dip-donut",
+          "section": "Donuts",
+          "row": "Honey Dip Donut",
+          "role": "dessert",
+          "kind": "dessert",
+          "portion": "1 donut",
+          "group": "honey-dip",
+          "build": "baked"
+        },
+        {
+          "id": "boston-cream-donut",
+          "section": "Donuts",
+          "row": "Boston Cream Donut",
+          "role": "dessert",
+          "kind": "dessert",
+          "portion": "1 donut",
+          "group": "boston-cream",
+          "build": "baked"
+        },
+        {
+          "id": "honey-dip-timbit",
+          "section": "Timbits®",
+          "row": "Honey Dip Timbit",
+          "role": "dessert",
+          "kind": "dessert",
+          "portion": "1 Timbit",
+          "group": "timbit",
+          "build": "baked"
+        },
+        {
+          "id": "plain-bagel",
+          "section": "Classic Bagels",
+          "row": "Plain Bagel",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 bagel",
+          "group": "plain-bagel",
+          "build": "baked",
+          "name": "Plain Bagel (no spread)"
+        }
+      ]
     },
     {
       "id": "subway-ca",

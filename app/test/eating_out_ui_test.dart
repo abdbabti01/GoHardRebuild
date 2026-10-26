@@ -144,11 +144,12 @@ void main() {
     await tester.pumpAndSettle();
     await _tap(tester, find.descendant(of: find.byType(EatScreen), matching: find.byKey(const Key('eat-eating-out'))));
     expect(find.text('Subway · Canada'), findsOneWidget);
-    expect(find.text('Menu not added yet: no verified data'), findsNWidgets(2), reason: 'McDonald\'s and Tim Hortons are listed, honestly empty');
-    await _tap(tester, find.byKey(const Key('eatout-chain-mcdonalds-ca')));
-    expect(find.textContaining('nothing is offered rather than a guess'), findsOneWidget);
-    await tester.tapAt(const Offset(10, 10));
-    await tester.pumpAndSettle();
+    for (final name in ["McDonald's", 'Tim Hortons', 'Pizza Pizza']) {
+      expect(find.text('$name · Canada'), findsOneWidget);
+    }
+    expect(find.text('Menu not added yet: no verified data'), findsNothing);
+    final mcd = catalog.chain('mcdonalds-ca')!;
+    expect(find.descendant(of: find.byKey(const Key('eatout-chain-mcdonalds-ca')), matching: find.textContaining('${mcd.items.length} verified options')), findsOneWidget);
 
     await _tap(tester, find.byKey(const Key('eatout-chain-subway-ca')));
     expect(find.textContaining('Subway · Canada · '), findsOneWidget);

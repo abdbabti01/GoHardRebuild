@@ -1,5 +1,5 @@
 {
- "version": "2026-10-25.1",
+ "version": "2026-10-25.2",
  "country": "CA",
  "checked": "2026-10-25",
  "chains": [
@@ -7,37 +7,1795 @@
    "id": "mcdonalds-ca",
    "name": "McDonald's",
    "country": "CA",
-   "status": "unavailable",
-   "unavailable": "The official Canadian nutrition calculator and product pages refused automated access (HTTP 403) on 2026-10-25. No values were imported; nothing is offered until an official document is read in.",
+   "status": "available",
+   "unavailable": null,
    "sources": [
     {
      "id": "mcdonalds-ca-calculator",
-     "title": "McDonald's Canada nutrition calculator",
+     "title": "McDonald's Canada Nutrition Calculator (values loaded by the official calculator page)",
      "url": "https://www.mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html",
+     "page": "https://www.mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html",
      "published": null,
+     "publishedNote": "Not stated by the calculator; values as shown on 2026-10-25 (country CA, language en)",
      "checked": "2026-10-25"
     }
    ],
-   "builds": {},
-   "items": []
+   "builds": {
+    "calculator": "McDonald's Canada's item as listed in its nutrition calculator, using the values it displays (already rounded by McDonald's). Customizations and other sizes cannot be calculated here.",
+    "drink": "As listed in the calculator for that size and volume. A weight in grams is not stated."
+   },
+   "items": [
+    {
+     "id": "mcdonalds-ca:big-mac",
+     "name": "Big Mac",
+     "sourceName": "Big Mac",
+     "section": "Beef",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "big-mac",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 burger",
+     "grams": 216,
+     "nutrients": {
+      "calories": 570,
+      "protein": 24,
+      "carbs": 46,
+      "fat": 32
+     },
+     "extra": {
+      "sodiumMg": 920,
+      "fibreG": 3,
+      "satFatG": 10
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:quarter-pounder-with-cheese",
+     "name": "Quarter Pounder with Cheese",
+     "sourceName": "Quarter Pounder with Cheese",
+     "section": "Beef",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "quarter-pounder-with-cheese",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 burger",
+     "grams": 201,
+     "nutrients": {
+      "calories": 530,
+      "protein": 29,
+      "carbs": 41,
+      "fat": 27
+     },
+     "extra": {
+      "sodiumMg": 1050,
+      "fibreG": 2,
+      "satFatG": 13
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:double-quarter-pounder-with-cheese",
+     "name": "Double Quarter Pounder with Cheese",
+     "sourceName": "Double Quarter Pounder with Cheese",
+     "section": "Beef",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "double-quarter-pounder-with-cheese",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 burger",
+     "grams": 278,
+     "nutrients": {
+      "calories": 750,
+      "protein": 47,
+      "carbs": 42,
+      "fat": 44
+     },
+     "extra": {
+      "sodiumMg": 1210,
+      "fibreG": 3,
+      "satFatG": 21
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:mcdouble",
+     "name": "McDouble",
+     "sourceName": "McDouble",
+     "section": "Beef",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "mcdouble",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 burger",
+     "grams": 149,
+     "nutrients": {
+      "calories": 380,
+      "protein": 21,
+      "carbs": 34,
+      "fat": 18
+     },
+     "extra": {
+      "sodiumMg": 840,
+      "fibreG": 2,
+      "satFatG": 8
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:cheeseburger",
+     "name": "Cheeseburger",
+     "sourceName": "Cheeseburger",
+     "section": "Beef",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "cheeseburger",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 burger",
+     "grams": 113,
+     "nutrients": {
+      "calories": 290,
+      "protein": 14,
+      "carbs": 32,
+      "fat": 12
+     },
+     "extra": {
+      "sodiumMg": 670,
+      "fibreG": 2,
+      "satFatG": 5
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:hamburger",
+     "name": "Hamburger",
+     "sourceName": "Hamburger",
+     "section": "Beef",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "hamburger",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 burger",
+     "grams": 100,
+     "nutrients": {
+      "calories": 240,
+      "protein": 12,
+      "carbs": 32,
+      "fat": 8
+     },
+     "extra": {
+      "sodiumMg": 490,
+      "fibreG": 2,
+      "satFatG": 3
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:mcchicken",
+     "name": "McChicken",
+     "sourceName": "McChicken",
+     "section": "Chicken",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "mcchicken",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": 175,
+     "nutrients": {
+      "calories": 480,
+      "protein": 16,
+      "carbs": 45,
+      "fat": 27
+     },
+     "extra": {
+      "sodiumMg": 650,
+      "fibreG": 3,
+      "satFatG": 4.5
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:mccrispy",
+     "name": "McCrispy",
+     "sourceName": "McCrispy",
+     "section": "Chicken",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "mccrispy",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": 205,
+     "nutrients": {
+      "calories": 520,
+      "protein": 29,
+      "carbs": 44,
+      "fat": 26
+     },
+     "extra": {
+      "sodiumMg": 840,
+      "fibreG": 2,
+      "satFatG": 4.5
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:grilled-chicken-sandwich",
+     "name": "Grilled Chicken Sandwich",
+     "sourceName": "Grilled Chicken Sandwich",
+     "section": "Chicken",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "grilled-chicken-sandwich",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": 189,
+     "nutrients": {
+      "calories": 400,
+      "protein": 31,
+      "carbs": 32,
+      "fat": 16
+     },
+     "extra": {
+      "sodiumMg": 650,
+      "fibreG": 2,
+      "satFatG": 3
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:chicken-bacon-mcwrap-grilled",
+     "name": "Chicken & Bacon McWrap - Grilled",
+     "sourceName": "Chicken & Bacon McWrap - Grilled",
+     "section": "Chicken",
+     "role": "main",
+     "kind": "wrap",
+     "group": "chicken-bacon-mcwrap-grilled",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 wrap",
+     "grams": 242,
+     "nutrients": {
+      "calories": 480,
+      "protein": 33,
+      "carbs": 37,
+      "fat": 22
+     },
+     "extra": {
+      "sodiumMg": 850,
+      "fibreG": 2,
+      "satFatG": 6
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:6-chicken-mcnuggets",
+     "name": "6 Chicken McNuggets",
+     "sourceName": "6 Chicken McNuggets",
+     "section": "Chicken",
+     "role": "main",
+     "kind": "chicken",
+     "group": "6-chicken-mcnuggets",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 order (6 McNuggets)",
+     "grams": 95,
+     "nutrients": {
+      "calories": 250,
+      "protein": 16,
+      "carbs": 15,
+      "fat": 14
+     },
+     "extra": {
+      "sodiumMg": 450,
+      "fibreG": 0,
+      "satFatG": 2.5
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:10-chicken-mcnuggets",
+     "name": "10 Chicken McNuggets",
+     "sourceName": "10 Chicken McNuggets",
+     "section": "Chicken",
+     "role": "main",
+     "kind": "chicken",
+     "group": "10-chicken-mcnuggets",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 order (10 McNuggets)",
+     "grams": 159,
+     "nutrients": {
+      "calories": 410,
+      "protein": 26,
+      "carbs": 26,
+      "fat": 23
+     },
+     "extra": {
+      "sodiumMg": 750,
+      "fibreG": 0,
+      "satFatG": 4
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:egg-mcmuffin",
+     "name": "Egg McMuffin",
+     "sourceName": "Egg McMuffin",
+     "section": "Breakfast",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "egg-mcmuffin",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": 133,
+     "nutrients": {
+      "calories": 290,
+      "protein": 16,
+      "carbs": 28,
+      "fat": 11
+     },
+     "extra": {
+      "sodiumMg": 750,
+      "fibreG": 2,
+      "satFatG": 5
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:sausage-n-egg-mcmuffin",
+     "name": "Sausage 'N Egg McMuffin",
+     "sourceName": "Sausage 'N Egg McMuffin",
+     "section": "Breakfast",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "sausage-n-egg-mcmuffin",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": 158,
+     "nutrients": {
+      "calories": 440,
+      "protein": 20,
+      "carbs": 29,
+      "fat": 26
+     },
+     "extra": {
+      "sodiumMg": 880,
+      "fibreG": 2,
+      "satFatG": 11
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:bacon-n-egg-mcmuffin",
+     "name": "Bacon 'N Egg McMuffin",
+     "sourceName": "Bacon 'N Egg McMuffin",
+     "section": "Breakfast",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "bacon-n-egg-mcmuffin",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": 124,
+     "nutrients": {
+      "calories": 310,
+      "protein": 16,
+      "carbs": 28,
+      "fat": 15
+     },
+     "extra": {
+      "sodiumMg": 670,
+      "fibreG": 2,
+      "satFatG": 6
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:hash-browns",
+     "name": "Hash Browns",
+     "sourceName": "Hash Browns",
+     "section": "Breakfast",
+     "role": "side",
+     "kind": "side",
+     "group": "hash-browns",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 hash brown",
+     "grams": 55,
+     "nutrients": {
+      "calories": 160,
+      "protein": 1,
+      "carbs": 16,
+      "fat": 10
+     },
+     "extra": {
+      "sodiumMg": 360,
+      "fibreG": 2,
+      "satFatG": 1.5
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:world-famous-fries-medium",
+     "name": "World Famous Fries - Medium",
+     "sourceName": "World Famous Fries - Medium",
+     "section": "Snacks & Sides",
+     "role": "side",
+     "kind": "side",
+     "group": "fries",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 order (medium)",
+     "grams": 110,
+     "nutrients": {
+      "calories": 350,
+      "protein": 4,
+      "carbs": 46,
+      "fat": 17
+     },
+     "extra": {
+      "sodiumMg": 260,
+      "fibreG": 4,
+      "satFatG": 2
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:fries-mini",
+     "name": "World Famous Fries - Mini",
+     "sourceName": "World Famous Fries - Mini",
+     "section": "Snacks & Sides",
+     "role": "side",
+     "kind": "side",
+     "group": "fries",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 order (mini)",
+     "grams": 38,
+     "nutrients": {
+      "calories": 120,
+      "protein": 1,
+      "carbs": 16,
+      "fat": 6
+     },
+     "extra": {
+      "sodiumMg": 90,
+      "fibreG": 1,
+      "satFatG": 0.5
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:apple-slices",
+     "name": "Apple Slices",
+     "sourceName": "Apple Slices",
+     "section": "Snacks & Sides",
+     "role": "side",
+     "kind": "side",
+     "group": "apple-slices",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 serving",
+     "grams": 68,
+     "nutrients": {
+      "calories": 35,
+      "protein": 0.1,
+      "carbs": 9,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 2,
+      "fibreG": 1,
+      "satFatG": 0
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:baked-apple-pie",
+     "name": "Baked Apple Pie",
+     "sourceName": "Baked Apple Pie",
+     "section": "Snacks & Sides",
+     "role": "dessert",
+     "kind": "dessert",
+     "group": "baked-apple-pie",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 pie",
+     "grams": 79,
+     "nutrients": {
+      "calories": 270,
+      "protein": 3,
+      "carbs": 34,
+      "fat": 13
+     },
+     "extra": {
+      "sodiumMg": 135,
+      "fibreG": 1,
+      "satFatG": 9
+     },
+     "build": "calculator",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:coca-cola-medium",
+     "name": "Coca-Cola - Medium",
+     "sourceName": "Coca-Cola - Medium",
+     "section": "Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "coca-cola-medium",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium, 570 mL)",
+     "grams": null,
+     "nutrients": {
+      "calories": 190,
+      "protein": 0,
+      "carbs": 52,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 45,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "drink",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:coca-cola-zero-medium",
+     "name": "Coca-Cola Zero - Medium",
+     "sourceName": "Coca-Cola Zero - Medium",
+     "section": "Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "coca-cola-zero-medium",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium, 570 mL)",
+     "grams": null,
+     "nutrients": {
+      "calories": 1,
+      "protein": 0.1,
+      "carbs": 2,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 90,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "drink",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:diet-coke-medium",
+     "name": "Diet Coke - Medium",
+     "sourceName": "Diet Coke - Medium",
+     "section": "Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "diet-coke-medium",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium, 570 mL)",
+     "grams": null,
+     "nutrients": {
+      "calories": 1,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 70,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "drink",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:sprite-medium",
+     "name": "Sprite - Medium",
+     "sourceName": "Sprite - Medium",
+     "section": "Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "sprite-medium",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium, 570 mL)",
+     "grams": null,
+     "nutrients": {
+      "calories": 190,
+      "protein": 0,
+      "carbs": 51,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 90,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "drink",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:minute-maid-orange-juice-medium",
+     "name": "Minute Maid Orange Juice - Medium",
+     "sourceName": "Minute Maid Orange Juice - Medium",
+     "section": "Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "minute-maid-orange-juice-medium",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium, 380 mL)",
+     "grams": null,
+     "nutrients": {
+      "calories": 180,
+      "protein": 0,
+      "carbs": 42,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 4,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "drink",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:1pct-partly-skimmed-milk-250-ml",
+     "name": "1% Partly Skimmed Milk - 250 ml",
+     "sourceName": "1% Partly Skimmed Milk - 250 ml",
+     "section": "Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "1pct-partly-skimmed-milk-250-ml",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (250 mL)",
+     "grams": null,
+     "nutrients": {
+      "calories": 110,
+      "protein": 9,
+      "carbs": 12,
+      "fat": 2.5
+     },
+     "extra": {
+      "sodiumMg": 120,
+      "fibreG": 0,
+      "satFatG": 1.5
+     },
+     "build": "drink",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "mcdonalds-ca:dasani-water",
+     "name": "Dasani Water",
+     "sourceName": "Dasani Water",
+     "section": "Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "dasani-water",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (591 mL)",
+     "grams": null,
+     "nutrients": {
+      "calories": 0,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 0,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "drink",
+     "source": "mcdonalds-ca-calculator",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    }
+   ]
   },
   {
    "id": "timhortons-ca",
    "name": "Tim Hortons",
    "country": "CA",
-   "status": "unavailable",
-   "unavailable": "The official Canadian nutrition page is built in the browser and its text holds no values; the data service behind it is not a documented public source. No values were imported on 2026-10-25.",
+   "status": "available",
+   "unavailable": null,
    "sources": [
     {
-     "id": "timhortons-ca-nutrition",
-     "title": "Tim Hortons Canada nutrition and allergens",
-     "url": "https://www.timhortons.ca/nutrition-and-allergens",
-     "published": null,
+     "id": "timhortons-ca-nutrition-2026-07",
+     "title": "Tim Hortons Canada Nutrition Information (PDF linked from timhortons.ca/nutrition-and-allergens)",
+     "url": "https://cdn.sanity.io/files/czqk28jt/prod_th_ca/147e592c99c865b50aca61832fa8ce3975cb0da5.pdf",
+     "page": "https://www.timhortons.ca/nutrition-and-allergens",
+     "published": "2026-07",
+     "publishedNote": "\"This document reflects information for our products as of July 2026\"; file Last-Modified 10 Jul 2026",
+     "sha256": "71cdd67b9380cd2de96dd75dcbfa7457fc4a0f1490c39d7c9e3a9b2875881f9f",
      "checked": "2026-10-25"
     }
    ],
-   "builds": {},
-   "items": []
+   "builds": {
+    "standard": "Standard product formulation as listed by Tim Hortons Canada; values may vary with suppliers and assembly (as the document states). Changes to bread, cheese, sauce or meat are not calculated.",
+    "coffee": "Original Blend brewed coffee as listed, black: no cream, milk or sugar.",
+    "doubledouble": "Double Double as listed by Tim Hortons: its stated values include the standard cream and sugar. Other amounts are not calculated.",
+    "espresso": "Standard recipe as listed, with its default milk. Other milks, syrups or extra shots are not calculated.",
+    "drink": "As listed. Tim Hortons names the size; the cup volume is not stated.",
+    "baked": "As listed; the document notes that baked goods may vary in size.",
+    "plain": null
+   },
+   "items": [
+    {
+     "id": "timhortons-ca:medium-coffee-original",
+     "name": "Original Blend Coffee, medium",
+     "sourceName": "Original Blend Coffee - Medium",
+     "section": "Brewed Coffee",
+     "role": "drink",
+     "kind": "drink",
+     "group": "coffee",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 4,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 0,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "coffee",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:medium-double-double",
+     "name": "Double Double Coffee, medium",
+     "sourceName": "Double Double Coffee - Medium",
+     "section": "Brewed Coffee",
+     "role": "drink",
+     "kind": "drink",
+     "group": "double-double",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 200,
+      "protein": 2,
+      "carbs": 22,
+      "fat": 13
+     },
+     "extra": {
+      "sodiumMg": 80,
+      "fibreG": 0,
+      "satFatG": 8
+     },
+     "build": "doubledouble",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:medium-latte",
+     "name": "Latte, medium",
+     "sourceName": "Latte - Medium",
+     "section": "Espresso Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "latte",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 140,
+      "protein": 10,
+      "carbs": 14,
+      "fat": 5
+     },
+     "extra": {
+      "sodiumMg": 115,
+      "fibreG": 0,
+      "satFatG": 3.5
+     },
+     "build": "espresso",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:medium-protein-latte",
+     "name": "Protein Latte, medium",
+     "sourceName": "Protein Latte - Medium",
+     "section": "Espresso Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "protein-latte",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 170,
+      "protein": 20,
+      "carbs": 10,
+      "fat": 6
+     },
+     "extra": {
+      "sodiumMg": 80,
+      "fibreG": 0,
+      "satFatG": 4
+     },
+     "build": "espresso",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:steeped-tea",
+     "name": "Steeped Tea",
+     "sourceName": "Steeped Tea",
+     "section": "Tea & Tea Lattes",
+     "role": "drink",
+     "kind": "drink",
+     "group": "tea",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink",
+     "grams": null,
+     "nutrients": {
+      "calories": 0,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0
+     },
+     "extra": {
+      "sodiumMg": 0,
+      "fibreG": 0,
+      "satFatG": 0
+     },
+     "build": "drink",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:medium-hot-chocolate",
+     "name": "Hot Chocolate, medium",
+     "sourceName": "Hot Chocolate - Medium",
+     "section": "Specialty Beverages",
+     "role": "drink",
+     "kind": "drink",
+     "group": "hot-chocolate",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 280,
+      "protein": 1,
+      "carbs": 62,
+      "fat": 4
+     },
+     "extra": {
+      "sodiumMg": 230,
+      "fibreG": 2,
+      "satFatG": 3.5
+     },
+     "build": "drink",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:medium-iced-coffee",
+     "name": "Original Iced Coffee, medium",
+     "sourceName": "Original Iced Coffee - Medium",
+     "section": "Iced Coffee & Cold Brew",
+     "role": "drink",
+     "kind": "drink",
+     "group": "iced-coffee",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 150,
+      "protein": 1,
+      "carbs": 22,
+      "fat": 8
+     },
+     "extra": {
+      "sodiumMg": 40,
+      "fibreG": 0,
+      "satFatG": 5
+     },
+     "build": "drink",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:medium-iced-capp",
+     "name": "Original Iced Capp, medium",
+     "sourceName": "Original Iced Capp - Medium",
+     "section": "Iced Capps",
+     "role": "drink",
+     "kind": "drink",
+     "group": "iced-capp",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 330,
+      "protein": 3,
+      "carbs": 45,
+      "fat": 16
+     },
+     "extra": {
+      "sodiumMg": 105,
+      "fibreG": 0,
+      "satFatG": 10
+     },
+     "build": "drink",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:medium-light-iced-capp",
+     "name": "Light Iced Capp, medium",
+     "sourceName": "Light Iced Capp - Medium",
+     "section": "Iced Capps",
+     "role": "drink",
+     "kind": "drink",
+     "group": "light-iced-capp",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 drink (medium)",
+     "grams": null,
+     "nutrients": {
+      "calories": 210,
+      "protein": 4,
+      "carbs": 45,
+      "fat": 2
+     },
+     "extra": {
+      "sodiumMg": 45,
+      "fibreG": 0,
+      "satFatG": 1
+     },
+     "build": "drink",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:bacon-english-muffin",
+     "name": "Bacon English Muffin",
+     "sourceName": "Bacon English Muffin",
+     "section": "Classic Breakfast Sandwiches",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "bacon-muffin",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": null,
+     "nutrients": {
+      "calories": 330,
+      "protein": 17,
+      "carbs": 27,
+      "fat": 16
+     },
+     "extra": {
+      "sodiumMg": 710,
+      "fibreG": 1,
+      "satFatG": 7
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:sausage-english-muffin",
+     "name": "Sausage English Muffin",
+     "sourceName": "Sausage English Muffin",
+     "section": "Classic Breakfast Sandwiches",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "sausage-muffin",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": null,
+     "nutrients": {
+      "calories": 450,
+      "protein": 19,
+      "carbs": 28,
+      "fat": 29
+     },
+     "extra": {
+      "sodiumMg": 680,
+      "fibreG": 2,
+      "satFatG": 11
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:egg-cheese-english-muffin",
+     "name": "Egg & Cheese English Muffin",
+     "sourceName": "Egg & Cheese English Muffin",
+     "section": "Classic Breakfast Sandwiches",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "egg-cheese-muffin",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": null,
+     "nutrients": {
+      "calories": 270,
+      "protein": 14,
+      "carbs": 27,
+      "fat": 12
+     },
+     "extra": {
+      "sodiumMg": 500,
+      "fibreG": 1,
+      "satFatG": 5
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:protein-bagel-belt",
+     "name": "Protein Bagel BELT Sandwich",
+     "sourceName": "Protein Bagel BELT Sandwich",
+     "section": "Bagel BELT Breakfast Sandwiches",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "protein-belt",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": null,
+     "nutrients": {
+      "calories": 480,
+      "protein": 33,
+      "carbs": 49,
+      "fat": 18
+     },
+     "extra": {
+      "sodiumMg": 1100,
+      "fibreG": 4,
+      "satFatG": 9
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:bacon-breakfast-wrap",
+     "name": "Bacon Breakfast Wrap",
+     "sourceName": "Bacon Breakfast Wrap",
+     "section": "Breakfast Wraps",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "bacon-breakfast-wrap",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 wrap",
+     "grams": null,
+     "nutrients": {
+      "calories": 400,
+      "protein": 18,
+      "carbs": 34,
+      "fat": 21
+     },
+     "extra": {
+      "sodiumMg": 750,
+      "fibreG": 2,
+      "satFatG": 8
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:bacon-farmers-wrap",
+     "name": "Bacon Farmer's Wrap",
+     "sourceName": "Bacon Farmer's Wrap",
+     "section": "Breakfast Wraps",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "farmers-wrap",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 wrap",
+     "grams": null,
+     "nutrients": {
+      "calories": 520,
+      "protein": 19,
+      "carbs": 49,
+      "fat": 27
+     },
+     "extra": {
+      "sodiumMg": 970,
+      "fibreG": 4,
+      "satFatG": 8
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:spinach-egg-white-omelette-bites",
+     "name": "Spinach & Egg White Omelette Bites",
+     "sourceName": "Spinach & Egg White Omelette Bites",
+     "section": "Omelette Bites",
+     "role": "side",
+     "kind": "side",
+     "group": "omelette-bites-spinach",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 serving",
+     "grams": null,
+     "nutrients": {
+      "calories": 130,
+      "protein": 14,
+      "carbs": 8,
+      "fat": 6
+     },
+     "extra": {
+      "sodiumMg": 420,
+      "fibreG": 1,
+      "satFatG": 2
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:sausage-cheese-omelette-bites",
+     "name": "Sausage & Four Cheese Omelette Bites",
+     "sourceName": "Sausage & Four Cheese Omelette Bites",
+     "section": "Omelette Bites",
+     "role": "side",
+     "kind": "side",
+     "group": "omelette-bites-sausage",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 serving",
+     "grams": null,
+     "nutrients": {
+      "calories": 290,
+      "protein": 13,
+      "carbs": 9,
+      "fat": 23
+     },
+     "extra": {
+      "sodiumMg": 610,
+      "fibreG": 1,
+      "satFatG": 8
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:hash-brown",
+     "name": "Hash Brown",
+     "sourceName": "Hash Brown",
+     "section": "Other",
+     "role": "side",
+     "kind": "side",
+     "group": "hash-brown",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 hash brown",
+     "grams": null,
+     "nutrients": {
+      "calories": 120,
+      "protein": 1,
+      "carbs": 15,
+      "fat": 6
+     },
+     "extra": {
+      "sodiumMg": 220,
+      "fibreG": 1,
+      "satFatG": 0.5
+     },
+     "build": "plain",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:yogurt-parfait",
+     "name": "Yogurt Parfait",
+     "sourceName": "Yogurt Parfait",
+     "section": "Other",
+     "role": "side",
+     "kind": "side",
+     "group": "parfait",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 parfait",
+     "grams": null,
+     "nutrients": {
+      "calories": 250,
+      "protein": 8,
+      "carbs": 40,
+      "fat": 7
+     },
+     "extra": {
+      "sodiumMg": 115,
+      "fibreG": 3,
+      "satFatG": 1.5
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:turkey-bacon-club",
+     "name": "Turkey Bacon Club Sandwich",
+     "sourceName": "Turkey Bacon Club Sandwich",
+     "section": "Sandwiches",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "turkey-club",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": null,
+     "nutrients": {
+      "calories": 550,
+      "protein": 27,
+      "carbs": 60,
+      "fat": 23
+     },
+     "extra": {
+      "sodiumMg": 1440,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:crispy-chicken-sandwich",
+     "name": "Crispy Chicken Sandwich",
+     "sourceName": "Crispy Chicken Sandwich",
+     "section": "Sandwiches",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "crispy-chicken",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": null,
+     "nutrients": {
+      "calories": 660,
+      "protein": 23,
+      "carbs": 54,
+      "fat": 37
+     },
+     "extra": {
+      "sodiumMg": 1170,
+      "fibreG": 4,
+      "satFatG": 7
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:chicken-bacon-ranch-wrap",
+     "name": "Chicken Bacon Ranch Wrap",
+     "sourceName": "Chicken Bacon Ranch Wrap",
+     "section": "Wraps",
+     "role": "main",
+     "kind": "wrap",
+     "group": "cbr-wrap",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 wrap",
+     "grams": null,
+     "nutrients": {
+      "calories": 420,
+      "protein": 27,
+      "carbs": 36,
+      "fat": 19
+     },
+     "extra": {
+      "sodiumMg": 900,
+      "fibreG": 2,
+      "satFatG": 4.5
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:cilantro-lime-chicken-bowl",
+     "name": "Cilantro Lime Chicken Loaded Bowl",
+     "sourceName": "Cilantro Lime Chicken Loaded Bowl",
+     "section": "Loaded Bowls",
+     "role": "main",
+     "kind": "bowl",
+     "group": "cilantro-chicken-bowl",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 bowl",
+     "grams": null,
+     "nutrients": {
+      "calories": 550,
+      "protein": 34,
+      "carbs": 41,
+      "fat": 29
+     },
+     "extra": {
+      "sodiumMg": 1100,
+      "fibreG": 4,
+      "satFatG": 6
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:habanero-chicken-bowl",
+     "name": "Habanero Chicken Loaded Bowl",
+     "sourceName": "Habanero Chicken Loaded Bowl",
+     "section": "Loaded Bowls",
+     "role": "main",
+     "kind": "bowl",
+     "group": "habanero-chicken-bowl",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 bowl",
+     "grams": null,
+     "nutrients": {
+      "calories": 530,
+      "protein": 34,
+      "carbs": 40,
+      "fat": 26
+     },
+     "extra": {
+      "sodiumMg": 1250,
+      "fibreG": 4,
+      "satFatG": 6
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:habanero-veggie-bowl",
+     "name": "Habanero Veggie Loaded Bowl",
+     "sourceName": "Habanero Veggie Loaded Bowl",
+     "section": "Loaded Bowls",
+     "role": "main",
+     "kind": "bowl",
+     "group": "habanero-veggie-bowl",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 bowl",
+     "grams": null,
+     "nutrients": {
+      "calories": 550,
+      "protein": 12,
+      "carbs": 72,
+      "fat": 26
+     },
+     "extra": {
+      "sodiumMg": 1400,
+      "fibreG": 7,
+      "satFatG": 5
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:grilled-cheese-melt",
+     "name": "Grilled Cheese Melt",
+     "sourceName": "Grilled Cheese Melt",
+     "section": "Melts",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "grilled-cheese",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich",
+     "grams": null,
+     "nutrients": {
+      "calories": 560,
+      "protein": 28,
+      "carbs": 59,
+      "fat": 25
+     },
+     "extra": {
+      "sodiumMg": 1550,
+      "fibreG": 3,
+      "satFatG": 14
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:chicken-noodle-soup-regular",
+     "name": "Chicken Noodle Soup, regular",
+     "sourceName": "Chicken Noodle Soup - Regular",
+     "section": "Soups & Chili",
+     "role": "side",
+     "kind": "side",
+     "group": "chicken-noodle",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 soup (regular)",
+     "grams": null,
+     "nutrients": {
+      "calories": 140,
+      "protein": 9,
+      "carbs": 20,
+      "fat": 3
+     },
+     "extra": {
+      "sodiumMg": 710,
+      "fibreG": 1,
+      "satFatG": 0.5
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:chili-regular",
+     "name": "Chili, regular",
+     "sourceName": "Chili - Regular",
+     "section": "Soups & Chili",
+     "role": "main",
+     "kind": "bowl",
+     "group": "chili",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 chili (regular)",
+     "grams": null,
+     "nutrients": {
+      "calories": 310,
+      "protein": 19,
+      "carbs": 22,
+      "fat": 16
+     },
+     "extra": {
+      "sodiumMg": 910,
+      "fibreG": 4,
+      "satFatG": 6
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:chili-large",
+     "name": "Chili, large",
+     "sourceName": "Chili - Large",
+     "section": "Soups & Chili",
+     "role": "main",
+     "kind": "bowl",
+     "group": "chili",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 chili (large)",
+     "grams": null,
+     "nutrients": {
+      "calories": 430,
+      "protein": 27,
+      "carbs": 31,
+      "fat": 22
+     },
+     "extra": {
+      "sodiumMg": 1270,
+      "fibreG": 6,
+      "satFatG": 9
+     },
+     "build": "standard",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:honey-dip-donut",
+     "name": "Honey Dip Donut",
+     "sourceName": "Honey Dip Donut",
+     "section": "Donuts",
+     "role": "dessert",
+     "kind": "dessert",
+     "group": "honey-dip",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 donut",
+     "grams": null,
+     "nutrients": {
+      "calories": 250,
+      "protein": 4,
+      "carbs": 41,
+      "fat": 7
+     },
+     "extra": {
+      "sodiumMg": 190,
+      "fibreG": 1,
+      "satFatG": 3.5
+     },
+     "build": "baked",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:boston-cream-donut",
+     "name": "Boston Cream Donut",
+     "sourceName": "Boston Cream Donut",
+     "section": "Donuts",
+     "role": "dessert",
+     "kind": "dessert",
+     "group": "boston-cream",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 donut",
+     "grams": null,
+     "nutrients": {
+      "calories": 240,
+      "protein": 4,
+      "carbs": 38,
+      "fat": 8
+     },
+     "extra": {
+      "sodiumMg": 240,
+      "fibreG": 1,
+      "satFatG": 3.5
+     },
+     "build": "baked",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:honey-dip-timbit",
+     "name": "Honey Dip Timbit",
+     "sourceName": "Honey Dip Timbit",
+     "section": "Timbits®",
+     "role": "dessert",
+     "kind": "dessert",
+     "group": "timbit",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Timbit",
+     "grams": null,
+     "nutrients": {
+      "calories": 50,
+      "protein": 1,
+      "carbs": 8,
+      "fat": 1.5
+     },
+     "extra": {
+      "sodiumMg": 25,
+      "fibreG": 0,
+      "satFatG": 0.5
+     },
+     "build": "baked",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "timhortons-ca:plain-bagel",
+     "name": "Plain Bagel (no spread)",
+     "sourceName": "Plain Bagel",
+     "section": "Classic Bagels",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "plain-bagel",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 bagel",
+     "grams": null,
+     "nutrients": {
+      "calories": 290,
+      "protein": 9,
+      "carbs": 62,
+      "fat": 1.5
+     },
+     "extra": {
+      "sodiumMg": 380,
+      "fibreG": 2,
+      "satFatG": 0.4
+     },
+     "build": "baked",
+     "source": "timhortons-ca-nutrition-2026-07",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    }
+   ]
   },
   {
    "id": "subway-ca",

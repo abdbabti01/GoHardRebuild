@@ -1,0 +1,473 @@
+# pdf.js positioned text of the Tim Hortons Canada Nutrition Information PDF (cells joined with |)
+===== page 1
+Nutrition Information
+The nutrition information provided in this document is based on standard product formulations and was obtained through analysis by our
+nutritional software, entitled ESHA Genesis R&D, and information provided by our suppliers. Variations may occur due to differences in
+suppliers, ingredient substitutions, recipe revisions, assembly at restaurant level, and/or time of the year. Baked goods may vary in size.
+Test, Limited Time Only and certain regional offerings may not be listed within this document. Nutrition information is applicable to
+products served in Canadian restaurants and may be subject to change. Updates will occur periodically.
+This document reflects information for our products as of July 2026.
+===== page 2
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Coffee, Tea & Other Hot Beverages
+Brewed Coffee
+Original Blend Coffee - Small | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Original Blend Coffee - Medium | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Original Blend Coffee - Large | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Original Blend Coffee - X Large | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Dark Roast Coffee - Small | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Dark Roast Coffee - Medium | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Dark Roast Coffee - Large | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Dark Roast Coffee - X Large | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Decaf Coffee - Small | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Decaf Coffee - Medium | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Decaf Coffee - Large | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Decaf Coffee - X Large | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Regular Coffee - Small | 70 | 4 | 2.5 | 0.1 | 10 | 25 | 8 | 0 | 8 | 1
+Regular Coffee - Medium | 100 | 6 | 4 | 0.2 | 15 | 40 | 11 | 0 | 11 | 1
+Regular Coffee - Large | 120 | 8 | 5 | 0.2 | 20 | 50 | 14 | 0 | 13 | 1
+Regular Coffee - X Large | 150 | 9 | 6 | 0.3 | 25 | 55 | 18 | 0 | 17 | 1
+Double Double Coffee - Small | 130 | 8 | 4.5 | 0.2 | 20 | 45 | 16 | 0 | 16 | 1
+Double Double Coffee - Medium | 200 | 13 | 8 | 0.4 | 35 | 80 | 22 | 0 | 21 | 2
+Double Double Coffee - Large | 250 | 15 | 10 | 0.5 | 40 | 95 | 28 | 0 | 27 | 2
+Double Double Coffee - X Large | 300 | 18 | 11 | 0.5 | 50 | 115 | 35 | 0 | 34 | 3
+Espresso Beverages
+Cappuccino - Small | 80 | 3 | 2 | 0.1 | 10 | 70 | 9 | 0 | 8 | 6
+Cappuccino - Medium | 120 | 4.5 | 3 | 0.2 | 15 | 95 | 12 | 0 | 11 | 8
+Cappuccino - Large | 170 | 6 | 4 | 0.2 | 25 | 135 | 16 | 0 | 15 | 11
+Latte - Small | 90 | 3.5 | 2 | 0.1 | 15 | 80 | 10 | 0 | 9 | 6
+©Tim Hortons, 2026 | Canadian Edition
+===== page 3
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Latte - Medium | 140 | 5 | 3.5 | 0.2 | 20 | 115 | 14 | 0 | 13 | 10
+Latte - Large | 190 | 7 | 4.5 | 0.3 | 30 | 160 | 19 | 0 | 18 | 13
+Protein Latte - Small | 110 | 4 | 2 | 0.1 | 20 | 50 | 6 | 0 | 6 | 13
+Protein Latte - Medium | 170 | 6 | 4 | 0.2 | 30 | 80 | 10 | 0 | 9 | 20
+Protein Latte - Large | 230 | 8 | 5 | 0.2 | 40 | 105 | 13 | 1 | 12 | 27
+Protein Latte with Sugar Free Vanilla Syrup -
+120 | 4 | 2 | 0.1 | 20 | 65 | 9 | 0 | 6 | 13
+Small
+Protein Latte with Sugar Free Vanilla Syrup -
+190 | 6 | 4 | 0.2 | 30 | 100 | 14 | 0 | 9 | 20
+Medium
+Protein Latte with Sugar Free Vanilla Syrup -
+250 | 8 | 5 | 0.2 | 40 | 140 | 19 | 1 | 12 | 27
+Large
+Specialty Beverages
+Coffee Mocha - Small | 90 | 1 | 1 | 0 | 0 | 75 | 20 | 1 | 14 | 1
+Coffee Mocha - Medium | 110 | 2 | 1.5 | 0 | 0 | 95 | 25 | 1 | 17 | 1
+Coffee Mocha - Large | 150 | 2 | 2 | 0 | 0 | 125 | 33 | 1 | 23 | 1
+Coffee Mocha - X Large | 200 | 3 | 2.5 | 0 | 0 | 160 | 44 | 1 | 31 | 1
+French Vanilla Cappuccino - Small | 260 | 10 | 10 | 0 | 0 | 180 | 39 | 1 | 30 | 3
+French Vanilla Cappuccino - Medium | 330 | 12 | 12 | 0 | 0 | 230 | 50 | 1 | 39 | 3
+French Vanilla Cappuccino - Large | 430 | 17 | 16 | 0 | 0 | 310 | 66 | 1 | 51 | 5
+French Vanilla Cappuccino - X Large | 570 | 22 | 22 | 0 | 0 | 410 | 88 | 1 | 68 | 6
+Hot Chocolate - Small | 220 | 3 | 3 | 0 | 0 | 180 | 48 | 1 | 34 | 1
+Hot Chocolate - Medium | 280 | 4 | 3.5 | 0 | 0 | 230 | 62 | 2 | 43 | 1
+Hot Chocolate - Large | 380 | 5 | 4.5 | 0 | 0 | 310 | 82 | 2 | 58 | 2
+Hot Chocolate - X Large | 500 | 7 | 6 | 0 | 0 | 410 | 108 | 3 | 76 | 3
+White Hot Chocolate - Small | 250 | 9 | 8 | 0 | 0 | 250 | 43 | 0 | 36 | 1
+White Hot Chocolate - Medium | 330 | 11 | 10 | 0.1 | 0 | 310 | 55 | 0 | 45 | 1
+White Hot Chocolate - Large | 430 | 15 | 14 | 0.1 | 0 | 420 | 73 | 0 | 60 | 2
+White Hot Chocolate - X Large | 570 | 20 | 18 | 0.1 | 0 | 550 | 96 | 0 | 80 | 2
+©Tim Hortons, 2026 | Canadian Edition
+===== page 4
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Tea & Tea Lattes
+Bagged Tea | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Steeped Tea | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+Chai Latte - Small | 150 | 3 | 2 | 0.1 | 15 | 90 | 22 | 0 | 21 | 6
+Chai Latte - Medium | 230 | 5 | 3 | 0.2 | 20 | 140 | 33 | 0 | 33 | 10
+Chai Latte - Large | 310 | 7 | 5 | 0.2 | 30 | 190 | 45 | 0 | 44 | 14
+London Fog - Small | 110 | 2 | 1.5 | 0.1 | 10 | 50 | 19 | 0 | 19 | 4
+London Fog - Medium | 160 | 3 | 2 | 0.1 | 10 | 110 | 28 | 0 | 28 | 6
+London Fog - Large | 240 | 4.5 | 3 | 0.2 | 15 | 160 | 38 | 0 | 38 | 8
+Cold Beverages
+Iced Coffee & Cold Brew
+Original Iced Coffee - Small | 120 | 6 | 4 | 0.2 | 20 | 35 | 15 | 0 | 15 | 1
+Original Iced Coffee - Medium | 150 | 8 | 5 | 0.2 | 25 | 40 | 22 | 0 | 22 | 1
+Original Iced Coffee - Large | 240 | 13 | 8 | 0.3 | 40 | 65 | 30 | 0 | 29 | 1
+Light Iced Coffee - Small | 80 | 1 | 0.5 | 0 | 5 | 25 | 16 | 0 | 16 | 2
+Light Iced Coffee - Medium | 110 | 1 | 1 | 0 | 5 | 30 | 23 | 0 | 23 | 2
+Light Iced Coffee - Large | 150 | 1.5 | 1 | 0 | 5 | 40 | 31 | 0 | 31 | 3
+Original Cold Brew - Small | 120 | 6 | 4 | 0.2 | 20 | 35 | 15 | 0 | 15 | 1
+Original Cold Brew - Medium | 150 | 8 | 5 | 0.2 | 25 | 40 | 22 | 0 | 22 | 1
+Original Cold Brew - Large | 240 | 13 | 8 | 0.3 | 40 | 65 | 30 | 0 | 29 | 1
+Vanilla Cream Cold Brew - Small | 120 | 6 | 3.5 | 0.2 | 25 | 30 | 15 | 0 | 15 | 1
+Vanilla Cream Cold Brew - Medium | 160 | 7 | 4 | 0.3 | 30 | 35 | 22 | 0 | 22 | 1
+Vanilla Cream Cold Brew - Large | 240 | 12 | 7 | 0.5 | 45 | 55 | 30 | 0 | 30 | 2
+Roasted Hazelnut Cold Brew - Small | 180 | 12 | 9 | 0.2 | 20 | 60 | 18 | 0 | 16 | 1
+Roasted Hazelnut Cold Brew - Medium | 220 | 14 | 10 | 0.3 | 25 | 70 | 25 | 0 | 22 | 2
+Roasted Hazelnut Cold Brew - Large | 300 | 19 | 14 | 0.4 | 40 | 105 | 32 | 0 | 29 | 2
+©Tim Hortons, 2026 | Canadian Edition
+===== page 5
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Iced Lattes
+Original Iced Latte - Small | 150 | 4 | 2 | 0.1 | 15 | 80 | 22 | 0 | 22 | 6
+Original Iced Latte - Medium | 200 | 5 | 3 | 0.1 | 20 | 100 | 31 | 0 | 31 | 8
+Original Iced Latte - Large | 250 | 5 | 3 | 0.2 | 20 | 120 | 40 | 0 | 40 | 10
+Unsweetened Iced Latte - Small | 90 | 4 | 2 | 0.1 | 15 | 80 | 9 | 0 | 9 | 6
+Unsweetened Iced Latte - Medium | 120 | 5 | 3 | 0.1 | 20 | 100 | 11 | 0 | 11 | 8
+Unsweetened Iced Latte - Large | 140 | 5 | 3 | 0.2 | 20 | 120 | 14 | 0 | 13 | 10
+Original Protein Iced Latte - Small | 160 | 4 | 2 | 0.1 | 20 | 50 | 19 | 0 | 19 | 12
+Original Protein Iced Latte - Medium | 230 | 5 | 3 | 0.1 | 25 | 70 | 28 | 0 | 28 | 17
+Original Protein Iced Latte - Large | 310 | 7 | 4 | 0.2 | 35 | 90 | 38 | 1 | 37 | 23
+Protein Iced Latte with Sugar Free Vanilla
+120 | 4 | 2 | 0.1 | 20 | 65 | 9 | 0 | 5 | 12
+Syrup - Small
+Protein Iced Latte with Sugar Free Vanilla
+160 | 5 | 3 | 0.1 | 25 | 90 | 12 | 0 | 8 | 17
+Syrup - Medium
+Protein Iced Latte with Sugar Free Vanilla
+220 | 7 | 4 | 0.2 | 35 | 125 | 17 | 1 | 10 | 23
+Syrup - Large
+Iced Chai Latte - Small | 150 | 4 | 2 | 0.1 | 15 | 90 | 22 | 0 | 22 | 7
+Iced Chai Latte - Medium | 200 | 5 | 3 | 0.1 | 20 | 120 | 31 | 0 | 31 | 8
+Iced Chai Latte - Large | 250 | 5 | 3 | 0.2 | 20 | 150 | 40 | 0 | 39 | 10
+Iced Capps
+Original Iced Capp - Small | 260 | 11 | 7 | 0.4 | 30 | 75 | 38 | 0 | 36 | 2
+Original Iced Capp - Medium | 330 | 16 | 10 | 0.5 | 45 | 105 | 45 | 0 | 42 | 3
+Original Iced Capp - Large | 430 | 22 | 14 | 0.5 | 60 | 140 | 59 | 1 | 56 | 4
+Light Iced Capp - Small | 170 | 1.5 | 1 | 0.1 | 5 | 35 | 39 | 0 | 37 | 3
+Light Iced Capp - Medium | 210 | 2 | 1 | 0.1 | 10 | 45 | 45 | 0 | 43 | 4
+Light Iced Capp - Large | 270 | 2.5 | 1.5 | 0.1 | 10 | 60 | 60 | 1 | 57 | 5
+Mocha Iced Capp - Small | 430 | 19 | 14 | 0.4 | 30 | 200 | 67 | 1 | 61 | 3
+Mocha Iced Capp - Medium | 530 | 24 | 17 | 0.5 | 45 | 260 | 79 | 2 | 72 | 4
+©Tim Hortons, 2026 | Canadian Edition
+===== page 6
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Mocha Iced Capp - Large | 650 | 29 | 21 | 0.5 | 60 | 330 | 98 | 2 | 90 | 6
+Vanilla Iced Capp - Small | 440 | 18 | 14 | 0.4 | 30 | 150 | 69 | 0 | 64 | 3
+Vanilla Iced Capp - Medium | 540 | 23 | 17 | 0.5 | 45 | 200 | 81 | 0 | 76 | 3
+Vanilla Iced Capp - Large | 660 | 28 | 20 | 0.5 | 60 | 250 | 101 | 1 | 95 | 4
+Caramel Toffee Iced Capp - Small | 440 | 18 | 14 | 0.3 | 35 | 220 | 68 | 0 | 63 | 3
+Caramel Toffee Iced Capp - Medium | 530 | 23 | 17 | 0.4 | 50 | 290 | 80 | 1 | 74 | 3
+Caramel Toffee Iced Capp - Large | 660 | 29 | 20 | 0.5 | 65 | 360 | 99 | 1 | 93 | 4
+Lemonades
+Frozen Lemonade - Small | 200 | 0 | 0 | 0 | 0 | 35 | 51 | 0 | 46 | 0
+Frozen Lemonade - Medium | 250 | 0 | 0 | 0 | 0 | 45 | 62 | 0 | 56 | 0
+Frozen Lemonade - Large | 330 | 0 | 0 | 0 | 0 | 55 | 82 | 0 | 73 | 0
+Strawberry Frozen Lemonade - Small | 250 | 0 | 0 | 0 | 0 | 35 | 62 | 0 | 56 | 0.1
+Strawberry Frozen Lemonade - Medium | 310 | 0 | 0 | 0 | 0 | 40 | 79 | 0 | 71 | 0.1
+Strawberry Frozen Lemonade - Large | 410 | 0 | 0 | 0 | 0 | 55 | 102 | 0 | 92 | 0.2
+Classic Lemonade - Small | 90 | 0 | 0 | 0 | 0 | 10 | 23 | 0 | 21 | 0
+Classic Lemonade - Medium | 110 | 0 | 0 | 0 | 0 | 10 | 30 | 0 | 28 | 0
+Classic Lemonade - Large | 140 | 0 | 0 | 0 | 0 | 15 | 39 | 0 | 36 | 0
+Sparkling Quenchers
+Blackberry Yuzu Quencher - Small | 80 | 0 | 0 | 0 | 0 | 0 | 19 | 0 | 19 | 0
+Blackberry Yuzu Quencher - Medium | 110 | 0 | 0 | 0 | 0 | 1 | 28 | 0 | 28 | 0
+Blackberry Yuzu Quencher - Large | 150 | 0 | 0 | 0 | 0 | 1 | 37 | 0 | 36 | 0
+Orange Tangerine Quencher - Small | 80 | 0 | 0 | 0 | 0 | 5 | 19 | 0 | 17 | 0
+Orange Tangerine Quencher - Medium | 120 | 0 | 0 | 0 | 0 | 10 | 28 | 0 | 26 | 0
+Orange Tangerine Quencher - Large | 160 | 0 | 0 | 0 | 0 | 10 | 37 | 0 | 34 | 0
+Peach Quencher - Small | 50 | 0 | 0 | 0 | 0 | 5 | 12 | 0 | 11 | 0
+Peach Quencher - Medium | 70 | 0 | 0 | 0 | 0 | 10 | 18 | 0 | 16 | 0
+Peach Quencher - Large | 100 | 0 | 0 | 0 | 0 | 10 | 24 | 0 | 21 | 0
+Strawberry Watermelon Quencher - Small | 40 | 0 | 0 | 0 | 0 | 10 | 10 | 0 | 8 | 0
+©Tim Hortons, 2026 | Canadian Edition
+===== page 7
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Strawberry Watermelon Quencher - Medium | 60 | 0 | 0 | 0 | 0 | 15 | 15 | 0 | 12 | 0
+Strawberry Watermelon Quencher - Large | 80 | 0 | 0 | 0 | 0 | 20 | 19 | 0 | 16 | 0
+Lemonade Quenchers
+Blackberry Yuzu Quencher - Small | 120 | 0 | 0 | 0 | 0 | 2 | 31 | 0 | 30 | 0
+Blackberry Yuzu Quencher - Medium | 170 | 0 | 0 | 0 | 0 | 3 | 43 | 0 | 42 | 0
+Blackberry Yuzu Quencher - Large | 220 | 0 | 0 | 0 | 0 | 4 | 56 | 0 | 54 | 0
+Orange Tangerine Quencher - Small | 130 | 0 | 0 | 0 | 0 | 5 | 31 | 0 | 29 | 0
+Orange Tangerine Quencher - Medium | 180 | 0 | 0 | 0 | 0 | 10 | 43 | 0 | 40 | 0
+Orange Tangerine Quencher - Large | 230 | 0 | 0 | 0 | 0 | 15 | 56 | 0 | 52 | 0
+Peach Quencher - Small | 90 | 0 | 0 | 0 | 0 | 5 | 24 | 0 | 22 | 0
+Peach Quencher - Medium | 130 | 0 | 0 | 0 | 0 | 10 | 33 | 0 | 30 | 0
+Peach Quencher - Large | 170 | 0 | 0 | 0 | 0 | 15 | 43 | 0 | 38 | 0
+Strawberry Watermelon Quencher - Small | 90 | 0 | 0 | 0 | 0 | 10 | 22 | 0 | 19 | 0
+Strawberry Watermelon Quencher - Medium | 120 | 0 | 0 | 0 | 0 | 15 | 30 | 0 | 26 | 0
+Strawberry Watermelon Quencher - Large | 150 | 0 | 0 | 0 | 0 | 25 | 39 | 0 | 33 | 0
+Frozen Quenchers
+Blackberry Yuzu Quencher - Small | 330 | 7 | 7 | 0 | 0 | 55 | 68 | 0 | 62 | 0
+Blackberry Yuzu Quencher - Medium | 390 | 7 | 7 | 0 | 0 | 60 | 82 | 0 | 76 | 0
+Blackberry Yuzu Quencher - Large | 480 | 7 | 7 | 0 | 0 | 70 | 104 | 0 | 96 | 0
+Orange Tangerine Quencher - Small | 340 | 7 | 7 | 0 | 0 | 60 | 68 | 0 | 61 | 0
+Orange Tangerine Quencher - Medium | 400 | 7 | 7 | 0 | 0 | 65 | 82 | 0 | 74 | 0
+Orange Tangerine Quencher - Large | 490 | 7 | 7 | 0 | 0 | 80 | 104 | 0 | 94 | 0
+Peach Quencher - Small | 310 | 7 | 7 | 0 | 0 | 60 | 61 | 0 | 54 | 0
+Peach Quencher - Medium | 350 | 7 | 7 | 0 | 0 | 65 | 73 | 0 | 64 | 0
+Peach Quencher - Large | 430 | 7 | 7 | 0 | 0 | 80 | 91 | 0 | 80 | 0
+Strawberry Watermelon Quencher - Small | 300 | 7 | 7 | 0 | 0 | 65 | 59 | 0 | 21 | 0
+Strawberry Watermelon Quencher - Medium | 340 | 7 | 7 | 0 | 0 | 75 | 69 | 0 | 60 | 0
+Strawberry Watermelon Quencher - Large | 410 | 7 | 7 | 0 | 0 | 90 | 87 | 0 | 75 | 0
+©Tim Hortons, 2026 | Canadian Edition
+===== page 8
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Beverage Additions
+Dairy | (single serving)
+Cream for Coffee - Small | 40 | 4 | 2 | 0.1 | 10 | 20 | 1 | 0 | 1 | 1
+Cream for Coffee - Medium | 60 | 6 | 4 | 0.1 | 20 | 30 | 2 | 0 | 1 | 1
+Cream for Coffee - Large | 80 | 8 | 5 | 0.2 | 25 | 40 | 2 | 0 | 2 | 1
+Cream for Coffee - X Large | 90 | 9 | 6 | 0.2 | 30 | 45 | 2 | 0 | 2 | 1
+Cream for Iced Coffee - Small | 70 | 7 | 4 | 0.2 | 20 | 30 | 2 | 0 | 1 | 1
+Cream for Iced Coffee - Medium | 80 | 8 | 5 | 0.2 | 25 | 35 | 2 | 0 | 2 | 1
+Cream for Iced Coffee - Large | 130 | 13 | 8 | 0.3 | 40 | 60 | 3 | 0 | 3 | 2
+Cream for Tea - Small | 40 | 4 | 2 | 0.1 | 10 | 20 | 1 | 0 | 1 | 1
+Cream for Tea - Medium | 60 | 6 | 4 | 0.1 | 20 | 30 | 2 | 0 | 1 | 1
+Cream for Tea - Large | 80 | 8 | 5 | 0.2 | 25 | 40 | 2 | 0 | 2 | 1
+Cream for Tea - X Large | 90 | 9 | 6 | 0.2 | 30 | 45 | 2 | 0 | 2 | 1
+2% Milk for Coffee - Small | 15 | 0.5 | 0.5 | 0 | 0 | 10 | 1 | 0 | 1 | 1
+2% Milk for Coffee - Medium | 20 | 1 | 0.5 | 0 | 5 | 20 | 2 | 0 | 2 | 2
+2% Milk for Coffee - Large | 30 | 1 | 1 | 0 | 5 | 25 | 3 | 0 | 3 | 2
+2% Milk for Coffee - X Large | 40 | 1.5 | 1 | 0 | 5 | 30 | 4 | 0 | 4 | 3
+2% Milk for Iced Coffee - Small | 25 | 1 | 0.5 | 0 | 5 | 20 | 2 | 0 | 2 | 2
+2% Milk for Iced Coffee - Medium | 35 | 1 | 1 | 0 | 5 | 30 | 3 | 0 | 3 | 2
+2% Milk for Iced Coffee - Large | 45 | 2 | 1 | 0 | 10 | 35 | 4 | 0 | 4 | 3
+2% Milk for Tea - Small | 10 | 0.5 | 0.3 | 0 | 0 | 10 | 1 | 0 | 1 | 1
+2% Milk for Tea - Medium | 15 | 0.5 | 0.4 | 0 | 0 | 15 | 1 | 0 | 1 | 1
+2% Milk for Tea - Large | 20 | 1 | 0.5 | 0 | 5 | 20 | 2 | 0 | 2 | 2
+2% Milk for Tea - X Large | 25 | 1 | 0.6 | 0 | 5 | 25 | 2 | 0 | 2 | 2
+Sugar | (single serving)
+Sugar for Coffee & Tea - Small | 30 | 0 | 0 | 0 | 0 | 0 | 7 | 0 | 7 | 0
+Sugar for Coffee & Tea - Medium | 35 | 0 | 0 | 0 | 0 | 0 | 9 | 0 | 9 | 0
+©Tim Hortons, 2026 | Canadian Edition
+===== page 9
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Sugar for Coffee & Tea - Large | 45 | 0 | 0 | 0 | 0 | 0 | 12 | 0 | 12 | 0
+Sugar for Coffee & Tea - X Large | 60 | 0 | 0 | 0 | 0 | 0 | 15 | 0 | 15 | 0
+Flavoured Syrups | (per pump)
+Cane Sugar Syrup | 25 | 0 | 0 | 0 | 0 | 0 | 7 | 0 | 7 | 0
+Vanilla Syrup | 30 | 0 | 0 | 0 | 0 | 15 | 7 | 0 | 7 | 0
+Mocha Syrup | 25 | 0 | 0 | 0 | 0 | 30 | 6 | 0 | 6 | 0
+Caramel Toffee Syrup | 30 | 0 | 0 | 0 | 0 | 45 | 7 | 0 | 6 | 0
+Roasted Hazelnut Flavoured Syrup | 25 | 0 | 0 | 0 | 0 | 1 | 6 | 0 | 6 | 0
+Sugar Free Vanilla Syrup | 5 | 0 | 0 | 0 | 0 | 10 | 1 | 0 | 0 | 0
+Donuts
+Apple Fritter | 330 | 11 | 5 | 0.1 | 0 | 280 | 54 | 2 | 23 | 6
+Boston Cream Donut | 240 | 8 | 3.5 | 0.1 | 0 | 240 | 38 | 1 | 16 | 4
+Canadian Maple Donut | 250 | 8 | 3.5 | 0.1 | 0 | 240 | 38 | 1 | 16 | 4
+Chocolate Cruller Donut | 360 | 22 | 11 | 0.2 | 40 | 120 | 40 | 0 | 28 | 2
+Chocolate Dip Donut | 220 | 8 | 3.5 | 0.1 | 0 | 190 | 33 | 1 | 12 | 4
+Chocolate Éclair Donut | 310 | 14 | 9 | 0.1 | 0 | 230 | 45 | 1 | 20 | 5
+Chocolate Glazed Donut | 330 | 21 | 10 | 0.2 | 15 | 210 | 34 | 1 | 20 | 3
+Chocolate Marble Donut | 320 | 21 | 10 | 0.2 | 15 | 210 | 31 | 1 | 17 | 3
+Chocolate Snow Donut | 290 | 21 | 10 | 0.2 | 15 | 210 | 24 | 1 | 10 | 3
+Chocolate Toasted Coconut Donut | 360 | 24 | 14 | 0.2 | 15 | 220 | 34 | 2 | 19 | 3
+Coconut Cream Donut | 260 | 10 | 5 | 0.1 | 0 | 240 | 39 | 1 | 17 | 4
+Double Chocolate Donut | 310 | 21 | 10 | 0.2 | 15 | 210 | 28 | 1 | 14 | 3
+Honey Cruller Donut | 320 | 22 | 11 | 0.2 | 40 | 120 | 30 | 0 | 18 | 2
+Honey Dip Donut | 250 | 7 | 3.5 | 0.1 | 0 | 190 | 41 | 1 | 21 | 4
+Long John Donut | 240 | 9 | 4 | 0.1 | 0 | 210 | 36 | 1 | 13 | 4
+Maple Glazed Donut | 260 | 8 | 4 | 0.1 | 0 | 200 | 42 | 1 | 20 | 4
+Maple Cruller Donut | 360 | 22 | 11 | 0.2 | 40 | 120 | 40 | 0 | 28 | 2
+©Tim Hortons, 2026 | Canadian Edition
+===== page 10
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Maple Dip Donut | 220 | 7 | 3.5 | 0.1 | 0 | 190 | 33 | 1 | 12 | 4
+Maple Éclair Donut | 310 | 14 | 9 | 0.1 | 0 | 230 | 43 | 1 | 18 | 5
+Maple Glazed Donut | 260 | 8 | 4 | 0.1 | 0 | 200 | 42 | 1 | 20 | 4
+Maple Swirl Donut | 250 | 8 | 3.5 | 0.1 | 0 | 240 | 39 | 1 | 17 | 4
+Old Fashioned Dip Donut | 310 | 18 | 9 | 0.1 | 25 | 230 | 34 | 1 | 16 | 3
+Old Fashioned Glazed Donut | 330 | 18 | 9 | 0.1 | 25 | 230 | 40 | 1 | 22 | 3
+Old Fashioned Plain Donut | 280 | 18 | 9 | 0.1 | 25 | 230 | 26 | 1 | 9 | 3
+Old Fashioned Snow Donut | 290 | 18 | 9 | 0.1 | 25 | 230 | 30 | 1 | 12 | 3
+Old Fashioned Sugar Donut | 300 | 18 | 9 | 0.1 | 25 | 230 | 33 | 1 | 16 | 3
+Powdered Venetian Cream Donut | 220 | 8 | 4 | 0.1 | 0 | 240 | 32 | 1 | 10 | 4
+Sour Cream Glazed Donut | 340 | 18 | 8 | 0.1 | 5 | 180 | 40 | 1 | 24 | 3
+Sour Cream Plain Donut | 280 | 18 | 8 | 0.1 | 5 | 180 | 26 | 1 | 11 | 3
+Sour Cream Sugar Donut | 300 | 16 | 8 | 0.1 | 5 | 180 | 32 | 1 | 16 | 3
+Strawberry Dip Donut | 220 | 7 | 3.5 | 0.1 | 0 | 190 | 33 | 1 | 12 | 4
+Strawberry Filled Donut | 240 | 8 | 3.5 | 0.1 | 0 | 210 | 38 | 1 | 16 | 4
+Strawberry Swirl Donut | 230 | 7 | 3.5 | 0.1 | 0 | 190 | 38 | 1 | 17 | 4
+Strawberry Vanilla Donut | 270 | 8 | 3.5 | 0.1 | 0 | 210 | 49 | 1 | 15 | 4
+Sugar Loop Donut | 200 | 7 | 3.5 | 0.1 | 0 | 190 | 29 | 1 | 8 | 4
+Toasted Coconut Donut | 360 | 21 | 12 | 0.1 | 25 | 240 | 39 | 2 | 21 | 4
+Vanilla Dip Donut | 250 | 7 | 3.5 | 0.1 | 0 | 190 | 40 | 1 | 19 | 4
+Timbits®
+Birthday Cake Timbit | 80 | 3 | 1.5 | 0 | 5 | 60 | 13 | 1 | 9 | 1
+Chocolate Glazed Timbit | 80 | 3.5 | 1.5 | 0 | 5 | 70 | 11 | 0 | 6 | 1
+Chocolate Snow Ball Timbit | 70 | 3.5 | 1.5 | 0 | 5 | 70 | 8 | 0 | 3 | 1
+Chocolate Toasted Coconut Timbit | 90 | 4.5 | 3 | 0 | 5 | 75 | 11 | 1 | 6 | 1
+Honey Dip Timbit | 50 | 1.5 | 0.5 | 0 | 0 | 25 | 8 | 0 | 5 | 1
+Old Fashioned Glazed Timbit | 80 | 3.5 | 1.5 | 0 | 0 | 64 | 12 | 0 | 7 | 1
+©Tim Hortons, 2026 | Canadian Edition
+===== page 11
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Old Fashioned Plain Timbit | 60 | 3.5 | 1.5 | 0 | 0 | 65 | 8 | 0 | 3 | 1
+Old Fashioned Sugar Timbit | 70 | 3.5 | 1.5 | 0 | 0 | 65 | 9 | 0 | 4 | 1
+Snow Ball Timbit | 70 | 3.5 | 15 | 0 | 0 | 65 | 8 | 0 | 3 | 1
+Sour Cream Glazed Timbit | 90 | 5 | 2.5 | 0 | 0 | 50 | 11 | 0 | 7 | 1
+Sour Cream Plain Timbit | 80 | 5 | 2.5 | 0 | 0 | 50 | 7 | 0 | 3 | 1
+Sour Cream Sugar Timbit | 80 | 5 | 2.5 | 0 | 0 | 50 | 8 | 0 | 4 | 1
+Strawberry Timbit | 50 | 1.5 | 0.5 | 0 | 0 | 30 | 8 | 0 | 4 | 1
+Toasted Coconut Timbit | 90 | 4.5 | 3 | 0 | 0 | 70 | 12 | 1 | 6 | 1
+Venetian Cream Timbit | 50 | 1.5 | 1 | 0 | 0 | 40 | 7 | 0 | 3 | 1
+Baked Goods
+Muffins
+Chocolate Chip Muffin | 420 | 17 | 5 | 0.1 | 30 | 400 | 64 | 2 | 36 | 6
+Fruit Explosion Muffin | 360 | 12 | 2 | 0.1 | 35 | 490 | 59 | 2 | 30 | 5
+Wild Blueberry Muffin | 380 | 14 | 2 | 0.1 | 40 | 500 | 56 | 2 | 29 | 6
+Raisin Bran Muffin | 380 | 13 | 2 | 0.1 | 15 | 500 | 60 | 5 | 30 | 6
+Carrot Cake Walnut Muffin | 360 | 13 | 2.5 | 0.1 | 30 | 480 | 55 | 2 | 28 | 6
+Banana Pecan Muffin | 340 | 10 | 2 | 0.1 | 30 | 790 | 60 | 9 | 20 | 6
+Cookies & Brownies
+Chocolate Chunk Cookie | 310 | 17 | 10 | 0.3 | 30 | 260 | 38 | 1 | 22 | 3
+Oatmeal Raisin Cookie | 290 | 11 | 6 | 0.2 | 25 | 220 | 44 | 2 | 26 | 4
+Peanut Butter Cookie | 320 | 16 | 8 | 0.2 | 25 | 310 | 39 | 1 | 21 | 5
+Reese's Minis Dream Cookie | 350 | 17 | 9 | 0.2 | 25 | 320 | 45 | 1 | 31 | 5
+Double Chocolate Brownie | 410 | 20 | 8 | 0.1 | 65 | 190 | 57 | 2 | 39 | 5
+Croissants
+Plain Croissant | 260 | 13 | 7 | 0.3 | 15 | 240 | 30 | 1 | 3 | 6
+Cheese Croissant | 290 | 14 | 8 | 0.3 | 20 | 280 | 30 | 1 | 3 | 7
+Chocolate Croissant | 350 | 17 | 8 | 0.2 | 0 | 120 | 43 | 0 | 18 | 6
+©Tim Hortons, 2026 | Canadian Edition
+===== page 12
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Tea Biscuits
+Cheese Tea Biscuit | 250 | 11 | 4 | 0.2 | 10 | 610 | 31 | 1 | 4 | 8
+Raisin Tea Biscuit | 250 | 8 | 1.5 | 0 | 0 | 500 | 40 | 2 | 12 | 5
+Savoury Pastries
+Herb & Garlic Savoury Pastry | 240 | 11 | 6.5 | 0.3 | 35 | 470 | 29 | 1 | 6 | 6
+Classic Bagels
+Plain Bagel | 290 | 1.5 | 0.4 | 0 | 0 | 380 | 62 | 2 | 9 | 9
+Sesame Seed Bagel | 310 | 4 | 1 | 0 | 0 | 400 | 62 | 4 | 10 | 10
+Everything Bagel | 290 | 2 | 0.5 | 0.1 | 0 | 390 | 60 | 4 | 9 | 10
+12-Grain Bagel | 320 | 7 | 1 | 0 | 0 | 460 | 57 | 8 | 9 | 11
+Cinnamon Raisin Bagel | 290 | 1 | 0.3 | 0 | 0 | 360 | 64 | 3 | 14 | 9
+Specialty Bagels
+Four Cheese Bagel | 330 | 5 | 1.5 | 0.1 | 5 | 580 | 58 | 2 | 4 | 11
+Jalapeno Asiago Mozzarella Bagel | 320 | 4.5 | 1.5 | 0.1 | 5 | 710 | 59 | 3 | 4 | 11
+Protein Bagel | 280 | 3 | 1.5 | 0 | 5 | 590 | 45 | 3 | 4 | 20
+Bagel Toppings
+Plain Cream Cheese | 100 | 9 | 6 | 0.3 | 25 | 150 | 2 | 0 | 2 | 2
+Herb & Garlic Cream Cheese | 100 | 9 | 6 | 0.3 | 25 | 190 | 3 | 0 | 2 | 2
+Strawberry Cream Cheese | 100 | 7 | 5 | 0.2 | 25 | 120 | 6 | 0 | 6 | 2
+Butter | 60 | 7 | 4.5 | 0.1 | 20 | 55 | 0 | 0 | 0 | 0
+Strawberry Jam Packet | 60 | 0 | 0 | 0 | 0 | 0 | 14 | 0 | 14 | 0
+Raspberry Jam Packet | 60 | 0 | 0 | 0 | 0 | 0 | 14 | 0 | 14 | 0
+Peanut Butter | 110 | 9 | 1.5 | 0 | 0 | 75 | 4 | 0 | 1 | 3
+Breakfast
+Classic Breakfast Sandwiches
+Sausage Homestyle Biscuit | 530 | 35 | 17 | 0.4 | 240 | 900 | 34 | 2 | 4 | 20
+Bacon Homestyle Biscuit | 410 | 22 | 13 | 0.3 | 215 | 930 | 33 | 1 | 3 | 18
+©Tim Hortons, 2026 | Canadian Edition
+===== page 13
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Egg & Cheese Homestyle Biscuit | 350 | 18 | 11 | 0.3 | 205 | 720 | 33 | 1 | 3 | 14
+Simply Sausage Homestyle Biscuit | 450 | 30 | 16 | 0.3 | 50 | 850 | 33 | 3 | 2 | 13
+Sausage English Muffin | 450 | 29 | 11 | 0.3 | 240 | 680 | 28 | 2 | 3 | 19
+Bacon English Muffin | 330 | 16 | 7 | 0.2 | 215 | 710 | 27 | 1 | 3 | 17
+Egg & Cheese English Muffin | 270 | 12 | 5 | 0.2 | 205 | 500 | 27 | 1 | 3 | 14
+Bagel Breakfast Sandwiches
+Sausage Plain Bagel Sandwich | 600 | 28 | 11 | 0.3 | 240 | 820 | 65 | 3 | 10 | 23
+Bacon Plain Bagel Sandwich | 480 | 16 | 7 | 0.3 | 215 | 850 | 64 | 3 | 10 | 22
+Sausage Sesame Seed Bagel Sandwich | 620 | 31 | 11 | 0.3 | 240 | 840 | 65 | 4 | 11 | 25
+Bacon Sesame Seed Bagel Sandwich | 500 | 18 | 7 | 0.2 | 215 | 870 | 64 | 4 | 11 | 23
+Sausage Everything Bagel Sandwich | 600 | 29 | 11 | 0.4 | 240 | 830 | 63 | 4 | 9 | 24
+Bacon Everything Bagel Sandwich | 480 | 16 | 7 | 0.3 | 215 | 860 | 62 | 4 | 9 | 23
+Sausage 12-Grain Bagel Sandwich | 630 | 33 | 12 | 0.4 | 240 | 900 | 60 | 9 | 10 | 26
+Bacon 12-Grain Bagel Sandwich | 510 | 21 | 7 | 0.3 | 215 | 940 | 59 | 8 | 10 | 24
+Bagel BELT Breakfast Sandwiches
+Plain Bagel BELT Sandwich | 490 | 16 | 7 | 0.3 | 215 | 860 | 66 | 3 | 11 | 22
+Sesame Seed Bagel BELT Sandwich | 510 | 15 | 7 | 0.2 | 215 | 880 | 66 | 5 | 12 | 23
+Everything Bagel BELT Sandwich | 490 | 17 | 7 | 0.3 | 215 | 860 | 64 | 4 | 10 | 23
+12-Grain Bagel BELT Sandwich | 520 | 21 | 7 | 0.3 | 215 | 940 | 61 | 9 | 11 | 24
+Protein Bagel BELT Sandwich | 480 | 18 | 9 | 0.2 | 230 | 1100 | 49 | 4 | 6 | 33
+Breakfast Wraps
+Sausage Breakfast Wrap | 530 | 34 | 12 | 0.3 | 240 | 720 | 35 | 3 | 3 | 20
+Bacon Breakfast Wrap | 400 | 21 | 8 | 0.3 | 220 | 750 | 34 | 2 | 3 | 18
+Sausage & Bacon Breakfast Wrap | 580 | 38 | 13 | 0.3 | 250 | 930 | 35 | 3 | 3 | 23
+Sausage Farmer's Wrap | 640 | 40 | 12 | 0.4 | 240 | 940 | 50 | 4 | 4 | 21
+Bacon Farmer's Wrap | 520 | 27 | 8 | 0.4 | 220 | 970 | 49 | 4 | 4 | 19
+Sausage & Bacon Farmer's Wrap | 700 | 44 | 14 | 0.5 | 250 | 1160 | 53 | 4 | 4 | 25
+©Tim Hortons, 2026 | Canadian Edition
+===== page 14
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Loaded Breakfast
+Sausage Scrambled Egg Loaded Wrap | 650 | 40 | 12 | 0.4 | 240 | 1020 | 53 | 4 | 5 | 22
+Bacon Scrambled Egg Loaded Wrap | 530 | 27 | 8 | 0.3 | 225 | 1060 | 52 | 4 | 5 | 20
+Scrambled Egg & Cheese Loaded Wrap | 470 | 23 | 6 | 0.3 | 205 | 840 | 52 | 4 | 5 | 16
+Sausage Scrambled Egg Loaded Box | 600 | 40 | 10 | 0.4 | 425 | 1050 | 37 | 3 | 4 | 24
+Bacon Scrambled Egg Loaded Box | 490 | 30 | 7 | 0.4 | 405 | 1030 | 36 | 3 | 4 | 21
+Scrambled Egg Loaded Box | 440 | 26 | 5 | 0.4 | 390 | 810 | 36 | 3 | 4 | 17
+Sausage Scrambled Egg Loaded Croissant | 590 | 39 | 16 | 0.3 | 245 | 800 | 40 | 2 | 6 | 21
+Bacon Scrambled Egg Loaded Croissant | 460 | 26 | 12 | 0.2 | 230 | 840 | 39 | 2 | 6 | 19
+Scrambled Egg & Cheese Loaded Croissant | 410 | 22 | 10 | 0.2 | 210 | 620 | 39 | 2 | 5 | 15
+Omelette Bites | (2 per serving)
+Bacon & Cheese Omelette Bites | 210 | 21 | 8 | 0.2 | 230 | 730 | 10 | 1 | 4 | 15
+Spinach & Egg White Omelette Bites | 130 | 6 | 2 | 0.1 | 10 | 420 | 8 | 1 | 2 | 14
+Sausage & Four Cheese Omelette Bites | 290 | 23 | 8 | 0.2 | 215 | 610 | 9 | 1 | 3 | 13
+Other
+Hash Brown | 120 | 6 | 0.5 | 0.1 | 0 | 220 | 15 | 1 | 1 | 1
+Yogurt Parfait | 250 | 7 | 1.5 | 0.1 | 10 | 115 | 40 | 3 | 25 | 8
+Lunch
+Sandwiches
+Turkey Bacon Club Sandwich | 550 | 23 | 5 | 0.2 | 50 | 1440 | 60 | 3 | 6 | 27
+BLT Sandwich | 490 | 21 | 5 | 0.2 | 25 | 940 | 59 | 4 | 6 | 16
+Ham & Cheddar Sandwich | 520 | 20 | 7 | 0.4 | 50 | 1330 | 60 | 3 | 7 | 25
+Steak & Cheddar Sandwich | 560 | 22 | 8 | 0.5 | 70 | 1280 | 63 | 3 | 8 | 30
+Crispy Chicken Sandwich | 660 | 37 | 7 | 0.5 | 110 | 1170 | 54 | 4 | 4 | 23
+Supreme Stack Sandwich | 620 | 32 | 12 | 1 | 150 | 1670 | 49 | 3 | 10 | 36
+Crispy Chicken Craveable | 470 | 19 | 3 | 0.2 | 25 | 960 | 55 | 3 | 1 | 21
+Steak Craveable | 450 | 20 | 6 | 0.5 | 60 | 1080 | 43 | 2 | 3 | 24
+©Tim Hortons, 2026 | Canadian Edition
+===== page 15
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Wraps
+Chicken Bacon Ranch Wrap | 420 | 19 | 4.5 | 0.2 | 65 | 900 | 36 | 2 | 4 | 27
+Crispy Chicken Bacon Ranch Wrap | 530 | 26 | 6 | 0.3 | 35 | 1010 | 54 | 4 | 4 | 24
+Classic Chicken Wrap | 380 | 17 | 3 | 0.2 | 60 | 660 | 36 | 2 | 3 | 24
+Classic Crispy Chicken Wrap | 490 | 24 | 4 | 0.3 | 25 | 770 | 53 | 4 | 3 | 20
+Loaded Wraps
+Cilantro Lime Chicken Loaded Wrap | 590 | 28 | 6 | 0.4 | 70 | 1060 | 56 | 4 | 5 | 29
+Cilantro Lime Crispy Chicken Loaded Wrap | 690 | 35 | 8 | 0.5 | 40 | 1200 | 72 | 6 | 5 | 25
+Cilantro Lime Veggie Loaded Wrap | 570 | 26 | 6 | 0.4 | 15 | 1070 | 72 | 6 | 5 | 13
+Habanero Chicken Loaded Wrap | 560 | 26 | 6 | 0.4 | 80 | 1240 | 54 | 5 | 5 | 29
+Habanero Crispy Chicken Loaded Wrap | 660 | 33 | 7 | 0.5 | 45 | 1360 | 71 | 6 | 5 | 25
+Habanero Veggie Loaded Wrap | 540 | 24 | 6 | 0.4 | 25 | 1220 | 70 | 6 | 6 | 13
+Loaded Bowls
+Cilantro Lime Chicken Loaded Bowl | 550 | 29 | 6 | 0.3 | 95 | 1100 | 41 | 4 | 4 | 34
+Cilantro Lime Crispy Chicken Loaded Bowl | 710 | 36 | 7 | 0.5 | 75 | 1350 | 62 | 5 | 5 | 29
+Cilantro Lime Veggie Loaded Bowl | 570 | 27 | 6 | 0.4 | 15 | 1250 | 73 | 7 | 5 | 12
+Habanero Chicken Loaded Bowl | 530 | 26 | 6 | 0.3 | 100 | 1250 | 40 | 4 | 4 | 34
+Habanero Crispy Chicken Loaded Bowl | 690 | 34 | 7 | 0.5 | 80 | 1500 | 61 | 6 | 5 | 29
+Habanero Veggie Loaded Bowl | 550 | 26 | 5 | 0.4 | 25 | 1400 | 72 | 7 | 5 | 12
+Flatbread Pizzas
+Simply Cheese Flatbread Pizza | 630 | 26 | 11 | 0.5 | 55 | 1590 | 68 | 3 | 6 | 31
+Pepperoni Flatbread Pizza | 750 | 37 | 15 | 1 | 75 | 1910 | 69 | 3 | 6 | 36
+Chicken Parmesan Flatbread Pizza | 760 | 34 | 14 | 0.5 | 100 | 1890 | 69 | 3 | 6 | 48
+Melts
+Grilled Cheese Melt | 560 | 25 | 14 | 1 | 65 | 1550 | 59 | 3 | 2 | 28
+Bacon Grilled Cheese Melt | 650 | 32 | 16 | 1 | 95 | 1920 | 60 | 4 | 2 | 35
+Soups & Chili
+Chicken Noodle Soup - Regular | 140 | 3 | 0.5 | 0 | 20 | 710 | 20 | 1 | 2 | 9
+©Tim Hortons, 2026 | Canadian Edition
+===== page 16
+Menu Item
+Calories (kcal) | Fat (g) | Saturated Fat (g) | Trans Fat (g) | Cholesterol (mg) | Sodium (mg) | Carbohydrates (g) | Fibre (g) | Total Sugars (g) | Protein (g)
+Chicken Noodle Soup - Large | 190 | 3.5 | 1 | 0 | 20 | 960 | 28 | 2 | 2 | 10
+Cream of Broccoli Soup - Regular | 100 | 3.5 | 1.5 | 0.1 | 10 | 650 | 15 | 2 | 6 | 5
+Cream of Broccoli Soup - Large | 150 | 5 | 2 | 0.1 | 15 | 910 | 21 | 3 | 9 | 6
+Garden Minestrone Soup - Regular | 100 | 1.5 | 0.3 | 0 | 0 | 590 | 20 | 6 | 6 | 5
+Garden Minestrone Soup - Large | 140 | 2.5 | 0.5 | 0 | 0 | 820 | 28 | 8 | 9 | 6
+Tomato Parmesan Soup - Regular | 150 | 7 | 4 | 0.3 | 15 | 740 | 17 | 3 | 6 | 5
+Tomato Parmesan Soup - Large | 210 | 10 | 5 | 0.4 | 20 | 1040 | 24 | 4 | 9 | 7
+Potato Bacon Soup - Regular | 220 | 11 | 6 | 0.3 | 35 | 820 | 25 | 2 | 5 | 6
+Potato Bacon Soup - Large | 310 | 15 | 8 | 0.4 | 50 | 1150 | 35 | 2 | 6 | 9
+Clam Chowder - Regular | 150 | 5 | 2 | 0.1 | 15 | 750 | 20 | 1 | 5 | 7
+Clam Chowder - Large | 210 | 7 | 3 | 0.2 | 20 | 1050 | 27 | 2 | 6 | 10
+Chili - Regular | 310 | 16 | 6 | 1 | 55 | 910 | 22 | 4 | 7 | 19
+Chili - Large | 430 | 22 | 9 | 1 | 75 | 1270 | 31 | 6 | 10 | 27
+Sides
+Potato Wedges | 170 | 7 | 1 | 0.2 | 0 | 520 | 26 | 2 | 0 | 2
+Soup Bun | 210 | 4.5 | 0.5 | 0.1 | 0 | 400 | 37 | 1 | 1 | 6
+©Tim Hortons, 2026 | Canadian Edition

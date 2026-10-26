@@ -1,0 +1,5480 @@
+{
+ "chain": "timhortons-ca",
+ "read": "2026-10-25",
+ "how": "Rows parsed from timhortons-ca-Nutrition_Information_2026-07.txt (pdf.js positioned text of the PDF linked from timhortons.ca/nutrition-and-allergens). Section = the nearest heading above the row. Names that wrap onto two lines are not parsed. A second extraction with scripts/pdf-text.mjs gives the same digits joined together.",
+ "pdf": {
+  "url": "https://cdn.sanity.io/files/czqk28jt/prod_th_ca/147e592c99c865b50aca61832fa8ce3975cb0da5.pdf",
+  "sha256": "71cdd67b9380cd2de96dd75dcbfa7457fc4a0f1490c39d7c9e3a9b2875881f9f",
+  "lastModified": "2026-07-10"
+ },
+ "columns": [
+  "calories",
+  "fat",
+  "satFat",
+  "transFat",
+  "cholesterol",
+  "sodium",
+  "carbs",
+  "fibre",
+  "sugars",
+  "protein"
+ ],
+ "rows": [
+  {
+   "section": "Brewed Coffee",
+   "name": "Original Blend Coffee - Small",
+   "values": [
+    3,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Original Blend Coffee - Medium",
+   "values": [
+    4,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Original Blend Coffee - Large",
+   "values": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Original Blend Coffee - X Large",
+   "values": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Dark Roast Coffee - Small",
+   "values": [
+    3,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Dark Roast Coffee - Medium",
+   "values": [
+    4,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Dark Roast Coffee - Large",
+   "values": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Dark Roast Coffee - X Large",
+   "values": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Decaf Coffee - Small",
+   "values": [
+    3,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Decaf Coffee - Medium",
+   "values": [
+    4,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Decaf Coffee - Large",
+   "values": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Decaf Coffee - X Large",
+   "values": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Regular Coffee - Small",
+   "values": [
+    70,
+    4,
+    2.5,
+    0.1,
+    10,
+    25,
+    8,
+    0,
+    8,
+    1
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Regular Coffee - Medium",
+   "values": [
+    100,
+    6,
+    4,
+    0.2,
+    15,
+    40,
+    11,
+    0,
+    11,
+    1
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Regular Coffee - Large",
+   "values": [
+    120,
+    8,
+    5,
+    0.2,
+    20,
+    50,
+    14,
+    0,
+    13,
+    1
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Regular Coffee - X Large",
+   "values": [
+    150,
+    9,
+    6,
+    0.3,
+    25,
+    55,
+    18,
+    0,
+    17,
+    1
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Double Double Coffee - Small",
+   "values": [
+    130,
+    8,
+    4.5,
+    0.2,
+    20,
+    45,
+    16,
+    0,
+    16,
+    1
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Double Double Coffee - Medium",
+   "values": [
+    200,
+    13,
+    8,
+    0.4,
+    35,
+    80,
+    22,
+    0,
+    21,
+    2
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Double Double Coffee - Large",
+   "values": [
+    250,
+    15,
+    10,
+    0.5,
+    40,
+    95,
+    28,
+    0,
+    27,
+    2
+   ]
+  },
+  {
+   "section": "Brewed Coffee",
+   "name": "Double Double Coffee - X Large",
+   "values": [
+    300,
+    18,
+    11,
+    0.5,
+    50,
+    115,
+    35,
+    0,
+    34,
+    3
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Cappuccino - Small",
+   "values": [
+    80,
+    3,
+    2,
+    0.1,
+    10,
+    70,
+    9,
+    0,
+    8,
+    6
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Cappuccino - Medium",
+   "values": [
+    120,
+    4.5,
+    3,
+    0.2,
+    15,
+    95,
+    12,
+    0,
+    11,
+    8
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Cappuccino - Large",
+   "values": [
+    170,
+    6,
+    4,
+    0.2,
+    25,
+    135,
+    16,
+    0,
+    15,
+    11
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Latte - Small",
+   "values": [
+    90,
+    3.5,
+    2,
+    0.1,
+    15,
+    80,
+    10,
+    0,
+    9,
+    6
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Latte - Medium",
+   "values": [
+    140,
+    5,
+    3.5,
+    0.2,
+    20,
+    115,
+    14,
+    0,
+    13,
+    10
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Latte - Large",
+   "values": [
+    190,
+    7,
+    4.5,
+    0.3,
+    30,
+    160,
+    19,
+    0,
+    18,
+    13
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Protein Latte - Small",
+   "values": [
+    110,
+    4,
+    2,
+    0.1,
+    20,
+    50,
+    6,
+    0,
+    6,
+    13
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Protein Latte - Medium",
+   "values": [
+    170,
+    6,
+    4,
+    0.2,
+    30,
+    80,
+    10,
+    0,
+    9,
+    20
+   ]
+  },
+  {
+   "section": "Espresso Beverages",
+   "name": "Protein Latte - Large",
+   "values": [
+    230,
+    8,
+    5,
+    0.2,
+    40,
+    105,
+    13,
+    1,
+    12,
+    27
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Coffee Mocha - Small",
+   "values": [
+    90,
+    1,
+    1,
+    0,
+    0,
+    75,
+    20,
+    1,
+    14,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Coffee Mocha - Medium",
+   "values": [
+    110,
+    2,
+    1.5,
+    0,
+    0,
+    95,
+    25,
+    1,
+    17,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Coffee Mocha - Large",
+   "values": [
+    150,
+    2,
+    2,
+    0,
+    0,
+    125,
+    33,
+    1,
+    23,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Coffee Mocha - X Large",
+   "values": [
+    200,
+    3,
+    2.5,
+    0,
+    0,
+    160,
+    44,
+    1,
+    31,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "French Vanilla Cappuccino - Small",
+   "values": [
+    260,
+    10,
+    10,
+    0,
+    0,
+    180,
+    39,
+    1,
+    30,
+    3
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "French Vanilla Cappuccino - Medium",
+   "values": [
+    330,
+    12,
+    12,
+    0,
+    0,
+    230,
+    50,
+    1,
+    39,
+    3
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "French Vanilla Cappuccino - Large",
+   "values": [
+    430,
+    17,
+    16,
+    0,
+    0,
+    310,
+    66,
+    1,
+    51,
+    5
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "French Vanilla Cappuccino - X Large",
+   "values": [
+    570,
+    22,
+    22,
+    0,
+    0,
+    410,
+    88,
+    1,
+    68,
+    6
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Hot Chocolate - Small",
+   "values": [
+    220,
+    3,
+    3,
+    0,
+    0,
+    180,
+    48,
+    1,
+    34,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Hot Chocolate - Medium",
+   "values": [
+    280,
+    4,
+    3.5,
+    0,
+    0,
+    230,
+    62,
+    2,
+    43,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Hot Chocolate - Large",
+   "values": [
+    380,
+    5,
+    4.5,
+    0,
+    0,
+    310,
+    82,
+    2,
+    58,
+    2
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "Hot Chocolate - X Large",
+   "values": [
+    500,
+    7,
+    6,
+    0,
+    0,
+    410,
+    108,
+    3,
+    76,
+    3
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "White Hot Chocolate - Small",
+   "values": [
+    250,
+    9,
+    8,
+    0,
+    0,
+    250,
+    43,
+    0,
+    36,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "White Hot Chocolate - Medium",
+   "values": [
+    330,
+    11,
+    10,
+    0.1,
+    0,
+    310,
+    55,
+    0,
+    45,
+    1
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "White Hot Chocolate - Large",
+   "values": [
+    430,
+    15,
+    14,
+    0.1,
+    0,
+    420,
+    73,
+    0,
+    60,
+    2
+   ]
+  },
+  {
+   "section": "Specialty Beverages",
+   "name": "White Hot Chocolate - X Large",
+   "values": [
+    570,
+    20,
+    18,
+    0.1,
+    0,
+    550,
+    96,
+    0,
+    80,
+    2
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "Bagged Tea",
+   "values": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "Steeped Tea",
+   "values": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "Chai Latte - Small",
+   "values": [
+    150,
+    3,
+    2,
+    0.1,
+    15,
+    90,
+    22,
+    0,
+    21,
+    6
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "Chai Latte - Medium",
+   "values": [
+    230,
+    5,
+    3,
+    0.2,
+    20,
+    140,
+    33,
+    0,
+    33,
+    10
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "Chai Latte - Large",
+   "values": [
+    310,
+    7,
+    5,
+    0.2,
+    30,
+    190,
+    45,
+    0,
+    44,
+    14
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "London Fog - Small",
+   "values": [
+    110,
+    2,
+    1.5,
+    0.1,
+    10,
+    50,
+    19,
+    0,
+    19,
+    4
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "London Fog - Medium",
+   "values": [
+    160,
+    3,
+    2,
+    0.1,
+    10,
+    110,
+    28,
+    0,
+    28,
+    6
+   ]
+  },
+  {
+   "section": "Tea & Tea Lattes",
+   "name": "London Fog - Large",
+   "values": [
+    240,
+    4.5,
+    3,
+    0.2,
+    15,
+    160,
+    38,
+    0,
+    38,
+    8
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Original Iced Coffee - Small",
+   "values": [
+    120,
+    6,
+    4,
+    0.2,
+    20,
+    35,
+    15,
+    0,
+    15,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Original Iced Coffee - Medium",
+   "values": [
+    150,
+    8,
+    5,
+    0.2,
+    25,
+    40,
+    22,
+    0,
+    22,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Original Iced Coffee - Large",
+   "values": [
+    240,
+    13,
+    8,
+    0.3,
+    40,
+    65,
+    30,
+    0,
+    29,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Light Iced Coffee - Small",
+   "values": [
+    80,
+    1,
+    0.5,
+    0,
+    5,
+    25,
+    16,
+    0,
+    16,
+    2
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Light Iced Coffee - Medium",
+   "values": [
+    110,
+    1,
+    1,
+    0,
+    5,
+    30,
+    23,
+    0,
+    23,
+    2
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Light Iced Coffee - Large",
+   "values": [
+    150,
+    1.5,
+    1,
+    0,
+    5,
+    40,
+    31,
+    0,
+    31,
+    3
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Original Cold Brew - Small",
+   "values": [
+    120,
+    6,
+    4,
+    0.2,
+    20,
+    35,
+    15,
+    0,
+    15,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Original Cold Brew - Medium",
+   "values": [
+    150,
+    8,
+    5,
+    0.2,
+    25,
+    40,
+    22,
+    0,
+    22,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Original Cold Brew - Large",
+   "values": [
+    240,
+    13,
+    8,
+    0.3,
+    40,
+    65,
+    30,
+    0,
+    29,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Vanilla Cream Cold Brew - Small",
+   "values": [
+    120,
+    6,
+    3.5,
+    0.2,
+    25,
+    30,
+    15,
+    0,
+    15,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Vanilla Cream Cold Brew - Medium",
+   "values": [
+    160,
+    7,
+    4,
+    0.3,
+    30,
+    35,
+    22,
+    0,
+    22,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Vanilla Cream Cold Brew - Large",
+   "values": [
+    240,
+    12,
+    7,
+    0.5,
+    45,
+    55,
+    30,
+    0,
+    30,
+    2
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Roasted Hazelnut Cold Brew - Small",
+   "values": [
+    180,
+    12,
+    9,
+    0.2,
+    20,
+    60,
+    18,
+    0,
+    16,
+    1
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Roasted Hazelnut Cold Brew - Medium",
+   "values": [
+    220,
+    14,
+    10,
+    0.3,
+    25,
+    70,
+    25,
+    0,
+    22,
+    2
+   ]
+  },
+  {
+   "section": "Iced Coffee & Cold Brew",
+   "name": "Roasted Hazelnut Cold Brew - Large",
+   "values": [
+    300,
+    19,
+    14,
+    0.4,
+    40,
+    105,
+    32,
+    0,
+    29,
+    2
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Original Iced Latte - Small",
+   "values": [
+    150,
+    4,
+    2,
+    0.1,
+    15,
+    80,
+    22,
+    0,
+    22,
+    6
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Original Iced Latte - Medium",
+   "values": [
+    200,
+    5,
+    3,
+    0.1,
+    20,
+    100,
+    31,
+    0,
+    31,
+    8
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Original Iced Latte - Large",
+   "values": [
+    250,
+    5,
+    3,
+    0.2,
+    20,
+    120,
+    40,
+    0,
+    40,
+    10
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Unsweetened Iced Latte - Small",
+   "values": [
+    90,
+    4,
+    2,
+    0.1,
+    15,
+    80,
+    9,
+    0,
+    9,
+    6
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Unsweetened Iced Latte - Medium",
+   "values": [
+    120,
+    5,
+    3,
+    0.1,
+    20,
+    100,
+    11,
+    0,
+    11,
+    8
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Unsweetened Iced Latte - Large",
+   "values": [
+    140,
+    5,
+    3,
+    0.2,
+    20,
+    120,
+    14,
+    0,
+    13,
+    10
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Original Protein Iced Latte - Small",
+   "values": [
+    160,
+    4,
+    2,
+    0.1,
+    20,
+    50,
+    19,
+    0,
+    19,
+    12
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Original Protein Iced Latte - Medium",
+   "values": [
+    230,
+    5,
+    3,
+    0.1,
+    25,
+    70,
+    28,
+    0,
+    28,
+    17
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Original Protein Iced Latte - Large",
+   "values": [
+    310,
+    7,
+    4,
+    0.2,
+    35,
+    90,
+    38,
+    1,
+    37,
+    23
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Iced Chai Latte - Small",
+   "values": [
+    150,
+    4,
+    2,
+    0.1,
+    15,
+    90,
+    22,
+    0,
+    22,
+    7
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Iced Chai Latte - Medium",
+   "values": [
+    200,
+    5,
+    3,
+    0.1,
+    20,
+    120,
+    31,
+    0,
+    31,
+    8
+   ]
+  },
+  {
+   "section": "Iced Lattes",
+   "name": "Iced Chai Latte - Large",
+   "values": [
+    250,
+    5,
+    3,
+    0.2,
+    20,
+    150,
+    40,
+    0,
+    39,
+    10
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Original Iced Capp - Small",
+   "values": [
+    260,
+    11,
+    7,
+    0.4,
+    30,
+    75,
+    38,
+    0,
+    36,
+    2
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Original Iced Capp - Medium",
+   "values": [
+    330,
+    16,
+    10,
+    0.5,
+    45,
+    105,
+    45,
+    0,
+    42,
+    3
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Original Iced Capp - Large",
+   "values": [
+    430,
+    22,
+    14,
+    0.5,
+    60,
+    140,
+    59,
+    1,
+    56,
+    4
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Light Iced Capp - Small",
+   "values": [
+    170,
+    1.5,
+    1,
+    0.1,
+    5,
+    35,
+    39,
+    0,
+    37,
+    3
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Light Iced Capp - Medium",
+   "values": [
+    210,
+    2,
+    1,
+    0.1,
+    10,
+    45,
+    45,
+    0,
+    43,
+    4
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Light Iced Capp - Large",
+   "values": [
+    270,
+    2.5,
+    1.5,
+    0.1,
+    10,
+    60,
+    60,
+    1,
+    57,
+    5
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Mocha Iced Capp - Small",
+   "values": [
+    430,
+    19,
+    14,
+    0.4,
+    30,
+    200,
+    67,
+    1,
+    61,
+    3
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Mocha Iced Capp - Medium",
+   "values": [
+    530,
+    24,
+    17,
+    0.5,
+    45,
+    260,
+    79,
+    2,
+    72,
+    4
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Mocha Iced Capp - Large",
+   "values": [
+    650,
+    29,
+    21,
+    0.5,
+    60,
+    330,
+    98,
+    2,
+    90,
+    6
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Vanilla Iced Capp - Small",
+   "values": [
+    440,
+    18,
+    14,
+    0.4,
+    30,
+    150,
+    69,
+    0,
+    64,
+    3
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Vanilla Iced Capp - Medium",
+   "values": [
+    540,
+    23,
+    17,
+    0.5,
+    45,
+    200,
+    81,
+    0,
+    76,
+    3
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Vanilla Iced Capp - Large",
+   "values": [
+    660,
+    28,
+    20,
+    0.5,
+    60,
+    250,
+    101,
+    1,
+    95,
+    4
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Caramel Toffee Iced Capp - Small",
+   "values": [
+    440,
+    18,
+    14,
+    0.3,
+    35,
+    220,
+    68,
+    0,
+    63,
+    3
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Caramel Toffee Iced Capp - Medium",
+   "values": [
+    530,
+    23,
+    17,
+    0.4,
+    50,
+    290,
+    80,
+    1,
+    74,
+    3
+   ]
+  },
+  {
+   "section": "Iced Capps",
+   "name": "Caramel Toffee Iced Capp - Large",
+   "values": [
+    660,
+    29,
+    20,
+    0.5,
+    65,
+    360,
+    99,
+    1,
+    93,
+    4
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Frozen Lemonade - Small",
+   "values": [
+    200,
+    0,
+    0,
+    0,
+    0,
+    35,
+    51,
+    0,
+    46,
+    0
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Frozen Lemonade - Medium",
+   "values": [
+    250,
+    0,
+    0,
+    0,
+    0,
+    45,
+    62,
+    0,
+    56,
+    0
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Frozen Lemonade - Large",
+   "values": [
+    330,
+    0,
+    0,
+    0,
+    0,
+    55,
+    82,
+    0,
+    73,
+    0
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Strawberry Frozen Lemonade - Small",
+   "values": [
+    250,
+    0,
+    0,
+    0,
+    0,
+    35,
+    62,
+    0,
+    56,
+    0.1
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Strawberry Frozen Lemonade - Medium",
+   "values": [
+    310,
+    0,
+    0,
+    0,
+    0,
+    40,
+    79,
+    0,
+    71,
+    0.1
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Strawberry Frozen Lemonade - Large",
+   "values": [
+    410,
+    0,
+    0,
+    0,
+    0,
+    55,
+    102,
+    0,
+    92,
+    0.2
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Classic Lemonade - Small",
+   "values": [
+    90,
+    0,
+    0,
+    0,
+    0,
+    10,
+    23,
+    0,
+    21,
+    0
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Classic Lemonade - Medium",
+   "values": [
+    110,
+    0,
+    0,
+    0,
+    0,
+    10,
+    30,
+    0,
+    28,
+    0
+   ]
+  },
+  {
+   "section": "Lemonades",
+   "name": "Classic Lemonade - Large",
+   "values": [
+    140,
+    0,
+    0,
+    0,
+    0,
+    15,
+    39,
+    0,
+    36,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Blackberry Yuzu Quencher - Small",
+   "values": [
+    80,
+    0,
+    0,
+    0,
+    0,
+    0,
+    19,
+    0,
+    19,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Blackberry Yuzu Quencher - Medium",
+   "values": [
+    110,
+    0,
+    0,
+    0,
+    0,
+    1,
+    28,
+    0,
+    28,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Blackberry Yuzu Quencher - Large",
+   "values": [
+    150,
+    0,
+    0,
+    0,
+    0,
+    1,
+    37,
+    0,
+    36,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Orange Tangerine Quencher - Small",
+   "values": [
+    80,
+    0,
+    0,
+    0,
+    0,
+    5,
+    19,
+    0,
+    17,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Orange Tangerine Quencher - Medium",
+   "values": [
+    120,
+    0,
+    0,
+    0,
+    0,
+    10,
+    28,
+    0,
+    26,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Orange Tangerine Quencher - Large",
+   "values": [
+    160,
+    0,
+    0,
+    0,
+    0,
+    10,
+    37,
+    0,
+    34,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Peach Quencher - Small",
+   "values": [
+    50,
+    0,
+    0,
+    0,
+    0,
+    5,
+    12,
+    0,
+    11,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Peach Quencher - Medium",
+   "values": [
+    70,
+    0,
+    0,
+    0,
+    0,
+    10,
+    18,
+    0,
+    16,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Peach Quencher - Large",
+   "values": [
+    100,
+    0,
+    0,
+    0,
+    0,
+    10,
+    24,
+    0,
+    21,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Strawberry Watermelon Quencher - Small",
+   "values": [
+    40,
+    0,
+    0,
+    0,
+    0,
+    10,
+    10,
+    0,
+    8,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Strawberry Watermelon Quencher - Medium",
+   "values": [
+    60,
+    0,
+    0,
+    0,
+    0,
+    15,
+    15,
+    0,
+    12,
+    0
+   ]
+  },
+  {
+   "section": "Sparkling Quenchers",
+   "name": "Strawberry Watermelon Quencher - Large",
+   "values": [
+    80,
+    0,
+    0,
+    0,
+    0,
+    20,
+    19,
+    0,
+    16,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Blackberry Yuzu Quencher - Small",
+   "values": [
+    120,
+    0,
+    0,
+    0,
+    0,
+    2,
+    31,
+    0,
+    30,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Blackberry Yuzu Quencher - Medium",
+   "values": [
+    170,
+    0,
+    0,
+    0,
+    0,
+    3,
+    43,
+    0,
+    42,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Blackberry Yuzu Quencher - Large",
+   "values": [
+    220,
+    0,
+    0,
+    0,
+    0,
+    4,
+    56,
+    0,
+    54,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Orange Tangerine Quencher - Small",
+   "values": [
+    130,
+    0,
+    0,
+    0,
+    0,
+    5,
+    31,
+    0,
+    29,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Orange Tangerine Quencher - Medium",
+   "values": [
+    180,
+    0,
+    0,
+    0,
+    0,
+    10,
+    43,
+    0,
+    40,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Orange Tangerine Quencher - Large",
+   "values": [
+    230,
+    0,
+    0,
+    0,
+    0,
+    15,
+    56,
+    0,
+    52,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Peach Quencher - Small",
+   "values": [
+    90,
+    0,
+    0,
+    0,
+    0,
+    5,
+    24,
+    0,
+    22,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Peach Quencher - Medium",
+   "values": [
+    130,
+    0,
+    0,
+    0,
+    0,
+    10,
+    33,
+    0,
+    30,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Peach Quencher - Large",
+   "values": [
+    170,
+    0,
+    0,
+    0,
+    0,
+    15,
+    43,
+    0,
+    38,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Strawberry Watermelon Quencher - Small",
+   "values": [
+    90,
+    0,
+    0,
+    0,
+    0,
+    10,
+    22,
+    0,
+    19,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Strawberry Watermelon Quencher - Medium",
+   "values": [
+    120,
+    0,
+    0,
+    0,
+    0,
+    15,
+    30,
+    0,
+    26,
+    0
+   ]
+  },
+  {
+   "section": "Lemonade Quenchers",
+   "name": "Strawberry Watermelon Quencher - Large",
+   "values": [
+    150,
+    0,
+    0,
+    0,
+    0,
+    25,
+    39,
+    0,
+    33,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Blackberry Yuzu Quencher - Small",
+   "values": [
+    330,
+    7,
+    7,
+    0,
+    0,
+    55,
+    68,
+    0,
+    62,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Blackberry Yuzu Quencher - Medium",
+   "values": [
+    390,
+    7,
+    7,
+    0,
+    0,
+    60,
+    82,
+    0,
+    76,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Blackberry Yuzu Quencher - Large",
+   "values": [
+    480,
+    7,
+    7,
+    0,
+    0,
+    70,
+    104,
+    0,
+    96,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Orange Tangerine Quencher - Small",
+   "values": [
+    340,
+    7,
+    7,
+    0,
+    0,
+    60,
+    68,
+    0,
+    61,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Orange Tangerine Quencher - Medium",
+   "values": [
+    400,
+    7,
+    7,
+    0,
+    0,
+    65,
+    82,
+    0,
+    74,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Orange Tangerine Quencher - Large",
+   "values": [
+    490,
+    7,
+    7,
+    0,
+    0,
+    80,
+    104,
+    0,
+    94,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Peach Quencher - Small",
+   "values": [
+    310,
+    7,
+    7,
+    0,
+    0,
+    60,
+    61,
+    0,
+    54,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Peach Quencher - Medium",
+   "values": [
+    350,
+    7,
+    7,
+    0,
+    0,
+    65,
+    73,
+    0,
+    64,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Peach Quencher - Large",
+   "values": [
+    430,
+    7,
+    7,
+    0,
+    0,
+    80,
+    91,
+    0,
+    80,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Strawberry Watermelon Quencher - Small",
+   "values": [
+    300,
+    7,
+    7,
+    0,
+    0,
+    65,
+    59,
+    0,
+    21,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Strawberry Watermelon Quencher - Medium",
+   "values": [
+    340,
+    7,
+    7,
+    0,
+    0,
+    75,
+    69,
+    0,
+    60,
+    0
+   ]
+  },
+  {
+   "section": "Frozen Quenchers",
+   "name": "Strawberry Watermelon Quencher - Large",
+   "values": [
+    410,
+    7,
+    7,
+    0,
+    0,
+    90,
+    87,
+    0,
+    75,
+    0
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Coffee - Small",
+   "values": [
+    40,
+    4,
+    2,
+    0.1,
+    10,
+    20,
+    1,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Coffee - Medium",
+   "values": [
+    60,
+    6,
+    4,
+    0.1,
+    20,
+    30,
+    2,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Coffee - Large",
+   "values": [
+    80,
+    8,
+    5,
+    0.2,
+    25,
+    40,
+    2,
+    0,
+    2,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Coffee - X Large",
+   "values": [
+    90,
+    9,
+    6,
+    0.2,
+    30,
+    45,
+    2,
+    0,
+    2,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Iced Coffee - Small",
+   "values": [
+    70,
+    7,
+    4,
+    0.2,
+    20,
+    30,
+    2,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Iced Coffee - Medium",
+   "values": [
+    80,
+    8,
+    5,
+    0.2,
+    25,
+    35,
+    2,
+    0,
+    2,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Iced Coffee - Large",
+   "values": [
+    130,
+    13,
+    8,
+    0.3,
+    40,
+    60,
+    3,
+    0,
+    3,
+    2
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Tea - Small",
+   "values": [
+    40,
+    4,
+    2,
+    0.1,
+    10,
+    20,
+    1,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Tea - Medium",
+   "values": [
+    60,
+    6,
+    4,
+    0.1,
+    20,
+    30,
+    2,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Tea - Large",
+   "values": [
+    80,
+    8,
+    5,
+    0.2,
+    25,
+    40,
+    2,
+    0,
+    2,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "Cream for Tea - X Large",
+   "values": [
+    90,
+    9,
+    6,
+    0.2,
+    30,
+    45,
+    2,
+    0,
+    2,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Coffee - Small",
+   "values": [
+    15,
+    0.5,
+    0.5,
+    0,
+    0,
+    10,
+    1,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Coffee - Medium",
+   "values": [
+    20,
+    1,
+    0.5,
+    0,
+    5,
+    20,
+    2,
+    0,
+    2,
+    2
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Coffee - Large",
+   "values": [
+    30,
+    1,
+    1,
+    0,
+    5,
+    25,
+    3,
+    0,
+    3,
+    2
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Coffee - X Large",
+   "values": [
+    40,
+    1.5,
+    1,
+    0,
+    5,
+    30,
+    4,
+    0,
+    4,
+    3
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Iced Coffee - Small",
+   "values": [
+    25,
+    1,
+    0.5,
+    0,
+    5,
+    20,
+    2,
+    0,
+    2,
+    2
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Iced Coffee - Medium",
+   "values": [
+    35,
+    1,
+    1,
+    0,
+    5,
+    30,
+    3,
+    0,
+    3,
+    2
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Iced Coffee - Large",
+   "values": [
+    45,
+    2,
+    1,
+    0,
+    10,
+    35,
+    4,
+    0,
+    4,
+    3
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Tea - Small",
+   "values": [
+    10,
+    0.5,
+    0.3,
+    0,
+    0,
+    10,
+    1,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Tea - Medium",
+   "values": [
+    15,
+    0.5,
+    0.4,
+    0,
+    0,
+    15,
+    1,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Tea - Large",
+   "values": [
+    20,
+    1,
+    0.5,
+    0,
+    5,
+    20,
+    2,
+    0,
+    2,
+    2
+   ]
+  },
+  {
+   "section": "Dairy",
+   "name": "2% Milk for Tea - X Large",
+   "values": [
+    25,
+    1,
+    0.6,
+    0,
+    5,
+    25,
+    2,
+    0,
+    2,
+    2
+   ]
+  },
+  {
+   "section": "Sugar",
+   "name": "Sugar for Coffee & Tea - Small",
+   "values": [
+    30,
+    0,
+    0,
+    0,
+    0,
+    0,
+    7,
+    0,
+    7,
+    0
+   ]
+  },
+  {
+   "section": "Sugar",
+   "name": "Sugar for Coffee & Tea - Medium",
+   "values": [
+    35,
+    0,
+    0,
+    0,
+    0,
+    0,
+    9,
+    0,
+    9,
+    0
+   ]
+  },
+  {
+   "section": "Sugar",
+   "name": "Sugar for Coffee & Tea - Large",
+   "values": [
+    45,
+    0,
+    0,
+    0,
+    0,
+    0,
+    12,
+    0,
+    12,
+    0
+   ]
+  },
+  {
+   "section": "Sugar",
+   "name": "Sugar for Coffee & Tea - X Large",
+   "values": [
+    60,
+    0,
+    0,
+    0,
+    0,
+    0,
+    15,
+    0,
+    15,
+    0
+   ]
+  },
+  {
+   "section": "Flavoured Syrups",
+   "name": "Cane Sugar Syrup",
+   "values": [
+    25,
+    0,
+    0,
+    0,
+    0,
+    0,
+    7,
+    0,
+    7,
+    0
+   ]
+  },
+  {
+   "section": "Flavoured Syrups",
+   "name": "Vanilla Syrup",
+   "values": [
+    30,
+    0,
+    0,
+    0,
+    0,
+    15,
+    7,
+    0,
+    7,
+    0
+   ]
+  },
+  {
+   "section": "Flavoured Syrups",
+   "name": "Mocha Syrup",
+   "values": [
+    25,
+    0,
+    0,
+    0,
+    0,
+    30,
+    6,
+    0,
+    6,
+    0
+   ]
+  },
+  {
+   "section": "Flavoured Syrups",
+   "name": "Caramel Toffee Syrup",
+   "values": [
+    30,
+    0,
+    0,
+    0,
+    0,
+    45,
+    7,
+    0,
+    6,
+    0
+   ]
+  },
+  {
+   "section": "Flavoured Syrups",
+   "name": "Roasted Hazelnut Flavoured Syrup",
+   "values": [
+    25,
+    0,
+    0,
+    0,
+    0,
+    1,
+    6,
+    0,
+    6,
+    0
+   ]
+  },
+  {
+   "section": "Flavoured Syrups",
+   "name": "Sugar Free Vanilla Syrup",
+   "values": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    10,
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Apple Fritter",
+   "values": [
+    330,
+    11,
+    5,
+    0.1,
+    0,
+    280,
+    54,
+    2,
+    23,
+    6
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Boston Cream Donut",
+   "values": [
+    240,
+    8,
+    3.5,
+    0.1,
+    0,
+    240,
+    38,
+    1,
+    16,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Canadian Maple Donut",
+   "values": [
+    250,
+    8,
+    3.5,
+    0.1,
+    0,
+    240,
+    38,
+    1,
+    16,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Chocolate Cruller Donut",
+   "values": [
+    360,
+    22,
+    11,
+    0.2,
+    40,
+    120,
+    40,
+    0,
+    28,
+    2
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Chocolate Dip Donut",
+   "values": [
+    220,
+    8,
+    3.5,
+    0.1,
+    0,
+    190,
+    33,
+    1,
+    12,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Chocolate Éclair Donut",
+   "values": [
+    310,
+    14,
+    9,
+    0.1,
+    0,
+    230,
+    45,
+    1,
+    20,
+    5
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Chocolate Glazed Donut",
+   "values": [
+    330,
+    21,
+    10,
+    0.2,
+    15,
+    210,
+    34,
+    1,
+    20,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Chocolate Marble Donut",
+   "values": [
+    320,
+    21,
+    10,
+    0.2,
+    15,
+    210,
+    31,
+    1,
+    17,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Chocolate Snow Donut",
+   "values": [
+    290,
+    21,
+    10,
+    0.2,
+    15,
+    210,
+    24,
+    1,
+    10,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Chocolate Toasted Coconut Donut",
+   "values": [
+    360,
+    24,
+    14,
+    0.2,
+    15,
+    220,
+    34,
+    2,
+    19,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Coconut Cream Donut",
+   "values": [
+    260,
+    10,
+    5,
+    0.1,
+    0,
+    240,
+    39,
+    1,
+    17,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Double Chocolate Donut",
+   "values": [
+    310,
+    21,
+    10,
+    0.2,
+    15,
+    210,
+    28,
+    1,
+    14,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Honey Cruller Donut",
+   "values": [
+    320,
+    22,
+    11,
+    0.2,
+    40,
+    120,
+    30,
+    0,
+    18,
+    2
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Honey Dip Donut",
+   "values": [
+    250,
+    7,
+    3.5,
+    0.1,
+    0,
+    190,
+    41,
+    1,
+    21,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Long John Donut",
+   "values": [
+    240,
+    9,
+    4,
+    0.1,
+    0,
+    210,
+    36,
+    1,
+    13,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Maple Glazed Donut",
+   "values": [
+    260,
+    8,
+    4,
+    0.1,
+    0,
+    200,
+    42,
+    1,
+    20,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Maple Cruller Donut",
+   "values": [
+    360,
+    22,
+    11,
+    0.2,
+    40,
+    120,
+    40,
+    0,
+    28,
+    2
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Maple Dip Donut",
+   "values": [
+    220,
+    7,
+    3.5,
+    0.1,
+    0,
+    190,
+    33,
+    1,
+    12,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Maple Éclair Donut",
+   "values": [
+    310,
+    14,
+    9,
+    0.1,
+    0,
+    230,
+    43,
+    1,
+    18,
+    5
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Maple Glazed Donut",
+   "values": [
+    260,
+    8,
+    4,
+    0.1,
+    0,
+    200,
+    42,
+    1,
+    20,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Maple Swirl Donut",
+   "values": [
+    250,
+    8,
+    3.5,
+    0.1,
+    0,
+    240,
+    39,
+    1,
+    17,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Old Fashioned Dip Donut",
+   "values": [
+    310,
+    18,
+    9,
+    0.1,
+    25,
+    230,
+    34,
+    1,
+    16,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Old Fashioned Glazed Donut",
+   "values": [
+    330,
+    18,
+    9,
+    0.1,
+    25,
+    230,
+    40,
+    1,
+    22,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Old Fashioned Plain Donut",
+   "values": [
+    280,
+    18,
+    9,
+    0.1,
+    25,
+    230,
+    26,
+    1,
+    9,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Old Fashioned Snow Donut",
+   "values": [
+    290,
+    18,
+    9,
+    0.1,
+    25,
+    230,
+    30,
+    1,
+    12,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Old Fashioned Sugar Donut",
+   "values": [
+    300,
+    18,
+    9,
+    0.1,
+    25,
+    230,
+    33,
+    1,
+    16,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Powdered Venetian Cream Donut",
+   "values": [
+    220,
+    8,
+    4,
+    0.1,
+    0,
+    240,
+    32,
+    1,
+    10,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Sour Cream Glazed Donut",
+   "values": [
+    340,
+    18,
+    8,
+    0.1,
+    5,
+    180,
+    40,
+    1,
+    24,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Sour Cream Plain Donut",
+   "values": [
+    280,
+    18,
+    8,
+    0.1,
+    5,
+    180,
+    26,
+    1,
+    11,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Sour Cream Sugar Donut",
+   "values": [
+    300,
+    16,
+    8,
+    0.1,
+    5,
+    180,
+    32,
+    1,
+    16,
+    3
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Strawberry Dip Donut",
+   "values": [
+    220,
+    7,
+    3.5,
+    0.1,
+    0,
+    190,
+    33,
+    1,
+    12,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Strawberry Filled Donut",
+   "values": [
+    240,
+    8,
+    3.5,
+    0.1,
+    0,
+    210,
+    38,
+    1,
+    16,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Strawberry Swirl Donut",
+   "values": [
+    230,
+    7,
+    3.5,
+    0.1,
+    0,
+    190,
+    38,
+    1,
+    17,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Strawberry Vanilla Donut",
+   "values": [
+    270,
+    8,
+    3.5,
+    0.1,
+    0,
+    210,
+    49,
+    1,
+    15,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Sugar Loop Donut",
+   "values": [
+    200,
+    7,
+    3.5,
+    0.1,
+    0,
+    190,
+    29,
+    1,
+    8,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Toasted Coconut Donut",
+   "values": [
+    360,
+    21,
+    12,
+    0.1,
+    25,
+    240,
+    39,
+    2,
+    21,
+    4
+   ]
+  },
+  {
+   "section": "Donuts",
+   "name": "Vanilla Dip Donut",
+   "values": [
+    250,
+    7,
+    3.5,
+    0.1,
+    0,
+    190,
+    40,
+    1,
+    19,
+    4
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Birthday Cake Timbit",
+   "values": [
+    80,
+    3,
+    1.5,
+    0,
+    5,
+    60,
+    13,
+    1,
+    9,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Chocolate Glazed Timbit",
+   "values": [
+    80,
+    3.5,
+    1.5,
+    0,
+    5,
+    70,
+    11,
+    0,
+    6,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Chocolate Snow Ball Timbit",
+   "values": [
+    70,
+    3.5,
+    1.5,
+    0,
+    5,
+    70,
+    8,
+    0,
+    3,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Chocolate Toasted Coconut Timbit",
+   "values": [
+    90,
+    4.5,
+    3,
+    0,
+    5,
+    75,
+    11,
+    1,
+    6,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Honey Dip Timbit",
+   "values": [
+    50,
+    1.5,
+    0.5,
+    0,
+    0,
+    25,
+    8,
+    0,
+    5,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Old Fashioned Glazed Timbit",
+   "values": [
+    80,
+    3.5,
+    1.5,
+    0,
+    0,
+    64,
+    12,
+    0,
+    7,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Old Fashioned Plain Timbit",
+   "values": [
+    60,
+    3.5,
+    1.5,
+    0,
+    0,
+    65,
+    8,
+    0,
+    3,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Old Fashioned Sugar Timbit",
+   "values": [
+    70,
+    3.5,
+    1.5,
+    0,
+    0,
+    65,
+    9,
+    0,
+    4,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Snow Ball Timbit",
+   "values": [
+    70,
+    3.5,
+    15,
+    0,
+    0,
+    65,
+    8,
+    0,
+    3,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Sour Cream Glazed Timbit",
+   "values": [
+    90,
+    5,
+    2.5,
+    0,
+    0,
+    50,
+    11,
+    0,
+    7,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Sour Cream Plain Timbit",
+   "values": [
+    80,
+    5,
+    2.5,
+    0,
+    0,
+    50,
+    7,
+    0,
+    3,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Sour Cream Sugar Timbit",
+   "values": [
+    80,
+    5,
+    2.5,
+    0,
+    0,
+    50,
+    8,
+    0,
+    4,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Strawberry Timbit",
+   "values": [
+    50,
+    1.5,
+    0.5,
+    0,
+    0,
+    30,
+    8,
+    0,
+    4,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Toasted Coconut Timbit",
+   "values": [
+    90,
+    4.5,
+    3,
+    0,
+    0,
+    70,
+    12,
+    1,
+    6,
+    1
+   ]
+  },
+  {
+   "section": "Timbits®",
+   "name": "Venetian Cream Timbit",
+   "values": [
+    50,
+    1.5,
+    1,
+    0,
+    0,
+    40,
+    7,
+    0,
+    3,
+    1
+   ]
+  },
+  {
+   "section": "Muffins",
+   "name": "Chocolate Chip Muffin",
+   "values": [
+    420,
+    17,
+    5,
+    0.1,
+    30,
+    400,
+    64,
+    2,
+    36,
+    6
+   ]
+  },
+  {
+   "section": "Muffins",
+   "name": "Fruit Explosion Muffin",
+   "values": [
+    360,
+    12,
+    2,
+    0.1,
+    35,
+    490,
+    59,
+    2,
+    30,
+    5
+   ]
+  },
+  {
+   "section": "Muffins",
+   "name": "Wild Blueberry Muffin",
+   "values": [
+    380,
+    14,
+    2,
+    0.1,
+    40,
+    500,
+    56,
+    2,
+    29,
+    6
+   ]
+  },
+  {
+   "section": "Muffins",
+   "name": "Raisin Bran Muffin",
+   "values": [
+    380,
+    13,
+    2,
+    0.1,
+    15,
+    500,
+    60,
+    5,
+    30,
+    6
+   ]
+  },
+  {
+   "section": "Muffins",
+   "name": "Carrot Cake Walnut Muffin",
+   "values": [
+    360,
+    13,
+    2.5,
+    0.1,
+    30,
+    480,
+    55,
+    2,
+    28,
+    6
+   ]
+  },
+  {
+   "section": "Muffins",
+   "name": "Banana Pecan Muffin",
+   "values": [
+    340,
+    10,
+    2,
+    0.1,
+    30,
+    790,
+    60,
+    9,
+    20,
+    6
+   ]
+  },
+  {
+   "section": "Cookies & Brownies",
+   "name": "Chocolate Chunk Cookie",
+   "values": [
+    310,
+    17,
+    10,
+    0.3,
+    30,
+    260,
+    38,
+    1,
+    22,
+    3
+   ]
+  },
+  {
+   "section": "Cookies & Brownies",
+   "name": "Oatmeal Raisin Cookie",
+   "values": [
+    290,
+    11,
+    6,
+    0.2,
+    25,
+    220,
+    44,
+    2,
+    26,
+    4
+   ]
+  },
+  {
+   "section": "Cookies & Brownies",
+   "name": "Peanut Butter Cookie",
+   "values": [
+    320,
+    16,
+    8,
+    0.2,
+    25,
+    310,
+    39,
+    1,
+    21,
+    5
+   ]
+  },
+  {
+   "section": "Cookies & Brownies",
+   "name": "Reese's Minis Dream Cookie",
+   "values": [
+    350,
+    17,
+    9,
+    0.2,
+    25,
+    320,
+    45,
+    1,
+    31,
+    5
+   ]
+  },
+  {
+   "section": "Cookies & Brownies",
+   "name": "Double Chocolate Brownie",
+   "values": [
+    410,
+    20,
+    8,
+    0.1,
+    65,
+    190,
+    57,
+    2,
+    39,
+    5
+   ]
+  },
+  {
+   "section": "Croissants",
+   "name": "Plain Croissant",
+   "values": [
+    260,
+    13,
+    7,
+    0.3,
+    15,
+    240,
+    30,
+    1,
+    3,
+    6
+   ]
+  },
+  {
+   "section": "Croissants",
+   "name": "Cheese Croissant",
+   "values": [
+    290,
+    14,
+    8,
+    0.3,
+    20,
+    280,
+    30,
+    1,
+    3,
+    7
+   ]
+  },
+  {
+   "section": "Croissants",
+   "name": "Chocolate Croissant",
+   "values": [
+    350,
+    17,
+    8,
+    0.2,
+    0,
+    120,
+    43,
+    0,
+    18,
+    6
+   ]
+  },
+  {
+   "section": "Tea Biscuits",
+   "name": "Cheese Tea Biscuit",
+   "values": [
+    250,
+    11,
+    4,
+    0.2,
+    10,
+    610,
+    31,
+    1,
+    4,
+    8
+   ]
+  },
+  {
+   "section": "Tea Biscuits",
+   "name": "Raisin Tea Biscuit",
+   "values": [
+    250,
+    8,
+    1.5,
+    0,
+    0,
+    500,
+    40,
+    2,
+    12,
+    5
+   ]
+  },
+  {
+   "section": "Savoury Pastries",
+   "name": "Herb & Garlic Savoury Pastry",
+   "values": [
+    240,
+    11,
+    6.5,
+    0.3,
+    35,
+    470,
+    29,
+    1,
+    6,
+    6
+   ]
+  },
+  {
+   "section": "Classic Bagels",
+   "name": "Plain Bagel",
+   "values": [
+    290,
+    1.5,
+    0.4,
+    0,
+    0,
+    380,
+    62,
+    2,
+    9,
+    9
+   ]
+  },
+  {
+   "section": "Classic Bagels",
+   "name": "Sesame Seed Bagel",
+   "values": [
+    310,
+    4,
+    1,
+    0,
+    0,
+    400,
+    62,
+    4,
+    10,
+    10
+   ]
+  },
+  {
+   "section": "Classic Bagels",
+   "name": "Everything Bagel",
+   "values": [
+    290,
+    2,
+    0.5,
+    0.1,
+    0,
+    390,
+    60,
+    4,
+    9,
+    10
+   ]
+  },
+  {
+   "section": "Classic Bagels",
+   "name": "12-Grain Bagel",
+   "values": [
+    320,
+    7,
+    1,
+    0,
+    0,
+    460,
+    57,
+    8,
+    9,
+    11
+   ]
+  },
+  {
+   "section": "Classic Bagels",
+   "name": "Cinnamon Raisin Bagel",
+   "values": [
+    290,
+    1,
+    0.3,
+    0,
+    0,
+    360,
+    64,
+    3,
+    14,
+    9
+   ]
+  },
+  {
+   "section": "Specialty Bagels",
+   "name": "Four Cheese Bagel",
+   "values": [
+    330,
+    5,
+    1.5,
+    0.1,
+    5,
+    580,
+    58,
+    2,
+    4,
+    11
+   ]
+  },
+  {
+   "section": "Specialty Bagels",
+   "name": "Jalapeno Asiago Mozzarella Bagel",
+   "values": [
+    320,
+    4.5,
+    1.5,
+    0.1,
+    5,
+    710,
+    59,
+    3,
+    4,
+    11
+   ]
+  },
+  {
+   "section": "Specialty Bagels",
+   "name": "Protein Bagel",
+   "values": [
+    280,
+    3,
+    1.5,
+    0,
+    5,
+    590,
+    45,
+    3,
+    4,
+    20
+   ]
+  },
+  {
+   "section": "Bagel Toppings",
+   "name": "Plain Cream Cheese",
+   "values": [
+    100,
+    9,
+    6,
+    0.3,
+    25,
+    150,
+    2,
+    0,
+    2,
+    2
+   ]
+  },
+  {
+   "section": "Bagel Toppings",
+   "name": "Herb & Garlic Cream Cheese",
+   "values": [
+    100,
+    9,
+    6,
+    0.3,
+    25,
+    190,
+    3,
+    0,
+    2,
+    2
+   ]
+  },
+  {
+   "section": "Bagel Toppings",
+   "name": "Strawberry Cream Cheese",
+   "values": [
+    100,
+    7,
+    5,
+    0.2,
+    25,
+    120,
+    6,
+    0,
+    6,
+    2
+   ]
+  },
+  {
+   "section": "Bagel Toppings",
+   "name": "Butter",
+   "values": [
+    60,
+    7,
+    4.5,
+    0.1,
+    20,
+    55,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "section": "Bagel Toppings",
+   "name": "Strawberry Jam Packet",
+   "values": [
+    60,
+    0,
+    0,
+    0,
+    0,
+    0,
+    14,
+    0,
+    14,
+    0
+   ]
+  },
+  {
+   "section": "Bagel Toppings",
+   "name": "Raspberry Jam Packet",
+   "values": [
+    60,
+    0,
+    0,
+    0,
+    0,
+    0,
+    14,
+    0,
+    14,
+    0
+   ]
+  },
+  {
+   "section": "Bagel Toppings",
+   "name": "Peanut Butter",
+   "values": [
+    110,
+    9,
+    1.5,
+    0,
+    0,
+    75,
+    4,
+    0,
+    1,
+    3
+   ]
+  },
+  {
+   "section": "Classic Breakfast Sandwiches",
+   "name": "Sausage Homestyle Biscuit",
+   "values": [
+    530,
+    35,
+    17,
+    0.4,
+    240,
+    900,
+    34,
+    2,
+    4,
+    20
+   ]
+  },
+  {
+   "section": "Classic Breakfast Sandwiches",
+   "name": "Bacon Homestyle Biscuit",
+   "values": [
+    410,
+    22,
+    13,
+    0.3,
+    215,
+    930,
+    33,
+    1,
+    3,
+    18
+   ]
+  },
+  {
+   "section": "Classic Breakfast Sandwiches",
+   "name": "Egg & Cheese Homestyle Biscuit",
+   "values": [
+    350,
+    18,
+    11,
+    0.3,
+    205,
+    720,
+    33,
+    1,
+    3,
+    14
+   ]
+  },
+  {
+   "section": "Classic Breakfast Sandwiches",
+   "name": "Simply Sausage Homestyle Biscuit",
+   "values": [
+    450,
+    30,
+    16,
+    0.3,
+    50,
+    850,
+    33,
+    3,
+    2,
+    13
+   ]
+  },
+  {
+   "section": "Classic Breakfast Sandwiches",
+   "name": "Sausage English Muffin",
+   "values": [
+    450,
+    29,
+    11,
+    0.3,
+    240,
+    680,
+    28,
+    2,
+    3,
+    19
+   ]
+  },
+  {
+   "section": "Classic Breakfast Sandwiches",
+   "name": "Bacon English Muffin",
+   "values": [
+    330,
+    16,
+    7,
+    0.2,
+    215,
+    710,
+    27,
+    1,
+    3,
+    17
+   ]
+  },
+  {
+   "section": "Classic Breakfast Sandwiches",
+   "name": "Egg & Cheese English Muffin",
+   "values": [
+    270,
+    12,
+    5,
+    0.2,
+    205,
+    500,
+    27,
+    1,
+    3,
+    14
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Sausage Plain Bagel Sandwich",
+   "values": [
+    600,
+    28,
+    11,
+    0.3,
+    240,
+    820,
+    65,
+    3,
+    10,
+    23
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Bacon Plain Bagel Sandwich",
+   "values": [
+    480,
+    16,
+    7,
+    0.3,
+    215,
+    850,
+    64,
+    3,
+    10,
+    22
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Sausage Sesame Seed Bagel Sandwich",
+   "values": [
+    620,
+    31,
+    11,
+    0.3,
+    240,
+    840,
+    65,
+    4,
+    11,
+    25
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Bacon Sesame Seed Bagel Sandwich",
+   "values": [
+    500,
+    18,
+    7,
+    0.2,
+    215,
+    870,
+    64,
+    4,
+    11,
+    23
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Sausage Everything Bagel Sandwich",
+   "values": [
+    600,
+    29,
+    11,
+    0.4,
+    240,
+    830,
+    63,
+    4,
+    9,
+    24
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Bacon Everything Bagel Sandwich",
+   "values": [
+    480,
+    16,
+    7,
+    0.3,
+    215,
+    860,
+    62,
+    4,
+    9,
+    23
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Sausage 12-Grain Bagel Sandwich",
+   "values": [
+    630,
+    33,
+    12,
+    0.4,
+    240,
+    900,
+    60,
+    9,
+    10,
+    26
+   ]
+  },
+  {
+   "section": "Bagel Breakfast Sandwiches",
+   "name": "Bacon 12-Grain Bagel Sandwich",
+   "values": [
+    510,
+    21,
+    7,
+    0.3,
+    215,
+    940,
+    59,
+    8,
+    10,
+    24
+   ]
+  },
+  {
+   "section": "Bagel BELT Breakfast Sandwiches",
+   "name": "Plain Bagel BELT Sandwich",
+   "values": [
+    490,
+    16,
+    7,
+    0.3,
+    215,
+    860,
+    66,
+    3,
+    11,
+    22
+   ]
+  },
+  {
+   "section": "Bagel BELT Breakfast Sandwiches",
+   "name": "Sesame Seed Bagel BELT Sandwich",
+   "values": [
+    510,
+    15,
+    7,
+    0.2,
+    215,
+    880,
+    66,
+    5,
+    12,
+    23
+   ]
+  },
+  {
+   "section": "Bagel BELT Breakfast Sandwiches",
+   "name": "Everything Bagel BELT Sandwich",
+   "values": [
+    490,
+    17,
+    7,
+    0.3,
+    215,
+    860,
+    64,
+    4,
+    10,
+    23
+   ]
+  },
+  {
+   "section": "Bagel BELT Breakfast Sandwiches",
+   "name": "12-Grain Bagel BELT Sandwich",
+   "values": [
+    520,
+    21,
+    7,
+    0.3,
+    215,
+    940,
+    61,
+    9,
+    11,
+    24
+   ]
+  },
+  {
+   "section": "Bagel BELT Breakfast Sandwiches",
+   "name": "Protein Bagel BELT Sandwich",
+   "values": [
+    480,
+    18,
+    9,
+    0.2,
+    230,
+    1100,
+    49,
+    4,
+    6,
+    33
+   ]
+  },
+  {
+   "section": "Breakfast Wraps",
+   "name": "Sausage Breakfast Wrap",
+   "values": [
+    530,
+    34,
+    12,
+    0.3,
+    240,
+    720,
+    35,
+    3,
+    3,
+    20
+   ]
+  },
+  {
+   "section": "Breakfast Wraps",
+   "name": "Bacon Breakfast Wrap",
+   "values": [
+    400,
+    21,
+    8,
+    0.3,
+    220,
+    750,
+    34,
+    2,
+    3,
+    18
+   ]
+  },
+  {
+   "section": "Breakfast Wraps",
+   "name": "Sausage & Bacon Breakfast Wrap",
+   "values": [
+    580,
+    38,
+    13,
+    0.3,
+    250,
+    930,
+    35,
+    3,
+    3,
+    23
+   ]
+  },
+  {
+   "section": "Breakfast Wraps",
+   "name": "Sausage Farmer's Wrap",
+   "values": [
+    640,
+    40,
+    12,
+    0.4,
+    240,
+    940,
+    50,
+    4,
+    4,
+    21
+   ]
+  },
+  {
+   "section": "Breakfast Wraps",
+   "name": "Bacon Farmer's Wrap",
+   "values": [
+    520,
+    27,
+    8,
+    0.4,
+    220,
+    970,
+    49,
+    4,
+    4,
+    19
+   ]
+  },
+  {
+   "section": "Breakfast Wraps",
+   "name": "Sausage & Bacon Farmer's Wrap",
+   "values": [
+    700,
+    44,
+    14,
+    0.5,
+    250,
+    1160,
+    53,
+    4,
+    4,
+    25
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Sausage Scrambled Egg Loaded Wrap",
+   "values": [
+    650,
+    40,
+    12,
+    0.4,
+    240,
+    1020,
+    53,
+    4,
+    5,
+    22
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Bacon Scrambled Egg Loaded Wrap",
+   "values": [
+    530,
+    27,
+    8,
+    0.3,
+    225,
+    1060,
+    52,
+    4,
+    5,
+    20
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Scrambled Egg & Cheese Loaded Wrap",
+   "values": [
+    470,
+    23,
+    6,
+    0.3,
+    205,
+    840,
+    52,
+    4,
+    5,
+    16
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Sausage Scrambled Egg Loaded Box",
+   "values": [
+    600,
+    40,
+    10,
+    0.4,
+    425,
+    1050,
+    37,
+    3,
+    4,
+    24
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Bacon Scrambled Egg Loaded Box",
+   "values": [
+    490,
+    30,
+    7,
+    0.4,
+    405,
+    1030,
+    36,
+    3,
+    4,
+    21
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Scrambled Egg Loaded Box",
+   "values": [
+    440,
+    26,
+    5,
+    0.4,
+    390,
+    810,
+    36,
+    3,
+    4,
+    17
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Sausage Scrambled Egg Loaded Croissant",
+   "values": [
+    590,
+    39,
+    16,
+    0.3,
+    245,
+    800,
+    40,
+    2,
+    6,
+    21
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Bacon Scrambled Egg Loaded Croissant",
+   "values": [
+    460,
+    26,
+    12,
+    0.2,
+    230,
+    840,
+    39,
+    2,
+    6,
+    19
+   ]
+  },
+  {
+   "section": "Loaded Breakfast",
+   "name": "Scrambled Egg & Cheese Loaded Croissant",
+   "values": [
+    410,
+    22,
+    10,
+    0.2,
+    210,
+    620,
+    39,
+    2,
+    5,
+    15
+   ]
+  },
+  {
+   "section": "Omelette Bites",
+   "name": "Bacon & Cheese Omelette Bites",
+   "values": [
+    210,
+    21,
+    8,
+    0.2,
+    230,
+    730,
+    10,
+    1,
+    4,
+    15
+   ]
+  },
+  {
+   "section": "Omelette Bites",
+   "name": "Spinach & Egg White Omelette Bites",
+   "values": [
+    130,
+    6,
+    2,
+    0.1,
+    10,
+    420,
+    8,
+    1,
+    2,
+    14
+   ]
+  },
+  {
+   "section": "Omelette Bites",
+   "name": "Sausage & Four Cheese Omelette Bites",
+   "values": [
+    290,
+    23,
+    8,
+    0.2,
+    215,
+    610,
+    9,
+    1,
+    3,
+    13
+   ]
+  },
+  {
+   "section": "Other",
+   "name": "Hash Brown",
+   "values": [
+    120,
+    6,
+    0.5,
+    0.1,
+    0,
+    220,
+    15,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "section": "Other",
+   "name": "Yogurt Parfait",
+   "values": [
+    250,
+    7,
+    1.5,
+    0.1,
+    10,
+    115,
+    40,
+    3,
+    25,
+    8
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "Turkey Bacon Club Sandwich",
+   "values": [
+    550,
+    23,
+    5,
+    0.2,
+    50,
+    1440,
+    60,
+    3,
+    6,
+    27
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "BLT Sandwich",
+   "values": [
+    490,
+    21,
+    5,
+    0.2,
+    25,
+    940,
+    59,
+    4,
+    6,
+    16
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "Ham & Cheddar Sandwich",
+   "values": [
+    520,
+    20,
+    7,
+    0.4,
+    50,
+    1330,
+    60,
+    3,
+    7,
+    25
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "Steak & Cheddar Sandwich",
+   "values": [
+    560,
+    22,
+    8,
+    0.5,
+    70,
+    1280,
+    63,
+    3,
+    8,
+    30
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "Crispy Chicken Sandwich",
+   "values": [
+    660,
+    37,
+    7,
+    0.5,
+    110,
+    1170,
+    54,
+    4,
+    4,
+    23
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "Supreme Stack Sandwich",
+   "values": [
+    620,
+    32,
+    12,
+    1,
+    150,
+    1670,
+    49,
+    3,
+    10,
+    36
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "Crispy Chicken Craveable",
+   "values": [
+    470,
+    19,
+    3,
+    0.2,
+    25,
+    960,
+    55,
+    3,
+    1,
+    21
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "name": "Steak Craveable",
+   "values": [
+    450,
+    20,
+    6,
+    0.5,
+    60,
+    1080,
+    43,
+    2,
+    3,
+    24
+   ]
+  },
+  {
+   "section": "Wraps",
+   "name": "Chicken Bacon Ranch Wrap",
+   "values": [
+    420,
+    19,
+    4.5,
+    0.2,
+    65,
+    900,
+    36,
+    2,
+    4,
+    27
+   ]
+  },
+  {
+   "section": "Wraps",
+   "name": "Crispy Chicken Bacon Ranch Wrap",
+   "values": [
+    530,
+    26,
+    6,
+    0.3,
+    35,
+    1010,
+    54,
+    4,
+    4,
+    24
+   ]
+  },
+  {
+   "section": "Wraps",
+   "name": "Classic Chicken Wrap",
+   "values": [
+    380,
+    17,
+    3,
+    0.2,
+    60,
+    660,
+    36,
+    2,
+    3,
+    24
+   ]
+  },
+  {
+   "section": "Wraps",
+   "name": "Classic Crispy Chicken Wrap",
+   "values": [
+    490,
+    24,
+    4,
+    0.3,
+    25,
+    770,
+    53,
+    4,
+    3,
+    20
+   ]
+  },
+  {
+   "section": "Loaded Wraps",
+   "name": "Cilantro Lime Chicken Loaded Wrap",
+   "values": [
+    590,
+    28,
+    6,
+    0.4,
+    70,
+    1060,
+    56,
+    4,
+    5,
+    29
+   ]
+  },
+  {
+   "section": "Loaded Wraps",
+   "name": "Cilantro Lime Crispy Chicken Loaded Wrap",
+   "values": [
+    690,
+    35,
+    8,
+    0.5,
+    40,
+    1200,
+    72,
+    6,
+    5,
+    25
+   ]
+  },
+  {
+   "section": "Loaded Wraps",
+   "name": "Cilantro Lime Veggie Loaded Wrap",
+   "values": [
+    570,
+    26,
+    6,
+    0.4,
+    15,
+    1070,
+    72,
+    6,
+    5,
+    13
+   ]
+  },
+  {
+   "section": "Loaded Wraps",
+   "name": "Habanero Chicken Loaded Wrap",
+   "values": [
+    560,
+    26,
+    6,
+    0.4,
+    80,
+    1240,
+    54,
+    5,
+    5,
+    29
+   ]
+  },
+  {
+   "section": "Loaded Wraps",
+   "name": "Habanero Crispy Chicken Loaded Wrap",
+   "values": [
+    660,
+    33,
+    7,
+    0.5,
+    45,
+    1360,
+    71,
+    6,
+    5,
+    25
+   ]
+  },
+  {
+   "section": "Loaded Wraps",
+   "name": "Habanero Veggie Loaded Wrap",
+   "values": [
+    540,
+    24,
+    6,
+    0.4,
+    25,
+    1220,
+    70,
+    6,
+    6,
+    13
+   ]
+  },
+  {
+   "section": "Loaded Bowls",
+   "name": "Cilantro Lime Chicken Loaded Bowl",
+   "values": [
+    550,
+    29,
+    6,
+    0.3,
+    95,
+    1100,
+    41,
+    4,
+    4,
+    34
+   ]
+  },
+  {
+   "section": "Loaded Bowls",
+   "name": "Cilantro Lime Crispy Chicken Loaded Bowl",
+   "values": [
+    710,
+    36,
+    7,
+    0.5,
+    75,
+    1350,
+    62,
+    5,
+    5,
+    29
+   ]
+  },
+  {
+   "section": "Loaded Bowls",
+   "name": "Cilantro Lime Veggie Loaded Bowl",
+   "values": [
+    570,
+    27,
+    6,
+    0.4,
+    15,
+    1250,
+    73,
+    7,
+    5,
+    12
+   ]
+  },
+  {
+   "section": "Loaded Bowls",
+   "name": "Habanero Chicken Loaded Bowl",
+   "values": [
+    530,
+    26,
+    6,
+    0.3,
+    100,
+    1250,
+    40,
+    4,
+    4,
+    34
+   ]
+  },
+  {
+   "section": "Loaded Bowls",
+   "name": "Habanero Crispy Chicken Loaded Bowl",
+   "values": [
+    690,
+    34,
+    7,
+    0.5,
+    80,
+    1500,
+    61,
+    6,
+    5,
+    29
+   ]
+  },
+  {
+   "section": "Loaded Bowls",
+   "name": "Habanero Veggie Loaded Bowl",
+   "values": [
+    550,
+    26,
+    5,
+    0.4,
+    25,
+    1400,
+    72,
+    7,
+    5,
+    12
+   ]
+  },
+  {
+   "section": "Flatbread Pizzas",
+   "name": "Simply Cheese Flatbread Pizza",
+   "values": [
+    630,
+    26,
+    11,
+    0.5,
+    55,
+    1590,
+    68,
+    3,
+    6,
+    31
+   ]
+  },
+  {
+   "section": "Flatbread Pizzas",
+   "name": "Pepperoni Flatbread Pizza",
+   "values": [
+    750,
+    37,
+    15,
+    1,
+    75,
+    1910,
+    69,
+    3,
+    6,
+    36
+   ]
+  },
+  {
+   "section": "Flatbread Pizzas",
+   "name": "Chicken Parmesan Flatbread Pizza",
+   "values": [
+    760,
+    34,
+    14,
+    0.5,
+    100,
+    1890,
+    69,
+    3,
+    6,
+    48
+   ]
+  },
+  {
+   "section": "Melts",
+   "name": "Grilled Cheese Melt",
+   "values": [
+    560,
+    25,
+    14,
+    1,
+    65,
+    1550,
+    59,
+    3,
+    2,
+    28
+   ]
+  },
+  {
+   "section": "Melts",
+   "name": "Bacon Grilled Cheese Melt",
+   "values": [
+    650,
+    32,
+    16,
+    1,
+    95,
+    1920,
+    60,
+    4,
+    2,
+    35
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Chicken Noodle Soup - Regular",
+   "values": [
+    140,
+    3,
+    0.5,
+    0,
+    20,
+    710,
+    20,
+    1,
+    2,
+    9
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Chicken Noodle Soup - Large",
+   "values": [
+    190,
+    3.5,
+    1,
+    0,
+    20,
+    960,
+    28,
+    2,
+    2,
+    10
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Cream of Broccoli Soup - Regular",
+   "values": [
+    100,
+    3.5,
+    1.5,
+    0.1,
+    10,
+    650,
+    15,
+    2,
+    6,
+    5
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Cream of Broccoli Soup - Large",
+   "values": [
+    150,
+    5,
+    2,
+    0.1,
+    15,
+    910,
+    21,
+    3,
+    9,
+    6
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Garden Minestrone Soup - Regular",
+   "values": [
+    100,
+    1.5,
+    0.3,
+    0,
+    0,
+    590,
+    20,
+    6,
+    6,
+    5
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Garden Minestrone Soup - Large",
+   "values": [
+    140,
+    2.5,
+    0.5,
+    0,
+    0,
+    820,
+    28,
+    8,
+    9,
+    6
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Tomato Parmesan Soup - Regular",
+   "values": [
+    150,
+    7,
+    4,
+    0.3,
+    15,
+    740,
+    17,
+    3,
+    6,
+    5
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Tomato Parmesan Soup - Large",
+   "values": [
+    210,
+    10,
+    5,
+    0.4,
+    20,
+    1040,
+    24,
+    4,
+    9,
+    7
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Potato Bacon Soup - Regular",
+   "values": [
+    220,
+    11,
+    6,
+    0.3,
+    35,
+    820,
+    25,
+    2,
+    5,
+    6
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Potato Bacon Soup - Large",
+   "values": [
+    310,
+    15,
+    8,
+    0.4,
+    50,
+    1150,
+    35,
+    2,
+    6,
+    9
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Clam Chowder - Regular",
+   "values": [
+    150,
+    5,
+    2,
+    0.1,
+    15,
+    750,
+    20,
+    1,
+    5,
+    7
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Clam Chowder - Large",
+   "values": [
+    210,
+    7,
+    3,
+    0.2,
+    20,
+    1050,
+    27,
+    2,
+    6,
+    10
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Chili - Regular",
+   "values": [
+    310,
+    16,
+    6,
+    1,
+    55,
+    910,
+    22,
+    4,
+    7,
+    19
+   ]
+  },
+  {
+   "section": "Soups & Chili",
+   "name": "Chili - Large",
+   "values": [
+    430,
+    22,
+    9,
+    1,
+    75,
+    1270,
+    31,
+    6,
+    10,
+    27
+   ]
+  },
+  {
+   "section": "Sides",
+   "name": "Potato Wedges",
+   "values": [
+    170,
+    7,
+    1,
+    0.2,
+    0,
+    520,
+    26,
+    2,
+    0,
+    2
+   ]
+  },
+  {
+   "section": "Sides",
+   "name": "Soup Bun",
+   "values": [
+    210,
+    4.5,
+    0.5,
+    0.1,
+    0,
+    400,
+    37,
+    1,
+    1,
+    6
+   ]
+  }
+ ]
+}

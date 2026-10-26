@@ -2271,3 +2271,23 @@ docs/RESTAURANT_SOURCES.md.
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40257479054). Against the hosted API as it is now (no
   `restaurants.*` capabilities) this IPA browses the bundled catalog, builds, suggests and logs; asking in words says it is
   not available until the API is deployed. `main` and Railway unchanged, awaiting the owner's approval.
+
+### 25 Oct 2026 (follow-up) — McDonald's and Tim Hortons added (catalog 2026-10-25.2)
+
+- Owner authorized read-only access to the official McDonald's and Tim Hortons Canada sites, their linked nutrition
+  documents and the public services those pages use. From this session McDonald's still answered every plain request
+  with its edge's "Access Denied" (HTTP 403): `/ca/en-ca/about-our-food/nutrition-calculator.html` (ref
+  `#18.b059c817.1792983967.63bfb82`), `/dnaapp/itemList?country=CA&language=en&showLiveData=true` (ref `…63bfc44`),
+  `/ca/en-ca/product/big-mac.html` (ref `…63bfd9c`); no browser tool exists in this session, and nothing tried to get
+  around the edge. A second local session (babti-7b) working on the same branch captured the calculator's data
+  service in Chrome (135 items, displayed values) and the official Tim Hortons PDF ("as of July 2026", SHA-256
+  recorded), then stopped and handed the catalog over. Its Tim Hortons spec entry was overwritten by this session by
+  mistake (concurrent edit) and rebuilt here from its committed PDF rows.
+- Tim Hortons source: the PDF (dated official document). The public content service (`prod_th_ca`) was read once as a
+  cross-check: identical values wherever both list an item. 33 Tim Hortons items, 27 McDonald's items (Mini fries added
+  as its own stated record); all pass the build's checks; two PDF defects left out (Snow Ball Timbit, Bacon & Cheese
+  Omelette Bites). McDonald's values were not re-read by this session (blocked); they passed every build check.
+- Tests (affected only): `eating_out_test` 18, `eating_out_ui_test` 7, `food_search_test` passed (43 together);
+  `CoachTests` incl. Eating out 28 passed; `flutter analyze` clean; catalog `--check` up to date.
+- Live AI: not run. No environment here holds a Groq key AND the Eating out endpoint (hosted has the key but not the
+  endpoint until deployed; no hosted accounts by the owner's rule). Pending for the approved deployment.

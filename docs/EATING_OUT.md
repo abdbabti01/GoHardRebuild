@@ -33,23 +33,30 @@ number taken from the chains' own published Canadian nutrition information and c
 
 No ordering, payment, delivery, prices or location search. No allergy, halal, vegetarian or medical claim is made.
 
-## Catalog: chains and exact coverage (version 2026-10-25.1)
+## Catalog: chains and exact coverage (version 2026-10-25.2)
 
 Full per-item table with values: `docs/RESTAURANT_SOURCES.md` (generated).
 
 | Chain | Status | Source (official, Canadian) | Published | Checked | Items |
 |---|---|---|---|---|---|
+| McDonald's Canada | available | the official nutrition calculator (mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html); its displayed values as loaded from `mcdonalds.com/dnaapp/itemList?country=CA&language=en`, read in Chrome by owner-authorized read-only access (`scripts/restaurant-sources/mcdonalds-ca-2026-10-25.json`, 135 items captured) | not stated by the calculator (kept unknown) | 2026-10-25 | 27: Big Mac, Quarter Pounder with Cheese (+ Double), McDouble, Cheeseburger, Hamburger, McChicken, McCrispy, Grilled Chicken Sandwich, Chicken & Bacon McWrap (grilled), 6 and 10 McNuggets, Egg / Sausage 'N Egg / Bacon 'N Egg McMuffin, Hash Browns, Fries Medium and Mini (separate stated records), Apple Slices, Baked Apple Pie, and 8 drinks with stated sizes and volumes (Coca-Cola, Coke Zero, Diet Coke, Sprite, orange juice, 1% milk, Dasani) |
+| Tim Hortons Canada | available | Nutrition Information PDF linked from timhortons.ca/nutrition-and-allergens (`cdn.sanity.io/files/czqk28jt/prod_th_ca/147e592c…pdf`), SHA-256 recorded; text extract committed | "as of July 2026" (file 10 Jul 2026) | 2026-10-25 | 33: brewed coffee black and Double Double (both as stated), latte, protein latte, steeped tea, hot chocolate, iced coffee, Original and Light Iced Capp (all medium), 3 English Muffin breakfast sandwiches, Protein Bagel BELT, 2 breakfast wraps, 2 Omelette Bites, Hash Brown, Yogurt Parfait, Turkey Bacon Club, Crispy Chicken Sandwich, Chicken Bacon Ranch Wrap, 3 Loaded Bowls, Grilled Cheese Melt, Chicken Noodle Soup (regular), Chili (regular, large), 2 donuts, a Timbit, Plain Bagel |
 | Subway Canada | available | Nutrition Data Tables `CAN_Nutrition_ENG_9-16-26.pdf` (media.subway.com, linked from subway.com/en-ca/menunutrition/nutrition), SHA-256 recorded | printed "October 2026" (file 16 Sep 2026) | 2026-10-25 | 31: eleven 6-inch subs (+ their 11 footlongs, derived by the source's rule), 2 wraps, 2 salads (no dressing), 1 Power Bowl, 2 breakfast sandwiches, Potato Rings, Chocolate Chunk Cookie |
 | Pizza Pizza Canada | available | pizzapizza.ca/about-us/nutrition/ (small-pizza, chicken-wings-bites pages) | "as of November 1st, 2023"; rows marked "Updated March 12, 2026" carry that date | 2026-10-25 | 20: 10 small pizzas by the slice (1/6 of a 10-inch pizza), 8 Walk-In slices, Classic Wings, Boneless Chicken Bites |
-| McDonald's Canada | **not available** | nutrition calculator / product pages | — | 2026-10-25 | 0 |
-| Tim Hortons Canada | **not available** | nutrition-and-allergens page | — | 2026-10-25 | 0 |
 
-**Source blockers (honest gaps).** McDonald's Canada answers every automated request for its calculator and product
-pages with HTTP 403. Tim Hortons Canada's nutrition page is built in the browser; its downloaded text holds no values,
-and the data service behind it is not a documented public source (reading it was refused by this session's access
-rules). No values were imported for either; both chains are listed with "Menu not added yet: no verified data" and an
-explanation, and nothing is guessed. To add them: save the official document (a PDF, or the calculator's values for
-each chosen item) and add a rows file plus spec entries (below).
+**How McDonald's and Tim Hortons were read (follow-up, 25 Oct 2026).** The owner authorized read-only access to both
+official sites and their public nutrition services. McDonald's answers scripted requests (curl, WebFetch) with an
+"Access Denied" page from its edge (HTTP 403, e.g. reference `#18.b059c817.1792983967.63bfc44` for
+`/dnaapp/itemList?country=CA&language=en&showLiveData=true`), so its values were captured in a normal Chrome window
+from the calculator's own data service; nothing tried to get around that edge. Tim Hortons publishes a dated PDF on its
+nutrition page; it is the source. The public content service its site reads (dataset `prod_th_ca`) was read once as an
+independent cross-check: wherever both list an item they agree (Turkey Bacon Club 550/27, Crispy Chicken Sandwich
+660/23, Grilled Cheese Melt 560/28, Medium Latte 140/10). Two PDF rows fail the build's checks and are left out
+(Snow Ball Timbit: saturated fat above fat; Bacon & Cheese Omelette Bites: energy does not fit the macros).
+
+**Not covered:** McDonald's Small and Large fries (only Medium and Mini were captured — a size is never scaled from
+another), McCafé drinks, combos/meals (order the parts); Tim Hortons other sizes than those listed, and any addition to
+a drink beyond what the source states (a Double Double is offered because its values are stated).
 
 **Deliberately excluded:** Subway drinks (not in the table), soups and regional items (marked regional/limited),
 Fresh Fit duplicates; Pizza Pizza drinks and dips (their table columns are unlabelled in the page text), medium/large
@@ -224,7 +231,8 @@ exceeding a target a failure; it says "fits your selected targets" with the numb
 ## iPhone checklist (after the owner approves and deploys)
 
 1. Eat › Eating out opens with today and the current meal; Add food › Eating out keeps the meal chosen there.
-2. Subway and Pizza Pizza show their menus; McDonald's and Tim Hortons say no verified data.
+2. All four chains show their menus; try "McDonald's, about 600 calories, more protein, keep the mini fries" and a
+   Tim Hortons breakfast with a medium Double Double.
 3. Ask: "Subway for lunch, around 600 calories, more protein, keep the potato rings" (live Groq): targets appear as
    chips, suggestions keep Potato Rings, the numbers match `docs/RESTAURANT_SOURCES.md`.
 4. Ask something ambiguous ("something cheap"): a question back, nothing changed. French and Arabic requests work.
