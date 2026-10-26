@@ -2291,3 +2291,7 @@ docs/RESTAURANT_SOURCES.md.
   `CoachTests` incl. Eating out 28 passed; `flutter analyze` clean; catalog `--check` up to date.
 - Live AI: not run. No environment here holds a Groq key AND the Eating out endpoint (hosted has the key but not the
   endpoint until deployed; no hosted accounts by the owner's rule). Pending for the approved deployment.
+- CI run 146 on `a100461` (tested code + catalog 2026-10-25.2): **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40263214913). Unsigned IPA run 54 on `a100461`, artifact
+  `GoHard-Dev-unsigned-ipa`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40318077683).
+  `main` and Railway unchanged.
