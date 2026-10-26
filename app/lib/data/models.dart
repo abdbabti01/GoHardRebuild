@@ -51,6 +51,9 @@ abstract final class Kinds {
   static const savedMeal = 'saved_meal';
   /// An unfinished saved meal or recipe being edited (id = the definition's ID, or `new:meal` / `new:recipe`). Local only.
   static const mealDraft = 'meal_draft';
+  /// Eating out on this phone (docs/EATING_OUT.md): `draft` (the order being built, with its chain and preferences) and
+  /// `catalog` (the last restaurant catalog the account's server sent). Local only.
+  static const eatOut = 'eat_out';
 }
 
 /// The server's word on whether this account may use its data (docs/AUTHENTICATION_EMAIL.md › Required verification).

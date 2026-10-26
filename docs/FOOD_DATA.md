@@ -27,6 +27,7 @@ unit, and logs only when **Log food** is pressed. Searching, scanning, previewin
 |---|---|---|---|
 | Barcode → packaged product | Open Food Facts | `GET /api/v3.6/product/{barcode}.json` | Data: Open Database License. Photos: CC BY-SA 3.0. Credited on the form and on the search screen. |
 | Text search of basic and branded foods | USDA FoodData Central | `GET /fdc/v1/foods/search` | Public domain (CC0). USDA asks to be credited; it is, under the results and on the form. |
+| Restaurant chain items (Eating out) | The chains' own published Canadian nutrition information, read into a reviewed catalog (`docs/EATING_OUT.md`, `docs/RESTAURANT_SOURCES.md`) | none at run time: bundled + `GET /api/v1/restaurants/catalog` | Factual values with attribution; source `restaurant`, credited with publication and check dates on the form. No logos or photos. |
 
 Checked against the providers' documentation and live responses on 12 October 2026:
 

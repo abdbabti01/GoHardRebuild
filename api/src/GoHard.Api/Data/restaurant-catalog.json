@@ -1,0 +1,1586 @@
+{
+ "version": "2026-10-25.1",
+ "country": "CA",
+ "checked": "2026-10-25",
+ "chains": [
+  {
+   "id": "mcdonalds-ca",
+   "name": "McDonald's",
+   "country": "CA",
+   "status": "unavailable",
+   "unavailable": "The official Canadian nutrition calculator and product pages refused automated access (HTTP 403) on 2026-10-25. No values were imported; nothing is offered until an official document is read in.",
+   "sources": [
+    {
+     "id": "mcdonalds-ca-calculator",
+     "title": "McDonald's Canada nutrition calculator",
+     "url": "https://www.mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html",
+     "published": null,
+     "checked": "2026-10-25"
+    }
+   ],
+   "builds": {},
+   "items": []
+  },
+  {
+   "id": "timhortons-ca",
+   "name": "Tim Hortons",
+   "country": "CA",
+   "status": "unavailable",
+   "unavailable": "The official Canadian nutrition page is built in the browser and its text holds no values; the data service behind it is not a documented public source. No values were imported on 2026-10-25.",
+   "sources": [
+    {
+     "id": "timhortons-ca-nutrition",
+     "title": "Tim Hortons Canada nutrition and allergens",
+     "url": "https://www.timhortons.ca/nutrition-and-allergens",
+     "published": null,
+     "checked": "2026-10-25"
+    }
+   ],
+   "builds": {},
+   "items": []
+  },
+  {
+   "id": "subway-ca",
+   "name": "Subway",
+   "country": "CA",
+   "status": "available",
+   "unavailable": null,
+   "sources": [
+    {
+     "id": "subway-ca-nutrition-2026-10",
+     "title": "Subway Canada Nutrition Information (Nutrition Data Tables, CAN_Nutrition_ENG_9-16-26.pdf)",
+     "url": "https://media.subway.com/dam/urn:aaid:aem:261b4b3a-2da3-43c5-a5f6-77b529ebf134/original/as/CAN_Nutrition_ENG_9-16-26.pdf",
+     "page": "https://www.subway.com/en-ca/menunutrition/nutrition",
+     "published": "2026-10",
+     "publishedNote": "Printed \"October 2026\"; file dated 16 Sep 2026",
+     "sha256": "d0c5a4e487242e3d4879d5f02f7b41dd188861b5fb94654f2d73eb352e853f2d",
+     "checked": "2026-10-25"
+    }
+   ],
+   "builds": {
+    "sub6": "Subway's standard 6-inch recipe as listed. The table does not say which bread, cheese, vegetables or sauce that standard build uses, so changes to them cannot be calculated.",
+    "footlong": "Footlong values are the 6-inch values doubled, as the table instructs (\"one footlong = two 6\" servings\").",
+    "wrap": "Values include wrap, Processed Cheddar, mayonnaise, lettuce, tomato, onion and cucumber (as stated by Subway).",
+    "salad": "Values include lettuce, spinach, tomatoes, onions, green peppers, cucumbers and olives; dressing is not included (as stated by Subway).",
+    "breakfast": "Values include 6\" Italian, scrambled egg patty and Canadian cheddar cheese (as stated by Subway).",
+    "bowl": "Subway's standard Power Bowl recipe as listed; its parts are not itemised.",
+    "plain": null
+   },
+   "items": [
+    {
+     "id": "subway-ca:rotisserie-chicken-6in",
+     "name": "Rotisserie-Style Chicken",
+     "sourceName": "Rotisserie-Style Chicken",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "rotisserie-chicken",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 244,
+     "nutrients": {
+      "calories": 460,
+      "protein": 28,
+      "carbs": 43,
+      "fat": 19
+     },
+     "extra": {
+      "sodiumMg": 920,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:rotisserie-chicken-footlong",
+     "name": "Rotisserie-Style Chicken",
+     "sourceName": "Rotisserie-Style Chicken",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "rotisserie-chicken",
+     "size": "Footlong",
+     "variantOf": "subway-ca:rotisserie-chicken-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 488,
+     "nutrients": {
+      "calories": 920,
+      "protein": 56,
+      "carbs": 86,
+      "fat": 38
+     },
+     "extra": {
+      "sodiumMg": 1840,
+      "fibreG": 6,
+      "satFatG": 10
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:grilled-chicken-6in",
+     "name": "Grilled Chicken",
+     "sourceName": "Grilled Chicken",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "grilled-chicken",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 237,
+     "nutrients": {
+      "calories": 420,
+      "protein": 22,
+      "carbs": 43,
+      "fat": 18
+     },
+     "extra": {
+      "sodiumMg": 980,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:grilled-chicken-footlong",
+     "name": "Grilled Chicken",
+     "sourceName": "Grilled Chicken",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "grilled-chicken",
+     "size": "Footlong",
+     "variantOf": "subway-ca:grilled-chicken-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 474,
+     "nutrients": {
+      "calories": 840,
+      "protein": 44,
+      "carbs": 86,
+      "fat": 36
+     },
+     "extra": {
+      "sodiumMg": 1960,
+      "fibreG": 6,
+      "satFatG": 10
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:turkey-breast-6in",
+     "name": "Turkey Breast",
+     "sourceName": "Turkey Breast",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "turkey-breast",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 233,
+     "nutrients": {
+      "calories": 430,
+      "protein": 20,
+      "carbs": 46,
+      "fat": 19
+     },
+     "extra": {
+      "sodiumMg": 1150,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:turkey-breast-footlong",
+     "name": "Turkey Breast",
+     "sourceName": "Turkey Breast",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "turkey-breast",
+     "size": "Footlong",
+     "variantOf": "subway-ca:turkey-breast-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 466,
+     "nutrients": {
+      "calories": 860,
+      "protein": 40,
+      "carbs": 92,
+      "fat": 38
+     },
+     "extra": {
+      "sodiumMg": 2300,
+      "fibreG": 6,
+      "satFatG": 10
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:black-forest-ham-6in",
+     "name": "Black Forest Ham",
+     "sourceName": "Black Forest Ham",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "black-forest-ham",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 227,
+     "nutrients": {
+      "calories": 430,
+      "protein": 19,
+      "carbs": 46,
+      "fat": 19
+     },
+     "extra": {
+      "sodiumMg": 1070,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:black-forest-ham-footlong",
+     "name": "Black Forest Ham",
+     "sourceName": "Black Forest Ham",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "black-forest-ham",
+     "size": "Footlong",
+     "variantOf": "subway-ca:black-forest-ham-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 454,
+     "nutrients": {
+      "calories": 860,
+      "protein": 38,
+      "carbs": 92,
+      "fat": 38
+     },
+     "extra": {
+      "sodiumMg": 2140,
+      "fibreG": 6,
+      "satFatG": 10
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:italian-bmt-6in",
+     "name": "Italian B.M.T.®",
+     "sourceName": "Italian B.M.T.®",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "italian-bmt",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 245,
+     "nutrients": {
+      "calories": 560,
+      "protein": 23,
+      "carbs": 46,
+      "fat": 31
+     },
+     "extra": {
+      "sodiumMg": 1650,
+      "fibreG": 3,
+      "satFatG": 10
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:italian-bmt-footlong",
+     "name": "Italian B.M.T.®",
+     "sourceName": "Italian B.M.T.®",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "italian-bmt",
+     "size": "Footlong",
+     "variantOf": "subway-ca:italian-bmt-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 490,
+     "nutrients": {
+      "calories": 1120,
+      "protein": 46,
+      "carbs": 92,
+      "fat": 62
+     },
+     "extra": {
+      "sodiumMg": 3300,
+      "fibreG": 6,
+      "satFatG": 20
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:meatball-marinara-6in",
+     "name": "Meatball Marinara",
+     "sourceName": "Meatball Marinara",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "meatball-marinara",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 301,
+     "nutrients": {
+      "calories": 510,
+      "protein": 27,
+      "carbs": 55,
+      "fat": 21
+     },
+     "extra": {
+      "sodiumMg": 1360,
+      "fibreG": 5,
+      "satFatG": 10
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:meatball-marinara-footlong",
+     "name": "Meatball Marinara",
+     "sourceName": "Meatball Marinara",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "meatball-marinara",
+     "size": "Footlong",
+     "variantOf": "subway-ca:meatball-marinara-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 602,
+     "nutrients": {
+      "calories": 1020,
+      "protein": 54,
+      "carbs": 110,
+      "fat": 42
+     },
+     "extra": {
+      "sodiumMg": 2720,
+      "fibreG": 10,
+      "satFatG": 20
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:steak-cheese-6in",
+     "name": "Steak & Cheese",
+     "sourceName": "Steak & Cheese",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "steak-cheese",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 244,
+     "nutrients": {
+      "calories": 480,
+      "protein": 25,
+      "carbs": 46,
+      "fat": 22
+     },
+     "extra": {
+      "sodiumMg": 1190,
+      "fibreG": 3,
+      "satFatG": 6
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:steak-cheese-footlong",
+     "name": "Steak & Cheese",
+     "sourceName": "Steak & Cheese",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "steak-cheese",
+     "size": "Footlong",
+     "variantOf": "subway-ca:steak-cheese-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 488,
+     "nutrients": {
+      "calories": 960,
+      "protein": 50,
+      "carbs": 92,
+      "fat": 44
+     },
+     "extra": {
+      "sodiumMg": 2380,
+      "fibreG": 6,
+      "satFatG": 12
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:sweet-onion-teriyaki-6in",
+     "name": "Sweet Onion Chicken Teriyaki",
+     "sourceName": "Sweet Onion Chicken Teriyaki",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "sweet-onion-teriyaki",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 258,
+     "nutrients": {
+      "calories": 410,
+      "protein": 26,
+      "carbs": 59,
+      "fat": 7
+     },
+     "extra": {
+      "sodiumMg": 1090,
+      "fibreG": 3,
+      "satFatG": 4
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:sweet-onion-teriyaki-footlong",
+     "name": "Sweet Onion Chicken Teriyaki",
+     "sourceName": "Sweet Onion Chicken Teriyaki",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "sweet-onion-teriyaki",
+     "size": "Footlong",
+     "variantOf": "subway-ca:sweet-onion-teriyaki-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 516,
+     "nutrients": {
+      "calories": 820,
+      "protein": 52,
+      "carbs": 118,
+      "fat": 14
+     },
+     "extra": {
+      "sodiumMg": 2180,
+      "fibreG": 6,
+      "satFatG": 8
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:tuna-6in",
+     "name": "Tuna (includes Mayonnaise)",
+     "sourceName": "Tuna (includes Mayonnaise)",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "tuna",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 234,
+     "nutrients": {
+      "calories": 510,
+      "protein": 23,
+      "carbs": 43,
+      "fat": 28
+     },
+     "extra": {
+      "sodiumMg": 900,
+      "fibreG": 3,
+      "satFatG": 6
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:tuna-footlong",
+     "name": "Tuna (includes Mayonnaise)",
+     "sourceName": "Tuna (includes Mayonnaise)",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "tuna",
+     "size": "Footlong",
+     "variantOf": "subway-ca:tuna-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 468,
+     "nutrients": {
+      "calories": 1020,
+      "protein": 46,
+      "carbs": 86,
+      "fat": 56
+     },
+     "extra": {
+      "sodiumMg": 1800,
+      "fibreG": 6,
+      "satFatG": 12
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:veggie-delite-6in",
+     "name": "Veggie Delite®",
+     "sourceName": "Veggie Delite®",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "veggie-delite",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 188,
+     "nutrients": {
+      "calories": 370,
+      "protein": 11,
+      "carbs": 43,
+      "fat": 17
+     },
+     "extra": {
+      "sodiumMg": 650,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:veggie-delite-footlong",
+     "name": "Veggie Delite®",
+     "sourceName": "Veggie Delite®",
+     "section": "6\" Classics Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "veggie-delite",
+     "size": "Footlong",
+     "variantOf": "subway-ca:veggie-delite-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 376,
+     "nutrients": {
+      "calories": 740,
+      "protein": 22,
+      "carbs": 86,
+      "fat": 34
+     },
+     "extra": {
+      "sodiumMg": 1300,
+      "fibreG": 6,
+      "satFatG": 10
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:chicken-rancher-6in",
+     "name": "Chicken Rancher",
+     "sourceName": "Chicken Rancher",
+     "section": "6\" Chicken Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "chicken-rancher",
+     "size": "6-inch",
+     "variantOf": null,
+     "portion": "1 sub (6-inch)",
+     "grams": 285,
+     "nutrients": {
+      "calories": 540,
+      "protein": 36,
+      "carbs": 45,
+      "fat": 25
+     },
+     "extra": {
+      "sodiumMg": 1150,
+      "fibreG": 3,
+      "satFatG": 9
+     },
+     "build": "sub6",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:chicken-rancher-footlong",
+     "name": "Chicken Rancher",
+     "sourceName": "Chicken Rancher",
+     "section": "6\" Chicken Subs",
+     "role": "main",
+     "kind": "sandwich",
+     "group": "chicken-rancher",
+     "size": "Footlong",
+     "variantOf": "subway-ca:chicken-rancher-6in",
+     "portion": "1 sub (footlong)",
+     "grams": 570,
+     "nutrients": {
+      "calories": 1080,
+      "protein": 72,
+      "carbs": 90,
+      "fat": 50
+     },
+     "extra": {
+      "sodiumMg": 2300,
+      "fibreG": 6,
+      "satFatG": 18
+     },
+     "build": "footlong",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": "footlong-double",
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:rotisserie-chicken-wrap",
+     "name": "Rotisserie-Style Chicken Wrap",
+     "sourceName": "Rotisserie-Style Chicken",
+     "section": "Classics Wraps",
+     "role": "main",
+     "kind": "wrap",
+     "group": "rotisserie-chicken-wrap",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 wrap",
+     "grams": 276,
+     "nutrients": {
+      "calories": 550,
+      "protein": 28,
+      "carbs": 55,
+      "fat": 24
+     },
+     "extra": {
+      "sodiumMg": 1010,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "wrap",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:turkey-breast-wrap",
+     "name": "Turkey Breast Wrap",
+     "sourceName": "Turkey Breast",
+     "section": "Classics Wraps",
+     "role": "main",
+     "kind": "wrap",
+     "group": "turkey-breast-wrap",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 wrap",
+     "grams": 265,
+     "nutrients": {
+      "calories": 520,
+      "protein": 20,
+      "carbs": 59,
+      "fat": 24
+     },
+     "extra": {
+      "sodiumMg": 1240,
+      "fibreG": 3,
+      "satFatG": 5
+     },
+     "build": "wrap",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:rotisserie-chicken-salad",
+     "name": "Rotisserie-Style Chicken Salad",
+     "sourceName": "Rotisserie-Style Chicken",
+     "section": "SALADS",
+     "role": "main",
+     "kind": "salad",
+     "group": "rotisserie-chicken-salad",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 salad",
+     "grams": 358,
+     "nutrients": {
+      "calories": 140,
+      "protein": 20,
+      "carbs": 9,
+      "fat": 4
+     },
+     "extra": {
+      "sodiumMg": 340,
+      "fibreG": 4,
+      "satFatG": 1
+     },
+     "build": "salad",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:turkey-breast-salad",
+     "name": "Turkey Breast Salad",
+     "sourceName": "Turkey Breast",
+     "section": "SALADS",
+     "role": "main",
+     "kind": "salad",
+     "group": "turkey-breast-salad",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 salad",
+     "grams": 347,
+     "nutrients": {
+      "calories": 120,
+      "protein": 12,
+      "carbs": 13,
+      "fat": 3
+     },
+     "extra": {
+      "sodiumMg": 560,
+      "fibreG": 4,
+      "satFatG": 1
+     },
+     "build": "salad",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:grilled-chicken-bowl",
+     "name": "Classic Grilled Chicken Power Bowl",
+     "sourceName": "Classic Grilled Chicken",
+     "section": "Power Bowls",
+     "role": "main",
+     "kind": "bowl",
+     "group": "grilled-chicken-bowl",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 bowl",
+     "grams": 354,
+     "nutrients": {
+      "calories": 540,
+      "protein": 23,
+      "carbs": 56,
+      "fat": 26
+     },
+     "extra": {
+      "sodiumMg": 1130,
+      "fibreG": 7,
+      "satFatG": 6
+     },
+     "build": "bowl",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:bacon-egg-6in",
+     "name": "Bacon & Egg Breakfast Sandwich",
+     "sourceName": "Bacon & Egg",
+     "section": "6\" Breakfast Sandwiches",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "bacon-egg",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich (6-inch)",
+     "grams": 233,
+     "nutrients": {
+      "calories": 560,
+      "protein": 16,
+      "carbs": 45,
+      "fat": 32
+     },
+     "extra": {
+      "sodiumMg": 1120,
+      "fibreG": 3,
+      "satFatG": 9
+     },
+     "build": "breakfast",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:ham-egg-6in",
+     "name": "Ham & Egg Breakfast Sandwich",
+     "sourceName": "Ham & Egg",
+     "section": "6\" Breakfast Sandwiches",
+     "role": "main",
+     "kind": "breakfast",
+     "group": "ham-egg",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 sandwich (6-inch)",
+     "grams": 250,
+     "nutrients": {
+      "calories": 550,
+      "protein": 16,
+      "carbs": 46,
+      "fat": 30
+     },
+     "extra": {
+      "sodiumMg": 1200,
+      "fibreG": 3,
+      "satFatG": 7
+     },
+     "build": "breakfast",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:potato-rings-4",
+     "name": "Potato Rings",
+     "sourceName": "Potato Rings (4)",
+     "section": "Sides",
+     "role": "side",
+     "kind": "side",
+     "group": "potato-rings",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 side (4 rings)",
+     "grams": 92,
+     "nutrients": {
+      "calories": 150,
+      "protein": 2,
+      "carbs": 19,
+      "fat": 8
+     },
+     "extra": {
+      "sodiumMg": 390,
+      "fibreG": 2,
+      "satFatG": 1
+     },
+     "build": "plain",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "subway-ca:chocolate-chunk-cookie",
+     "name": "Chocolate Chunk Cookie",
+     "sourceName": "Chocolate Chunk Cookie",
+     "section": "Cookies & Desserts",
+     "role": "dessert",
+     "kind": "dessert",
+     "group": "cookie",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 cookie",
+     "grams": 45,
+     "nutrients": {
+      "calories": 210,
+      "protein": 2,
+      "carbs": 29,
+      "fat": 10
+     },
+     "extra": {
+      "sodiumMg": 100,
+      "fibreG": 1,
+      "satFatG": 5
+     },
+     "build": "plain",
+     "source": "subway-ca-nutrition-2026-10",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    }
+   ]
+  },
+  {
+   "id": "pizzapizza-ca",
+   "name": "Pizza Pizza",
+   "country": "CA",
+   "status": "available",
+   "unavailable": null,
+   "sources": [
+    {
+     "id": "pizzapizza-ca-nutrition",
+     "title": "Pizza Pizza nutrition information (pizza, Walk-In slices)",
+     "url": "https://www.pizzapizza.ca/about-us/nutrition/small-pizza/",
+     "page": "https://www.pizzapizza.ca/about-us/nutrition/",
+     "published": "2023-11-01",
+     "publishedNote": "\"Nutrition facts as of November 1st, 2023\"; rows marked \"Updated March 12, 2026\" carry that date",
+     "checked": "2026-10-25"
+    },
+    {
+     "id": "pizzapizza-ca-chicken",
+     "title": "Pizza Pizza nutrition information (chicken wings and bites)",
+     "url": "https://www.pizzapizza.ca/about-us/nutrition/chicken-wings-bites/",
+     "page": "https://www.pizzapizza.ca/about-us/nutrition/",
+     "published": "2023-11-01",
+     "publishedNote": "\"Nutrition facts as of November 1st, 2023\" (nutrition index); no row dates",
+     "checked": "2026-10-25"
+    }
+   ],
+   "builds": {
+    "small": "One slice is 1/6 of a small 10-inch pizza (as stated by Pizza Pizza). No other size or cut is interchangeable with it. Saturated fat is left unknown: the page text loses its decimal point.",
+    "walkin": "One Walk-In slice, as listed (\"Per Slice\"). Pizza Pizza does not state the pizza's diameter for it.",
+    "wings": "Pizza Pizza lists the serving as \"5\" with no unit; it is shown exactly as listed."
+   },
+   "items": [
+    {
+     "id": "pizzapizza-ca:small-pepperoni-slice",
+     "name": "Pepperoni Pizza, small",
+     "sourceName": "Pepperoni Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-pepperoni",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 210,
+      "protein": 10,
+      "carbs": 24,
+      "fat": 8
+     },
+     "extra": {
+      "sodiumMg": 520,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": "2026-03-12",
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-cheese-slice",
+     "name": "Classic Cheese Pizza, small",
+     "sourceName": "Classic Cheese Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-cheese",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 180,
+      "protein": 9,
+      "carbs": 24,
+      "fat": 5
+     },
+     "extra": {
+      "sodiumMg": 410,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": "2026-03-12",
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-plant-pepperoni-slice",
+     "name": "Plant-Based Pepperoni Pizza, small",
+     "sourceName": "Plant-Based Pepperoni Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-plant-pepperoni",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 200,
+      "protein": 9,
+      "carbs": 25,
+      "fat": 7
+     },
+     "extra": {
+      "sodiumMg": 480,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": "2026-03-12",
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-garden-veggie-slice",
+     "name": "Garden Veggie Pizza, small",
+     "sourceName": "Garden Veggie Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-garden-veggie",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 170,
+      "protein": 10,
+      "carbs": 23,
+      "fat": 5
+     },
+     "extra": {
+      "sodiumMg": 310,
+      "fibreG": 3,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-hawaiian-slice",
+     "name": "Tropical Hawaiian Pizza, small",
+     "sourceName": "Tropical Hawaiian Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-hawaiian",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 220,
+      "protein": 11,
+      "carbs": 25,
+      "fat": 9
+     },
+     "extra": {
+      "sodiumMg": 570,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-canadian-slice",
+     "name": "Canadian Eh! Pizza, small",
+     "sourceName": "Canadian Eh! Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-canadian",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 220,
+      "protein": 12,
+      "carbs": 24,
+      "fat": 9
+     },
+     "extra": {
+      "sodiumMg": 610,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-meat-supreme-slice",
+     "name": "Meat Supreme Pizza, small",
+     "sourceName": "Meat Supreme Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-meat-supreme",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 250,
+      "protein": 13,
+      "carbs": 24,
+      "fat": 11
+     },
+     "extra": {
+      "sodiumMg": 760,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-buffalo-chicken-slice",
+     "name": "Buffalo Chicken Pizza, small",
+     "sourceName": "Buffalo Chicken Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-buffalo-chicken",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 220,
+      "protein": 11,
+      "carbs": 24,
+      "fat": 9
+     },
+     "extra": {
+      "sodiumMg": 640,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-bbq-chicken-slice",
+     "name": "Spicy BBQ Chicken Pizza, small",
+     "sourceName": "Spicy BBQ Chicken Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-bbq-chicken",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 210,
+      "protein": 11,
+      "carbs": 28,
+      "fat": 6
+     },
+     "extra": {
+      "sodiumMg": 600,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:small-chicken-bruschetta-slice",
+     "name": "Chicken Bruschetta Pizza, small",
+     "sourceName": "Chicken Bruschetta Pizza",
+     "section": "Pizza - Small",
+     "role": "main",
+     "kind": "pizza",
+     "group": "small-chicken-bruschetta",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 slice (1/6 of a 10-inch small pizza)",
+     "grams": null,
+     "nutrients": {
+      "calories": 210,
+      "protein": 12,
+      "carbs": 25,
+      "fat": 7
+     },
+     "extra": {
+      "sodiumMg": 570,
+      "fibreG": 1,
+      "satFatG": null
+     },
+     "build": "small",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 3
+    },
+    {
+     "id": "pizzapizza-ca:walkin-pepperoni-slice",
+     "name": "Pepperoni Walk-In Slice",
+     "sourceName": "Pepperoni Pizza",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-pepperoni",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 670,
+      "protein": 33,
+      "carbs": 78,
+      "fat": 25
+     },
+     "extra": {
+      "sodiumMg": 1680,
+      "fibreG": 4,
+      "satFatG": 11
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:walkin-big-cheese-slice",
+     "name": "Big Cheese Walk-In Slice",
+     "sourceName": "Big Cheese",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-cheese",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 580,
+      "protein": 29,
+      "carbs": 78,
+      "fat": 17
+     },
+     "extra": {
+      "sodiumMg": 1380,
+      "fibreG": 3,
+      "satFatG": 8
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:walkin-garden-veggie-slice",
+     "name": "Garden Veggie Walk-In Slice",
+     "sourceName": "Garden Veggie Pizza",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-garden-veggie",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 560,
+      "protein": 30,
+      "carbs": 77,
+      "fat": 16
+     },
+     "extra": {
+      "sodiumMg": 950,
+      "fibreG": 11,
+      "satFatG": 8
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:walkin-super-slice",
+     "name": "Classic Super/All Dressed Walk-In Slice",
+     "sourceName": "Classic Super/All Dressed",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-super",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 660,
+      "protein": 33,
+      "carbs": 81,
+      "fat": 23
+     },
+     "extra": {
+      "sodiumMg": 1660,
+      "fibreG": 4,
+      "satFatG": 10
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:walkin-canadian-slice",
+     "name": "Canadian Eh! Walk-In Slice",
+     "sourceName": "Canadian Eh! Pizza",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-canadian",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 710,
+      "protein": 36,
+      "carbs": 81,
+      "fat": 27
+     },
+     "extra": {
+      "sodiumMg": 1870,
+      "fibreG": 4,
+      "satFatG": 12
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:walkin-hawaiian-slice",
+     "name": "Tropical Hawaiian Walk-In Slice",
+     "sourceName": "Tropical Hawaiian Pizza",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-hawaiian",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 690,
+      "protein": 33,
+      "carbs": 82,
+      "fat": 26
+     },
+     "extra": {
+      "sodiumMg": 1720,
+      "fibreG": 4,
+      "satFatG": 11
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:walkin-bbq-chicken-slice",
+     "name": "Spicy BBQ Chicken Walk-In Slice",
+     "sourceName": "Spicy BBQ Chicken Pizza",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-bbq-chicken",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 680,
+      "protein": 35,
+      "carbs": 94,
+      "fat": 18
+     },
+     "extra": {
+      "sodiumMg": 1890,
+      "fibreG": 5,
+      "satFatG": 8
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:walkin-bacon-cheeseburger-slice",
+     "name": "Bacon Double Cheeseburger Walk-In Slice",
+     "sourceName": "Bacon Double Cheeseburger Pizza",
+     "section": "Pizza - Walk-In",
+     "role": "main",
+     "kind": "pizza",
+     "group": "walkin-bacon-cheeseburger",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 Walk-In slice",
+     "grams": null,
+     "nutrients": {
+      "calories": 700,
+      "protein": 34,
+      "carbs": 80,
+      "fat": 26
+     },
+     "extra": {
+      "sodiumMg": 1710,
+      "fibreG": 3,
+      "satFatG": 12
+     },
+     "build": "walkin",
+     "source": "pizzapizza-ca-nutrition",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:classic-wings-5",
+     "name": "Classic Wings",
+     "sourceName": "Classic Wings",
+     "section": "Chicken Wings",
+     "role": "main",
+     "kind": "chicken",
+     "group": "classic-wings",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 serving (listed as 5)",
+     "grams": null,
+     "nutrients": {
+      "calories": 510,
+      "protein": 40,
+      "carbs": 1,
+      "fat": 38
+     },
+     "extra": {
+      "sodiumMg": 1090,
+      "fibreG": 0,
+      "satFatG": 9
+     },
+     "build": "wings",
+     "source": "pizzapizza-ca-chicken",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    },
+    {
+     "id": "pizzapizza-ca:boneless-bites-5",
+     "name": "Boneless Chicken Bites",
+     "sourceName": "Boneless Chicken Bites",
+     "section": "Chicken Bites",
+     "role": "main",
+     "kind": "chicken",
+     "group": "boneless-bites",
+     "size": null,
+     "variantOf": null,
+     "portion": "1 serving (listed as 5)",
+     "grams": null,
+     "nutrients": {
+      "calories": 380,
+      "protein": 27,
+      "carbs": 25,
+      "fat": 19
+     },
+     "extra": {
+      "sodiumMg": 1060,
+      "fibreG": 2,
+      "satFatG": 2.5
+     },
+     "build": "wings",
+     "source": "pizzapizza-ca-chicken",
+     "updated": null,
+     "derived": null,
+     "maxQuantity": 1
+    }
+   ]
+  }
+ ]
+}

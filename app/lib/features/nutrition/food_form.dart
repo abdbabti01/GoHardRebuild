@@ -15,6 +15,7 @@ import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
 import 'log_food_screen.dart';
+import 'restaurants.dart' show RestaurantOrigin;
 import 'saved_meals_screens.dart' show MealReviewScreen;
 import 'nutrition_surface.dart' show formatKcal;
 
@@ -520,7 +521,7 @@ class _FoodHeader extends StatelessWidget {
 
 /// "Source: USDA FoodData Central", "Barcode 0123…": the provider's name and the code stay as they are.
 List<String> _credits(AppLocalizations l, FoodItem item) {
-  final credit = sourceCredit(item.source);
+  final credit = sourceCredit(item);
   return [credit != null ? l.foodSource(credit) : l.foodYourOwn, if (item.barcode != null) l.foodBarcode(ltr(item.barcode!))];
 }
 
@@ -658,6 +659,15 @@ class FoodSourceCard extends StatelessWidget {
             ]),
           ),
         ),
+        // A restaurant item: what its source says the standard item includes, and the values it states beyond the four.
+        if (RestaurantOrigin.of(item) case final r?) ...[
+          if ([('sodiumMg', 'mg', l.eatOutSodiumLabel), ('fibreG', 'g', l.eatOutFibreLabel), ('satFatG', 'g', l.eatOutSatFatLabel)].where((e) => r.extra(e.$1) != null).toList() case final extra when extra.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(extra.map((e) => '${e.$3} ${formatNumber2(r.extra(e.$1)!)} ${e.$2}').join(' · '), style: context.sansStyle(15)),
+            ),
+          if (r.build != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.eatOutBuildNote(ltr(r.build!)), style: context.caption)),
+        ],
         const SizedBox(height: 10),
         Text([..._credits(l, item), if (item.imageUrl != null && item.imageAttribution != null) item.imageAttribution!].join(' · '), style: context.caption),
       ]);

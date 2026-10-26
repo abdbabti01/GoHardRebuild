@@ -11098,4 +11098,492 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mealsThisTimeTotal => 'هذه المرة';
+
+  @override
+  String get eatOutTitle => 'تناول الطعام في الخارج';
+
+  @override
+  String get eatOutEntrySubtitle => 'قوائم كندية موثّقة: اختر طلبًا أو حسّنه';
+
+  @override
+  String get eatOutEntrySaid =>
+      'تناول الطعام في الخارج: اختر طلب مطعم أو حسّنه';
+
+  @override
+  String eatOutForContext(String meal, String date) {
+    return 'لـ$meal · $date';
+  }
+
+  @override
+  String eatOutChainContext(String chain, String meal, String date) {
+    return '$chain · كندا · $meal · $date';
+  }
+
+  @override
+  String get eatOutChooseChain => 'اختر مطعمًا';
+
+  @override
+  String eatOutChainCanada(String chain) {
+    return '$chain · كندا';
+  }
+
+  @override
+  String eatOutChainOptions(int count, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count خيار موثّق',
+      many: '$count خيارًا موثّقًا',
+      few: '$count خيارات موثّقة',
+      two: 'خياران موثّقان',
+      one: 'خيار موثّق واحد',
+      zero: 'لا خيارات موثّقة',
+    );
+    return '$_temp0 · تم التحقق في $date';
+  }
+
+  @override
+  String get eatOutChainUnavailable =>
+      'لم تُضَف القائمة بعد: لا توجد بيانات موثّقة';
+
+  @override
+  String eatOutChainNotYet(String chain) {
+    return 'لا توجد قائمة موثّقة لـ$chain بعد';
+  }
+
+  @override
+  String get eatOutChainBlocked =>
+      'لا يعرض GoHard إلا الأصناف التي تأتي قيمها الغذائية من المعلومات الكندية التي تنشرها السلسلة نفسها. لم يتسنَّ بعد قراءة البيانات الرسمية لهذه السلسلة، لذلك لا يُعرض شيء بدل التخمين. ويمكنك تسجيل إدخالك الخاص من إضافة طعام.';
+
+  @override
+  String get eatOutChangeChain => 'تغيير المطعم';
+
+  @override
+  String get eatOutCoverageNote =>
+      'مجموعة مختارة من الأصناف المعتادة، وليست القائمة كاملة. ولا تبيع كل الفروع كل الأصناف. الأسعار والطلب والتوصيل ليست جزءًا من GoHard.';
+
+  @override
+  String eatOutAskLabel(String guide) {
+    return 'اسأل $guide عن تناول الطعام في الخارج';
+  }
+
+  @override
+  String get eatOutAskHint =>
+      'أخبرني بما تريد، مثلًا: أبقِ حلقات البطاطس، وبروتين أكثر';
+
+  @override
+  String get eatOutAskUnavailable =>
+      'الطلب بالكلمات غير متاح على هذا الخادم. الأهداف والقائمة والاقتراحات كلها تعمل من دونه.';
+
+  @override
+  String get eatOutAskInvalid =>
+      'تعذّر إرسال هذا الطلب. اختصره (حتى 600 حرف) وأرسله مرة أخرى.';
+
+  @override
+  String get eatOutProblemLimit =>
+      'لقد طلبت كثيرًا اليوم. سيعود الطلب بالكلمات لاحقًا، والأهداف والقائمة ما زالت تعمل.';
+
+  @override
+  String get eatOutProblemBusy =>
+      'المساعد مشغول الآن. طلبك محفوظ، حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get eatOutProblemUnreached =>
+      'تعذّر إرسال طلبك: قد يكون السبب اتصال هذا الهاتف أو الخادم. الطلب محفوظ، والقائمة تعمل دون اتصال.';
+
+  @override
+  String get eatOutProblemUnavailable =>
+      'المساعد غير متاح الآن. طلبك محفوظ، والأهداف والقائمة ما زالت تعمل.';
+
+  @override
+  String get eatOutStale =>
+      'تغيّر طلبك أو أهدافك أثناء قراءتي. لم يتغيّر شيء: أرسل الطلب مرة أخرى لاستخدام ما لديك الآن.';
+
+  @override
+  String get eatOutMenuChanged =>
+      'حُدِّثت القائمة على الخادم. حدّثها هنا قبل أن تسأل مرة أخرى.';
+
+  @override
+  String get eatOutUpdateMenu => 'تحديث القائمة';
+
+  @override
+  String eatOutSwitchTo(String chain) {
+    return 'الانتقال إلى $chain';
+  }
+
+  @override
+  String get eatOutCoachIntro =>
+      'ستأكل في الخارج؟ أخبرني إلى أين أنت ذاهب وما تريد الإبقاء عليه.';
+
+  @override
+  String eatOutCoachChain(String chain) {
+    return 'حدّد حدًا للسعرات أو هدفًا للبروتين، أو أخبرني بما تريده في $chain. سأعرض طلبات تناسبه.';
+  }
+
+  @override
+  String get eatOutCoachImprove =>
+      'تريد تغيير شيء في طلبك؟ أخبرني بما أبقيه وما يهمك أكثر.';
+
+  @override
+  String get eatOutCoachReading => 'أقرأ طلبك…';
+
+  @override
+  String get eatOutCoachUnderstood =>
+      'هذا ما فهمته: راجع أهدافك أدناه وغيّر ما أخطأت فيه. كل رقم يأتي من القائمة الموثّقة.';
+
+  @override
+  String eatOutCoachUnknown(String names) {
+    return 'لم أجد $names في هذه القائمة.';
+  }
+
+  @override
+  String get eatOutCoachUnsupported =>
+      'لديّ قوائم موثّقة للمطاعم المدرجة هنا فقط، لذلك لا يمكنني المساعدة في ذلك.';
+
+  @override
+  String get eatOutCoachContradiction =>
+      'طلبك يتضمن أمرين يلغي أحدهما الآخر. أيهما أحتفظ به؟';
+
+  @override
+  String get eatOutCoachClarify =>
+      'هل يمكنك التوضيح أكثر؟ مثلًا حدّ للسعرات، أو الصنف والحجم المقصودين.';
+
+  @override
+  String eatOutCoachAsks(String question) {
+    return '$question';
+  }
+
+  @override
+  String get eatOutYourTargets => 'أهدافك';
+
+  @override
+  String get eatOutNoTargetsYet => 'لا شيء بعد. لا يُختار شيء نيابةً عنك.';
+
+  @override
+  String eatOutChipMax(String kcal) {
+    return 'حتى $kcal سعرة';
+  }
+
+  @override
+  String eatOutChipMin(String kcal) {
+    return '$kcal سعرة على الأقل';
+  }
+
+  @override
+  String eatOutChipProtein(String grams) {
+    return '$grams غ بروتين على الأقل';
+  }
+
+  @override
+  String eatOutChipKeep(String name, int count) {
+    return 'إبقاء $name × $count';
+  }
+
+  @override
+  String eatOutChipExclude(String name) {
+    return 'بدون $name';
+  }
+
+  @override
+  String eatOutChipPrefer(String kind) {
+    return 'تفضيل: $kind';
+  }
+
+  @override
+  String eatOutChipAvoid(String kind) {
+    return 'تجنّب: $kind';
+  }
+
+  @override
+  String eatOutRemoveTarget(String target) {
+    return 'إزالة $target';
+  }
+
+  @override
+  String get eatOutHelpChoose => 'ساعدني في الاختيار';
+
+  @override
+  String eatOutYourOrder(int count) {
+    return 'طلبك ($count)';
+  }
+
+  @override
+  String get eatOutNoTargetsTitle => 'ما الذي يجب أن يناسبه الطلب؟';
+
+  @override
+  String get eatOutNoTargetsBody =>
+      'حدّد حدًا للسعرات أو هدفًا للبروتين، أو اسألني بكلماتك. يمكنك أيضًا أن تبني طلبًا بنفسك.';
+
+  @override
+  String get eatOutSetTargets => 'تحديد الأهداف';
+
+  @override
+  String eatOutSortedBy(String priority) {
+    return 'الترتيب حسب: $priority';
+  }
+
+  @override
+  String get eatOutPriorityProtein => 'الأكثر بروتينًا';
+
+  @override
+  String get eatOutPriorityCalories => 'الأقل سعرات';
+
+  @override
+  String get eatOutPriorityClosest => 'الأقرب إلى حدّ السعرات';
+
+  @override
+  String get eatOutNoneFits =>
+      'لا شيء يناسب كل أهدافك. هذه الأقرب، مع ما ينقص كلًا منها. لا تتغيّر الأصناف التي أبقيتها أو استبعدتها أبدًا.';
+
+  @override
+  String get eatOutNothingPossible =>
+      'لا يمكن بناء طلب بهذه الخيارات. أزل صنفًا أو نوعًا مستبعدًا.';
+
+  @override
+  String get eatOutContradiction =>
+      'الحد الأدنى أعلى من الحد الأقصى، أو صنف مُبقى ومستبعد في آن واحد. غيّر أحدهما.';
+
+  @override
+  String eatOutLine(int count, String name) {
+    return '$count × $name';
+  }
+
+  @override
+  String eatOutProteinValue(String grams) {
+    return '$grams غ بروتين';
+  }
+
+  @override
+  String get eatOutFits => 'يناسب أهدافك المحددة.';
+
+  @override
+  String eatOutKeeps(String names) {
+    return 'يُبقي $names.';
+  }
+
+  @override
+  String eatOutMisses(String misses) {
+    return 'لا يحقق: $misses';
+  }
+
+  @override
+  String eatOutMissOver(String kcal) {
+    return '$kcal سعرة فوق حدّك';
+  }
+
+  @override
+  String eatOutMissUnder(String kcal) {
+    return '$kcal سعرة تحت حدّك الأدنى';
+  }
+
+  @override
+  String eatOutMissProtein(String grams) {
+    return 'ينقص $grams غ بروتين';
+  }
+
+  @override
+  String eatOutVersusOrder(String kcal, String protein) {
+    return 'مقارنةً بطلبك: $kcal سعرة، $protein غ بروتين';
+  }
+
+  @override
+  String get eatOutUseOrder => 'استخدم هذا الطلب';
+
+  @override
+  String get eatOutUseInstead => 'استخدمه بدل طلبي';
+
+  @override
+  String get eatOutOrderEmptyTitle => 'لا أصناف بعد';
+
+  @override
+  String get eatOutOrderEmptyBody =>
+      'أضف أصنافًا من القائمة أو اختر اقتراحًا. لا يُسجَّل شيء قبل مراجعتك.';
+
+  @override
+  String get eatOutAddFromMenu => 'إضافة من القائمة';
+
+  @override
+  String eatOutMenuTitle(String chain) {
+    return 'قائمة $chain · كندا';
+  }
+
+  @override
+  String get eatOutMenuFilter => 'تصفية القائمة';
+
+  @override
+  String eatOutAddItem(String name) {
+    return 'إضافة $name';
+  }
+
+  @override
+  String eatOutInOrder(int count) {
+    return '$count في الطلب';
+  }
+
+  @override
+  String eatOutEach(String kcal) {
+    return '$kcal سعرة للواحد';
+  }
+
+  @override
+  String eatOutLess(String name) {
+    return 'واحد أقل من $name';
+  }
+
+  @override
+  String eatOutMore(String name) {
+    return 'واحد أكثر من $name';
+  }
+
+  @override
+  String eatOutCountSaid(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      many: '$count صنفًا',
+      few: '$count أصناف',
+      two: 'صنفان',
+      one: 'صنف واحد',
+      zero: 'لا أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String eatOutNoLongerListed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف لم تعد في هذه القائمة.',
+      many: '$count صنفًا لم تعد في هذه القائمة.',
+      few: '$count أصناف لم تعد في هذه القائمة.',
+      two: 'صنفان لم يعودا في هذه القائمة.',
+      one: 'صنف واحد لم يعد في هذه القائمة.',
+      zero: 'كل الأصناف ما زالت في القائمة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get eatOutRemoveThem => 'إزالة';
+
+  @override
+  String get eatOutOrderTotal => 'إجمالي الطلب';
+
+  @override
+  String eatOutSodium(String mg) {
+    return 'الصوديوم $mg ملغ';
+  }
+
+  @override
+  String get eatOutReview => 'المراجعة والتسجيل';
+
+  @override
+  String eatOutOrderName(String chain) {
+    return 'طلب $chain';
+  }
+
+  @override
+  String eatOutSourceLine(String source, String published, String checked) {
+    return 'المصدر: $source. تاريخ النشر: $published. تم التحقق في $checked.';
+  }
+
+  @override
+  String get eatOutNotStated => 'غير مذكور';
+
+  @override
+  String get eatOutCustomNote =>
+      'تُحسب الأصناف والأحجام المدرجة فقط. أي تعديل مثل بدون صلصة أو جبن إضافي ليست له قيم موثّقة، فلا يمكن حسابه بدقة.';
+
+  @override
+  String get eatOutOwnEstimate => 'سجّل تقديرك الخاص بدلًا من ذلك';
+
+  @override
+  String get eatOutTargetsTitle => 'أهداف هذا الطلب';
+
+  @override
+  String get eatOutTargetsNote =>
+      'لهذه الوجبة فقط، وليست أهدافك اليومية. اترك أي حقل فارغًا.';
+
+  @override
+  String get eatOutTargetMax => 'الحد الأقصى للسعرات';
+
+  @override
+  String get eatOutTargetMin => 'الحد الأدنى للسعرات';
+
+  @override
+  String get eatOutTargetProtein => 'الحد الأدنى للبروتين';
+
+  @override
+  String get eatOutSortLabel => 'عندما تناسب عدة طلبات، اعرض أولًا';
+
+  @override
+  String get eatOutSortAutomatic => 'تلقائي (حسب أهدافك)';
+
+  @override
+  String get eatOutApplyTargets => 'استخدم هذه الأهداف';
+
+  @override
+  String get eatOutTargetsInvalid =>
+      'استخدم أعدادًا صحيحة: السعرات من 100 إلى 4000 (الحد الأدنى من 0)، والبروتين من 1 إلى 300 غ.';
+
+  @override
+  String get eatOutKindSandwich => 'شطيرة';
+
+  @override
+  String get eatOutKindWrap => 'لفافة';
+
+  @override
+  String get eatOutKindSalad => 'سلطة';
+
+  @override
+  String get eatOutKindBowl => 'وعاء';
+
+  @override
+  String get eatOutKindBreakfast => 'فطور';
+
+  @override
+  String get eatOutKindPizza => 'بيتزا';
+
+  @override
+  String get eatOutKindChicken => 'دجاج';
+
+  @override
+  String get eatOutKindSide => 'طبق جانبي';
+
+  @override
+  String get eatOutKindDessert => 'حلوى';
+
+  @override
+  String get eatOutKindDrink => 'مشروب';
+
+  @override
+  String eatOutChainOfficial(String chain) {
+    return 'المعلومات الغذائية المنشورة من $chain كندا';
+  }
+
+  @override
+  String eatOutPublished(String date) {
+    return 'نُشر $date';
+  }
+
+  @override
+  String eatOutChecked(String date) {
+    return 'تم التحقق $date';
+  }
+
+  @override
+  String eatOutBuildNote(String note) {
+    return 'التحضير المعتاد: $note';
+  }
+
+  @override
+  String get eatOutSodiumLabel => 'الصوديوم';
+
+  @override
+  String get eatOutFibreLabel => 'الألياف';
+
+  @override
+  String get eatOutSatFatLabel => 'الدهون المشبعة';
 }

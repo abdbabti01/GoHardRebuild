@@ -4,6 +4,7 @@ using GoHard.Api.Application;
 using GoHard.Api.Application.AccountEmail;
 using GoHard.Api.Application.Coach;
 using GoHard.Api.Application.FoodDiscovery;
+using GoHard.Api.Application.Restaurants;
 using GoHard.Api.Application.Weather;
 using GoHard.Api.Persistence;
 using Microsoft.AspNetCore.Http.Features;
@@ -33,6 +34,7 @@ public static class GoHardEndpoints
         .AddFoodDiscovery(config)
         .AddWeather(config)
         .AddCoach(config)
+        .AddSingleton<RestaurantService>()
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<SavedMealService>().AddScoped<WaterService>()
         .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>().AddScoped<WeeklyGoalService>()
         .AddScoped<ExerciseIncrementService>();
@@ -77,12 +79,14 @@ public static class GoHardEndpoints
         var api = app.MapGroup("/api/v1");
         // minimumClientContract rises only for a change an older app cannot live with. Added optional fields are not one.
         // 2: required email verification (an app before it cannot show the verification step; docs/AUTHENTICATION_EMAIL.md).
-        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach, EmailOptions email) => Results.Ok(new
+        api.MapGet("/capabilities", (FoodDiscoveryService food, WeatherService weather, CoachService coach, RestaurantService restaurants, EmailOptions email) => Results.Ok(new
         {
             contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 2),
             capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
                 .Concat(weather.Enabled ? [WeatherRegistration.Capability] : [])
                 .Concat(coach.Enabled ? [CoachService.Capability] : [])
+                .Concat(restaurants.Catalog is not null ? [RestaurantService.CatalogCapability] : [])
+                .Concat(restaurants.InterpretEnabled ? [RestaurantService.InterpretCapability] : [])
                 .Concat(email.Configured ? [AccountEmailRegistration.DeliveryCapability] : []).ToArray(),
         }));
 
@@ -283,6 +287,30 @@ public static class GoHardEndpoints
                 CoachStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
                 // The provider's rate limit or overload: not the person's own limit, so not COACH_LIMIT.
                 CoachStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
+                _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
+            };
+        });
+
+        // Eating out (docs/EATING_OUT.md). The reviewed catalog, read only; "have" = the version the phone holds.
+        me.MapGet("/restaurants/catalog", (string? have, RestaurantService s) => s.Catalog is not { } c
+            ? Results.Json(new { code = "RESTAURANTS_UNAVAILABLE" }, statusCode: 503)
+            : have == c.Version ? Results.Ok(new { upToDate = true, version = c.Version }) : Results.Text(c.Json, "application/json"));
+        // Words → checked preferences. Reads only, never a command; the same per-account limits as Ask GoHard.
+        me.MapPost("/restaurants/interpret", async (HttpRequest req, ClaimsPrincipal u, RestaurantService s, CancellationToken ct) =>
+        {
+            if (req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = RestaurantService.MaxBodyBytes;
+            RestaurantInterpretRequest? r = null;
+            if (req.ContentLength is null or <= RestaurantService.MaxBodyBytes)
+                try { r = await JsonSerializer.DeserializeAsync<RestaurantInterpretRequest>(req.Body, CommandRunner.Json, ct); }
+                catch (Exception ex) when (ex is JsonException or BadHttpRequestException) { }
+            var outcome = await s.InterpretAsync(u.UserId(), r, ct);
+            return outcome.Status switch
+            {
+                RestaurantStatus.Ok => Results.Json(outcome.Answer, CommandRunner.Json),
+                RestaurantStatus.Invalid => Results.Json(new { code = "RESTAURANT_INVALID" }, statusCode: 400),
+                RestaurantStatus.Mismatch => Results.Json(new { code = "RESTAURANT_CATALOG_MISMATCH", catalogVersion = s.Catalog?.Version }, statusCode: 409),
+                RestaurantStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
+                RestaurantStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
                 _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
             };
         });

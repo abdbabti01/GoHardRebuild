@@ -8,23 +8,36 @@ public interface ICoachProvider
 {
     /// <param name="system">Trusted parts, each its own labelled block: instructions, then reviewed references.</param>
     /// <param name="user">Untrusted parts of the one user turn, each its own labelled block; the question last.</param>
-    /// <returns>A reply or a typed failure. Throws only for cancellation/timeout and transport errors (no response).</returns>
-    Task<CoachProviderResult> AskAsync(IReadOnlyList<string> system, IReadOnlyList<string> user, CancellationToken ct);
+    /// <param name="format">The structured output asked for; null is Ask GoHard's own (<see cref="CoachReplySchema"/>).</param>
+    /// <returns>The structured output (a JSON object, not yet trusted) or a typed failure. Throws only for
+    /// cancellation/timeout and transport errors (no response).</returns>
+    Task<CoachProviderResult> AskAsync(IReadOnlyList<string> system, IReadOnlyList<string> user, CancellationToken ct, ReplyFormat? format = null);
 }
 
-/// <summary>What the model returned, parsed but not yet trusted: the service filters sources and validates the proposal.</summary>
-public sealed record CoachModelReply(string Answer, List<string> Sources, JsonElement? Proposal)
+/// <summary>A strict JSON-schema output format: its name as the provider is told it, and the schema.</summary>
+public sealed record ReplyFormat(string Name, JsonObject Schema)
 {
-    /// <summary>
-    /// The structured output, or null when it is empty or does not follow <see cref="CoachReplySchema"/>: answer is a
-    /// string, sources an array of strings, proposal present (its content is validated later by the service).
-    /// Throws JsonException when the text is not JSON.
-    /// </summary>
-    public static CoachModelReply? FromJson(string? text)
+    public static ReplyFormat Coach => new("coach_reply", CoachReplySchema.Create());
+
+    /// <summary>The model's JSON object, or null when the text is empty or not an object. Throws JsonException when it is not JSON.</summary>
+    public static JsonElement? Read(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
         var r = JsonDocument.Parse(text).RootElement.Clone();
-        if (r.ValueKind != JsonValueKind.Object || !r.TryGetProperty("answer", out var a) || a.ValueKind != JsonValueKind.String ||
+        return r.ValueKind == JsonValueKind.Object ? r : null;
+    }
+}
+
+/// <summary>Ask GoHard's reply, parsed but not yet trusted: the service filters sources and validates the proposal.</summary>
+public sealed record CoachModelReply(string Answer, List<string> Sources, JsonElement? Proposal)
+{
+    /// <summary>
+    /// The structured output, or null when it does not follow <see cref="CoachReplySchema"/>: answer is a string,
+    /// sources an array of strings, proposal present (its content is validated later by the service).
+    /// </summary>
+    public static CoachModelReply? From(JsonElement? output)
+    {
+        if (output is not { } r || !r.TryGetProperty("answer", out var a) || a.ValueKind != JsonValueKind.String ||
             !r.TryGetProperty("sources", out var s) || s.ValueKind != JsonValueKind.Array || s.EnumerateArray().Any(x => x.ValueKind != JsonValueKind.String) ||
             !r.TryGetProperty("proposal", out var p)) return null;
         return new(a.GetString()!, [.. s.EnumerateArray().Select(x => x.GetString()!)], p.ValueKind == JsonValueKind.Null ? null : p);
@@ -51,7 +64,8 @@ public enum CoachFailure
 
 /// <param name="RetryAfter">Set only for failures worth one retry (rate limit, overload, 5xx): the provider's retry-after,
 /// or a short default for 5xx without one.</param>
-public sealed record CoachProviderResult(CoachModelReply? Reply, CoachFailure? Failure = null, TimeSpan? RetryAfter = null)
+/// <param name="Output">The structured output as a JSON object; each caller checks it against its own format.</param>
+public sealed record CoachProviderResult(JsonElement? Output, CoachFailure? Failure = null, TimeSpan? RetryAfter = null)
 {
     private static readonly TimeSpan ServerErrorPause = TimeSpan.FromMilliseconds(500);
 

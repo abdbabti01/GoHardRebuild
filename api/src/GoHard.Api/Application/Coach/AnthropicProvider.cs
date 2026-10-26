@@ -14,8 +14,9 @@ public sealed class AnthropicProvider(HttpClient http, CoachOptions options, ILo
 {
     public const string DefaultModel = "claude-haiku-5-5";
 
-    public async Task<CoachProviderResult> AskAsync(IReadOnlyList<string> system, IReadOnlyList<string> user, CancellationToken ct)
+    public async Task<CoachProviderResult> AskAsync(IReadOnlyList<string> system, IReadOnlyList<string> user, CancellationToken ct, ReplyFormat? format = null)
     {
+        format ??= ReplyFormat.Coach;
         var body = new JsonObject
         {
             ["model"] = options.ModelId,
@@ -23,7 +24,7 @@ public sealed class AnthropicProvider(HttpClient http, CoachOptions options, ILo
             ["system"] = new JsonArray([.. system.Select(Block)]),
             ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = new JsonArray([.. user.Select(Block)]) }),
             // Short grounded answers: low effort keeps latency and cost down; thinking stays adaptive.
-            ["output_config"] = new JsonObject { ["effort"] = options.Effort, ["format"] = new JsonObject { ["type"] = "json_schema", ["schema"] = CoachReplySchema.Create() } },
+            ["output_config"] = new JsonObject { ["effort"] = options.Effort, ["format"] = new JsonObject { ["type"] = "json_schema", ["schema"] = format.Schema } },
         };
         using var request = new HttpRequestMessage(HttpMethod.Post, "v1/messages") { Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json") };
         request.Headers.Add("x-api-key", options.AnthropicApiKey!.Trim());
@@ -39,13 +40,13 @@ public sealed class AnthropicProvider(HttpClient http, CoachOptions options, ILo
             log.LogWarning("Anthropic answered HTTP {Status} ({Type})", (int)response.StatusCode, code);
             return CoachProviderResult.FromStatus(response, code, time ?? TimeProvider.System);
         }
-        return Parse(text, log) is { } reply ? new(reply) : CoachProviderResult.Bad;
+        return Parse(text, log) is { } output ? new(output) : CoachProviderResult.Bad;
     }
 
     private static JsonObject Block(string text) => new() { ["type"] = "text", ["text"] = text };
 
-    /// <summary>The structured answer from a Messages API response, or null when it is not a complete, well-formed one.</summary>
-    public static CoachModelReply? Parse(string responseBody, ILogger log)
+    /// <summary>The structured output (a JSON object) from a Messages API response, or null when it is not a complete, well-formed one.</summary>
+    public static JsonElement? Parse(string responseBody, ILogger log)
     {
         try
         {
@@ -58,7 +59,7 @@ public sealed class AnthropicProvider(HttpClient http, CoachOptions options, ILo
                 return null;
             }
             var json = root.GetProperty("content").EnumerateArray().FirstOrDefault(b => b.GetProperty("type").GetString() == "text");
-            return json.ValueKind == JsonValueKind.Object ? CoachModelReply.FromJson(json.GetProperty("text").GetString()) : null;
+            return json.ValueKind == JsonValueKind.Object ? ReplyFormat.Read(json.GetProperty("text").GetString()) : null;
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
         {

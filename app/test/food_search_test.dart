@@ -60,7 +60,7 @@ void main() {
         // The portion a new entry starts from is one the record itself states.
         if (f.portion != null) expect([for (final s in f.item.servings) s.label], contains(f.portion), reason: why);
         expect(FoodScaling.units(f.item).map((u) => u.id), contains(f.unitId), reason: why);
-        expect(sourceCredit(f.item.source), 'USDA FoodData Central', reason: why);
+        expect(sourceCredit(f.item), 'USDA FoodData Central', reason: why);
       }
     });
 

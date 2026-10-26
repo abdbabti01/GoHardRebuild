@@ -643,11 +643,14 @@ Future<void> showCoachHelpSheet(BuildContext context, {required String title, re
 /// a new message, a rebuild or scrolling it out of the page's lazy list and back changes nothing but the words. The portrait is the
 /// page's help entry ([onAvatarTap], named by [avatarLabel]). Opening the tab never asks the AI.
 class TabCoach extends ConsumerStatefulWidget {
-  const TabCoach({super.key, required this.id, required this.say, required this.onAvatarTap, this.avatarLabel});
+  const TabCoach({super.key, required this.id, required this.say, required this.onAvatarTap, this.avatarLabel, this.attentive = false});
 
   /// The tab ('train', 'eat'): its entrance is played once per session.
   final String id;
   final CoachSay say;
+
+  /// A request the user sent is really in flight (as in Ask GoHard): the guide leans in, attentive, until it ends.
+  final bool attentive;
   final VoidCallback onAvatarTap;
   final String? avatarLabel;
 
@@ -693,6 +696,7 @@ class _TabCoachState extends ConsumerState<TabCoach> {
           if (mounted) ref.read(tabsGreetedProvider.notifier).add(widget.id); // called after the frame
         },
         ack: _ack,
+        attentive: widget.attentive,
         onAsk: () => setState(() => _ack++),
         avatarLabel: widget.avatarLabel,
         onAvatarTap: () {

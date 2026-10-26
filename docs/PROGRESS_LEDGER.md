@@ -2223,3 +2223,43 @@ docs/PROGRESS.md; design: docs/DESIGN.md › Progress.
   definitions). They need verified accounts, and hosted registration sends a real verification email; by the
   owner's decision no account was created and verification was not weakened. These behaviours are verified locally
   (`SavedMealTests` on PostgreSQL, `saved_meals_test`, `journey_meals_test`) and are left to the owner's iPhone test.
+
+## 25 Oct 2026 — Eating out (`feature/eating-out`, from `main` 2397b0d)
+
+Brief: `GoHard_Eating_Out_Claude_Prompt.md`. Details: docs/EATING_OUT.md; per-item sources and values:
+docs/RESTAURANT_SOURCES.md.
+
+- Catalog `2026-10-25.1`: Subway Canada 31 items (Nutrition Data Tables PDF printed "October 2026", read through a
+  page-to-PDF fetch, SHA-256 recorded, text extracted with `scripts/pdf-text.mjs`; 11 footlongs derived by the table's
+  own doubling rule) and Pizza Pizza Canada 20 items (pizzapizza.ca nutrition pages, "as of November 1st, 2023", some rows
+  "Updated March 12, 2026"; read twice with differently worded page-to-text requests, identical numbers). Every row
+  passes the build's checks (unique match, Atwater, sat fat ≤ fat, fibre ≤ carbs). **Not imported:** McDonald's Canada
+  (HTTP 403 for every automated request to the calculator and product pages) and Tim Hortons Canada (page built in the
+  browser; its data service is not a documented public source and reading it was refused by this session's access
+  rules). Both are listed honestly empty. Excluded on purpose: Subway drinks/soups/regional items, Pizza Pizza drinks and
+  dips (unlabelled columns), medium+ pizzas (no stated slice size), small-pizza saturated fat (lost decimal → unknown).
+- API: `dotnet test --filter CoachTests` on disposable PostgreSQL: **28 passed** (23 existing Ask GoHard + 5 new
+  Eating out, provider STUBBED in both Anthropic and Groq shapes). Build: 0 warnings.
+- App: `flutter analyze` no issues; `node scripts/check-l10n.mjs` OK (2,706 messages; 115 new, fr-CA and ar);
+  `eating_out_test` 17 + `eating_out_ui_test` 7 passed (AI client STUBBED); affected suites once together (food search,
+  food, food UI, saved meals ×2, Eat UI, coach companion, coach ask, l10n Eat/coach, localization, coach guide, data
+  layer): **201 passed**.
+- Renders (Flutter widgets, fixture drafts, stubbed answer): docs/evidence/eating-out (chains, suggestions, comparison,
+  order; light and dark; 320 px at 2× text; 320 px at 1.6× with the keyboard) and docs/evidence/localization/{fr,ar}/
+  eating-out. Reviewed by eye; found and fixed: Send could sit under the keyboard at 320 px (moved into the field), the
+  French Undo label overflowed the targets header and Material chips cut labels at large text (wrapping header and
+  chips), English official names/portions/build notes scrambled inside Arabic sentences (isolated with `ltr()`), the
+  coach bust missing from renders (texture now preloaded in the render test).
+- Native (Pixel_7 emulator, branch API on 127.0.0.1:5136 with captured mail and `Coach:GroqBaseUrl` pointed at
+  `scripts/coach-stub.mjs` — a STUB, so this proves the app/API path, not live AI; disposable database dropped
+  afterwards): `journey_eatout_test` **passed** on the 4th run (run 1: the journey re-logged in on every poll and hit the
+  auth rate limit; run 2: the journey expected 3 entries, but the chicken kept in the draft after Save as meal correctly
+  made the offline order 2 items — expectation fixed; run 3: INSUFFICIENT_STORAGE on install, emulator rebooted).
+  Chose Subway, sent a request, interpreted chips shown, suggestion kept Potato Rings, used it, comparison shown,
+  logged once (2 entries), saved another order as a meal and reopened it (no entry), then with Wi-Fi and data really
+  off: asking said it couldn't be sent and kept the question, the order was logged on the phone, back online the
+  account held 4 restaurant entries with one catalog version and 1 saved meal; account deleted. Captures
+  docs/evidence/screenshots/eo-01…10 (the device capture of the suggestion is clipped at the bottom; the card is shown in
+  the widget renders). **Not verified on the device:** a restart (one process; covered by `eating_out_test`).
+- **Live AI:** no Groq key on this machine; no live request made. Hosted (key configured) after an approved deploy.
+- Not done here: merge, deploy, an iPhone, a fluent review of the new fr/ar strings.

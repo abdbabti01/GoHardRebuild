@@ -25,6 +25,8 @@ jobs:
       - run: flutter pub get
       # Every English message has a French and an Arabic one, with matching placeholders and plural forms (docs/LOCALIZATION.md).
       - run: node ../scripts/check-l10n.mjs
+      # The restaurant catalog copies and its source manifest match a fresh build from the committed sources (docs/EATING_OUT.md).
+      - run: node ../scripts/build-restaurant-catalog.mjs --check
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart format --output=none --set-exit-if-changed lib test integration_test || true   # formatting is not yet enforced; see docs/PROGRESS_LEDGER.md
       - run: flutter analyze

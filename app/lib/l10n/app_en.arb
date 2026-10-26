@@ -14771,5 +14771,707 @@
   "mealsThisTimeTotal": "This time",
   "@mealsThisTimeTotal": {
     "description": "Meal review nutrition panel title."
+  },
+  "eatOutTitle": "Eating out",
+  "@eatOutTitle": {
+    "description": "Eating out page title and entry."
+  },
+  "eatOutEntrySubtitle": "Verified Canadian menus: choose or improve an order",
+  "@eatOutEntrySubtitle": {
+    "description": "Add food row under Eating out."
+  },
+  "eatOutEntrySaid": "Eating out: choose or improve a restaurant order",
+  "@eatOutEntrySaid": {
+    "description": "Screen reader label for the Eat entry."
+  },
+  "eatOutForContext": "For {meal} · {date}",
+  "@eatOutForContext": {
+    "description": "Subtitle: the meal and day an order would be logged to.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChainContext": "{chain} · Canada · {meal} · {date}",
+  "@eatOutChainContext": {
+    "description": "Subtitle with the chosen chain. The French may match English.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      },
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChooseChain": "Choose a restaurant",
+  "@eatOutChooseChain": {
+    "description": "Heading over the chains."
+  },
+  "eatOutChainCanada": "{chain} · Canada",
+  "@eatOutChainCanada": {
+    "description": "A chain, always labelled Canada. The French may match English.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChainOptions": "{count, plural, =1{1 verified option} other{{count} verified options}} · checked {date}",
+  "@eatOutChainOptions": {
+    "description": "Chain row: how many items and when the sources were checked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChainUnavailable": "Menu not added yet: no verified data",
+  "@eatOutChainUnavailable": {
+    "description": "Chain row for a chain without imported data."
+  },
+  "eatOutChainNotYet": "No verified {chain} menu yet",
+  "@eatOutChainNotYet": {
+    "description": "A chain whose data could not be imported.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChainBlocked": "GoHard only offers items whose nutrition comes from the chain's own published Canadian information. This chain's official data couldn't be read in yet, so nothing is offered rather than a guess. You can still log your own entry from Add food.",
+  "@eatOutChainBlocked": {
+    "description": "Why a chain is unavailable."
+  },
+  "eatOutChangeChain": "Change restaurant",
+  "@eatOutChangeChain": {
+    "description": "App bar action."
+  },
+  "eatOutCoverageNote": "A selection of standard items, not the full menu. Not every location sells every item. Prices, ordering and delivery aren't part of GoHard.",
+  "@eatOutCoverageNote": {
+    "description": "Coverage note under the chains."
+  },
+  "eatOutAskLabel": "Ask {guide} about eating out",
+  "@eatOutAskLabel": {
+    "description": "Coach avatar label: focuses the request field.",
+    "placeholders": {
+      "guide": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutAskHint": "Tell me what you want, e.g. keep the potato rings, more protein",
+  "@eatOutAskHint": {
+    "description": "Request field hint."
+  },
+  "eatOutAskUnavailable": "Asking in words isn't available on this server. Targets, the menu and suggestions all work without it.",
+  "@eatOutAskUnavailable": {
+    "description": "When the server does not declare restaurants.interpret."
+  },
+  "eatOutAskInvalid": "That request couldn't be sent. Shorten it (up to 600 characters) and send it again.",
+  "@eatOutAskInvalid": {
+    "description": "A refused request."
+  },
+  "eatOutProblemLimit": "You've asked a lot today. Asking in words works again later; targets and the menu still work.",
+  "@eatOutProblemLimit": {
+    "description": "Daily or concurrency limit (shared with Ask GoHard)."
+  },
+  "eatOutProblemBusy": "The assistant is busy right now. Your request is kept; try again in a moment.",
+  "@eatOutProblemBusy": {
+    "description": "Provider rate limited."
+  },
+  "eatOutProblemUnreached": "Your request couldn't be sent: that can be this phone's connection or the server. It's kept, and the menu works offline.",
+  "@eatOutProblemUnreached": {
+    "description": "Request did not get through."
+  },
+  "eatOutProblemUnavailable": "The assistant isn't available right now. Your request is kept; targets and the menu still work.",
+  "@eatOutProblemUnavailable": {
+    "description": "Provider unavailable, timed out or gave an unreadable answer."
+  },
+  "eatOutStale": "Your order or targets changed while I was reading that. Nothing was changed: send it again to use what you have now.",
+  "@eatOutStale": {
+    "description": "A late answer for an earlier version."
+  },
+  "eatOutMenuChanged": "The menu was updated on the server. Update it here before asking again.",
+  "@eatOutMenuChanged": {
+    "description": "Catalog version mismatch."
+  },
+  "eatOutUpdateMenu": "Update menu",
+  "@eatOutUpdateMenu": {
+    "description": "Button."
+  },
+  "eatOutSwitchTo": "Switch to {chain}",
+  "@eatOutSwitchTo": {
+    "description": "Offer when the request named another chain.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutCoachIntro": "Eating out? Tell me where you're going and what you want to keep.",
+  "@eatOutCoachIntro": {
+    "description": "Coach introduction."
+  },
+  "eatOutCoachChain": "Set a calorie limit or a protein target, or tell me what you'd like at {chain}. I'll show orders that fit.",
+  "@eatOutCoachChain": {
+    "description": "Coach once a chain is chosen.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutCoachImprove": "Want to change something in your order? Tell me what to keep and what matters most.",
+  "@eatOutCoachImprove": {
+    "description": "Coach with an order started."
+  },
+  "eatOutCoachReading": "Reading your request…",
+  "@eatOutCoachReading": {
+    "description": "While a request is in flight."
+  },
+  "eatOutCoachUnderstood": "Here's what I understood: check your targets below and change anything I got wrong. Every number comes from the verified menu.",
+  "@eatOutCoachUnderstood": {
+    "description": "After an applied interpretation."
+  },
+  "eatOutCoachUnknown": "I couldn't find {names} on this menu.",
+  "@eatOutCoachUnknown": {
+    "description": "Names not matched to items.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutCoachUnsupported": "I only have verified menus for the restaurants listed here, so I can't help with that one.",
+  "@eatOutCoachUnsupported": {
+    "description": "Unsupported restaurant."
+  },
+  "eatOutCoachContradiction": "Your request asks for two things that rule each other out. Which one should I keep?",
+  "@eatOutCoachContradiction": {
+    "description": "Contradictory request."
+  },
+  "eatOutCoachClarify": "Could you say a bit more? For example a calorie limit, or which item and size you mean.",
+  "@eatOutCoachClarify": {
+    "description": "Generic clarification."
+  },
+  "eatOutCoachAsks": "{question}",
+  "@eatOutCoachAsks": {
+    "description": "The assistant's clarification question, shown as it wrote it (AI-generated, never a number).",
+    "placeholders": {
+      "question": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutYourTargets": "Your targets",
+  "@eatOutYourTargets": {
+    "description": "Preferences panel heading."
+  },
+  "eatOutNoTargetsYet": "None yet. Nothing is chosen for you.",
+  "@eatOutNoTargetsYet": {
+    "description": "Empty preferences."
+  },
+  "eatOutChipMax": "Up to {kcal} kcal",
+  "@eatOutChipMax": {
+    "description": "Chip.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChipMin": "At least {kcal} kcal",
+  "@eatOutChipMin": {
+    "description": "Chip.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChipProtein": "At least {grams} g protein",
+  "@eatOutChipProtein": {
+    "description": "Chip.",
+    "placeholders": {
+      "grams": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChipKeep": "Keep {name} × {count}",
+  "@eatOutChipKeep": {
+    "description": "Chip: item kept in every suggestion.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eatOutChipExclude": "Not {name}",
+  "@eatOutChipExclude": {
+    "description": "Chip: item never suggested.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChipPrefer": "Prefer: {kind}",
+  "@eatOutChipPrefer": {
+    "description": "Chip.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChipAvoid": "Avoid: {kind}",
+  "@eatOutChipAvoid": {
+    "description": "Chip.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutRemoveTarget": "Remove {target}",
+  "@eatOutRemoveTarget": {
+    "description": "Chip delete tooltip.",
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutHelpChoose": "Help me choose",
+  "@eatOutHelpChoose": {
+    "description": "Tab."
+  },
+  "eatOutYourOrder": "Your order ({count})",
+  "@eatOutYourOrder": {
+    "description": "Tab with item count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eatOutNoTargetsTitle": "What should an order fit?",
+  "@eatOutNoTargetsTitle": {
+    "description": "Help me choose without targets."
+  },
+  "eatOutNoTargetsBody": "Set a calorie limit or a protein target, or ask me in your own words. You can also build an order yourself.",
+  "@eatOutNoTargetsBody": {
+    "description": "Help me choose without targets."
+  },
+  "eatOutSetTargets": "Set targets",
+  "@eatOutSetTargets": {
+    "description": "Button."
+  },
+  "eatOutSortedBy": "Sorted by: {priority}",
+  "@eatOutSortedBy": {
+    "description": "How fitting orders are ordered; always visible.",
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutPriorityProtein": "most protein",
+  "@eatOutPriorityProtein": {
+    "description": "Sort."
+  },
+  "eatOutPriorityCalories": "fewest calories",
+  "@eatOutPriorityCalories": {
+    "description": "Sort."
+  },
+  "eatOutPriorityClosest": "closest to your calorie limit",
+  "@eatOutPriorityClosest": {
+    "description": "Sort."
+  },
+  "eatOutNoneFits": "Nothing fits all your targets. These are the closest, with what each one misses. Kept and excluded items are never changed.",
+  "@eatOutNoneFits": {
+    "description": "Nearest alternatives."
+  },
+  "eatOutNothingPossible": "No order can be built from these choices. Remove an excluded item or kind.",
+  "@eatOutNothingPossible": {
+    "description": "Everything ruled out."
+  },
+  "eatOutContradiction": "The minimum is above the maximum, or an item is both kept and excluded. Change one of them.",
+  "@eatOutContradiction": {
+    "description": "Contradictory targets."
+  },
+  "eatOutLine": "{count} × {name}",
+  "@eatOutLine": {
+    "description": "An order line.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutProteinValue": "{grams} g protein",
+  "@eatOutProteinValue": {
+    "description": "Protein total.",
+    "placeholders": {
+      "grams": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutFits": "Fits your selected targets.",
+  "@eatOutFits": {
+    "description": "A suggestion meets every target."
+  },
+  "eatOutKeeps": "Keeps {names}.",
+  "@eatOutKeeps": {
+    "description": "Kept items.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutMisses": "Misses: {misses}",
+  "@eatOutMisses": {
+    "description": "What a suggestion misses.",
+    "placeholders": {
+      "misses": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutMissOver": "{kcal} kcal over your limit",
+  "@eatOutMissOver": {
+    "description": "Miss.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutMissUnder": "{kcal} kcal under your minimum",
+  "@eatOutMissUnder": {
+    "description": "Miss.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutMissProtein": "{grams} g protein short",
+  "@eatOutMissProtein": {
+    "description": "Miss.",
+    "placeholders": {
+      "grams": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutVersusOrder": "Compared with your order: {kcal} kcal, {protein} g protein",
+  "@eatOutVersusOrder": {
+    "description": "Before/after difference.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutUseOrder": "Use this order",
+  "@eatOutUseOrder": {
+    "description": "Applies to the draft only."
+  },
+  "eatOutUseInstead": "Use instead of my order",
+  "@eatOutUseInstead": {
+    "description": "Replaces the draft (Undo available)."
+  },
+  "eatOutOrderEmptyTitle": "No items yet",
+  "@eatOutOrderEmptyTitle": {
+    "description": "Empty order."
+  },
+  "eatOutOrderEmptyBody": "Add items from the menu, or choose a suggestion. Nothing is logged until you review it.",
+  "@eatOutOrderEmptyBody": {
+    "description": "Empty order."
+  },
+  "eatOutAddFromMenu": "Add from the menu",
+  "@eatOutAddFromMenu": {
+    "description": "Button."
+  },
+  "eatOutMenuTitle": "{chain} menu · Canada",
+  "@eatOutMenuTitle": {
+    "description": "Menu sheet title.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutMenuFilter": "Filter the menu",
+  "@eatOutMenuFilter": {
+    "description": "Menu filter hint."
+  },
+  "eatOutAddItem": "Add {name}",
+  "@eatOutAddItem": {
+    "description": "Tooltip.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutInOrder": "{count} in order",
+  "@eatOutInOrder": {
+    "description": "Menu row value.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eatOutEach": "{kcal} kcal each",
+  "@eatOutEach": {
+    "description": "Order line detail.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutLess": "One less {name}",
+  "@eatOutLess": {
+    "description": "Tooltip.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutMore": "One more {name}",
+  "@eatOutMore": {
+    "description": "Tooltip.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutCountSaid": "{count, plural, =1{1 item} other{{count} items}}",
+  "@eatOutCountSaid": {
+    "description": "Screen reader count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eatOutNoLongerListed": "{count, plural, =1{1 item is no longer on this menu.} other{{count} items are no longer on this menu.}}",
+  "@eatOutNoLongerListed": {
+    "description": "After a catalog update; the order is not changed by itself.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eatOutRemoveThem": "Remove",
+  "@eatOutRemoveThem": {
+    "description": "Removes items no longer listed."
+  },
+  "eatOutOrderTotal": "Order total",
+  "@eatOutOrderTotal": {
+    "description": "Totals heading."
+  },
+  "eatOutSodium": "Sodium {mg} mg",
+  "@eatOutSodium": {
+    "description": "Sodium total, only when every item states it. The French may match English.",
+    "placeholders": {
+      "mg": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutReview": "Review and log",
+  "@eatOutReview": {
+    "description": "Opens the review; logging happens only there."
+  },
+  "eatOutOrderName": "{chain} order",
+  "@eatOutOrderName": {
+    "description": "Name of the order in the review and as a new saved meal.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutSourceLine": "Source: {source}. Published: {published}. Checked {checked}.",
+  "@eatOutSourceLine": {
+    "description": "Provenance footer.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "published": {
+        "type": "String"
+      },
+      "checked": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutNotStated": "not stated",
+  "@eatOutNotStated": {
+    "description": "No publication date given by the source."
+  },
+  "eatOutCustomNote": "Only listed items and sizes are calculated. A change such as no sauce or extra cheese has no verified values, so it can't be calculated reliably.",
+  "@eatOutCustomNote": {
+    "description": "Customizations note."
+  },
+  "eatOutOwnEstimate": "Log your own estimate instead",
+  "@eatOutOwnEstimate": {
+    "description": "Opens the manual form (marked as the person's own values)."
+  },
+  "eatOutTargetsTitle": "Targets for this order",
+  "@eatOutTargetsTitle": {
+    "description": "Targets sheet title."
+  },
+  "eatOutTargetsNote": "For this meal only, not your daily goals. Leave any field blank.",
+  "@eatOutTargetsNote": {
+    "description": "Targets sheet note."
+  },
+  "eatOutTargetMax": "Maximum calories",
+  "@eatOutTargetMax": {
+    "description": "Field."
+  },
+  "eatOutTargetMin": "Minimum calories",
+  "@eatOutTargetMin": {
+    "description": "Field."
+  },
+  "eatOutTargetProtein": "Minimum protein",
+  "@eatOutTargetProtein": {
+    "description": "Field."
+  },
+  "eatOutSortLabel": "When several orders fit, show first",
+  "@eatOutSortLabel": {
+    "description": "Sort choice label."
+  },
+  "eatOutSortAutomatic": "Automatic (from your targets)",
+  "@eatOutSortAutomatic": {
+    "description": "Sort choice."
+  },
+  "eatOutApplyTargets": "Use these targets",
+  "@eatOutApplyTargets": {
+    "description": "Button."
+  },
+  "eatOutTargetsInvalid": "Use whole numbers: calories 100 to 4,000 (minimum from 0), protein 1 to 300 g.",
+  "@eatOutTargetsInvalid": {
+    "description": "Validation."
+  },
+  "eatOutKindSandwich": "sandwich",
+  "@eatOutKindSandwich": {
+    "description": "Food kind. The French may match English."
+  },
+  "eatOutKindWrap": "wrap",
+  "@eatOutKindWrap": {
+    "description": "Food kind. The French may match English."
+  },
+  "eatOutKindSalad": "salad",
+  "@eatOutKindSalad": {
+    "description": "Food kind."
+  },
+  "eatOutKindBowl": "bowl",
+  "@eatOutKindBowl": {
+    "description": "Food kind."
+  },
+  "eatOutKindBreakfast": "breakfast",
+  "@eatOutKindBreakfast": {
+    "description": "Food kind."
+  },
+  "eatOutKindPizza": "pizza",
+  "@eatOutKindPizza": {
+    "description": "Food kind. The French may match English."
+  },
+  "eatOutKindChicken": "chicken",
+  "@eatOutKindChicken": {
+    "description": "Food kind."
+  },
+  "eatOutKindSide": "side",
+  "@eatOutKindSide": {
+    "description": "Food kind."
+  },
+  "eatOutKindDessert": "dessert",
+  "@eatOutKindDessert": {
+    "description": "Food kind. The French may match English."
+  },
+  "eatOutKindDrink": "drink",
+  "@eatOutKindDrink": {
+    "description": "Food kind."
+  },
+  "eatOutChainOfficial": "{chain} Canada's published nutrition information",
+  "@eatOutChainOfficial": {
+    "description": "Food form credit for a restaurant item.",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutPublished": "published {date}",
+  "@eatOutPublished": {
+    "description": "Source publication date (as the source gives it).",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutChecked": "checked {date}",
+  "@eatOutChecked": {
+    "description": "Date GoHard checked the source.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutBuildNote": "Standard build: {note}",
+  "@eatOutBuildNote": {
+    "description": "Food details: what the standard item includes (source wording, English).",
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "eatOutSodiumLabel": "Sodium",
+  "@eatOutSodiumLabel": {
+    "description": "Nutrient label in food details. The French may match English."
+  },
+  "eatOutFibreLabel": "Fibre",
+  "@eatOutFibreLabel": {
+    "description": "Nutrient label in food details."
+  },
+  "eatOutSatFatLabel": "Saturated fat",
+  "@eatOutSatFatLabel": {
+    "description": "Nutrient label in food details."
   }
 }

@@ -1,0 +1,614 @@
+{
+  "version": "2026-10-25.1",
+  "checked": "2026-10-25",
+  "chains": [
+    {
+      "id": "mcdonalds-ca",
+      "name": "McDonald's",
+      "status": "unavailable",
+      "unavailable": "The official Canadian nutrition calculator and product pages refused automated access (HTTP 403) on 2026-10-25. No values were imported; nothing is offered until an official document is read in.",
+      "sources": [
+        {
+          "id": "mcdonalds-ca-calculator",
+          "title": "McDonald's Canada nutrition calculator",
+          "url": "https://www.mcdonalds.com/ca/en-ca/about-our-food/nutrition-calculator.html",
+          "published": null,
+          "checked": "2026-10-25"
+        }
+      ],
+      "items": []
+    },
+    {
+      "id": "timhortons-ca",
+      "name": "Tim Hortons",
+      "status": "unavailable",
+      "unavailable": "The official Canadian nutrition page is built in the browser and its text holds no values; the data service behind it is not a documented public source. No values were imported on 2026-10-25.",
+      "sources": [
+        {
+          "id": "timhortons-ca-nutrition",
+          "title": "Tim Hortons Canada nutrition and allergens",
+          "url": "https://www.timhortons.ca/nutrition-and-allergens",
+          "published": null,
+          "checked": "2026-10-25"
+        }
+      ],
+      "items": []
+    },
+    {
+      "id": "subway-ca",
+      "name": "Subway",
+      "status": "available",
+      "adapter": "subway-pdf-text",
+      "file": "subway-ca-CAN_Nutrition_ENG_9-16-26.txt",
+      "columns": [
+        "grams",
+        "calories",
+        "fat",
+        "satFat",
+        "transFat",
+        "cholesterol",
+        "sodium",
+        "carbs",
+        "fibre",
+        "sugars",
+        "protein",
+        "calcium",
+        "iron"
+      ],
+      "sections": [
+        "6\" Steak Subs",
+        "6\" Chicken Subs",
+        "6\" Classics Subs",
+        "6\" Deli Subs",
+        "6\" Veggie Subs",
+        "6\" Fresh Fit",
+        "Snackwiches",
+        "Classics Wraps",
+        "SALADS",
+        "6\" Limited Time Offer/Regional Salads**",
+        "Power Bowls",
+        "6\" Breakfast Sandwiches",
+        "Breakfast Wraps",
+        "Breakfast Ciabatta",
+        "Breads",
+        "Sandwich Condiments & Add ons",
+        "Seasonings",
+        "Vegetables",
+        "Cheese",
+        "Individual Proteins",
+        "Cookies & Desserts",
+        "Sides",
+        "Soup**"
+      ],
+      "sources": [
+        {
+          "id": "subway-ca-nutrition-2026-10",
+          "title": "Subway Canada Nutrition Information (Nutrition Data Tables, CAN_Nutrition_ENG_9-16-26.pdf)",
+          "url": "https://media.subway.com/dam/urn:aaid:aem:261b4b3a-2da3-43c5-a5f6-77b529ebf134/original/as/CAN_Nutrition_ENG_9-16-26.pdf",
+          "page": "https://www.subway.com/en-ca/menunutrition/nutrition",
+          "published": "2026-10",
+          "publishedNote": "Printed \"October 2026\"; file dated 16 Sep 2026",
+          "sha256": "d0c5a4e487242e3d4879d5f02f7b41dd188861b5fb94654f2d73eb352e853f2d",
+          "checked": "2026-10-25"
+        }
+      ],
+      "builds": {
+        "sub6": "Subway's standard 6-inch recipe as listed. The table does not say which bread, cheese, vegetables or sauce that standard build uses, so changes to them cannot be calculated.",
+        "footlong": "Footlong values are the 6-inch values doubled, as the table instructs (\"one footlong = two 6\" servings\").",
+        "wrap": "Values include wrap, Processed Cheddar, mayonnaise, lettuce, tomato, onion and cucumber (as stated by Subway).",
+        "salad": "Values include lettuce, spinach, tomatoes, onions, green peppers, cucumbers and olives; dressing is not included (as stated by Subway).",
+        "breakfast": "Values include 6\" Italian, scrambled egg patty and Canadian cheddar cheese (as stated by Subway).",
+        "bowl": "Subway's standard Power Bowl recipe as listed; its parts are not itemised.",
+        "plain": null
+      },
+      "items": [
+        {
+          "id": "rotisserie-chicken-6in",
+          "section": "6\" Classics Subs",
+          "row": "Rotisserie-Style Chicken",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "rotisserie-chicken",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "grilled-chicken-6in",
+          "section": "6\" Classics Subs",
+          "row": "Grilled Chicken",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "grilled-chicken",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "turkey-breast-6in",
+          "section": "6\" Classics Subs",
+          "row": "Turkey Breast",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "turkey-breast",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "black-forest-ham-6in",
+          "section": "6\" Classics Subs",
+          "row": "Black Forest Ham",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "black-forest-ham",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "italian-bmt-6in",
+          "section": "6\" Classics Subs",
+          "row": "Italian B.M.T.®",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "italian-bmt",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "meatball-marinara-6in",
+          "section": "6\" Classics Subs",
+          "row": "Meatball Marinara",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "meatball-marinara",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "steak-cheese-6in",
+          "section": "6\" Classics Subs",
+          "row": "Steak & Cheese",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "steak-cheese",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "sweet-onion-teriyaki-6in",
+          "section": "6\" Classics Subs",
+          "row": "Sweet Onion Chicken Teriyaki",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "sweet-onion-teriyaki",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "tuna-6in",
+          "section": "6\" Classics Subs",
+          "row": "Tuna (includes Mayonnaise)",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "tuna",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "veggie-delite-6in",
+          "section": "6\" Classics Subs",
+          "row": "Veggie Delite®",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "veggie-delite",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "chicken-rancher-6in",
+          "section": "6\" Chicken Subs",
+          "row": "Chicken Rancher",
+          "role": "main",
+          "kind": "sandwich",
+          "portion": "1 sub (6-inch)",
+          "group": "chicken-rancher",
+          "build": "sub6",
+          "footlong": true
+        },
+        {
+          "id": "rotisserie-chicken-wrap",
+          "section": "Classics Wraps",
+          "row": "Rotisserie-Style Chicken",
+          "name": "Rotisserie-Style Chicken Wrap",
+          "role": "main",
+          "kind": "wrap",
+          "portion": "1 wrap",
+          "group": "rotisserie-chicken-wrap",
+          "build": "wrap"
+        },
+        {
+          "id": "turkey-breast-wrap",
+          "section": "Classics Wraps",
+          "row": "Turkey Breast",
+          "name": "Turkey Breast Wrap",
+          "role": "main",
+          "kind": "wrap",
+          "portion": "1 wrap",
+          "group": "turkey-breast-wrap",
+          "build": "wrap"
+        },
+        {
+          "id": "rotisserie-chicken-salad",
+          "section": "SALADS",
+          "row": "Rotisserie-Style Chicken",
+          "name": "Rotisserie-Style Chicken Salad",
+          "role": "main",
+          "kind": "salad",
+          "portion": "1 salad",
+          "group": "rotisserie-chicken-salad",
+          "build": "salad"
+        },
+        {
+          "id": "turkey-breast-salad",
+          "section": "SALADS",
+          "row": "Turkey Breast",
+          "name": "Turkey Breast Salad",
+          "role": "main",
+          "kind": "salad",
+          "portion": "1 salad",
+          "group": "turkey-breast-salad",
+          "build": "salad"
+        },
+        {
+          "id": "grilled-chicken-bowl",
+          "section": "Power Bowls",
+          "row": "Classic Grilled Chicken",
+          "name": "Classic Grilled Chicken Power Bowl",
+          "role": "main",
+          "kind": "bowl",
+          "portion": "1 bowl",
+          "group": "grilled-chicken-bowl",
+          "build": "bowl"
+        },
+        {
+          "id": "bacon-egg-6in",
+          "section": "6\" Breakfast Sandwiches",
+          "row": "Bacon & Egg",
+          "name": "Bacon & Egg Breakfast Sandwich",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich (6-inch)",
+          "group": "bacon-egg",
+          "build": "breakfast"
+        },
+        {
+          "id": "ham-egg-6in",
+          "section": "6\" Breakfast Sandwiches",
+          "row": "Ham & Egg",
+          "name": "Ham & Egg Breakfast Sandwich",
+          "role": "main",
+          "kind": "breakfast",
+          "portion": "1 sandwich (6-inch)",
+          "group": "ham-egg",
+          "build": "breakfast"
+        },
+        {
+          "id": "potato-rings-4",
+          "section": "Sides",
+          "row": "Potato Rings (4)",
+          "name": "Potato Rings",
+          "role": "side",
+          "kind": "side",
+          "portion": "1 side (4 rings)",
+          "group": "potato-rings",
+          "build": "plain"
+        },
+        {
+          "id": "chocolate-chunk-cookie",
+          "section": "Cookies & Desserts",
+          "row": "Chocolate Chunk Cookie",
+          "role": "dessert",
+          "kind": "dessert",
+          "portion": "1 cookie",
+          "group": "cookie",
+          "build": "plain"
+        }
+      ]
+    },
+    {
+      "id": "pizzapizza-ca",
+      "name": "Pizza Pizza",
+      "status": "available",
+      "adapter": "rows",
+      "file": "pizzapizza-ca-2026-10-25.json",
+      "sources": [
+        {
+          "id": "pizzapizza-ca-nutrition",
+          "title": "Pizza Pizza nutrition information (pizza, Walk-In slices)",
+          "url": "https://www.pizzapizza.ca/about-us/nutrition/small-pizza/",
+          "page": "https://www.pizzapizza.ca/about-us/nutrition/",
+          "published": "2023-11-01",
+          "publishedNote": "\"Nutrition facts as of November 1st, 2023\"; rows marked \"Updated March 12, 2026\" carry that date",
+          "checked": "2026-10-25"
+        },
+        {
+          "id": "pizzapizza-ca-chicken",
+          "title": "Pizza Pizza nutrition information (chicken wings and bites)",
+          "url": "https://www.pizzapizza.ca/about-us/nutrition/chicken-wings-bites/",
+          "page": "https://www.pizzapizza.ca/about-us/nutrition/",
+          "published": "2023-11-01",
+          "publishedNote": "\"Nutrition facts as of November 1st, 2023\" (nutrition index); no row dates",
+          "checked": "2026-10-25"
+        }
+      ],
+      "builds": {
+        "small": "One slice is 1/6 of a small 10-inch pizza (as stated by Pizza Pizza). No other size or cut is interchangeable with it. Saturated fat is left unknown: the page text loses its decimal point.",
+        "walkin": "One Walk-In slice, as listed (\"Per Slice\"). Pizza Pizza does not state the pizza's diameter for it.",
+        "wings": "Pizza Pizza lists the serving as \"5\" with no unit; it is shown exactly as listed."
+      },
+      "unreliable": {
+        "Pizza - Small": [
+          "satFat"
+        ]
+      },
+      "items": [
+        {
+          "id": "small-pepperoni-slice",
+          "section": "Pizza - Small",
+          "row": "Pepperoni Pizza",
+          "name": "Pepperoni Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-pepperoni",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-cheese-slice",
+          "section": "Pizza - Small",
+          "row": "Classic Cheese Pizza",
+          "name": "Classic Cheese Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-cheese",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-plant-pepperoni-slice",
+          "section": "Pizza - Small",
+          "row": "Plant-Based Pepperoni Pizza",
+          "name": "Plant-Based Pepperoni Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-plant-pepperoni",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-garden-veggie-slice",
+          "section": "Pizza - Small",
+          "row": "Garden Veggie Pizza",
+          "name": "Garden Veggie Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-garden-veggie",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-hawaiian-slice",
+          "section": "Pizza - Small",
+          "row": "Tropical Hawaiian Pizza",
+          "name": "Tropical Hawaiian Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-hawaiian",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-canadian-slice",
+          "section": "Pizza - Small",
+          "row": "Canadian Eh! Pizza",
+          "name": "Canadian Eh! Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-canadian",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-meat-supreme-slice",
+          "section": "Pizza - Small",
+          "row": "Meat Supreme Pizza",
+          "name": "Meat Supreme Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-meat-supreme",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-buffalo-chicken-slice",
+          "section": "Pizza - Small",
+          "row": "Buffalo Chicken Pizza",
+          "name": "Buffalo Chicken Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-buffalo-chicken",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-bbq-chicken-slice",
+          "section": "Pizza - Small",
+          "row": "Spicy BBQ Chicken Pizza",
+          "name": "Spicy BBQ Chicken Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-bbq-chicken",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "small-chicken-bruschetta-slice",
+          "section": "Pizza - Small",
+          "row": "Chicken Bruschetta Pizza",
+          "name": "Chicken Bruschetta Pizza, small",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 slice (1/6 of a 10-inch small pizza)",
+          "group": "small-chicken-bruschetta",
+          "build": "small",
+          "maxQuantity": 3,
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-pepperoni-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Pepperoni Pizza",
+          "name": "Pepperoni Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-pepperoni",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-big-cheese-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Big Cheese",
+          "name": "Big Cheese Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-cheese",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-garden-veggie-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Garden Veggie Pizza",
+          "name": "Garden Veggie Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-garden-veggie",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-super-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Classic Super/All Dressed",
+          "name": "Classic Super/All Dressed Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-super",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-canadian-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Canadian Eh! Pizza",
+          "name": "Canadian Eh! Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-canadian",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-hawaiian-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Tropical Hawaiian Pizza",
+          "name": "Tropical Hawaiian Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-hawaiian",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-bbq-chicken-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Spicy BBQ Chicken Pizza",
+          "name": "Spicy BBQ Chicken Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-bbq-chicken",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "walkin-bacon-cheeseburger-slice",
+          "section": "Pizza - Walk-In",
+          "row": "Bacon Double Cheeseburger Pizza",
+          "name": "Bacon Double Cheeseburger Walk-In Slice",
+          "role": "main",
+          "kind": "pizza",
+          "portion": "1 Walk-In slice",
+          "group": "walkin-bacon-cheeseburger",
+          "build": "walkin",
+          "source": "pizzapizza-ca-nutrition"
+        },
+        {
+          "id": "classic-wings-5",
+          "section": "Chicken Wings",
+          "row": "Classic Wings",
+          "role": "main",
+          "kind": "chicken",
+          "portion": "1 serving (listed as 5)",
+          "group": "classic-wings",
+          "build": "wings",
+          "source": "pizzapizza-ca-chicken"
+        },
+        {
+          "id": "boneless-bites-5",
+          "section": "Chicken Bites",
+          "row": "Boneless Chicken Bites",
+          "role": "main",
+          "kind": "chicken",
+          "portion": "1 serving (listed as 5)",
+          "group": "boneless-bites",
+          "build": "wings",
+          "source": "pizzapizza-ca-chicken"
+        }
+      ]
+    }
+  ]
+}

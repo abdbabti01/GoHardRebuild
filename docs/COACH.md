@@ -361,6 +361,15 @@ recipes (opens the library for the day shown). In the library, introduced once e
 batch into the servings you choose."), also behind the help entry in the app bar and in the recipe editor. After a save
 a short toast says "Your meal is in Saved meals & recipes." A hint or shortcut never saves or logs.
 
+#### Eating out (25 Oct 2026)
+
+The same guide is the way to ask for help on Eating out (docs/EATING_OUT.md): `TabCoach` id `eatout`, fixed words,
+leaning in (`attentive`) only while a request is really in flight; tapping it focuses the request field. Asking there
+is NOT Ask GoHard: it is a narrow endpoint (`POST /restaurants/interpret`) whose model only turns words into checked
+preferences naming real catalog items. It shares Ask GoHard's provider, timeout, retry rule and per-account limits
+(`CoachService.GuardedAsync`: one request at a time and ONE daily allowance for both), and is declared
+(`restaurants.interpret`) only where `coach.ask`'s provider rule holds. Ask GoHard itself still answers training only.
+
 #### Run / Walk and Steps (18 Oct 2026; corrected the same day)
 
 Ready: "Choose your setup. Start when ready." (or "Intervals are set. Start when you're ready."); words only, so the

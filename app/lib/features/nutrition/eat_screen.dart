@@ -21,6 +21,7 @@ import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
 import 'nutrition_tools.dart';
+import 'eating_out_screen.dart';
 import 'saved_meals_screens.dart';
 import 'water.dart';
 
@@ -217,6 +218,10 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                     PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
                     TextButton.icon(key: const Key('eat-saved-meals'), icon: const Icon(Icons.menu_book_outlined, size: 20), label: Text(l.mealsLibraryTitle),
                         onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
+                    // A restaurant order from verified menus, for the same day and the meal of the time of day.
+                    TextButton.icon(key: const Key('eat-eating-out'), icon: const Icon(Icons.storefront_outlined, size: 20),
+                        label: Text(l.eatOutTitle, semanticsLabel: l.eatOutEntrySaid),
+                        onPressed: () => openEatingOut(context, dayKey: day, meal: _mealNow(DateTime.now()))),
                   ]),
                 ),
                 const SizedBox(height: 16),

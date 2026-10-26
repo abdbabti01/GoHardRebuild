@@ -31,8 +31,9 @@ public sealed class GroqProvider(HttpClient http, CoachOptions options, ILogger<
 {
     public const string DefaultModel = "openai/gpt-oss-120b";
 
-    public async Task<CoachProviderResult> AskAsync(IReadOnlyList<string> system, IReadOnlyList<string> user, CancellationToken ct)
+    public async Task<CoachProviderResult> AskAsync(IReadOnlyList<string> system, IReadOnlyList<string> user, CancellationToken ct, ReplyFormat? format = null)
     {
+        format ??= ReplyFormat.Coach;
         var body = new JsonObject
         {
             ["model"] = options.ModelId,
@@ -42,7 +43,7 @@ public sealed class GroqProvider(HttpClient http, CoachOptions options, ILogger<
             ["response_format"] = new JsonObject
             {
                 ["type"] = "json_schema",
-                ["json_schema"] = new JsonObject { ["name"] = "coach_reply", ["strict"] = true, ["schema"] = CoachReplySchema.Create() },
+                ["json_schema"] = new JsonObject { ["name"] = format.Name, ["strict"] = true, ["schema"] = format.Schema },
             },
             // Reasoning tokens count toward this bound; a cut-off reply (finish_reason "length") is a failure.
             ["max_completion_tokens"] = options.MaxTokens,
@@ -62,11 +63,11 @@ public sealed class GroqProvider(HttpClient http, CoachOptions options, ILogger<
             log.LogWarning("Groq answered HTTP {Status} ({Type})", (int)response.StatusCode, code);
             return CoachProviderResult.FromStatus(response, code, time ?? TimeProvider.System);
         }
-        return Parse(text, log) is { } reply ? new(reply) : CoachProviderResult.Bad;
+        return Parse(text, log) is { } output ? new(output) : CoachProviderResult.Bad;
     }
 
-    /// <summary>The structured answer from a Chat Completions response, or null when it is not a complete, well-formed one.</summary>
-    public static CoachModelReply? Parse(string responseBody, ILogger log)
+    /// <summary>The structured output (a JSON object) from a Chat Completions response, or null when it is not a complete, well-formed one.</summary>
+    public static JsonElement? Parse(string responseBody, ILogger log)
     {
         try
         {
@@ -84,9 +85,9 @@ public sealed class GroqProvider(HttpClient http, CoachOptions options, ILogger<
                 log.LogWarning("Groq refused");
                 return null;
             }
-            var reply = CoachModelReply.FromJson(message.TryGetProperty("content", out var c) && c.ValueKind == JsonValueKind.String ? c.GetString() : null);
-            if (reply is null) log.LogWarning("Groq reply was empty or did not follow the schema");
-            return reply;
+            var output = ReplyFormat.Read(message.TryGetProperty("content", out var c) && c.ValueKind == JsonValueKind.String ? c.GetString() : null);
+            if (output is null) log.LogWarning("Groq reply was empty or not a JSON object");
+            return output;
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException)
         {

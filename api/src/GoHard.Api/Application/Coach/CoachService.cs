@@ -66,9 +66,9 @@ public sealed class CoachService
     private readonly TimeProvider _time;
     private readonly CoachGuide? _guide;
 
-    private sealed class Seen(Task<CoachOutcome> outcome) { public readonly Task<CoachOutcome> Outcome = outcome; public DateTimeOffset? DoneAt; }
+    private sealed class Seen(Task<object> outcome) { public readonly Task<object> Outcome = outcome; public DateTimeOffset? DoneAt; }
     private readonly Lock _gate = new();
-    private readonly Dictionary<(Guid User, Guid Request), Seen> _seen = [];
+    private readonly Dictionary<(Guid User, string Scope, Guid Request), Seen> _seen = [];
     private readonly HashSet<Guid> _busy = [];
     private readonly Dictionary<Guid, (DateOnly Day, int Count)> _daily = [];
 
@@ -86,10 +86,22 @@ public sealed class CoachService
     {
         if (r is null || !Valid(r)) return new(CoachStatus.Invalid);
         if (!Enabled) return new(CoachStatus.Unavailable);
+        return await GuardedAsync(userId, "coach", r.RequestId, t => RunAsync(userId, r, db, t), o => o.Status == CoachStatus.Ok,
+            new CoachOutcome(CoachStatus.Limit), new CoachOutcome(CoachStatus.Unavailable), ct);
+    }
 
-        Task<CoachOutcome> shared;
-        TaskCompletionSource<CoachOutcome>? mine = null;
-        var key = (userId, r.RequestId);
+    /// <summary>
+    /// The per-account rules every model request goes through, whatever it is about (Ask GoHard, Eating out): one at a
+    /// time per account, ONE daily allowance between them, and the same requestId (within its <paramref name="scope"/>)
+    /// shares one call and one answer. Only an answer (<paramref name="ok"/>) is remembered; after a failure the same
+    /// requestId may ask again. Another account never receives this account's answer.
+    /// </summary>
+    internal async Task<T> GuardedAsync<T>(Guid userId, string scope, Guid requestId, Func<CancellationToken, Task<T>> run, Func<T, bool> ok, T limit, T failed, CancellationToken ct)
+        where T : class
+    {
+        Task<object> shared;
+        TaskCompletionSource<object>? mine = null;
+        var key = (userId, scope, requestId);
         lock (_gate)
         {
             var now = _time.GetUtcNow();
@@ -98,7 +110,7 @@ public sealed class CoachService
             else
             {
                 // Checked here, counted once the provider is reached (Charge): one request per account at a time, so no race.
-                if (_busy.Contains(userId) || Used(userId, now) >= _options.DailyLimit) return new(CoachStatus.Limit);
+                if (_busy.Contains(userId) || Used(userId, now) >= _options.DailyLimit) return limit;
                 _busy.Add(userId);
                 mine = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 _seen[key] = new Seen(shared = mine.Task);
@@ -107,8 +119,8 @@ public sealed class CoachService
 
         if (mine is not null)
         {
-            var outcome = new CoachOutcome(CoachStatus.Unavailable);
-            try { outcome = await RunAsync(userId, r, db, ct); }
+            var outcome = failed;
+            try { outcome = await run(ct); }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { _log.LogInformation("Coach request abandoned by the client"); }
             catch (Exception ex) { _log.LogError(ex, "Coach request failed"); }
             finally
@@ -116,13 +128,12 @@ public sealed class CoachService
                 lock (_gate)
                 {
                     _busy.Remove(userId);
-                    // Only an answer is remembered: after a failure the same requestId may try again.
-                    if (outcome.Status != CoachStatus.Ok) _seen.Remove(key); else _seen[key].DoneAt = _time.GetUtcNow();
+                    if (!ok(outcome)) _seen.Remove(key); else _seen[key].DoneAt = _time.GetUtcNow();
                 }
                 mine.SetResult(outcome);
             }
         }
-        return await shared.WaitAsync(ct);
+        return (T)await shared.WaitAsync(ct);
     }
 
     private int Used(Guid userId, DateTimeOffset now) =>
@@ -143,44 +154,8 @@ public sealed class CoachService
         var guide = _guide!;
         var catalog = await db.CatalogExercises.AsNoTracking().OrderBy(c => c.Key).Select(c => new { c.Key, c.Name }).ToListAsync(ct);
         var (system, user) = Prompt(guide, r, catalog.Select(c => (c.Key, c.Name)).ToList());
-
-        // Charged once the provider has been reached (any HTTP answer, or our timeout while it worked). Not charged:
-        // anything that failed before, a provider that could not be connected to, or a client that went away.
-        CoachProviderResult result;
-        var charged = false;
-        using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
-        {
-            var budget = TimeSpan.FromSeconds(_options.TimeoutSeconds);
-            var started = _time.GetTimestamp();
-            timeout.CancelAfter(budget);
-            try
-            {
-                result = await _provider.AskAsync(system, user, timeout.Token);
-                Charge(userId);
-                charged = true;
-                // At most one retry, only for a rate limit, overload or 5xx whose wait is short and fits the time left.
-                // Auth, model and other 4xx failures are never retried.
-                if (result.RetryAfter is { } wait && wait <= MaxRetryWait && _time.GetElapsedTime(started) + wait < budget)
-                {
-                    _log.LogInformation("Coach provider {Failure}; one retry in {Wait} ms", result.Failure, (int)wait.TotalMilliseconds);
-                    await Task.Delay(wait, _time, timeout.Token);
-                    result = await _provider.AskAsync(system, user, timeout.Token);
-                }
-            }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                if (!charged) Charge(userId);
-                _log.LogWarning("Coach provider timed out after {Seconds} s", _options.TimeoutSeconds);
-                return new(CoachStatus.Unavailable);
-            }
-            catch (HttpRequestException ex)
-            {
-                _log.LogWarning("Coach provider could not be reached ({Reason})", ex.HttpRequestError);
-                return new(CoachStatus.Unavailable);
-            }
-        }
-        if (result.Reply is not { } reply)
-            return result.Busy ? new(CoachStatus.Busy, RetryAfterSeconds: result.RetryAfter is { } ra ? (int)Math.Ceiling(ra.TotalSeconds) : null) : new(CoachStatus.Unavailable);
+        var (output, failure) = await CallAsync(userId, system, user, null, ct);
+        if (CoachModelReply.From(output) is not { } reply) return failure ?? new(CoachStatus.Unavailable);
 
         var text = reply.Answer.Trim();
         if (text.Length == 0) return new(CoachStatus.Unavailable);
@@ -199,6 +174,51 @@ public sealed class CoachService
         var proposal = await ProposalAsync(reply.Proposal, r.Context?.Draft, catalogKeys, userId, db, ct);
         if (reply.Proposal is not null && proposal is null) _log.LogInformation("Coach proposal dropped: it did not validate against the sent draft");
         return new(CoachStatus.Ok, new CoachAnswer(r.RequestId, "ai", text, sources, proposal, r.Context?.DraftRevision));
+    }
+
+    /// <summary>
+    /// One model call with the time budget, the charge and at most one retry. Returns the structured output, or the
+    /// outcome to report instead (Busy or Unavailable). Charged once the provider has been reached (any HTTP answer,
+    /// or our timeout while it worked). Not charged: anything that failed before, a provider that could not be
+    /// connected to, or a client that went away.
+    /// </summary>
+    internal async Task<(JsonElement? Output, CoachOutcome? Failure)> CallAsync(Guid userId, IReadOnlyList<string> system, IReadOnlyList<string> user, ReplyFormat? format, CancellationToken ct)
+    {
+        CoachProviderResult result;
+        var charged = false;
+        using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
+        {
+            var budget = TimeSpan.FromSeconds(_options.TimeoutSeconds);
+            var started = _time.GetTimestamp();
+            timeout.CancelAfter(budget);
+            try
+            {
+                result = await _provider.AskAsync(system, user, timeout.Token, format);
+                Charge(userId);
+                charged = true;
+                // At most one retry, only for a rate limit, overload or 5xx whose wait is short and fits the time left.
+                // Auth, model and other 4xx failures are never retried.
+                if (result.RetryAfter is { } wait && wait <= MaxRetryWait && _time.GetElapsedTime(started) + wait < budget)
+                {
+                    _log.LogInformation("Coach provider {Failure}; one retry in {Wait} ms", result.Failure, (int)wait.TotalMilliseconds);
+                    await Task.Delay(wait, _time, timeout.Token);
+                    result = await _provider.AskAsync(system, user, timeout.Token, format);
+                }
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                if (!charged) Charge(userId);
+                _log.LogWarning("Coach provider timed out after {Seconds} s", _options.TimeoutSeconds);
+                return (null, new(CoachStatus.Unavailable));
+            }
+            catch (HttpRequestException ex)
+            {
+                _log.LogWarning("Coach provider could not be reached ({Reason})", ex.HttpRequestError);
+                return (null, new(CoachStatus.Unavailable));
+            }
+        }
+        if (result.Output is { } output) return (output, null);
+        return (null, result.Busy ? new(CoachStatus.Busy, RetryAfterSeconds: result.RetryAfter is { } ra ? (int)Math.Ceiling(ra.TotalSeconds) : null) : new(CoachStatus.Unavailable));
     }
 
     // ---------------------------------------------------------------- request bounds
@@ -257,7 +277,7 @@ public sealed class CoachService
         """;
 
     /// <summary>Free text from the person: angle brackets cannot close or open a labelled part.</summary>
-    private static string Untrusted(string s) => s.Replace('<', '‹').Replace('>', '›');
+    internal static string Untrusted(string s) => s.Replace('<', '‹').Replace('>', '›');
     private static string Quote(string? s) => JsonSerializer.Serialize(s ?? "");   // escapes quotes, < and >
 
     internal static (List<string> System, List<string> User) Prompt(CoachGuide guide, CoachAskRequest r, List<(string Key, string Name)> catalog)

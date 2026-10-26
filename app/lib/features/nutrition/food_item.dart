@@ -18,7 +18,7 @@ extension type FoodServing(Json j) {
 /// One food in the shape every source is normalized to: a provider's, or one the user wrote.
 /// `nutrients` are for exactly one `basis`. Null is unknown; zero is a stated zero.
 extension type FoodItem(Json j) {
-  /// off | usda | user
+  /// off | usda | user | restaurant (a verified chain menu item, features/nutrition/restaurants.dart)
   String get source => j['source'] as String? ?? 'user';
   String? get sourceId => j['sourceId'] as String?;
 
@@ -40,13 +40,20 @@ extension type FoodItem(Json j) {
   String get key => '$source:${sourceId ?? name.toLowerCase()}';
 
   static const per100g = '100g', per100ml = '100ml', perServing = 'serving';
+  static const restaurant = 'restaurant';
   static const nutrientKeys = ['calories', 'protein', 'carbs', 'fat'];
 }
 
-/// Who to credit, and under what terms, wherever a food from that source is shown.
-String? sourceCredit(String source) => switch (source) {
+/// Who to credit, and under what terms, wherever a food from that source is shown. A restaurant item names its chain's
+/// own published nutrition information and when it was published (or that no date was given) and checked.
+String? sourceCredit(FoodItem item) => switch (item.source) {
       'off' => 'Open Food Facts · Open Database License',
       'usda' => 'USDA FoodData Central',
+      FoodItem.restaurant => () {
+          final r = item.j['restaurant'] as Json? ?? const {};
+          final dates = [if (r['published'] != null) currentL10n.eatOutPublished('${r['published']}'), if (r['checked'] != null) currentL10n.eatOutChecked('${r['checked']}')];
+          return [currentL10n.eatOutChainOfficial('${r['chainName'] ?? item.brand ?? ''}'), ...dates].join(' · ');
+        }(),
       _ => null,
     };
 

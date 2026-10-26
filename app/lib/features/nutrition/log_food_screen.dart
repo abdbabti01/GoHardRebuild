@@ -19,6 +19,7 @@ import 'food_form.dart';
 import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
+import 'eating_out_screen.dart' show openEatingOut;
 import 'saved_meals_screens.dart' show openMealsLibrary;
 
 /// The lists a food can be picked from. Search covers everyday foods and the owner's own; the others are theirs.
@@ -116,6 +117,12 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
   /// Saved meals & recipes for this day and meal. When something was logged there, this screen is done too.
   Future<void> _openMeals() async {
     final logged = await openMealsLibrary(context, dayKey: widget.dayKey, meal: _meal);
+    if (logged == true && mounted) Navigator.pop(context, true);
+  }
+
+  /// Eating out for this day and the meal chosen above. When an order was logged there, this screen is done too.
+  Future<void> _openEatingOut() async {
+    final logged = await openEatingOut(context, dayKey: widget.dayKey, meal: _meal);
     if (logged == true && mounted) Navigator.pop(context, true);
   }
 
@@ -416,6 +423,11 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             GroupRow(
               key: const Key('food-saved-meals'), icon: Icons.menu_book_outlined, title: l.mealsLibraryTitle, subtitle: l.mealsFromAddFoodSubtitle,
               onTap: _openMeals,
+            ),
+          if (!widget.pick)
+            GroupRow(
+              key: const Key('food-eating-out'), icon: Icons.storefront_outlined, title: l.eatOutTitle, subtitle: l.eatOutEntrySubtitle,
+              onTap: _openEatingOut,
             ),
         ]),
       ),

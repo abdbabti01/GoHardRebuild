@@ -15737,6 +15737,696 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This time'**
   String get mealsThisTimeTotal;
+
+  /// Eating out page title and entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Eating out'**
+  String get eatOutTitle;
+
+  /// Add food row under Eating out.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Canadian menus: choose or improve an order'**
+  String get eatOutEntrySubtitle;
+
+  /// Screen reader label for the Eat entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Eating out: choose or improve a restaurant order'**
+  String get eatOutEntrySaid;
+
+  /// Subtitle: the meal and day an order would be logged to.
+  ///
+  /// In en, this message translates to:
+  /// **'For {meal} · {date}'**
+  String eatOutForContext(String meal, String date);
+
+  /// Subtitle with the chosen chain. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'{chain} · Canada · {meal} · {date}'**
+  String eatOutChainContext(String chain, String meal, String date);
+
+  /// Heading over the chains.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a restaurant'**
+  String get eatOutChooseChain;
+
+  /// A chain, always labelled Canada. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'{chain} · Canada'**
+  String eatOutChainCanada(String chain);
+
+  /// Chain row: how many items and when the sources were checked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 verified option} other{{count} verified options}} · checked {date}'**
+  String eatOutChainOptions(int count, String date);
+
+  /// Chain row for a chain without imported data.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu not added yet: no verified data'**
+  String get eatOutChainUnavailable;
+
+  /// A chain whose data could not be imported.
+  ///
+  /// In en, this message translates to:
+  /// **'No verified {chain} menu yet'**
+  String eatOutChainNotYet(String chain);
+
+  /// Why a chain is unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard only offers items whose nutrition comes from the chain\'s own published Canadian information. This chain\'s official data couldn\'t be read in yet, so nothing is offered rather than a guess. You can still log your own entry from Add food.'**
+  String get eatOutChainBlocked;
+
+  /// App bar action.
+  ///
+  /// In en, this message translates to:
+  /// **'Change restaurant'**
+  String get eatOutChangeChain;
+
+  /// Coverage note under the chains.
+  ///
+  /// In en, this message translates to:
+  /// **'A selection of standard items, not the full menu. Not every location sells every item. Prices, ordering and delivery aren\'t part of GoHard.'**
+  String get eatOutCoverageNote;
+
+  /// Coach avatar label: focuses the request field.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask {guide} about eating out'**
+  String eatOutAskLabel(String guide);
+
+  /// Request field hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell me what you want, e.g. keep the potato rings, more protein'**
+  String get eatOutAskHint;
+
+  /// When the server does not declare restaurants.interpret.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking in words isn\'t available on this server. Targets, the menu and suggestions all work without it.'**
+  String get eatOutAskUnavailable;
+
+  /// A refused request.
+  ///
+  /// In en, this message translates to:
+  /// **'That request couldn\'t be sent. Shorten it (up to 600 characters) and send it again.'**
+  String get eatOutAskInvalid;
+
+  /// Daily or concurrency limit (shared with Ask GoHard).
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve asked a lot today. Asking in words works again later; targets and the menu still work.'**
+  String get eatOutProblemLimit;
+
+  /// Provider rate limited.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant is busy right now. Your request is kept; try again in a moment.'**
+  String get eatOutProblemBusy;
+
+  /// Request did not get through.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request couldn\'t be sent: that can be this phone\'s connection or the server. It\'s kept, and the menu works offline.'**
+  String get eatOutProblemUnreached;
+
+  /// Provider unavailable, timed out or gave an unreadable answer.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant isn\'t available right now. Your request is kept; targets and the menu still work.'**
+  String get eatOutProblemUnavailable;
+
+  /// A late answer for an earlier version.
+  ///
+  /// In en, this message translates to:
+  /// **'Your order or targets changed while I was reading that. Nothing was changed: send it again to use what you have now.'**
+  String get eatOutStale;
+
+  /// Catalog version mismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The menu was updated on the server. Update it here before asking again.'**
+  String get eatOutMenuChanged;
+
+  /// Button.
+  ///
+  /// In en, this message translates to:
+  /// **'Update menu'**
+  String get eatOutUpdateMenu;
+
+  /// Offer when the request named another chain.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {chain}'**
+  String eatOutSwitchTo(String chain);
+
+  /// Coach introduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Eating out? Tell me where you\'re going and what you want to keep.'**
+  String get eatOutCoachIntro;
+
+  /// Coach once a chain is chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a calorie limit or a protein target, or tell me what you\'d like at {chain}. I\'ll show orders that fit.'**
+  String eatOutCoachChain(String chain);
+
+  /// Coach with an order started.
+  ///
+  /// In en, this message translates to:
+  /// **'Want to change something in your order? Tell me what to keep and what matters most.'**
+  String get eatOutCoachImprove;
+
+  /// While a request is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading your request…'**
+  String get eatOutCoachReading;
+
+  /// After an applied interpretation.
+  ///
+  /// In en, this message translates to:
+  /// **'Here\'s what I understood: check your targets below and change anything I got wrong. Every number comes from the verified menu.'**
+  String get eatOutCoachUnderstood;
+
+  /// Names not matched to items.
+  ///
+  /// In en, this message translates to:
+  /// **'I couldn\'t find {names} on this menu.'**
+  String eatOutCoachUnknown(String names);
+
+  /// Unsupported restaurant.
+  ///
+  /// In en, this message translates to:
+  /// **'I only have verified menus for the restaurants listed here, so I can\'t help with that one.'**
+  String get eatOutCoachUnsupported;
+
+  /// Contradictory request.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request asks for two things that rule each other out. Which one should I keep?'**
+  String get eatOutCoachContradiction;
+
+  /// Generic clarification.
+  ///
+  /// In en, this message translates to:
+  /// **'Could you say a bit more? For example a calorie limit, or which item and size you mean.'**
+  String get eatOutCoachClarify;
+
+  /// The assistant's clarification question, shown as it wrote it (AI-generated, never a number).
+  ///
+  /// In en, this message translates to:
+  /// **'{question}'**
+  String eatOutCoachAsks(String question);
+
+  /// Preferences panel heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Your targets'**
+  String get eatOutYourTargets;
+
+  /// Empty preferences.
+  ///
+  /// In en, this message translates to:
+  /// **'None yet. Nothing is chosen for you.'**
+  String get eatOutNoTargetsYet;
+
+  /// Chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {kcal} kcal'**
+  String eatOutChipMax(String kcal);
+
+  /// Chip.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {kcal} kcal'**
+  String eatOutChipMin(String kcal);
+
+  /// Chip.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {grams} g protein'**
+  String eatOutChipProtein(String grams);
+
+  /// Chip: item kept in every suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep {name} × {count}'**
+  String eatOutChipKeep(String name, int count);
+
+  /// Chip: item never suggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Not {name}'**
+  String eatOutChipExclude(String name);
+
+  /// Chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer: {kind}'**
+  String eatOutChipPrefer(String kind);
+
+  /// Chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid: {kind}'**
+  String eatOutChipAvoid(String kind);
+
+  /// Chip delete tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {target}'**
+  String eatOutRemoveTarget(String target);
+
+  /// Tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me choose'**
+  String get eatOutHelpChoose;
+
+  /// Tab with item count.
+  ///
+  /// In en, this message translates to:
+  /// **'Your order ({count})'**
+  String eatOutYourOrder(int count);
+
+  /// Help me choose without targets.
+  ///
+  /// In en, this message translates to:
+  /// **'What should an order fit?'**
+  String get eatOutNoTargetsTitle;
+
+  /// Help me choose without targets.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a calorie limit or a protein target, or ask me in your own words. You can also build an order yourself.'**
+  String get eatOutNoTargetsBody;
+
+  /// Button.
+  ///
+  /// In en, this message translates to:
+  /// **'Set targets'**
+  String get eatOutSetTargets;
+
+  /// How fitting orders are ordered; always visible.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorted by: {priority}'**
+  String eatOutSortedBy(String priority);
+
+  /// Sort.
+  ///
+  /// In en, this message translates to:
+  /// **'most protein'**
+  String get eatOutPriorityProtein;
+
+  /// Sort.
+  ///
+  /// In en, this message translates to:
+  /// **'fewest calories'**
+  String get eatOutPriorityCalories;
+
+  /// Sort.
+  ///
+  /// In en, this message translates to:
+  /// **'closest to your calorie limit'**
+  String get eatOutPriorityClosest;
+
+  /// Nearest alternatives.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing fits all your targets. These are the closest, with what each one misses. Kept and excluded items are never changed.'**
+  String get eatOutNoneFits;
+
+  /// Everything ruled out.
+  ///
+  /// In en, this message translates to:
+  /// **'No order can be built from these choices. Remove an excluded item or kind.'**
+  String get eatOutNothingPossible;
+
+  /// Contradictory targets.
+  ///
+  /// In en, this message translates to:
+  /// **'The minimum is above the maximum, or an item is both kept and excluded. Change one of them.'**
+  String get eatOutContradiction;
+
+  /// An order line.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} × {name}'**
+  String eatOutLine(int count, String name);
+
+  /// Protein total.
+  ///
+  /// In en, this message translates to:
+  /// **'{grams} g protein'**
+  String eatOutProteinValue(String grams);
+
+  /// A suggestion meets every target.
+  ///
+  /// In en, this message translates to:
+  /// **'Fits your selected targets.'**
+  String get eatOutFits;
+
+  /// Kept items.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps {names}.'**
+  String eatOutKeeps(String names);
+
+  /// What a suggestion misses.
+  ///
+  /// In en, this message translates to:
+  /// **'Misses: {misses}'**
+  String eatOutMisses(String misses);
+
+  /// Miss.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal over your limit'**
+  String eatOutMissOver(String kcal);
+
+  /// Miss.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal under your minimum'**
+  String eatOutMissUnder(String kcal);
+
+  /// Miss.
+  ///
+  /// In en, this message translates to:
+  /// **'{grams} g protein short'**
+  String eatOutMissProtein(String grams);
+
+  /// Before/after difference.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared with your order: {kcal} kcal, {protein} g protein'**
+  String eatOutVersusOrder(String kcal, String protein);
+
+  /// Applies to the draft only.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this order'**
+  String get eatOutUseOrder;
+
+  /// Replaces the draft (Undo available).
+  ///
+  /// In en, this message translates to:
+  /// **'Use instead of my order'**
+  String get eatOutUseInstead;
+
+  /// Empty order.
+  ///
+  /// In en, this message translates to:
+  /// **'No items yet'**
+  String get eatOutOrderEmptyTitle;
+
+  /// Empty order.
+  ///
+  /// In en, this message translates to:
+  /// **'Add items from the menu, or choose a suggestion. Nothing is logged until you review it.'**
+  String get eatOutOrderEmptyBody;
+
+  /// Button.
+  ///
+  /// In en, this message translates to:
+  /// **'Add from the menu'**
+  String get eatOutAddFromMenu;
+
+  /// Menu sheet title.
+  ///
+  /// In en, this message translates to:
+  /// **'{chain} menu · Canada'**
+  String eatOutMenuTitle(String chain);
+
+  /// Menu filter hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter the menu'**
+  String get eatOutMenuFilter;
+
+  /// Tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {name}'**
+  String eatOutAddItem(String name);
+
+  /// Menu row value.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in order'**
+  String eatOutInOrder(int count);
+
+  /// Order line detail.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal each'**
+  String eatOutEach(String kcal);
+
+  /// Tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'One less {name}'**
+  String eatOutLess(String name);
+
+  /// Tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'One more {name}'**
+  String eatOutMore(String name);
+
+  /// Screen reader count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String eatOutCountSaid(int count);
+
+  /// After a catalog update; the order is not changed by itself.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item is no longer on this menu.} other{{count} items are no longer on this menu.}}'**
+  String eatOutNoLongerListed(int count);
+
+  /// Removes items no longer listed.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get eatOutRemoveThem;
+
+  /// Totals heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Order total'**
+  String get eatOutOrderTotal;
+
+  /// Sodium total, only when every item states it. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'Sodium {mg} mg'**
+  String eatOutSodium(String mg);
+
+  /// Opens the review; logging happens only there.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and log'**
+  String get eatOutReview;
+
+  /// Name of the order in the review and as a new saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'{chain} order'**
+  String eatOutOrderName(String chain);
+
+  /// Provenance footer.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {source}. Published: {published}. Checked {checked}.'**
+  String eatOutSourceLine(String source, String published, String checked);
+
+  /// No publication date given by the source.
+  ///
+  /// In en, this message translates to:
+  /// **'not stated'**
+  String get eatOutNotStated;
+
+  /// Customizations note.
+  ///
+  /// In en, this message translates to:
+  /// **'Only listed items and sizes are calculated. A change such as no sauce or extra cheese has no verified values, so it can\'t be calculated reliably.'**
+  String get eatOutCustomNote;
+
+  /// Opens the manual form (marked as the person's own values).
+  ///
+  /// In en, this message translates to:
+  /// **'Log your own estimate instead'**
+  String get eatOutOwnEstimate;
+
+  /// Targets sheet title.
+  ///
+  /// In en, this message translates to:
+  /// **'Targets for this order'**
+  String get eatOutTargetsTitle;
+
+  /// Targets sheet note.
+  ///
+  /// In en, this message translates to:
+  /// **'For this meal only, not your daily goals. Leave any field blank.'**
+  String get eatOutTargetsNote;
+
+  /// Field.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum calories'**
+  String get eatOutTargetMax;
+
+  /// Field.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum calories'**
+  String get eatOutTargetMin;
+
+  /// Field.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum protein'**
+  String get eatOutTargetProtein;
+
+  /// Sort choice label.
+  ///
+  /// In en, this message translates to:
+  /// **'When several orders fit, show first'**
+  String get eatOutSortLabel;
+
+  /// Sort choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic (from your targets)'**
+  String get eatOutSortAutomatic;
+
+  /// Button.
+  ///
+  /// In en, this message translates to:
+  /// **'Use these targets'**
+  String get eatOutApplyTargets;
+
+  /// Validation.
+  ///
+  /// In en, this message translates to:
+  /// **'Use whole numbers: calories 100 to 4,000 (minimum from 0), protein 1 to 300 g.'**
+  String get eatOutTargetsInvalid;
+
+  /// Food kind. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'sandwich'**
+  String get eatOutKindSandwich;
+
+  /// Food kind. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'wrap'**
+  String get eatOutKindWrap;
+
+  /// Food kind.
+  ///
+  /// In en, this message translates to:
+  /// **'salad'**
+  String get eatOutKindSalad;
+
+  /// Food kind.
+  ///
+  /// In en, this message translates to:
+  /// **'bowl'**
+  String get eatOutKindBowl;
+
+  /// Food kind.
+  ///
+  /// In en, this message translates to:
+  /// **'breakfast'**
+  String get eatOutKindBreakfast;
+
+  /// Food kind. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'pizza'**
+  String get eatOutKindPizza;
+
+  /// Food kind.
+  ///
+  /// In en, this message translates to:
+  /// **'chicken'**
+  String get eatOutKindChicken;
+
+  /// Food kind.
+  ///
+  /// In en, this message translates to:
+  /// **'side'**
+  String get eatOutKindSide;
+
+  /// Food kind. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'dessert'**
+  String get eatOutKindDessert;
+
+  /// Food kind.
+  ///
+  /// In en, this message translates to:
+  /// **'drink'**
+  String get eatOutKindDrink;
+
+  /// Food form credit for a restaurant item.
+  ///
+  /// In en, this message translates to:
+  /// **'{chain} Canada\'s published nutrition information'**
+  String eatOutChainOfficial(String chain);
+
+  /// Source publication date (as the source gives it).
+  ///
+  /// In en, this message translates to:
+  /// **'published {date}'**
+  String eatOutPublished(String date);
+
+  /// Date GoHard checked the source.
+  ///
+  /// In en, this message translates to:
+  /// **'checked {date}'**
+  String eatOutChecked(String date);
+
+  /// Food details: what the standard item includes (source wording, English).
+  ///
+  /// In en, this message translates to:
+  /// **'Standard build: {note}'**
+  String eatOutBuildNote(String note);
+
+  /// Nutrient label in food details. The French may match English.
+  ///
+  /// In en, this message translates to:
+  /// **'Sodium'**
+  String get eatOutSodiumLabel;
+
+  /// Nutrient label in food details.
+  ///
+  /// In en, this message translates to:
+  /// **'Fibre'**
+  String get eatOutFibreLabel;
+
+  /// Nutrient label in food details.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturated fat'**
+  String get eatOutSatFatLabel;
 }
 
 class _AppLocalizationsDelegate
