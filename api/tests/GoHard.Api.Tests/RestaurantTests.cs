@@ -49,7 +49,7 @@ public partial class CoachTests
                 keep: [new { itemId = Rings, quantity = (int?)null }, new { itemId = "subway-ca:made-up-sub", quantity = (int?)2 }, new { itemId = Chicken, quantity = (int?)40 }],
                 exclude: ["subway-ca:double-bacon-melt", Tuna], prefer: ["sandwich", "sandwich"],
                 // A model that adds values of its own: none may reach the phone.
-                extra: new { calories = 590, protein = 41, totalCalories = 999, price = "$9.99", url = "https://example.com" }))),
+                extra: new { calories = 98765, protein = 4321, totalCalories = 87654, price = "$9.99", url = "https://example.com" }))),
         };
         await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = Using(provider), Provider = fake.Handler() };
         var a = await Account.RegisterAsync(api);
@@ -69,9 +69,9 @@ public partial class CoachTests
              "priority":"protein","clarification":null,"unknownItems":[],"problem":null,"dropped":["item","quantity"]}
             """);
         Assert.True(JsonNode.DeepEquals(expected, intent), intent.ToJsonString());
-        Assert.DoesNotContain("590", body.GetRawText());
-        Assert.DoesNotContain("9.99", body.GetRawText());
-        Assert.DoesNotContain("example.com", body.GetRawText());
+        // Only the intent is searched: the response also carries a random request ID.
+        var said = body.GetProperty("intent").GetRawText();
+        foreach (var injected in new[] { "98765", "4321", "87654", "9.99", "example.com" }) Assert.DoesNotContain(injected, said);
 
         // The request: one call, strict schema, trusted menu (IDs and portions, no nutrition) apart from the person's words.
         var call = Assert.Single(fake.Calls);
