@@ -2350,3 +2350,7 @@ docs/RESTAURANT_SOURCES.md.
   alone — the known timing flake).
 - Renders: new state `large-text-eat-meals-320` (en/fr/ar) shows the stacked footers; Eat states regenerated; the
   French `large-text-eat-goals-320` render now passes.
+- Tested app commit `1b7b3bc`: CI run 154 **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40549038131);
+  unsigned IPA run 56, artifact `GoHard-Dev-unsigned-ipa`, **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40549060769). No emulator run for this follow-up (not
+  asked). Not merged; `main` and deployment untouched.
