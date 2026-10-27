@@ -244,6 +244,57 @@ void main() {
     }
   });
 
+  testWidgets('nothing logged or saved: the first visit stays about logging; the next visit introduces Eating out, not with the keyboard up, once, never with hints off', (tester) async {
+    final coach = find.byKey(const Key('eat-coach'));
+    final intro = find.descendant(of: coach, matching: find.textContaining('Eating out today?', findRichText: true));
+    Future<void> visit(String tab) async {
+      await tester.tap(find.byKey(Key(tab)));
+      await tester.pumpAndSettle();
+    }
+
+    final (overrides, fakes, _, ai) = await _fixture(tester);
+    final c = await pumpApp(tester, overrides, size: const Size(390, 1600));
+    await visit('nav-eat');
+    expect(find.descendant(of: coach, matching: find.textContaining('Log a meal', findRichText: true)), findsOneWidget, reason: 'a first visit is about logging');
+    await tester.drag(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first, const Offset(0, -200));
+    await tester.pumpAndSettle();
+    await tester.drag(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first, const Offset(0, 200));
+    await tester.pumpAndSettle();
+    expect(intro, findsNothing, reason: 'the words do not change during the visit');
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await visit('nav-today');
+    await visit('nav-eat');
+    expect(intro, findsNothing, reason: 'not while the keyboard is up');
+    expect(c.read(coachPrefsProvider).seen('one', 'eat.out'), isFalse);
+    tester.view.resetViewInsets();
+    await visit('nav-today');
+    await visit('nav-eat');
+    expect(intro, findsOneWidget, reason: 'the next visit');
+    expect(c.read(coachPrefsProvider).seen('one', 'eat.out'), isTrue);
+    await _tap(tester, find.byKey(const Key('eat-coach-eating-out')));
+    expect(tester.widget<EatingOutScreen>(find.byType(EatingOutScreen)).dayKey, day);
+    expect(ai.requests, isEmpty);
+    expect(fakes.journal.saved, isEmpty);
+
+    // After a restart (same account, same phone): not again.
+    final kept = c.read(coachPrefsProvider);
+    await tester.pumpWidget(const SizedBox());
+    final (again, _, _, _) = await _fixture(tester, coach: kept);
+    await pumpApp(tester, again, size: const Size(390, 1600));
+    await visit('nav-eat');
+    expect(intro, findsNothing, reason: 'once');
+
+    // Hints off: the first visit is behind it, still no introduction; the panel stays.
+    await tester.pumpWidget(const SizedBox());
+    final (off, _, _, _) = await _fixture(tester, coach: const CoachPrefs(hintsEnabled: false, dismissed: {'one|eat.first'}));
+    final c3 = await pumpApp(tester, off, size: const Size(390, 1600));
+    await visit('nav-eat');
+    expect(intro, findsNothing);
+    expect(c3.read(coachPrefsProvider).seen('one', 'eat.out'), isFalse);
+    expect(find.descendant(of: find.byType(EatScreen), matching: find.byKey(const Key('eat-eating-out'))), findsOneWidget);
+  });
+
   testWidgets('Send asks once; the targets are shown and editable; Undo; a suggestion is reviewed and logged once, one entry per item', (tester) async {
     final (overrides, fakes, store, ai) = await _fixture(tester, draft: const EatOutDraft(chainId: 'subway-ca'));
     ai.reply = (r) async => answer(r, lunch);

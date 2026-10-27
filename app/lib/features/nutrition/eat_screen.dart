@@ -76,18 +76,36 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// the reader; afterwards the usual words, and the help keeps the shortcut.
   String? _hint;
 
+  /// This visit to Eat is the account's first with nothing logged or saved: it stays about logging a meal. Cleared when
+  /// another tab is shown, so the next visit may introduce Eating out.
+  bool _firstVisit = false;
+
   CoachSay? _hintSay(String day, List<SavedFood> saved, {required bool logged}) {
     final owner = ref.read(ownerProvider);
     if (owner == null || !ref.read(savedFoodsProvider).hasValue) return null;
     final has = saved.any((s) => s.isFavourite || s.isMine);
     // Tabs stay built off screen: a hint is chosen (and used up) only while Eat is the tab in view and its page current.
     // Nor while the keyboard is up (the view's own inset: the Scaffold takes it out of the page's MediaQuery).
-    final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
+    final tab = ref.watch(shellProvider.select((s) => s.tab == 2));
+    if (!tab) _firstVisit = false;
+    final inView = tab && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
     // A first visit is about logging a meal at all; saving one for next time is worth saying once food is logged.
     if (_hint == null && inView && (has || logged)) {
       final id = has ? 'eat.saved.shortcut' : 'eat.saved.new';
       _hint = ref.read(coachPrefsProvider).mayIntroduce(owner, id) ? id : '';
       if (_hint!.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
+    }
+    // Nothing logged or saved yet: the first visit keeps the usual words about logging (and is remembered for this
+    // account); a later visit introduces Eating out.
+    if (_hint == null && inView && !_firstVisit) {
+      final prefs = ref.read(coachPrefsProvider);
+      if (!prefs.seen(owner, 'eat.first')) {
+        _firstVisit = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, 'eat.first'));
+      } else if (prefs.mayIntroduce(owner, 'eat.out')) {
+        _hint = 'eat.out';
+        WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, 'eat.out'));
+      }
     }
     // Once there are earlier days, History is introduced once (after the saved-foods hint has had its turn).
     if (_hint == '' && inView && _pastDays) {
@@ -281,19 +299,18 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         ]),
                       ),
                       for (final r in mine) _EntryRow(r, indent: indent, detail: _detail(l, r), onTap: () => openFoodForm(context, dayKey: day, entry: r.value)),
-                      Row(children: [
-                        Expanded(child: _AddFood(key: Key('eat-add-$label'), meal: meal, indent: indent, onTap: () => openFoodForm(context, dayKey: day, meal: meal))),
+                      _MealFooter(
+                        indent: indent,
+                        add: _AddFood(key: Key('eat-add-$label'), meal: meal, indent: indent, onTap: () => openFoodForm(context, dayKey: day, meal: meal)),
                         // Quiet, beside Add food: this meal's foods copied into a new saved meal. Nothing is logged again.
-                        if (mine.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(end: 6),
-                            child: TextButton(
-                              key: Key('eat-save-meal-$label'),
-                              onPressed: () => saveAsMeal(context, dayKey: day, meal: meal, entries: [for (final r in mine) r.value]),
-                              child: Text(l.mealsSaveAsMeal, semanticsLabel: l.mealsSaveAsMealSaid(mealLabel(l, meal))),
-                            ),
-                          ),
-                      ]),
+                        save: mine.isEmpty
+                            ? null
+                            : TextButton(
+                                key: Key('eat-save-meal-$label'),
+                                onPressed: () => saveAsMeal(context, dayKey: day, meal: meal, entries: [for (final r in mine) r.value]),
+                                child: Text(l.mealsSaveAsMeal, semanticsLabel: l.mealsSaveAsMealSaid(mealLabel(l, meal))),
+                              ),
+                      ),
                     ]);
                   }(),
                   const SizedBox(height: 12),
@@ -308,6 +325,37 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   }
 
   static const _tile = 40.0;
+}
+
+/// A meal's footer: Add food across the width, Save as meal (when the meal has foods) quiet at its end. When both labels
+/// do not fit on one line (long words, large text), Save as meal goes under Add food, its label in line with Add food's,
+/// so nothing is squeezed or cut and both keep their 48 px targets.
+class _MealFooter extends StatelessWidget {
+  const _MealFooter({required this.indent, required this.add, this.save});
+  final double indent;
+  final Widget add;
+  final TextButton? save;
+
+  @override
+  Widget build(BuildContext context) {
+    if (save == null) return add;
+    final l = context.l10n;
+    return LayoutBuilder(builder: (context, box) {
+      double width(String s, TextStyle? style) =>
+          (TextPainter(text: TextSpan(text: s, style: style), textDirection: Directionality.of(context), textScaler: MediaQuery.textScalerOf(context), maxLines: 1)..layout()).width;
+      // _AddFood's padding, icon and gap; the button's own padding (theme: 12 each side) and the 6 at the end.
+      final addWidth = indent - 2 + 18 + 6 + width(l.eatAddFood, context.sansStyle(15, weight: FontWeight.w500)) + 12;
+      final saveWidth = 24 + width(l.mealsSaveAsMeal, TextButtonTheme.of(context).style?.textStyle?.resolve(const {})) + 6;
+      if (addWidth + saveWidth <= box.maxWidth) {
+        return Row(children: [Expanded(child: add), Padding(padding: const EdgeInsetsDirectional.only(end: 6), child: save)]);
+      }
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        add,
+        // Under Add food, its label starting where Add food's does (after the + icon), the button's 12 px padding inside.
+        Align(alignment: AlignmentDirectional.centerStart, child: Padding(padding: EdgeInsetsDirectional.only(start: indent + 10, end: 6, bottom: 4), child: save)),
+      ]);
+    });
+  }
 }
 
 /// A meal's footer: "+ Add food", small and in the accent, below its foods. A full-width 48 px target; read out with

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/device_prefs.dart';
+import 'package:gohard_rebuild/core/language.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
 import 'package:gohard_rebuild/data/models.dart';
@@ -215,5 +217,30 @@ void main() {
     await tester.scrollUntilVisible(find.textContaining('Slow-cooked beef and barley stew'), 400, scrollable: eatList);
     expect(tester.takeException(), isNull, reason: 'most of the page laid out at once');
     expect(find.textContaining('Slow-cooked beef and barley stew'), findsOneWidget, reason: 'the name wraps; it is not cut');
+  });
+
+  testWidgets('a meal footer: Add food and Save as meal side by side when they fit; stacked, Add food first, in French and Arabic with large text at 320 px', (tester) async {
+    Future<(Rect, Rect)> footer(String lang, Size size, double scale) async {
+      final c = await pumpApp(tester, await fixture(tester), size: size, textScale: scale);
+      c.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(lang));
+      await openEat(tester);
+      final save = find.byKey(const Key('eat-save-meal-breakfast'));
+      await tester.scrollUntilVisible(save, 300, scrollable: eatList);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: '$lang: nothing overflows');
+      final rects = (tester.getRect(find.byKey(const Key('eat-add-breakfast'))), tester.getRect(save));
+      await tester.pumpWidget(const SizedBox());
+      return rects;
+    }
+
+    final (add, save) = await footer('en', const Size(390, 1600), 1);
+    expect(save.center.dy, closeTo(add.center.dy, 2), reason: 'side by side when both fit');
+    for (final lang in ['fr-CA', 'ar']) {
+      final (add, save) = await footer(lang, const Size(320, 5200), 2);
+      expect(save.top, greaterThanOrEqualTo(add.bottom - 0.5), reason: '$lang: Save as meal under Add food');
+      expect(add.width, greaterThan(250), reason: '$lang: Add food keeps the full width');
+      expect([add.height, save.height], everyElement(greaterThanOrEqualTo(48)), reason: '$lang: 48 px targets');
+      expect(save.left >= 0 && save.right <= 320, isTrue, reason: '$lang: on screen');
+    }
   });
 }

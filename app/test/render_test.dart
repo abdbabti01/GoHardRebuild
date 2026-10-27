@@ -214,6 +214,12 @@ Future<void> _open(WidgetTester tester, String screen) async {
       if (screen == 'builder-structure') await tap('builder-next');
     case 'eat':
       await tap('nav-eat');
+    case 'eat-meals':
+      // Down to the meal groups, for their footers (Add food, Save as meal).
+      await tap('nav-eat');
+      await tester.scrollUntilVisible(find.byKey(const Key('eat-save-meal-lunch')), 300,
+          scrollable: find.ancestor(of: find.byKey(const Key('eat-eating-out')), matching: find.byType(Scrollable)).first);
+      await tester.pumpAndSettle();
     case 'run':
       await tap('today-run');
     case 'run-history':
@@ -497,6 +503,7 @@ void main() {
     'large-text-log-food-320': ((t) => _fixture(t, Accent.blue, ThemeMode.light), 'log-food', const Size(320, 2400), 2),
     'large-text-food-preview-320': ((t) => _fixture(t, Accent.pink, ThemeMode.dark), 'food-preview', const Size(320, 3200), 2),
     'large-text-eat-goals-320': ((t) => _fixture(t, Accent.green, ThemeMode.light), 'eat', const Size(320, 2600), 2),
+    'large-text-eat-meals-320': ((t) => _fixture(t, Accent.blue, ThemeMode.dark), 'eat-meals', const Size(320, 1400), 2),
     // The workout panel in Train › Workouts: preview, recording beside last time, the history sheet and the result.
     'workout-preview-blue-light': ((t) => _workoutPanel(t, Accent.blue, ThemeMode.light), 'workout-preview', const Size(390, 1700), 1),
     'workout-preview-pink-dark': ((t) => _workoutPanel(t, Accent.pink, ThemeMode.dark), 'workout-preview', const Size(390, 1700), 1),

@@ -9,6 +9,7 @@ import 'package:gohard_rebuild/core/widgets.dart' show ProgressRail;
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
+import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/nutrition/water.dart';
 
 import 'food_fakes.dart';
@@ -163,8 +164,11 @@ void main() {
   });
 
   testWidgets('water is off until turned on; hiding and showing it keeps the day\'s water and its goal, on Today and Eat', (tester) async {
-    await pumpApp(tester, await _fixture(tester, water: [_entry('a', 500), _entry('b', 250), _entry('old', 900, day: '2026-10-10')], profile: {'waterGoalMl': 2000}),
-        size: const Size(390, 1400));
+    await pumpApp(tester, [
+      // Eat is visited several times with nothing logged: the Eating out introduction has had its turn, so the coach's usual words show.
+      coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())..value = const CoachPrefs(dismissed: {'one|eat.out'})),
+      ...await _fixture(tester, water: [_entry('a', 500), _entry('b', 250), _entry('old', 900, day: '2026-10-10')], profile: {'waterGoalMl': 2000}),
+    ], size: const Size(390, 1400));
     expect(find.byKey(const Key('today-water')), findsNothing, reason: 'water tracking starts off');
 
     // Customize tracking is in Eat (with the goals); Today shows the result.

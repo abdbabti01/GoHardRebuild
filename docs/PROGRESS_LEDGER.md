@@ -2330,3 +2330,23 @@ docs/RESTAURANT_SOURCES.md.
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40540012687). Unsigned IPA run 55 on `ab8bee0`, artifact
   `GoHard-Dev-unsigned-ipa`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40540109863).
   Not merged; `main`, Railway, secrets and restaurant data unchanged.
+
+### 27 Oct 2026 (follow-up) — meal footer stacking and the Eat hint sequence
+
+- Meal footer (`_MealFooter` in eat_screen.dart): Add food and Save as meal stay side by side when both labels fit
+  (measured with the real styles and text scale); otherwise Save as meal goes under Add food. Fixes the French 320 px /
+  2× overflow that was also on `main`. The Eating out panel is unchanged.
+- Hint sequence: for an account with nothing logged or saved, the hint chooser never left its first step, so no later
+  introduction (Eating out included) could ever be chosen. Now the first such visit keeps "Log a meal…" and is
+  remembered per account (`eat.first`); the next visit to Eat (another tab shown in between, or a later launch)
+  introduces Eating out once, under the same rules (in view, route current, keyboard down, Coaching hints).
+- Tests (affected only): `eat_ui_test` +1 (footer side by side in English; stacked, full-width Add food, 48 px targets,
+  on screen, no overflow in French and Arabic at 320 px / 2×); `eating_out_ui_test` +1 (first visit stays about logging
+  and does not switch mid-visit; keyboard up: not chosen; next visit: introduced, Find an order opens it for the day, no
+  AI request, nothing logged; after a restart: not again; hints off: never, panel stays); `water_ui_test` marks
+  `eat.out` seen (it visits Eat repeatedly and checks the usual words). `flutter analyze` clean, `check-l10n` OK; with
+  `move_ui`, `saved_meals_ui`, `nutrition_trends_ui`, `coach_companion`, `coach_avatar`, `l10n_eat`, `localization`,
+  `food_ui`, `render`, `today_ui` all passing (`coach_companion` "no replay" failed once under parallel load and passed
+  alone — the known timing flake).
+- Renders: new state `large-text-eat-meals-320` (en/fr/ar) shows the stacked footers; Eat states regenerated; the
+  French `large-text-eat-goals-320` render now passes.

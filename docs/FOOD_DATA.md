@@ -330,7 +330,8 @@ nothing. Logging copies; it never links history to the template.
 
 **Where.** Eat: "Saved meals & recipes" beside Log food in the day's panel (History & trends stays as it was); each
 meal group with food has a quiet **Save as meal** beside + Add food (copies those entries' snapshots and amounts into
-a new editor; logs nothing again). Add food: a "Saved meals & recipes" row in its bottom card, which keeps the day and
+a new editor; logs nothing again). When both labels do not fit on one line (French, large text, narrow phones; since
+27 Oct 2026) Save as meal goes under Add food, its label in line with Add food's; both keep 48 px targets. Add food: a "Saved meals & recipes" row in its bottom card, which keeps the day and
 the meal chosen there. The library has Meals / Recipes, New meal / New recipe, search (from 4 items), honest empty
 states, rows with the count and a truthful energy line ("370 kcal", "400 kcal known"), and a menu with Edit, Duplicate
 and Delete (delete is confirmed; history stays).
