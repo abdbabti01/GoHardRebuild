@@ -370,6 +370,12 @@ preferences naming real catalog items. It shares Ask GoHard's provider, timeout,
 (`CoachService.GuardedAsync`: one request at a time and ONE daily allowance for both), and is declared
 (`restaurants.interpret`) only where `coach.ask`'s provider rule holds. Ask GoHard itself still answers training only.
 
+On Eat (27 Oct 2026), once the hints above have had their turn: `eat.out` "Eating out today? I can help you choose an
+order—or improve the one you want." with the guide action **Find an order** (opens Eating out for the day shown and the
+meal of the time of day, like the panel). Built-in words, no AI request; chosen and marked seen only while Eat is the tab
+in view, its route current and the keyboard down; Coaching hints and *Show coach on Train and Eat* govern it. It only
+points to the permanent Eating out panel under the summary, which stays with the coach or hints off.
+
 #### Run / Walk and Steps (18 Oct 2026; corrected the same day)
 
 Ready: "Choose your setup. Start when ready." (or "Intervals are set. Start when you're ready."); words only, so the

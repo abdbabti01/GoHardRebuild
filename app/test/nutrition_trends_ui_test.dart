@@ -34,6 +34,9 @@ String _text(WidgetTester tester, String key) => tester.widget<Text>(find.byKey(
 Future<void> _openTrends(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('nav-eat')));
   await tester.pumpAndSettle();
+  // With large text on a narrow phone it is below the fold, under Eating out.
+  await tester.ensureVisible(find.byKey(const Key('eat-history')));
+  await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('eat-history')));
   await tester.pumpAndSettle();
 }

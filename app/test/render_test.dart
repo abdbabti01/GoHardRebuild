@@ -26,6 +26,8 @@ import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
 import 'package:gohard_rebuild/features/coach/coach_bubble.dart';
+import 'package:gohard_rebuild/features/nutrition/eating_out.dart' show restaurantCatalogProvider;
+import 'package:gohard_rebuild/features/nutrition/restaurants.dart' show RestaurantCatalog;
 import 'package:gohard_rebuild/features/weather/weather.dart';
 
 import 'food_fakes.dart';
@@ -527,7 +529,9 @@ void main() {
   }
   for (final MapEntry(key: name, value: (fixture, screen, size, scale)) in states.entries) {
     testWidgets('state: $name', (tester) async {
-      await pumpApp(tester, await fixture(tester), size: size, textScale: scale, insets: phoneInsets, settle: false);
+      // The bundled restaurant catalog read from the file, so Eat's Eating out panel names its chains in every render.
+      final catalog = restaurantCatalogProvider.overrideWith((ref) async => RestaurantCatalog.parse(File('assets/data/restaurant-catalog.json').readAsStringSync())!);
+      await pumpApp(tester, [...await fixture(tester), catalog], size: size, textScale: scale, insets: phoneInsets, settle: false);
       await _settle(tester);
       await _open(tester, screen);
       await _save(tester, await _capture(tester), 'state-$name');

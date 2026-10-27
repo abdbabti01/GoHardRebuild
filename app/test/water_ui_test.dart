@@ -197,6 +197,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.descendant(of: find.byKey(const Key('eat-water')), matching: find.text('750 / 2,000 mL')), findsOneWidget, reason: 'Eat shows the same day\'s water');
     await tester.pump(const Duration(seconds: 3));
+    // Customize left Eat scrolled down; the coach is in its header, back at the top of the lazy list.
+    await tester.scrollUntilVisible(find.byKey(const Key('eat-coach')), -300, scrollable: find.ancestor(of: find.byKey(const Key('eat-water')), matching: find.byType(Scrollable)).first);
     expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.textContaining('water', findRichText: true)), findsOneWidget, reason: 'the coach mentions water once it is shown');
     expect(tester.takeException(), isNull);
   });

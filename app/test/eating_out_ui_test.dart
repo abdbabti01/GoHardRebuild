@@ -21,6 +21,7 @@ import 'package:gohard_rebuild/features/nutrition/eat_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/eating_out.dart';
 import 'package:gohard_rebuild/features/nutrition/eating_out_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/food_item.dart';
+import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart' show NutritionSurface;
 import 'package:gohard_rebuild/features/nutrition/restaurants.dart';
 import 'package:gohard_rebuild/features/nutrition/saved_meals.dart';
 import 'package:gohard_rebuild/data/sync.dart' show Receipt;
@@ -87,11 +88,13 @@ Json answer(Json r, Json intent) => {
 
 const lunch = {'maxCalories': 600, 'minProtein': 25, 'keep': [{'itemId': rings, 'quantity': 1}], 'priority': 'protein'};
 
-Future<(List<Override>, FoodFakes, MemoryEatOut, ScriptedEatingOut)> _fixture(WidgetTester tester, {EatOutDraft draft = const EatOutDraft(), AppearanceStore? appearance}) async {
+Future<(List<Override>, FoodFakes, MemoryEatOut, ScriptedEatingOut)> _fixture(WidgetTester tester,
+    {EatOutDraft draft = const EatOutDraft(), AppearanceStore? appearance, List<Json> food = const [], CoachPrefs? coach}) async {
   final fakes = FoodFakes(), store = MemoryEatOut(draft), ai = ScriptedEatingOut();
   return (
     [
-      ...(await tester.runAsync(() => overridesFor(day: day, appearance: appearance)))!,
+      if (coach != null) coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())..value = coach),
+      ...(await tester.runAsync(() => overridesFor(day: day, appearance: appearance, food: food)))!,
       ...fakes.overrides,
       restaurantCatalogProvider.overrideWith((ref) async => catalog),
       eatOutStoreProvider.overrideWithValue(store),
@@ -173,6 +176,72 @@ void main() {
     expect(fakes.journal.meals, isEmpty);
     expect(fakes.journal.saved, isEmpty);
     expect(store.draft.chainId, 'subway-ca');
+  });
+
+  testWidgets('Eating out is its own panel under the summary, before History; it names the catalog\'s chains and opens Eating out for the day picked', (tester) async {
+    final (overrides, fakes, _, ai) = await _fixture(tester);
+    await pumpApp(tester, overrides, size: const Size(390, 1600));
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    final eat = find.byType(EatScreen);
+    await _tap(tester, find.descendant(of: eat, matching: find.byTooltip('Previous day')));
+    final panel = find.descendant(of: eat, matching: find.byKey(const Key('eat-eating-out')));
+    expect(panel, findsOneWidget);
+    expect(find.descendant(of: find.byType(NutritionSurface), matching: find.byKey(const Key('eat-eating-out'))), findsNothing, reason: 'the small summary entry is gone');
+    expect(find.descendant(of: find.byType(NutritionSurface), matching: find.byKey(const Key('eat-saved-meals'))), findsOneWidget, reason: 'Saved meals keeps its entry');
+    final y = tester.getTopLeft(panel).dy;
+    expect(tester.getBottomLeft(find.byType(NutritionSurface)).dy < y && y < tester.getTopLeft(find.descendant(of: eat, matching: find.byKey(const Key('eat-history')))).dy, isTrue);
+    for (final words in ['Find a restaurant order that fits your goals.', 'Choose a restaurant ']) {
+      expect(find.descendant(of: panel, matching: find.textContaining(words, findRichText: true)), findsOneWidget);
+    }
+    final line = tester.widget<Text>(find.descendant(of: panel, matching: find.textContaining('Pizza'))).data!;
+    expect(line.replaceAll(String.fromCharCode(0xa0), ' '), "McDonald's · Tim Hortons · Subway · Pizza Pizza");
+    // One action for screen readers: the whole panel, read once.
+    expect(find.bySemanticsLabel(RegExp(r"^Eating out\. Find a restaurant order .*Pizza Pizza\. Choose a restaurant$")), findsOneWidget);
+
+    await _tap(tester, panel);
+    expect(tester.widget<EatingOutScreen>(find.byType(EatingOutScreen)).dayKey, '2026-10-10', reason: 'the day picked on Eat, not today');
+    expect(ai.requests, isEmpty);
+    expect(fakes.journal.meals, isEmpty);
+    expect(fakes.journal.saved, isEmpty);
+  });
+
+  testWidgets('the coach introduces Eating out once, only on Eat in view, and Find an order opens it for the day; hints or coach off: no introduction, the panel stays', (tester) async {
+    const earlier = {'one|eat.saved.new', 'one|eat.meals'}; // the hints before it have had their turn
+    final food = [foodEntry('f1', day, 'Breakfast', 'Porridge', '1 bowl', calories: 300)];
+    final (overrides, fakes, _, ai) = await _fixture(tester, food: food, coach: const CoachPrefs(dismissed: earlier));
+    final c = await pumpApp(tester, overrides, size: const Size(390, 1600));
+    expect(c.read(coachPrefsProvider).seen('one', 'eat.out'), isFalse, reason: 'Eat is built behind Today: not used up unseen');
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    expect(c.read(coachPrefsProvider).seen('one', 'eat.out'), isFalse, reason: 'not while the keyboard is up');
+    tester.view.resetViewInsets();
+    // It waits for the next visit rather than popping in as the keyboard closes.
+    for (final tab in ['nav-today', 'nav-eat']) {
+      await tester.tap(find.byKey(Key(tab)));
+      await tester.pumpAndSettle();
+    }
+    final coach = find.byKey(const Key('eat-coach'));
+    expect(find.descendant(of: coach, matching: find.textContaining('Eating out today?', findRichText: true)), findsOneWidget);
+    expect(c.read(coachPrefsProvider).seen('one', 'eat.out'), isTrue);
+    await _tap(tester, find.byKey(const Key('eat-coach-eating-out')));
+    final screen = tester.widget<EatingOutScreen>(find.byType(EatingOutScreen));
+    expect(screen.dayKey, day);
+    expect(ai.requests, isEmpty, reason: 'the introduction and its shortcut ask nothing');
+    expect(fakes.journal.saved, isEmpty);
+    expect(fakes.journal.meals, isEmpty);
+
+    for (final prefs in const [CoachPrefs(dismissed: earlier, hintsEnabled: false), CoachPrefs(dismissed: earlier, onTabs: false)]) {
+      await tester.pumpWidget(const SizedBox());
+      final (overrides, _, _, _) = await _fixture(tester, food: food, coach: prefs);
+      final c = await pumpApp(tester, overrides, size: const Size(390, 1600));
+      await tester.tap(find.byKey(const Key('nav-eat')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Eating out today?', findRichText: true), findsNothing);
+      expect(c.read(coachPrefsProvider).seen('one', 'eat.out'), isFalse);
+      expect(find.descendant(of: find.byType(EatScreen), matching: find.byKey(const Key('eat-eating-out'))), findsOneWidget);
+    }
   });
 
   testWidgets('Send asks once; the targets are shown and editable; Undo; a suggestion is reviewed and logged once, one entry per item', (tester) async {

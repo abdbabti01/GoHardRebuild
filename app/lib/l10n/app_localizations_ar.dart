@@ -11106,8 +11106,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get eatOutEntrySubtitle => 'قوائم كندية موثّقة: اختر طلبًا أو حسّنه';
 
   @override
-  String get eatOutEntrySaid =>
-      'تناول الطعام في الخارج: اختر طلب مطعم أو حسّنه';
+  String get eatOutPanelBody => 'اعثر على طلب من مطعم يناسب أهدافك.';
+
+  @override
+  String get eatOutPanelAction => 'اختر مطعمًا';
+
+  @override
+  String get eatHintEatingOut =>
+      'ستأكل في الخارج اليوم؟ يمكنني مساعدتك في اختيار طلب أو تحسين الطلب الذي تريده.';
+
+  @override
+  String get eatHintEatingOutAction => 'اعثر على طلب';
 
   @override
   String eatOutForContext(String meal, String date) {

@@ -10806,8 +10806,18 @@ class AppLocalizationsFr extends AppLocalizations {
       'Menus canadiens vérifiés : choisir ou améliorer une commande';
 
   @override
-  String get eatOutEntrySaid =>
-      'Au restaurant : choisir ou améliorer une commande';
+  String get eatOutPanelBody =>
+      'Trouve une commande au restaurant qui respecte tes objectifs.';
+
+  @override
+  String get eatOutPanelAction => 'Choisir un restaurant';
+
+  @override
+  String get eatHintEatingOut =>
+      'Tu manges au restaurant aujourd\'hui? Je peux t\'aider à choisir une commande ou à améliorer celle que tu veux.';
+
+  @override
+  String get eatHintEatingOutAction => 'Trouver une commande';
 
   @override
   String eatOutForContext(String meal, String date) {

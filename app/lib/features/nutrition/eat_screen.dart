@@ -21,7 +21,9 @@ import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
 import 'nutrition_tools.dart';
+import 'eating_out.dart' show restaurantCatalogProvider;
 import 'eating_out_screen.dart';
+import 'restaurants.dart' show RestaurantChain;
 import 'saved_meals_screens.dart';
 import 'water.dart';
 
@@ -61,6 +63,9 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// The meal a saved-food shortcut starts on, from the time of day; it can be changed in Add food before choosing.
   static String _mealNow(DateTime t) => t.hour < 11 ? 'Breakfast' : t.hour < 16 ? 'Lunch' : t.hour < 21 ? 'Dinner' : 'Snack';
 
+  /// Eating out for [day] and the meal of the time of day: the panel and the coach's shortcut open the same thing.
+  Future<void> _openEatingOut(String day) => openEatingOut(context, dayKey: day, meal: _mealNow(DateTime.now()));
+
   /// Add food opened on Favourites or My foods, for [day]. A shortcut, never a log: the amount is still reviewed and confirmed.
   static Future<void> openSavedFoods(BuildContext context, {required String day, required FoodScope scope}) =>
       push(context, LogFoodScreen(dayKey: day, meal: _mealNow(DateTime.now()), scope: scope));
@@ -76,7 +81,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     if (owner == null || !ref.read(savedFoodsProvider).hasValue) return null;
     final has = saved.any((s) => s.isFavourite || s.isMine);
     // Tabs stay built off screen: a hint is chosen (and used up) only while Eat is the tab in view and its page current.
-    final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true);
+    // Nor while the keyboard is up (the view's own inset: the Scaffold takes it out of the page's MediaQuery).
+    final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
     // A first visit is about logging a meal at all; saving one for next time is worth saying once food is logged.
     if (_hint == null && inView && (has || logged)) {
       final id = has ? 'eat.saved.shortcut' : 'eat.saved.new';
@@ -99,7 +105,17 @@ class _EatScreenState extends ConsumerState<EatScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
       }
     }
+    // Eating out, once, after the hints above have had their turn (a first visit stays about logging a meal). The
+    // panel under the summary is always there; this only points to it.
+    if (_hint == '' && inView) {
+      const id = 'eat.out';
+      if (ref.read(coachPrefsProvider).mayIntroduce(owner, id)) {
+        _hint = id;
+        WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
+      }
+    }
     final l = context.l10n;
+    if (_hint == 'eat.out') return CoachSay(l.eatHintEatingOut, guide: (label: l.eatHintEatingOutAction, key: const Key('eat-coach-eating-out'), onPressed: () => _openEatingOut(day)));
     if (_hint == 'eat.history') return CoachSay(l.eatHintHistory);
     if (_hint == 'eat.meals') {
       return CoachSay(l.eatHintMeals,
@@ -218,12 +234,22 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                     PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
                     TextButton.icon(key: const Key('eat-saved-meals'), icon: const Icon(Icons.menu_book_outlined, size: 20), label: Text(l.mealsLibraryTitle),
                         onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
-                    // A restaurant order from verified menus, for the same day and the meal of the time of day.
-                    TextButton.icon(key: const Key('eat-eating-out'), icon: const Icon(Icons.storefront_outlined, size: 20),
-                        label: Text(l.eatOutTitle, semanticsLabel: l.eatOutEntrySaid),
-                        onPressed: () => openEatingOut(context, dayKey: day, meal: _mealNow(DateTime.now()))),
                   ]),
                 ),
+                const SizedBox(height: 16),
+                // Eating out, always here (coach or not): a restaurant order from verified menus, for the same day and the
+                // meal of the time of day. The chains named are the catalog's own, so the line never claims more.
+                () {
+                  final names = [for (final ch in ref.watch(restaurantCatalogProvider).value?.chains ?? const <RestaurantChain>[]) ch.name];
+                  return PanelLink(
+                    key: const Key('eat-eating-out'), icon: const Icon(Icons.storefront_outlined), title: l.eatOutTitle, subtitle: l.eatOutPanelBody,
+                    // Each name stays whole on one line; the list wraps between names.
+                    detail: names.isEmpty ? null : names.map((n) => n.replaceAll(' ', String.fromCharCode(0xa0))).join(' · '),
+                    action: l.eatOutPanelAction,
+                    semanticLabel: [l.eatOutTitle, l.eatOutPanelBody, if (names.isNotEmpty) names.join(', '), l.eatOutPanelAction].join('. '),
+                    onTap: () => _openEatingOut(day),
+                  );
+                }(),
                 const SizedBox(height: 16),
                 // The one way to History & trends (charts by week and month, the calendar, the days with entries): under
                 // the day's summary, secondary to Log food. It opens the history on the day shown and changes nothing.

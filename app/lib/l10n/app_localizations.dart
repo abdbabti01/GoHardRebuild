@@ -15750,11 +15750,29 @@ abstract class AppLocalizations {
   /// **'Verified Canadian menus: choose or improve an order'**
   String get eatOutEntrySubtitle;
 
-  /// Screen reader label for the Eat entry.
+  /// Eat › Eating out panel: what it does.
   ///
   /// In en, this message translates to:
-  /// **'Eating out: choose or improve a restaurant order'**
-  String get eatOutEntrySaid;
+  /// **'Find a restaurant order that fits your goals.'**
+  String get eatOutPanelBody;
+
+  /// Eat › Eating out panel: its action (an arrow follows).
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a restaurant'**
+  String get eatOutPanelAction;
+
+  /// One-time Eat coach introduction of Eating out.
+  ///
+  /// In en, this message translates to:
+  /// **'Eating out today? I can help you choose an order—or improve the one you want.'**
+  String get eatHintEatingOut;
+
+  /// Coach bubble button: opens Eating out.
+  ///
+  /// In en, this message translates to:
+  /// **'Find an order'**
+  String get eatHintEatingOutAction;
 
   /// Subtitle: the meal and day an order would be logged to.
   ///

@@ -14780,9 +14780,21 @@
   "@eatOutEntrySubtitle": {
     "description": "Add food row under Eating out."
   },
-  "eatOutEntrySaid": "Eating out: choose or improve a restaurant order",
-  "@eatOutEntrySaid": {
-    "description": "Screen reader label for the Eat entry."
+  "eatOutPanelBody": "Find a restaurant order that fits your goals.",
+  "@eatOutPanelBody": {
+    "description": "Eat › Eating out panel: what it does."
+  },
+  "eatOutPanelAction": "Choose a restaurant",
+  "@eatOutPanelAction": {
+    "description": "Eat › Eating out panel: its action (an arrow follows)."
+  },
+  "eatHintEatingOut": "Eating out today? I can help you choose an order—or improve the one you want.",
+  "@eatHintEatingOut": {
+    "description": "One-time Eat coach introduction of Eating out."
+  },
+  "eatHintEatingOutAction": "Find an order",
+  "@eatHintEatingOutAction": {
+    "description": "Coach bubble button: opens Eating out."
   },
   "eatOutForContext": "For {meal} · {date}",
   "@eatOutForContext": {

@@ -1116,11 +1116,13 @@ class BrandBadge extends StatelessWidget {
 
 /// A substantial way to another page, in the pale panel: an icon, a title in the serif, a line saying what is there,
 /// and a chevron that points the reading way. The whole panel is one target, read out as [semanticLabel]; its words
-/// wrap with large text and long translations.
+/// wrap with large text and long translations. An optional [detail] is a quieter line under the subtitle, and an
+/// optional [action] names where the panel goes, in the accent with an arrow, in place of the chevron.
 class PanelLink extends StatelessWidget {
-  const PanelLink({super.key, required this.icon, required this.title, required this.subtitle, required this.semanticLabel, required this.onTap});
+  const PanelLink({super.key, required this.icon, required this.title, required this.subtitle, required this.semanticLabel, required this.onTap, this.detail, this.action});
   final Widget icon;
   final String title, subtitle, semanticLabel;
+  final String? detail, action;
   final VoidCallback onTap;
 
   @override
@@ -1141,9 +1143,16 @@ class PanelLink extends StatelessWidget {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(title, style: context.pageTitleStyle(21)),
                         Text(subtitle, style: context.sansStyle(15, color: context.c.secondary)),
+                        if (detail != null) ...[const SizedBox(height: 4), Text(detail!, style: context.sansStyle(14, color: context.c.secondary, weight: FontWeight.w500))],
+                        if (action != null) ...[
+                          const SizedBox(height: 8),
+                          // The arrow mirrors in a right-to-left language.
+                          Text.rich(TextSpan(text: '${action!} ', children: [WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(Icons.arrow_forward, size: 18, color: context.c.accent))]),
+                              style: context.sansStyle(15.5, color: context.c.accent, weight: FontWeight.w600)),
+                        ],
                       ]),
                     ),
-                    Icon(Icons.chevron_right, color: context.c.text),
+                    if (action == null) Icon(Icons.chevron_right, color: context.c.text),
                   ]),
                 ),
               ),

@@ -2301,3 +2301,27 @@ docs/RESTAURANT_SOURCES.md.
   8458563 (success 12:19 UTC); hosted Ready with 14 migrations, declares `restaurants.catalog`, `restaurants.interpret`,
   `coach.ask`; new routes 401 without a session. IPA 54 reused (app unchanged). **Pending:** live AI and hosted data
   checks on the owner's iPhone (no hosted accounts by the owner's rule).
+
+## 27 Oct 2026 — Eating out discovery (`feature/eating-out-discovery`, from `main` 71a80e9)
+
+- UI only (docs/EATING_OUT.md › Finding it, docs/COACH.md › Eating out): the small Eating out button in the nutrition
+  summary is replaced by a full-width panel (`PanelLink` with a new optional detail line and action) between the
+  summary and History & trends, naming the catalog's chains; the coach introduces it once (`eat.out`, last in the Eat
+  hint chain, with **Find an order**). The hint chooser now also waits for the keyboard to be down. No API, catalog,
+  capability, AI, auth, logging or sync change. New strings in en/fr/ar (`eatOutPanelBody`, `eatOutPanelAction`,
+  `eatHintEatingOut`, `eatHintEatingOutAction`); `eatOutEntrySaid` removed.
+- Tests (affected only): `flutter analyze` clean; `check-l10n` OK (2709 messages); `eating_out_ui_test` +2 (panel
+  placement, removed summary entry, chain line, one screen-reader node, opens for the picked day; introduction only on
+  Eat in view, not with the keyboard up, once, Find an order opens it for the day; hints off / coach off: none, panel
+  stays; no AI request, nothing logged); `water_ui_test` and `nutrition_trends_ui_test` adjusted (the taller page puts
+  the header coach / History below the fold); with `eat_ui`, `move_ui`, `saved_meals_ui`, `coach_companion`,
+  `coach_avatar`, `l10n_eat`, `localization`, `food_ui`, `render`: 148 passed.
+- Renders: `render_test` states now read the bundled catalog from its file (it did not load reliably in the harness).
+  `state-full-eat-*` and `state-large-text-eat-goals-320` regenerated in en/fr/ar; before/after set in
+  `docs/evidence/eating-out-discovery/`. **Pre-existing, not changed here:** the French 320 px / 2× Eat render fails on
+  `main` too — the meal group's "+ Ajouter un aliment" / "Enregistrer comme repas" row overflows (eat_screen.dart
+  meal-group footer Row).
+- Native: `journey_eatout_entry_test` (new, one process, not default) on Pixel_7 against the branch API on
+  127.0.0.1:5136 with a disposable DB (dropped afterwards): **passed** on the second run (the first failed only on its
+  own last check — a header key out of the lazy list — after the real checks had passed). Captures
+  `docs/evidence/screenshots/eod-*`.
