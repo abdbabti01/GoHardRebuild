@@ -15485,5 +15485,565 @@
   "eatOutSatFatLabel": "Saturated fat",
   "@eatOutSatFatLabel": {
     "description": "Nutrient label in food details."
+  },
+  "dcTitle": "Help with today",
+  "@dcTitle": {
+    "description": "Title of the daily coach conversation (today and food)."
+  },
+  "dcAboutDay": "About {date}",
+  "@dcAboutDay": {
+    "description": "The day the conversation is about.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dcEarlierDay": "This is an earlier day, not today.",
+  "@dcEarlierDay": {
+    "description": "Shown when the coach was opened on an earlier Eat day."
+  },
+  "dcPrivacy": "When you type a request, your words and the names of your saved meals, recipes and foods are sent to read it. Your journal, goals and numbers are not sent: every number is worked out on this phone.",
+  "@dcPrivacy": {
+    "description": "Privacy note: what typing a request sends."
+  },
+  "dcIntro": "I can sum up today, show what's in your journal, and suggest portions from your saved meals, recipes and foods. Every number comes from your own records, and nothing is logged until you choose Log.",
+  "@dcIntro": {
+    "description": "Intro shown in an empty daily coach conversation."
+  },
+  "dcInputHint": "Ask about today or food",
+  "@dcInputHint": {
+    "description": "Hint in the request field."
+  },
+  "dcNoAi": "Typed requests aren't available on this server. The suggested requests above still work.",
+  "@dcNoAi": {
+    "description": "Shown instead of the request field when the server does not declare coach.daily."
+  },
+  "dcWaiting": "Reading your request…",
+  "@dcWaiting": {
+    "description": "While a typed request is being read."
+  },
+  "dcStillWorks": "Your journal, saved meals and the suggested requests still work.",
+  "@dcStillWorks": {
+    "description": "Under a failed typed request."
+  },
+  "dcAiRead": "Request read by AI · numbers from your records",
+  "@dcAiRead": {
+    "description": "Label of a reply to a typed request."
+  },
+  "dcBuiltIn": "Built in · from your records",
+  "@dcBuiltIn": {
+    "description": "Label of a reply to a suggested request (no AI)."
+  },
+  "dcBasisToday": "Today, {date}: your plan and journal on this phone",
+  "@dcBasisToday": {
+    "description": "What a reply about today is based on.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dcBasisDay": "{date}: your journal on this phone",
+  "@dcBasisDay": {
+    "description": "What a reply about an earlier day is based on.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dcSwitchedToToday": "Switched to today, {date}.",
+  "@dcSwitchedToToday": {
+    "description": "Said when a request about today is made while an earlier day is shown.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dcStale": "Your records changed since this answer.",
+  "@dcStale": {
+    "description": "A reply made from records that changed since."
+  },
+  "dcRecalculate": "Recalculate",
+  "@dcRecalculate": {
+    "description": "Works a reply out again from current records (no AI)."
+  },
+  "dcStaleReview": "This changed since the suggestion. Recalculate it first.",
+  "@dcStaleReview": {
+    "description": "Toast when Review is pressed on a stale or vanished suggestion."
+  },
+  "dcTrainingLoading": "Today's training is still loading.",
+  "@dcTrainingLoading": {
+    "description": "Daily facts: training not loaded yet."
+  },
+  "dcTrainingNoPlan": "No training plan is active.",
+  "@dcTrainingNoPlan": {
+    "description": "Daily facts: no active plan."
+  },
+  "dcTrainingNothingDefinite": "Nothing definite is planned for training today.",
+  "@dcTrainingNothingDefinite": {
+    "description": "Daily facts: no definite training state."
+  },
+  "dcWorkoutsRecorded": "Workouts finished today: {count}.",
+  "@dcWorkoutsRecorded": {
+    "description": "Daily facts.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "dcNoWorkoutRecorded": "No workout is recorded today.",
+  "@dcNoWorkoutRecorded": {
+    "description": "Recorded facts. Only about records, never about activity."
+  },
+  "dcRunOpen": "A run or walk is in progress.",
+  "@dcRunOpen": {
+    "description": "Daily facts."
+  },
+  "dcJournalLoading": "The journal for this day is still loading.",
+  "@dcJournalLoading": {
+    "description": "Daily facts: food not loaded. Never shown as zero."
+  },
+  "dcJournalEmpty": "Nothing is in the journal for this day yet. That only means nothing was logged.",
+  "@dcJournalEmpty": {
+    "description": "Daily facts: empty journal."
+  },
+  "dcJournalLine": "Foods in the journal: {count} · {kcal} · {protein}",
+  "@dcJournalLine": {
+    "description": "Daily facts: what is logged. kcal/protein already say \"known\" when partial.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "kcal": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "dcLoggedOnly": "This is what was logged, which may not be everything eaten.",
+  "@dcLoggedOnly": {
+    "description": "Under recorded facts."
+  },
+  "dcTodayChoice": "What would you like to look at?",
+  "@dcTodayChoice": {
+    "description": "Ends the daily summary; actions follow."
+  },
+  "dcPending": "Some changes on this phone haven't reached your account yet. I'm using what's on this phone; something saved only here can't be found by name until it syncs.",
+  "@dcPending": {
+    "description": "Unsynced local changes."
+  },
+  "dcProteinKnown": "{value} g protein known",
+  "@dcProteinKnown": {
+    "description": "A partial protein sum.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "dcProteinUnknown": "Protein unknown",
+  "@dcProteinUnknown": {
+    "description": "No protein value known."
+  },
+  "dcTimesSaved": "{value}× the saved amounts",
+  "@dcTimesSaved": {
+    "description": "A saved meal at a multiplier.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalProteinNotSet": "You haven't set a daily protein goal. You can set one in Eat, or tell me what you'd like from this meal.",
+  "@dcGoalProteinNotSet": {
+    "description": "Goal not set; never invented."
+  },
+  "dcGoalCaloriesNotSet": "You haven't set a daily calorie goal. You can set one in Eat, or tell me what you'd like from this meal.",
+  "@dcGoalCaloriesNotSet": {
+    "description": "Goal not set; never invented."
+  },
+  "dcGoalProteinNone": "No protein is logged yet today. Your goal is {goal} g.",
+  "@dcGoalProteinNone": {
+    "description": "Goal status.",
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalProteinPartial": "At least {known} g of protein is known so far toward your {goal} g goal. Some foods have no protein value, so the exact gap is not known.",
+  "@dcGoalProteinPartial": {
+    "description": "Goal status with partial data.",
+    "placeholders": {
+      "known": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalProteinReached": "{logged} g of protein is logged; your goal is {goal} g.",
+  "@dcGoalProteinReached": {
+    "description": "Goal status at or past the goal (neutral, no praise or guilt).",
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalProteinLeft": "{logged} g of your {goal} g protein goal is logged: {left} g to go.",
+  "@dcGoalProteinLeft": {
+    "description": "Goal status, complete data.",
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalKcalNone": "No calories are logged yet today. Your goal is {goal} kcal.",
+  "@dcGoalKcalNone": {
+    "description": "Goal status.",
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalKcalPartial": "At least {known} kcal is known so far toward your {goal} kcal goal. Some foods have no calorie value, so the exact gap is not known.",
+  "@dcGoalKcalPartial": {
+    "description": "Goal status with partial data.",
+    "placeholders": {
+      "known": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalKcalReached": "{logged} kcal is logged; your goal is {goal} kcal.",
+  "@dcGoalKcalReached": {
+    "description": "Goal status at or past the goal.",
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalKcalLeft": "{logged} of your {goal} kcal goal is logged: {left} kcal left.",
+  "@dcGoalKcalLeft": {
+    "description": "Goal status, complete data.",
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "dcGoalNotMealSize": "A daily goal isn't a meal size: choose what suits this meal.",
+  "@dcGoalNotMealSize": {
+    "description": "Under goal suggestions."
+  },
+  "dcFromSaved": "From your saved meals, recipes and foods:",
+  "@dcFromSaved": {
+    "description": "Heading over suggestion cards."
+  },
+  "dcNoItems": "You have no saved meals, recipes or favourite foods yet, so I have nothing of yours to suggest. Find a food in Add food, or try Eating out.",
+  "@dcNoItems": {
+    "description": "No saved items; nothing is invented."
+  },
+  "dcNoProteinKnown": "None of your saved items has a known value for that.",
+  "@dcNoProteinKnown": {
+    "description": "Every saved item lacks the needed value."
+  },
+  "dcUnderKcal": "at most {kcal} kcal",
+  "@dcUnderKcal": {
+    "description": "A meal target, joined with dcAnd.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAtLeastProtein": "at least {g} g protein",
+  "@dcAtLeastProtein": {
+    "description": "A meal target, joined with dcAnd.",
+    "placeholders": {
+      "g": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAnd": " and ",
+  "@dcAnd": {
+    "description": "Joins two short phrases (keep the spaces)."
+  },
+  "dcFitsHeading": "These fit {targets}:",
+  "@dcFitsHeading": {
+    "description": "Heading over fitting suggestions.",
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      }
+    }
+  },
+  "dcNothingFits": "Nothing saved fits {targets}. The nearest, with what each misses:",
+  "@dcNothingFits": {
+    "description": "Nothing fits; nearest shown, never called a match.",
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      }
+    }
+  },
+  "dcNothingKnownFits": "I can't check {targets}: your saved items don't have those values known.",
+  "@dcNothingKnownFits": {
+    "description": "Targets need values that are unknown for every item.",
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      }
+    }
+  },
+  "dcUnknownLeftOut": "Items with an unknown value for these targets were left out.",
+  "@dcUnknownLeftOut": {
+    "description": "Some items could not be checked."
+  },
+  "dcChangeWhich": "Which target would you like to change?",
+  "@dcChangeWhich": {
+    "description": "After nearest suggestions."
+  },
+  "dcMisses": "Misses: {misses}",
+  "@dcMisses": {
+    "description": "What a nearest suggestion misses.",
+    "placeholders": {
+      "misses": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMissOverKcal": "{kcal} kcal over",
+  "@dcMissOverKcal": {
+    "description": "A miss.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMissUnderProtein": "{g} g protein short",
+  "@dcMissUnderProtein": {
+    "description": "A miss.",
+    "placeholders": {
+      "g": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAddsProtein": "Adds {adds} g protein: {total} of {goal} g logged after this.",
+  "@dcAddsProtein": {
+    "description": "Contribution toward the goal; only with complete values.",
+    "placeholders": {
+      "adds": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAddsKcal": "Adds {adds} kcal: {total} of {goal} kcal logged after this.",
+  "@dcAddsKcal": {
+    "description": "Contribution toward the goal; only with complete values.",
+    "placeholders": {
+      "adds": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcChoose": "I found more than one. Which do you mean?",
+  "@dcChoose": {
+    "description": "Several saved items match the name."
+  },
+  "dcThatItem": "that item",
+  "@dcThatItem": {
+    "description": "Used in dcNotFound when no name was given."
+  },
+  "dcNotFound": "I couldn't find {names} in your saved meals, recipes or foods. Find it in Add food, or save it as a meal.",
+  "@dcNotFound": {
+    "description": "Nothing saved matches; never pretends one exists.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "dcNeedItem": "Which saved meal, recipe or food do you mean?",
+  "@dcNeedItem": {
+    "description": "A portion request that names nothing."
+  },
+  "dcSmallest": "That's the smallest practical portion I can suggest for this.",
+  "@dcSmallest": {
+    "description": "No smaller step."
+  },
+  "dcLargest": "That's the largest practical portion I can suggest for this.",
+  "@dcLargest": {
+    "description": "No larger step."
+  },
+  "dcCantGrams": "This can't be measured in grams: its finished weight isn't known. Use servings, or weigh the batch in the recipe.",
+  "@dcCantGrams": {
+    "description": "Grams asked for without a known weight; kept at the previous portion."
+  },
+  "dcCantMeasure": "That amount doesn't fit how this is measured. Try servings or a multiplier.",
+  "@dcCantMeasure": {
+    "description": "Portion words that cannot be used; kept at the previous portion."
+  },
+  "dcMoreProtein": "{more} has {diff} g more protein than {less}.",
+  "@dcMoreProtein": {
+    "description": "Comparison; names are the person's own.",
+    "placeholders": {
+      "more": {
+        "type": "String"
+      },
+      "diff": {
+        "type": "String"
+      },
+      "less": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMoreKcal": "{more} has {diff} kcal more than {less}.",
+  "@dcMoreKcal": {
+    "description": "Comparison; names are the person's own.",
+    "placeholders": {
+      "more": {
+        "type": "String"
+      },
+      "diff": {
+        "type": "String"
+      },
+      "less": {
+        "type": "String"
+      }
+    }
+  },
+  "dcSameProtein": "They have the same protein.",
+  "@dcSameProtein": {
+    "description": "Comparison."
+  },
+  "dcSameKcal": "They have the same calories.",
+  "@dcSameKcal": {
+    "description": "Comparison."
+  },
+  "dcCompareUnknown": "Some values are unknown for one of them, so I can't compare those.",
+  "@dcCompareUnknown": {
+    "description": "Comparison with unknown values."
+  },
+  "dcTraining": "Questions about your workouts and plan go to Ask GoHard, the training assistant.",
+  "@dcTraining": {
+    "description": "A training question; points to the existing assistant."
+  },
+  "dcRestaurant": "Restaurant orders are in Eating out, with verified menus.",
+  "@dcRestaurant": {
+    "description": "A restaurant request."
+  },
+  "dcClarify": "Could you say a bit more? For example which saved meal, or a calorie limit for this meal.",
+  "@dcClarify": {
+    "description": "Default clarification question."
+  },
+  "dcUnsupported": "I can help with today's plan and records, and with food from your saved meals, recipes and foods. I can't help with medical or health questions.",
+  "@dcUnsupported": {
+    "description": "Out-of-scope request."
+  },
+  "dcActionReview": "Review portion",
+  "@dcActionReview": {
+    "description": "Opens the existing review with the suggested portion; logs nothing."
+  },
+  "dcActionWorkout": "View workout",
+  "@dcActionWorkout": {
+    "description": "Opens the workout preview or the open workout; starts nothing."
+  },
+  "dcActionJournal": "Open journal",
+  "@dcActionJournal": {
+    "description": "Opens Eat on the discussed day."
+  },
+  "dcActionGoals": "Edit goals",
+  "@dcActionGoals": {
+    "description": "Opens the goal editor in Eat."
+  },
+  "dcActionAddFood": "Find a food",
+  "@dcActionAddFood": {
+    "description": "Opens Add food; logs nothing."
+  },
+  "dcActionTraining": "Ask about training",
+  "@dcActionTraining": {
+    "description": "Opens Ask GoHard about training."
+  },
+  "dcActionChooseMeal": "Choose a meal",
+  "@dcActionChooseMeal": {
+    "description": "Shows suggestions from saved items."
+  },
+  "dcChipToday": "Help me with today",
+  "@dcChipToday": {
+    "description": "Suggested request (built in, no AI)."
+  },
+  "dcChipRecorded": "What have I recorded today?",
+  "@dcChipRecorded": {
+    "description": "Suggested request (built in, no AI)."
+  },
+  "dcChipProtein": "Help me reach my protein goal",
+  "@dcChipProtein": {
+    "description": "Suggested request (built in, no AI)."
+  },
+  "dcChipSaved": "What could I have from my saved meals?",
+  "@dcChipSaved": {
+    "description": "Suggested request (built in, no AI)."
+  },
+  "dcChipSmaller": "Make that a smaller portion",
+  "@dcChipSmaller": {
+    "description": "Suggested follow-up (built in, no AI)."
+  },
+  "dcOpenWith": "Help with today: open the conversation with {guide}",
+  "@dcOpenWith": {
+    "description": "Screen-reader label of Today's guide portrait, which opens help with today.",
+    "placeholders": {
+      "guide": {
+        "type": "String"
+      }
+    }
   }
 }

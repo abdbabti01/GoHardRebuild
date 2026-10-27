@@ -35,6 +35,7 @@ public static class GoHardEndpoints
         .AddWeather(config)
         .AddCoach(config)
         .AddSingleton<RestaurantService>()
+        .AddSingleton<DailyCoachService>()
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<SavedMealService>().AddScoped<WaterService>()
         .AddScoped<ActivityService>().AddScoped<AccountService>().AddScoped<ProposalService>().AddScoped<CustomExerciseService>().AddScoped<WeeklyGoalService>()
         .AddScoped<ExerciseIncrementService>();
@@ -84,7 +85,7 @@ public static class GoHardEndpoints
             contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 2),
             capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
                 .Concat(weather.Enabled ? [WeatherRegistration.Capability] : [])
-                .Concat(coach.Enabled ? [CoachService.Capability] : [])
+                .Concat(coach.Enabled ? [CoachService.Capability, DailyCoachService.Capability] : [])
                 .Concat(restaurants.Catalog is not null ? [RestaurantService.CatalogCapability] : [])
                 .Concat(restaurants.InterpretEnabled ? [RestaurantService.InterpretCapability] : [])
                 .Concat(email.Configured ? [AccountEmailRegistration.DeliveryCapability] : []).ToArray(),
@@ -287,6 +288,26 @@ public static class GoHardEndpoints
                 CoachStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
                 // The provider's rate limit or overload: not the person's own limit, so not COACH_LIMIT.
                 CoachStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
+                _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
+            };
+        });
+
+        // Help with today and food (docs/COACH.md › Help with today): words → a checked intent naming this account's own
+        // saved items. Reads only, never a command; the same per-account limits and daily allowance as Ask GoHard.
+        me.MapPost("/coach/daily", async (HttpRequest req, ClaimsPrincipal u, DailyCoachService s, GoHardDb db, CancellationToken ct) =>
+        {
+            if (req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = DailyCoachService.MaxBodyBytes;
+            DailyCoachRequest? r = null;
+            if (req.ContentLength is null or <= DailyCoachService.MaxBodyBytes)
+                try { r = await JsonSerializer.DeserializeAsync<DailyCoachRequest>(req.Body, CommandRunner.Json, ct); }
+                catch (Exception ex) when (ex is JsonException or BadHttpRequestException) { }
+            var outcome = await s.InterpretAsync(u.UserId(), r, db, ct);
+            return outcome.Status switch
+            {
+                DailyStatus.Ok => Results.Json(outcome.Answer, CommandRunner.Json),
+                DailyStatus.Invalid => Results.Json(new { code = "COACH_INVALID" }, statusCode: 400),
+                DailyStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
+                DailyStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
                 _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
             };
         });

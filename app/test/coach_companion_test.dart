@@ -17,6 +17,7 @@ import 'package:gohard_rebuild/features/coach/coach_client.dart';
 import 'package:gohard_rebuild/features/coach/coach_companion.dart';
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/coach/coach_rig.dart';
+import 'package:gohard_rebuild/features/coach/day_coach_screen.dart' show DayConversation, dayConversationProvider;
 import 'package:gohard_rebuild/features/plans/builder/plan_builder_screen.dart';
 import 'package:gohard_rebuild/features/plans/plan_draft.dart';
 import 'package:gohard_rebuild/features/plans/train_screen.dart' show builderDraftProvider;
@@ -87,6 +88,13 @@ class _Quiet extends AskConversation {
 }
 
 final _quiet = askConversationProvider.overrideWith(_Quiet.new);
+
+class _QuietDay extends DayConversation {
+  @override
+  AskState build() => const AskState(loaded: true);
+}
+
+final _quietDay = dayConversationProvider.overrideWith(_QuietDay.new);
 
 /// A phone's stored preference as an earlier build wrote it, "hidden for today" included.
 Future<CoachPrefsStore> _upgraded(String hidden) async {
@@ -198,19 +206,19 @@ void main() {
       expect(find.byType(CoachCompanion), findsOneWidget);
     });
 
-    testWidgets('tapping the guide opens Ask GoHard; so does Ask me; both with the same guide in the conversation', (tester) async {
-      await _today(tester, more: [_quiet]);
+    testWidgets('tapping the guide opens help with today; so does Ask me; both with the same guide in the conversation', (tester) async {
+      await _today(tester, more: [_quiet, _quietDay]);
       await _frames(tester, 3000);
       await tester.tap(find.byKey(const Key('coach-avatar-launcher')));
       await _frames(tester, 600);
-      expect(find.byKey(const Key('ask-input')), findsOneWidget, reason: 'the conversation');
-      expect(find.byKey(const Key('ask-companion')), findsOneWidget, reason: 'the same guide in its header');
-      await tester.tap(find.byKey(const Key('ask-close')));
+      expect(find.byKey(const Key('day-context')), findsOneWidget, reason: 'the conversation about today (docs/COACH.md › Help with today)');
+      expect(find.byKey(const Key('day-companion')), findsOneWidget, reason: 'the same guide in its header');
+      await tester.tap(find.byKey(const Key('day-close')));
       await _frames(tester, 600);
       await tester.tap(find.byKey(const Key('coach-say-ask')));
       await _frames(tester, 600);
-      expect(find.byKey(const Key('ask-input')), findsOneWidget);
-      await tester.tap(find.byKey(const Key('ask-close')));
+      expect(find.byKey(const Key('day-context')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('day-close')));
       await _frames(tester, 600);
       expect(find.byType(CoachCompanion), findsOneWidget, reason: 'still on Today afterwards');
     });
@@ -219,7 +227,7 @@ void main() {
       final handle = tester.ensureSemantics();
       await _today(tester);
       await _frames(tester, 3000);
-      expect(tester.getSemantics(find.bySemanticsLabel('Ask GoHard: open the conversation with Leon')), matchesSemantics(isButton: true, hasTapAction: true, label: 'Ask GoHard: open the conversation with Leon'));
+      expect(tester.getSemantics(find.bySemanticsLabel('Help with today: open the conversation with Leon')), matchesSemantics(isButton: true, hasTapAction: true, label: 'Help with today: open the conversation with Leon'));
       handle.dispose();
     });
 
@@ -408,7 +416,7 @@ void main() {
       final eat = find.byKey(const Key('eat-coach'));
       expect(find.descendant(of: eat, matching: find.textContaining('Log a meal, or set your daily goals.', findRichText: true)), findsOneWidget);
       expect(find.byKey(const Key('coach-help-eat')), findsNothing);
-      expect(find.descendant(of: eat, matching: find.byKey(const Key('coach-say-ask'))), findsNothing, reason: 'no AI offered for food');
+      expect(find.descendant(of: eat, matching: find.byKey(const Key('coach-say-ask'))), findsOneWidget, reason: 'Ask me opens help with food (docs/COACH.md › Help with today)');
       expect(find.textContaining('water', findRichText: true), findsNothing, reason: 'water is off');
       await tester.tap(find.descendant(of: eat, matching: find.byKey(const Key('coach-avatar-launcher'))));
       await _frames(tester, 800);

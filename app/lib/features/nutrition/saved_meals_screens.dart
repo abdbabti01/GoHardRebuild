@@ -486,12 +486,19 @@ class _Stop implements Exception {
 /// this time only. A recipe is logged by servings, or by grams of the finished batch when it was weighed.
 /// Log is the main action and the only one that records food; Update saved meal and Save as new change templates only.
 class MealReviewScreen extends ConsumerStatefulWidget {
-  const MealReviewScreen({super.key, required this.body, required this.dayKey, required this.meal, this.saved}) : entry = null;
-  MealReviewScreen.entry(FoodEntry this.entry, {super.key}) : body = MealMath.ofEntry(entry)!.recipe, dayKey = entry.dayKey, meal = entry.meal, saved = null;
+  const MealReviewScreen({super.key, required this.body, required this.dayKey, required this.meal, this.saved, this.initialFactor, this.initialAmount, this.initialMeasure})
+      : entry = null;
+  MealReviewScreen.entry(FoodEntry this.entry, {super.key})
+      : body = MealMath.ofEntry(entry)!.recipe, dayKey = entry.dayKey, meal = entry.meal, saved = null, initialFactor = null, initialAmount = null, initialMeasure = null;
   final MealBody body;
   final SavedMeal? saved;
   final String dayKey, meal;
   final FoodEntry? entry;
+
+  /// Where a suggested portion opens (docs/COACH.md › Help with today): a meal at this multiplier, a recipe at this amount
+  /// of [initialMeasure]. Still only a starting point: every amount stays editable and only Log records anything.
+  final double? initialFactor, initialAmount;
+  final PortionMeasure? initialMeasure;
   @override
   ConsumerState<MealReviewScreen> createState() => _MealReviewScreenState();
 }
@@ -504,12 +511,25 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
   double? _factor = 1;
   late MealBody _batch = widget.body;
   late final _from = widget.entry == null ? null : MealMath.ofEntry(widget.entry!);
-  late PortionMeasure _measure = _from?.measure ?? PortionMeasure.serving;
-  late final _amount = TextEditingController(text: formatNumber2(_from?.amount ?? 1));
-  bool _busy = false, _batchChanged = false;
+  late PortionMeasure _measure = _from?.measure ?? (widget.initialMeasure == PortionMeasure.gram && widget.body.preparedWeightG != null ? PortionMeasure.gram : PortionMeasure.serving);
+  late final _amount = TextEditingController(text: formatNumber2(_from?.amount ?? widget.initialAmount ?? 1));
+  bool _busy = false, _batchChanged = false, _started = false;
   String? _error;
 
   bool get _recipe => widget.body.isRecipe;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A suggested multiplier, applied once with the amounts said in this language (the same path as tapping it).
+    if (_started) return;
+    _started = true;
+    final f = widget.initialFactor;
+    if (!_recipe && f != null && f != 1 && f > 0 && f <= MealMath.maxMultiplier) {
+      _factor = f;
+      _parts = MealMath.scaled(widget.body.components, f, (c, q) => _describe(ref, context.l10n, c, q));
+    }
+  }
 
   @override
   void dispose() {

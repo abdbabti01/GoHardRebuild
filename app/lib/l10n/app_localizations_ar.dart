@@ -11595,4 +11595,350 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get eatOutSatFatLabel => 'الدهون المشبعة';
+
+  @override
+  String get dcTitle => 'مساعدة لليوم';
+
+  @override
+  String dcAboutDay(String date) {
+    return 'عن يوم $date';
+  }
+
+  @override
+  String get dcEarlierDay => 'هذا يوم سابق، وليس اليوم.';
+
+  @override
+  String get dcPrivacy =>
+      'عندما تكتب طلبًا، تُرسَل كلماتك وأسماء وجباتك ووصفاتك وأطعمتك المحفوظة لقراءته. لا تُرسَل يومياتك ولا أهدافك ولا أرقامك: كل رقم يُحسب على هذا الهاتف.';
+
+  @override
+  String get dcIntro =>
+      'يمكنني تلخيص يومك، وعرض ما في يومياتك، واقتراح حصص من وجباتك ووصفاتك وأطعمتك المحفوظة. كل رقم يأتي من سجلاتك أنت، ولا يُسجَّل شيء حتى تختار التسجيل.';
+
+  @override
+  String get dcInputHint => 'اسأل عن يومك أو عن الطعام';
+
+  @override
+  String get dcNoAi =>
+      'الطلبات المكتوبة غير متاحة على هذا الخادم. الطلبات المقترحة أعلاه ما زالت تعمل.';
+
+  @override
+  String get dcWaiting => 'أقرأ طلبك…';
+
+  @override
+  String get dcStillWorks =>
+      'ما زالت يومياتك ووجباتك المحفوظة والطلبات المقترحة تعمل.';
+
+  @override
+  String get dcAiRead => 'قرأ الذكاء الاصطناعي الطلب · الأرقام من سجلاتك';
+
+  @override
+  String get dcBuiltIn => 'مدمج · من سجلاتك';
+
+  @override
+  String dcBasisToday(String date) {
+    return 'اليوم، $date: خطتك ويومياتك على هذا الهاتف';
+  }
+
+  @override
+  String dcBasisDay(String date) {
+    return '$date: يومياتك على هذا الهاتف';
+  }
+
+  @override
+  String dcSwitchedToToday(String date) {
+    return 'انتقلت إلى اليوم، $date.';
+  }
+
+  @override
+  String get dcStale => 'تغيّرت سجلاتك منذ هذه الإجابة.';
+
+  @override
+  String get dcRecalculate => 'أعد الحساب';
+
+  @override
+  String get dcStaleReview => 'تغيّر هذا منذ الاقتراح. أعد حسابه أولًا.';
+
+  @override
+  String get dcTrainingLoading => 'ما زال تدريب اليوم قيد التحميل.';
+
+  @override
+  String get dcTrainingNoPlan => 'لا توجد خطة تدريب نشطة.';
+
+  @override
+  String get dcTrainingNothingDefinite => 'لا يوجد تدريب محدد مخطط له اليوم.';
+
+  @override
+  String dcWorkoutsRecorded(String count) {
+    return 'التمارين المنتهية اليوم: $count.';
+  }
+
+  @override
+  String get dcNoWorkoutRecorded => 'لا يوجد تمرين مسجّل اليوم.';
+
+  @override
+  String get dcRunOpen => 'هناك جري أو مشي قيد التنفيذ.';
+
+  @override
+  String get dcJournalLoading => 'ما زالت يوميات هذا اليوم قيد التحميل.';
+
+  @override
+  String get dcJournalEmpty =>
+      'لا يوجد شيء في يوميات هذا اليوم بعد. هذا يعني فقط أنه لم يُسجَّل شيء.';
+
+  @override
+  String dcJournalLine(String count, String kcal, String protein) {
+    return 'الأطعمة في اليوميات: $count · $kcal · $protein';
+  }
+
+  @override
+  String get dcLoggedOnly => 'هذا ما سُجِّل، وقد لا يكون كل ما أُكل.';
+
+  @override
+  String get dcTodayChoice => 'ما الذي تريد النظر فيه؟';
+
+  @override
+  String get dcPending =>
+      'بعض التغييرات على هذا الهاتف لم تصل إلى حسابك بعد. أستخدم ما على هذا الهاتف؛ ولا يمكن إيجاد شيء محفوظ هنا فقط باسمه حتى تتم المزامنة.';
+
+  @override
+  String dcProteinKnown(String value) {
+    return '$value غ بروتين معروفة';
+  }
+
+  @override
+  String get dcProteinUnknown => 'البروتين غير معروف';
+
+  @override
+  String dcTimesSaved(String value) {
+    return '$value× الكميات المحفوظة';
+  }
+
+  @override
+  String get dcGoalProteinNotSet =>
+      'لم تحدّد هدفًا يوميًا للبروتين. يمكنك تحديده في الطعام، أو إخباري بما تريده من هذه الوجبة.';
+
+  @override
+  String get dcGoalCaloriesNotSet =>
+      'لم تحدّد هدفًا يوميًا للسعرات. يمكنك تحديده في الطعام، أو إخباري بما تريده من هذه الوجبة.';
+
+  @override
+  String dcGoalProteinNone(String goal) {
+    return 'لم يُسجَّل بروتين بعد اليوم. هدفك $goal غ.';
+  }
+
+  @override
+  String dcGoalProteinPartial(String known, String goal) {
+    return 'معروف حتى الآن $known غ على الأقل من البروتين نحو هدفك البالغ $goal غ. بعض الأطعمة ليس لها قيمة بروتين، لذا فالفرق الدقيق غير معروف.';
+  }
+
+  @override
+  String dcGoalProteinReached(String logged, String goal) {
+    return 'سُجِّل $logged غ من البروتين؛ هدفك $goal غ.';
+  }
+
+  @override
+  String dcGoalProteinLeft(String logged, String goal, String left) {
+    return 'سُجِّل $logged غ من هدف البروتين البالغ $goal غ: يتبقى $left غ.';
+  }
+
+  @override
+  String dcGoalKcalNone(String goal) {
+    return 'لم تُسجَّل سعرات بعد اليوم. هدفك $goal كيلوكالوري.';
+  }
+
+  @override
+  String dcGoalKcalPartial(String known, String goal) {
+    return 'معروف حتى الآن $known كيلوكالوري على الأقل نحو هدفك البالغ $goal كيلوكالوري. بعض الأطعمة ليس لها قيمة سعرات، لذا فالفرق الدقيق غير معروف.';
+  }
+
+  @override
+  String dcGoalKcalReached(String logged, String goal) {
+    return 'سُجِّل $logged كيلوكالوري؛ هدفك $goal كيلوكالوري.';
+  }
+
+  @override
+  String dcGoalKcalLeft(String logged, String goal, String left) {
+    return 'سُجِّل $logged من هدفك البالغ $goal كيلوكالوري: يتبقى $left كيلوكالوري.';
+  }
+
+  @override
+  String get dcGoalNotMealSize =>
+      'الهدف اليومي ليس حجم وجبة: اختر ما يناسب هذه الوجبة.';
+
+  @override
+  String get dcFromSaved => 'من وجباتك ووصفاتك وأطعمتك المحفوظة:';
+
+  @override
+  String get dcNoItems =>
+      'ليس لديك بعد وجبات أو وصفات أو أطعمة مفضلة محفوظة، لذا ليس لدي شيء منك لأقترحه. ابحث عن طعام في إضافة طعام، أو جرّب الأكل في الخارج.';
+
+  @override
+  String get dcNoProteinKnown =>
+      'لا يملك أي من عناصرك المحفوظة قيمة معروفة لذلك.';
+
+  @override
+  String dcUnderKcal(String kcal) {
+    return '$kcal كيلوكالوري كحد أقصى';
+  }
+
+  @override
+  String dcAtLeastProtein(String g) {
+    return '$g غ بروتين على الأقل';
+  }
+
+  @override
+  String get dcAnd => ' و';
+
+  @override
+  String dcFitsHeading(String targets) {
+    return 'هذه تناسب $targets:';
+  }
+
+  @override
+  String dcNothingFits(String targets) {
+    return 'لا يوجد شيء محفوظ يناسب $targets. الأقرب، مع ما ينقص كلًا منها:';
+  }
+
+  @override
+  String dcNothingKnownFits(String targets) {
+    return 'لا يمكنني التحقق من $targets: عناصرك المحفوظة ليست لها هذه القيم معروفة.';
+  }
+
+  @override
+  String get dcUnknownLeftOut =>
+      'استُبعدت العناصر التي لها قيمة غير معروفة لهذه الأهداف.';
+
+  @override
+  String get dcChangeWhich => 'أي هدف تريد تغييره؟';
+
+  @override
+  String dcMisses(String misses) {
+    return 'لا يحقق: $misses';
+  }
+
+  @override
+  String dcMissOverKcal(String kcal) {
+    return 'زيادة $kcal كيلوكالوري';
+  }
+
+  @override
+  String dcMissUnderProtein(String g) {
+    return 'نقص $g غ بروتين';
+  }
+
+  @override
+  String dcAddsProtein(String adds, String total, String goal) {
+    return 'يضيف $adds غ بروتين: $total من $goal غ مسجّلة بعد ذلك.';
+  }
+
+  @override
+  String dcAddsKcal(String adds, String total, String goal) {
+    return 'يضيف $adds كيلوكالوري: $total من $goal كيلوكالوري مسجّلة بعد ذلك.';
+  }
+
+  @override
+  String get dcChoose => 'وجدت أكثر من واحد. أيها تقصد؟';
+
+  @override
+  String get dcThatItem => 'هذا العنصر';
+
+  @override
+  String dcNotFound(String names) {
+    return 'لم أجد $names في وجباتك أو وصفاتك أو أطعمتك المحفوظة. ابحث عنه في إضافة طعام، أو احفظه كوجبة.';
+  }
+
+  @override
+  String get dcNeedItem => 'أي وجبة أو وصفة أو طعام محفوظ تقصد؟';
+
+  @override
+  String get dcSmallest => 'هذه أصغر حصة عملية يمكنني اقتراحها لهذا.';
+
+  @override
+  String get dcLargest => 'هذه أكبر حصة عملية يمكنني اقتراحها لهذا.';
+
+  @override
+  String get dcCantGrams =>
+      'لا يمكن قياس هذا بالغرامات: وزنه بعد التحضير غير معروف. استخدم الحصص، أو زِن الكمية كاملة في الوصفة.';
+
+  @override
+  String get dcCantMeasure =>
+      'هذه الكمية لا تناسب طريقة قياس هذا. جرّب الحصص أو مضاعفًا.';
+
+  @override
+  String dcMoreProtein(String more, String diff, String less) {
+    return 'يحتوي $more على $diff غ بروتين أكثر من $less.';
+  }
+
+  @override
+  String dcMoreKcal(String more, String diff, String less) {
+    return 'يحتوي $more على $diff كيلوكالوري أكثر من $less.';
+  }
+
+  @override
+  String get dcSameProtein => 'لهما نفس كمية البروتين.';
+
+  @override
+  String get dcSameKcal => 'لهما نفس السعرات.';
+
+  @override
+  String get dcCompareUnknown =>
+      'بعض القيم غير معروفة لأحدهما، لذا لا يمكنني مقارنتها.';
+
+  @override
+  String get dcTraining =>
+      'الأسئلة عن تمارينك وخطتك تذهب إلى اسأل GoHard، مساعد التدريب.';
+
+  @override
+  String get dcRestaurant =>
+      'طلبات المطاعم موجودة في الأكل في الخارج، مع قوائم موثّقة.';
+
+  @override
+  String get dcClarify =>
+      'هل يمكنك التوضيح قليلًا؟ مثلًا أي وجبة محفوظة، أو حدًا للسعرات لهذه الوجبة.';
+
+  @override
+  String get dcUnsupported =>
+      'يمكنني المساعدة في خطة اليوم وسجلاته، وفي الطعام من وجباتك ووصفاتك وأطعمتك المحفوظة. لا يمكنني المساعدة في الأسئلة الطبية أو الصحية.';
+
+  @override
+  String get dcActionReview => 'راجع الحصة';
+
+  @override
+  String get dcActionWorkout => 'اعرض التمرين';
+
+  @override
+  String get dcActionJournal => 'افتح اليوميات';
+
+  @override
+  String get dcActionGoals => 'عدّل الأهداف';
+
+  @override
+  String get dcActionAddFood => 'ابحث عن طعام';
+
+  @override
+  String get dcActionTraining => 'اسأل عن التدريب';
+
+  @override
+  String get dcActionChooseMeal => 'اختر وجبة';
+
+  @override
+  String get dcChipToday => 'ساعدني في يومي';
+
+  @override
+  String get dcChipRecorded => 'ماذا سجّلت اليوم؟';
+
+  @override
+  String get dcChipProtein => 'ساعدني في بلوغ هدف البروتين';
+
+  @override
+  String get dcChipSaved => 'ماذا يمكنني أن أتناول من وجباتي المحفوظة؟';
+
+  @override
+  String get dcChipSmaller => 'اجعلها حصة أصغر';
+
+  @override
+  String dcOpenWith(String guide) {
+    return 'مساعدة لليوم: افتح المحادثة مع $guide';
+  }
 }

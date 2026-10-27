@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
+import '../coach/day_coach_screen.dart' show openDayCoach;
 import '../shell/home_shell.dart' show shellProvider;
 import 'food_form.dart';
 import 'food_repository.dart' show SavedFood, mealLabel;
@@ -26,6 +27,17 @@ import 'eating_out_screen.dart';
 import 'restaurants.dart' show RestaurantChain;
 import 'saved_meals_screens.dart';
 import 'water.dart';
+
+/// A request from elsewhere (the coach's Open journal / Edit goals) to show a day in Eat and, with `goals`, to open
+/// Eat's own goal sheet there. Eat takes it and clears it; nothing else reads it.
+final eatDayRequestProvider = NotifierProvider<EatDayRequest, ({String day, bool goals})?>(EatDayRequest.new);
+
+class EatDayRequest extends Notifier<({String day, bool goals})?> {
+  @override
+  ({String day, bool goals})? build() => null;
+  void show(String day, {bool goals = false}) => state = (day: day, goals: goals);
+  void done() => state = null;
+}
 
 /// The dated food journal: the day's overview, one Log food action, then Breakfast, Lunch, Dinner and Snack,
 /// built only from food the user logged as eaten. Each entry is its own row with the name, portion and values
@@ -44,9 +56,10 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// on the same tile, with the meal's name beside them.
   static const _icons = {'Breakfast': Icons.wb_twilight_outlined, 'Lunch': Icons.light_mode_outlined, 'Dinner': Icons.dark_mode_outlined, 'Snack': Icons.cookie_outlined};
 
-  /// Built-in help with the journal. Ask GoHard answers training questions, so nothing here offers to ask it about food.
-  /// It explains the saved foods and opens them, on request, at any time.
+  /// Built-in help with the journal. It explains the saved foods and opens them, on request, at any time; Ask me opens
+  /// help with food for the day shown (docs/COACH.md › Help with today), never Ask GoHard.
   static void _help(BuildContext context, String day) => showCoachHelpSheet(context, title: context.l10n.eatHelpTitle, say: CoachSay(context.l10n.eatHelpBody,
+      onAsk: () => openDayCoach(context, day: day),
       guide: (label: context.l10n.eatOpenFavourites, key: const Key('eat-help-favourites'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.favourites))));
 
   /// Whether anything was logged on a day before today (food on this phone).
@@ -151,9 +164,9 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// What the coach says on Eat: fixed words chosen from the account's own settings, never from the AI. Water is
   /// mentioned only where it is shown (turned on, and the server keeps it). Words only: Log food and the goals link
   /// are right below it in the summary, so the bubble repeats neither.
-  static CoachSay _say(AppLocalizations l, {required Profile? profile, required bool water}) {
+  static CoachSay _say(AppLocalizations l, {required Profile? profile, required bool water, required VoidCallback onAsk}) {
     final hasGoal = profile != null && (profile.calorieGoal != null || profile.proteinGoal != null || profile.waterGoalMl != null);
-    return CoachSay(hasGoal ? (water ? l.eatSayGoalWater : l.eatSayGoal) : (water ? l.eatSayNoGoalWater : l.eatSayNoGoal));
+    return CoachSay(hasGoal ? (water ? l.eatSayGoalWater : l.eatSayGoal) : (water ? l.eatSayNoGoalWater : l.eatSayNoGoal), onAsk: onAsk);
   }
 
   /// The portion as it was saved, then the macros that are known (a recipe portion's partial sums marked "known"), then
@@ -185,6 +198,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   @override
   Widget build(BuildContext context) {
     final today = ref.watch(todayKeyProvider);
+    ref.listen(eatDayRequestProvider, (_, request) {
+      if (request == null) return;
+      setState(() => _picked = request.day == today ? null : request.day);
+      ref.read(eatDayRequestProvider.notifier).done();
+      if (request.goals) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? showGoalsSheet(context, ref) : null);
+    });
     final day = _picked ?? today;
     final rows = ref.watch(foodProvider(day));
     final live = [for (final r in rows.value ?? const <Stored<FoodEntry>>[]) if (!r.value.isDeleted) r];
@@ -229,7 +248,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                       if (coachOn)
                         TabCoach(key: const Key('eat-coach'), id: 'eat',
                             say: _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
-                                _say(l, profile: profile, water: display.water),
+                                _say(l, profile: profile, water: display.water, onAsk: () => openDayCoach(context, day: day)),
                             avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day)),
                     ]),
             ),

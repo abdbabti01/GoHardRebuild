@@ -11094,4 +11094,355 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eatOutSatFatLabel => 'Saturated fat';
+
+  @override
+  String get dcTitle => 'Help with today';
+
+  @override
+  String dcAboutDay(String date) {
+    return 'About $date';
+  }
+
+  @override
+  String get dcEarlierDay => 'This is an earlier day, not today.';
+
+  @override
+  String get dcPrivacy =>
+      'When you type a request, your words and the names of your saved meals, recipes and foods are sent to read it. Your journal, goals and numbers are not sent: every number is worked out on this phone.';
+
+  @override
+  String get dcIntro =>
+      'I can sum up today, show what\'s in your journal, and suggest portions from your saved meals, recipes and foods. Every number comes from your own records, and nothing is logged until you choose Log.';
+
+  @override
+  String get dcInputHint => 'Ask about today or food';
+
+  @override
+  String get dcNoAi =>
+      'Typed requests aren\'t available on this server. The suggested requests above still work.';
+
+  @override
+  String get dcWaiting => 'Reading your request…';
+
+  @override
+  String get dcStillWorks =>
+      'Your journal, saved meals and the suggested requests still work.';
+
+  @override
+  String get dcAiRead => 'Request read by AI · numbers from your records';
+
+  @override
+  String get dcBuiltIn => 'Built in · from your records';
+
+  @override
+  String dcBasisToday(String date) {
+    return 'Today, $date: your plan and journal on this phone';
+  }
+
+  @override
+  String dcBasisDay(String date) {
+    return '$date: your journal on this phone';
+  }
+
+  @override
+  String dcSwitchedToToday(String date) {
+    return 'Switched to today, $date.';
+  }
+
+  @override
+  String get dcStale => 'Your records changed since this answer.';
+
+  @override
+  String get dcRecalculate => 'Recalculate';
+
+  @override
+  String get dcStaleReview =>
+      'This changed since the suggestion. Recalculate it first.';
+
+  @override
+  String get dcTrainingLoading => 'Today\'s training is still loading.';
+
+  @override
+  String get dcTrainingNoPlan => 'No training plan is active.';
+
+  @override
+  String get dcTrainingNothingDefinite =>
+      'Nothing definite is planned for training today.';
+
+  @override
+  String dcWorkoutsRecorded(String count) {
+    return 'Workouts finished today: $count.';
+  }
+
+  @override
+  String get dcNoWorkoutRecorded => 'No workout is recorded today.';
+
+  @override
+  String get dcRunOpen => 'A run or walk is in progress.';
+
+  @override
+  String get dcJournalLoading => 'The journal for this day is still loading.';
+
+  @override
+  String get dcJournalEmpty =>
+      'Nothing is in the journal for this day yet. That only means nothing was logged.';
+
+  @override
+  String dcJournalLine(String count, String kcal, String protein) {
+    return 'Foods in the journal: $count · $kcal · $protein';
+  }
+
+  @override
+  String get dcLoggedOnly =>
+      'This is what was logged, which may not be everything eaten.';
+
+  @override
+  String get dcTodayChoice => 'What would you like to look at?';
+
+  @override
+  String get dcPending =>
+      'Some changes on this phone haven\'t reached your account yet. I\'m using what\'s on this phone; something saved only here can\'t be found by name until it syncs.';
+
+  @override
+  String dcProteinKnown(String value) {
+    return '$value g protein known';
+  }
+
+  @override
+  String get dcProteinUnknown => 'Protein unknown';
+
+  @override
+  String dcTimesSaved(String value) {
+    return '$value× the saved amounts';
+  }
+
+  @override
+  String get dcGoalProteinNotSet =>
+      'You haven\'t set a daily protein goal. You can set one in Eat, or tell me what you\'d like from this meal.';
+
+  @override
+  String get dcGoalCaloriesNotSet =>
+      'You haven\'t set a daily calorie goal. You can set one in Eat, or tell me what you\'d like from this meal.';
+
+  @override
+  String dcGoalProteinNone(String goal) {
+    return 'No protein is logged yet today. Your goal is $goal g.';
+  }
+
+  @override
+  String dcGoalProteinPartial(String known, String goal) {
+    return 'At least $known g of protein is known so far toward your $goal g goal. Some foods have no protein value, so the exact gap is not known.';
+  }
+
+  @override
+  String dcGoalProteinReached(String logged, String goal) {
+    return '$logged g of protein is logged; your goal is $goal g.';
+  }
+
+  @override
+  String dcGoalProteinLeft(String logged, String goal, String left) {
+    return '$logged g of your $goal g protein goal is logged: $left g to go.';
+  }
+
+  @override
+  String dcGoalKcalNone(String goal) {
+    return 'No calories are logged yet today. Your goal is $goal kcal.';
+  }
+
+  @override
+  String dcGoalKcalPartial(String known, String goal) {
+    return 'At least $known kcal is known so far toward your $goal kcal goal. Some foods have no calorie value, so the exact gap is not known.';
+  }
+
+  @override
+  String dcGoalKcalReached(String logged, String goal) {
+    return '$logged kcal is logged; your goal is $goal kcal.';
+  }
+
+  @override
+  String dcGoalKcalLeft(String logged, String goal, String left) {
+    return '$logged of your $goal kcal goal is logged: $left kcal left.';
+  }
+
+  @override
+  String get dcGoalNotMealSize =>
+      'A daily goal isn\'t a meal size: choose what suits this meal.';
+
+  @override
+  String get dcFromSaved => 'From your saved meals, recipes and foods:';
+
+  @override
+  String get dcNoItems =>
+      'You have no saved meals, recipes or favourite foods yet, so I have nothing of yours to suggest. Find a food in Add food, or try Eating out.';
+
+  @override
+  String get dcNoProteinKnown =>
+      'None of your saved items has a known value for that.';
+
+  @override
+  String dcUnderKcal(String kcal) {
+    return 'at most $kcal kcal';
+  }
+
+  @override
+  String dcAtLeastProtein(String g) {
+    return 'at least $g g protein';
+  }
+
+  @override
+  String get dcAnd => ' and ';
+
+  @override
+  String dcFitsHeading(String targets) {
+    return 'These fit $targets:';
+  }
+
+  @override
+  String dcNothingFits(String targets) {
+    return 'Nothing saved fits $targets. The nearest, with what each misses:';
+  }
+
+  @override
+  String dcNothingKnownFits(String targets) {
+    return 'I can\'t check $targets: your saved items don\'t have those values known.';
+  }
+
+  @override
+  String get dcUnknownLeftOut =>
+      'Items with an unknown value for these targets were left out.';
+
+  @override
+  String get dcChangeWhich => 'Which target would you like to change?';
+
+  @override
+  String dcMisses(String misses) {
+    return 'Misses: $misses';
+  }
+
+  @override
+  String dcMissOverKcal(String kcal) {
+    return '$kcal kcal over';
+  }
+
+  @override
+  String dcMissUnderProtein(String g) {
+    return '$g g protein short';
+  }
+
+  @override
+  String dcAddsProtein(String adds, String total, String goal) {
+    return 'Adds $adds g protein: $total of $goal g logged after this.';
+  }
+
+  @override
+  String dcAddsKcal(String adds, String total, String goal) {
+    return 'Adds $adds kcal: $total of $goal kcal logged after this.';
+  }
+
+  @override
+  String get dcChoose => 'I found more than one. Which do you mean?';
+
+  @override
+  String get dcThatItem => 'that item';
+
+  @override
+  String dcNotFound(String names) {
+    return 'I couldn\'t find $names in your saved meals, recipes or foods. Find it in Add food, or save it as a meal.';
+  }
+
+  @override
+  String get dcNeedItem => 'Which saved meal, recipe or food do you mean?';
+
+  @override
+  String get dcSmallest =>
+      'That\'s the smallest practical portion I can suggest for this.';
+
+  @override
+  String get dcLargest =>
+      'That\'s the largest practical portion I can suggest for this.';
+
+  @override
+  String get dcCantGrams =>
+      'This can\'t be measured in grams: its finished weight isn\'t known. Use servings, or weigh the batch in the recipe.';
+
+  @override
+  String get dcCantMeasure =>
+      'That amount doesn\'t fit how this is measured. Try servings or a multiplier.';
+
+  @override
+  String dcMoreProtein(String more, String diff, String less) {
+    return '$more has $diff g more protein than $less.';
+  }
+
+  @override
+  String dcMoreKcal(String more, String diff, String less) {
+    return '$more has $diff kcal more than $less.';
+  }
+
+  @override
+  String get dcSameProtein => 'They have the same protein.';
+
+  @override
+  String get dcSameKcal => 'They have the same calories.';
+
+  @override
+  String get dcCompareUnknown =>
+      'Some values are unknown for one of them, so I can\'t compare those.';
+
+  @override
+  String get dcTraining =>
+      'Questions about your workouts and plan go to Ask GoHard, the training assistant.';
+
+  @override
+  String get dcRestaurant =>
+      'Restaurant orders are in Eating out, with verified menus.';
+
+  @override
+  String get dcClarify =>
+      'Could you say a bit more? For example which saved meal, or a calorie limit for this meal.';
+
+  @override
+  String get dcUnsupported =>
+      'I can help with today\'s plan and records, and with food from your saved meals, recipes and foods. I can\'t help with medical or health questions.';
+
+  @override
+  String get dcActionReview => 'Review portion';
+
+  @override
+  String get dcActionWorkout => 'View workout';
+
+  @override
+  String get dcActionJournal => 'Open journal';
+
+  @override
+  String get dcActionGoals => 'Edit goals';
+
+  @override
+  String get dcActionAddFood => 'Find a food';
+
+  @override
+  String get dcActionTraining => 'Ask about training';
+
+  @override
+  String get dcActionChooseMeal => 'Choose a meal';
+
+  @override
+  String get dcChipToday => 'Help me with today';
+
+  @override
+  String get dcChipRecorded => 'What have I recorded today?';
+
+  @override
+  String get dcChipProtein => 'Help me reach my protein goal';
+
+  @override
+  String get dcChipSaved => 'What could I have from my saved meals?';
+
+  @override
+  String get dcChipSmaller => 'Make that a smaller portion';
+
+  @override
+  String dcOpenWith(String guide) {
+    return 'Help with today: open the conversation with $guide';
+  }
 }

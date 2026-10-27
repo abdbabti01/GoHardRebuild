@@ -22,7 +22,7 @@ import '../activity/recorder.dart';
 import '../activity/run_walk_screens.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_rig.dart' show RigFrame;
-import '../coach/coach_contract.dart';
+import '../coach/day_coach_screen.dart' show openDayCoach;
 import '../coach/coach_prefs.dart';
 import '../nutrition/food_form.dart';
 import '../nutrition/nutrition_surface.dart';
@@ -200,7 +200,6 @@ class _HeaderState extends ConsumerState<_Header> {
     // While a workout or a run is open the companion stays quiet: no entrance, just the settled guide.
     final busy = (ref.watch(dailySnapshotProvider)?.inProgress.isNotEmpty ?? false) || (ref.watch(runsProvider).value ?? const []).any((r) => r.value.isOpen);
     final greeting = _greeting(context, ref, justSaved: justSaved);
-    const ask = CoachContext(label: 'Your training');
     final inView = ref.watch(shellProvider.select((s) => s.tab == 0)) && (ModalRoute.isCurrentOf(context) ?? true);
     if (_stepsIntro == null && slot != null && inView && owner.isNotEmpty && !busy && !justSaved) {
       // Not on the account's first day (that greeting is about the plan): from a day after an earlier greeting.
@@ -229,14 +228,15 @@ class _HeaderState extends ConsumerState<_Header> {
                   say: intro
                       ? CoachSay(l.todayCoachStepsIntro, title: greeting.title,
                           guide: (label: l.todayCoachEnableSteps, key: const Key('today-coach-steps'), onPressed: () => showStepsSheet(context)))
-                      : CoachSay(greeting.line ?? l.todayCoachNeedHand, title: greeting.title, ask: ask),
-                  portrait: slot, frame: RigFrame.edge, bleed: context.inset,
+                      // Ask me opens help with today (docs/COACH.md › Help with today); Ask GoHard stays the guide on Train.
+                      : CoachSay(greeting.line ?? l.todayCoachNeedHand, title: greeting.title, onAsk: () => openDayCoach(context, day: day)),
+                  portrait: slot, frame: RigFrame.edge, bleed: context.inset, avatarLabel: l.dcOpenWith(coach.guide.displayName(l)),
                   greet: !busy && coach.mayGreet(owner, day), ack: _ack,
                   onGreeted: () => prefs.markGreeted(owner, day), // after the frame, so not through ref
                   onAsk: _asked,
                   onAvatarTap: () {
                     _asked();
-                    openAskGoHard(context, ask);
+                    openDayCoach(context, day: day);
                   },
                 ),
               const _SkyLine(),

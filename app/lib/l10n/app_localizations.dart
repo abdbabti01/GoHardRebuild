@@ -16445,6 +16445,540 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saturated fat'**
   String get eatOutSatFatLabel;
+
+  /// Title of the daily coach conversation (today and food).
+  ///
+  /// In en, this message translates to:
+  /// **'Help with today'**
+  String get dcTitle;
+
+  /// The day the conversation is about.
+  ///
+  /// In en, this message translates to:
+  /// **'About {date}'**
+  String dcAboutDay(String date);
+
+  /// Shown when the coach was opened on an earlier Eat day.
+  ///
+  /// In en, this message translates to:
+  /// **'This is an earlier day, not today.'**
+  String get dcEarlierDay;
+
+  /// Privacy note: what typing a request sends.
+  ///
+  /// In en, this message translates to:
+  /// **'When you type a request, your words and the names of your saved meals, recipes and foods are sent to read it. Your journal, goals and numbers are not sent: every number is worked out on this phone.'**
+  String get dcPrivacy;
+
+  /// Intro shown in an empty daily coach conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'I can sum up today, show what\'s in your journal, and suggest portions from your saved meals, recipes and foods. Every number comes from your own records, and nothing is logged until you choose Log.'**
+  String get dcIntro;
+
+  /// Hint in the request field.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about today or food'**
+  String get dcInputHint;
+
+  /// Shown instead of the request field when the server does not declare coach.daily.
+  ///
+  /// In en, this message translates to:
+  /// **'Typed requests aren\'t available on this server. The suggested requests above still work.'**
+  String get dcNoAi;
+
+  /// While a typed request is being read.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading your request…'**
+  String get dcWaiting;
+
+  /// Under a failed typed request.
+  ///
+  /// In en, this message translates to:
+  /// **'Your journal, saved meals and the suggested requests still work.'**
+  String get dcStillWorks;
+
+  /// Label of a reply to a typed request.
+  ///
+  /// In en, this message translates to:
+  /// **'Request read by AI · numbers from your records'**
+  String get dcAiRead;
+
+  /// Label of a reply to a suggested request (no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'Built in · from your records'**
+  String get dcBuiltIn;
+
+  /// What a reply about today is based on.
+  ///
+  /// In en, this message translates to:
+  /// **'Today, {date}: your plan and journal on this phone'**
+  String dcBasisToday(String date);
+
+  /// What a reply about an earlier day is based on.
+  ///
+  /// In en, this message translates to:
+  /// **'{date}: your journal on this phone'**
+  String dcBasisDay(String date);
+
+  /// Said when a request about today is made while an earlier day is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to today, {date}.'**
+  String dcSwitchedToToday(String date);
+
+  /// A reply made from records that changed since.
+  ///
+  /// In en, this message translates to:
+  /// **'Your records changed since this answer.'**
+  String get dcStale;
+
+  /// Works a reply out again from current records (no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculate'**
+  String get dcRecalculate;
+
+  /// Toast when Review is pressed on a stale or vanished suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'This changed since the suggestion. Recalculate it first.'**
+  String get dcStaleReview;
+
+  /// Daily facts: training not loaded yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s training is still loading.'**
+  String get dcTrainingLoading;
+
+  /// Daily facts: no active plan.
+  ///
+  /// In en, this message translates to:
+  /// **'No training plan is active.'**
+  String get dcTrainingNoPlan;
+
+  /// Daily facts: no definite training state.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing definite is planned for training today.'**
+  String get dcTrainingNothingDefinite;
+
+  /// Daily facts.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts finished today: {count}.'**
+  String dcWorkoutsRecorded(String count);
+
+  /// Recorded facts. Only about records, never about activity.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout is recorded today.'**
+  String get dcNoWorkoutRecorded;
+
+  /// Daily facts.
+  ///
+  /// In en, this message translates to:
+  /// **'A run or walk is in progress.'**
+  String get dcRunOpen;
+
+  /// Daily facts: food not loaded. Never shown as zero.
+  ///
+  /// In en, this message translates to:
+  /// **'The journal for this day is still loading.'**
+  String get dcJournalLoading;
+
+  /// Daily facts: empty journal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is in the journal for this day yet. That only means nothing was logged.'**
+  String get dcJournalEmpty;
+
+  /// Daily facts: what is logged. kcal/protein already say "known" when partial.
+  ///
+  /// In en, this message translates to:
+  /// **'Foods in the journal: {count} · {kcal} · {protein}'**
+  String dcJournalLine(String count, String kcal, String protein);
+
+  /// Under recorded facts.
+  ///
+  /// In en, this message translates to:
+  /// **'This is what was logged, which may not be everything eaten.'**
+  String get dcLoggedOnly;
+
+  /// Ends the daily summary; actions follow.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to look at?'**
+  String get dcTodayChoice;
+
+  /// Unsynced local changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes on this phone haven\'t reached your account yet. I\'m using what\'s on this phone; something saved only here can\'t be found by name until it syncs.'**
+  String get dcPending;
+
+  /// A partial protein sum.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} g protein known'**
+  String dcProteinKnown(String value);
+
+  /// No protein value known.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein unknown'**
+  String get dcProteinUnknown;
+
+  /// A saved meal at a multiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}× the saved amounts'**
+  String dcTimesSaved(String value);
+
+  /// Goal not set; never invented.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t set a daily protein goal. You can set one in Eat, or tell me what you\'d like from this meal.'**
+  String get dcGoalProteinNotSet;
+
+  /// Goal not set; never invented.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t set a daily calorie goal. You can set one in Eat, or tell me what you\'d like from this meal.'**
+  String get dcGoalCaloriesNotSet;
+
+  /// Goal status.
+  ///
+  /// In en, this message translates to:
+  /// **'No protein is logged yet today. Your goal is {goal} g.'**
+  String dcGoalProteinNone(String goal);
+
+  /// Goal status with partial data.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {known} g of protein is known so far toward your {goal} g goal. Some foods have no protein value, so the exact gap is not known.'**
+  String dcGoalProteinPartial(String known, String goal);
+
+  /// Goal status at or past the goal (neutral, no praise or guilt).
+  ///
+  /// In en, this message translates to:
+  /// **'{logged} g of protein is logged; your goal is {goal} g.'**
+  String dcGoalProteinReached(String logged, String goal);
+
+  /// Goal status, complete data.
+  ///
+  /// In en, this message translates to:
+  /// **'{logged} g of your {goal} g protein goal is logged: {left} g to go.'**
+  String dcGoalProteinLeft(String logged, String goal, String left);
+
+  /// Goal status.
+  ///
+  /// In en, this message translates to:
+  /// **'No calories are logged yet today. Your goal is {goal} kcal.'**
+  String dcGoalKcalNone(String goal);
+
+  /// Goal status with partial data.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {known} kcal is known so far toward your {goal} kcal goal. Some foods have no calorie value, so the exact gap is not known.'**
+  String dcGoalKcalPartial(String known, String goal);
+
+  /// Goal status at or past the goal.
+  ///
+  /// In en, this message translates to:
+  /// **'{logged} kcal is logged; your goal is {goal} kcal.'**
+  String dcGoalKcalReached(String logged, String goal);
+
+  /// Goal status, complete data.
+  ///
+  /// In en, this message translates to:
+  /// **'{logged} of your {goal} kcal goal is logged: {left} kcal left.'**
+  String dcGoalKcalLeft(String logged, String goal, String left);
+
+  /// Under goal suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'A daily goal isn\'t a meal size: choose what suits this meal.'**
+  String get dcGoalNotMealSize;
+
+  /// Heading over suggestion cards.
+  ///
+  /// In en, this message translates to:
+  /// **'From your saved meals, recipes and foods:'**
+  String get dcFromSaved;
+
+  /// No saved items; nothing is invented.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no saved meals, recipes or favourite foods yet, so I have nothing of yours to suggest. Find a food in Add food, or try Eating out.'**
+  String get dcNoItems;
+
+  /// Every saved item lacks the needed value.
+  ///
+  /// In en, this message translates to:
+  /// **'None of your saved items has a known value for that.'**
+  String get dcNoProteinKnown;
+
+  /// A meal target, joined with dcAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'at most {kcal} kcal'**
+  String dcUnderKcal(String kcal);
+
+  /// A meal target, joined with dcAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'at least {g} g protein'**
+  String dcAtLeastProtein(String g);
+
+  /// Joins two short phrases (keep the spaces).
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get dcAnd;
+
+  /// Heading over fitting suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'These fit {targets}:'**
+  String dcFitsHeading(String targets);
+
+  /// Nothing fits; nearest shown, never called a match.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved fits {targets}. The nearest, with what each misses:'**
+  String dcNothingFits(String targets);
+
+  /// Targets need values that are unknown for every item.
+  ///
+  /// In en, this message translates to:
+  /// **'I can\'t check {targets}: your saved items don\'t have those values known.'**
+  String dcNothingKnownFits(String targets);
+
+  /// Some items could not be checked.
+  ///
+  /// In en, this message translates to:
+  /// **'Items with an unknown value for these targets were left out.'**
+  String get dcUnknownLeftOut;
+
+  /// After nearest suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Which target would you like to change?'**
+  String get dcChangeWhich;
+
+  /// What a nearest suggestion misses.
+  ///
+  /// In en, this message translates to:
+  /// **'Misses: {misses}'**
+  String dcMisses(String misses);
+
+  /// A miss.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal over'**
+  String dcMissOverKcal(String kcal);
+
+  /// A miss.
+  ///
+  /// In en, this message translates to:
+  /// **'{g} g protein short'**
+  String dcMissUnderProtein(String g);
+
+  /// Contribution toward the goal; only with complete values.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds {adds} g protein: {total} of {goal} g logged after this.'**
+  String dcAddsProtein(String adds, String total, String goal);
+
+  /// Contribution toward the goal; only with complete values.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds {adds} kcal: {total} of {goal} kcal logged after this.'**
+  String dcAddsKcal(String adds, String total, String goal);
+
+  /// Several saved items match the name.
+  ///
+  /// In en, this message translates to:
+  /// **'I found more than one. Which do you mean?'**
+  String get dcChoose;
+
+  /// Used in dcNotFound when no name was given.
+  ///
+  /// In en, this message translates to:
+  /// **'that item'**
+  String get dcThatItem;
+
+  /// Nothing saved matches; never pretends one exists.
+  ///
+  /// In en, this message translates to:
+  /// **'I couldn\'t find {names} in your saved meals, recipes or foods. Find it in Add food, or save it as a meal.'**
+  String dcNotFound(String names);
+
+  /// A portion request that names nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Which saved meal, recipe or food do you mean?'**
+  String get dcNeedItem;
+
+  /// No smaller step.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s the smallest practical portion I can suggest for this.'**
+  String get dcSmallest;
+
+  /// No larger step.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s the largest practical portion I can suggest for this.'**
+  String get dcLargest;
+
+  /// Grams asked for without a known weight; kept at the previous portion.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be measured in grams: its finished weight isn\'t known. Use servings, or weigh the batch in the recipe.'**
+  String get dcCantGrams;
+
+  /// Portion words that cannot be used; kept at the previous portion.
+  ///
+  /// In en, this message translates to:
+  /// **'That amount doesn\'t fit how this is measured. Try servings or a multiplier.'**
+  String get dcCantMeasure;
+
+  /// Comparison; names are the person's own.
+  ///
+  /// In en, this message translates to:
+  /// **'{more} has {diff} g more protein than {less}.'**
+  String dcMoreProtein(String more, String diff, String less);
+
+  /// Comparison; names are the person's own.
+  ///
+  /// In en, this message translates to:
+  /// **'{more} has {diff} kcal more than {less}.'**
+  String dcMoreKcal(String more, String diff, String less);
+
+  /// Comparison.
+  ///
+  /// In en, this message translates to:
+  /// **'They have the same protein.'**
+  String get dcSameProtein;
+
+  /// Comparison.
+  ///
+  /// In en, this message translates to:
+  /// **'They have the same calories.'**
+  String get dcSameKcal;
+
+  /// Comparison with unknown values.
+  ///
+  /// In en, this message translates to:
+  /// **'Some values are unknown for one of them, so I can\'t compare those.'**
+  String get dcCompareUnknown;
+
+  /// A training question; points to the existing assistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions about your workouts and plan go to Ask GoHard, the training assistant.'**
+  String get dcTraining;
+
+  /// A restaurant request.
+  ///
+  /// In en, this message translates to:
+  /// **'Restaurant orders are in Eating out, with verified menus.'**
+  String get dcRestaurant;
+
+  /// Default clarification question.
+  ///
+  /// In en, this message translates to:
+  /// **'Could you say a bit more? For example which saved meal, or a calorie limit for this meal.'**
+  String get dcClarify;
+
+  /// Out-of-scope request.
+  ///
+  /// In en, this message translates to:
+  /// **'I can help with today\'s plan and records, and with food from your saved meals, recipes and foods. I can\'t help with medical or health questions.'**
+  String get dcUnsupported;
+
+  /// Opens the existing review with the suggested portion; logs nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Review portion'**
+  String get dcActionReview;
+
+  /// Opens the workout preview or the open workout; starts nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'View workout'**
+  String get dcActionWorkout;
+
+  /// Opens Eat on the discussed day.
+  ///
+  /// In en, this message translates to:
+  /// **'Open journal'**
+  String get dcActionJournal;
+
+  /// Opens the goal editor in Eat.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit goals'**
+  String get dcActionGoals;
+
+  /// Opens Add food; logs nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a food'**
+  String get dcActionAddFood;
+
+  /// Opens Ask GoHard about training.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about training'**
+  String get dcActionTraining;
+
+  /// Shows suggestions from saved items.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a meal'**
+  String get dcActionChooseMeal;
+
+  /// Suggested request (built in, no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'Help me with today'**
+  String get dcChipToday;
+
+  /// Suggested request (built in, no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'What have I recorded today?'**
+  String get dcChipRecorded;
+
+  /// Suggested request (built in, no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'Help me reach my protein goal'**
+  String get dcChipProtein;
+
+  /// Suggested request (built in, no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'What could I have from my saved meals?'**
+  String get dcChipSaved;
+
+  /// Suggested follow-up (built in, no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'Make that a smaller portion'**
+  String get dcChipSmaller;
+
+  /// Screen-reader label of Today's guide portrait, which opens help with today.
+  ///
+  /// In en, this message translates to:
+  /// **'Help with today: open the conversation with {guide}'**
+  String dcOpenWith(String guide);
 }
 
 class _AppLocalizationsDelegate

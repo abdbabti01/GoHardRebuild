@@ -207,7 +207,7 @@ public sealed class RestaurantService
     });
 
     // A clarification that states a nutrition figure would be the model's number, not GoHard's: it is replaced by the app's own words.
-    private static readonly Regex Figure = new(@"\d\s*(k?cal|calories|g\b|grams|mg|\$|kj)|https?://", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    internal static readonly Regex Figure = new(@"\d\s*(k?cal|calories|g\b|grams|mg|\$|kj)|https?://", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     /// <summary>
     /// The interpretation rebuilt from checked values only, or null when the output does not have the expected shape.
