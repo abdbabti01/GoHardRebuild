@@ -2354,3 +2354,6 @@ docs/RESTAURANT_SOURCES.md.
   unsigned IPA run 56, artifact `GoHard-Dev-unsigned-ipa`, **passed**
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40549060769). No emulator run for this follow-up (not
   asked). Not merged; `main` and deployment untouched.
+- 27 Oct 2026, owner approved: `main` fast-forwarded 71a80e9 → df6062c and pushed; CI 156 on `main` passed; Railway
+  devoted-caring deployed (success 22:07 UTC; diplomatic-intuition failed, unused); hosted Ready, 14 migrations (no API
+  change). IPA 56 reused (app code identical to `1b7b3bc`).
