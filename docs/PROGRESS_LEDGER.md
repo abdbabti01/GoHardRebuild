@@ -2325,3 +2325,8 @@ docs/RESTAURANT_SOURCES.md.
   127.0.0.1:5136 with a disposable DB (dropped afterwards): **passed** on the second run (the first failed only on its
   own last check — a header key out of the lazy list — after the real checks had passed). Captures
   `docs/evidence/screenshots/eod-*`.
+- Tested app commit `ab8bee0`. CI run 152: attempt 1 failed only on `coach_companion_test` "no replay" (Today's
+  idle-blink timing, the known CI flake; 759 passed), attempt 2 **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40540012687). Unsigned IPA run 55 on `ab8bee0`, artifact
+  `GoHard-Dev-unsigned-ipa`: **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40540109863).
+  Not merged; `main`, Railway, secrets and restaurant data unchanged.
