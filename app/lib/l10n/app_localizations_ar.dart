@@ -11941,4 +11941,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String dcOpenWith(String guide) {
     return 'مساعدة لليوم: افتح المحادثة مع $guide';
   }
+
+  @override
+  String get dcProblemLimit =>
+      'طرحت أسئلة كثيرة اليوم. ستعمل الطلبات المكتوبة مجددًا لاحقًا؛ وما زالت الطلبات المقترحة تعمل.';
+
+  @override
+  String get dcProblemBusy =>
+      'قراءة الطلبات مشغولة الآن. حاول مجددًا بعد قليل.';
+
+  @override
+  String get dcProblemUnreached =>
+      'تعذّر إرسال طلبك. قد يكون السبب اتصال هذا الهاتف أو الخادم.';
+
+  @override
+  String get dcProblemInterrupted =>
+      'لم يحصل هذا الطلب على إجابة قبل إغلاق التطبيق. أعد المحاولة لطرحه مجددًا.';
+
+  @override
+  String get dcProblemUnavailable =>
+      'قراءة الطلبات المكتوبة غير متاحة الآن. طلبك محفوظ.';
 }

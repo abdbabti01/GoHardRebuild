@@ -162,7 +162,8 @@ the greeting, one factual line from Today's own projection and Ask me, e.g. "Goo
 today. Ask me ›" (`today_greeting.dart`: "<workout> is planned today.", "Your workout is ready to resume.", "A planned
 rest day today.", "Today's workout is skipped/done/saved.", "Your plan is paused today.", after a finish this session
 "Your workout is saved. Nice work.", or "Need a hand with today?" when there is nothing definite). The whole bubble is
-the Ask me button; Ask GoHard opens about "Your training". The date and "Today" stay above, separate.
+the Ask me button; since 28 Oct 2026 it (and the portrait) opens **Help with today** (below), not Ask GoHard, which stays
+the guide on Train. The date and "Today" stay above, separate.
 
 It stays: there is no close button, no "hide for today" and no timeout. It is part of the header (it scrolls away with
 it and is never over a section, a form or the navigation) for as long as Me › Appearance › Show coach on Today is on;
@@ -218,8 +219,8 @@ open at a time (`coachHelpProvider`). Where it speaks:
 | recording sets | workout screen app bar → sheet | never | Record each set when you finish it… | Ask me about the selected movement |
 | a run | run screen app bar (open run) → sheet | never | Distance comes from your phone's GPS while this screen is open… | none |
 
-Food, goals, appearance and runs have no Ask me: the coach server contract covers plans, splits, workouts and
-exercises only, so nothing outside it is sent. During recording and a run, help is a sheet the user opens (the
+Food, goals, appearance and runs have no Ask GoHard: its server contract covers plans, splits, workouts and exercises
+only, so nothing outside it is sent. (Eat's bubble and help sheet have Ask me for Help with today, below.) During recording and a run, help is a sheet the user opens (the
 same speaker inside), so nothing appears over a set field, the rest timer, the run controls or the keyboard; the
 activity underneath keeps its input, timers and drafts, and Ask GoHard opens over the sheet and returns to it.
 
@@ -337,7 +338,7 @@ What it says is fixed words chosen from the real state (`train_screen.dart` `_co
 | Train › Plan, a plan | how to read and adjust the week (or that it is paused) | Ask me about the plan |
 | Train › Workouts | an open workout to resume, or recording one's own (and where the planned one starts) | Ask me ("Your training") |
 | Train › Progress | what is recorded, or that it appears once a workout is finished | Ask me ("Your progress") |
-| Eat | "Log a meal, or set your daily goals." (with goals: "… and see how the day adds up against your goals"; with water shown: "Log a meal or some water…") | None: Log food and the goals link are right below it in the summary. No Ask me: Ask GoHard answers training questions only |
+| Eat | "Log a meal, or set your daily goals." (with goals: "… and see how the day adds up against your goals"; with water shown: "Log a meal or some water…") | Ask me (since 28 Oct 2026) → Help with today for the day shown. Log food and the goals link stay right below it in the summary |
 
 | Eat, saved-foods hint (18 Oct 2026; once each, Coaching hints govern it) | with food logged and nothing saved: "Eat the same foods often? Tap the star on a food's amount page and it waits under Favourites in Add food." · with favourites: "Your favourite foods are one tap away. Pick one, check the amount, then log it." (only My foods: "Foods you saved are in My foods. …") | **Open Favourites** / **Open My foods** (a guide action, not a primary button) → the existing Add food, on that list, for the day shown in Eat, the meal from the time of day (changeable there) |
 
@@ -395,7 +396,8 @@ network), Leon a little lower and Leona a little higher. After a save that sets 
 coach says it once ("Your longest walk so far, 4.00 km."), from the save itself, never from a sync or a restart.
 
 No score, trend, readiness or form judgement is ever said. On Train the bust opens Ask GoHard about the section in view
-(the plan's title, "Starting a plan", "Your progress", "Your training"); on Eat it opens the built-in journal help.
+(the plan's title, "Starting a plan", "Your progress", "Your training"); on Eat it opens the built-in journal help
+(whose Ask me opens Help with today).
 Water is mentioned only when it is shown (turned on, and the server declares `water.entries`).
 
 Me › Appearance › **Show coach on Train and Eat** (default on, `CoachPrefs.onTabs`, key `tabs`) is separate from Show
@@ -407,6 +409,174 @@ place of the long empty-state paragraph.
 A help sheet's guide used to stay hidden: the companion checked once, on its first frame, whether it was on screen,
 and a sheet is still below the screen then, with nothing scrolling to check again. It now looks again after each frame
 until it has started (no frames are requested for that). `coach_companion_test` covers it.
+
+## Help with today (28 Oct 2026)
+
+Added on `feature/daily-nutrition-coach` (brief: `GoHard_Daily_Nutrition_Coach_Claude_Prompt.md`). Leon or Leona helps
+someone understand their day, pick a next step and review a practical food portion — from their own records. Code:
+`features/coach/day_coach.dart` (pure: facts, portions, suggestions, revisions), `day_coach_screen.dart` (conversation,
+client, actions); API `Application/Coach/DailyCoachService.cs`.
+
+**Where.** Today's guide (portrait and Ask me) opens it about today; Eat's bubble and journal help (Ask me) open it about
+the day shown in Eat. Opening it, a hint, a tab change or a data refresh sends nothing. No new hero, floating chatbot or
+header: the conversation is a pushed page, so a workout being recorded, its timer and typed values, and any food form
+underneath stay exactly as they were. Ask GoHard (training) is unchanged and still opens from Train; a training question
+here is answered with **Ask about training**, which opens it.
+
+**Suggested requests are built in.** "Help me with today", "What have I recorded today?", "Help me reach my protein goal",
+"What could I have from my saved meals?" and, after a single suggestion, "Make that a smaller portion" are answered on the
+phone from the records, with **no model call** (label: "Built in · from your records"). They keep working with the AI
+off, unconfigured, rate-limited or offline. Only typed words, on Send, are read by the server's model (label: "Request read
+by AI · numbers from your records").
+
+### What a reply says, and where every number comes from
+
+`resolveDay` turns a request (a `DayIntent`) and the records on this phone (`DayRecords`) into lines of fact, portion
+cards and allowlisted actions. Nothing in it comes from the model except which allowlisted kind was asked and which of
+the person's own items it names.
+
+- **Today** (always today; from an earlier Eat day it says "Switched to today, …"): Today's own line (`todayLine` over the
+  shared `DailySnapshot`/`resolveTraining`: planned, in progress, rest, skipped, done, paused), "No training plan is
+  active" (never "rest"), workouts finished today, a run in progress, then the journal line, then a small choice — View
+  workout (an open workout first, else today's lead planned workout: `WorkoutFocus.session`/`preview`, which starts
+  nothing), Choose a meal, Open journal. A manual workout never completes, replaces or hides the planned one; a skipped
+  workout is never replaced by the next.
+- **Recorded** (the day shown, or today when asked): "Foods in the journal: 3 · 1,240 kcal · 86 g protein" with
+  NutrientCoverage's wording ("… kcal known" when partial), "Nothing is in the journal for this day yet. That only means
+  nothing was logged.", "The journal for this day is still loading." (never zero), workouts recorded, and "This is what
+  was logged, which may not be everything eaten." No inference about effort, recovery, adherence or health.
+- **Goal** (today; goals are compared with today only, as in Eat): with no goal set, "You haven't set a daily protein goal.
+  You can set one in Eat, or tell me what you'd like from this meal." and **Edit goals** — no target is invented and
+  nothing is ranked against one. With a goal: the exact gap only when every logged value of that nutrient is known
+  ("80 g of your 140 g protein goal is logged: 60 g to go."), otherwise "At least 80 g … known so far … the exact gap is
+  not known"; past the goal it is stated plainly. Then up to three saved items by protein, each card saying what it adds
+  ("Adds 48 g protein: 128 of 140 g logged after this.", only when both are fully known), and "A daily goal isn't a meal
+  size". Calories and protein are judged separately: a protein-complete day can have an exact protein gap and a "known"
+  calorie total.
+- **Suggest**: the usual portion of each saved meal, recipe (one serving) and saved food (a favourite or one of My foods),
+  or, with targets the person stated for this meal (calories at most, protein at least), the practical step closest to
+  the usual portion that meets them. A target needs a known value; items without it are left out and said to be. Nothing
+  fits: "Nothing saved fits …" and the two nearest, each labelled with its miss ("120 kcal over"), then "Which target
+  would you like to change?". A target is never relaxed. No saved items: says so and offers Find a food / Eating out.
+- **Portion**: one named item (several matches → "Which do you mean?" with one button per item and no values; no match →
+  "I couldn't find "shake" … Find it in Add food, or save it as a meal."). "Smaller"/"larger" move one practical step from
+  the actual current portion (`CoachMath.steps` 0.5, 0.75, 1, 1.25, 1.5, 2 × the usual; grams in 5 g steps, counts in
+  quarters) and say "That's the smallest practical portion …" at the end; a multiplier, servings or grams are used only
+  when they fit how the item is measured (recipe grams need its weighed batch: "This can't be measured in grams …").
+- **Compare**: two cards, and a difference only for a nutrient known in both.
+- **Restaurant** → Eating out (its own catalog; this feature never adds menu items). **Training** → Ask about training.
+  **Unsupported** (medical, health conditions, supplements, promises) → what it can help with, nothing more.
+
+Arithmetic is the app's own: `MealBody.totals` / `NutrientTotal.times` for a saved meal at a multiplier,
+`MealMath.share` for a recipe portion (servings of the yield, or grams of a weighed batch — never an inferred cooked
+weight), `FoodScaling` units for a saved food. Values stay exact until shown; unknown stays unknown and a zero stays zero.
+A card stores its item ID, portion and totals as worked out; the text is rendered from those numbers.
+
+### Actions, review and logging
+
+The model returns no action, route or URL. Each action is one of an allowlist resolved on the phone against the current
+account's records when tapped: **Review portion**, View workout, Open journal (Eat on that day), Edit goals (Eat, which
+opens its own goal sheet over today: goal editing stays in Eat), Saved meals & recipes, Find an order (Eating out), Find a
+food (Add food), Ask about training, Choose a meal. Navigation never starts a workout, saves a template or logs food.
+
+Ask → suggestion → review → log stay four stages. **Review portion** re-checks the reply first (below) and opens the
+existing screens with a copy taken now: a saved meal or recipe in `MealReviewScreen` at the suggested multiplier
+(`initialFactor`) or amount (`initialAmount`, `initialMeasure`), for the reply's day and the meal named (else the meal of
+the time of day); a saved food in its own amount form (`FoodFormScreen`, values from `FoodScaling.scale`, provenance
+`imported`). Everything stays editable; leaving logs nothing. Only that screen's own **Log** records, through the existing
+paths (`FoodRepository.logMeal` with one operation ID per review for a meal — one ordinary entry per food; one composite
+recipe entry with its frozen batch; `save` for a food). Changes in review affect that consumption only; Update saved meal
+/ Save as new remain the explicit template actions. A data change never edits an earlier entry.
+
+### Freshness and stale answers
+
+Each reply carries `dayRevision`: an FNV-1a fingerprint of the day's journal (ids, macros, partial sums), the goals, the
+carded items' definitions and, for a reply about today's training, the day's workouts. The screen recomputes it from the
+live records; when it differs it says "Your records changed since this answer." with **Recalculate** (the same request,
+worked out again on the phone, no AI), and Review refuses ("This changed since the suggestion. Recalculate it first.").
+An answer that arrives for a request no longer waited for, another account or another sign-in is dropped.
+
+Local-first: numbers are always this phone's records — what the person sees — never server totals. Before a typed request
+the app flushes its outbox (at most 6 s; a failure only means it says so); with changes still waiting, every reply says
+"Some changes on this phone haven't reached your account yet. I'm using what's on this phone; something saved only here
+can't be found by name until it syncs." Offline logging is never blocked.
+
+### `POST /api/v1/coach/daily` (signed in and verified, the default `me` policy; a read, never a command, never queued)
+
+```jsonc
+// request (≤ 64 KB)
+{ "requestId": "<uuid>", "question": "…",              // 1–600 chars
+  "language": "en" | "fr-CA" | "ar", "dayKey": "2026-10-28", "isToday": true,
+  "history": [ { "role": "user" | "assistant", "text": "…" } ],    // ≤ 6, each ≤ 1500 (replies as their own words)
+  "focus": [ { "kind": "meal" | "recipe" | "food", "id": "<uuid>" } ],   // ≤ 3: the last suggestion, IDs only
+  "contextRevision": "<opaque>" }                       // echoed
+
+// 200
+{ "requestId", "dayKey", "contextRevision",
+  "intent": { "kind": "today" | "recorded" | "goal" | "suggest" | "portion" | "compare" | "training" | "restaurant" | "clarify" | "unsupported",
+              "day": "shown" | "today", "nutrient": "protein" | "calories" | null, "source": "meal" | "recipe" | "food" | null,
+              "items": [ { "kind", "id" } ],                       // ≤ 3, only this account's own saved items that were offered
+              "portion": { "change": "smaller" | "larger" | null, "factor": 0.1–20 | null, "servings": 0.1–1000 | null, "grams": 1–5000 | null },
+              "maxCalories": 50–4000 | null, "minProtein": 1–300 | null, "meal": "Breakfast" | … | null,
+              "clarification": "…" | null, "unknownItems": ["as written"], "dropped": ["item" | "factor" | …] } }
+// 400 COACH_INVALID · 429 COACH_LIMIT · 503 COACH_BUSY {retryAfterSeconds} · 503 COACH_UNAVAILABLE (401/403 as everywhere)
+```
+
+Server side (`DailyCoachService`): the candidate set is read from the database by the authenticated user's ID only —
+saved meals, recipes and saved foods (favourites and My foods), not deleted — and bounded to 40: owned focus items first
+(a foreign or unknown focus ID is simply not offered), then names sharing a word with the request or the last turn, then
+the most recent. Each is sent as a short ref (`m1`, `r2`, `f3`) with its kind and name; the server maps refs back, so the
+model can neither see nor invent an ID, and another account's item can never be named. **Sent to the provider:** the
+words, up to six earlier turns, whether the day shown is today, and those refs/kinds/names. **Never sent:** nutrition
+values, journal entries or totals, goals, email, body data, GPS routes, notes. Names, the request and history are
+untrusted: they sit in labelled user blocks (`<saved_items>`, `<earlier_conversation>`, `<request>`) with `<`/`>`
+neutralised, after the trusted instructions. The reply is the strict schema `daily_coach_intent`; it is rebuilt from known
+properties only (an added `calories` field is ignored), refs not offered and out-of-range numbers are dropped and named in
+`dropped`, a clarification stating a figure or a link is replaced by the app's own words (`RestaurantService.Figure`), a
+portion naming nothing becomes `clarify`, a comparison of one becomes a portion. One model call per question; no tools.
+
+Shared limits: through `CoachService.GuardedAsync` (scope `daily`) and `CallAsync` — one request per account at a time,
+ONE daily allowance across Ask GoHard, Eating out and this, the same requestId answered once, the same timeout and
+one-retry rule, failures never remembered (Retry asks again). Provider rate limit/overload is `COACH_BUSY`, the person's
+own limit `COACH_LIMIT`; nothing is called "offline". Logs carry statuses only, never the words.
+
+Compatibility: capability **`coach.daily`**, declared with `coach.ask`'s rule (the configured provider's key and the
+guide). The phone shows the request field only when the account's server has declared it (unknown = no): an older server
+never receives the request, and the page says "Typed requests aren't available on this server. The suggested requests
+above still work." No migration, no contract change (client contract stays 2), no new configuration.
+
+Privacy on screen: under the title, "When you type a request, your words and the names of your saved meals, recipes and
+foods are sent to read it. Your journal, goals and numbers are not sent: every number is worked out on this phone."
+
+Conversation storage: `Kinds.coachChat` id `daily`, on this phone, per account (a short-lived conversation: the last 60
+messages; replies keep their request so they can be recalculated). Nothing is learned or remembered beyond it; Clear removes
+it. A request waiting when the app closed comes back as interrupted with Retry.
+
+Tone: factual, no guilt, no praise streams, no diagnosis, no promises about fat loss or muscle gain, no recovery or
+readiness scores. Reaching or passing a goal is stated as numbers.
+
+### Verification (28 Oct 2026)
+
+- API (`DailyCoachTests` in `CoachTests`, real host + disposable PostgreSQL, **stubbed provider** in both Anthropic and
+  Groq shapes): intent naming only this account's offered items (foreign focus never offered, invented refs dropped,
+  added nutrition/URL fields ignored), short refs instead of IDs, no journal/goal/email/item values in the prompt, names in
+  the user block, injection through the words and an item name, ambiguous names kept for the person to choose, ranges,
+  figure-bearing clarifications, portion/compare degradation, bad replies → 503, one shared allowance with Ask GoHard and
+  Eating out, one call per requestId, invalid requests never reaching the provider, unconfigured → not declared, 503.
+- App (`day_coach_test`, 20, pure): schedule states from the shared projection (planned, rest, skipped, open/finished
+  manual, paused, no plan), loading/empty/partial/pending journals, earlier day vs today, goals absent vs set (exact gap,
+  partial, past), recipe shares and grams, unknown vs zero, practical steps and their ends, ambiguous/unknown/foreign
+  items, exact or labelled-near targets, comparisons, the server intent read from known fields only, revisions, the saved
+  food's review draft.
+- App (`day_coach_ui_test`, 10, real local database for the conversation, **scripted client**): built-in requests make no
+  request; Review opens the exact portion and day; back logs nothing; Log meal logs once at 0.75×; a saved food's form;
+  typed request content (no journal values), stale after a definition change, Review refused, Recalculate with no request,
+  follow-up focus by ID; failure → Retry with the same requestId; older server → no field, built-ins still answer; no
+  goal → Edit goals, nothing written; the conversation survives closing; French 320 px / 1.6× and Arabic RTL without
+  overflow. `coach_companion_test` updated: Today's guide and Ask me open Help with today; Eat's bubble has Ask me.
+- Native `journey_daily_test` (one process, not default; branch API on 127.0.0.1:5136, disposable DB, captured mail, provider
+  = `scripts/coach-stub.mjs`, a **stub** with a fixed rule): see the ledger, 28 Oct 2026.
+- **Live AI:** no Groq key on this machine; no live request was made. Pending the owner's approval to deploy.
 
 ### Groq rate limits in practice (live, 15 Oct 2026)
 

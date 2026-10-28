@@ -16979,6 +16979,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help with today: open the conversation with {guide}'**
   String dcOpenWith(String guide);
+
+  /// Daily coach: the person's own daily AI allowance is used (COACH_LIMIT).
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve asked a lot today. Typed requests will work again later; the suggested requests still work.'**
+  String get dcProblemLimit;
+
+  /// Daily coach: the AI provider is rate limited or overloaded (COACH_BUSY).
+  ///
+  /// In en, this message translates to:
+  /// **'Reading requests is busy right now. Try again in a moment.'**
+  String get dcProblemBusy;
+
+  /// Daily coach: the request did not get through; never called "offline".
+  ///
+  /// In en, this message translates to:
+  /// **'Your request couldn\'t be sent. That can be this phone\'s connection or the server.'**
+  String get dcProblemUnreached;
+
+  /// Daily coach: the app closed while a request waited.
+  ///
+  /// In en, this message translates to:
+  /// **'This request didn\'t get an answer before the app closed. Retry to ask again.'**
+  String get dcProblemInterrupted;
+
+  /// Daily coach: the AI could not answer (COACH_UNAVAILABLE, timeout, unreadable reply).
+  ///
+  /// In en, this message translates to:
+  /// **'Reading typed requests isn\'t available right now. Your request is kept.'**
+  String get dcProblemUnavailable;
 }
 
 class _AppLocalizationsDelegate

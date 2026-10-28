@@ -2797,5 +2797,10 @@
   "dcChipProtein": "Aide-moi à atteindre mon objectif de protéines",
   "dcChipSaved": "Que pourrais-je prendre parmi mes repas enregistrés?",
   "dcChipSmaller": "Une portion plus petite",
-  "dcOpenWith": "Aide pour aujourd'hui : ouvrir la conversation avec {guide}"
+  "dcOpenWith": "Aide pour aujourd'hui : ouvrir la conversation avec {guide}",
+  "dcProblemLimit": "Tu as posé beaucoup de questions aujourd'hui. Les demandes écrites fonctionneront de nouveau plus tard; les demandes suggérées fonctionnent toujours.",
+  "dcProblemBusy": "La lecture des demandes est occupée en ce moment. Réessaie dans un instant.",
+  "dcProblemUnreached": "Ta demande n'a pas pu être envoyée. Cela peut venir de la connexion de ce téléphone ou du serveur.",
+  "dcProblemInterrupted": "Cette demande n'a pas eu de réponse avant la fermeture de l'application. Réessaie pour la poser de nouveau.",
+  "dcProblemUnavailable": "La lecture des demandes écrites n'est pas offerte en ce moment. Ta demande est conservée."
 }

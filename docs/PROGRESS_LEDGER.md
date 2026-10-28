@@ -2357,3 +2357,47 @@ docs/RESTAURANT_SOURCES.md.
 - 27 Oct 2026, owner approved: `main` fast-forwarded 71a80e9 → df6062c and pushed; CI 156 on `main` passed; Railway
   devoted-caring deployed (success 22:07 UTC; diplomatic-intuition failed, unused); hosted Ready, 14 migrations (no API
   change). IPA 56 reused (app code identical to `1b7b3bc`).
+
+## 28 Oct 2026 — Help with today and food (`feature/daily-nutrition-coach`, from `main` 65fa9b8)
+
+Brief: `GoHard_Daily_Nutrition_Coach_Claude_Prompt.md`. Design and contract: docs/COACH.md › Help with today;
+docs/FOOD_DATA.md › Suggested portions.
+
+- What works: Today's guide (portrait and Ask me) and Eat's Ask me (bubble and journal help) open a conversation about
+  that day. Built-in requests (Help me with today, What have I recorded today?, Help me reach my protein goal, What could
+  I have from my saved meals?, Make that a smaller portion) are answered on the phone with no AI. Typed words go to
+  `POST /coach/daily`, whose model only returns a checked intent naming this account's own saved meals, recipes and saved
+  foods by short reference; every number is worked out on the phone with MealMath / FoodScaling / NutrientCoverage. Cards
+  open the existing review (`MealReviewScreen` at the suggested multiplier/amount, or the food's amount form) and only
+  its own Log records, through the existing paths. Stale replies are detected (`dayRevision`) and recalculated without AI.
+  Shared allowance with Ask GoHard and Eating out; capability `coach.daily`; no migration; client contract stays 2.
+- Changed on purpose: Today's guide now opens Help with today instead of Ask GoHard (Ask GoHard stays on Train; a training
+  question offers Ask about training). Eat's coach now has Ask me. `coach_companion_test` updated accordingly.
+- Not included (brief's later ideas): plan adaptation, new trend analysis, durable preference memory, photos, voice,
+  notifications, autonomous logging. Water and steps are not part of the briefing (the brief allowed them; left out to
+  keep it small).
+- Tests: API `CoachTests` 33 passed (4 new `DailyCoachTests`, **stubbed provider**, Anthropic and Groq shapes). App
+  `day_coach_test` 20, `day_coach_ui_test` 10 (**scripted client**, real local DB for the conversation),
+  `coach_companion_test` updated; full app suite 792 passed on the feature commit; `flutter analyze` clean; `check-l10n`
+  OK (en/fr/ar).
+- Native `journey_daily_test` (new, one process, not default) on Pixel_7 against the branch API on 127.0.0.1:5136, a
+  disposable DB (`gohard_daily_journey`, dropped afterwards), captured mail, and the provider pointed at
+  `scripts/coach-stub.mjs` — a **stub with a fixed rule, not a model**: **passed** (2:55). Covered: briefing and goal
+  question with no AI request; Edit goals opening Eat's goal sheet; a saved meal made; a typed request naming it; a typed
+  "smaller" (0.75×); Review → back (account: no entries); Review → Log meal (account: 2 entries at exactly 0.75× of each
+  saved amount; saved meal still revision 1); a typed request the provider fails (HTTP 500) → honest problem with Retry,
+  then a built-in request still answering ("Foods in the journal: 2"); nothing logged twice; account deleted. Captures
+  `docs/evidence/screenshots/dc-01…08`. The captures showed two defects, fixed in the follow-up commit: an empty answer
+  bubble for a card-only reply, and the failure text reusing Ask GoHard's words (now its own `dcProblem*`).
+- Restart with an unsaved draft: not covered natively (a one-process journey; phase-2 reinstalls fail on Pixel_7 for
+  storage). Covered at database level: `day_coach_ui_test` "the conversation survives closing the screen" (real local DB),
+  and the existing review/draft persistence tests (`saved_meals_test`).
+- Live AI: no Groq key on this machine; **no live request was made**. Pending owner approval to deploy, then iPhone.
+- CI run 158 on `457541e` **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40600762565).
+- Follow-up (from the journey and render captures): no empty answer bubble for a card-only reply; failure states use this
+  feature's own words (`dcProblem*`: limit / busy / couldn't be sent / interrupted / unavailable — never "offline");
+  suggested requests are outlined rounded buttons whose words wrap (Material chips clipped them in French at 320 px /
+  1.6×). Renders (`day_coach_ui_test` › renders, `GOHARD_RENDER`, settled guide): `docs/evidence/daily-coach/` and
+  `docs/evidence/localization/{fr,ar}/daily-coach/` — empty and goal + smaller portion in light and dark, large text at
+  320 px, typed request with the unavailable fallback. Affected suites after the follow-up: 132 passed; analyze clean.
+  The native journey ran on `457541e` (before these presentation-only changes; its keys and flow are unchanged).

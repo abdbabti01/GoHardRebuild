@@ -385,9 +385,13 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                 const SizedBox(height: 14),
                 Wrap(spacing: 8, runSpacing: 4, children: [
                   for (final (said, intent) in _chips(l, s))
-                    ActionChip(
-                        key: Key('day-chip-${intent.kind}${intent.change ?? ''}'), label: Text(said), materialTapTargetSize: MaterialTapTargetSize.padded,
-                        shape: StadiumBorder(side: BorderSide(color: context.c.outline)), onPressed: s.sending || !s.loaded ? null : () => _builtIn(intent, said)),
+                    // An outlined pill whose words wrap (a chip would clip them at large text on a narrow phone).
+                    OutlinedButton(
+                        key: Key('day-chip-${intent.kind}${intent.change ?? ''}'),
+                        style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel)), side: BorderSide(color: context.c.outline), minimumSize: const Size(48, 48),
+                            foregroundColor: context.c.text, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+                        onPressed: s.sending || !s.loaded ? null : () => _builtIn(intent, said),
+                        child: Text(said)),
                 ]),
               ],
             ),
@@ -449,12 +453,12 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                 liveRegion: true,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   StatusLine(Icons.info_outline, switch (problem) {
-                    AskProblem.limit => l.coachAskProblemLimit,
-                    AskProblem.busy => l.coachAskProblemBusy,
-                    AskProblem.unreached => l.coachAskProblemUnreached,
+                    AskProblem.limit => l.dcProblemLimit,
+                    AskProblem.busy => l.dcProblemBusy,
+                    AskProblem.unreached => l.dcProblemUnreached,
                     AskProblem.invalid => l.coachAskProblemInvalid,
-                    AskProblem.interrupted => l.coachAskProblemInterrupted,
-                    AskProblem.unavailable => l.coachAskProblemUnavailable,
+                    AskProblem.interrupted => l.dcProblemInterrupted,
+                    AskProblem.unavailable => l.dcProblemUnavailable,
                   }, key: const Key('day-problem'), tone: Tone.warning),
                   Text(l.dcStillWorks, style: context.caption),
                   Wrap(spacing: 8, children: [
@@ -500,6 +504,8 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                 TextButton(key: Key('day-recalc-$id'), onPressed: () => _convo.recalculate(id, _records(), l), child: Text(l.dcRecalculate)),
               ]),
             ),
+          // Lines of fact in the pale panel; a reply that is only a card has none, and no empty bubble.
+          if ((reply['lines'] as List? ?? const []).isNotEmpty) ...[
           const SizedBox(height: 6),
           Container(
             margin: const EdgeInsetsDirectional.only(end: 24),
@@ -507,6 +513,7 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
             decoration: BoxDecoration(color: context.c.tint, borderRadius: BorderRadius.circular(Radii.panel)),
             child: Text((reply['lines'] as List? ?? const []).join('\n'), key: Key('day-answer-$id'), style: context.body.copyWith(color: GoColors.panelOf(context.c).text)),
           ),
+          ],
           for (final (i, c) in cards.indexed) _card(id, i, c, reply, actions, stale),
           // Actions not tied to a card: one row of quiet buttons, each naming what it opens.
           Wrap(spacing: 4, children: [

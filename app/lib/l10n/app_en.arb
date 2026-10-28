@@ -16045,5 +16045,25 @@
         "type": "String"
       }
     }
+  },
+  "dcProblemLimit": "You've asked a lot today. Typed requests will work again later; the suggested requests still work.",
+  "@dcProblemLimit": {
+    "description": "Daily coach: the person's own daily AI allowance is used (COACH_LIMIT)."
+  },
+  "dcProblemBusy": "Reading requests is busy right now. Try again in a moment.",
+  "@dcProblemBusy": {
+    "description": "Daily coach: the AI provider is rate limited or overloaded (COACH_BUSY)."
+  },
+  "dcProblemUnreached": "Your request couldn't be sent. That can be this phone's connection or the server.",
+  "@dcProblemUnreached": {
+    "description": "Daily coach: the request did not get through; never called \"offline\"."
+  },
+  "dcProblemInterrupted": "This request didn't get an answer before the app closed. Retry to ask again.",
+  "@dcProblemInterrupted": {
+    "description": "Daily coach: the app closed while a request waited."
+  },
+  "dcProblemUnavailable": "Reading typed requests isn't available right now. Your request is kept.",
+  "@dcProblemUnavailable": {
+    "description": "Daily coach: the AI could not answer (COACH_UNAVAILABLE, timeout, unreadable reply)."
   }
 }

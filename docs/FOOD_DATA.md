@@ -401,6 +401,16 @@ Code: app `features/nutrition/saved_meals.dart` (model, `MealMath`, repository),
 `test/saved_meals_ui_test.dart` (renders with `GOHARD_RENDER`), API `SavedMealTests`, native
 `journey_meals_test`.
 
+### Suggested portions from the coach (28 Oct 2026)
+
+Leon or Leona can suggest a portion of a saved meal, recipe or saved food (docs/COACH.md › Help with today). The values
+are this section's arithmetic, unchanged: `MealBody.totals` × a multiplier, `MealMath.share` for a recipe (grams only for
+a weighed batch), `FoodScaling` units for a food; unknown stays unknown, a zero stays zero, nothing is rounded before it
+is shown. Practical steps only (½, ¾, 1, 1¼, 1½, 2 × the usual portion; grams in 5 g steps). **Review portion** opens
+`MealReviewScreen` (new optional `initialFactor` / `initialAmount` / `initialMeasure`) or the food's amount form at that
+portion; only their own Log records, through `logMeal` / recipe snapshot / `save` as above. A suggestion never edits a
+saved definition or an earlier entry.
+
 ## Compatibility gate
 
 On start and on resume the app asks `/capabilities` once, waiting at most 6 seconds. If the server's

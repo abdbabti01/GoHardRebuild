@@ -2,12 +2,20 @@
 // local database for the conversation, with the server's reading of typed words SCRIPTED (no AI, no network): these
 // tests prove what the app does with an answer, never that a live model reads well.
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import 'package:flutter/services.dart' show ByteData, FontLoader;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
+import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/compatibility.dart';
+import 'package:gohard_rebuild/core/theme.dart';
+import 'package:gohard_rebuild/features/coach/coach_prefs.dart' show coachPrefsProvider;
+import 'package:gohard_rebuild/features/coach/coach_rig.dart' show rigImageProvider;
 import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/language.dart';
 import 'package:gohard_rebuild/data/models.dart';
@@ -25,6 +33,8 @@ import 'support.dart';
 import 'ui_support.dart';
 
 const day = '2026-10-27';
+const _render = bool.fromEnvironment('GOHARD_RENDER');
+const _out = renderLanguage == '' ? '../docs/evidence/daily-coach' : '../docs/evidence/localization/$renderLanguage/daily-coach';
 
 Json _whey = {'source': 'user', 'sourceId': 'whey', 'name': 'Whey', 'basis': 'serving', 'nutrients': {'calories': 120, 'protein': 24, 'carbs': 3, 'fat': 1.5}, 'servings': [{'label': '1 scoop', 'grams': 30}]};
 Json shakeMeal({double scoops = 2, String name = 'Breakfast shake'}) =>
@@ -65,14 +75,14 @@ class _Fixture {
     meals.add([for (final x in m) _row(x)]);
   }
 
-  Future<List<Override>> overrides(WidgetTester tester, {int? proteinGoal = 140, List<Json>? journal, Set<String>? caps = const {'coach.daily', 'food.saved-meals'}, int pending = 0, List<Json>? foods}) async {
+  Future<List<Override>> overrides(WidgetTester tester, {int? proteinGoal = 140, List<Json>? journal, Set<String>? caps = const {'coach.daily', 'food.saved-meals'}, int pending = 0, List<Json>? foods, AppearanceStore? appearance}) async {
     final db = store.open();
     addTearDown(() async {
       await db.close();
       store.dispose();
     });
     return [
-      ...(await tester.runAsync(() => overridesFor(day: day, proteinGoal: proteinGoal, food: journal ?? [food('a', kcal: 400, protein: 80)], savedFoods: foods ?? [_yogurt], pending: pending)))!,
+      ...(await tester.runAsync(() => overridesFor(day: day, appearance: appearance, proteinGoal: proteinGoal, food: journal ?? [food('a', kcal: 400, protein: 80)], savedFoods: foods ?? [_yogurt], pending: pending)))!,
       ...fakes.overrides,
       dbProvider.overrideWithValue(db),
       syncProvider.overrideWith((ref) {
@@ -253,4 +263,77 @@ void main() {
       expect(find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('day-review-')), findsWidgets);
     });
   }
+
+  group('renders', () {
+    if (!_render) {
+      test('help with today renders are skipped without GOHARD_RENDER', () {});
+      return;
+    }
+    setUpAll(() async {
+      final inter = FontLoader('Inter');
+      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+        inter.addFont(File('assets/fonts/Inter-$w.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)));
+      }
+      await inter.load();
+      await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+      await loadArabicFonts();
+      final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+      if (icons.existsSync()) await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+    });
+
+    Future<void> shot(WidgetTester tester, String name, Future<void> Function(_Fixture f) act, {Size size = const Size(390, 1500), ThemeMode mode = ThemeMode.light, double text = 1}) async {
+      final store = AppearanceStore(MemorySecretStore())
+        ..accent = Accent.blue
+        ..mode = mode;
+      final f = _Fixture();
+      final c = await pumpApp(tester, await f.overrides(tester, appearance: store, foods: const []), home: const DayCoachScreen(day: day), size: size, textScale: text, insets: phoneInsets, settle: false);
+      // Settled guide (Reduce Motion): a still portrait, so the page can settle for the capture.
+      c.read(devicePrefsProvider.notifier).setMotion(MotionPref.reduced);
+      // The guide's painted bust loads over real time (awaiting its future inside runAsync hangs in this harness).
+      c.read(rigImageProvider(c.read(coachPrefsProvider).guide));
+      for (var i = 0; i < 10; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      await act(f);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pumpAndSettle();
+      final image = (await tester.runAsync(() => tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot'))).toImage(pixelRatio: 2)))!;
+      await tester.runAsync(() async {
+        final file = File('$_out/$name.png');
+        await file.parent.create(recursive: true);
+        await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
+      });
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    }
+
+    Future<void> goalThenSmaller(WidgetTester tester) async {
+      await _tap(tester, find.byKey(const Key('day-chip-goal')));
+      await _tap(tester, find.byKey(const Key('day-chip-portionsmaller')));
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -3000));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('empty, goal and smaller portion, light and dark', (tester) async {
+      for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+        await shot(tester, 'empty-${mode.name}', (_) async {}, size: const Size(390, 844), mode: mode);
+        await shot(tester, 'goal-smaller-${mode.name}', (_) => goalThenSmaller(tester), mode: mode);
+      }
+    });
+
+    testWidgets('large text at 320 px', (tester) async {
+      await shot(tester, 'large-text-320', (_) => goalThenSmaller(tester), size: const Size(320, 1500), text: 1.6);
+    });
+
+    testWidgets('typed request and the unavailable fallback', (tester) async {
+      await shot(tester, 'typed-unavailable', (f) async {
+        f.ai.reply = (r) async => throw const AskFailure(AskProblem.unavailable);
+        await tester.enterText(find.byKey(const Key('day-input')), 'What could I have for lunch?');
+        await _sendTap(tester);
+        await _tap(tester, find.byKey(const Key('day-chip-recorded')));
+      });
+    });
+  });
 }

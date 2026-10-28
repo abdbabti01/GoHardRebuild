@@ -11646,6 +11646,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String dcOpenWith(String guide) {
     return 'Aide pour aujourd\'hui : ouvrir la conversation avec $guide';
   }
+
+  @override
+  String get dcProblemLimit =>
+      'Tu as posé beaucoup de questions aujourd\'hui. Les demandes écrites fonctionneront de nouveau plus tard; les demandes suggérées fonctionnent toujours.';
+
+  @override
+  String get dcProblemBusy =>
+      'La lecture des demandes est occupée en ce moment. Réessaie dans un instant.';
+
+  @override
+  String get dcProblemUnreached =>
+      'Ta demande n\'a pas pu être envoyée. Cela peut venir de la connexion de ce téléphone ou du serveur.';
+
+  @override
+  String get dcProblemInterrupted =>
+      'Cette demande n\'a pas eu de réponse avant la fermeture de l\'application. Réessaie pour la poser de nouveau.';
+
+  @override
+  String get dcProblemUnavailable =>
+      'La lecture des demandes écrites n\'est pas offerte en ce moment. Ta demande est conservée.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

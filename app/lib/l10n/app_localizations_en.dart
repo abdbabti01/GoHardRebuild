@@ -11445,4 +11445,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String dcOpenWith(String guide) {
     return 'Help with today: open the conversation with $guide';
   }
+
+  @override
+  String get dcProblemLimit =>
+      'You\'ve asked a lot today. Typed requests will work again later; the suggested requests still work.';
+
+  @override
+  String get dcProblemBusy =>
+      'Reading requests is busy right now. Try again in a moment.';
+
+  @override
+  String get dcProblemUnreached =>
+      'Your request couldn\'t be sent. That can be this phone\'s connection or the server.';
+
+  @override
+  String get dcProblemInterrupted =>
+      'This request didn\'t get an answer before the app closed. Retry to ask again.';
+
+  @override
+  String get dcProblemUnavailable =>
+      'Reading typed requests isn\'t available right now. Your request is kept.';
 }
