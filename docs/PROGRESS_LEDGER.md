@@ -2401,3 +2401,7 @@ docs/FOOD_DATA.md › Suggested portions.
   `docs/evidence/localization/{fr,ar}/daily-coach/` — empty and goal + smaller portion in light and dark, large text at
   320 px, typed request with the unavailable fallback. Affected suites after the follow-up: 132 passed; analyze clean.
   The native journey ran on `457541e` (before these presentation-only changes; its keys and flow are unchanged).
+- Tested app commit `dea4e00`: CI run 159 **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40609988642);
+  unsigned IPA run 57, artifact `GoHard-Dev-unsigned-ipa`, **passed**
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40611505805). Not merged; `main`, Railway, Cloudflare,
+  secrets, signing and the deferred video branches untouched. Live AI not verified (no key here; needs the deploy).
