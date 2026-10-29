@@ -2405,3 +2405,11 @@ docs/FOOD_DATA.md › Suggested portions.
   unsigned IPA run 57, artifact `GoHard-Dev-unsigned-ipa`, **passed**
   (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40611505805). Not merged; `main`, Railway, Cloudflare,
   secrets, signing and the deferred video branches untouched. Live AI not verified (no key here; needs the deploy).
+- 29 Oct 2026, owner approved merge and deploy: `main` fast-forwarded 65fa9b8 → b0c0da6 (no newer work on `main` to
+  preserve) and pushed. CI run 161 on `main` **passed** (https://github.com/abdbabti01/GoHardRebuild/actions/runs/40921678030).
+  Railway devoted-caring deployed (success 17:29:56 UTC; diplomatic-intuition failed, unused). Hosted
+  `/health/ready` 200 "Ready — 14 migration(s) applied" (no migration in this release); `/capabilities` contract 2 /
+  minimum 2 and declares `coach.daily` beside `coach.ask` and `restaurants.interpret`, so the existing Groq settings are
+  in use — no secret or variable was changed. Unauthenticated `POST /api/v1/coach/daily` → 401. No hosted account was
+  created and no email sent. IPA 57 reused (app code identical to `dea4e00`). **Live AI and hosted logging: unverified**,
+  pending the owner's iPhone check.

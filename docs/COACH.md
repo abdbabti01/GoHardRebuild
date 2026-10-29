@@ -576,7 +576,7 @@ readiness scores. Reaching or passing a goal is stated as numbers.
   overflow. `coach_companion_test` updated: Today's guide and Ask me open Help with today; Eat's bubble has Ask me.
 - Native `journey_daily_test` (one process, not default; branch API on 127.0.0.1:5136, disposable DB, captured mail, provider
   = `scripts/coach-stub.mjs`, a **stub** with a fixed rule): see the ledger, 28 Oct 2026.
-- **Live AI:** no Groq key on this machine; no live request was made. Pending the owner's approval to deploy.
+- **Live AI:** no Groq key on this machine; no live request was made. Deployed 29 Oct 2026 (hosted declares `coach.daily`); live behaviour unverified until the owner checks on the iPhone.
 
 ### Groq rate limits in practice (live, 15 Oct 2026)
 
