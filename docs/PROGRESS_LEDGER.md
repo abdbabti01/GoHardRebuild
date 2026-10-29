@@ -2413,3 +2413,28 @@ docs/FOOD_DATA.md › Suggested portions.
   in use — no secret or variable was changed. Unauthenticated `POST /api/v1/coach/daily` → 401. No hosted account was
   created and no email sent. IPA 57 reused (app code identical to `dea4e00`). **Live AI and hosted logging: unverified**,
   pending the owner's iPhone check.
+
+## 29 Oct 2026 — Meal habits, saved-meal amounts and Reminders (`feature/meal-habits-reminders`, from `main` 12d7ce5)
+
+Design and rules: docs/MEAL_HABITS_REMINDERS.md. Code a19aef7.
+
+- What existed: saved-meal review with per-food edits, add/remove, multipliers, recipe servings/weighed grams, Update
+  saved meal (confirmed), Save as new; typed coach requests resolving to the review; workout reminders with one
+  replace-everything scheduler.
+- Added: local meal-habit detection (28-day window, 3 distinct days, last within 14, stable identities, latest amounts)
+  with Eat's Review usual meal / Choose something else / Not today, opt-in (Me › Meal suggestions or the coach's one-time
+  offer); review actions renamed Log this time / Update saved meal / Save as a variation with an explanatory note;
+  `portion.ingredient` on `POST /coach/daily` (additive, no capability/migration) resolved on the phone; Me › Reminders
+  (workout switch moved there) with local, per-account meal/medication/supplement reminders, 7-day horizon within 60
+  notifications, meal suppression once logged, Taken/Snooze/Skip per occurrence, private lock-screen wording, suggested
+  meal time only from same-day logging times; Eat link to Reminders.
+- Tests: app `meal_habits_reminders_test` 16, `meal_habits_reminders_ui_test` 3 (ar/fr, 320 px, 1.6× text), updated Me /
+  language / saved-meal tests; full app suite **812 passed**; `flutter analyze` clean; `check-l10n` OK (2,893 messages).
+  API `DailyCoachTests` 7 passed locally (**stubbed provider**). CI 40933069001 passed on attempt 2: attempt 1 failed only
+  `AccountEmailTests.Provider_trouble…`, whose "no 8-digit code in logs" regex matched digits inside a random GUID
+  (unrelated, pre-existing flake). Unsigned IPA run 58 (a19aef7) passed.
+- Native `journey_habits_test` (new, one process, not default): **not run**. Branch API on 127.0.0.1:5136 with a
+  disposable DB (`gohard_habits_journey`, dropped) was up; the Pixel_7 install failed twice with
+  INSUFFICIENT_STORAGE (~560 MB free after reboot and cache trim). Stopped there as instructed.
+- **Unverified:** real iOS/Android notification delivery, lock-screen discretion, notification buttons, background meal
+  suppression, real Groq interpretation of ingredient requests, VoiceOver. Not merged, not deployed.
