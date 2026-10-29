@@ -16,6 +16,8 @@ import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
+import 'package:gohard_rebuild/features/me/reminders.dart' show Reminder, remindersProvider, doseLogsProvider;
+import 'package:gohard_rebuild/features/nutrition/meal_habits_ui.dart' show habitPrefsProvider, logTimesProvider;
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/nutrition/food_item.dart';
 import 'package:gohard_rebuild/features/nutrition/food_repository.dart';
@@ -41,7 +43,8 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     List<Json> food = const [], bool foodFails = false, AppearanceStore? appearance, String profileAppearance = 'dark',
     int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const [], List<Json> runs = const [],
     int pending = 0, List<Rec> issues = const [], Json profile = const {}, bool profileLoaded = true, bool liveWorkouts = false,
-    List<Json> weeklyGoals = const [], bool liveGoals = false, List<Json> bodyMetrics = const [], List<String> pendingMetrics = const [], bool liveMetrics = false, bool livePlans = false}) async {
+    List<Json> weeklyGoals = const [], bool liveGoals = false, List<Json> bodyMetrics = const [], List<String> pendingMetrics = const [], bool liveMetrics = false, bool livePlans = false,
+    List<Json> reminders = const [], Json habitPrefs = const {}, List<({String day, String meal, int minute})> logTimes = const []}) async {
   final sessions = SessionManager(MemorySecretStore());
   await sessions.signIn(authFor('one'));
   List<Stored<WorkoutSet>> setRows(String? workoutId) => [for (final s in sets) if (workoutId == null || s['workoutId'] == workoutId) stored(WorkoutSet(s), Kinds.set, s['id'] as String, s)];
@@ -74,6 +77,11 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     catalogProvider.overrideWith((ref) => Stream.value(const [])),
     issuesProvider.overrideWith((ref) => Stream.value(issues)),
     pendingCountProvider.overrideWith((ref) => Stream.value(pending)),
+    // This phone's own reminders and meal-suggestion choice (docs/MEAL_HABITS_REMINDERS.md): none unless a test gives some.
+    remindersProvider.overrideWith((ref) => Stream.value([for (final r in reminders) Reminder(r)])),
+    doseLogsProvider.overrideWith((ref) => Stream.value(const {})),
+    habitPrefsProvider.overrideWith((ref) => Stream.value(habitPrefs)),
+    logTimesProvider.overrideWith((ref) => Stream.value(logTimes)),
   ];
 }
 

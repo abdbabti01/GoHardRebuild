@@ -56,7 +56,7 @@ try {
         $location = 'ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'
         $grants = @{
             journey_device_test = @('POST_NOTIFICATIONS') + $location; journey_food_test = @('CAMERA'); journey_runwalk_test = @('POST_NOTIFICATIONS') + $location
-            journey_move_test = @('POST_NOTIFICATIONS') + $location; journey_ux_test = @('POST_NOTIFICATIONS') + $location
+            journey_move_test = @('POST_NOTIFICATIONS') + $location; journey_ux_test = @('POST_NOTIFICATIONS') + $location; journey_habits_test = @('POST_NOTIFICATIONS')
             # These start a run or walk on the way (Run / Walk asks for location when Start is pressed).
             journey_coldstart_test = $location; journey_today_panels_test = $location; journey_appwide_test = $location
         }[$journey]

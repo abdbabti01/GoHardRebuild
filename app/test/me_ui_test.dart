@@ -36,7 +36,7 @@ class _NoReminders implements ReminderScheduler {
   @override
   Future<bool?> notificationsAllowed() async => null;
   @override
-  Future<void> replaceAll(List<PlannedReminder> reminders, String localTime) async {}
+  Future<void> replaceAll(List<Notice> notices) async {}
 }
 
 Rec _issue(String id) => Rec(ownerId: 'one', kind: Kinds.food, id: id, body: '{}', revision: 1, localRevision: 1, syncState: 'conflict');
@@ -65,7 +65,7 @@ void main() {
     for (final section in ['PERSONAL', 'PREFERENCES', 'ACCOUNT']) {
       expect(find.text(section), findsOneWidget);
     }
-    for (final key in ['me-body', 'me-goals', 'me-appearance', 'me-units', 'me-motion', 'me-reminders', 'me-sync', 'me-delete-account', 'me-sign-out']) {
+    for (final key in ['me-body', 'me-goals', 'me-meal-suggestions', 'me-appearance', 'me-units', 'me-motion', 'me-reminders-page', 'me-sync', 'me-delete-account', 'me-sign-out']) {
       expect(find.byKey(Key(key)), findsOneWidget, reason: key);
     }
     expect(_in('me-appearance', find.text('Blue · System')), findsOneWidget);
@@ -88,7 +88,7 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const Key('me-name'))).data, 'one@example.test');
     expect(find.text('Edit profile'), findsNothing);
     expect(find.text('Your profile has not loaded on this phone yet.'), findsOneWidget);
-    for (final key in ['me-goals', 'me-units', 'me-reminders']) {
+    for (final key in ['me-goals', 'me-units']) {
       expect(find.byKey(Key(key)), findsNothing, reason: '$key needs the profile');
     }
     expect(find.byKey(const Key('me-sign-out')), findsOneWidget);
@@ -217,8 +217,16 @@ void main() {
         }
 
         await check('Me');
+        // Workout reminders live on Me › Reminders with the other reminders.
+        await reveal(find.byKey(const Key('me-reminders-page')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('me-reminders-page')));
+        await tester.pumpAndSettle();
+        await check('reminders');
         expect(tester.getSemantics(_in('me-reminders', find.byType(Switch))), isSemantics(label: 'Workout reminders\nOn days with a planned workout. None while your plan is paused.', hasToggledState: true, isToggled: true, hasTapAction: true, hasEnabledState: true, isEnabled: true, hasFocusAction: true, isFocusable: true),
             reason: 'the switch is announced with what it switches');
+        await tester.pageBack();
+        await tester.pumpAndSettle();
         for (final key in ['me-motion', 'me-appearance', 'me-delete-account', 'me-edit-name']) {
           await reveal(find.byKey(Key(key)));
           await tester.pumpAndSettle();
@@ -260,17 +268,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    for (final key in ['me-goals', 'me-appearance', 'me-units', 'me-motion', 'me-reminders', 'me-reminder-time', 'me-sync', 'me-delete-account', 'me-sign-out']) {
+    for (final key in ['me-goals', 'me-meal-suggestions', 'me-appearance', 'me-units', 'me-motion', 'me-reminders-page', 'me-sync', 'me-delete-account', 'me-sign-out']) {
       await reveal(key);
       expect(tester.takeException(), isNull, reason: key);
       expect(tester.getSize(find.byKey(Key(key))).width, lessThanOrEqualTo(320));
     }
     expect(find.textContaining('12 changes waiting to sync'), findsOneWidget);
 
-    for (final key in ['me-motion', 'me-appearance', 'me-delete-account']) {
+    for (final key in ['me-motion', 'me-appearance', 'me-delete-account', 'me-reminders-page', 'me-meal-suggestions']) {
       await reveal(key);
       await tester.tap(find.byKey(Key(key)));
       await tester.pumpAndSettle();
+      if (key == 'me-reminders-page') expect(find.byKey(const Key('me-reminder-time')), findsOneWidget, reason: 'the workout time is on Reminders');
       await tester.dragFrom(const Offset(160, 400), const Offset(0, -600));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: 'page behind $key');

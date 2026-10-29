@@ -22,8 +22,12 @@ public sealed record DailyCoachRequest(Guid RequestId, string? Question, string?
 
 /// <summary>A saved item by kind ("meal" | "recipe" | "food") and the account's own ID.</summary>
 public sealed record DailyRef(string Kind, Guid Id);
-/// <summary>The person's own portion words: a step ("smaller" | "larger"), a multiplier, servings or grams. Never a nutrient value.</summary>
-public sealed record DailyPortion(string? Change, double? Factor, double? Servings, double? Grams);
+/// <summary>
+/// The person's own portion words: a step ("smaller" | "larger"), a multiplier, servings or grams. Never a nutrient value.
+/// <c>Ingredient</c>: one food inside the named saved meal, in the person's words ("rice"), when only that food's amount
+/// changes this time; the phone matches it against the meal's own foods and asks back when it is unclear.
+/// </summary>
+public sealed record DailyPortion(string? Change, double? Factor, double? Servings, double? Grams, string? Ingredient = null);
 /// <summary>
 /// What was asked, every value checked: a kind from the allowlist, references only to this account's saved items that
 /// were offered, the person's own numbers in range. <c>Dropped</c> names what the model said that did not check out.
@@ -126,7 +130,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
         - "recorded": what has been recorded or logged on the day.
         - "goal": help reaching a daily goal; nutrient "protein" or "calories" (null if not said).
         - "suggest": ideas from the person's saved meals, recipes and foods, optionally limited by maxCalories and minProtein for this meal, or to one source ("meal", "recipe" or "food").
-        - "portion": one saved item at a portion, or a change to the portion of the item marked [discussed] ("smaller", "half", "1.5 servings", "200 g").
+        - "portion": one saved item at a portion, or a change to the portion of the item marked [discussed] ("smaller", "half", "1.5 servings", "200 g"). Also one food inside a saved meal at another amount this time ("my chicken meal, but with 150 g of rice today"): the meal in refs, the food's name exactly as the person wrote it in ingredient, and the amount in grams, servings or factor.
         - "compare": two saved items.
         - "training": a question about workouts, exercises or the training plan.
         - "restaurant": a restaurant, fast-food or eating-out request.
@@ -136,6 +140,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
         Rules:
         - refs: only refs listed in <saved_items>. Never invent one. When a name matches several listed items equally well, list them all (at most 3) and GoHard asks the person to choose. A food name you cannot match goes in unknownItems as the person wrote it.
         - A follow-up such as "smaller", "make that 2 servings" or "use the recipe instead" refers to the item marked [discussed] unless the person names another.
+        - ingredient: only for that case, else null. Never a food the person did not name, and never a guess at which food they meant.
         - Numbers you return are only the person's own words: maxCalories and minProtein (for this meal, not the day), factor (a multiplier such as 0.5 for half), servings, grams. "Smaller" or "bigger" without a number is change "smaller" or "larger". Never estimate calories, protein or any nutrition value, and never invent a target the person did not state.
         - day: "today" only when the person explicitly asks about today while <context> says an earlier day is shown; otherwise "shown".
         - meal: Breakfast, Lunch, Dinner or Snack when the person names one, else null.
@@ -178,14 +183,14 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
     public static ReplyFormat Format => new("daily_coach_intent", new JsonObject
     {
         ["type"] = "object", ["additionalProperties"] = false,
-        ["required"] = new JsonArray("kind", "day", "nutrient", "source", "refs", "change", "factor", "servings", "grams", "maxCalories", "minProtein", "meal", "clarification", "unknownItems"),
+        ["required"] = new JsonArray("kind", "day", "nutrient", "source", "refs", "change", "factor", "servings", "grams", "ingredient", "maxCalories", "minProtein", "meal", "clarification", "unknownItems"),
         ["properties"] = new JsonObject
         {
             ["kind"] = Enum(Kinds), ["day"] = Enum("shown", "today"),
             ["nutrient"] = Maybe(Enum("protein", "calories")), ["source"] = Maybe(Enum("meal", "recipe", "food")),
             ["refs"] = new JsonObject { ["type"] = "array", ["items"] = Type("string") },
             ["change"] = Maybe(Enum("smaller", "larger")),
-            ["factor"] = Maybe(Type("number")), ["servings"] = Maybe(Type("number")), ["grams"] = Maybe(Type("number")),
+            ["factor"] = Maybe(Type("number")), ["servings"] = Maybe(Type("number")), ["grams"] = Maybe(Type("number")), ["ingredient"] = Maybe(Type("string")),
             ["maxCalories"] = Maybe(Type("integer")), ["minProtein"] = Maybe(Type("integer")),
             ["meal"] = Maybe(Enum(Meals)), ["clarification"] = Maybe(Type("string")),
             ["unknownItems"] = new JsonObject { ["type"] = "array", ["items"] = Type("string") },
@@ -226,7 +231,14 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
                 return null;
             }
             int? Whole(string name, int min, int max) => Range(name, min, max) is { } v ? (int)Math.Round(v) : null;
-            var portion = new DailyPortion(S("change") is "smaller" or "larger" ? S("change") : null, Range("factor", 0.1, 20), Range("servings", 0.1, 1000), Range("grams", 1, 5000));
+            // One food of a saved meal, named in the person's words: only on a portion of a saved meal, short, and data.
+            var ingredient = S("ingredient")?.Trim() is { Length: > 0 } w ? CoachService.Untrusted(w) : null;
+            if (ingredient is { Length: > 60 } || ingredient is not null && (kind != "portion" || !refs.Any(r => r.Kind == "meal") && !hasFocus))
+            {
+                dropped.Add("ingredient");
+                ingredient = null;
+            }
+            var portion = new DailyPortion(S("change") is "smaller" or "larger" ? S("change") : null, Range("factor", 0.1, 20), Range("servings", 0.1, 1000), Range("grams", 1, 5000), ingredient);
             var meal = Meals.Contains(S("meal")) ? S("meal") : null;
             var unknown = A("unknownItems").Where(v => v.ValueKind == JsonValueKind.String).Select(v => CoachService.Untrusted(v.GetString()!.Trim()))
                 .Where(s => s.Length is > 0 and <= 60).Distinct().Take(5).ToList();

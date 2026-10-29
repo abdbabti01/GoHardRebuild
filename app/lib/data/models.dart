@@ -54,6 +54,12 @@ abstract final class Kinds {
   /// Eating out on this phone (docs/EATING_OUT.md): `draft` (the order being built, with its chain and preferences) and
   /// `catalog` (the last restaurant catalog the account's server sent). Local only.
   static const eatOut = 'eat_out';
+  /// The person's own meal, medication and supplement reminders, and their answers to medication and supplement
+  /// occurrences (id = the occurrence key). Local only: never sent to the account (docs/MEAL_HABITS_REMINDERS.md).
+  static const reminder = 'reminder', reminderLog = 'reminder_log';
+  /// Meal suggestions on this phone: `prefs` (on, off, or not chosen yet, and the meals set aside for a day), and when
+  /// each meal was first logged on its own day (id = `day|meal`). Local only.
+  static const habit = 'habit', logTime = 'log_time';
 }
 
 /// The server's word on whether this account may use its data (docs/AUTHENTICATION_EMAIL.md › Required verification).

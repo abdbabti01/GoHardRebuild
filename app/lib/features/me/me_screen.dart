@@ -31,22 +31,10 @@ import '../nutrition/water.dart';
 import '../weather/weather.dart';
 import 'account_repository.dart';
 import 'permissions_screen.dart';
+import '../nutrition/meal_habits_ui.dart' show MealSuggestionsScreen, habitSuggestProvider;
 import 'reminders.dart';
+import 'reminders_screen.dart';
 import 'sync_review_screen.dart';
-
-/// Workout reminders on or off (Me, setup). Notification permission is asked for only here, when they are turned on.
-Future<void> setReminders(BuildContext context, WidgetRef ref, Profile profile, bool on) async {
-  if (on && !await ref.read(reminderSchedulerProvider).requestPermission()) {
-    if (context.mounted) toast(context, context.l10n.meRemindersNotAllowed);
-    return;
-  }
-  try {
-    await ref.read(profileRepositoryProvider).update(profile, remindersEnabled: on, reminderLocalTime: profile.reminderLocalTime ?? '18:00');
-    Haptics.selection();
-  } on LocalSaveFailure {
-    if (context.mounted) toast(context, context.l10n.mePrefNotSaved);
-  }
-}
 
 /// Me: who is signed in, personal information, preferences for this phone and the account. Training, history and
 /// progress live in Train; nothing here repeats them.
@@ -208,6 +196,11 @@ class MeScreen extends ConsumerWidget {
               value: goalsSummary(profile, ref.watch(volumeUnitProvider), water: ref.watch(nutritionDisplayProvider).water),
               onTap: () => push(context, NutritionGoalsScreen(profile: profile)),
             ),
+          // Meal suggestions: off until chosen; their own page explains them.
+          GroupRow(
+            key: const Key('me-meal-suggestions'), icon: Icons.auto_awesome_outlined, title: l.habitSettingTitle,
+            value: ref.watch(habitSuggestProvider) == true ? l.meOn : l.meOff, onTap: () => push(context, const MealSuggestionsScreen()),
+          ),
         ]),
 
         // Steps' one set of controls, the same sheet Today's tile and Run / Walk open (docs/RUN_WALK.md › Steps).
@@ -238,35 +231,12 @@ class MeScreen extends ConsumerWidget {
             onTap: () => showLanguagePicker(context, ref),
           ),
           GroupRow(key: const Key('me-permissions'), icon: Icons.verified_user_outlined, title: l.mePermissions, subtitle: l.mePermissionsSubtitle, onTap: () => push(context, const PermissionsScreen())),
-          if (profile != null) ...[
-            MergeSemantics(
-              child: GroupRow(
-                key: const Key('me-reminders'),
-                icon: profile.remindersEnabled ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
-                title: l.meReminders,
-                subtitle: profile.remindersEnabled ? l.meRemindersOnSubtitle : l.meOff,
-                trailing: Switch(
-                  value: profile.remindersEnabled,
-                  onChanged: (on) => setReminders(context, ref, profile, on),
-                ),
-              ),
-            ),
-            if (profile.remindersEnabled)
-              GroupRow(
-                key: const Key('me-reminder-time'),
-                icon: Icons.schedule,
-                title: l.meReminderTime,
-                subtitle: l.meReminderTimeSubtitle,
-                value: profile.reminderLocalTime ?? '18:00',
-                onTap: () async {
-                  final parts = (profile.reminderLocalTime ?? '18:00').split(':');
-                  final picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])));
-                  if (picked == null) return;
-                  await ref.read(profileRepositoryProvider).update(profile,
-                      reminderLocalTime: '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}');
-                },
-              ),
-          ],
+          // Workout, meal, medication and supplement reminders: one destination (docs/MEAL_HABITS_REMINDERS.md).
+          GroupRow(
+            key: const Key('me-reminders-page'), icon: Icons.notifications_none, title: l.remindersTitle,
+            subtitle: l.meRemindersPageSubtitle(((profile?.remindersEnabled ?? false) ? 1 : 0) + (ref.watch(remindersProvider).value ?? const <Reminder>[]).where((r) => r.enabled).length),
+            onTap: () => push(context, const RemindersScreen()),
+          ),
         ]),
 
         _Group(l.meGroupAccount),

@@ -7,6 +7,7 @@ import '../../core/units.dart' show formatNumber2;
 import '../../data/models.dart';
 import '../nutrition/food_item.dart';
 import '../nutrition/food_repository.dart';
+import '../nutrition/food_search.dart' show searchWords;
 import '../nutrition/nutrient_coverage.dart';
 import '../nutrition/nutrition_surface.dart' show formatKcal;
 import '../nutrition/saved_meals.dart';
@@ -236,13 +237,52 @@ String fingerprint(String text) {
   return h.toRadixString(16).padLeft(8, '0');
 }
 
+// ---------------------------------------------------------------------------- one food of a saved meal, this time
+
+/// The foods of [b] named by [words]: every word the person used is a word of the food's name (case, accents and plurals
+/// ignored). Never a guess from a similar name: no match is none, several are several.
+List<int> ingredientMatches(MealBody b, String words) {
+  final want = searchWords(words);
+  if (want.isEmpty) return const [];
+  return [
+    for (final (i, c) in b.components.indexed)
+      if (want.every(searchWords(c.name).toSet().contains)) i,
+  ];
+}
+
+/// Food [c] at the person's own amount: grams only when the food has a weight, servings only when it has a serving, a
+/// factor of its own amount. Null when the amount does not fit how the food is measured: no unit is ever swapped.
+MealComponent? changedIngredient(MealComponent c, {double? grams, double? servings, double? factor}) {
+  final f = c.item, units = FoodScaling.units(f);
+  final (double? q, FoodUnit? u) = grams != null
+      ? (grams, units.where((u) => u.id == 'g').firstOrNull)
+      : servings != null
+          ? (servings, units.where((u) => u.id.startsWith('serving')).firstOrNull)
+          : factor != null
+              ? (c.quantity * factor, c.unit)
+              : (null, null);
+  if (q == null || u == null || !(q > 0) || q > MealMath.maxQuantity) return null;
+  return c.withAmount(q, u.id, FoodScaling.describe(f, q, u));
+}
+
+/// The foods of saved meal [b] with the change a reply's card describes (`{index, sourceId, quantity, unit}`), or null
+/// when the meal no longer has that food at that place (it was edited since): the review is then not opened.
+List<MealComponent>? ingredientParts(MealBody b, Object? change) {
+  if (change is! Map || change['index'] is! int || change['quantity'] is! num || change['unit'] is! String) return null;
+  final parts = b.components, i = change['index'] as int;
+  if (i < 0 || i >= parts.length || parts[i].item.sourceId != change['sourceId']) return null;
+  final q = (change['quantity'] as num).toDouble(), unit = FoodScaling.units(parts[i].item).where((u) => u.id == change['unit']).firstOrNull;
+  if (unit == null) return null;
+  return [...parts]..[i] = parts[i].withAmount(q, unit.id, FoodScaling.describe(parts[i].item, q, unit));
+}
+
 // ---------------------------------------------------------------------------- requests
 
 /// What was asked: built on the phone for a suggested request, or read from the server's checked answer for typed words.
 class DayIntent {
   const DayIntent(this.kind,
       {this.today = false, this.nutrient, this.source, this.items = const [], this.change, this.factor, this.servings, this.grams, this.maxCalories, this.minProtein,
-      this.meal, this.clarification, this.unknownItems = const [], this.ai = false});
+      this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient});
 
   /// today | recorded | goal | suggest | portion | compare | training | restaurant | clarify | unsupported
   final String kind;
@@ -257,6 +297,10 @@ class DayIntent {
   final int? maxCalories, minProtein;
   final List<String> unknownItems;
 
+  /// One food inside a saved meal whose amount changes this time, in the person's words ("rice"): [grams],
+  /// [servings] or [factor] then apply to that food, not to the meal.
+  final String? ingredient;
+
   /// Read from typed words by the server's model (said on the reply), as opposed to a built-in request.
   final bool ai;
 
@@ -265,7 +309,7 @@ class DayIntent {
   Json toJson() => {
         'kind': kind, 'today': today, 'nutrient': nutrient?.name, 'source': source?.name, 'items': [for (final i in items) {'kind': i.kind.name, 'id': i.id}],
         'change': change, 'factor': factor, 'servings': servings, 'grams': grams, 'maxCalories': maxCalories, 'minProtein': minProtein, 'meal': meal,
-        'clarification': clarification, 'unknownItems': unknownItems, 'ai': ai,
+        'clarification': clarification, 'unknownItems': unknownItems, 'ai': ai, 'ingredient': ingredient,
       };
 
   /// [j] as stored here, or the server's intent (`items`, `portion`, `day`). Anything off the allowlist reads as nothing.
@@ -284,7 +328,8 @@ class DayIntent {
         factor: n(portion['factor']), servings: n(portion['servings']), grams: n(portion['grams']),
         maxCalories: j['maxCalories'] is int ? j['maxCalories'] as int : null, minProtein: j['minProtein'] is int ? j['minProtein'] as int : null,
         meal: meals.contains(j['meal']) ? j['meal'] as String : null, clarification: j['clarification'] is String ? j['clarification'] as String : null,
-        unknownItems: [for (final u in j['unknownItems'] as List? ?? const []) if (u is String) u], ai: ai || j['ai'] == true);
+        unknownItems: [for (final u in j['unknownItems'] as List? ?? const []) if (u is String) u], ai: ai || j['ai'] == true,
+        ingredient: switch (portion['ingredient'] ?? j['ingredient']) { final String i when i.trim().isNotEmpty && i.length <= 60 => i.trim(), _ => null });
   }
 }
 
@@ -415,6 +460,53 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
 
   List<CoachItem> named() => [for (final i in intent.items) ?r.item(i.id)];
 
+  /// "My chicken meal, but with 150 g of rice today": one food of one saved meal, at the person's own amount, for this
+  /// time. Anything unclear is asked back; the card opens the ordinary review, whose Log is the only thing that logs.
+  void ingredient(CoachItem item, String words) {
+    final base = Pick(item, CoachMath.base(item), CoachMath.values(item, CoachMath.base(item))!);
+    if (item.kind != ItemKind.meal) {
+      lines.add(l.dcIngredientMealOnly);
+      card(base);
+      return;
+    }
+    final parts = item.body!.components, found = ingredientMatches(item.body!, words);
+    if (found.length > 1) {
+      lines.add(l.dcIngredientWhich(item.name));
+      for (final i in found) {
+        cards.add({'kind': item.kind.name, 'id': item.id, 'name': parts[i].name, 'choice': true});
+        actions.add(_action('ask', card: cards.length - 1, intent: DayIntent('portion', items: [(kind: item.kind, id: item.id)], factor: intent.factor,
+            servings: intent.servings, grams: intent.grams, meal: intent.meal, today: intent.today, ingredient: parts[i].name).toJson()));
+      }
+      return;
+    }
+    if (found.isEmpty) {
+      lines.add(l.dcIngredientNotFound(words, item.name));
+      card(base);
+      return;
+    }
+    final i = found.single, c = parts[i];
+    if (intent.grams == null && intent.servings == null && intent.factor == null) {
+      lines.add(l.dcIngredientNeedAmount(c.name));
+      card(base);
+      return;
+    }
+    final changed = changedIngredient(c, grams: intent.grams, servings: intent.servings, factor: intent.factor);
+    if (changed == null) {
+      lines.add(intent.grams != null ? l.dcIngredientCantGrams(c.name) : l.dcIngredientCantMeasure(c.name));
+      card(base);
+      return;
+    }
+    final now = [...parts]..[i] = changed;
+    final values = NutrientCoverage.ofParts(now.map((p) => p.values));
+    lines.add(l.dcIngredientLine(item.name, changed.amount, c.name));
+    cards.add({
+      'kind': item.kind.name, 'id': item.id, 'name': item.name, 'portion': CoachMath.base(item).toJson(), 'amount': l.dcIngredientAmount(c.name, changed.amount),
+      'kcal': _total(values[Nutrient.calories]!), 'protein': _total(values[Nutrient.protein]!),
+      'ingredient': {'index': i, 'sourceId': c.item.sourceId, 'quantity': changed.quantity, 'unit': changed.unitId},
+    });
+    actions.add(_action('review', card: cards.length - 1));
+  }
+
   switch (intent.kind) {
     case 'today':
       switchToToday();
@@ -508,6 +600,10 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
         } else {
           lines.add(l.dcNeedItem);
         }
+        break;
+      }
+      if (intent.ingredient case final words?) {
+        ingredient(item, words);
         break;
       }
       final from = last != null && last['id'] == item.id ? Portion.fromJson(last['portion']) ?? CoachMath.base(item) : CoachMath.base(item);

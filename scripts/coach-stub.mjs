@@ -1,7 +1,7 @@
 // A STUB of Groq's Chat Completions endpoint for local journeys (docs/EATING_OUT.md › Verification, docs/COACH.md › Help
 // with today). It is not a model: every Eating out request gets the same fixed structured reply, and a Help with today
 // request a fixed rule (a word "fail" → HTTP 500; "smaller" → a smaller portion of the item discussed; a saved item whose
-// name is in the words → that item; otherwise "today"), so a real-app journey can exercise the app and API end to end
+// name is in the words → that item, and "with 150 g of rice" → that food of it at those grams; otherwise "today"), so a real-app journey can exercise the app and API end to end
 // without a key. Never point a deployed API at it.
 //
 //   node scripts/coach-stub.mjs [port]        (default 5137, bound to 127.0.0.1)
@@ -19,10 +19,13 @@ const reply = {
 function daily(user) {
   const request = (user.split('<request>\n').at(-1) ?? '').split('\n</request>')[0].toLowerCase();
   const items = [...user.matchAll(/^- ([mrf]\d+) \| (\w+) \| "(.*)"/gm)].map((m) => ({ ref: m[1], name: m[3].toLowerCase() }));
-  const base = { kind: 'today', day: 'shown', nutrient: null, source: null, refs: [], change: null, factor: null, servings: null, grams: null,
+  const base = { kind: 'today', day: 'shown', nutrient: null, source: null, refs: [], change: null, factor: null, servings: null, grams: null, ingredient: null,
     maxCalories: null, minProtein: null, meal: null, clarification: null, unknownItems: [] };
   const named = items.filter((i) => i.name.split(/\s+/).every((w) => request.includes(w)));
   if (/smaller/.test(request)) return { ...base, kind: 'portion', change: 'smaller', refs: named.map((i) => i.ref) };
+  // "<meal> but with 150 g of <food>": one food of that saved meal at the person's grams.
+  const swap = request.match(/with (\d+) ?g of ([a-z ]+?)(?: today|$)/);
+  if (named.length && swap) return { ...base, kind: 'portion', refs: named.map((i) => i.ref), grams: Number(swap[1]), ingredient: swap[2].trim() };
   if (named.length) return { ...base, kind: 'portion', refs: named.map((i) => i.ref) };
   return base;
 }

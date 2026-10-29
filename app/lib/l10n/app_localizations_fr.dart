@@ -11666,6 +11666,361 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get dcProblemUnavailable =>
       'La lecture des demandes écrites n\'est pas offerte en ce moment. Ta demande est conservée.';
+
+  @override
+  String habitUsualName(String meal) {
+    return '$meal (habituel)';
+  }
+
+  @override
+  String habitSay(String meal) {
+    return 'Ton « $meal » habituel? Révise-le ou choisis autre chose.';
+  }
+
+  @override
+  String habitSaySaved(String meal, String name) {
+    return 'Ton « $meal » habituel : $name? Révise-le ou choisis autre chose.';
+  }
+
+  @override
+  String habitWhy(String meal, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Consigné dans « $meal » $count jours récemment.',
+      one: 'Consigné dans « $meal » $count jour récemment.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get habitReview => 'Réviser le repas habituel';
+
+  @override
+  String get habitOther => 'Choisir autre chose';
+
+  @override
+  String get habitNotToday => 'Pas aujourd’hui';
+
+  @override
+  String get habitSettingTitle => 'Suggestions de repas';
+
+  @override
+  String get habitSettingBody =>
+      'GoHard peut remarquer les repas que tu consignes souvent et te les proposer dans Manger : « Ton déjeuner habituel? » C’est toujours toi qui choisis : rien n’est consigné, modifié ni planifié à ta place. Le calcul se fait sur ce téléphone, à partir de ton propre journal, et rien n’est envoyé.';
+
+  @override
+  String habitSettingRules(int minDays, int windowDays) {
+    return 'Une suggestion demande les mêmes aliments, consignés au même repas, au moins $minDays jours différents dans les $windowDays derniers jours. Les aliments tapés à la main ne comptent pas, et une vieille habitude cesse d’être suggérée d’elle-même.';
+  }
+
+  @override
+  String get habitSettingSwitch => 'Suggérer mes repas habituels';
+
+  @override
+  String get habitSettingOffNote =>
+      'Désactiver ceci garde chaque entrée du journal et chaque repas enregistré.';
+
+  @override
+  String get habitIntro =>
+      'Je peux remarquer les repas que tu consignes souvent et te les suggérer ici. C’est toujours toi qui choisis, et rien n’est consigné à ta place. On l’active?';
+
+  @override
+  String get habitTurnOn => 'Activer';
+
+  @override
+  String get habitNotNow => 'Pas maintenant';
+
+  @override
+  String get mealsLogThisTime => 'Consigner cette fois';
+
+  @override
+  String get mealsSaveVariation => 'Enregistrer comme variante';
+
+  @override
+  String get mealsSaveVariationTitle => 'Enregistrer comme variante';
+
+  @override
+  String mealsVariationName(String name) {
+    return '$name (variante)';
+  }
+
+  @override
+  String get mealsSaveAsMealBody =>
+      'Les aliments et quantités affichés deviennent un repas enregistré. Rien n’est consigné.';
+
+  @override
+  String get mealsReviewActionsNote =>
+      'Consigner cette fois enregistre seulement ces quantités; le repas enregistré reste tel quel. Mettre à jour le repas le modifie pour la prochaine fois. Rien de ce qui est déjà consigné ne change.';
+
+  @override
+  String get dcIngredientMealOnly =>
+      'Je peux changer un aliment dans un repas enregistré. Pour une recette ou un aliment, change la quantité dans sa révision.';
+
+  @override
+  String dcIngredientWhich(String meal) {
+    return 'Quel aliment dans $meal?';
+  }
+
+  @override
+  String dcIngredientNotFound(String words, String meal) {
+    return 'Je n’ai pas trouvé « $words » dans $meal. Le voici tel qu’enregistré; tu peux changer n’importe quel aliment dans la révision.';
+  }
+
+  @override
+  String dcIngredientNeedAmount(String food) {
+    return 'Combien de $food cette fois? Dis-le en grammes ou en portions, ou change-le dans la révision.';
+  }
+
+  @override
+  String dcIngredientCantGrams(String food) {
+    return '$food n’a pas de poids dans ce repas, donc les grammes ne peuvent pas servir. Utilise son unité dans la révision.';
+  }
+
+  @override
+  String dcIngredientCantMeasure(String food) {
+    return '$food ne peut pas se mesurer ainsi. Change sa quantité dans la révision.';
+  }
+
+  @override
+  String dcIngredientLine(String meal, String amount, String food) {
+    return '$meal avec $amount de $food cette fois. Ton repas enregistré reste tel quel, sauf si tu le mets à jour.';
+  }
+
+  @override
+  String dcIngredientAmount(String food, String amount) {
+    return '$food : $amount cette fois';
+  }
+
+  @override
+  String get reminderPrivateTitle => 'Rappel GoHard';
+
+  @override
+  String get reminderPrivateBody => 'Ouvre GoHard pour le voir.';
+
+  @override
+  String reminderMealBody(String meal) {
+    return 'C’est le moment de consigner ton « $meal ».';
+  }
+
+  @override
+  String get reminderDoseBody => 'Touche pour confirmer dans GoHard.';
+
+  @override
+  String get reminderTaken => 'Pris';
+
+  @override
+  String get reminderSnooze => 'Plus tard';
+
+  @override
+  String get reminderSkip => 'Sauter';
+
+  @override
+  String get reminderMealChannelName => 'Rappels de repas';
+
+  @override
+  String get reminderMealChannelDescription =>
+      'Rappels pour consigner un repas, aux heures que tu as choisies';
+
+  @override
+  String get reminderDoseChannelName =>
+      'Rappels de médicaments et de suppléments';
+
+  @override
+  String get reminderDoseChannelDescription =>
+      'Tes propres rappels de médicaments et de suppléments';
+
+  @override
+  String get reminderCategoryMeal => 'Repas';
+
+  @override
+  String get reminderCategoryMedication => 'Médicament';
+
+  @override
+  String get reminderCategorySupplement => 'Supplément';
+
+  @override
+  String get reminderEveryDay => 'Tous les jours';
+
+  @override
+  String get reminderWeekdays => 'Du lundi au vendredi';
+
+  @override
+  String get reminderNotAllowed =>
+      'Enregistré. Les notifications ne sont pas autorisées pour GoHard, donc il ne peut pas encore s’afficher. Tu peux les autoriser dans les réglages du téléphone.';
+
+  @override
+  String get remindersTitle => 'Rappels';
+
+  @override
+  String get remindersSubtitle =>
+      'Les notifications que tu configures. Rien n’est planifié tant que tu n’en ajoutes pas.';
+
+  @override
+  String meRemindersPageSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activés',
+      one: '$count activé',
+      zero: 'Aucun activé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reminderDenied =>
+      'Les notifications de GoHard sont désactivées dans les réglages du téléphone, donc ces rappels ne peuvent pas s’afficher.';
+
+  @override
+  String get reminderTodayHeading => 'Aujourd’hui';
+
+  @override
+  String get reminderWorkoutHeading => 'Entraînements';
+
+  @override
+  String get reminderOwnHeading => 'Repas, médicaments et suppléments';
+
+  @override
+  String get reminderNone => 'Aucun pour l’instant.';
+
+  @override
+  String get reminderPaused => 'En pause';
+
+  @override
+  String get reminderAdd => 'Ajouter un rappel';
+
+  @override
+  String reminderThrough(String date) {
+    return 'Planifiés jusqu’au $date. Ouvrir GoHard planifie les jours suivants.';
+  }
+
+  @override
+  String get reminderPolicy =>
+      'Les heures sont locales : un rappel réglé à 8 h arrive à 8 h où que soit le téléphone, et suit l’heure avancée. Un jour où cette heure n’existe pas, il arrive juste après le changement; quand elle se produit deux fois, il arrive une seule fois. GoHard planifie les 7 prochains jours chaque fois qu’il est ouvert. Le téléphone décide du moment exact, donc un rappel peut arriver un peu en retard. Un rappel de repas n’est pas envoyé une fois ce repas consigné sur ce téléphone ce jour-là. Les rappels et les réponses sont gardés sur ce téléphone, pour ce compte seulement : ils ne sont pas enregistrés dans ton compte ni envoyés à une IA.';
+
+  @override
+  String get reminderUnconfirmed => 'Non confirmé';
+
+  @override
+  String get reminderStatusTaken => 'Pris';
+
+  @override
+  String get reminderStatusSkipped => 'Sauté';
+
+  @override
+  String get reminderStatusSnoozed => 'Remis à plus tard';
+
+  @override
+  String reminderOccurrence(String date, String time) {
+    return '$date à $time';
+  }
+
+  @override
+  String reminderSnoozeFor(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Plus tard ($minutes minutes)',
+      one: 'Plus tard ($minutes minute)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reminderMealDefaultName(String meal) {
+    return 'Consigner « $meal »';
+  }
+
+  @override
+  String get reminderProblemName =>
+      'Donne un nom au rappel (60 caractères au plus).';
+
+  @override
+  String get reminderProblemTime => 'Choisis une heure.';
+
+  @override
+  String get reminderProblemDays => 'Choisis au moins un jour.';
+
+  @override
+  String get reminderSaved => 'Rappel enregistré.';
+
+  @override
+  String reminderDeleteTitle(String name) {
+    return 'Supprimer $name?';
+  }
+
+  @override
+  String get reminderDeleteBody =>
+      'Ses notifications sont annulées. Les réponses déjà données restent sur ce téléphone.';
+
+  @override
+  String get reminderNewTitle => 'Nouveau rappel';
+
+  @override
+  String get reminderEditTitle => 'Modifier le rappel';
+
+  @override
+  String get reminderNameLabel => 'Nom';
+
+  @override
+  String get reminderDoseNameLabel => 'Nom, comme tu veux le voir';
+
+  @override
+  String reminderSuggestedTime(String meal, String time) {
+    return 'Tu consignes souvent « $meal » vers $time. Utiliser cette heure?';
+  }
+
+  @override
+  String reminderUseTime(String time) {
+    return 'Utiliser $time';
+  }
+
+  @override
+  String get reminderOwnTime => 'Choisir mon heure';
+
+  @override
+  String get reminderTimeLabel => 'Heure';
+
+  @override
+  String get reminderDaysLabel => 'Jours';
+
+  @override
+  String get reminderInstructionsLabel => 'Instructions (facultatif)';
+
+  @override
+  String get reminderInstructionsHelp =>
+      'Tes propres mots, par exemple ce que dit ton prescripteur ou l’étiquette. GoHard ne suggère jamais de dose ni d’horaire.';
+
+  @override
+  String get reminderPrivateLabel =>
+      'Masquer les détails sur l’écran verrouillé';
+
+  @override
+  String get reminderPrivateHelp =>
+      'La notification dit seulement « Rappel GoHard ».';
+
+  @override
+  String get reminderOnLabel => 'Activé';
+
+  @override
+  String get reminderMealNote =>
+      'Si ce repas est déjà consigné sur ce téléphone ce jour-là, le rappel n’est pas envoyé.';
+
+  @override
+  String get reminderDoseNote =>
+      'Un rappel sert seulement à te rappeler et à confirmer; ce n’est pas un avis médical. Si tu ne réponds pas, il reste Non confirmé.';
+
+  @override
+  String reminderSuggestSay(String meal, String time) {
+    return 'Tu consignes souvent « $meal » vers $time. Veux-tu un rappel pour le consigner?';
+  }
+
+  @override
+  String get reminderAddThis => 'Ajouter un rappel';
+
+  @override
+  String get eatMealReminders => 'Rappels de repas';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

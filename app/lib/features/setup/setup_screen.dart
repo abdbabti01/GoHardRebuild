@@ -11,7 +11,8 @@ import '../coach/coach_bubble.dart';
 import '../coach/coach_companion.dart';
 import '../coach/coach_prefs.dart';
 import '../coach/coach_rig.dart' show RigFrame;
-import '../me/me_screen.dart' show CoachChoice, setReminders;
+import '../me/me_screen.dart' show CoachChoice;
+import '../me/reminders_screen.dart' show setReminders;
 import '../weather/weather.dart';
 
 /// The short setup after creating an account on this phone (docs/COACH.md › Setup): choose the coach, then the

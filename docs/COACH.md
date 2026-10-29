@@ -412,6 +412,10 @@ until it has started (no frames are requested for that). `coach_companion_test` 
 
 ## Help with today (28 Oct 2026)
 
+> 29 Oct 2026: a typed request may change one food of a saved meal for this time ("my chicken meal, but with 150 g of
+> rice today"): `portion.ingredient`, resolved and checked on the phone. Eat's coach also offers the usual meal and,
+> once, meal suggestions and a meal reminder. See docs/MEAL_HABITS_REMINDERS.md.
+
 Added on `feature/daily-nutrition-coach` (brief: `GoHard_Daily_Nutrition_Coach_Claude_Prompt.md`). Leon or Leona helps
 someone understand their day, pick a next step and review a practical food portion — from their own records. Code:
 `features/coach/day_coach.dart` (pure: facts, portions, suggestions, revisions), `day_coach_screen.dart` (conversation,

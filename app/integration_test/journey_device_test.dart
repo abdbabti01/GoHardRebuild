@@ -116,10 +116,13 @@ void main() {
 
     // --- Reminders. With no plan, turning them on schedules nothing.
     await tapKey(tester, 'nav-me');
+    await tapKey(tester, 'me-reminders-page'); // Me › Reminders (docs/MEAL_HABITS_REMINDERS.md)
     await tap(tester, find.descendant(of: find.byKey(const Key('me-reminders')), matching: find.byType(Switch)));
     await waitFor(tester, find.byKey(const Key('me-reminder-time')), what: 'reminders switched on');
     expect(await scheduled(tester, (c) => c == 0), 0, reason: 'no plan means no reminders');
     await binding.takeScreenshot('50-me-reminders-on');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
     // An active plan: one reminder per pending workout from today on (today's only if its time has not passed).
     await tapKey(tester, 'nav-train');

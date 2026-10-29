@@ -10,6 +10,7 @@ import '../../core/device_prefs.dart';
 import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../me/me_screen.dart';
+import '../me/reminders_screen.dart' show NoticeResponder;
 import '../me/sync_review_screen.dart';
 import '../nutrition/eat_screen.dart';
 import '../nutrition/water.dart' show displayMigrationProvider;
@@ -80,6 +81,7 @@ class HomeShell extends ConsumerWidget {
       body: Stack(children: [
         _FadeStack(index: shell.tab, children: const [TodayScreen(), QuietBackground(child: TrainScreen()), QuietBackground(child: EatScreen()), MeScreen()]),
         Positioned(top: 0, left: 0, right: 0, child: _SkyAwareVeil(onToday: shell.tab == 0)),
+        const NoticeResponder(),
       ]),
       bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
         // Attention appears only when saved data cannot converge without a decision. Ordinary pending upload stays quiet.

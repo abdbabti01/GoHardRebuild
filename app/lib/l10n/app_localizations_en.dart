@@ -11465,4 +11465,357 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dcProblemUnavailable =>
       'Reading typed requests isn\'t available right now. Your request is kept.';
+
+  @override
+  String habitUsualName(String meal) {
+    return '$meal (usual)';
+  }
+
+  @override
+  String habitSay(String meal) {
+    return 'Your usual $meal? Review it or choose something else.';
+  }
+
+  @override
+  String habitSaySaved(String meal, String name) {
+    return 'Your usual $meal: $name? Review it or choose something else.';
+  }
+
+  @override
+  String habitWhy(String meal, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Logged at $meal on $count recent days.',
+      one: 'Logged at $meal on 1 recent day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get habitReview => 'Review usual meal';
+
+  @override
+  String get habitOther => 'Choose something else';
+
+  @override
+  String get habitNotToday => 'Not today';
+
+  @override
+  String get habitSettingTitle => 'Meal suggestions';
+
+  @override
+  String get habitSettingBody =>
+      'GoHard can notice meals you log again and again and offer them on Eat: “Your usual breakfast?” You always choose: nothing is logged, changed or scheduled for you. It is worked out on this phone from your own journal, and nothing is sent anywhere.';
+
+  @override
+  String habitSettingRules(int minDays, int windowDays) {
+    return 'A suggestion needs the same foods, logged at the same meal, on at least $minDays different days in the last $windowDays days. Foods typed by hand are left out, and an old habit stops being suggested by itself.';
+  }
+
+  @override
+  String get habitSettingSwitch => 'Suggest my usual meals';
+
+  @override
+  String get habitSettingOffNote =>
+      'Turning this off keeps every journal entry and saved meal.';
+
+  @override
+  String get habitIntro =>
+      'I can notice meals you log often and suggest them here. You always choose, and nothing is logged for you. Turn this on?';
+
+  @override
+  String get habitTurnOn => 'Turn on';
+
+  @override
+  String get habitNotNow => 'Not now';
+
+  @override
+  String get mealsLogThisTime => 'Log this time';
+
+  @override
+  String get mealsSaveVariation => 'Save as a variation';
+
+  @override
+  String get mealsSaveVariationTitle => 'Save as a variation';
+
+  @override
+  String mealsVariationName(String name) {
+    return '$name (variation)';
+  }
+
+  @override
+  String get mealsSaveAsMealBody =>
+      'The foods and amounts shown become a saved meal. Nothing is logged.';
+
+  @override
+  String get mealsReviewActionsNote =>
+      'Log this time records these amounts only; the saved meal stays as it is. Update saved meal changes it for next time. Nothing already logged changes.';
+
+  @override
+  String get dcIngredientMealOnly =>
+      'I can change one food inside a saved meal. For a recipe or a food, change the amount in its review.';
+
+  @override
+  String dcIngredientWhich(String meal) {
+    return 'Which food in $meal?';
+  }
+
+  @override
+  String dcIngredientNotFound(String words, String meal) {
+    return 'I could not find “$words” in $meal. Here it is as saved; you can change any food in the review.';
+  }
+
+  @override
+  String dcIngredientNeedAmount(String food) {
+    return 'How much $food this time? Say it in grams or servings, or change it in the review.';
+  }
+
+  @override
+  String dcIngredientCantGrams(String food) {
+    return '$food in this meal has no weight, so grams cannot be used. Use its own unit in the review.';
+  }
+
+  @override
+  String dcIngredientCantMeasure(String food) {
+    return '$food cannot be measured that way. Change its amount in the review.';
+  }
+
+  @override
+  String dcIngredientLine(String meal, String amount, String food) {
+    return '$meal with $amount of $food this time. Your saved meal stays as it is unless you update it.';
+  }
+
+  @override
+  String dcIngredientAmount(String food, String amount) {
+    return '$food: $amount this time';
+  }
+
+  @override
+  String get reminderPrivateTitle => 'GoHard reminder';
+
+  @override
+  String get reminderPrivateBody => 'Open GoHard to see it.';
+
+  @override
+  String reminderMealBody(String meal) {
+    return 'Time to log your $meal.';
+  }
+
+  @override
+  String get reminderDoseBody => 'Tap to confirm in GoHard.';
+
+  @override
+  String get reminderTaken => 'Taken';
+
+  @override
+  String get reminderSnooze => 'Snooze';
+
+  @override
+  String get reminderSkip => 'Skip';
+
+  @override
+  String get reminderMealChannelName => 'Meal reminders';
+
+  @override
+  String get reminderMealChannelDescription =>
+      'Reminders to log a meal, at times you chose';
+
+  @override
+  String get reminderDoseChannelName => 'Medication and supplement reminders';
+
+  @override
+  String get reminderDoseChannelDescription =>
+      'Your own medication and supplement reminders';
+
+  @override
+  String get reminderCategoryMeal => 'Meal';
+
+  @override
+  String get reminderCategoryMedication => 'Medication';
+
+  @override
+  String get reminderCategorySupplement => 'Supplement';
+
+  @override
+  String get reminderEveryDay => 'Every day';
+
+  @override
+  String get reminderWeekdays => 'Monday to Friday';
+
+  @override
+  String get reminderNotAllowed =>
+      'Saved. Notifications are not allowed for GoHard, so it cannot appear yet. You can allow them in the phone’s settings.';
+
+  @override
+  String get remindersTitle => 'Reminders';
+
+  @override
+  String get remindersSubtitle =>
+      'Phone notifications you set up. Nothing is scheduled until you add one.';
+
+  @override
+  String meRemindersPageSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count on',
+      one: '1 on',
+      zero: 'None on',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reminderDenied =>
+      'Notifications are off for GoHard in the phone’s settings, so these reminders cannot appear.';
+
+  @override
+  String get reminderTodayHeading => 'Today';
+
+  @override
+  String get reminderWorkoutHeading => 'Workouts';
+
+  @override
+  String get reminderOwnHeading => 'Meals, medication and supplements';
+
+  @override
+  String get reminderNone => 'None yet.';
+
+  @override
+  String get reminderPaused => 'Paused';
+
+  @override
+  String get reminderAdd => 'Add a reminder';
+
+  @override
+  String reminderThrough(String date) {
+    return 'Scheduled through $date. Opening GoHard schedules the following days.';
+  }
+
+  @override
+  String get reminderPolicy =>
+      'Times are local: a reminder set for 8:00 comes at 8:00 wherever the phone is, and follows daylight saving time. On a day when that time does not exist it comes just after the change; when it happens twice it comes once. GoHard schedules the next 7 days whenever it is opened. The phone decides the exact moment, so a reminder can arrive a little late. A meal reminder is not sent once that meal is logged on this phone that day. Reminders and answers are kept on this phone for this account only: they are not saved to your account or sent to any AI.';
+
+  @override
+  String get reminderUnconfirmed => 'Unconfirmed';
+
+  @override
+  String get reminderStatusTaken => 'Taken';
+
+  @override
+  String get reminderStatusSkipped => 'Skipped';
+
+  @override
+  String get reminderStatusSnoozed => 'Snoozed';
+
+  @override
+  String reminderOccurrence(String date, String time) {
+    return '$date at $time';
+  }
+
+  @override
+  String reminderSnoozeFor(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Snooze $minutes minutes',
+      one: 'Snooze 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reminderMealDefaultName(String meal) {
+    return 'Log $meal';
+  }
+
+  @override
+  String get reminderProblemName =>
+      'Give the reminder a name (up to 60 characters).';
+
+  @override
+  String get reminderProblemTime => 'Choose a time.';
+
+  @override
+  String get reminderProblemDays => 'Choose at least one day.';
+
+  @override
+  String get reminderSaved => 'Reminder saved.';
+
+  @override
+  String reminderDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get reminderDeleteBody =>
+      'Its notifications are cancelled. Answers you already gave stay on this phone.';
+
+  @override
+  String get reminderNewTitle => 'New reminder';
+
+  @override
+  String get reminderEditTitle => 'Edit reminder';
+
+  @override
+  String get reminderNameLabel => 'Name';
+
+  @override
+  String get reminderDoseNameLabel => 'Name, as you want to see it';
+
+  @override
+  String reminderSuggestedTime(String meal, String time) {
+    return 'You often log $meal around $time. Use that time?';
+  }
+
+  @override
+  String reminderUseTime(String time) {
+    return 'Use $time';
+  }
+
+  @override
+  String get reminderOwnTime => 'Choose my own time';
+
+  @override
+  String get reminderTimeLabel => 'Time';
+
+  @override
+  String get reminderDaysLabel => 'Days';
+
+  @override
+  String get reminderInstructionsLabel => 'Instructions (optional)';
+
+  @override
+  String get reminderInstructionsHelp =>
+      'Your own words, such as what your prescriber or the label says. GoHard never suggests a dose or a schedule.';
+
+  @override
+  String get reminderPrivateLabel => 'Hide details on the lock screen';
+
+  @override
+  String get reminderPrivateHelp =>
+      'The notification says only “GoHard reminder”.';
+
+  @override
+  String get reminderOnLabel => 'On';
+
+  @override
+  String get reminderMealNote =>
+      'If that meal is already logged on this phone that day, the reminder is not sent.';
+
+  @override
+  String get reminderDoseNote =>
+      'A reminder only reminds you and lets you confirm; it is not medical advice. If you do not answer, it stays Unconfirmed.';
+
+  @override
+  String reminderSuggestSay(String meal, String time) {
+    return 'You often log $meal around $time. Want a reminder to log it?';
+  }
+
+  @override
+  String get reminderAddThis => 'Add a reminder';
+
+  @override
+  String get eatMealReminders => 'Meal reminders';
 }

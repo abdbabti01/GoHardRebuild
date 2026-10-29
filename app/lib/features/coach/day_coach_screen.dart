@@ -591,9 +591,12 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
           await push(context, FoodFormScreen(draft: foodDraft(item, portion, day: day, meal: meal)!));
         } else {
           final saved = (ref.read(savedMealsProvider).value ?? const <Stored<SavedMeal>>[]).where((s) => s.value.id == item.id).firstOrNull?.value;
+          // One food changed for this time: rebuilt from the saved meal as it is now, or not opened when it has changed.
+          final parts = c['ingredient'] == null ? null : ingredientParts(item.body!, c['ingredient']);
+          if (c['ingredient'] != null && parts == null) return toast(context, l.dcStaleReview);
           // A copy taken now: an edit arriving from another phone never changes what is being reviewed.
           await push(context, MealReviewScreen(
-              body: MealBody(copyJson(item.body!.j)), saved: saved, dayKey: day, meal: meal,
+              body: MealBody(copyJson(item.body!.j)), saved: saved, dayKey: day, meal: meal, initialParts: parts,
               initialFactor: item.kind == ItemKind.meal ? portion.amount : null,
               initialAmount: item.kind == ItemKind.recipe ? portion.amount : null,
               initialMeasure: portion.unit == 'g' ? PortionMeasure.gram : PortionMeasure.serving));

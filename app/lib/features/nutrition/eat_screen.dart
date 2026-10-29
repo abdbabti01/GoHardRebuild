@@ -14,10 +14,13 @@ import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 import '../coach/day_coach_screen.dart' show openDayCoach;
+import '../me/reminders.dart' show remindersProvider;
+import '../me/reminders_screen.dart' show RemindersScreen, ReminderEditorScreen, timeLabel;
 import '../shell/home_shell.dart' show shellProvider;
 import 'food_form.dart';
 import 'food_repository.dart' show SavedFood, mealLabel;
 import 'log_food_screen.dart';
+import 'meal_habits_ui.dart';
 import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
@@ -92,6 +95,47 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// This visit to Eat is the account's first with nothing logged or saved: it stays about logging a meal. Cleared when
   /// another tab is shown, so the next visit may introduce Eating out.
   bool _firstVisit = false;
+
+  /// Meal suggestions and meal reminders, before the other hints: the usual meal for the meal of the time of day
+  /// (today only, suggestions on), else once each the offer to turn suggestions on and a reminder at the usual time.
+  /// Words chosen here from the records; nothing is asked of a server.
+  CoachSay? _habitSay(String day, String today) {
+    final owner = ref.read(ownerProvider);
+    if (owner == null || day != today) return null;
+    final meal = _mealNow(DateTime.now()), l = context.l10n;
+    if (ref.watch(usualMealProvider(meal)) case final u?) return usualMealSay(context, ref, u, today);
+    final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
+    if (!inView) return _habitHint == null ? null : _habitHintSay(l, owner, meal);
+    if (_habitHint == null) {
+      final prefs = ref.read(coachPrefsProvider);
+      if (ref.watch(habitIntroDueProvider) && prefs.mayIntroduce(owner, 'eat.habits')) {
+        _habitHint = 'eat.habits';
+      } else if (ref.watch(usualLogTimeProvider(meal)) != null && !(ref.watch(remindersProvider).value ?? const []).any((r) => r.meal == meal) &&
+          prefs.mayIntroduce(owner, 'eat.reminders')) {
+        _habitHint = 'eat.reminders';
+      }
+      if (_habitHint case final id?) WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(coachPrefsProvider.notifier).markSeen(owner, id));
+    }
+    return _habitHint == null ? null : _habitHintSay(l, owner, meal);
+  }
+
+  /// The introduction chosen for this visit, kept so its words never change under the reader.
+  String? _habitHint;
+
+  CoachSay? _habitHintSay(AppLocalizations l, String owner, String meal) {
+    if (_habitHint == 'eat.habits') {
+      if (ref.read(habitSuggestProvider) != null) return null; // answered
+      return CoachSay(l.habitIntro,
+          primary: (label: l.habitTurnOn, key: const Key('habit-turn-on'), onPressed: () => setMealSuggestions(ref, true)),
+          guide: (label: l.habitNotNow, key: const Key('habit-not-now'), onPressed: () => setMealSuggestions(ref, false)));
+    }
+    final time = ref.read(usualLogTimeProvider(meal));
+    if (_habitHint != 'eat.reminders' || time == null) return null;
+    final label = mealLabel(l, meal).toLowerCase();
+    return CoachSay(l.reminderSuggestSay(label, timeLabel(context, time)),
+        guide: (label: l.reminderAddThis, key: const Key('eat-coach-reminder'),
+            onPressed: () => push(context, ReminderEditorScreen(meal: meal))));
+  }
 
   CoachSay? _hintSay(String day, List<SavedFood> saved, {required bool logged}) {
     final owner = ref.read(ownerProvider);
@@ -247,7 +291,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         ),
                       if (coachOn)
                         TabCoach(key: const Key('eat-coach'), id: 'eat',
-                            say: _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
+                            say: _habitSay(day, today) ?? _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
                                 _say(l, profile: profile, water: display.water, onAsk: () => openDayCoach(context, day: day)),
                             avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day)),
                     ]),
@@ -273,6 +317,9 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
                   ]),
                 ),
+                // Without the coach, the usual meal is a compact panel here instead (today only, suggestions on).
+                if (!coachOn && day == today)
+                  if (ref.watch(usualMealProvider(_mealNow(DateTime.now()))) case final u?) ...[const SizedBox(height: 12), UsualMealPanel(usual: u, day: today)],
                 const SizedBox(height: 16),
                 // Eating out, always here (coach or not): a restaurant order from verified menus, for the same day and the
                 // meal of the time of day. The chains named are the catalog's own, so the line never claims more.
@@ -335,6 +382,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                   const SizedBox(height: 12),
                 ],
                 Text(l.eatOnlyLoggedNote, style: context.caption),
+                // Reminders to log a meal live with the other reminders (Me › Reminders); this is the way there from Eat.
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(key: const Key('eat-reminders'), icon: const Icon(Icons.notifications_none, size: 20), label: Text(l.eatMealReminders),
+                      onPressed: () => push(context, const RemindersScreen())),
+                ),
               ],
             ]),
           ),

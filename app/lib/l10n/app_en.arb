@@ -16065,5 +16065,510 @@
   "dcProblemUnavailable": "Reading typed requests isn't available right now. Your request is kept.",
   "@dcProblemUnavailable": {
     "description": "Daily coach: the AI could not answer (COACH_UNAVAILABLE, timeout, unreadable reply)."
+  },
+  "habitUsualName": "{meal} (usual)",
+  "@habitUsualName": {
+    "description": "Name of an unsaved usual meal in the review. meal = meal name.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "habitSay": "Your usual {meal}? Review it or choose something else.",
+  "@habitSay": {
+    "description": "Coach suggestion of the usual meal. meal = lower-case meal name.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "habitSaySaved": "Your usual {meal}: {name}? Review it or choose something else.",
+  "@habitSaySaved": {
+    "description": "Coach suggestion when the usual meal is a saved meal. name = the saved meal (user content).",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "habitWhy": "{count, plural, =1{Logged at {meal} on 1 recent day.} other{Logged at {meal} on {count} recent days.}}",
+  "@habitWhy": {
+    "description": "Why a usual meal is suggested: on how many distinct recent days.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "habitReview": "Review usual meal",
+  "@habitReview": {
+    "description": "Opens the usual meal in the review (nothing is logged)."
+  },
+  "habitOther": "Choose something else",
+  "@habitOther": {
+    "description": "Opens Add food for this meal."
+  },
+  "habitNotToday": "Not today",
+  "@habitNotToday": {
+    "description": "Hides the usual-meal suggestion for this meal today."
+  },
+  "habitSettingTitle": "Meal suggestions",
+  "@habitSettingTitle": {
+    "description": "Me row and page title."
+  },
+  "habitSettingBody": "GoHard can notice meals you log again and again and offer them on Eat: “Your usual breakfast?” You always choose: nothing is logged, changed or scheduled for you. It is worked out on this phone from your own journal, and nothing is sent anywhere.",
+  "@habitSettingBody": {
+    "description": "Meal suggestions page: what the feature does."
+  },
+  "habitSettingRules": "A suggestion needs the same foods, logged at the same meal, on at least {minDays} different days in the last {windowDays} days. Foods typed by hand are left out, and an old habit stops being suggested by itself.",
+  "@habitSettingRules": {
+    "description": "Meal suggestions page: the thresholds.",
+    "placeholders": {
+      "minDays": {
+        "type": "int"
+      },
+      "windowDays": {
+        "type": "int"
+      }
+    }
+  },
+  "habitSettingSwitch": "Suggest my usual meals",
+  "@habitSettingSwitch": {
+    "description": "Switch on the Meal suggestions page."
+  },
+  "habitSettingOffNote": "Turning this off keeps every journal entry and saved meal.",
+  "@habitSettingOffNote": {
+    "description": "Meal suggestions page: what turning off does."
+  },
+  "habitIntro": "I can notice meals you log often and suggest them here. You always choose, and nothing is logged for you. Turn this on?",
+  "@habitIntro": {
+    "description": "Coach asks once before meal suggestions are turned on."
+  },
+  "habitTurnOn": "Turn on",
+  "@habitTurnOn": {
+    "description": "Turns meal suggestions on."
+  },
+  "habitNotNow": "Not now",
+  "@habitNotNow": {
+    "description": "Declines meal suggestions (can be changed in Me)."
+  },
+  "mealsLogThisTime": "Log this time",
+  "@mealsLogThisTime": {
+    "description": "Review main action for a saved meal: logs the amounts shown without changing the saved meal."
+  },
+  "mealsSaveVariation": "Save as a variation",
+  "@mealsSaveVariation": {
+    "description": "Review: saves the amounts shown as a separate saved meal."
+  },
+  "mealsSaveVariationTitle": "Save as a variation",
+  "@mealsSaveVariationTitle": {
+    "description": "Name dialog title for a variation."
+  },
+  "mealsVariationName": "{name} (variation)",
+  "@mealsVariationName": {
+    "description": "Name proposed for a variation. name = saved meal (user content).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mealsSaveAsMealBody": "The foods and amounts shown become a saved meal. Nothing is logged.",
+  "@mealsSaveAsMealBody": {
+    "description": "Name dialog body when a usual meal is saved."
+  },
+  "mealsReviewActionsNote": "Log this time records these amounts only; the saved meal stays as it is. Update saved meal changes it for next time. Nothing already logged changes.",
+  "@mealsReviewActionsNote": {
+    "description": "Review note: what each action changes."
+  },
+  "dcIngredientMealOnly": "I can change one food inside a saved meal. For a recipe or a food, change the amount in its review.",
+  "@dcIngredientMealOnly": {
+    "description": "Daily coach: an ingredient change asked for something that is not a saved meal."
+  },
+  "dcIngredientWhich": "Which food in {meal}?",
+  "@dcIngredientWhich": {
+    "description": "Daily coach: several foods of the saved meal match. meal = saved meal name.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIngredientNotFound": "I could not find “{words}” in {meal}. Here it is as saved; you can change any food in the review.",
+  "@dcIngredientNotFound": {
+    "description": "Daily coach: no food of the saved meal matches the words. words = the person’s words.",
+    "placeholders": {
+      "words": {
+        "type": "String"
+      },
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIngredientNeedAmount": "How much {food} this time? Say it in grams or servings, or change it in the review.",
+  "@dcIngredientNeedAmount": {
+    "description": "Daily coach: an ingredient was named without an amount.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIngredientCantGrams": "{food} in this meal has no weight, so grams cannot be used. Use its own unit in the review.",
+  "@dcIngredientCantGrams": {
+    "description": "Daily coach: grams asked for a food measured only by count.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIngredientCantMeasure": "{food} cannot be measured that way. Change its amount in the review.",
+  "@dcIngredientCantMeasure": {
+    "description": "Daily coach: servings asked for a food without a serving.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIngredientLine": "{meal} with {amount} of {food} this time. Your saved meal stays as it is unless you update it.",
+  "@dcIngredientLine": {
+    "description": "Daily coach: a saved meal with one food changed for this time.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIngredientAmount": "{food}: {amount} this time",
+  "@dcIngredientAmount": {
+    "description": "Daily coach card line for the changed food.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPrivateTitle": "GoHard reminder",
+  "@reminderPrivateTitle": {
+    "description": "Notification title of a reminder marked private (lock screen)."
+  },
+  "reminderPrivateBody": "Open GoHard to see it.",
+  "@reminderPrivateBody": {
+    "description": "Notification body of a reminder marked private."
+  },
+  "reminderMealBody": "Time to log your {meal}.",
+  "@reminderMealBody": {
+    "description": "Meal reminder notification body without instructions. meal = lower-case meal name.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDoseBody": "Tap to confirm in GoHard.",
+  "@reminderDoseBody": {
+    "description": "Medication/supplement notification body without instructions."
+  },
+  "reminderTaken": "Taken",
+  "@reminderTaken": {
+    "description": "Notification and sheet action: the person took it."
+  },
+  "reminderSnooze": "Snooze",
+  "@reminderSnooze": {
+    "description": "Notification action: remind again in a few minutes."
+  },
+  "reminderSkip": "Skip",
+  "@reminderSkip": {
+    "description": "Notification and sheet action: skip this occurrence."
+  },
+  "reminderMealChannelName": "Meal reminders",
+  "@reminderMealChannelName": {
+    "description": "Android notification channel name."
+  },
+  "reminderMealChannelDescription": "Reminders to log a meal, at times you chose",
+  "@reminderMealChannelDescription": {
+    "description": "Android notification channel description."
+  },
+  "reminderDoseChannelName": "Medication and supplement reminders",
+  "@reminderDoseChannelName": {
+    "description": "Android notification channel name."
+  },
+  "reminderDoseChannelDescription": "Your own medication and supplement reminders",
+  "@reminderDoseChannelDescription": {
+    "description": "Android notification channel description."
+  },
+  "reminderCategoryMeal": "Meal",
+  "@reminderCategoryMeal": {
+    "description": "Reminder category."
+  },
+  "reminderCategoryMedication": "Medication",
+  "@reminderCategoryMedication": {
+    "description": "Reminder category."
+  },
+  "reminderCategorySupplement": "Supplement",
+  "@reminderCategorySupplement": {
+    "description": "Reminder category."
+  },
+  "reminderEveryDay": "Every day",
+  "@reminderEveryDay": {
+    "description": "Reminder days summary."
+  },
+  "reminderWeekdays": "Monday to Friday",
+  "@reminderWeekdays": {
+    "description": "Reminder days summary for Monday–Friday."
+  },
+  "reminderNotAllowed": "Saved. Notifications are not allowed for GoHard, so it cannot appear yet. You can allow them in the phone’s settings.",
+  "@reminderNotAllowed": {
+    "description": "Toast when a reminder is on but permission was refused."
+  },
+  "remindersTitle": "Reminders",
+  "@remindersTitle": {
+    "description": "Reminders page title and Me row."
+  },
+  "remindersSubtitle": "Phone notifications you set up. Nothing is scheduled until you add one.",
+  "@remindersSubtitle": {
+    "description": "Reminders page subtitle."
+  },
+  "meRemindersPageSubtitle": "{count, plural, =0{None on} =1{1 on} other{{count} on}}",
+  "@meRemindersPageSubtitle": {
+    "description": "Me › Reminders row: how many reminders are on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderDenied": "Notifications are off for GoHard in the phone’s settings, so these reminders cannot appear.",
+  "@reminderDenied": {
+    "description": "Reminders page when notification permission is refused."
+  },
+  "reminderTodayHeading": "Today",
+  "@reminderTodayHeading": {
+    "description": "Reminders page: today’s medication and supplement occurrences."
+  },
+  "reminderWorkoutHeading": "Workouts",
+  "@reminderWorkoutHeading": {
+    "description": "Reminders page: workout reminders section."
+  },
+  "reminderOwnHeading": "Meals, medication and supplements",
+  "@reminderOwnHeading": {
+    "description": "Reminders page: the person’s own reminders."
+  },
+  "reminderNone": "None yet.",
+  "@reminderNone": {
+    "description": "Reminders page: no own reminders."
+  },
+  "reminderPaused": "Paused",
+  "@reminderPaused": {
+    "description": "A reminder that is off."
+  },
+  "reminderAdd": "Add a reminder",
+  "@reminderAdd": {
+    "description": "Reminders page button."
+  },
+  "reminderThrough": "Scheduled through {date}. Opening GoHard schedules the following days.",
+  "@reminderThrough": {
+    "description": "Reminders page when the notification limit left later days out.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPolicy": "Times are local: a reminder set for 8:00 comes at 8:00 wherever the phone is, and follows daylight saving time. On a day when that time does not exist it comes just after the change; when it happens twice it comes once. GoHard schedules the next 7 days whenever it is opened. The phone decides the exact moment, so a reminder can arrive a little late. A meal reminder is not sent once that meal is logged on this phone that day. Reminders and answers are kept on this phone for this account only: they are not saved to your account or sent to any AI.",
+  "@reminderPolicy": {
+    "description": "Reminders page: local-time, delivery and storage policy."
+  },
+  "reminderUnconfirmed": "Unconfirmed",
+  "@reminderUnconfirmed": {
+    "description": "An occurrence with no answer (never “not taken”)."
+  },
+  "reminderStatusTaken": "Taken",
+  "@reminderStatusTaken": {
+    "description": "Occurrence answered Taken."
+  },
+  "reminderStatusSkipped": "Skipped",
+  "@reminderStatusSkipped": {
+    "description": "Occurrence answered Skip."
+  },
+  "reminderStatusSnoozed": "Snoozed",
+  "@reminderStatusSnoozed": {
+    "description": "Occurrence snoozed."
+  },
+  "reminderOccurrence": "{date} at {time}",
+  "@reminderOccurrence": {
+    "description": "Confirmation sheet: which occurrence.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderSnoozeFor": "{minutes, plural, =1{Snooze 1 minute} other{Snooze {minutes} minutes}}",
+  "@reminderSnoozeFor": {
+    "description": "Confirmation sheet: snooze button.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderMealDefaultName": "Log {meal}",
+  "@reminderMealDefaultName": {
+    "description": "Default name of a new meal reminder. meal = lower-case meal name.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderProblemName": "Give the reminder a name (up to 60 characters).",
+  "@reminderProblemName": {
+    "description": "Reminder form error."
+  },
+  "reminderProblemTime": "Choose a time.",
+  "@reminderProblemTime": {
+    "description": "Reminder form error."
+  },
+  "reminderProblemDays": "Choose at least one day.",
+  "@reminderProblemDays": {
+    "description": "Reminder form error."
+  },
+  "reminderSaved": "Reminder saved.",
+  "@reminderSaved": {
+    "description": "Toast after saving a reminder."
+  },
+  "reminderDeleteTitle": "Delete {name}?",
+  "@reminderDeleteTitle": {
+    "description": "Confirm deleting a reminder. name = user content.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDeleteBody": "Its notifications are cancelled. Answers you already gave stay on this phone.",
+  "@reminderDeleteBody": {
+    "description": "Confirm deleting a reminder: body."
+  },
+  "reminderNewTitle": "New reminder",
+  "@reminderNewTitle": {
+    "description": "Reminder editor title."
+  },
+  "reminderEditTitle": "Edit reminder",
+  "@reminderEditTitle": {
+    "description": "Reminder editor title."
+  },
+  "reminderNameLabel": "Name",
+  "@reminderNameLabel": {
+    "description": "Reminder name field."
+  },
+  "reminderDoseNameLabel": "Name, as you want to see it",
+  "@reminderDoseNameLabel": {
+    "description": "Medication/supplement reminder name field."
+  },
+  "reminderSuggestedTime": "You often log {meal} around {time}. Use that time?",
+  "@reminderSuggestedTime": {
+    "description": "Reminder editor: a time supported by the person’s own records.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderUseTime": "Use {time}",
+  "@reminderUseTime": {
+    "description": "Reminder editor: accept the suggested time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderOwnTime": "Choose my own time",
+  "@reminderOwnTime": {
+    "description": "Reminder editor: open the time picker."
+  },
+  "reminderTimeLabel": "Time",
+  "@reminderTimeLabel": {
+    "description": "Reminder editor time row."
+  },
+  "reminderDaysLabel": "Days",
+  "@reminderDaysLabel": {
+    "description": "Reminder editor days label."
+  },
+  "reminderInstructionsLabel": "Instructions (optional)",
+  "@reminderInstructionsLabel": {
+    "description": "Reminder editor instructions field."
+  },
+  "reminderInstructionsHelp": "Your own words, such as what your prescriber or the label says. GoHard never suggests a dose or a schedule.",
+  "@reminderInstructionsHelp": {
+    "description": "Reminder editor: instructions helper for medication/supplements."
+  },
+  "reminderPrivateLabel": "Hide details on the lock screen",
+  "@reminderPrivateLabel": {
+    "description": "Reminder editor: discreet notification switch."
+  },
+  "reminderPrivateHelp": "The notification says only “GoHard reminder”.",
+  "@reminderPrivateHelp": {
+    "description": "Reminder editor: what the discreet switch does."
+  },
+  "reminderOnLabel": "On",
+  "@reminderOnLabel": {
+    "description": "Reminder editor: on/paused switch."
+  },
+  "reminderMealNote": "If that meal is already logged on this phone that day, the reminder is not sent.",
+  "@reminderMealNote": {
+    "description": "Reminder editor note for meal reminders."
+  },
+  "reminderDoseNote": "A reminder only reminds you and lets you confirm; it is not medical advice. If you do not answer, it stays Unconfirmed.",
+  "@reminderDoseNote": {
+    "description": "Reminder editor note for medication/supplement reminders."
+  },
+  "reminderSuggestSay": "You often log {meal} around {time}. Want a reminder to log it?",
+  "@reminderSuggestSay": {
+    "description": "Eat coach: offers a meal reminder at a time the records support.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderAddThis": "Add a reminder",
+  "@reminderAddThis": {
+    "description": "Eat coach action: opens the reminder editor for this meal."
+  },
+  "eatMealReminders": "Meal reminders",
+  "@eatMealReminders": {
+    "description": "Eat: link to the Reminders page."
   }
 }

@@ -192,7 +192,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: lang);
       final l = c.read(appL10nProvider);
-      expect(find.text(l.mealsLogMeal), findsOneWidget, reason: '$lang: the main action stays on screen above the keyboard');
+      expect(find.text(l.mealsLogThisTime), findsOneWidget, reason: '$lang: the main action stays on screen above the keyboard');
       expect(tester.getRect(find.byKey(const Key('meal-log'))).bottom, lessThanOrEqualTo(900 - 300));
       expect(Directionality.of(tester.element(find.byKey(const Key('meal-log')))), lang == 'ar' ? TextDirection.rtl : TextDirection.ltr);
       final remove = find.byKey(const Key('meal-part-remove-0'));

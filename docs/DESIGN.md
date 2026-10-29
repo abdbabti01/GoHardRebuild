@@ -514,8 +514,10 @@ back arrow on Eat; the root bar is not shown on this pushed page; the summary ha
 
 Redesigned on 13 October 2026 from `me-reference.png`. Me is identity, personal information, preferences and the
 account, as grouped rows (`GroupCard` / `GroupRow`): the profile's own name with its initial and Edit profile;
-Personal (Body measurements, Nutrition goals); Preferences (Appearance, Units, Motion & haptics, Workout reminders);
-Account (Sync status, Delete account); Sign out, with the signed-in email. Every row opens something real.
+Personal (Body measurements, Nutrition goals, Meal suggestions); Preferences (Appearance, Units, Motion & haptics, Language,
+Permissions, Reminders); Account (Sync status, Delete account); Sign out, with the signed-in email. Every row opens
+something real. Since 29 Oct 2026 Reminders is one page for workout, meal, medication and supplement reminders (the
+workout switch and time moved there); see docs/MEAL_HABITS_REMINDERS.md.
 
 The training overview, week history, open workouts and the Workout history, Progress and Run history rows that used
 to be here are gone from Me: they are in Train (Workouts lists recent workouts and Run history; Progress ends with

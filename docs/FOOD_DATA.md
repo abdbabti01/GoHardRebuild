@@ -316,6 +316,9 @@ The three display choices are on the account where the server declares `profile.
 
 ## Saved meals and recipes (23 Oct 2026, GoHard_Saved_Meals_Recipes_Claude_Prompt)
 
+> 29 Oct 2026: the review's actions are now **Log this time**, **Update saved meal** and **Save as a variation**, with a
+> note saying what each changes; usual-meal suggestions open the same review. See docs/MEAL_HABITS_REMINDERS.md.
+
 Four things stay distinct, in storage and on screen:
 
 | Thing | What it is | Where |

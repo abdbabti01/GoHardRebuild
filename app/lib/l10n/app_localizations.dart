@@ -17009,6 +17009,546 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reading typed requests isn\'t available right now. Your request is kept.'**
   String get dcProblemUnavailable;
+
+  /// Name of an unsaved usual meal in the review. meal = meal name.
+  ///
+  /// In en, this message translates to:
+  /// **'{meal} (usual)'**
+  String habitUsualName(String meal);
+
+  /// Coach suggestion of the usual meal. meal = lower-case meal name.
+  ///
+  /// In en, this message translates to:
+  /// **'Your usual {meal}? Review it or choose something else.'**
+  String habitSay(String meal);
+
+  /// Coach suggestion when the usual meal is a saved meal. name = the saved meal (user content).
+  ///
+  /// In en, this message translates to:
+  /// **'Your usual {meal}: {name}? Review it or choose something else.'**
+  String habitSaySaved(String meal, String name);
+
+  /// Why a usual meal is suggested: on how many distinct recent days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Logged at {meal} on 1 recent day.} other{Logged at {meal} on {count} recent days.}}'**
+  String habitWhy(String meal, int count);
+
+  /// Opens the usual meal in the review (nothing is logged).
+  ///
+  /// In en, this message translates to:
+  /// **'Review usual meal'**
+  String get habitReview;
+
+  /// Opens Add food for this meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose something else'**
+  String get habitOther;
+
+  /// Hides the usual-meal suggestion for this meal today.
+  ///
+  /// In en, this message translates to:
+  /// **'Not today'**
+  String get habitNotToday;
+
+  /// Me row and page title.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal suggestions'**
+  String get habitSettingTitle;
+
+  /// Meal suggestions page: what the feature does.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard can notice meals you log again and again and offer them on Eat: “Your usual breakfast?” You always choose: nothing is logged, changed or scheduled for you. It is worked out on this phone from your own journal, and nothing is sent anywhere.'**
+  String get habitSettingBody;
+
+  /// Meal suggestions page: the thresholds.
+  ///
+  /// In en, this message translates to:
+  /// **'A suggestion needs the same foods, logged at the same meal, on at least {minDays} different days in the last {windowDays} days. Foods typed by hand are left out, and an old habit stops being suggested by itself.'**
+  String habitSettingRules(int minDays, int windowDays);
+
+  /// Switch on the Meal suggestions page.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest my usual meals'**
+  String get habitSettingSwitch;
+
+  /// Meal suggestions page: what turning off does.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning this off keeps every journal entry and saved meal.'**
+  String get habitSettingOffNote;
+
+  /// Coach asks once before meal suggestions are turned on.
+  ///
+  /// In en, this message translates to:
+  /// **'I can notice meals you log often and suggest them here. You always choose, and nothing is logged for you. Turn this on?'**
+  String get habitIntro;
+
+  /// Turns meal suggestions on.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get habitTurnOn;
+
+  /// Declines meal suggestions (can be changed in Me).
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get habitNotNow;
+
+  /// Review main action for a saved meal: logs the amounts shown without changing the saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Log this time'**
+  String get mealsLogThisTime;
+
+  /// Review: saves the amounts shown as a separate saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as a variation'**
+  String get mealsSaveVariation;
+
+  /// Name dialog title for a variation.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as a variation'**
+  String get mealsSaveVariationTitle;
+
+  /// Name proposed for a variation. name = saved meal (user content).
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (variation)'**
+  String mealsVariationName(String name);
+
+  /// Name dialog body when a usual meal is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'The foods and amounts shown become a saved meal. Nothing is logged.'**
+  String get mealsSaveAsMealBody;
+
+  /// Review note: what each action changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Log this time records these amounts only; the saved meal stays as it is. Update saved meal changes it for next time. Nothing already logged changes.'**
+  String get mealsReviewActionsNote;
+
+  /// Daily coach: an ingredient change asked for something that is not a saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'I can change one food inside a saved meal. For a recipe or a food, change the amount in its review.'**
+  String get dcIngredientMealOnly;
+
+  /// Daily coach: several foods of the saved meal match. meal = saved meal name.
+  ///
+  /// In en, this message translates to:
+  /// **'Which food in {meal}?'**
+  String dcIngredientWhich(String meal);
+
+  /// Daily coach: no food of the saved meal matches the words. words = the person’s words.
+  ///
+  /// In en, this message translates to:
+  /// **'I could not find “{words}” in {meal}. Here it is as saved; you can change any food in the review.'**
+  String dcIngredientNotFound(String words, String meal);
+
+  /// Daily coach: an ingredient was named without an amount.
+  ///
+  /// In en, this message translates to:
+  /// **'How much {food} this time? Say it in grams or servings, or change it in the review.'**
+  String dcIngredientNeedAmount(String food);
+
+  /// Daily coach: grams asked for a food measured only by count.
+  ///
+  /// In en, this message translates to:
+  /// **'{food} in this meal has no weight, so grams cannot be used. Use its own unit in the review.'**
+  String dcIngredientCantGrams(String food);
+
+  /// Daily coach: servings asked for a food without a serving.
+  ///
+  /// In en, this message translates to:
+  /// **'{food} cannot be measured that way. Change its amount in the review.'**
+  String dcIngredientCantMeasure(String food);
+
+  /// Daily coach: a saved meal with one food changed for this time.
+  ///
+  /// In en, this message translates to:
+  /// **'{meal} with {amount} of {food} this time. Your saved meal stays as it is unless you update it.'**
+  String dcIngredientLine(String meal, String amount, String food);
+
+  /// Daily coach card line for the changed food.
+  ///
+  /// In en, this message translates to:
+  /// **'{food}: {amount} this time'**
+  String dcIngredientAmount(String food, String amount);
+
+  /// Notification title of a reminder marked private (lock screen).
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard reminder'**
+  String get reminderPrivateTitle;
+
+  /// Notification body of a reminder marked private.
+  ///
+  /// In en, this message translates to:
+  /// **'Open GoHard to see it.'**
+  String get reminderPrivateBody;
+
+  /// Meal reminder notification body without instructions. meal = lower-case meal name.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to log your {meal}.'**
+  String reminderMealBody(String meal);
+
+  /// Medication/supplement notification body without instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to confirm in GoHard.'**
+  String get reminderDoseBody;
+
+  /// Notification and sheet action: the person took it.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken'**
+  String get reminderTaken;
+
+  /// Notification action: remind again in a few minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze'**
+  String get reminderSnooze;
+
+  /// Notification and sheet action: skip this occurrence.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get reminderSkip;
+
+  /// Android notification channel name.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal reminders'**
+  String get reminderMealChannelName;
+
+  /// Android notification channel description.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders to log a meal, at times you chose'**
+  String get reminderMealChannelDescription;
+
+  /// Android notification channel name.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication and supplement reminders'**
+  String get reminderDoseChannelName;
+
+  /// Android notification channel description.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own medication and supplement reminders'**
+  String get reminderDoseChannelDescription;
+
+  /// Reminder category.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal'**
+  String get reminderCategoryMeal;
+
+  /// Reminder category.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication'**
+  String get reminderCategoryMedication;
+
+  /// Reminder category.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplement'**
+  String get reminderCategorySupplement;
+
+  /// Reminder days summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get reminderEveryDay;
+
+  /// Reminder days summary for Monday–Friday.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday to Friday'**
+  String get reminderWeekdays;
+
+  /// Toast when a reminder is on but permission was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. Notifications are not allowed for GoHard, so it cannot appear yet. You can allow them in the phone’s settings.'**
+  String get reminderNotAllowed;
+
+  /// Reminders page title and Me row.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get remindersTitle;
+
+  /// Reminders page subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone notifications you set up. Nothing is scheduled until you add one.'**
+  String get remindersSubtitle;
+
+  /// Me › Reminders row: how many reminders are on.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{None on} =1{1 on} other{{count} on}}'**
+  String meRemindersPageSubtitle(int count);
+
+  /// Reminders page when notification permission is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for GoHard in the phone’s settings, so these reminders cannot appear.'**
+  String get reminderDenied;
+
+  /// Reminders page: today’s medication and supplement occurrences.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get reminderTodayHeading;
+
+  /// Reminders page: workout reminders section.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts'**
+  String get reminderWorkoutHeading;
+
+  /// Reminders page: the person’s own reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Meals, medication and supplements'**
+  String get reminderOwnHeading;
+
+  /// Reminders page: no own reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'None yet.'**
+  String get reminderNone;
+
+  /// A reminder that is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get reminderPaused;
+
+  /// Reminders page button.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a reminder'**
+  String get reminderAdd;
+
+  /// Reminders page when the notification limit left later days out.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled through {date}. Opening GoHard schedules the following days.'**
+  String reminderThrough(String date);
+
+  /// Reminders page: local-time, delivery and storage policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Times are local: a reminder set for 8:00 comes at 8:00 wherever the phone is, and follows daylight saving time. On a day when that time does not exist it comes just after the change; when it happens twice it comes once. GoHard schedules the next 7 days whenever it is opened. The phone decides the exact moment, so a reminder can arrive a little late. A meal reminder is not sent once that meal is logged on this phone that day. Reminders and answers are kept on this phone for this account only: they are not saved to your account or sent to any AI.'**
+  String get reminderPolicy;
+
+  /// An occurrence with no answer (never “not taken”).
+  ///
+  /// In en, this message translates to:
+  /// **'Unconfirmed'**
+  String get reminderUnconfirmed;
+
+  /// Occurrence answered Taken.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken'**
+  String get reminderStatusTaken;
+
+  /// Occurrence answered Skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get reminderStatusSkipped;
+
+  /// Occurrence snoozed.
+  ///
+  /// In en, this message translates to:
+  /// **'Snoozed'**
+  String get reminderStatusSnoozed;
+
+  /// Confirmation sheet: which occurrence.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} at {time}'**
+  String reminderOccurrence(String date, String time);
+
+  /// Confirmation sheet: snooze button.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{Snooze 1 minute} other{Snooze {minutes} minutes}}'**
+  String reminderSnoozeFor(int minutes);
+
+  /// Default name of a new meal reminder. meal = lower-case meal name.
+  ///
+  /// In en, this message translates to:
+  /// **'Log {meal}'**
+  String reminderMealDefaultName(String meal);
+
+  /// Reminder form error.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the reminder a name (up to 60 characters).'**
+  String get reminderProblemName;
+
+  /// Reminder form error.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a time.'**
+  String get reminderProblemTime;
+
+  /// Reminder form error.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one day.'**
+  String get reminderProblemDays;
+
+  /// Toast after saving a reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder saved.'**
+  String get reminderSaved;
+
+  /// Confirm deleting a reminder. name = user content.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String reminderDeleteTitle(String name);
+
+  /// Confirm deleting a reminder: body.
+  ///
+  /// In en, this message translates to:
+  /// **'Its notifications are cancelled. Answers you already gave stay on this phone.'**
+  String get reminderDeleteBody;
+
+  /// Reminder editor title.
+  ///
+  /// In en, this message translates to:
+  /// **'New reminder'**
+  String get reminderNewTitle;
+
+  /// Reminder editor title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit reminder'**
+  String get reminderEditTitle;
+
+  /// Reminder name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get reminderNameLabel;
+
+  /// Medication/supplement reminder name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, as you want to see it'**
+  String get reminderDoseNameLabel;
+
+  /// Reminder editor: a time supported by the person’s own records.
+  ///
+  /// In en, this message translates to:
+  /// **'You often log {meal} around {time}. Use that time?'**
+  String reminderSuggestedTime(String meal, String time);
+
+  /// Reminder editor: accept the suggested time.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {time}'**
+  String reminderUseTime(String time);
+
+  /// Reminder editor: open the time picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose my own time'**
+  String get reminderOwnTime;
+
+  /// Reminder editor time row.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get reminderTimeLabel;
+
+  /// Reminder editor days label.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get reminderDaysLabel;
+
+  /// Reminder editor instructions field.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions (optional)'**
+  String get reminderInstructionsLabel;
+
+  /// Reminder editor: instructions helper for medication/supplements.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own words, such as what your prescriber or the label says. GoHard never suggests a dose or a schedule.'**
+  String get reminderInstructionsHelp;
+
+  /// Reminder editor: discreet notification switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide details on the lock screen'**
+  String get reminderPrivateLabel;
+
+  /// Reminder editor: what the discreet switch does.
+  ///
+  /// In en, this message translates to:
+  /// **'The notification says only “GoHard reminder”.'**
+  String get reminderPrivateHelp;
+
+  /// Reminder editor: on/paused switch.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get reminderOnLabel;
+
+  /// Reminder editor note for meal reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'If that meal is already logged on this phone that day, the reminder is not sent.'**
+  String get reminderMealNote;
+
+  /// Reminder editor note for medication/supplement reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'A reminder only reminds you and lets you confirm; it is not medical advice. If you do not answer, it stays Unconfirmed.'**
+  String get reminderDoseNote;
+
+  /// Eat coach: offers a meal reminder at a time the records support.
+  ///
+  /// In en, this message translates to:
+  /// **'You often log {meal} around {time}. Want a reminder to log it?'**
+  String reminderSuggestSay(String meal, String time);
+
+  /// Eat coach action: opens the reminder editor for this meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a reminder'**
+  String get reminderAddThis;
+
+  /// Eat: link to the Reminders page.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal reminders'**
+  String get eatMealReminders;
 }
 
 class _AppLocalizationsDelegate

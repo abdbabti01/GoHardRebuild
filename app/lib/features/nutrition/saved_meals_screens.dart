@@ -484,12 +484,14 @@ class _Stop implements Exception {
 /// It works on a copy of the definition taken when it opened, so an edit from another phone never changes what is on
 /// screen. A meal can be multiplied (½×, 1×, 1½×, 2×, or any multiplier) and each food changed, removed or added, for
 /// this time only. A recipe is logged by servings, or by grams of the finished batch when it was weighed.
-/// Log is the main action and the only one that records food; Update saved meal and Save as new change templates only.
+/// Log this time is the main action and the only one that records food; Update saved meal (confirmed) and Save as a
+/// variation change templates only, and never anything already logged.
 class MealReviewScreen extends ConsumerStatefulWidget {
-  const MealReviewScreen({super.key, required this.body, required this.dayKey, required this.meal, this.saved, this.initialFactor, this.initialAmount, this.initialMeasure})
-      : entry = null;
+  const MealReviewScreen({super.key, required this.body, required this.dayKey, required this.meal, this.saved, this.initialFactor, this.initialAmount, this.initialMeasure,
+      this.initialParts}) : entry = null;
   MealReviewScreen.entry(FoodEntry this.entry, {super.key})
-      : body = MealMath.ofEntry(entry)!.recipe, dayKey = entry.dayKey, meal = entry.meal, saved = null, initialFactor = null, initialAmount = null, initialMeasure = null;
+      : body = MealMath.ofEntry(entry)!.recipe, dayKey = entry.dayKey, meal = entry.meal, saved = null, initialFactor = null, initialAmount = null, initialMeasure = null,
+        initialParts = null;
   final MealBody body;
   final SavedMeal? saved;
   final String dayKey, meal;
@@ -499,6 +501,10 @@ class MealReviewScreen extends ConsumerStatefulWidget {
   /// of [initialMeasure]. Still only a starting point: every amount stays editable and only Log records anything.
   final double? initialFactor, initialAmount;
   final PortionMeasure? initialMeasure;
+
+  /// A meal's foods for this time only, already changed (the coach's "with 150 g of rice today"): the saved definition
+  /// is [body], unchanged until Update saved meal.
+  final List<MealComponent>? initialParts;
   @override
   ConsumerState<MealReviewScreen> createState() => _MealReviewScreenState();
 }
@@ -507,8 +513,8 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
   /// One operation per review: a second tap, or a retry after the first was written, logs nothing more.
   final _op = SyncEngine.newId();
   late String _day = widget.dayKey, _meal = meals.contains(widget.meal) ? widget.meal : meals.first;
-  late List<MealComponent> _parts = widget.body.components;
-  double? _factor = 1;
+  late List<MealComponent> _parts = widget.initialParts ?? widget.body.components;
+  late double? _factor = widget.initialParts == null ? 1 : null;
   late MealBody _batch = widget.body;
   late final _from = widget.entry == null ? null : MealMath.ofEntry(widget.entry!);
   late PortionMeasure _measure = _from?.measure ?? (widget.initialMeasure == PortionMeasure.gram && widget.body.preparedWeightG != null ? PortionMeasure.gram : PortionMeasure.serving);
@@ -641,10 +647,13 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     }
   }
 
-  /// Save as new: the amounts shown become one new saved meal; the original stays as it is. Nothing is logged.
+  /// Save as a variation: the amounts shown become one new saved meal with its own name; the original stays as it is.
+  /// From foods that are not a saved meal yet (a usual meal), Save as a meal. Nothing is logged.
   Future<void> _saveNew() async {
-    final l = context.l10n;
-    final name = await showDialog<String>(context: context, builder: (_) => _NameDialog(initial: l.mealsCopyName(widget.body.name), body: l.mealsSaveAsNewBody(widget.body.name)));
+    final l = context.l10n, fresh = widget.saved == null;
+    final name = await showDialog<String>(context: context, builder: (_) => _NameDialog(
+        initial: fresh ? widget.body.name : l.mealsVariationName(widget.body.name), body: fresh ? l.mealsSaveAsMealBody : l.mealsSaveAsNewBody(widget.body.name),
+        title: fresh ? l.mealsSaveAsMeal : l.mealsSaveVariationTitle));
     if (name == null || !mounted) return;
     if (await _attempt(context, (e) => setState(() => _error = e), () => ref.read(savedMealRepositoryProvider).put(widget.body.copyWith(name: name, components: _parts))) && mounted) {
       toast(context, l.mealsSavedNew);
@@ -681,13 +690,15 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
       actions: [if (_recipe) CoachHelpEntry(id: 'meals.recipes', label: l.mealsHelpLabel)],
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, key: const Key('meal-error'), tone: Tone.error)),
-        PrimaryButton(entry != null ? l.foodSaveChanges : _recipe ? l.mealsLogPortion : l.mealsLogMeal, key: const Key('meal-log'), busy: _busy, onPressed: supported ? _log : null),
+        PrimaryButton(entry != null ? l.foodSaveChanges : _recipe ? l.mealsLogPortion : l.mealsLogThisTime, key: const Key('meal-log'), busy: _busy, onPressed: supported ? _log : null),
         // The template actions are quieter than Log, and say what they change.
         if (!_recipe && saved != null && live != null && !live.isDeleted)
           Wrap(alignment: WrapAlignment.center, children: [
             TextButton(key: const Key('meal-update-saved'), onPressed: supported && !_busy ? () => _update(live) : null, child: Text(l.mealsUpdateSaved)),
-            TextButton(key: const Key('meal-review-save-new'), onPressed: supported && !_busy ? _saveNew : null, child: Text(l.mealsSaveAsNew)),
+            TextButton(key: const Key('meal-review-save-new'), onPressed: supported && !_busy ? _saveNew : null, child: Text(l.mealsSaveVariation)),
           ]),
+        if (!_recipe && saved == null && entry == null)
+          TextButton(key: const Key('meal-review-save-new'), onPressed: supported && !_busy ? _saveNew : null, child: Text(l.mealsSaveAsMeal)),
         if (_recipe && saved != null && live != null && !live.isDeleted)
           TextButton(key: const Key('recipe-edit'), onPressed: () => push(context, MealEditorScreen(dayKey: _day, saved: live)), child: Text(l.mealsEditRecipe)),
         if (entry != null) TextButton.icon(key: const Key('food-remove'), onPressed: _remove, icon: const Icon(Icons.delete_outline, size: 18), label: Text(l.foodRemoveAction)),
@@ -754,7 +765,12 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           child: TextButton.icon(key: const Key('meal-add-food'), onPressed: parts.length >= SavedMealRepository.maxComponents ? null : _addPart, icon: const Icon(Icons.add),
               label: Text(_recipe ? l.mealsAddIngredient : l.mealsAddFood)),
         ),
-        if (!_recipe) ...[const SizedBox(height: 10), _Nutrition(l.mealsThisTimeTotal, totals, key: const Key('meal-review-totals'))],
+        if (!_recipe) ...[
+          const SizedBox(height: 10),
+          _Nutrition(l.mealsThisTimeTotal, totals, key: const Key('meal-review-totals')),
+          // What each action changes, said once: logging never touches the saved meal, updating never touches history.
+          if (saved != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.info_outline, l.mealsReviewActionsNote, key: const Key('meal-review-note'))),
+        ],
       ],
     );
   }
@@ -806,8 +822,8 @@ class _MultiplierDialogState extends State<_MultiplierDialog> {
 
 /// The name for a new saved meal made from the amounts on screen; says that those amounts become one saved meal.
 class _NameDialog extends StatefulWidget {
-  const _NameDialog({required this.initial, required this.body});
-  final String initial, body;
+  const _NameDialog({required this.initial, required this.body, required this.title});
+  final String initial, body, title;
   @override
   State<_NameDialog> createState() => _NameDialogState();
 }
@@ -833,7 +849,7 @@ class _NameDialogState extends State<_NameDialog> {
     final l = context.l10n;
     return AlertDialog(
       actionsOverflowDirection: VerticalDirection.up, actionsOverflowButtonSpacing: 4,
-      title: Text(l.mealsSaveAsNewTitle),
+      title: Text(widget.title),
       content: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(widget.body, style: context.caption),

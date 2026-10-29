@@ -11961,4 +11961,366 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dcProblemUnavailable =>
       'قراءة الطلبات المكتوبة غير متاحة الآن. طلبك محفوظ.';
+
+  @override
+  String habitUsualName(String meal) {
+    return '$meal (المعتاد)';
+  }
+
+  @override
+  String habitSay(String meal) {
+    return '$meal المعتاد؟ راجعه أو اختر شيئًا آخر.';
+  }
+
+  @override
+  String habitSaySaved(String meal, String name) {
+    return '$meal المعتاد: $name؟ راجعه أو اختر شيئًا آخر.';
+  }
+
+  @override
+  String habitWhy(String meal, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'سُجّل في $meal $count يوم مؤخرًا.',
+      many: 'سُجّل في $meal $count يومًا مؤخرًا.',
+      few: 'سُجّل في $meal $count أيام مؤخرًا.',
+      two: 'سُجّل في $meal يومين مؤخرًا.',
+      one: 'سُجّل في $meal يومًا واحدًا مؤخرًا.',
+      zero: 'لم يُسجَّل في $meal مؤخرًا.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get habitReview => 'مراجعة الوجبة المعتادة';
+
+  @override
+  String get habitOther => 'اختيار شيء آخر';
+
+  @override
+  String get habitNotToday => 'ليس اليوم';
+
+  @override
+  String get habitSettingTitle => 'اقتراحات الوجبات';
+
+  @override
+  String get habitSettingBody =>
+      'يمكن لـ GoHard أن يلاحظ الوجبات التي تسجّلها مرارًا ويقترحها عليك في «الأكل»: «فطورك المعتاد؟» أنت من يختار دائمًا: لا يُسجَّل شيء ولا يُغيَّر ولا يُجدوَل نيابةً عنك. يُحسب ذلك على هذا الهاتف من سجلّك أنت، ولا يُرسَل شيء إلى أي مكان.';
+
+  @override
+  String habitSettingRules(int minDays, int windowDays) {
+    return 'يتطلّب الاقتراح الأطعمة نفسها، مسجّلة في الوجبة نفسها، في $minDays أيام مختلفة على الأقل خلال آخر $windowDays يومًا. لا تُحتسب الأطعمة المكتوبة يدويًا، وتتوقف العادة القديمة عن الظهور من تلقاء نفسها.';
+  }
+
+  @override
+  String get habitSettingSwitch => 'اقترح وجباتي المعتادة';
+
+  @override
+  String get habitSettingOffNote =>
+      'إيقاف هذا يُبقي كل إدخالات السجل والوجبات المحفوظة.';
+
+  @override
+  String get habitIntro =>
+      'يمكنني ملاحظة الوجبات التي تسجّلها كثيرًا واقتراحها هنا. أنت من يختار دائمًا، ولا يُسجَّل شيء نيابةً عنك. هل أفعّل ذلك؟';
+
+  @override
+  String get habitTurnOn => 'تفعيل';
+
+  @override
+  String get habitNotNow => 'ليس الآن';
+
+  @override
+  String get mealsLogThisTime => 'تسجيل هذه المرة';
+
+  @override
+  String get mealsSaveVariation => 'حفظ كنسخة مختلفة';
+
+  @override
+  String get mealsSaveVariationTitle => 'حفظ كنسخة مختلفة';
+
+  @override
+  String mealsVariationName(String name) {
+    return '$name (نسخة مختلفة)';
+  }
+
+  @override
+  String get mealsSaveAsMealBody =>
+      'تصبح الأطعمة والكميات المعروضة وجبة محفوظة. لا يُسجَّل شيء.';
+
+  @override
+  String get mealsReviewActionsNote =>
+      '«تسجيل هذه المرة» يسجّل هذه الكميات فقط، وتبقى الوجبة المحفوظة كما هي. «تحديث الوجبة المحفوظة» يغيّرها للمرات القادمة. لا يتغيّر شيء سبق تسجيله.';
+
+  @override
+  String get dcIngredientMealOnly =>
+      'يمكنني تغيير طعام واحد داخل وجبة محفوظة. أما الوصفة أو الطعام، فغيّر الكمية في مراجعته.';
+
+  @override
+  String dcIngredientWhich(String meal) {
+    return 'أي طعام في $meal؟';
+  }
+
+  @override
+  String dcIngredientNotFound(String words, String meal) {
+    return 'لم أجد «$words» في $meal. إليك الوجبة كما حُفظت، ويمكنك تغيير أي طعام في المراجعة.';
+  }
+
+  @override
+  String dcIngredientNeedAmount(String food) {
+    return 'ما كمية $food هذه المرة؟ قلها بالغرامات أو الحصص، أو غيّرها في المراجعة.';
+  }
+
+  @override
+  String dcIngredientCantGrams(String food) {
+    return 'ليس لـ $food وزن في هذه الوجبة، لذا لا يمكن استخدام الغرامات. استخدم وحدته في المراجعة.';
+  }
+
+  @override
+  String dcIngredientCantMeasure(String food) {
+    return 'لا يمكن قياس $food بهذه الطريقة. غيّر كميته في المراجعة.';
+  }
+
+  @override
+  String dcIngredientLine(String meal, String amount, String food) {
+    return '$meal مع $amount من $food هذه المرة. تبقى وجبتك المحفوظة كما هي ما لم تحدّثها.';
+  }
+
+  @override
+  String dcIngredientAmount(String food, String amount) {
+    return '$food: $amount هذه المرة';
+  }
+
+  @override
+  String get reminderPrivateTitle => 'تذكير من GoHard';
+
+  @override
+  String get reminderPrivateBody => 'افتح GoHard لرؤيته.';
+
+  @override
+  String reminderMealBody(String meal) {
+    return 'حان وقت تسجيل $meal.';
+  }
+
+  @override
+  String get reminderDoseBody => 'المس للتأكيد في GoHard.';
+
+  @override
+  String get reminderTaken => 'تم التناول';
+
+  @override
+  String get reminderSnooze => 'تأجيل';
+
+  @override
+  String get reminderSkip => 'تخطٍّ';
+
+  @override
+  String get reminderMealChannelName => 'تذكيرات الوجبات';
+
+  @override
+  String get reminderMealChannelDescription =>
+      'تذكيرات لتسجيل وجبة في الأوقات التي اخترتها';
+
+  @override
+  String get reminderDoseChannelName => 'تذكيرات الأدوية والمكمّلات';
+
+  @override
+  String get reminderDoseChannelDescription =>
+      'تذكيرات الأدوية والمكمّلات الخاصة بك';
+
+  @override
+  String get reminderCategoryMeal => 'وجبة';
+
+  @override
+  String get reminderCategoryMedication => 'دواء';
+
+  @override
+  String get reminderCategorySupplement => 'مكمّل';
+
+  @override
+  String get reminderEveryDay => 'كل يوم';
+
+  @override
+  String get reminderWeekdays => 'من الاثنين إلى الجمعة';
+
+  @override
+  String get reminderNotAllowed =>
+      'تم الحفظ. الإشعارات غير مسموح بها لـ GoHard، لذا لا يمكن أن يظهر بعد. يمكنك السماح بها في إعدادات الهاتف.';
+
+  @override
+  String get remindersTitle => 'التذكيرات';
+
+  @override
+  String get remindersSubtitle =>
+      'إشعارات الهاتف التي تضبطها أنت. لا يُجدوَل شيء حتى تضيف تذكيرًا.';
+
+  @override
+  String meRemindersPageSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تذكير مفعَّل',
+      many: '$count تذكيرًا مفعَّلًا',
+      few: '$count تذكيرات مفعَّلة',
+      two: 'تذكيران مفعَّلان',
+      one: 'تذكير واحد مفعَّل',
+      zero: 'لا شيء مفعَّل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reminderDenied =>
+      'الإشعارات متوقفة لـ GoHard في إعدادات الهاتف، لذا لا يمكن أن تظهر هذه التذكيرات.';
+
+  @override
+  String get reminderTodayHeading => 'اليوم';
+
+  @override
+  String get reminderWorkoutHeading => 'التمارين';
+
+  @override
+  String get reminderOwnHeading => 'الوجبات والأدوية والمكمّلات';
+
+  @override
+  String get reminderNone => 'لا شيء بعد.';
+
+  @override
+  String get reminderPaused => 'متوقف مؤقتًا';
+
+  @override
+  String get reminderAdd => 'إضافة تذكير';
+
+  @override
+  String reminderThrough(String date) {
+    return 'مُجدوَلة حتى $date. فتح GoHard يجدول الأيام التالية.';
+  }
+
+  @override
+  String get reminderPolicy =>
+      'الأوقات محلية: التذكير المضبوط على 8:00 يصل في 8:00 أينما كان الهاتف، ويتبع التوقيت الصيفي. في يوم لا يوجد فيه هذا الوقت يصل بعد التغيير مباشرة، وإذا تكرّر الوقت يصل مرة واحدة. يجدول GoHard الأيام السبعة التالية كلما فُتح. الهاتف هو من يحدّد اللحظة الدقيقة، لذا قد يتأخر التذكير قليلًا. لا يُرسَل تذكير الوجبة بعد تسجيل تلك الوجبة على هذا الهاتف في ذلك اليوم. تُحفظ التذكيرات والإجابات على هذا الهاتف لهذا الحساب فقط: لا تُحفظ في حسابك ولا تُرسَل إلى أي ذكاء اصطناعي.';
+
+  @override
+  String get reminderUnconfirmed => 'غير مؤكَّد';
+
+  @override
+  String get reminderStatusTaken => 'تم التناول';
+
+  @override
+  String get reminderStatusSkipped => 'تم التخطي';
+
+  @override
+  String get reminderStatusSnoozed => 'مؤجَّل';
+
+  @override
+  String reminderOccurrence(String date, String time) {
+    return '$date الساعة $time';
+  }
+
+  @override
+  String reminderSnoozeFor(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'تأجيل $minutes دقيقة',
+      many: 'تأجيل $minutes دقيقة',
+      few: 'تأجيل $minutes دقائق',
+      two: 'تأجيل دقيقتين',
+      one: 'تأجيل دقيقة واحدة',
+      zero: 'تأجيل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reminderMealDefaultName(String meal) {
+    return 'تسجيل $meal';
+  }
+
+  @override
+  String get reminderProblemName => 'أعطِ التذكير اسمًا (60 حرفًا على الأكثر).';
+
+  @override
+  String get reminderProblemTime => 'اختر وقتًا.';
+
+  @override
+  String get reminderProblemDays => 'اختر يومًا واحدًا على الأقل.';
+
+  @override
+  String get reminderSaved => 'تم حفظ التذكير.';
+
+  @override
+  String reminderDeleteTitle(String name) {
+    return 'حذف $name؟';
+  }
+
+  @override
+  String get reminderDeleteBody =>
+      'تُلغى إشعاراته. تبقى الإجابات التي قدّمتها على هذا الهاتف.';
+
+  @override
+  String get reminderNewTitle => 'تذكير جديد';
+
+  @override
+  String get reminderEditTitle => 'تعديل التذكير';
+
+  @override
+  String get reminderNameLabel => 'الاسم';
+
+  @override
+  String get reminderDoseNameLabel => 'الاسم كما تريد أن تراه';
+
+  @override
+  String reminderSuggestedTime(String meal, String time) {
+    return 'غالبًا ما تسجّل $meal نحو الساعة $time. هل تستخدم هذا الوقت؟';
+  }
+
+  @override
+  String reminderUseTime(String time) {
+    return 'استخدام $time';
+  }
+
+  @override
+  String get reminderOwnTime => 'اختيار وقتي بنفسي';
+
+  @override
+  String get reminderTimeLabel => 'الوقت';
+
+  @override
+  String get reminderDaysLabel => 'الأيام';
+
+  @override
+  String get reminderInstructionsLabel => 'تعليمات (اختياري)';
+
+  @override
+  String get reminderInstructionsHelp =>
+      'كلماتك أنت، مثل ما يقوله الطبيب أو الملصق. لا يقترح GoHard أي جرعة أو جدول أبدًا.';
+
+  @override
+  String get reminderPrivateLabel => 'إخفاء التفاصيل على شاشة القفل';
+
+  @override
+  String get reminderPrivateHelp => 'يقول الإشعار فقط «تذكير من GoHard».';
+
+  @override
+  String get reminderOnLabel => 'مفعَّل';
+
+  @override
+  String get reminderMealNote =>
+      'إذا كانت تلك الوجبة مسجّلة بالفعل على هذا الهاتف في ذلك اليوم، لا يُرسَل التذكير.';
+
+  @override
+  String get reminderDoseNote =>
+      'التذكير يذكّرك فقط ويتيح لك التأكيد، وليس نصيحة طبية. إذا لم تُجب، يبقى «غير مؤكَّد».';
+
+  @override
+  String reminderSuggestSay(String meal, String time) {
+    return 'غالبًا ما تسجّل $meal نحو الساعة $time. هل تريد تذكيرًا لتسجيله؟';
+  }
+
+  @override
+  String get reminderAddThis => 'إضافة تذكير';
+
+  @override
+  String get eatMealReminders => 'تذكيرات الوجبات';
 }

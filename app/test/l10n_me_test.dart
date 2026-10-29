@@ -21,7 +21,7 @@ class _Scheduler implements ReminderScheduler {
   @override
   Future<bool?> notificationsAllowed() async => true;
   @override
-  Future<void> replaceAll(List<PlannedReminder> reminders, String localTime) async => calls.add([for (final r in reminders) r.id]);
+  Future<void> replaceAll(List<Notice> notices) async => calls.add([for (final n in notices) n.id]);
 }
 
 void main() {

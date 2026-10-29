@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../core/clock.dart' show dayKeyOf;
 import '../../core/language.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
@@ -71,9 +72,10 @@ class FoodDraft {
 
 /// The owner's consumed-food journal, saved locally first. Today and Eat both read these same records.
 class FoodRepository {
-  FoodRepository(this._sync, this._owner);
+  FoodRepository(this._sync, this._owner, {DateTime Function()? now}) : _now = now ?? DateTime.now;
   final SyncEngine _sync;
   final String _owner;
+  final DateTime Function() _now;
 
   /// Snapshot bounds the account applies too (api FoodService): a recipe portion carries its whole batch.
   static const snapshotLimit = 16000, compositeSnapshotLimit = 48000, maxBatch = 30;
@@ -129,12 +131,13 @@ class FoodRepository {
 
   /// Saves a new entry or one edited entry. Blank nutrients are sent as null, never as zero. A recipe portion is
   /// sent as its own command kind, held until the account's server takes recipe snapshots.
-  Future<Receipt> save(FoodDraft d, {String? operationId}) {
+  Future<Receipt> save(FoodDraft d, {String? operationId}) async {
     validate(d);
     final id = d.id ?? SyncEngine.newId();
     final fields = _fields(d);
     final write = [LocalWrite(Kinds.food, id, _body(id, fields), dayKey: d.dayKey)];
     final recipe = d.recipe == null ? '' : '.recipe';
+    if (d.id == null) await _noteLogTime(d.dayKey, d.meal);
     return _once(operationId, () => d.id == null
         ? _sync.submit(_owner, kind: 'food$recipe.create', path: '/food-entries', targetKind: Kinds.food, targetId: id, writes: write, payload: {'entryId': id, ...fields}, operationId: operationId)
         : _sync.submit(_owner, kind: 'food$recipe.update', method: 'PUT', path: '/food-entries/$id', targetKind: Kinds.food, targetId: id, writes: write,
@@ -150,9 +153,24 @@ class FoodRepository {
     drafts.forEach(validate);
     final ids = [for (final _ in drafts) SyncEngine.newId()];
     final fields = [for (final d in drafts) _fields(d)];
+    await _noteLogTime(drafts.first.dayKey, drafts.first.meal);
     return _once(operationId, () => _sync.submit(_owner, kind: 'food.batch', path: '/food-entries/batch', targetKind: Kinds.food, targetId: ids.first, operationId: operationId,
         writes: [for (final (i, d) in drafts.indexed) LocalWrite(Kinds.food, ids[i], _body(ids[i], fields[i]), dayKey: d.dayKey, parentId: i == 0 ? null : ids.first)],
         payload: {'entries': [for (final (i, f) in fields.indexed) {'entryId': ids[i], ...f}]}));
+  }
+
+  /// When [meal] was first logged on [dayKey], kept only when it is logged on that day itself: an entry for another day
+  /// says nothing about when that meal is eaten (features/nutrition/meal_habits.dart). Local, best effort: a failed write
+  /// never stops the food being logged.
+  Future<void> _noteLogTime(String dayKey, String meal) async {
+    final now = _now();
+    if (dayKeyOf(now) != dayKey) return;
+    try {
+      if (await _sync.get(_owner, Kinds.logTime, '$dayKey|$meal') != null) return;
+      await _sync.putLocal(_owner, LocalWrite(Kinds.logTime, '$dayKey|$meal', {'day': dayKey, 'meal': meal, 'minute': now.hour * 60 + now.minute}));
+    } on Object {
+      // Only evidence for a suggested time is lost.
+    }
   }
 
   /// Removes exactly this entry. Other entries, including others in the same meal, are untouched.

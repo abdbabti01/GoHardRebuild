@@ -26,7 +26,7 @@ typedef CoachGuideAction = ({String label, Key key, VoidCallback onPressed});
 /// when [ask] is given (Ask GoHard about that context; nothing is sent until the user asks) and one [guide] action.
 @immutable
 class CoachSay {
-  const CoachSay(this.text, {this.title, this.ask, this.onAsk, this.guide, this.primary});
+  const CoachSay(this.text, {this.title, this.ask, this.onAsk, this.guide, this.primary, this.also = const []});
   final String? title;
   final String text;
   final CoachContext? ask;
@@ -38,6 +38,9 @@ class CoachSay {
   /// The page's main next step, said by the coach (Train's "Create my plan"): a deep filled button under the words,
   /// so the invitation and the action are one thing. The page does not repeat it.
   final CoachGuideAction? primary;
+
+  /// Quieter choices after [guide], when a suggestion must always offer them (a usual meal's Not today).
+  final List<CoachGuideAction> also;
 }
 
 /// The speech bubble's body: the theme's raised surface with a hairline edge, readable over any page or weather scene.
@@ -126,7 +129,7 @@ class CoachBubble extends StatelessWidget {
               PrimaryButton(p.label, key: p.key, expand: false, onPressed: p.onPressed),
               if (ask != null)
                 TextButton(key: const Key('coach-say-ask'), style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: ask, child: Text(l.coachAskMe)),
-              if (s.guide case final g?)
+              for (final g in [?s.guide, ...s.also])
                 TextButton(key: g.key, style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: g.onPressed, child: Text(g.label)),
             ]),
           )
