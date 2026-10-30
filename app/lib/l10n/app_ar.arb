@@ -2931,9 +2931,12 @@
   "dcIdeaCalculated": "محسوب من سجلات الأطعمة.",
   "dcIdeaLabel": "فكرة من ليون أو ليونا",
   "dcIdeaUnmatchedFood": "{food} (لم يُطابَق بعد)",
-  "dcIdeaStartAmount": "الكمية مأخوذة من حصة الطعام نفسه: {foods}. غيّرها في المراجعة.",
   "dcReviewMeal": "مراجعة الوجبة",
   "dcFindFood": "البحث عن الطعام",
   "dcAnotherIdea": "أفكار أخرى",
-  "dcAnotherIdeaText": "أفكار أخرى مختلفة عن هذه"
+  "dcAnotherIdeaText": "أفكار أخرى مختلفة عن هذه",
+  "dcIdeaConfirm": "أكّد الأطعمة أدناه لرؤية المجاميع.",
+  "dcIdeaWhich": "أيّ {food}؟",
+  "dcIdeaAmountNeeded": "ما كمية {food}؟ الكمية المقترحة لا تناسب وحدات هذا الطعام.",
+  "dcChooseAmount": "اختيار الكمية"
 }

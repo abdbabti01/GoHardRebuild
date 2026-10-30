@@ -2474,3 +2474,13 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
 - **Unverified:** real Groq ideas, real USDA matches for ideas, iPhone notification wording on the lock screen,
   VoiceOver. Hosted ideas need this API deployed. Not merged, not deployed.
 - Final code ae3abd2: CI 41076832635 passed (99ee83d before the device fix: CI 41074210093 passed); unsigned IPA run 59 (ae3abd2) passed.
+
+### 30 Oct 2026 (follow-up, before merge) — confirmation instead of silent matching
+
+- Preparation: a proposed preparation now filters records and the name decides among them; when no record states it,
+  the same name is only offered as a choice (the old fallback to the name without its preparation is gone). Equally good
+  records are a choice of up to 3 (the old "first of a tie"). Found while testing: "raw egg" tied with raw egg whites.
+- Amounts: a unit the record lacks, or several sizes of the same thing (slices), now asks **Choose amount** (the usual
+  amount form); the automatic standard-portion substitution is removed. Totals and Review only once all is confirmed.
+- Focused tests only: `eat_companion_test` 11, `day_coach_ui_test` 15 (idea → choose amount → review → back logs
+  nothing → Log once). `flutter analyze` clean, `check-l10n` OK.

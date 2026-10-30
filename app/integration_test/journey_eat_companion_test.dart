@@ -35,8 +35,12 @@ void main() {
     await j.waitFor(find.byKey(const Key('day-idea-0')), what: 'idea requests (the server declares coach.ideas)', seconds: 40);
     await j.shot('ec-02-what-could-i-eat');
     await j.tapKey('day-idea-0'); // Something quick with more protein → the stub's two ideas
-    await j.waitFor(find.text('Calculated from food records.'), what: 'a matched idea', seconds: 60);
+    await j.waitFor(find.text('Confirm the foods below to see totals.'), what: 'a matched idea asking for the toast amount', seconds: 60);
     expect(find.textContaining('Needs a food match'), findsOneWidget);
+    // Several slice sizes: the person chooses the amount in the usual form (its starting amount, confirmed).
+    await j.tap(find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('day-amount-')).first);
+    await j.tapKey('food-save');
+    await j.waitFor(find.text('Calculated from food records.'), what: 'the idea calculated', seconds: 30);
     await j.shot('ec-03-ideas');
 
     final review = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('day-review-'));

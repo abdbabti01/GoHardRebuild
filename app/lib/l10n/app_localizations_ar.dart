@@ -12483,11 +12483,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String dcIdeaStartAmount(String foods) {
-    return 'الكمية مأخوذة من حصة الطعام نفسه: $foods. غيّرها في المراجعة.';
-  }
-
-  @override
   String get dcReviewMeal => 'مراجعة الوجبة';
 
   @override
@@ -12498,4 +12493,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dcAnotherIdeaText => 'أفكار أخرى مختلفة عن هذه';
+
+  @override
+  String get dcIdeaConfirm => 'أكّد الأطعمة أدناه لرؤية المجاميع.';
+
+  @override
+  String dcIdeaWhich(String food) {
+    return 'أيّ $food؟';
+  }
+
+  @override
+  String dcIdeaAmountNeeded(String food) {
+    return 'ما كمية $food؟ الكمية المقترحة لا تناسب وحدات هذا الطعام.';
+  }
+
+  @override
+  String get dcChooseAmount => 'اختيار الكمية';
 }

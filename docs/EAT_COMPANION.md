@@ -92,7 +92,8 @@ my usual". Anything else can be typed ("something cheaper", "what could I order 
 | Read the request | server model (Groq, existing setup and shared allowance) | kind `ideas`, up to 3 ideas of 1–6 foods as **words**: an everyday English name, the name in the person's language, a preparation, an amount in g / ml / piece (+ noun) / serving; preferences from an allowlist |
 | Check | server (`DailyCoachService.Ideas`) | lengths, units, amount ranges (g/ml 1–2,000; pieces/servings 0.25–20); a title or name with a figure (kcal, g, $, a link) is dropped; everything else treated as the person's data |
 | Match foods | phone (`features/coach/meal_ideas.dart`) | each name to a real record: the bundled everyday foods (`common-foods.json`, USDA records), the person's own saved foods, foods already seen on this phone, then the account's food search (USDA via `/foods/search`), at most **3 searches per request**, unbranded results only, whole-word name matches only |
-| Match amounts | phone | to one of the record's own units (a count unit by its noun, preferring the record's standard portion; never a conversion). No fitting unit → the record's own starting portion, and the idea says so |
+| Confirm preparation | phone | a proposed preparation filters the records (only records stating it count), then the name decides among them ("raw egg" is the egg, not raw egg whites). No record states it → the same name is offered as a choice with its preparation shown ("cooked oats" → "Oats (Dry · uncooked)"), never taken. Several equally good records → a choice of up to 3 |
+| Match amounts | phone | to exactly one of the record's own units (g, ml, a count unit by its noun, a single serving). A unit the record lacks, or one that fits several of its units (slice sizes) → **Choose amount**: the usual amount form in its selection mode; never a conversion and never a standard portion in its place |
 | Values, limits, goals | phone | totals from the records only (`MealComponent` / `NutrientCoverage`); an explicit limit ("under 500 kcal", "at least 30 g protein") is met by a practical step of every amount (½–2×) or the nearest is shown with what it misses; how it sits with the day's goal when both are fully known |
 
 The model never supplies a food record, a nutrient value, a serving conversion, a price, a preparation time or a
@@ -102,9 +103,12 @@ Canadian menus and customization rules).
 ### Idea cards
 
 Each card shows the foods with exact amounts, the matched record's preparation or title beside each, calories and
-protein, and one of:
+protein, and one of (an idea gets totals and Review only once every food is matched and confirmed):
 
 - **Calculated from food records.** → **Review meal**
+- **Confirm the foods below to see totals.** → per food, "Which rice?" with one button per record (name and
+  preparation), or "How much toast?" with **Choose amount**. The answer is applied on the phone and the card recalculated;
+  nothing is sent.
 - **Needs a food match: Dragonfruit. No totals until it is found.** → **Find food** (Add food with that name in its
   search; nothing chosen for the person). Never estimated, never logged as verified.
 - **Doesn't meet: …** (the misses) or "Some values are missing, so GoHard can't say whether it meets what you asked."
@@ -141,7 +145,8 @@ recalculated; matched records are snapshots, so an idea never changes under the 
 
 - `test/eat_companion_test.dart` (9): completeness (independent calories/protein, missing fat, no exact allowance),
   no-goal, empty, over/near/protein heads-ups and their thresholds, said once, turned off, earlier days, next meal from
-  reminders; ideas matched to real records with their own units, standard portion, no conversion, no branded
+  reminders; ideas matched to real records with their own units, preparation never swapped (cooked vs dry oats, raw egg vs egg
+  whites), ties offered as a choice, unit mismatches and several sizes asking for an amount, no conversion, no branded
   substitute, search bound, model values ignored, limits met by steps, unmatched ideas without totals, unverifiable
   preferences said, "different" filtering, stored replies reading back the same, built-in What could I eat? with no AI.
 - `test/eat_companion_ui_test.dart` (7): bubble wording and action, heads-up first time / said already / turned off,

@@ -310,7 +310,7 @@ class DayIntent {
       {this.today = false, this.nutrient, this.source, this.items = const [], this.change, this.factor, this.servings, this.grams, this.maxCalories, this.minProtein,
       this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient, this.ideas = const [], this.preferences = const [], this.proposed});
 
-  /// `ideas` only: the ideas as matched on the phone (`{title, parts, unmatched, startAmounts}`).
+  /// `ideas` only: the ideas as matched on the phone (`{title, parts, unmatched, confirm}`, features/coach/meal_ideas.dart).
   final List<Json> ideas;
 
   /// `ideas` only, in a server answer: the model's ideas as words, before matching. Never stored.
@@ -533,9 +533,9 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
   void ideaCards() {
     final usualIds = {for (final e in r.usual?.entries ?? const <FoodEntry>[]) ?habitIdentity(e)};
     var ideas = [
-      for (final i in intent.ideas)
-        (title: i['title'] as String? ?? '', parts: [for (final p in i['parts'] as List? ?? const []) MealComponent(Map<String, dynamic>.from(p as Map))],
-            unmatched: [for (final u in i['unmatched'] as List? ?? const []) '$u'], startAmounts: [for (final u in i['startAmounts'] as List? ?? const []) '$u']),
+      for (final (n, i) in intent.ideas.indexed)
+        (index: n, title: i['title'] as String? ?? '', parts: [for (final p in i['parts'] as List? ?? const []) MealComponent(Map<String, dynamic>.from(p as Map))],
+            unmatched: [for (final u in i['unmatched'] as List? ?? const []) '$u'], confirm: [for (final c in i['confirm'] as List? ?? const []) Map<String, dynamic>.from(c as Map)]),
     ];
     if (intent.preferences.contains('different') && usualIds.isNotEmpty) {
       String? id(MealComponent c) => habitIdentity(FoodEntry({'source': {'item': c.item.j, 'quantity': c.quantity, 'unit': c.unitId}}));
@@ -549,9 +549,10 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
     final built = <(Json, double)>[];
     for (final i in ideas) {
       final fit = fitIdea(i.parts, maxKcal: intent.maxCalories, minProtein: intent.minProtein);
-      final complete = i.unmatched.isEmpty && i.parts.isNotEmpty;
+      // Totals only once every food is matched and nothing is left for the person to confirm.
+      final complete = i.unmatched.isEmpty && i.confirm.isEmpty && i.parts.isNotEmpty;
       final c = <String, dynamic>{
-        'kind': 'idea', 'id': 'idea', 'name': i.title, 'parts': [for (final p in fit.parts) p.j], 'unmatched': i.unmatched, 'startAmounts': i.startAmounts,
+        'kind': 'idea', 'id': 'idea', 'idea': i.index, 'name': i.title, 'parts': [for (final p in fit.parts) p.j], 'unmatched': i.unmatched, 'confirm': i.confirm,
         'amount': [for (final p in fit.parts) '${p.amount} ${p.name}'].join(' · '),
         if (complete) ...{'kcal': _total(fit.values[Nutrient.calories]!), 'protein': _total(fit.values[Nutrient.protein]!)},
         if (complete && fit.overKcal != null) 'overKcal': fit.overKcal, if (complete && fit.underProtein != null) 'underProtein': fit.underProtein,
@@ -574,7 +575,12 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
     lines.add(l.dcIdeasHeading);
     for (final (c, _) in built.take(3)) {
       cards.add(c);
-      actions.add(_action((c['unmatched'] as List).isEmpty && (c['parts'] as List).isNotEmpty ? 'reviewIdea' : 'findFood', card: cards.length - 1));
+      // Review once complete; Find food for a food with no record. A confirmation is answered on the card itself.
+      if (c['kcal'] is Map) {
+        actions.add(_action('reviewIdea', card: cards.length - 1));
+      } else if ((c['unmatched'] as List).isNotEmpty) {
+        actions.add(_action('findFood', card: cards.length - 1));
+      }
     }
     // What GoHard cannot check is said, never implied: it has no prices, preparation times or dietary labels.
     for (final p in intent.preferences) {

@@ -16827,15 +16827,6 @@
       }
     }
   },
-  "dcIdeaStartAmount": "Amount set from the food’s own portion: {foods}. Change it in the review.",
-  "@dcIdeaStartAmount": {
-    "description": "Idea card: the proposed unit did not fit the record, so its own portion is used.",
-    "placeholders": {
-      "foods": {
-        "type": "String"
-      }
-    }
-  },
   "dcReviewMeal": "Review meal",
   "@dcReviewMeal": {
     "description": "Idea card action: opens the review (nothing is logged)."
@@ -16851,5 +16842,31 @@
   "dcAnotherIdeaText": "Other ideas, different from these",
   "@dcAnotherIdeaText": {
     "description": "The typed request sent by Other ideas."
+  },
+  "dcIdeaConfirm": "Confirm the foods below to see totals.",
+  "@dcIdeaConfirm": {
+    "description": "Idea card: a food needs the person to confirm its record or amount before totals."
+  },
+  "dcIdeaWhich": "Which {food}?",
+  "@dcIdeaWhich": {
+    "description": "Idea card: several records (or another preparation) could be the food. food = the idea’s word for it.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIdeaAmountNeeded": "How much {food}? The proposed amount does not fit this food’s units.",
+  "@dcIdeaAmountNeeded": {
+    "description": "Idea card: the proposed unit is not one of the record’s, so the person chooses the amount.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcChooseAmount": "Choose amount",
+  "@dcChooseAmount": {
+    "description": "Idea card: opens the amount form for this food."
   }
 }

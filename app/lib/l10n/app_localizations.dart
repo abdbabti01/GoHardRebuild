@@ -17778,12 +17778,6 @@ abstract class AppLocalizations {
   /// **'{food} (not matched yet)'**
   String dcIdeaUnmatchedFood(String food);
 
-  /// Idea card: the proposed unit did not fit the record, so its own portion is used.
-  ///
-  /// In en, this message translates to:
-  /// **'Amount set from the food’s own portion: {foods}. Change it in the review.'**
-  String dcIdeaStartAmount(String foods);
-
   /// Idea card action: opens the review (nothing is logged).
   ///
   /// In en, this message translates to:
@@ -17807,6 +17801,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other ideas, different from these'**
   String get dcAnotherIdeaText;
+
+  /// Idea card: a food needs the person to confirm its record or amount before totals.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the foods below to see totals.'**
+  String get dcIdeaConfirm;
+
+  /// Idea card: several records (or another preparation) could be the food. food = the idea’s word for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Which {food}?'**
+  String dcIdeaWhich(String food);
+
+  /// Idea card: the proposed unit is not one of the record’s, so the person chooses the amount.
+  ///
+  /// In en, this message translates to:
+  /// **'How much {food}? The proposed amount does not fit this food’s units.'**
+  String dcIdeaAmountNeeded(String food);
+
+  /// Idea card: opens the amount form for this food.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose amount'**
+  String get dcChooseAmount;
 }
 
 class _AppLocalizationsDelegate

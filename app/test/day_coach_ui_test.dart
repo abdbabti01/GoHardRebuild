@@ -148,8 +148,16 @@ void main() {
     f.ai.reply = (r) async => _ideas(r);
     await _ask(tester, 'Something quick with more protein');
     expect(f.ai.requests.single['features'], ['ideas'], reason: 'asked only of a server that declared coach.ideas');
-    expect(find.text('Calculated from food records.'), findsOneWidget);
+    // Several slice sizes: the toast's amount is the person's to choose before any total or Review.
+    expect(find.text('Confirm the foods below to see totals.'), findsOneWidget);
     expect(find.textContaining('Needs a food match: Dragonfruit'), findsOneWidget);
+    expect(_keyed('day-review-'), findsNothing);
+    await _tap(tester, _keyed('day-amount-').first);
+    expect(find.byType(FoodFormScreen), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('food-unit')));
+    await _tap(tester, find.byKey(const Key('food-unit-serving:3')).last); // 1 medium or regular slice
+    await _tap(tester, find.byKey(const Key('food-save'))); // the amount, chosen; nothing logged
+    expect(find.text('Calculated from food records.'), findsOneWidget);
     expect(find.textContaining('9999'), findsNothing, reason: 'a model-given value is never shown or used');
     expect(find.textContaining('preparation times'), findsOneWidget, reason: 'quick is passed on, said to be unchecked');
     expect(_keyed('day-find-'), findsOneWidget);

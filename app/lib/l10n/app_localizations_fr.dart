@@ -12181,11 +12181,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String dcIdeaStartAmount(String foods) {
-    return 'Quantité prise de la portion de l’aliment : $foods. Change-la dans la révision.';
-  }
-
-  @override
   String get dcReviewMeal => 'Réviser le repas';
 
   @override
@@ -12196,6 +12191,23 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dcAnotherIdeaText => 'D’autres idées, différentes de celles-ci';
+
+  @override
+  String get dcIdeaConfirm =>
+      'Confirme les aliments ci-dessous pour voir les totaux.';
+
+  @override
+  String dcIdeaWhich(String food) {
+    return 'Quel aliment pour « $food »?';
+  }
+
+  @override
+  String dcIdeaAmountNeeded(String food) {
+    return 'Quelle quantité de $food? La quantité proposée ne correspond pas aux unités de cet aliment.';
+  }
+
+  @override
+  String get dcChooseAmount => 'Choisir la quantité';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

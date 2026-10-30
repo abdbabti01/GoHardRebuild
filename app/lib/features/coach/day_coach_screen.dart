@@ -17,6 +17,7 @@ import '../../data/sync.dart';
 import '../nutrition/eat_screen.dart' show eatDayRequestProvider;
 import '../nutrition/eating_out_screen.dart' show openEatingOut;
 import '../nutrition/food_form.dart' show FoodFormScreen;
+import '../nutrition/food_repository.dart' show FoodDraft;
 import '../nutrition/food_repository.dart' show SavedFood;
 import '../nutrition/nutrient_coverage.dart' show Nutrient;
 import '../nutrition/log_food_screen.dart' show LogFoodScreen;
@@ -216,7 +217,14 @@ class DayConversation extends Notifier<AskState> {
   static String _clip(String s) => s.length > 1500 ? s.substring(0, 1500) : s;
 
   /// Works a reply out again from the records as they are now (same request, same follow-up target). No AI.
-  void recalculate(String messageId, DayRecords records, AppLocalizations l) {
+  void recalculate(String messageId, DayRecords records, AppLocalizations l) => _rework(messageId, records, l, (intent) => intent);
+
+  /// The person's answer to one confirmation of an idea (a record chosen, or an amount chosen in the amount form). The
+  /// reply is worked out again from the records as they are now. No AI.
+  void confirmIdea(String messageId, int idea, int index, DayRecords records, AppLocalizations l, {int? option, Json? part}) => _rework(messageId, records, l,
+      (intent) => idea < 0 || idea >= intent.ideas.length ? intent : intent.withIdeas([...intent.ideas]..[idea] = confirmIdeaFood(intent.ideas[idea], index, option: option, part: part)));
+
+  void _rework(String messageId, DayRecords records, AppLocalizations l, DayIntent Function(DayIntent) change) {
     final i = state.messages.indexWhere((m) => m['id'] == messageId);
     if (i < 0) return;
     final reply = Map<String, dynamic>.from(state.messages[i]['reply'] as Map);
@@ -224,7 +232,7 @@ class DayConversation extends Notifier<AskState> {
     if (intent == null) return;
     final earlier = state.messages.take(i).lastWhere((m) => m['role'] == 'assistant', orElse: () => const {});
     final focus = [for (final c in (earlier['reply'] as Map?)?['cards'] as List? ?? const []) if (c is Map && c['choice'] != true) Map<String, dynamic>.from(c)];
-    _set(state.copy(messages: [...state.messages]..[i] = {...state.messages[i], 'reply': resolveDay(intent, records, l, focus: focus)}));
+    _set(state.copy(messages: [...state.messages]..[i] = {...state.messages[i], 'reply': resolveDay(change(intent), records, l, focus: focus)}));
   }
 
   void cancel() {
@@ -630,14 +638,15 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
   /// a food match (no totals), or calculated but not meeting what was asked.
   Widget _ideaCard(String id, int i, Json c, Json reply, Json? action, bool stale) {
     final l = context.l10n;
-    final unmatched = [for (final u in c['unmatched'] as List? ?? const []) '$u'], start = [for (final u in c['startAmounts'] as List? ?? const []) '$u'];
+    final unmatched = [for (final u in c['unmatched'] as List? ?? const []) '$u'];
+    final confirm = [for (final x in c['confirm'] as List? ?? const []) Map<String, dynamic>.from(x as Map)];
     final calculated = c['kcal'] is Map;
     final misses = [
       if (c['overKcal'] is num) l.dcMissOverKcal(formatKcal(c['overKcal'] as num)),
       if (c['underProtein'] is num) l.dcMissUnderProtein(formatNumber((c['underProtein'] as num).ceil())),
     ];
     final (status, tone) = !calculated
-        ? (l.dcIdeaNeedsMatch(unmatched.join(l.dcAnd)), Tone.warning)
+        ? (unmatched.isNotEmpty ? l.dcIdeaNeedsMatch(unmatched.join(l.dcAnd)) : l.dcIdeaConfirm, Tone.warning)
         : misses.isNotEmpty
             ? (l.dcMisses(misses.join(l.dcAnd)), Tone.warning)
             : c['unknownTarget'] == true
@@ -659,7 +668,8 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                 style: context.numStyle(15, weight: FontWeight.w500)),
           ],
           Padding(padding: const EdgeInsets.only(top: 4), child: StatusLine(Icons.info_outline, status, key: Key('day-idea-status-$id-$i'), tone: tone)),
-          if (start.isNotEmpty) Text(l.dcIdeaStartAmount(start.join(l.dcAnd)), style: context.caption),
+          // What the person confirms before any total: which record a food is, or how much of it.
+          for (final (k, x) in confirm.indexed) ..._confirmRow(id, i, c, k, x, reply),
           if (c['toward'] is String) Padding(padding: const EdgeInsets.only(top: 2), child: Text(c['toward'] as String, style: context.caption)),
           if (action != null) ...[
             const SizedBox(height: 10),
@@ -670,6 +680,35 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
         ]),
       ),
     );
+  }
+
+  List<Widget> _confirmRow(String id, int i, Json c, int k, Json x, Json reply) {
+    final l = context.l10n, idea = c['idea'] as int, label = x['label'] as String;
+    void answer({int? option, Json? part}) => _convo.confirmIdea(id, idea, k, _records(), l, option: option, part: part);
+    if (x['confirm'] == 'record') {
+      return [
+        Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.dcIdeaWhich(label), style: context.sansStyle(15, weight: FontWeight.w600))),
+        for (final (o, opt) in (x['options'] as List).indexed)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: SecondaryButton(['${(opt as Map)['name']}', if (opt['match'] is String) '(${opt['match']})'].join(' '), key: Key('day-pick-$id-$i-$k-$o'), onPressed: () => answer(option: o)),
+          ),
+      ];
+    }
+    final food = Map<String, dynamic>.from(x['food'] as Map);
+    return [
+      Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.dcIdeaAmountNeeded(food['name'] as String), style: context.sansStyle(15, weight: FontWeight.w600))),
+      Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: SecondaryButton(l.dcChooseAmount, key: Key('day-amount-$id-$i-$k'), icon: Icons.tune, onPressed: () async {
+          // The usual amount form, in its selection mode: the person picks a quantity in one of the record's own units.
+          final item = FoodItem(food['item'] as Json), day = reply['dayKey'] as String;
+          final d = await push<FoodDraft>(context, FoodFormScreen(draft: FoodDraft.of(item, dayKey: day, meal: mealAt(DateTime.now()), name: food['name'] as String), pick: true));
+          if (d == null || !mounted) return;
+          answer(part: {...MealComponent.ofDraft(d).j, if (food['match'] is String) 'match': food['match']});
+        }),
+      ),
+    ];
   }
 
   static String _actionLabel(AppLocalizations l, Json a) => switch (a['id']) {

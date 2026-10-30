@@ -96,12 +96,46 @@ void main() {
         return q.startsWith('farro') ? [branded, plain] : const [];
       }));
       final eggs = ideas[0]['parts'] as List;
-      expect([for (final p in eggs) (p as Map)['unit']], ['serving:0', 'serving:3', 'serving:1'], reason: '1 egg; the standard slice; banana in ml has no ml: its own portion');
-      expect(ideas[0]['startAmounts'], ['Banana']);
+      expect([for (final p in eggs) (p as Map)['unit']], ['serving:0'], reason: '2 of the record’s own "1 egg"');
+      // Several slice sizes, and ml for a banana that has none: the person chooses the amount; nothing is substituted.
+      expect([for (final c in ideas[0]['confirm'] as List) ((c as Map)['confirm'], c['label'])], [('amount', 'whole wheat bread'), ('amount', 'banana')]);
       final bowl = ideas[1];
       expect(((bowl['parts'] as List).single as Map)['item']['sourceId'], 'q1', reason: 'never a branded product the idea did not name');
       expect(bowl['unmatched'], ['dragonfruit zzz', 'mango zzz', 'kiwi zzz', 'lychee zzz']);
       expect(searched.length, 3, reason: 'at most three searches per request');
+    });
+
+    test('a preparation is never swapped: "cooked oats" is not matched to dry oats without the person confirming it', () async {
+      final ideas = await resolveIdeas([
+        (title: 'Porridge', foods: [f('oats', 40, 'g', prep: 'cooked')]),
+        (title: 'Raw egg?', foods: [f('egg', 1, 'piece', noun: 'egg', prep: 'raw')]),
+      ], IdeaSources(common: common));
+      expect(ideas[0]['parts'], isEmpty);
+      final which = (ideas[0]['confirm'] as List).single as Map;
+      expect(which['confirm'], 'record');
+      expect([for (final o in which['options'] as List) (o as Map)['match']], ['Dry · uncooked'], reason: 'offered, with its preparation, never taken');
+      expect((((ideas[1]['parts'] as List).single as Map)['match']), 'Whole · raw', reason: 'a record stating the preparation is taken');
+      // Confirming it places the proposed amount when the record has that unit.
+      final confirmed = confirmIdeaFood(ideas[0], 0, option: 0);
+      expect(((confirmed['parts'] as List).single as Map)['quantity'], 40);
+      expect(confirmed['confirm'], isEmpty);
+    });
+
+    test('equally good records are a choice, never the first one; an amount chosen in the form completes the idea', () async {
+      FoodItem rice(String id, String name) => FoodItem({'source': 'usda', 'sourceId': id, 'name': name, 'basis': '100g', 'nutrients': {'calories': 130, 'protein': 2.7}, 'servings': const []});
+      final pool = [candidateOf(rice('w', 'Rice, white, cooked')), candidateOf(rice('b', 'Rice, brown, cooked'))];
+      final idea = (await resolveIdeas([(title: 'Rice bowl', foods: [f('rice', 150, 'g', prep: 'cooked'), f('banana', 2, 'ml')])], IdeaSources(common: pool, mine: common)))[0];
+      final which = (idea['confirm'] as List).first as Map;
+      expect([for (final o in which['options'] as List) (o as Map)['item']['sourceId']], ['w', 'b']);
+      final brown = confirmIdeaFood(idea, 0, option: 1);
+      expect(((brown['parts'] as List).single as Map)['item']['sourceId'], 'b');
+      final records = DayRecords(today: today, shown: today, entries: (_) => const [], mealNow: 'Lunch');
+      Map card(Json i) => (resolveDay(DayIntent('ideas', ideas: [i]), records, l)['cards'] as List).single as Map;
+      expect(card(brown).containsKey('kcal'), isFalse, reason: 'the banana amount is still to be chosen: no totals, no Review');
+      final banana = ((brown['confirm'] as List).single as Map)['food'] as Map;
+      final done = confirmIdeaFood(brown, 0, part: {'item': banana['item'], 'quantity': 1, 'unit': 'serving:1', 'name': 'Banana'});
+      expect((card(done)['kcal'] as Map)['complete'], isTrue);
+      expect([for (final a in resolveDay(DayIntent('ideas', ideas: [done]), records, l)['actions'] as List) (a as Map)['id']], contains('reviewIdea'));
     });
 
     test('a reply gives totals only from records, fits the person’s own limit, and keeps unmatched ideas without totals', () async {

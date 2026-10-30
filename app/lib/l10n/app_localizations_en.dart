@@ -11977,11 +11977,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String dcIdeaStartAmount(String foods) {
-    return 'Amount set from the food’s own portion: $foods. Change it in the review.';
-  }
-
-  @override
   String get dcReviewMeal => 'Review meal';
 
   @override
@@ -11992,4 +11987,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dcAnotherIdeaText => 'Other ideas, different from these';
+
+  @override
+  String get dcIdeaConfirm => 'Confirm the foods below to see totals.';
+
+  @override
+  String dcIdeaWhich(String food) {
+    return 'Which $food?';
+  }
+
+  @override
+  String dcIdeaAmountNeeded(String food) {
+    return 'How much $food? The proposed amount does not fit this food’s units.';
+  }
+
+  @override
+  String get dcChooseAmount => 'Choose amount';
 }

@@ -2931,9 +2931,12 @@
   "dcIdeaCalculated": "Calculé à partir des fiches d’aliments.",
   "dcIdeaLabel": "Une idée de Leon ou Leona",
   "dcIdeaUnmatchedFood": "{food} (pas encore trouvé)",
-  "dcIdeaStartAmount": "Quantité prise de la portion de l’aliment : {foods}. Change-la dans la révision.",
   "dcReviewMeal": "Réviser le repas",
   "dcFindFood": "Trouver l’aliment",
   "dcAnotherIdea": "Autres idées",
-  "dcAnotherIdeaText": "D’autres idées, différentes de celles-ci"
+  "dcAnotherIdeaText": "D’autres idées, différentes de celles-ci",
+  "dcIdeaConfirm": "Confirme les aliments ci-dessous pour voir les totaux.",
+  "dcIdeaWhich": "Quel aliment pour « {food} »?",
+  "dcIdeaAmountNeeded": "Quelle quantité de {food}? La quantité proposée ne correspond pas aux unités de cet aliment.",
+  "dcChooseAmount": "Choisir la quantité"
 }
