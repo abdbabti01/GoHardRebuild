@@ -2501,3 +2501,5 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
 - Focused tests: `eat_companion_test` 11, `eat_companion_ui_test` 9 (+2: back from logging, scrolled to the top, coach
   on and off), `day_coach_ui_test` 15, `move_ui_test` / `eating_out_ui_test` / `coach_companion_test` 46 (introduction
   order). `flutter analyze` clean, `check-l10n` OK.
+- Code 31b0e2a: CI 41095951147 passed (first attempt); unsigned IPA run 61 (31b0e2a) passed.
+- Native `journey_eat_companion_test` (one attempt after a fresh boot, branch API on 127.0.0.1:5136, disposable DB dropped, coach stub — **not a model**): **passed, every step**, including the last: back on Eat after logging the idea, the coach says "Lunch is logged. Want ideas for your next meal?" with What could I eat?, Ask me and Set goals. Captures `docs/evidence/screenshots/ec-01…05`.
