@@ -2462,5 +2462,14 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
   `coach_companion_test`, `eating_out_ui_test`, `move_ui_test`, `water_ui_test`, `meal_habits_reminders_test`; full app
   suite once: 828 passed, 4 failed on the old Eat wording, those files fixed and rerun (35 passed); `flutter analyze`
   clean; `check-l10n` OK (2,936 messages). API `DailyCoachTests` 8 passed (**stubbed provider**).
-- Not run: native journey (Pixel_7 storage, see 29 Oct). **Unverified:** real Groq ideas, real USDA matches for ideas,
-  iPhone notification wording on the lock screen, VoiceOver. Hosted ideas need this API deployed. Not merged, not deployed.
+- Native `journey_eat_companion_test` (new, one process, not default) on Pixel_7 against the branch API on 127.0.0.1:5136
+  (disposable DB `gohard_ec_journey`, dropped) with the provider pointed at `scripts/coach-stub.mjs` (**a stub, not a
+  model**). Run 1 found a real bug: on a fresh start the bundled food catalog had not been read yet when ideas were
+  matched, so nothing matched (fixed: the catalog and seen foods are loaded on demand). Run 2: briefing, What could I
+  eat?, the stub's ideas (one matched to bundled foods, one "needs a food match"), review with an amount changed and
+  left (account: nothing), Log once (account: 2 entries at the original amounts) all **passed**; it stopped on the
+  journey's own back step (the conversation has a close button). Run 3: INSTALL_FAILED_INSUFFICIENT_STORAGE. Run 4
+  (after a reboot): the same steps passed again; only the last check (the briefing after logging) timed out because
+  Eat's header had scrolled out of its lazy list (journey fixed to scroll back, not rerun). Stopped there.
+- **Unverified:** real Groq ideas, real USDA matches for ideas, iPhone notification wording on the lock screen,
+  VoiceOver. Hosted ideas need this API deployed. Not merged, not deployed.

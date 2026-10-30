@@ -319,12 +319,22 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
   /// foods seen on this phone, then at most three searches of the account's food search.
   Future<List<Json>> _match(Object? raw) async {
     final lang = foodLang(context.l10n);
-    final common = ref.read(commonFoodsProvider).value?.foods ?? const <CommonFood>[];
+    // Loaded on demand: nothing may have read the bundled foods or the phone's seen foods yet (a fresh start).
+    Future<T?> loaded<T>(Future<T> f) async {
+      try {
+        return await f.timeout(const Duration(seconds: 5));
+      } on Object {
+        return null;
+      }
+    }
+    final common = (await loaded(ref.read(commonFoodsProvider.future)))?.foods ?? const <CommonFood>[];
+    final seen = await loaded(ref.read(seenFoodsProvider.future)) ?? const <FoodItem>[];
+    if (!mounted) return const [];
     final discovery = ref.read(foodDiscoveryProvider);
     return resolveIdeas(ideasOf(raw), IdeaSources(
       common: [for (final c in common) (item: c.item, fields: c.fields, name: c.nameIn(lang), detail: c.qualifierIn(lang), startUnit: c.unitId)],
       mine: [for (final r in ref.read(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) candidateOf(r.value.item)],
-      seen: [for (final i in ref.read(seenFoodsProvider).value ?? const <FoodItem>[]) candidateOf(i)],
+      seen: [for (final i in seen) candidateOf(i)],
       search: (q) async {
         try {
           return await discovery.search(q).timeout(const Duration(seconds: 8));

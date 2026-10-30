@@ -149,5 +149,8 @@ recalculated; matched records are snapshots, so an idea never changes under the 
 - `test/day_coach_ui_test.dart` (+4): an idea from words to review, back logs nothing, Log once through the meal batch
   even with a second tap; an older server gets no `features`; French and Arabic ideas at 320 px with 1.6× text.
 - `test/meal_habits_reminders_test.dart`: reminder wording with details on and off for meal, medication, supplement.
+- Native `journey_eat_companion_test` (coach stub, not a model): briefing, What could I eat?, a matched and an unmatched
+  idea, review with a changed amount and back (nothing logged), Log once (two entries) passed on Pixel_7; it found the
+  cold-start catalog bug fixed here. The last check (briefing after logging) was not rerun after a harness fix.
 - API `DailyCoachTests` (8): ideas kept as words only for a phone that asked, figures dropped, amounts out of range
   dropped, preferences allowlisted, an older phone gets `suggest`. **Stubbed provider: says nothing about real Groq.**
