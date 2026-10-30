@@ -15,7 +15,7 @@ import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 import '../coach/day_coach.dart' show DayIntent;
 import '../coach/day_coach_screen.dart' show openDayCoach;
-import '../me/reminders.dart' show remindersProvider;
+import '../me/reminders.dart' show Reminder, remindersProvider;
 import '../me/reminders_screen.dart' show RemindersScreen, ReminderEditorScreen, timeLabel;
 import '../shell/home_shell.dart' show shellProvider;
 import 'food_form.dart';
@@ -113,7 +113,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       final prefs = ref.read(coachPrefsProvider);
       if (ref.watch(habitIntroDueProvider) && prefs.mayIntroduce(owner, 'eat.habits')) {
         _habitHint = 'eat.habits';
-      } else if (ref.watch(usualLogTimeProvider(meal)) != null && !(ref.watch(remindersProvider).value ?? const []).any((r) => r.meal == meal) &&
+      } else if (ref.watch(usualLogTimeProvider(meal)) != null && !(ref.watch(remindersProvider).value ?? const <Reminder>[]).any((r) => r.meal == meal) &&
           prefs.mayIntroduce(owner, 'eat.reminders')) {
         _habitHint = 'eat.reminders';
       }
@@ -226,6 +226,26 @@ class _EatScreenState extends ConsumerState<EatScreen> {
             : (label: l.eatOpenMine, key: const Key('eat-coach-mine'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.mine)));
   }
 
+  /// What the coach says (coach on) or the compact panel without it (coach off): the usual meal, a one-time
+  /// introduction, or the day's briefing. Throws if any of it cannot be worked out; the caller isolates that.
+  ({CoachSay? say, List<Widget> panel}) _coachContent(AppLocalizations l, String day, String today, List<FoodEntry> entries, Profile? profile, {required bool coachOn}) {
+    final brief = _briefing(day, today, entries, profile);
+    _noteFood(day, entries);
+    if (coachOn) {
+      final saved = [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value];
+      return (say: _habitSay(day, today) ?? _hintSay(day, saved, logged: entries.isNotEmpty) ?? _briefSay(l, brief, day, today), panel: const []);
+    }
+    final usual = day == today ? ref.watch(usualMealProvider(_mealNow(DateTime.now()))) : null;
+    return (
+      say: null,
+      panel: [
+        usual != null
+            ? UsualMealPanel(usual: usual, day: today)
+            : BriefingPanel(text: briefingText(l, brief, dayLabel: longDate(day)), ideas: day == today ? () => openDayCoach(context, day: day, start: (const DayIntent('eat'), l.ebIdeas)) : null),
+      ],
+    );
+  }
+
   /// The heads-up on screen now, kept so its words do not change under the reader while the same state lasts.
   String? _headsUpShown;
 
@@ -237,7 +257,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final b = eatBriefing(
       day: day, today: today, entries: entries, kcalGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, nowMinute: minute,
       nextMeal: nextMealAt(minute, reminders: [
-        for (final r in ref.watch(remindersProvider).value ?? const [])
+        for (final r in ref.watch(remindersProvider).value ?? const <Reminder>[])
           if (r.enabled && r.meal != null && r.weekdays.contains(weekday)) (meal: r.meal!, minute: r.minute),
       ]),
       // Not before the account's choices have loaded: a heads-up already said must never be picked again meanwhile.
@@ -305,8 +325,15 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final l = context.l10n;
 
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
-    final brief = _briefing(day, today, entries, profile);
-    _noteFood(day, entries);
+    // The coach's message and suggestions are optional. If working them out fails, the error is reported like any other
+    // Flutter error (so it shows in logs and tests) and a short notice with Try again takes their place; the day's
+    // summary, Log food and the meals below never depend on them.
+    ({CoachSay? say, List<Widget> panel})? coach;
+    try {
+      coach = _coachContent(l, day, today, entries, profile, coachOn: coachOn);
+    } catch (e, s) {
+      FlutterError.reportError(FlutterErrorDetails(exception: e, stack: s, library: 'GoHard Eat', context: ErrorDescription("while working out Eat's coach message")));
+    }
     final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
 
     // With very large text the meal icon gives its room to the words.
@@ -338,11 +365,10 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                           alignment: AlignmentDirectional.centerStart,
                           child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: Text(l.eatBackToToday)),
                         ),
-                      if (coachOn)
-                        TabCoach(key: const Key('eat-coach'), id: 'eat',
-                            say: _habitSay(day, today) ?? _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
-                                _briefSay(l, brief, day, today),
-                            avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day)),
+                      if (coachOn && coach?.say != null)
+                        TabCoach(key: const Key('eat-coach'), id: 'eat', say: coach!.say!, avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day))
+                      else if (coachOn)
+                        _CoachProblem(onRetry: () => setState(() {})),
                     ]),
             ),
           ),
@@ -366,13 +392,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
                   ]),
                 ),
-                // Without the coach, its one message is a compact panel here instead: the usual meal (today, suggestions
-                // on), else the briefing with its action.
-                if (!coachOn)
-                  if (day == today && ref.watch(usualMealProvider(_mealNow(DateTime.now()))) != null)
-                    ...[const SizedBox(height: 12), UsualMealPanel(usual: ref.watch(usualMealProvider(_mealNow(DateTime.now())))!, day: today)]
-                  else
-                    ...[const SizedBox(height: 12), BriefingPanel(text: briefingText(l, brief, dayLabel: longDate(day)), ideas: day == today ? () => openDayCoach(context, day: day, start: (const DayIntent('eat'), l.ebIdeas)) : null)],
+                // Without the coach, its one message is a compact panel here instead (or the notice, if it failed).
+                if (!coachOn) ...[const SizedBox(height: 12), ...?coach?.panel, if (coach == null) _CoachProblem(onRetry: () => setState(() {}))],
                 const SizedBox(height: 16),
                 // Eating out, always here (coach or not): a restaurant order from verified menus, for the same day and the
                 // meal of the time of day. The chains named are the catalog's own, so the line never claims more.
@@ -450,6 +471,22 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   }
 
   static const _tile = 40.0;
+}
+
+/// In the coach's place when its message could not be worked out: what still works, and Try again.
+class _CoachProblem extends StatelessWidget {
+  const _CoachProblem({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Panel(
+        key: const Key('eat-coach-problem'),
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 6),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          StatusLine(Icons.info_outline, context.l10n.eatCoachProblem, tone: Tone.warning),
+          TextButton(key: const Key('eat-coach-retry'), onPressed: onRetry, child: Text(context.l10n.coachAskRetry)),
+        ]),
+      );
 }
 
 /// A meal's footer: Add food across the width, Save as meal (when the meal has foods) quiet at its end. When both labels

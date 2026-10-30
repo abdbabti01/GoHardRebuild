@@ -12213,6 +12213,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String dcIdeaPrepDiffers(String food, String asked) {
     return 'Tu as choisi $food, pas « $asked » comme l’idée le disait. Les quantités diffèrent selon la préparation, donc la quantité proposée n’est pas utilisée.';
   }
+
+  @override
+  String get eatCoachProblem =>
+      'Le message du coach n’a pas pu être préparé. Ton journal et Consigner un aliment fonctionnent normalement.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

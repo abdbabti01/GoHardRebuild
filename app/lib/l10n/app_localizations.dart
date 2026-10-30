@@ -17831,6 +17831,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You chose {food}, not {asked} as the idea said. Amounts differ between preparations, so the proposed amount is not used.'**
   String dcIdeaPrepDiffers(String food, String asked);
+
+  /// Eat: shown in the coach’s place when its message failed; the journal still works. Followed by Try again.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach’s message couldn’t be worked out. Your journal and Log food work as usual.'**
+  String get eatCoachProblem;
 }
 
 class _AppLocalizationsDelegate

@@ -16880,5 +16880,9 @@
         "type": "String"
       }
     }
+  },
+  "eatCoachProblem": "The coach’s message couldn’t be worked out. Your journal and Log food work as usual.",
+  "@eatCoachProblem": {
+    "description": "Eat: shown in the coach’s place when its message failed; the journal still works. Followed by Try again."
   }
 }

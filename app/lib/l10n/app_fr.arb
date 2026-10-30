@@ -2939,5 +2939,6 @@
   "dcIdeaWhich": "Quel aliment pour « {food} »?",
   "dcIdeaAmountNeeded": "Quelle quantité de {food}? La quantité proposée ne correspond pas aux unités de cet aliment.",
   "dcChooseAmount": "Choisir la quantité",
-  "dcIdeaPrepDiffers": "Tu as choisi {food}, pas « {asked} » comme l’idée le disait. Les quantités diffèrent selon la préparation, donc la quantité proposée n’est pas utilisée."
+  "dcIdeaPrepDiffers": "Tu as choisi {food}, pas « {asked} » comme l’idée le disait. Les quantités diffèrent selon la préparation, donc la quantité proposée n’est pas utilisée.",
+  "eatCoachProblem": "Le message du coach n’a pas pu être préparé. Ton journal et Consigner un aliment fonctionnent normalement."
 }

@@ -2503,3 +2503,20 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
   order). `flutter analyze` clean, `check-l10n` OK.
 - Code 31b0e2a: CI 41095951147 passed (first attempt); unsigned IPA run 61 (31b0e2a) passed.
 - Native `journey_eat_companion_test` (one attempt after a fresh boot, branch API on 127.0.0.1:5136, disposable DB dropped, coach stub — **not a model**): **passed, every step**, including the last: back on Eat after logging the idea, the coach says "Lunch is logged. Want ideas for your next meal?" with What could I eat?, Ask me and Set goals. Captures `docs/evidence/screenshots/ec-01…05`.
+
+### 30 Oct 2026 (fix) — Eat blank grey on iPhone for accounts with reminders
+
+- Cause (reproduced, not assumed):  (added in 99ee83d, so IPA 59, 60 and 61) iterated
+  . In a for-in, the untyped  made each element , and
+   is an extension type, so  was a dynamic call on the raw map: NoSuchMethodError
+  ("Class '_Map<String, dynamic>' has no instance getter 'enabled'") thrown while building EatScreen, which a release
+  build shows as a grey box filling the tab. Only accounts with at least one reminder of their own (enabled or paused),
+  which is why fresh test accounts never showed it. No stored data was involved or changed.
+- Fix: the list is typed (, also in the reminder-offer check). Defence: the coach's optional message
+  (briefing, suggestions, introductions, the coach-off panel) is now worked out in one guarded step; a failure is
+  reported through FlutterError.reportError (still visible in logs and tests) and a notice with Retry takes the coach's
+  place, while the day's summary, Log food and the meals render as usual.
+- Evidence:  (existing-account data with reminders, 12 combinations of goals, coach on
+  or off and stored preferences, plus 2 isolation tests) — fails with the old line put back, passes with the fix. Affected
+  Eat tests (7 files, 76) pass;  clean;  OK.  would have caught it; enabling it
+  repo-wide needs ~50 test/journey JSON accesses typed first (not done here).

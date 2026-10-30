@@ -12008,4 +12008,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String dcIdeaPrepDiffers(String food, String asked) {
     return 'You chose $food, not $asked as the idea said. Amounts differ between preparations, so the proposed amount is not used.';
   }
+
+  @override
+  String get eatCoachProblem =>
+      'The coach’s message couldn’t be worked out. Your journal and Log food work as usual.';
 }

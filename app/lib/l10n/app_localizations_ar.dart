@@ -12514,4 +12514,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String dcIdeaPrepDiffers(String food, String asked) {
     return 'اخترت $food، وليس «$asked» كما قالت الفكرة. تختلف الكميات بين طرق التحضير، لذا لا تُستخدم الكمية المقترحة.';
   }
+
+  @override
+  String get eatCoachProblem =>
+      'تعذّر إعداد رسالة المدرّب. سجلّك وتسجيل الطعام يعملان كالمعتاد.';
 }
