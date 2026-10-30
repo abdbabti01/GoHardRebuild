@@ -2473,3 +2473,4 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
   Eat's header had scrolled out of its lazy list (journey fixed to scroll back, not rerun). Stopped there.
 - **Unverified:** real Groq ideas, real USDA matches for ideas, iPhone notification wording on the lock screen,
   VoiceOver. Hosted ideas need this API deployed. Not merged, not deployed.
+- Final code ae3abd2: CI 41076832635 passed (99ee83d before the device fix: CI 41074210093 passed); unsigned IPA run 59 (ae3abd2) passed.
