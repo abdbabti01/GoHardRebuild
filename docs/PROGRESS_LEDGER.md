@@ -2438,3 +2438,29 @@ Design and rules: docs/MEAL_HABITS_REMINDERS.md. Code a19aef7.
   INSUFFICIENT_STORAGE (~560 MB free after reboot and cache trim). Stopped there as instructed.
 - **Unverified:** real iOS/Android notification delivery, lock-screen discretion, notification buttons, background meal
   suppression, real Groq interpretation of ingredient requests, VoiceOver. Not merged, not deployed.
+
+## 30 Oct 2026 — Eat companion and meaningful reminders (`feature/eat-companion`, from unmerged `feature/meal-habits-reminders` d613430)
+
+Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (not merged): this branch contains it.
+
+- Reminder wording: the generic "GoHard reminder — Open GoHard to see it" was the hidden-details text, on by default
+  for supplements too. Now every notification states its purpose ("Time to log breakfast.", the supplement's name,
+  "Time for your medication." / "Time for your supplement." when hidden); hidden details never show name, dose or
+  instructions; default hidden for medication only.
+- Eat's bubble: a deterministic briefing from the day's records, goals, time and meal reminders replaces the fixed
+  sentence; earlier days are told looking back; one action (What could I eat?), Set goals without goals, Ask me kept;
+  the same words in a compact panel without the coach. In-app heads-ups (over, near before 17:00 within
+  max(150 kcal, 10 %), protein reached), once per day per account, switchable in Me › Meal suggestions; none as
+  notifications. Fixed during testing: a heads-up already said could be picked again before the account's choices had
+  loaded.
+- What could I eat?: built-in (usual meal, saved items, Eating out, Choose something else, Saved meals) with no AI;
+  new ideas via `POST /coach/daily` kind `ideas` (capability `coach.ideas`, request `features`), words only, matched
+  on the phone to bundled everyday foods, the person's foods, foods seen on the phone, then at most 3 account food
+  searches; values only from records; unmatched foods shown without totals with Find food; review through the existing
+  review and atomic meal log.
+- Tests: app `eat_companion_test` 9, `eat_companion_ui_test` 7, `day_coach_ui_test` +4 (15 total), updated
+  `coach_companion_test`, `eating_out_ui_test`, `move_ui_test`, `water_ui_test`, `meal_habits_reminders_test`; full app
+  suite once: 828 passed, 4 failed on the old Eat wording, those files fixed and rerun (35 passed); `flutter analyze`
+  clean; `check-l10n` OK (2,936 messages). API `DailyCoachTests` 8 passed (**stubbed provider**).
+- Not run: native journey (Pixel_7 storage, see 29 Oct). **Unverified:** real Groq ideas, real USDA matches for ideas,
+  iPhone notification wording on the lock screen, VoiceOver. Hosted ideas need this API deployed. Not merged, not deployed.

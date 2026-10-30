@@ -182,7 +182,12 @@ void main() {
       expect([for (final n in a) n.id], [for (final n in b) n.id]);
       expect({for (final n in a) n.id}.length, a.length);
       final hidden = plan([Reminder({...r('Lisinopril', ReminderCategory.medication, '20:00', private: true).j, 'instructions': '10 mg with water'})]).first;
-      expect((hidden.title, hidden.body), (l.reminderPrivateTitle, l.reminderPrivateBody));
+      expect((hidden.title, hidden.body), (l.reminderHiddenMedication, l.reminderDoseBody), reason: 'the purpose, never the name, dose or instructions');
+      final shown = plan([Reminder({...r('Vitamin D', ReminderCategory.supplement, '20:00').j, 'instructions': '1 capsule'})]).first;
+      expect((shown.title, shown.body), ('Vitamin D', '1 capsule'));
+      final hiddenSupplement = plan([r('Iron', ReminderCategory.supplement, '20:00', private: true)]).first;
+      expect('${hiddenSupplement.title} ${hiddenSupplement.body}', allOf(contains('Time for your supplement.'), isNot(contains('Iron'))));
+      expect(plan([r('m', ReminderCategory.meal, '12:00', meal: 'Lunch', private: true)]).first.title, 'Time to log lunch.');
       expect(jsonDecode(hidden.payload!), {'o': 'one', 'r': 'Lisinopril', 'k': 'Lisinopril|$today|20:00'});
     });
 

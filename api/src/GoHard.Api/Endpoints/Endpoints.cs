@@ -85,7 +85,7 @@ public static class GoHardEndpoints
             contractVersion = ContractVersion, minimumClientContract = app.Configuration.GetValue("Compatibility:MinimumClientContract", 2),
             capabilities = Capabilities.Concat(food.SearchConfigured ? [SearchCapability] : [])
                 .Concat(weather.Enabled ? [WeatherRegistration.Capability] : [])
-                .Concat(coach.Enabled ? [CoachService.Capability, DailyCoachService.Capability] : [])
+                .Concat(coach.Enabled ? [CoachService.Capability, DailyCoachService.Capability, DailyCoachService.IdeasCapability] : [])
                 .Concat(restaurants.Catalog is not null ? [RestaurantService.CatalogCapability] : [])
                 .Concat(restaurants.InterpretEnabled ? [RestaurantService.InterpretCapability] : [])
                 .Concat(email.Configured ? [AccountEmailRegistration.DeliveryCapability] : []).ToArray(),

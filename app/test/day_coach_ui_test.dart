@@ -121,7 +121,83 @@ Future<void> _sendTap(WidgetTester tester, [Key key = const Key('day-send')]) as
 
 String _answerText(WidgetTester tester) => [for (final t in tester.widgetList<Text>(find.byWidgetPredicate((w) => w is Text && w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('day-answer-')))) t.data].join('\n');
 
+/// The server's ideas as words, scripted: one idea every food of which is in the bundled everyday foods, and one with a
+/// food no record has. A value the model adds to a food is not a field an idea is read by.
+DayIntent _ideas(Json _) => DayIntent.fromJson({
+      'kind': 'ideas', 'preferences': ['moreProtein', 'quick'],
+      'ideas': [
+        {'title': 'Eggs and toast', 'foods': [
+          {'name': 'egg', 'label': 'Eggs', 'preparation': null, 'quantity': 2, 'unit': 'piece', 'noun': 'egg', 'calories': 9999},
+          {'name': 'whole wheat bread', 'label': 'Toast', 'preparation': null, 'quantity': 1, 'unit': 'piece', 'noun': 'slice'},
+        ]},
+        {'title': 'Dragonfruit cup', 'foods': [{'name': 'dragonfruit zzz', 'label': 'Dragonfruit', 'preparation': null, 'quantity': 150, 'unit': 'g', 'noun': null}]},
+      ],
+    }, ai: true)!;
+
+Future<void> _ask(WidgetTester tester, String words) async {
+  await tester.enterText(find.byKey(const Key('day-input')), words);
+  await _sendTap(tester);
+}
+
+Finder _keyed(String prefix) => find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith(prefix));
+
 void main() {
+  testWidgets('a new idea: words from the model, values from food records; review and back logs nothing; Log logs the meal once', (tester) async {
+    final f = _Fixture();
+    await pumpApp(tester, await f.overrides(tester, caps: const {'coach.daily', 'coach.ideas', 'food.saved-meals'}), home: const DayCoachScreen(day: day), size: const Size(390, 2400));
+    f.ai.reply = (r) async => _ideas(r);
+    await _ask(tester, 'Something quick with more protein');
+    expect(f.ai.requests.single['features'], ['ideas'], reason: 'asked only of a server that declared coach.ideas');
+    expect(find.text('Calculated from food records.'), findsOneWidget);
+    expect(find.textContaining('Needs a food match: Dragonfruit'), findsOneWidget);
+    expect(find.textContaining('9999'), findsNothing, reason: 'a model-given value is never shown or used');
+    expect(find.textContaining('preparation times'), findsOneWidget, reason: 'quick is passed on, said to be unchecked');
+    expect(_keyed('day-find-'), findsOneWidget);
+
+    await _tap(tester, _keyed('day-review-').first);
+    final review = tester.widget<MealReviewScreen>(find.byType(MealReviewScreen));
+    expect((review.dayKey, review.saved), (day, null));
+    expect([for (final c in review.body.components) c.unitId], ['serving:0', 'serving:3'], reason: '2 eggs; the standard slice');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(f.fakes.journal.meals, isEmpty, reason: 'leaving the review logs nothing');
+
+    await _tap(tester, _keyed('day-review-').first);
+    await tester.tap(find.byKey(const Key('meal-log')));
+    await tester.tap(find.byKey(const Key('meal-log')), warnIfMissed: false); // a second tap
+    await tester.pumpAndSettle();
+    expect(f.fakes.journal.meals.length, 1, reason: 'one atomic meal log, once');
+    expect([for (final d in f.fakes.journal.meals.single) d.name], ['Eggs', 'Whole wheat bread']);
+  });
+
+  testWidgets('an older server is never sent features; its suggestions stay the person’s own', (tester) async {
+    final f = _Fixture();
+    await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day), size: const Size(390, 1600));
+    f.ai.reply = (r) async => const DayIntent('suggest', ai: true);
+    await _ask(tester, 'Something quick with more protein');
+    expect(f.ai.requests.single.containsKey('features'), isFalse);
+    expect(_keyed('day-idea-'), findsNothing, reason: 'no idea requests without the server’s ideas');
+  });
+
+  for (final lang in ['fr-CA', 'ar']) {
+    testWidgets('$lang: ideas at 320 px with 1.6× text, nothing overflows', (tester) async {
+      final f = _Fixture();
+      final c = await pumpApp(tester, await f.overrides(tester, caps: const {'coach.daily', 'coach.ideas', 'food.saved-meals'}), home: const DayCoachScreen(day: day), size: const Size(320, 900), textScale: 1.6);
+      c.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(lang));
+      await tester.pumpAndSettle();
+      f.ai.reply = (r) async => _ideas(r);
+      await _tap(tester, find.byKey(const Key('day-chip-eat')));
+      expect(_keyed('day-idea-'), findsWidgets, reason: 'idea requests after What could I eat?');
+      await _ask(tester, 'idées');
+      for (var i = 0; i < 6; i++) {
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, 300));
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull);
+      expect(Directionality.of(tester.element(find.byKey(const Key('day-input')))), lang == 'ar' ? TextDirection.rtl : TextDirection.ltr);
+    });
+  }
+
   testWidgets('suggested requests answer from the records with no request to the server; the reply says what it used', (tester) async {
     final f = _Fixture();
     await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day), size: const Size(390, 1600));
@@ -260,7 +336,11 @@ void main() {
       expect(Directionality.of(tester.element(find.byKey(const Key('day-context')))), lang == 'ar' ? TextDirection.rtl : TextDirection.ltr);
       await _tap(tester, find.byKey(const Key('day-chip-goal')));
       expect(tester.takeException(), isNull);
-      expect(find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('day-review-')), findsWidgets);
+      final review = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('day-review-'));
+      // The conversation is lazy and ends with its requests: the cards are above them.
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
+      await tester.pumpAndSettle();
+      expect(review, findsWidgets);
     });
   }
 

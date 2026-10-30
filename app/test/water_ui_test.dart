@@ -112,6 +112,8 @@ void main() {
     await tester.pumpAndSettle();
     final history = find.byKey(const Key('eat-history'));
     expect(find.descendant(of: history, matching: find.text('History & trends')), findsOneWidget, reason: 'a labelled action, not only arrows');
+    await tester.ensureVisible(history);
+    await tester.pumpAndSettle();
     await tester.tap(history);
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('trends-calendar')));
@@ -203,7 +205,8 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     // Customize left Eat scrolled down; the coach is in its header, back at the top of the lazy list.
     await tester.scrollUntilVisible(find.byKey(const Key('eat-coach')), -300, scrollable: find.ancestor(of: find.byKey(const Key('eat-water')), matching: find.byType(Scrollable)).first);
-    expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.textContaining('water', findRichText: true)), findsOneWidget, reason: 'the coach mentions water once it is shown');
+    // The coach speaks about the day's food (docs/EAT_COMPANION.md); water is in the summary row above, not in its words.
+    expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.byKey(const Key('eat-brief-ideas'))), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

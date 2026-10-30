@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../nutrition/food_item.dart';
 import '../nutrition/food_repository.dart';
 import '../nutrition/food_search.dart' show searchWords;
+import '../nutrition/meal_habits.dart' show UsualMeal, habitIdentity;
 import '../nutrition/nutrient_coverage.dart';
 import '../nutrition/nutrition_surface.dart' show formatKcal;
 import '../nutrition/saved_meals.dart';
@@ -228,6 +229,31 @@ Suggestions suggest(List<CoachItem> items, {int? maxKcal, int? minProtein, ItemK
   return Suggestions([for (final n in near.take(2)) n.$2], fits: false, leftOut: leftOut);
 }
 
+/// [parts] at the practical step closest to their proposed amounts that meets the person's own limits, or the nearest
+/// with what it misses. Steps scale every amount together, from the proposed amounts (never drifting). [unknown]: a
+/// value a limit needs is unknown, so no step can be promised to meet it.
+({List<MealComponent> parts, Values values, double? overKcal, double? underProtein, bool unknown}) fitIdea(List<MealComponent> parts, {int? maxKcal, int? minProtein}) {
+  String describe(MealComponent c, double q) => FoodScaling.describe(c.item, q, c.unit);
+  Values valuesOf(List<MealComponent> p) => NutrientCoverage.ofParts(p.map((c) => c.values));
+  final base = valuesOf(parts);
+  if (maxKcal == null && minProtein == null || parts.isEmpty) return (parts: parts, values: base, overKcal: null, underProtein: null, unknown: false);
+  final kcal = Nutrient.calories, protein = Nutrient.protein;
+  if ((maxKcal != null && !base[kcal]!.isComplete) || (minProtein != null && !base[protein]!.isComplete)) {
+    return (parts: parts, values: base, overKcal: null, underProtein: null, unknown: true);
+  }
+  ({List<MealComponent> parts, Values values, double over, double under}) at(double f) {
+    final p = f == 1 ? parts : MealMath.scaled(parts, f, describe), v = valuesOf(p);
+    return (parts: p, values: v, over: maxKcal == null ? 0 : math.max(0, v[kcal]!.knownTotal - maxKcal), under: minProtein == null ? 0 : math.max(0, minProtein - v[protein]!.knownTotal));
+  }
+  final steps = [...CoachMath.steps]..sort((a, b) => math.log(a).abs().compareTo(math.log(b).abs()));
+  for (final f in steps) {
+    final o = at(f);
+    if (o.over == 0 && o.under == 0) return (parts: o.parts, values: o.values, overKcal: null, underProtein: null, unknown: false);
+  }
+  final o = at(1);
+  return (parts: o.parts, values: o.values, overKcal: o.over > 0 ? o.over : null, underProtein: o.under > 0 ? o.under : null, unknown: false);
+}
+
 /// A stable short fingerprint (FNV-1a) of [text]: the same records give the same revision on any run.
 String fingerprint(String text) {
   var h = 0x811c9dc5;
@@ -282,7 +308,18 @@ List<MealComponent>? ingredientParts(MealBody b, Object? change) {
 class DayIntent {
   const DayIntent(this.kind,
       {this.today = false, this.nutrient, this.source, this.items = const [], this.change, this.factor, this.servings, this.grams, this.maxCalories, this.minProtein,
-      this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient});
+      this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient, this.ideas = const [], this.preferences = const [], this.proposed});
+
+  /// `ideas` only: the ideas as matched on the phone (`{title, parts, unmatched, startAmounts}`).
+  final List<Json> ideas;
+
+  /// `ideas` only, in a server answer: the model's ideas as words, before matching. Never stored.
+  final Object? proposed;
+  final List<String> preferences;
+
+  DayIntent withIdeas(List<Json> matched) => DayIntent(kind, today: today, nutrient: nutrient, source: source, items: items, change: change, factor: factor,
+      servings: servings, grams: grams, maxCalories: maxCalories, minProtein: minProtein, meal: meal, clarification: clarification, unknownItems: unknownItems,
+      ai: ai, ingredient: ingredient, ideas: matched, preferences: preferences);
 
   /// today | recorded | goal | suggest | portion | compare | training | restaurant | clarify | unsupported
   final String kind;
@@ -304,12 +341,18 @@ class DayIntent {
   /// Read from typed words by the server's model (said on the reply), as opposed to a built-in request.
   final bool ai;
 
-  static const kinds = {'today', 'recorded', 'goal', 'suggest', 'portion', 'compare', 'training', 'restaurant', 'clarify', 'unsupported'};
+  /// `eat`: What could I eat? on the phone (no AI). `ideas`: new ideas the server's model proposed as words, matched to
+  /// real food records on the phone before they are stored here (features/coach/meal_ideas.dart).
+  static const kinds = {'today', 'recorded', 'goal', 'suggest', 'portion', 'compare', 'training', 'restaurant', 'clarify', 'unsupported', 'eat', 'ideas'};
+
+  /// Preferences the person said, from the allowlist. Only protein and calories are checked by GoHard; the others are
+  /// passed on as asked and said to be unchecked.
+  static const preferenceIds = {'quick', 'sweet', 'noCooking', 'vegetarian', 'cheaper', 'moreProtein', 'lighter', 'different'};
 
   Json toJson() => {
         'kind': kind, 'today': today, 'nutrient': nutrient?.name, 'source': source?.name, 'items': [for (final i in items) {'kind': i.kind.name, 'id': i.id}],
         'change': change, 'factor': factor, 'servings': servings, 'grams': grams, 'maxCalories': maxCalories, 'minProtein': minProtein, 'meal': meal,
-        'clarification': clarification, 'unknownItems': unknownItems, 'ai': ai, 'ingredient': ingredient,
+        'clarification': clarification, 'unknownItems': unknownItems, 'ai': ai, 'ingredient': ingredient, 'ideas': ideas, 'preferences': preferences,
       };
 
   /// [j] as stored here, or the server's intent (`items`, `portion`, `day`). Anything off the allowlist reads as nothing.
@@ -329,7 +372,11 @@ class DayIntent {
         maxCalories: j['maxCalories'] is int ? j['maxCalories'] as int : null, minProtein: j['minProtein'] is int ? j['minProtein'] as int : null,
         meal: meals.contains(j['meal']) ? j['meal'] as String : null, clarification: j['clarification'] is String ? j['clarification'] as String : null,
         unknownItems: [for (final u in j['unknownItems'] as List? ?? const []) if (u is String) u], ai: ai || j['ai'] == true,
-        ingredient: switch (portion['ingredient'] ?? j['ingredient']) { final String i when i.trim().isNotEmpty && i.length <= 60 => i.trim(), _ => null });
+        ingredient: switch (portion['ingredient'] ?? j['ingredient']) { final String i when i.trim().isNotEmpty && i.length <= 60 => i.trim(), _ => null },
+        // Stored ideas are the phone's own matched ones; a server answer's raw ideas are read by meal_ideas.dart instead.
+        ideas: [for (final i in j['ideas'] as List? ?? const []) if (i is Map && i['parts'] is List) Map<String, dynamic>.from(i)],
+        preferences: [for (final p in j['preferences'] as List? ?? const []) if (p is String && preferenceIds.contains(p)) p],
+        proposed: ai && j['kind'] == 'ideas' ? j['ideas'] : null);
   }
 }
 
@@ -338,7 +385,10 @@ class DayIntent {
 /// Everything a reply may use, from the records on this phone. [entries] is null while that day's journal is loading.
 class DayRecords {
   const DayRecords({required this.today, required this.shown, this.snapshot, this.workouts = const [], this.entries, this.calorieGoal, this.proteinGoal,
-      this.items = const [], this.pending = 0, this.runOpen = false, required this.mealNow});
+      this.items = const [], this.pending = 0, this.runOpen = false, required this.mealNow, this.usual});
+
+  /// The usual meal for [mealNow] today, when meal suggestions are on and the journal shows one.
+  final UsualMeal? usual;
   final String today, shown, mealNow;
   final DailySnapshot? snapshot;
   final List<Workout> workouts;
@@ -459,6 +509,80 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
   }
 
   List<CoachItem> named() => [for (final i in intent.items) ?r.item(i.id)];
+
+  Nutrient? toward() => r.proteinGoal != null ? Nutrient.protein : r.calorieGoal != null ? Nutrient.calories : null;
+
+  /// What could I eat?, with no AI: the usual meal, a couple of the person's own saved items, and the ways to Eating
+  /// out, Find food and Saved meals. New ideas are one tap further (the screen's idea requests).
+  void eatChoices() {
+    lines.add(l.dcEatIntro);
+    if (r.usual case final u?) {
+      final v = NutrientCoverage.calculate(u.entries);
+      cards.add({'kind': 'usual', 'id': 'usual', 'name': u.saved?.body.name ?? l.habitUsualName(mealLabel(l, u.meal)), 'amount': [for (final e in u.entries) e.amountDescription].join(' · '),
+          'kcal': _total(v[Nutrient.calories]!), 'protein': _total(v[Nutrient.protein]!), 'meal': u.meal});
+      actions.add(_action('usual', card: cards.length - 1));
+    }
+    for (final p in suggest(r.items, byProtein: r.proteinGoal != null).picks.take(2)) {
+      card(p, toward: toward());
+    }
+    actions.addAll([_action('eatingOut'), _action('addFood'), _action('meals')]);
+  }
+
+  /// The model's ideas, as matched on the phone: totals from the food records only, at the person's own limits when
+  /// they gave one (a practical step of every amount), with what still needs a food match or does not fit said plainly.
+  void ideaCards() {
+    final usualIds = {for (final e in r.usual?.entries ?? const <FoodEntry>[]) ?habitIdentity(e)};
+    var ideas = [
+      for (final i in intent.ideas)
+        (title: i['title'] as String? ?? '', parts: [for (final p in i['parts'] as List? ?? const []) MealComponent(Map<String, dynamic>.from(p as Map))],
+            unmatched: [for (final u in i['unmatched'] as List? ?? const []) '$u'], startAmounts: [for (final u in i['startAmounts'] as List? ?? const []) '$u']),
+    ];
+    if (intent.preferences.contains('different') && usualIds.isNotEmpty) {
+      String? id(MealComponent c) => habitIdentity(FoodEntry({'source': {'item': c.item.j, 'quantity': c.quantity, 'unit': c.unitId}}));
+      ideas = [for (final i in ideas) if (!i.parts.any((c) => usualIds.contains(id(c)))) i];
+    }
+    if (ideas.isEmpty) {
+      lines.add(l.dcNoIdeas);
+      actions.addAll([_action('addFood'), _action('meals'), _action('eatingOut')]);
+      return;
+    }
+    final built = <(Json, double)>[];
+    for (final i in ideas) {
+      final fit = fitIdea(i.parts, maxKcal: intent.maxCalories, minProtein: intent.minProtein);
+      final complete = i.unmatched.isEmpty && i.parts.isNotEmpty;
+      final c = <String, dynamic>{
+        'kind': 'idea', 'id': 'idea', 'name': i.title, 'parts': [for (final p in fit.parts) p.j], 'unmatched': i.unmatched, 'startAmounts': i.startAmounts,
+        'amount': [for (final p in fit.parts) '${p.amount} ${p.name}'].join(' · '),
+        if (complete) ...{'kcal': _total(fit.values[Nutrient.calories]!), 'protein': _total(fit.values[Nutrient.protein]!)},
+        if (complete && fit.overKcal != null) 'overKcal': fit.overKcal, if (complete && fit.underProtein != null) 'underProtein': fit.underProtein,
+        if (complete && fit.unknown) 'unknownTarget': true,
+      };
+      // How it sits with the day's goals, only when the day's value and the idea's are both fully known.
+      final t = logged(), n = toward();
+      if (complete && t != null && n != null) {
+        final goal = n == Nutrient.protein ? r.proteinGoal : r.calorieGoal, have = t[n]!, adds = fit.values[n]!;
+        if (goal != null && have.isComplete && adds.isComplete) {
+          c['toward'] = n == Nutrient.protein
+              ? l.dcAddsProtein(_g(adds.knownTotal), _g(have.knownTotal + adds.knownTotal), '$goal')
+              : l.dcAddsKcal(formatKcal(adds.knownTotal), formatKcal(have.knownTotal + adds.knownTotal), formatKcal(goal));
+        }
+      }
+      final sort = !complete ? double.infinity : intent.preferences.contains('lighter') ? fit.values[Nutrient.calories]!.knownTotal : -fit.values[Nutrient.protein]!.knownTotal;
+      built.add((c, intent.preferences.contains('moreProtein') || intent.preferences.contains('lighter') ? sort : built.length.toDouble()));
+    }
+    built.sort((a, b) => a.$2.compareTo(b.$2));
+    lines.add(l.dcIdeasHeading);
+    for (final (c, _) in built.take(3)) {
+      cards.add(c);
+      actions.add(_action((c['unmatched'] as List).isEmpty && (c['parts'] as List).isNotEmpty ? 'reviewIdea' : 'findFood', card: cards.length - 1));
+    }
+    // What GoHard cannot check is said, never implied: it has no prices, preparation times or dietary labels.
+    for (final p in intent.preferences) {
+      final note = switch (p) { 'cheaper' => l.dcNoPrices, 'quick' || 'noCooking' => l.dcNotTimed, 'vegetarian' => l.dcNotChecked, _ => null };
+      if (note != null && !lines.contains(note)) lines.add(note);
+    }
+    actions.addAll([_action('another'), _action('addFood')]);
+  }
 
   /// "My chicken meal, but with 150 g of rice today": one food of one saved meal, at the person's own amount, for this
   /// time. Anything unclear is asked back; the card opens the ordinary review, whose Log is the only thing that logs.
@@ -645,6 +769,18 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
     case 'training':
       lines.add(l.dcTraining);
       actions.add(_action('training'));
+    case 'eat' || 'ideas':
+      // Ideas are about what to have next: on an earlier day they would read as "eat this now".
+      if (day != r.today) {
+        lines.add(l.dcIdeasToday);
+        actions.add(_action('addFood'));
+        break;
+      }
+      if (intent.kind == 'eat') {
+        eatChoices();
+      } else {
+        ideaCards();
+      }
     case 'restaurant':
       lines.add(l.dcRestaurant);
       actions.add(_action('eatingOut'));
@@ -664,7 +800,9 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
 String replyText(Json reply, AppLocalizations l) => [
       ...(reply['lines'] as List? ?? const []).cast<String>(),
       for (final c in (reply['cards'] as List? ?? const []).cast<Map>())
-        c['choice'] == true ? '${c['name']}' : '${c['name']}: ${c['amount']}, ${kcalSaid(l, Map<String, dynamic>.from(c['kcal'] as Map))}, ${proteinSaid(l, Map<String, dynamic>.from(c['protein'] as Map))}',
+        c['choice'] == true || c['kcal'] is! Map
+            ? '${c['name']}${c['amount'] is String ? ': ${c['amount']}' : ''}'
+            : '${c['name']}: ${c['amount']}, ${kcalSaid(l, Map<String, dynamic>.from(c['kcal'] as Map))}, ${proteinSaid(l, Map<String, dynamic>.from(c['protein'] as Map))}',
     ].join('\n');
 
 /// The draft a card's Review opens: the food's own amount form for a saved food, at the suggested amount, for [day] and

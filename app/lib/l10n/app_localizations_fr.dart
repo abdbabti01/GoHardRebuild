@@ -1677,22 +1677,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Les aliments que tu as gardés sont dans Mes aliments. Choisis-en un, vérifie la quantité, puis consigne-le.';
 
   @override
-  String get eatSayGoalWater =>
-      'Consigne un repas ou de l\'eau et vois où en est ta journée par rapport à tes objectifs.';
-
-  @override
-  String get eatSayGoal =>
-      'Consigne un repas et vois où en est ta journée par rapport à tes objectifs.';
-
-  @override
-  String get eatSayNoGoalWater =>
-      'Consigne un repas ou de l\'eau, ou fixe tes objectifs quotidiens.';
-
-  @override
-  String get eatSayNoGoal =>
-      'Consigne un repas, ou fixe tes objectifs quotidiens.';
-
-  @override
   String eatMacroProtein(String value) {
     return 'P $value g';
   }
@@ -11793,17 +11777,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get reminderPrivateTitle => 'Rappel GoHard';
-
-  @override
-  String get reminderPrivateBody => 'Ouvre GoHard pour le voir.';
-
-  @override
-  String reminderMealBody(String meal) {
-    return 'C’est le moment de consigner ton « $meal ».';
-  }
-
-  @override
   String get reminderDoseBody => 'Touche pour confirmer dans GoHard.';
 
   @override
@@ -11998,7 +11971,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get reminderPrivateHelp =>
-      'La notification dit seulement « Rappel GoHard ».';
+      'La notification dit seulement « C’est l’heure de ton médicament » ou « C’est l’heure de ton supplément » : aucun nom, dose ni instruction.';
 
   @override
   String get reminderOnLabel => 'Activé';
@@ -12021,6 +11994,208 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get eatMealReminders => 'Rappels de repas';
+
+  @override
+  String reminderMealTitle(String meal) {
+    return 'C’est le moment de consigner « $meal ».';
+  }
+
+  @override
+  String get reminderMealTap => 'Touche pour ouvrir Manger.';
+
+  @override
+  String get reminderHiddenMedication => 'C’est l’heure de ton médicament.';
+
+  @override
+  String get reminderHiddenSupplement => 'C’est l’heure de ton supplément.';
+
+  @override
+  String ebPastEmpty(String day) {
+    return 'Rien n’a été consigné le $day.';
+  }
+
+  @override
+  String ebPast(String day, String totals) {
+    return 'Le $day, tu as consigné $totals.';
+  }
+
+  @override
+  String ebPastOver(String kcal) {
+    return 'C’est $kcal kcal au-dessus de ta cible.';
+  }
+
+  @override
+  String ebPastUnder(String kcal) {
+    return 'C’est $kcal kcal sous ta cible.';
+  }
+
+  @override
+  String ebAtLeastKcal(String kcal) {
+    return 'au moins $kcal kcal';
+  }
+
+  @override
+  String ebAtLeastProtein(String protein) {
+    return 'au moins $protein g de protéines';
+  }
+
+  @override
+  String ebEmpty(String meal) {
+    return 'Rien de consigné aujourd’hui pour l’instant. Des idées pour « $meal »?';
+  }
+
+  @override
+  String ebOver(String kcal) {
+    return 'Les calories consignées aujourd’hui dépassent ta cible de $kcal kcal. Ce n’est pas grave. Si tu as encore faim, je peux te suggérer des options plus légères.';
+  }
+
+  @override
+  String ebNear(String kcal) {
+    return 'Tu approches de ta cible de calories (il reste $kcal kcal), et la journée n’est pas finie. Veux-tu de l’aide pour planifier ton prochain repas?';
+  }
+
+  @override
+  String ebProteinReached(String protein, String goal) {
+    return 'Tu as atteint ton objectif de protéines : $protein g sur $goal g. Des idées pour ton prochain repas?';
+  }
+
+  @override
+  String ebUnknownKcal(String kcal) {
+    return 'Certains aliments d’aujourd’hui n’ont pas de calories, donc le total est incomplet : au moins $kcal kcal consignées. Veux-tu des options?';
+  }
+
+  @override
+  String ebProteinIncomplete(String protein) {
+    return 'Au moins $protein g de protéines consignés; certaines valeurs manquent.';
+  }
+
+  @override
+  String ebProteinLeft(String protein) {
+    return 'Il reste $protein g de protéines.';
+  }
+
+  @override
+  String ebOverPlain(String kcal) {
+    return 'Les calories consignées dépassent ta cible de $kcal kcal aujourd’hui.';
+  }
+
+  @override
+  String ebLeftBoth(String kcal, String protein) {
+    return 'Il te reste $kcal kcal et $protein g de protéines. Veux-tu des options?';
+  }
+
+  @override
+  String ebKcalLeft(String kcal) {
+    return 'Il te reste $kcal kcal aujourd’hui.';
+  }
+
+  @override
+  String get ebProteinDone => 'Objectif de protéines atteint.';
+
+  @override
+  String get ebWantOptions => 'Veux-tu des options?';
+
+  @override
+  String ebLogged(String meal) {
+    return '« $meal » est consigné. Des idées pour ton prochain repas?';
+  }
+
+  @override
+  String get ebIdeas => 'Qu’est-ce que je pourrais manger?';
+
+  @override
+  String get ebSetGoals => 'Fixer des objectifs';
+
+  @override
+  String get ebSettingTitle => 'Rappels nutritionnels';
+
+  @override
+  String get ebSettingBody =>
+      'Dans Manger, Leon ou Leona peut te dire quand tu approches ou dépasses ta cible de calories, ou quand ton objectif de protéines est atteint, une fois par jour chacun. Ils n’apparaissent que dans GoHard, jamais en notification, et ne sont pas un avis médical.';
+
+  @override
+  String get ebSettingSwitch => 'Afficher les rappels nutritionnels';
+
+  @override
+  String get dcIdeasToday =>
+      'Les idées sont pour aujourd’hui. Pour un jour passé, ajoute ce qui a été mangé avec Choisir autre chose.';
+
+  @override
+  String get dcEatIntro =>
+      'Quelques pistes. Pour de nouvelles idées, demande quelque chose de précis, comme « quelque chose de rapide avec plus de protéines ».';
+
+  @override
+  String get dcNoIdeas =>
+      'Aucune idée ne correspond. Essaie d’autres mots, ou choisis toi-même.';
+
+  @override
+  String get dcIdeasHeading =>
+      'Des idées, avec chaque valeur calculée à partir des fiches d’aliments :';
+
+  @override
+  String get dcNoPrices =>
+      'GoHard n’a pas les prix, donc il ne peut pas vérifier le coût.';
+
+  @override
+  String get dcNotTimed =>
+      'GoHard ne connaît pas les temps de préparation; vérifie les aliments.';
+
+  @override
+  String get dcNotChecked =>
+      'GoHard ne vérifie pas les régimes comme végétarien; vérifie les aliments.';
+
+  @override
+  String get dcIdeaQuickProtein =>
+      'Quelque chose de rapide avec plus de protéines';
+
+  @override
+  String get dcIdeaSweet => 'Quelque chose de sucré';
+
+  @override
+  String get dcIdeaNoCooking => 'Sans cuisson';
+
+  @override
+  String get dcIdeaVegetarian => 'Un repas végétarien';
+
+  @override
+  String get dcIdeaDifferent => 'Quelque chose de différent de mon habitude';
+
+  @override
+  String dcIdeaNeedsMatch(String foods) {
+    return 'Aliment à trouver : $foods. Pas de total tant qu’il n’est pas trouvé.';
+  }
+
+  @override
+  String get dcIdeaUnknownTarget =>
+      'Certaines valeurs manquent, donc GoHard ne peut pas dire si ça respecte ta demande.';
+
+  @override
+  String get dcIdeaCalculated => 'Calculé à partir des fiches d’aliments.';
+
+  @override
+  String get dcIdeaLabel => 'Une idée de Leon ou Leona';
+
+  @override
+  String dcIdeaUnmatchedFood(String food) {
+    return '$food (pas encore trouvé)';
+  }
+
+  @override
+  String dcIdeaStartAmount(String foods) {
+    return 'Quantité prise de la portion de l’aliment : $foods. Change-la dans la révision.';
+  }
+
+  @override
+  String get dcReviewMeal => 'Réviser le repas';
+
+  @override
+  String get dcFindFood => 'Trouver l’aliment';
+
+  @override
+  String get dcAnotherIdea => 'Autres idées';
+
+  @override
+  String get dcAnotherIdeaText => 'D’autres idées, différentes de celles-ci';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

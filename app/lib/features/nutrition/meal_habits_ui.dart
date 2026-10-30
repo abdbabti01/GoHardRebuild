@@ -56,6 +56,20 @@ Future<void> skipMealToday(WidgetRef ref, String day, String meal) => _putPrefs(
       return j..['skipped'] = [...kept, '$day|$meal'];
     });
 
+/// Nutrition heads-ups on Eat (docs/EAT_COMPANION.md): on unless the person turned them off. Separate from reminders.
+final headsUpsOnProvider = Provider<bool>((ref) => ref.watch(habitPrefsProvider).value?['headsUps'] as bool? ?? true);
+
+/// Heads-ups already said (`day|kind`), so each is said at most once a day.
+final headsUpsSeenProvider = Provider<Set<String>>((ref) => {...(ref.watch(habitPrefsProvider).value?['seen'] as List? ?? const []).cast<String>()});
+
+Future<void> setHeadsUps(WidgetRef ref, bool on) => _putPrefs(ref, (j) => j..['headsUps'] = on);
+
+/// [key] (`day|kind`) has been said. Only the last few days are kept.
+Future<void> markHeadsUpSeen(WidgetRef ref, String key) => _putPrefs(ref, (j) {
+      final kept = [for (final s in (j['seen'] as List? ?? const []).cast<String>()) if (s.compareTo(addDays(key.split('|').first, -3)) >= 0 && s != key) s];
+      return j..['seen'] = [...kept, key];
+    });
+
 /// The usual [meal] to suggest today, or null: suggestions off or not chosen, set aside today, that meal already
 /// logged today, or no habit in the records.
 final usualMealProvider = Provider.family<UsualMeal?, String>((ref, meal) {
@@ -146,6 +160,28 @@ class UsualMealPanel extends ConsumerWidget {
   }
 }
 
+/// Eat's briefing without the coach (Show coach on Train and Eat off): its words and What could I eat?, in a compact
+/// pale panel, so the action is still there.
+class BriefingPanel extends StatelessWidget {
+  const BriefingPanel({super.key, required this.text, this.ideas});
+  final String text;
+  final VoidCallback? ideas;
+
+  @override
+  Widget build(BuildContext context) => PanelTheme(
+        child: Builder(
+          builder: (context) => PanelSurface(
+            key: const Key('eat-brief-panel'),
+            padding: EdgeInsets.fromLTRB(16, 14, 12, ideas == null ? 14 : 6),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(text, key: const Key('eat-brief-text'), style: context.body),
+              if (ideas != null) TextButton(key: const Key('eat-brief-ideas'), onPressed: ideas, child: Text(context.l10n.ebIdeas)),
+            ]),
+          ),
+        ),
+      );
+}
+
 /// Me › Meal suggestions: what the feature does, and the one switch.
 class MealSuggestionsScreen extends ConsumerWidget {
   const MealSuggestionsScreen({super.key});
@@ -169,6 +205,20 @@ class MealSuggestionsScreen extends ConsumerWidget {
       ]),
       const SizedBox(height: 12),
       Text(l.habitSettingOffNote, style: context.caption),
+      const SizedBox(height: 22),
+      Semantics(header: true, child: Text(l.ebSettingTitle, style: context.titleStyle(20))),
+      const SizedBox(height: 6),
+      Text(l.ebSettingBody, style: context.body),
+      const SizedBox(height: 12),
+      GroupCard(children: [
+        MergeSemantics(
+          child: GroupRow(
+            key: const Key('headsups-switch'), icon: Icons.tips_and_updates_outlined, title: l.ebSettingSwitch,
+            subtitle: ref.watch(headsUpsOnProvider) ? l.meOn : l.meOff,
+            trailing: Switch(value: ref.watch(headsUpsOnProvider), onChanged: (v) => setHeadsUps(ref, v)),
+          ),
+        ),
+      ]),
     ]);
   }
 }

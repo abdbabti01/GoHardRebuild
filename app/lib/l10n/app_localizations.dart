@@ -2669,30 +2669,6 @@ abstract class AppLocalizations {
   /// **'Foods you saved are in My foods. Pick one, check the amount, then log it.'**
   String get eatHintMine;
 
-  /// Coach line on Eat (goals set, water on).
-  ///
-  /// In en, this message translates to:
-  /// **'Log a meal or some water and see how the day adds up against your goals.'**
-  String get eatSayGoalWater;
-
-  /// Coach line on Eat (goals set).
-  ///
-  /// In en, this message translates to:
-  /// **'Log a meal and see how the day adds up against your goals.'**
-  String get eatSayGoal;
-
-  /// Coach line on Eat (no goals, water on).
-  ///
-  /// In en, this message translates to:
-  /// **'Log a meal or some water, or set your daily goals.'**
-  String get eatSayNoGoalWater;
-
-  /// Coach line on Eat (no goals).
-  ///
-  /// In en, this message translates to:
-  /// **'Log a meal, or set your daily goals.'**
-  String get eatSayNoGoal;
-
   /// Compact protein on a logged food row (P = protein).
   ///
   /// In en, this message translates to:
@@ -17184,24 +17160,6 @@ abstract class AppLocalizations {
   /// **'{food}: {amount} this time'**
   String dcIngredientAmount(String food, String amount);
 
-  /// Notification title of a reminder marked private (lock screen).
-  ///
-  /// In en, this message translates to:
-  /// **'GoHard reminder'**
-  String get reminderPrivateTitle;
-
-  /// Notification body of a reminder marked private.
-  ///
-  /// In en, this message translates to:
-  /// **'Open GoHard to see it.'**
-  String get reminderPrivateBody;
-
-  /// Meal reminder notification body without instructions. meal = lower-case meal name.
-  ///
-  /// In en, this message translates to:
-  /// **'Time to log your {meal}.'**
-  String reminderMealBody(String meal);
-
   /// Medication/supplement notification body without instructions.
   ///
   /// In en, this message translates to:
@@ -17511,7 +17469,7 @@ abstract class AppLocalizations {
   /// Reminder editor: what the discreet switch does.
   ///
   /// In en, this message translates to:
-  /// **'The notification says only “GoHard reminder”.'**
+  /// **'The notification says only “Time for your medication” or “Time for your supplement”: no name, dose or instructions.'**
   String get reminderPrivateHelp;
 
   /// Reminder editor: on/paused switch.
@@ -17549,6 +17507,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meal reminders'**
   String get eatMealReminders;
+
+  /// Meal reminder notification title. meal = lower-case meal name.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to log {meal}.'**
+  String reminderMealTitle(String meal);
+
+  /// Meal reminder notification body when there are no instructions to show.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open Eat.'**
+  String get reminderMealTap;
+
+  /// Medication notification title when details are hidden: no name, dose or instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for your medication.'**
+  String get reminderHiddenMedication;
+
+  /// Supplement notification title when details are hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for your supplement.'**
+  String get reminderHiddenSupplement;
+
+  /// Eat briefing, earlier day with no food. day = long date.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was recorded on {day}.'**
+  String ebPastEmpty(String day);
+
+  /// Eat briefing, earlier day: what was recorded. totals = "1,850 kcal and 92 g protein".
+  ///
+  /// In en, this message translates to:
+  /// **'On {day} you recorded {totals}.'**
+  String ebPast(String day, String totals);
+
+  /// Eat briefing, earlier day above the calorie target (retrospective, neutral).
+  ///
+  /// In en, this message translates to:
+  /// **'That is {kcal} kcal above your target.'**
+  String ebPastOver(String kcal);
+
+  /// Eat briefing, earlier day under the calorie target.
+  ///
+  /// In en, this message translates to:
+  /// **'That is {kcal} kcal under your target.'**
+  String ebPastUnder(String kcal);
+
+  /// A calorie total some foods have no value for.
+  ///
+  /// In en, this message translates to:
+  /// **'at least {kcal} kcal'**
+  String ebAtLeastKcal(String kcal);
+
+  /// A protein total some foods have no value for.
+  ///
+  /// In en, this message translates to:
+  /// **'at least {protein} g protein'**
+  String ebAtLeastProtein(String protein);
+
+  /// Eat briefing, today with nothing logged. meal = the next meal, lower case.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing logged yet today. Want ideas for {meal}?'**
+  String ebEmpty(String meal);
+
+  /// In-app heads-up: calorie target exceeded. Neutral, never a warning or a reason to skip meals.
+  ///
+  /// In en, this message translates to:
+  /// **'Today’s recorded calories are {kcal} kcal above your target. That’s okay. If you’re still hungry, I can suggest lighter options.'**
+  String ebOver(String kcal);
+
+  /// In-app heads-up: near the calorie target before 17:00.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re near your calorie target ({kcal} kcal left), with time left in the day. Want help planning your next meal?'**
+  String ebNear(String kcal);
+
+  /// In-app heads-up: protein goal reached. Never suggests stopping eating.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your protein goal: {protein} g of {goal} g. Want ideas for your next meal?'**
+  String ebProteinReached(String protein, String goal);
+
+  /// Eat briefing: calorie total incomplete, so no allowance is given.
+  ///
+  /// In en, this message translates to:
+  /// **'Some foods today have no calorie value, so the total is incomplete: at least {kcal} kcal recorded. Want some options?'**
+  String ebUnknownKcal(String kcal);
+
+  /// Eat briefing: protein total incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {protein} g protein recorded; some values are missing.'**
+  String ebProteinIncomplete(String protein);
+
+  /// Eat briefing: protein still to go against what is recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'{protein} g protein left.'**
+  String ebProteinLeft(String protein);
+
+  /// Eat briefing, plain fact after the heads-up was said once.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded calories are {kcal} kcal above your target today.'**
+  String ebOverPlain(String kcal);
+
+  /// Eat briefing: both left, all values known.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {kcal} kcal and {protein} g protein left. Want some options?'**
+  String ebLeftBoth(String kcal, String protein);
+
+  /// Eat briefing: calories left, all values known.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {kcal} kcal left today.'**
+  String ebKcalLeft(String kcal);
+
+  /// Eat briefing: protein goal reached (plain).
+  ///
+  /// In en, this message translates to:
+  /// **'Protein goal reached.'**
+  String get ebProteinDone;
+
+  /// Eat briefing closing question.
+  ///
+  /// In en, this message translates to:
+  /// **'Want some options?'**
+  String get ebWantOptions;
+
+  /// Eat briefing without goals: the last meal logged. meal = meal name as shown.
+  ///
+  /// In en, this message translates to:
+  /// **'{meal} is logged. Want ideas for your next meal?'**
+  String ebLogged(String meal);
+
+  /// Eat briefing action and coach request: opens meal ideas.
+  ///
+  /// In en, this message translates to:
+  /// **'What could I eat?'**
+  String get ebIdeas;
+
+  /// Eat briefing without goals: opens Eat’s goal editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Set goals'**
+  String get ebSetGoals;
+
+  /// Settings heading for in-app heads-ups.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition heads-ups'**
+  String get ebSettingTitle;
+
+  /// Settings: what heads-ups are.
+  ///
+  /// In en, this message translates to:
+  /// **'On Eat, Leon or Leona can say when you are near or above your calorie target, or when your protein goal is reached, once a day each. They only appear inside GoHard, never as notifications, and are not medical advice.'**
+  String get ebSettingBody;
+
+  /// Settings switch for in-app heads-ups.
+  ///
+  /// In en, this message translates to:
+  /// **'Show nutrition heads-ups'**
+  String get ebSettingSwitch;
+
+  /// Daily coach: ideas asked about an earlier day.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas are for today. For an earlier day, add what was eaten with Choose something else.'**
+  String get dcIdeasToday;
+
+  /// Daily coach: What could I eat? answered on the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'A few ways to go. For new ideas, ask for something specific, like “something quick with more protein”.'**
+  String get dcEatIntro;
+
+  /// Daily coach: nothing left after the checks.
+  ///
+  /// In en, this message translates to:
+  /// **'No idea fits that. Try other words, or choose something yourself.'**
+  String get dcNoIdeas;
+
+  /// Daily coach: above idea cards.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas, with every value worked out from food records:'**
+  String get dcIdeasHeading;
+
+  /// Daily coach: cheaper was asked.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard has no prices, so it can’t check cost.'**
+  String get dcNoPrices;
+
+  /// Daily coach: quick or no cooking was asked.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard doesn’t know preparation times; check the foods.'**
+  String get dcNotTimed;
+
+  /// Daily coach: vegetarian was asked.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard doesn’t check dietary labels such as vegetarian; check the foods.'**
+  String get dcNotChecked;
+
+  /// Ready idea request.
+  ///
+  /// In en, this message translates to:
+  /// **'Something quick with more protein'**
+  String get dcIdeaQuickProtein;
+
+  /// Ready idea request.
+  ///
+  /// In en, this message translates to:
+  /// **'Something sweet'**
+  String get dcIdeaSweet;
+
+  /// Ready idea request.
+  ///
+  /// In en, this message translates to:
+  /// **'No cooking'**
+  String get dcIdeaNoCooking;
+
+  /// Ready idea request.
+  ///
+  /// In en, this message translates to:
+  /// **'A vegetarian meal'**
+  String get dcIdeaVegetarian;
+
+  /// Ready idea request (meal suggestions on).
+  ///
+  /// In en, this message translates to:
+  /// **'Something different from my usual'**
+  String get dcIdeaDifferent;
+
+  /// Idea card: a food with no record found.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a food match: {foods}. No totals until it is found.'**
+  String dcIdeaNeedsMatch(String foods);
+
+  /// Idea card: a limit was asked but a needed value is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Some values are missing, so GoHard can’t say whether it meets what you asked.'**
+  String get dcIdeaUnknownTarget;
+
+  /// Idea card: every food matched and every value computed.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculated from food records.'**
+  String get dcIdeaCalculated;
+
+  /// Idea card caption: the idea itself is the AI’s, the values are not.
+  ///
+  /// In en, this message translates to:
+  /// **'An idea from Leon or Leona'**
+  String get dcIdeaLabel;
+
+  /// Idea card: a food without a record.
+  ///
+  /// In en, this message translates to:
+  /// **'{food} (not matched yet)'**
+  String dcIdeaUnmatchedFood(String food);
+
+  /// Idea card: the proposed unit did not fit the record, so its own portion is used.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount set from the food’s own portion: {foods}. Change it in the review.'**
+  String dcIdeaStartAmount(String foods);
+
+  /// Idea card action: opens the review (nothing is logged).
+  ///
+  /// In en, this message translates to:
+  /// **'Review meal'**
+  String get dcReviewMeal;
+
+  /// Idea card action: opens food search with the food’s name.
+  ///
+  /// In en, this message translates to:
+  /// **'Find food'**
+  String get dcFindFood;
+
+  /// Daily coach action: asks for other ideas.
+  ///
+  /// In en, this message translates to:
+  /// **'Other ideas'**
+  String get dcAnotherIdea;
+
+  /// The typed request sent by Other ideas.
+  ///
+  /// In en, this message translates to:
+  /// **'Other ideas, different from these'**
+  String get dcAnotherIdeaText;
 }
 
 class _AppLocalizationsDelegate

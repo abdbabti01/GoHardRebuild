@@ -255,7 +255,7 @@ void main() {
     final (overrides, fakes, _, ai) = await _fixture(tester);
     final c = await pumpApp(tester, overrides, size: const Size(390, 1600));
     await visit('nav-eat');
-    expect(find.descendant(of: coach, matching: find.textContaining('Log a meal', findRichText: true)), findsOneWidget, reason: 'a first visit is about logging');
+    expect(find.descendant(of: coach, matching: find.textContaining('Nothing logged yet today', findRichText: true)), findsOneWidget, reason: 'a first visit is about logging (the day\'s briefing)');
     await tester.drag(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first, const Offset(0, -200));
     await tester.pumpAndSettle();
     await tester.drag(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first, const Offset(0, 200));

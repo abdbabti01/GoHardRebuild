@@ -240,7 +240,7 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
   late String _meal = _r?.meal ?? widget.meal ?? meals.first;
   late String? _time = _r?.time;
   late final Set<int> _days = {...(_r?.weekdays ?? const [1, 2, 3, 4, 5, 6, 7])};
-  late bool _private = _r?.private ?? _category != ReminderCategory.meal;
+  late bool _private = _r?.private ?? _category == ReminderCategory.medication;
   late bool _on = _r?.enabled ?? true;
   late final _name = TextEditingController(text: _r?.name);
   late final _instructions = TextEditingController(text: _r?.instructions);
@@ -323,7 +323,7 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
             keyPrefix: 'reminder-category', values: ReminderCategory.values, selected: _category, label: (c) => categoryLabel(l, c),
             onChanged: (c) => setState(() {
               _category = c;
-              _private = c != ReminderCategory.meal;
+              _private = c == ReminderCategory.medication;
               if (!_named) _name.text = c == ReminderCategory.meal ? l.reminderMealDefaultName(mealLabel(l, _meal).toLowerCase()) : '';
             }),
           ),

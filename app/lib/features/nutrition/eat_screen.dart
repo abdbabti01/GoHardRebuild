@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../coach/coach_avatar.dart';
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
+import '../coach/day_coach.dart' show DayIntent;
 import '../coach/day_coach_screen.dart' show openDayCoach;
 import '../me/reminders.dart' show remindersProvider;
 import '../me/reminders_screen.dart' show RemindersScreen, ReminderEditorScreen, timeLabel;
@@ -21,6 +22,7 @@ import 'food_form.dart';
 import 'food_repository.dart' show SavedFood, mealLabel;
 import 'log_food_screen.dart';
 import 'meal_habits_ui.dart';
+import 'eat_briefing.dart';
 import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
@@ -205,13 +207,39 @@ class _EatScreenState extends ConsumerState<EatScreen> {
             : (label: l.eatOpenMine, key: const Key('eat-coach-mine'), onPressed: () => openSavedFoods(context, day: day, scope: FoodScope.mine)));
   }
 
-  /// What the coach says on Eat: fixed words chosen from the account's own settings, never from the AI. Water is
-  /// mentioned only where it is shown (turned on, and the server keeps it). Words only: Log food and the goals link
-  /// are right below it in the summary, so the bubble repeats neither.
-  static CoachSay _say(AppLocalizations l, {required Profile? profile, required bool water, required VoidCallback onAsk}) {
-    final hasGoal = profile != null && (profile.calorieGoal != null || profile.proteinGoal != null || profile.waterGoalMl != null);
-    return CoachSay(hasGoal ? (water ? l.eatSayGoalWater : l.eatSayGoal) : (water ? l.eatSayNoGoalWater : l.eatSayNoGoal), onAsk: onAsk);
+  /// The heads-up on screen now, kept so its words do not change under the reader while the same state lasts.
+  String? _headsUpShown;
+
+  /// The day's briefing (features/nutrition/eat_briefing.dart): worked out here from the day's records, goals and time.
+  /// No AI and no network. A heads-up is said once a day; its key is remembered as soon as it is shown.
+  Briefing _briefing(String day, String today, List<FoodEntry> entries, Profile? profile) {
+    final now = DateTime.now(), minute = now.hour * 60 + now.minute;
+    final weekday = now.weekday;
+    final b = eatBriefing(
+      day: day, today: today, entries: entries, kcalGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, nowMinute: minute,
+      nextMeal: nextMealAt(minute, reminders: [
+        for (final r in ref.watch(remindersProvider).value ?? const [])
+          if (r.enabled && r.meal != null && r.weekdays.contains(weekday)) (meal: r.meal!, minute: r.minute),
+      ]),
+      // Not before the account's choices have loaded: a heads-up already said must never be picked again meanwhile.
+      headsUps: ref.watch(headsUpsOnProvider) && ref.watch(habitPrefsProvider).hasValue, seen: {...ref.watch(headsUpsSeenProvider)}..remove(_headsUpShown),
+    );
+    final key = b.seenKey(day);
+    // Only a heads-up actually on screen counts as said (the tabs stay built while another one is shown).
+    final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true);
+    if (key != null && key != _headsUpShown && inView) {
+      _headsUpShown = key;
+      // A failed write only means it may be said once more.
+      WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? markHeadsUpSeen(ref, key).ignore() : null);
+    }
+    return b;
   }
+
+  /// What the coach says: the briefing, with What could I eat? (today) and, without goals, a quiet way to set them.
+  CoachSay _briefSay(AppLocalizations l, Briefing b, String day, String today) => CoachSay(briefingText(l, b, dayLabel: longDate(day)),
+      onAsk: () => openDayCoach(context, day: day),
+      primary: day == today ? (label: l.ebIdeas, key: const Key('eat-brief-ideas'), onPressed: () => openDayCoach(context, day: day, start: (const DayIntent('eat'), l.ebIdeas))) : null,
+      guide: b.noGoals && day == today ? (label: l.ebSetGoals, key: const Key('eat-brief-goals'), onPressed: () => showGoalsSheet(context, ref)) : null);
 
   /// The portion as it was saved, then the macros that are known (a recipe portion's partial sums marked "known"), then
   /// how the record stands with the account.
@@ -258,6 +286,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final l = context.l10n;
 
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
+    final brief = _briefing(day, today, entries, profile);
     final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
 
     // With very large text the meal icon gives its room to the words.
@@ -292,7 +321,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                       if (coachOn)
                         TabCoach(key: const Key('eat-coach'), id: 'eat',
                             say: _habitSay(day, today) ?? _hintSay(day, [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value], logged: entries.isNotEmpty) ??
-                                _say(l, profile: profile, water: display.water, onAsk: () => openDayCoach(context, day: day)),
+                                _briefSay(l, brief, day, today),
                             avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day)),
                     ]),
             ),
@@ -317,9 +346,13 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
                   ]),
                 ),
-                // Without the coach, the usual meal is a compact panel here instead (today only, suggestions on).
-                if (!coachOn && day == today)
-                  if (ref.watch(usualMealProvider(_mealNow(DateTime.now()))) case final u?) ...[const SizedBox(height: 12), UsualMealPanel(usual: u, day: today)],
+                // Without the coach, its one message is a compact panel here instead: the usual meal (today, suggestions
+                // on), else the briefing with its action.
+                if (!coachOn)
+                  if (day == today && ref.watch(usualMealProvider(_mealNow(DateTime.now()))) != null)
+                    ...[const SizedBox(height: 12), UsualMealPanel(usual: ref.watch(usualMealProvider(_mealNow(DateTime.now())))!, day: today)]
+                  else
+                    ...[const SizedBox(height: 12), BriefingPanel(text: briefingText(l, brief, dayLabel: longDate(day)), ideas: day == today ? () => openDayCoach(context, day: day, start: (const DayIntent('eat'), l.ebIdeas)) : null)],
                 const SizedBox(height: 16),
                 // Eating out, always here (coach or not): a restaurant order from verified menus, for the same day and the
                 // meal of the time of day. The chains named are the catalog's own, so the line never claims more.

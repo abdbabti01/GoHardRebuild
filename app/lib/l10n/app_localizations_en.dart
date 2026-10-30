@@ -1651,21 +1651,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Foods you saved are in My foods. Pick one, check the amount, then log it.';
 
   @override
-  String get eatSayGoalWater =>
-      'Log a meal or some water and see how the day adds up against your goals.';
-
-  @override
-  String get eatSayGoal =>
-      'Log a meal and see how the day adds up against your goals.';
-
-  @override
-  String get eatSayNoGoalWater =>
-      'Log a meal or some water, or set your daily goals.';
-
-  @override
-  String get eatSayNoGoal => 'Log a meal, or set your daily goals.';
-
-  @override
   String eatMacroProtein(String value) {
     return 'P $value g';
   }
@@ -11592,17 +11577,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get reminderPrivateTitle => 'GoHard reminder';
-
-  @override
-  String get reminderPrivateBody => 'Open GoHard to see it.';
-
-  @override
-  String reminderMealBody(String meal) {
-    return 'Time to log your $meal.';
-  }
-
-  @override
   String get reminderDoseBody => 'Tap to confirm in GoHard.';
 
   @override
@@ -11795,7 +11769,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reminderPrivateHelp =>
-      'The notification says only “GoHard reminder”.';
+      'The notification says only “Time for your medication” or “Time for your supplement”: no name, dose or instructions.';
 
   @override
   String get reminderOnLabel => 'On';
@@ -11818,4 +11792,204 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eatMealReminders => 'Meal reminders';
+
+  @override
+  String reminderMealTitle(String meal) {
+    return 'Time to log $meal.';
+  }
+
+  @override
+  String get reminderMealTap => 'Tap to open Eat.';
+
+  @override
+  String get reminderHiddenMedication => 'Time for your medication.';
+
+  @override
+  String get reminderHiddenSupplement => 'Time for your supplement.';
+
+  @override
+  String ebPastEmpty(String day) {
+    return 'Nothing was recorded on $day.';
+  }
+
+  @override
+  String ebPast(String day, String totals) {
+    return 'On $day you recorded $totals.';
+  }
+
+  @override
+  String ebPastOver(String kcal) {
+    return 'That is $kcal kcal above your target.';
+  }
+
+  @override
+  String ebPastUnder(String kcal) {
+    return 'That is $kcal kcal under your target.';
+  }
+
+  @override
+  String ebAtLeastKcal(String kcal) {
+    return 'at least $kcal kcal';
+  }
+
+  @override
+  String ebAtLeastProtein(String protein) {
+    return 'at least $protein g protein';
+  }
+
+  @override
+  String ebEmpty(String meal) {
+    return 'Nothing logged yet today. Want ideas for $meal?';
+  }
+
+  @override
+  String ebOver(String kcal) {
+    return 'Today’s recorded calories are $kcal kcal above your target. That’s okay. If you’re still hungry, I can suggest lighter options.';
+  }
+
+  @override
+  String ebNear(String kcal) {
+    return 'You’re near your calorie target ($kcal kcal left), with time left in the day. Want help planning your next meal?';
+  }
+
+  @override
+  String ebProteinReached(String protein, String goal) {
+    return 'You’ve reached your protein goal: $protein g of $goal g. Want ideas for your next meal?';
+  }
+
+  @override
+  String ebUnknownKcal(String kcal) {
+    return 'Some foods today have no calorie value, so the total is incomplete: at least $kcal kcal recorded. Want some options?';
+  }
+
+  @override
+  String ebProteinIncomplete(String protein) {
+    return 'At least $protein g protein recorded; some values are missing.';
+  }
+
+  @override
+  String ebProteinLeft(String protein) {
+    return '$protein g protein left.';
+  }
+
+  @override
+  String ebOverPlain(String kcal) {
+    return 'Recorded calories are $kcal kcal above your target today.';
+  }
+
+  @override
+  String ebLeftBoth(String kcal, String protein) {
+    return 'You have $kcal kcal and $protein g protein left. Want some options?';
+  }
+
+  @override
+  String ebKcalLeft(String kcal) {
+    return 'You have $kcal kcal left today.';
+  }
+
+  @override
+  String get ebProteinDone => 'Protein goal reached.';
+
+  @override
+  String get ebWantOptions => 'Want some options?';
+
+  @override
+  String ebLogged(String meal) {
+    return '$meal is logged. Want ideas for your next meal?';
+  }
+
+  @override
+  String get ebIdeas => 'What could I eat?';
+
+  @override
+  String get ebSetGoals => 'Set goals';
+
+  @override
+  String get ebSettingTitle => 'Nutrition heads-ups';
+
+  @override
+  String get ebSettingBody =>
+      'On Eat, Leon or Leona can say when you are near or above your calorie target, or when your protein goal is reached, once a day each. They only appear inside GoHard, never as notifications, and are not medical advice.';
+
+  @override
+  String get ebSettingSwitch => 'Show nutrition heads-ups';
+
+  @override
+  String get dcIdeasToday =>
+      'Ideas are for today. For an earlier day, add what was eaten with Choose something else.';
+
+  @override
+  String get dcEatIntro =>
+      'A few ways to go. For new ideas, ask for something specific, like “something quick with more protein”.';
+
+  @override
+  String get dcNoIdeas =>
+      'No idea fits that. Try other words, or choose something yourself.';
+
+  @override
+  String get dcIdeasHeading =>
+      'Ideas, with every value worked out from food records:';
+
+  @override
+  String get dcNoPrices => 'GoHard has no prices, so it can’t check cost.';
+
+  @override
+  String get dcNotTimed =>
+      'GoHard doesn’t know preparation times; check the foods.';
+
+  @override
+  String get dcNotChecked =>
+      'GoHard doesn’t check dietary labels such as vegetarian; check the foods.';
+
+  @override
+  String get dcIdeaQuickProtein => 'Something quick with more protein';
+
+  @override
+  String get dcIdeaSweet => 'Something sweet';
+
+  @override
+  String get dcIdeaNoCooking => 'No cooking';
+
+  @override
+  String get dcIdeaVegetarian => 'A vegetarian meal';
+
+  @override
+  String get dcIdeaDifferent => 'Something different from my usual';
+
+  @override
+  String dcIdeaNeedsMatch(String foods) {
+    return 'Needs a food match: $foods. No totals until it is found.';
+  }
+
+  @override
+  String get dcIdeaUnknownTarget =>
+      'Some values are missing, so GoHard can’t say whether it meets what you asked.';
+
+  @override
+  String get dcIdeaCalculated => 'Calculated from food records.';
+
+  @override
+  String get dcIdeaLabel => 'An idea from Leon or Leona';
+
+  @override
+  String dcIdeaUnmatchedFood(String food) {
+    return '$food (not matched yet)';
+  }
+
+  @override
+  String dcIdeaStartAmount(String foods) {
+    return 'Amount set from the food’s own portion: $foods. Change it in the review.';
+  }
+
+  @override
+  String get dcReviewMeal => 'Review meal';
+
+  @override
+  String get dcFindFood => 'Find food';
+
+  @override
+  String get dcAnotherIdea => 'Other ideas';
+
+  @override
+  String get dcAnotherIdeaText => 'Other ideas, different from these';
 }

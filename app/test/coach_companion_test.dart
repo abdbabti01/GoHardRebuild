@@ -414,7 +414,10 @@ void main() {
       await tester.tap(find.byKey(const Key('nav-eat')));
       await _frames(tester, 2500);
       final eat = find.byKey(const Key('eat-coach'));
-      expect(find.descendant(of: eat, matching: find.textContaining('Log a meal, or set your daily goals.', findRichText: true)), findsOneWidget);
+      // The day's briefing (docs/EAT_COMPANION.md): nothing logged yet, with What could I eat? and, with no goals, Set goals.
+      expect(find.descendant(of: eat, matching: find.textContaining('Nothing logged yet today.', findRichText: true)), findsOneWidget);
+      expect(find.descendant(of: eat, matching: find.byKey(const Key('eat-brief-ideas'))), findsOneWidget);
+      expect(find.descendant(of: eat, matching: find.byKey(const Key('eat-brief-goals'))), findsOneWidget);
       expect(find.byKey(const Key('coach-help-eat')), findsNothing);
       expect(find.descendant(of: eat, matching: find.byKey(const Key('coach-say-ask'))), findsOneWidget, reason: 'Ask me opens help with food (docs/COACH.md › Help with today)');
       expect(find.textContaining('water', findRichText: true), findsNothing, reason: 'water is off');

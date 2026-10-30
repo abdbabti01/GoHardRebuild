@@ -37,8 +37,9 @@ public partial class CoachTests
         return id;
     }
 
-    private static DailyCoachRequest Daily(string question = "Help me reach my protein goal", Guid? id = null, List<DailyFocus>? focus = null, bool today = true, List<CoachTurn>? history = null) =>
-        new(id ?? Guid.NewGuid(), question, "en", "2026-10-27", today, history ?? [], focus ?? [], "ctx-9");
+    private static DailyCoachRequest Daily(string question = "Help me reach my protein goal", Guid? id = null, List<DailyFocus>? focus = null, bool today = true, List<CoachTurn>? history = null,
+        List<string>? features = null) =>
+        new(id ?? Guid.NewGuid(), question, "en", "2026-10-27", today, history ?? [], focus ?? [], "ctx-9", features);
 
     private static async Task<(HttpStatusCode Status, JsonElement Body)> PostDaily(Account a, object request)
     {
@@ -47,12 +48,12 @@ public partial class CoachTests
     }
 
     private static string DailyIntent(string kind = "portion", string[]? refs = null, string? change = null, double? factor = null, double? servings = null, double? grams = null,
-        int? maxCalories = null, string? ingredient = null, int? minProtein = null, string? nutrient = null, string? clarification = null, string[]? unknownItems = null, string day = "shown", object? extra = null)
+        int? maxCalories = null, string? ingredient = null, object[]? ideas = null, string[]? preferences = null, int? minProtein = null, string? nutrient = null, string? clarification = null, string[]? unknownItems = null, string day = "shown", object? extra = null)
     {
         var o = JsonSerializer.SerializeToNode(new
         {
             kind, day, nutrient, source = (string?)null, refs = refs ?? [], change, factor, servings, grams, ingredient, maxCalories, minProtein, meal = (string?)null,
-            clarification, unknownItems = unknownItems ?? [],
+            clarification, unknownItems = unknownItems ?? [], ideas = ideas ?? [], preferences = preferences ?? [],
         })!.AsObject();
         if (extra is not null) foreach (var (k, v) in JsonSerializer.SerializeToNode(extra)!.AsObject()) o[k] = v?.DeepClone();
         return o.ToJsonString();
@@ -105,7 +106,7 @@ public partial class CoachTests
         var expected = JsonNode.Parse($$"""
             {"kind":"portion","day":"shown","nutrient":null,"source":null,"items":[{"kind":"meal","id":"{{shake}}"}],
              "portion":{"change":"smaller","factor":0.5,"servings":null,"grams":null,"ingredient":null},"maxCalories":null,"minProtein":null,"meal":null,
-             "clarification":null,"unknownItems":[],"dropped":["item"]}
+             "clarification":null,"unknownItems":[],"dropped":["item"],"ideas":[],"preferences":[]}
             """);
         Assert.True(JsonNode.DeepEquals(expected, intent), intent.ToJsonString());
         foreach (var injected in new[] { "98765", "4321", "87654", "example.com" }) Assert.DoesNotContain(injected, body.GetProperty("intent").GetRawText());
@@ -123,6 +124,48 @@ public partial class CoachTests
         Assert.Contains("Day shown: today", user);
         if (provider == "Groq") Assert.Equal("daily_coach_intent", JsonNode.Parse(call.Body)!["response_format"]!["json_schema"]!["name"]!.GetValue<string>());
         Assert.Null(JsonNode.Parse(call.Body)!["tools"]);
+    }
+
+    [Fact]
+    public async Task Daily_ideas_are_words_only_for_a_phone_that_asked_and_never_carry_a_number_of_their_own()
+    {
+        var fake = new FakeAnthropic();
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = On, Provider = fake.Handler() };
+        var a = await Account.RegisterAsync(api);
+        Assert.Contains(DailyCoachService.IdeasCapability, Declared(await a.Http.GetFromJsonAsync<JsonElement>("/api/v1/capabilities")));
+        object Food(string name, double? q, string? unit, string? noun = null, string? prep = null) => new { name, label = name, preparation = prep, quantity = q, unit, noun };
+        var ideas = new object[]
+        {
+            new { title = "Chicken and rice bowl", foods = new[] { Food("chicken breast", 150, "g", prep: "cooked"), Food("white rice", 9999, "g", prep: "cooked"), Food("egg", 2, "piece", "egg") } },
+            new { title = "Yogurt bowl with 450 kcal", foods = new[] { Food("greek yogurt plain", 200, "g"), Food("Big Mac 550 kcal", 1, "serving") } },
+            new { title = "Nothing", foods = Array.Empty<object>() },
+            new { title = "Fourth", foods = new[] { Food("apple", 1, "piece", "apple") } },
+        };
+        fake.Respond = _ => Task.FromResult(Message(DailyIntent(kind: "ideas", ideas: ideas, preferences: ["moreProtein", "quick", "teleport"],
+            extra: new { calories = 777 })));
+
+        var (status, body) = await PostDaily(a, Daily("Something quick with more protein", features: ["ideas"]));
+        Assert.Equal(HttpStatusCode.OK, status);
+        var intent = JsonNode.Parse(body.GetProperty("intent").GetRawText())!;
+        Assert.Equal("ideas", intent["kind"]!.GetValue<string>());
+        Assert.Equal(["moreProtein", "quick"], intent["preferences"]!.AsArray().Select(p => p!.GetValue<string>()));
+        var kept = intent["ideas"]!.AsArray();
+        Assert.Equal(2, kept.Count);                                                           // the empty idea is dropped; at most 3 are read
+        var bowl = kept[0]!["foods"]!.AsArray();
+        Assert.Equal(("chicken breast", "cooked", 150.0, "g"), (bowl[0]!["name"]!.GetValue<string>(), bowl[0]!["preparation"]!.GetValue<string>(), bowl[0]!["quantity"]!.GetValue<double>(), bowl[0]!["unit"]!.GetValue<string>()));
+        Assert.Null(bowl[1]!["quantity"]);                                                     // out of range: no amount, never clamped
+        Assert.Equal("egg", bowl[2]!["noun"]!.GetValue<string>());
+        Assert.Equal("greek yogurt plain", kept[1]!["title"]!.GetValue<string>().Split(',')[0]); // a title with a figure is replaced by the foods
+        Assert.Single(kept[1]!["foods"]!.AsArray());                                           // a food named with a figure is dropped
+        foreach (var never in new[] { "450", "550", "777", "kcal" }) Assert.DoesNotContain(never, body.GetProperty("intent").GetRawText());
+        Assert.Contains("New ideas: available", UserText(fake.Calls[^1].Body));
+
+        // A phone that did not ask (an older one) gets its saved items, as before, and the model is told ideas are off.
+        var (_, older) = await PostDaily(a, Daily("Something quick with more protein"));
+        Assert.Equal("suggest", older.GetProperty("intent").GetProperty("kind").GetString());
+        Assert.Empty(older.GetProperty("intent").GetProperty("ideas").EnumerateArray());
+        Assert.Contains("New ideas: not available", UserText(fake.Calls[^1].Body));
+        Assert.Equal(HttpStatusCode.BadRequest, (await PostDaily(a, Daily(features: ["everything"]))).Status);
     }
 
     [Fact]

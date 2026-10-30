@@ -140,20 +140,16 @@ List<Notice> reminderNotices(List<Reminder> reminders, {required Map<String, Dos
 }
 
 Notice _notice(Reminder r, String key, {String? day, DateTime? snoozeUntil, required String owner, required AppLocalizations l}) {
-  final meal = r.meal;
-  final hidden = r.private;
+  final hidden = r.private, said = hidden ? '' : r.instructions.trim();
   return Notice(
     id: noticeId(snoozeUntil == null ? key : 'snooze|$key'),
-    title: hidden ? l.reminderPrivateTitle : r.name,
-    body: hidden
-        ? l.reminderPrivateBody
-        : r.instructions.trim().isNotEmpty
-            ? r.instructions.trim()
-            : switch (r.category) {
-                ReminderCategory.meal => l.reminderMealBody(mealLabel(l, meal ?? 'Breakfast').toLowerCase()),
-                ReminderCategory.medication => l.reminderDoseBody,
-                ReminderCategory.supplement => l.reminderDoseBody,
-              },
+    // Always the purpose. Hidden details leave out the person's own words (name, dose, instructions), never the purpose.
+    title: switch (r.category) {
+      ReminderCategory.meal => l.reminderMealTitle(mealLabel(l, r.meal ?? 'Breakfast').toLowerCase()),
+      ReminderCategory.medication => hidden ? l.reminderHiddenMedication : r.name,
+      ReminderCategory.supplement => hidden ? l.reminderHiddenSupplement : r.name,
+    },
+    body: said.isNotEmpty ? said : r.isDose ? l.reminderDoseBody : l.reminderMealTap,
     day: day, time: r.time, atUtc: snoozeUntil,
     payload: jsonEncode({'o': owner, 'r': r.id, 'k': key}),
     channel: r.isDose ? NoticeChannel.dose : NoticeChannel.meal,

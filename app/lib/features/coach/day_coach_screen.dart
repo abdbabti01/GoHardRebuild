@@ -31,10 +31,16 @@ import 'coach_contract.dart';
 import 'coach_prefs.dart';
 import 'coach_rig.dart' show RigFrame;
 import 'day_coach.dart';
+import 'meal_ideas.dart';
+import '../nutrition/food_discovery.dart' show LookupFailure;
+import '../nutrition/food_item.dart' show FoodItem;
+import '../nutrition/food_search.dart' show CommonFood, foodLang;
+import '../nutrition/meal_habits_ui.dart' show usualMealProvider, reviewUsualMeal;
 
 /// Opens help with today and food about [day] over [context]'s page. Opening it sends nothing and changes nothing; the
 /// page underneath (a workout being recorded, a food form) keeps everything typed in it.
-Future<void> openDayCoach(BuildContext context, {required String day}) => push<void>(context, DayCoachScreen(day: day));
+/// [start]: a built-in request answered as it opens (Eat's What could I eat?), on the phone and with no AI.
+Future<void> openDayCoach(BuildContext context, {required String day, (DayIntent, String)? start}) => push<void>(context, DayCoachScreen(day: day, start: start));
 
 /// The meal a suggestion starts on, from the time of day (changeable in the review).
 String mealAt(DateTime t) => t.hour < 11 ? 'Breakfast' : t.hour < 16 ? 'Lunch' : t.hour < 21 ? 'Dinner' : 'Snack';
@@ -70,6 +76,10 @@ final dayCoachClientProvider = Provider((ref) => DayCoachClient(ref.watch(apiPro
 
 /// Whether the account's server reads typed requests. Unknown counts as no: an older server never gets the request.
 final dayCoachAvailableProvider = Provider<bool>((ref) => ref.watch(compatibilityProvider).capabilities?.contains('coach.daily') ?? false);
+
+/// Whether the account's server proposes new meal ideas (`coach.ideas`). Without it the request carries no
+/// `features`, and What could I eat? stays with the person's own meals, Find food and Eating out.
+final dayIdeasAvailableProvider = Provider<bool>((ref) => ref.watch(compatibilityProvider).capabilities?.contains('coach.ideas') ?? false);
 
 // ---------------------------------------------------------------------------- the conversation
 
@@ -159,7 +169,9 @@ class DayConversation extends Notifier<AskState> {
 
   /// Sends typed words to be read. [records] is read when the answer arrives, so the reply uses the records as they are
   /// then. With [retry] the waiting request is sent again under the same requestId (the server answers it once).
-  Future<void> send(String question, DayRecords Function() records, AppLocalizations l, {bool retry = false}) async {
+  /// [match] turns the model's ideas (words) into ideas matched to real food records; nothing else uses it.
+  Future<void> send(String question, DayRecords Function() records, AppLocalizations l, {bool retry = false, bool ideas = false,
+      Future<List<Json>> Function(Object? raw)? match}) async {
     final q = question.trim();
     final owner = _owner, session = _sessions.current;
     if (state.sending || !state.loaded || q.isEmpty || owner == null || session == null || (retry && state.pending == null)) return;
@@ -183,12 +195,15 @@ class DayConversation extends Notifier<AskState> {
     ];
     final request = {
       'requestId': requestId, 'question': pending['question'], 'language': askLanguage(ref.read(appLocaleProvider)), 'dayKey': r.shown, 'isToday': r.shown == r.today,
-      'history': history, 'focus': [for (final c in focus.take(3)) {'kind': c['kind'], 'id': c['id']}], 'contextRevision': dayRevision(r, r.shown),
+      'history': history, 'focus': [for (final c in focus.take(3)) if (c['kind'] != 'idea' && c['kind'] != 'usual') {'kind': c['kind'], 'id': c['id']}], 'contextRevision': dayRevision(r, r.shown),
+      // Only to a server that declared it: an older one is never sent what it cannot take.
+      if (ideas) 'features': const ['ideas'],
     };
     DayIntent? intent;
     AskProblem? problem;
     try {
       intent = await ref.read(dayCoachClientProvider).interpret(request);
+      if (intent.kind == 'ideas') intent = intent.withIdeas(match == null ? const [] : await match(intent.proposed));
     } on AskFailure catch (e) {
       problem = e.problem;
     }
@@ -234,7 +249,8 @@ class DayConversation extends Notifier<AskState> {
 // ---------------------------------------------------------------------------- the screen
 
 class DayCoachScreen extends ConsumerStatefulWidget {
-  const DayCoachScreen({super.key, required this.day});
+  const DayCoachScreen({super.key, required this.day, this.start});
+  final (DayIntent, String)? start;
 
   /// The day being looked at where it was opened (Today: today; Eat: the day shown there).
   final String day;
@@ -247,6 +263,7 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
   final _scroll = ScrollController();
   final _arrivedKey = GlobalKey();
   String? _arrived;
+  bool _started = false;
 
   DayConversation get _convo => ref.read(dayConversationProvider.notifier);
 
@@ -254,6 +271,10 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
   void initState() {
     super.initState();
     ref.listenManual<AskState>(dayConversationProvider, (prev, next) {
+      if (next.loaded && !_started && widget.start != null) {
+        _started = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _builtIn(widget.start!.$1, widget.start!.$2) : null);
+      }
       if (next.loaded && (prev?.loaded != true || next.unsent != prev?.unsent) && _text.text != next.unsent) _text.text = next.unsent;
       final last = next.messages.lastOrNull;
       if (prev != null && prev.loaded && last?['role'] == 'assistant' && last?['id'] != prev.messages.lastOrNull?['id']) {
@@ -290,7 +311,28 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
           [for (final r in ref.read(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) r.value]),
       pending: ref.read(pendingCountProvider).value ?? 0, runOpen: (ref.read(runsProvider).value ?? const <Stored<Run>>[]).any((r) => r.value.isOpen && !r.value.isDeleted),
       mealNow: mealAt(DateTime.now()),
+      usual: ref.read(usualMealProvider(mealAt(DateTime.now()))),
     );
+  }
+
+  /// Where an idea's foods are matched (features/coach/meal_ideas.dart): everyday foods, the person's own saved foods,
+  /// foods seen on this phone, then at most three searches of the account's food search.
+  Future<List<Json>> _match(Object? raw) async {
+    final lang = foodLang(context.l10n);
+    final common = ref.read(commonFoodsProvider).value?.foods ?? const <CommonFood>[];
+    final discovery = ref.read(foodDiscoveryProvider);
+    return resolveIdeas(ideasOf(raw), IdeaSources(
+      common: [for (final c in common) (item: c.item, fields: c.fields, name: c.nameIn(lang), detail: c.qualifierIn(lang), startUnit: c.unitId)],
+      mine: [for (final r in ref.read(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) candidateOf(r.value.item)],
+      seen: [for (final i in ref.read(seenFoodsProvider).value ?? const <FoodItem>[]) candidateOf(i)],
+      search: (q) async {
+        try {
+          return await discovery.search(q).timeout(const Duration(seconds: 8));
+        } on LookupFailure {
+          return const [];
+        }
+      },
+    ));
   }
 
   void _builtIn(DayIntent intent, String said) {
@@ -300,7 +342,7 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
 
   void _send(String question, {bool retry = false}) {
     if (!retry) _text.clear();
-    _convo.send(question, _records, context.l10n, retry: retry);
+    _convo.send(question, _records, context.l10n, retry: retry, ideas: ref.read(dayIdeasAvailableProvider), match: _match);
     _toEnd();
   }
 
@@ -316,8 +358,12 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
       (l.dcChipRecorded, const DayIntent('recorded', today: true)),
       (l.dcChipProtein, const DayIntent('goal', nutrient: Nutrient.protein, today: true)),
       (l.dcChipSaved, const DayIntent('suggest')),
+      (l.ebIdeas, const DayIntent('eat')),
     ];
   }
+
+  /// Ready requests for new ideas (typed requests, so they need the server's ideas): shown after What could I eat?.
+  List<String> _ideaRequests(AppLocalizations l) => [l.dcIdeaQuickProtein, l.dcIdeaSweet, l.dcIdeaNoCooking, l.dcIdeaVegetarian, if (_records().usual != null) l.dcIdeaDifferent];
 
   @override
   Widget build(BuildContext context) {
@@ -392,6 +438,16 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                             foregroundColor: context.c.text, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
                         onPressed: s.sending || !s.loaded ? null : () => _builtIn(intent, said),
                         child: Text(said)),
+                  // After What could I eat?: new ideas, each a typed request the server reads (only when it can).
+                  if (ref.watch(dayIdeasAvailableProvider) && available && (s.messages.lastOrNull?['reply'] as Map?)?['intent'] is Map &&
+                      const {'eat', 'ideas'}.contains(((s.messages.last['reply'] as Map)['intent'] as Map)['kind']))
+                    for (final (i, words) in _ideaRequests(l).indexed)
+                      OutlinedButton(
+                          key: Key('day-idea-$i'),
+                          style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.panel)), side: BorderSide(color: context.c.accent), minimumSize: const Size(48, 48),
+                              foregroundColor: context.c.text, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+                          onPressed: s.sending || !s.loaded ? null : () => _send(words),
+                          child: Text(words)),
                 ]),
               ],
             ),
@@ -534,6 +590,7 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
         child: SecondaryButton(c['name'] as String, key: Key('day-choose-$id-$i'), onPressed: action == null ? null : () => _act(action, reply, stale)),
       );
     }
+    if (c['kind'] == 'idea') return _ideaCard(id, i, c, reply, action, stale);
     final kcal = Map<String, dynamic>.from(c['kcal'] as Map), protein = Map<String, dynamic>.from(c['protein'] as Map);
     final misses = [
       if (c['overKcal'] is num) l.dcMissOverKcal(formatKcal(c['overKcal'] as num)),
@@ -559,13 +616,61 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
     );
   }
 
+  /// An idea: what it is made of and how much, and which of three it is: calculated from food records, still needing
+  /// a food match (no totals), or calculated but not meeting what was asked.
+  Widget _ideaCard(String id, int i, Json c, Json reply, Json? action, bool stale) {
+    final l = context.l10n;
+    final unmatched = [for (final u in c['unmatched'] as List? ?? const []) '$u'], start = [for (final u in c['startAmounts'] as List? ?? const []) '$u'];
+    final calculated = c['kcal'] is Map;
+    final misses = [
+      if (c['overKcal'] is num) l.dcMissOverKcal(formatKcal(c['overKcal'] as num)),
+      if (c['underProtein'] is num) l.dcMissUnderProtein(formatNumber((c['underProtein'] as num).ceil())),
+    ];
+    final (status, tone) = !calculated
+        ? (l.dcIdeaNeedsMatch(unmatched.join(l.dcAnd)), Tone.warning)
+        : misses.isNotEmpty
+            ? (l.dcMisses(misses.join(l.dcAnd)), Tone.warning)
+            : c['unknownTarget'] == true
+                ? (l.dcIdeaUnknownTarget, Tone.warning)
+                : (l.dcIdeaCalculated, Tone.success);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Panel(
+        padding: const EdgeInsets.all(14),
+        child: Column(key: Key('day-card-$id-$i'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(c['name'] as String, style: context.sansStyle(16, weight: FontWeight.w600)),
+          Text(l.dcIdeaLabel, style: context.caption),
+          const SizedBox(height: 6),
+          for (final p in c['parts'] as List? ?? const []) Text(['${(p as Map)['amount']} · ${p['name']}', if (p['match'] is String) '(${p['match']})'].join(' '), style: context.body),
+          for (final u in unmatched) Text(l.dcIdeaUnmatchedFood(u), style: context.body.copyWith(color: context.c.secondary)),
+          if (calculated) ...[
+            const SizedBox(height: 4),
+            Text('${kcalSaid(l, Map<String, dynamic>.from(c['kcal'] as Map))} · ${proteinSaid(l, Map<String, dynamic>.from(c['protein'] as Map))}', key: Key('day-values-$id-$i'),
+                style: context.numStyle(15, weight: FontWeight.w500)),
+          ],
+          Padding(padding: const EdgeInsets.only(top: 4), child: StatusLine(Icons.info_outline, status, key: Key('day-idea-status-$id-$i'), tone: tone)),
+          if (start.isNotEmpty) Text(l.dcIdeaStartAmount(start.join(l.dcAnd)), style: context.caption),
+          if (c['toward'] is String) Padding(padding: const EdgeInsets.only(top: 2), child: Text(c['toward'] as String, style: context.caption)),
+          if (action != null) ...[
+            const SizedBox(height: 10),
+            action['id'] == 'reviewIdea'
+                ? PrimaryButton(l.dcReviewMeal, key: Key('day-review-$id-$i'), icon: Icons.fact_check_outlined, onPressed: () => _act(action, reply, stale))
+                : SecondaryButton(l.dcFindFood, key: Key('day-find-$id-$i'), icon: Icons.search, onPressed: () => _act(action, reply, stale)),
+          ],
+        ]),
+      ),
+    );
+  }
+
   static String _actionLabel(AppLocalizations l, Json a) => switch (a['id']) {
+        'another' => l.dcAnotherIdea,
+        'usual' => l.habitReview,
         'workout' => l.dcActionWorkout,
         'journal' => l.dcActionJournal,
         'goals' => l.dcActionGoals,
         'meals' => l.mealsLibraryTitle,
         'eatingOut' => l.eatHintEatingOutAction,
-        'addFood' => l.dcActionAddFood,
+        'addFood' => l.habitOther,
         'training' => l.dcActionTraining,
         'ask' => l.dcActionChooseMeal,
         _ => l.dcActionReview,
@@ -579,6 +684,26 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
     final shell = ref.read(shellProvider.notifier), eat = ref.read(eatDayRequestProvider.notifier);
     void home() => Navigator.of(context).popUntil((route) => route.isFirst);
     switch (a['id']) {
+      case 'reviewIdea':
+        // The idea's own foods and amounts, worked out again from them; a reply made before the day or goals changed is
+        // recalculated first, so it is never reviewed as if it still fit.
+        if (stale) return toast(context, l.dcStaleReview);
+        final c = (reply['cards'] as List)[a['card'] as int] as Map;
+        final parts = [for (final p in c['parts'] as List) Map<String, dynamic>.from(p as Map)];
+        await push(context, MealReviewScreen(body: MealBody({'kind': MealBody.meal, 'name': c['name'], 'components': parts}), dayKey: day, meal: meal));
+      case 'findFood':
+        final c = (reply['cards'] as List)[a['card'] as int] as Map;
+        await push(context, LogFoodScreen(dayKey: day, meal: meal, query: ((c['unmatched'] as List?)?.firstOrNull as String?) ?? ''));
+      case 'usual':
+        final u = ref.read(usualMealProvider(mealAt(DateTime.now())));
+        if (stale || u == null) return toast(context, l.dcStaleReview);
+        await reviewUsualMeal(context, u, day);
+      case 'another':
+        if (ref.read(dayIdeasAvailableProvider) && ref.read(dayCoachAvailableProvider)) {
+          _send(l.dcAnotherIdeaText);
+        } else {
+          await push(context, LogFoodScreen(dayKey: day, meal: meal));
+        }
       case 'ask':
         final intent = DayIntent.fromJson(a['intent']);
         final card = a['card'] is int ? (reply['cards'] as List)[a['card'] as int] as Map : null;

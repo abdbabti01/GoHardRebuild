@@ -80,7 +80,8 @@ void main() {
       await pumpApp(tester, await _fixture(tester, FoodFakes()));
       await tester.tap(find.byKey(const Key('nav-eat')));
       await tester.pumpAndSettle();
-      expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.textContaining('Log a meal')), findsOneWidget);
+      // The day's briefing (docs/EAT_COMPANION.md): nothing logged yet, so it is about the next meal.
+      expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.textContaining('Nothing logged yet today', findRichText: true)), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
 
       await pumpApp(tester, await _fixture(tester, FoodFakes(), food: [foodEntry('f1', day, 'Breakfast', 'Porridge', '1 bowl', calories: 300, protein: 10, carbs: 50, fat: 5)]));

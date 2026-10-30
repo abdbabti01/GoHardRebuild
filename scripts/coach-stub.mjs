@@ -1,7 +1,8 @@
 // A STUB of Groq's Chat Completions endpoint for local journeys (docs/EATING_OUT.md › Verification, docs/COACH.md › Help
 // with today). It is not a model: every Eating out request gets the same fixed structured reply, and a Help with today
 // request a fixed rule (a word "fail" → HTTP 500; "smaller" → a smaller portion of the item discussed; a saved item whose
-// name is in the words → that item, and "with 150 g of rice" → that food of it at those grams; otherwise "today"), so a real-app journey can exercise the app and API end to end
+// name is in the words → that item, and "with 150 g of rice" → that food of it at those grams; "quick"/"protein"/"idea"
+// with ideas available → two fixed ideas; otherwise "today"), so a real-app journey can exercise the app and API end to end
 // without a key. Never point a deployed API at it.
 //
 //   node scripts/coach-stub.mjs [port]        (default 5137, bound to 127.0.0.1)
@@ -20,7 +21,14 @@ function daily(user) {
   const request = (user.split('<request>\n').at(-1) ?? '').split('\n</request>')[0].toLowerCase();
   const items = [...user.matchAll(/^- ([mrf]\d+) \| (\w+) \| "(.*)"/gm)].map((m) => ({ ref: m[1], name: m[3].toLowerCase() }));
   const base = { kind: 'today', day: 'shown', nutrient: null, source: null, refs: [], change: null, factor: null, servings: null, grams: null, ingredient: null,
-    maxCalories: null, minProtein: null, meal: null, clarification: null, unknownItems: [] };
+    maxCalories: null, minProtein: null, meal: null, clarification: null, unknownItems: [], ideas: [], preferences: [] };
+  // "quick ... protein" with ideas available → two fixed ideas, one of them with a food no catalog has.
+  if (/new ideas: available/i.test(user) && /quick|protein|idea/.test(request)) {
+    return { ...base, kind: 'ideas', preferences: ['quick', 'moreProtein'], ideas: [
+      { title: 'Eggs and toast', foods: [{ name: 'egg', label: 'Eggs', preparation: null, quantity: 2, unit: 'piece', noun: 'egg' }, { name: 'whole wheat bread', label: 'Toast', preparation: null, quantity: 1, unit: 'piece', noun: 'slice' }] },
+      { title: 'Dragonfruit cup', foods: [{ name: 'dragonfruit zzz', label: 'Dragonfruit', preparation: null, quantity: 150, unit: 'g', noun: null }] },
+    ] };
+  }
   const named = items.filter((i) => i.name.split(/\s+/).every((w) => request.includes(w)));
   if (/smaller/.test(request)) return { ...base, kind: 'portion', change: 'smaller', refs: named.map((i) => i.ref) };
   // "<meal> but with 150 g of <food>": one food of that saved meal at the person's grams.

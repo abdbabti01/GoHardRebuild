@@ -31,7 +31,10 @@ enum FoodScope { search, recent, favourites, mine }
 /// The day is carried into the form, and so is the meal, which can be changed here first. What was typed, the
 /// list and category chosen and the scroll position are still here on return.
 class LogFoodScreen extends ConsumerStatefulWidget {
-  const LogFoodScreen({super.key, required this.dayKey, required this.meal, this.scope = FoodScope.search, this.pick = false});
+  const LogFoodScreen({super.key, required this.dayKey, required this.meal, this.scope = FoodScope.search, this.pick = false, this.query = ''});
+
+  /// Words already in the search (an idea's food that still needs a match). Nothing is chosen for the person.
+  final String query;
 
   /// Selection only (a saved meal's or recipe's editor): the chosen food and its confirmed amount are returned as a
   /// [FoodDraft]. Nothing is logged, and no meal or date is asked for.
@@ -52,7 +55,7 @@ class LogFoodScreen extends ConsumerStatefulWidget {
 SearchFields _fields(Suggestion s) => s.common?.fields ?? SearchFields(s.item.name, brand: s.item.brand);
 
 class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
-  final _query = TextEditingController();
+  late final _query = TextEditingController(text: widget.query);
   final _scroll = ScrollController();
   late String _meal = meals.contains(widget.meal) ? widget.meal : meals.first;
   late FoodScope _scope = widget.scope;

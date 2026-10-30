@@ -2444,22 +2444,6 @@
   "@eatHintMine": {
     "description": "Coach hint when own foods exist."
   },
-  "eatSayGoalWater": "Log a meal or some water and see how the day adds up against your goals.",
-  "@eatSayGoalWater": {
-    "description": "Coach line on Eat (goals set, water on)."
-  },
-  "eatSayGoal": "Log a meal and see how the day adds up against your goals.",
-  "@eatSayGoal": {
-    "description": "Coach line on Eat (goals set)."
-  },
-  "eatSayNoGoalWater": "Log a meal or some water, or set your daily goals.",
-  "@eatSayNoGoalWater": {
-    "description": "Coach line on Eat (no goals, water on)."
-  },
-  "eatSayNoGoal": "Log a meal, or set your daily goals.",
-  "@eatSayNoGoal": {
-    "description": "Coach line on Eat (no goals)."
-  },
   "eatMacroProtein": "P {value} g",
   "@eatMacroProtein": {
     "description": "Compact protein on a logged food row (P = protein).",
@@ -16268,23 +16252,6 @@
       }
     }
   },
-  "reminderPrivateTitle": "GoHard reminder",
-  "@reminderPrivateTitle": {
-    "description": "Notification title of a reminder marked private (lock screen)."
-  },
-  "reminderPrivateBody": "Open GoHard to see it.",
-  "@reminderPrivateBody": {
-    "description": "Notification body of a reminder marked private."
-  },
-  "reminderMealBody": "Time to log your {meal}.",
-  "@reminderMealBody": {
-    "description": "Meal reminder notification body without instructions. meal = lower-case meal name.",
-    "placeholders": {
-      "meal": {
-        "type": "String"
-      }
-    }
-  },
   "reminderDoseBody": "Tap to confirm in GoHard.",
   "@reminderDoseBody": {
     "description": "Medication/supplement notification body without instructions."
@@ -16535,7 +16502,7 @@
   "@reminderPrivateLabel": {
     "description": "Reminder editor: discreet notification switch."
   },
-  "reminderPrivateHelp": "The notification says only “GoHard reminder”.",
+  "reminderPrivateHelp": "The notification says only “Time for your medication” or “Time for your supplement”: no name, dose or instructions.",
   "@reminderPrivateHelp": {
     "description": "Reminder editor: what the discreet switch does."
   },
@@ -16570,5 +16537,319 @@
   "eatMealReminders": "Meal reminders",
   "@eatMealReminders": {
     "description": "Eat: link to the Reminders page."
+  },
+  "reminderMealTitle": "Time to log {meal}.",
+  "@reminderMealTitle": {
+    "description": "Meal reminder notification title. meal = lower-case meal name.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderMealTap": "Tap to open Eat.",
+  "@reminderMealTap": {
+    "description": "Meal reminder notification body when there are no instructions to show."
+  },
+  "reminderHiddenMedication": "Time for your medication.",
+  "@reminderHiddenMedication": {
+    "description": "Medication notification title when details are hidden: no name, dose or instructions."
+  },
+  "reminderHiddenSupplement": "Time for your supplement.",
+  "@reminderHiddenSupplement": {
+    "description": "Supplement notification title when details are hidden."
+  },
+  "ebPastEmpty": "Nothing was recorded on {day}.",
+  "@ebPastEmpty": {
+    "description": "Eat briefing, earlier day with no food. day = long date.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "ebPast": "On {day} you recorded {totals}.",
+  "@ebPast": {
+    "description": "Eat briefing, earlier day: what was recorded. totals = \"1,850 kcal and 92 g protein\".",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "totals": {
+        "type": "String"
+      }
+    }
+  },
+  "ebPastOver": "That is {kcal} kcal above your target.",
+  "@ebPastOver": {
+    "description": "Eat briefing, earlier day above the calorie target (retrospective, neutral).",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebPastUnder": "That is {kcal} kcal under your target.",
+  "@ebPastUnder": {
+    "description": "Eat briefing, earlier day under the calorie target.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebAtLeastKcal": "at least {kcal} kcal",
+  "@ebAtLeastKcal": {
+    "description": "A calorie total some foods have no value for.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebAtLeastProtein": "at least {protein} g protein",
+  "@ebAtLeastProtein": {
+    "description": "A protein total some foods have no value for.",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "ebEmpty": "Nothing logged yet today. Want ideas for {meal}?",
+  "@ebEmpty": {
+    "description": "Eat briefing, today with nothing logged. meal = the next meal, lower case.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebOver": "Today’s recorded calories are {kcal} kcal above your target. That’s okay. If you’re still hungry, I can suggest lighter options.",
+  "@ebOver": {
+    "description": "In-app heads-up: calorie target exceeded. Neutral, never a warning or a reason to skip meals.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebNear": "You’re near your calorie target ({kcal} kcal left), with time left in the day. Want help planning your next meal?",
+  "@ebNear": {
+    "description": "In-app heads-up: near the calorie target before 17:00.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebProteinReached": "You’ve reached your protein goal: {protein} g of {goal} g. Want ideas for your next meal?",
+  "@ebProteinReached": {
+    "description": "In-app heads-up: protein goal reached. Never suggests stopping eating.",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebUnknownKcal": "Some foods today have no calorie value, so the total is incomplete: at least {kcal} kcal recorded. Want some options?",
+  "@ebUnknownKcal": {
+    "description": "Eat briefing: calorie total incomplete, so no allowance is given.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebProteinIncomplete": "At least {protein} g protein recorded; some values are missing.",
+  "@ebProteinIncomplete": {
+    "description": "Eat briefing: protein total incomplete.",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "ebProteinLeft": "{protein} g protein left.",
+  "@ebProteinLeft": {
+    "description": "Eat briefing: protein still to go against what is recorded.",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "ebOverPlain": "Recorded calories are {kcal} kcal above your target today.",
+  "@ebOverPlain": {
+    "description": "Eat briefing, plain fact after the heads-up was said once.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebLeftBoth": "You have {kcal} kcal and {protein} g protein left. Want some options?",
+  "@ebLeftBoth": {
+    "description": "Eat briefing: both left, all values known.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "ebKcalLeft": "You have {kcal} kcal left today.",
+  "@ebKcalLeft": {
+    "description": "Eat briefing: calories left, all values known.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebProteinDone": "Protein goal reached.",
+  "@ebProteinDone": {
+    "description": "Eat briefing: protein goal reached (plain)."
+  },
+  "ebWantOptions": "Want some options?",
+  "@ebWantOptions": {
+    "description": "Eat briefing closing question."
+  },
+  "ebLogged": "{meal} is logged. Want ideas for your next meal?",
+  "@ebLogged": {
+    "description": "Eat briefing without goals: the last meal logged. meal = meal name as shown.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "ebIdeas": "What could I eat?",
+  "@ebIdeas": {
+    "description": "Eat briefing action and coach request: opens meal ideas."
+  },
+  "ebSetGoals": "Set goals",
+  "@ebSetGoals": {
+    "description": "Eat briefing without goals: opens Eat’s goal editor."
+  },
+  "ebSettingTitle": "Nutrition heads-ups",
+  "@ebSettingTitle": {
+    "description": "Settings heading for in-app heads-ups."
+  },
+  "ebSettingBody": "On Eat, Leon or Leona can say when you are near or above your calorie target, or when your protein goal is reached, once a day each. They only appear inside GoHard, never as notifications, and are not medical advice.",
+  "@ebSettingBody": {
+    "description": "Settings: what heads-ups are."
+  },
+  "ebSettingSwitch": "Show nutrition heads-ups",
+  "@ebSettingSwitch": {
+    "description": "Settings switch for in-app heads-ups."
+  },
+  "dcIdeasToday": "Ideas are for today. For an earlier day, add what was eaten with Choose something else.",
+  "@dcIdeasToday": {
+    "description": "Daily coach: ideas asked about an earlier day."
+  },
+  "dcEatIntro": "A few ways to go. For new ideas, ask for something specific, like “something quick with more protein”.",
+  "@dcEatIntro": {
+    "description": "Daily coach: What could I eat? answered on the phone."
+  },
+  "dcNoIdeas": "No idea fits that. Try other words, or choose something yourself.",
+  "@dcNoIdeas": {
+    "description": "Daily coach: nothing left after the checks."
+  },
+  "dcIdeasHeading": "Ideas, with every value worked out from food records:",
+  "@dcIdeasHeading": {
+    "description": "Daily coach: above idea cards."
+  },
+  "dcNoPrices": "GoHard has no prices, so it can’t check cost.",
+  "@dcNoPrices": {
+    "description": "Daily coach: cheaper was asked."
+  },
+  "dcNotTimed": "GoHard doesn’t know preparation times; check the foods.",
+  "@dcNotTimed": {
+    "description": "Daily coach: quick or no cooking was asked."
+  },
+  "dcNotChecked": "GoHard doesn’t check dietary labels such as vegetarian; check the foods.",
+  "@dcNotChecked": {
+    "description": "Daily coach: vegetarian was asked."
+  },
+  "dcIdeaQuickProtein": "Something quick with more protein",
+  "@dcIdeaQuickProtein": {
+    "description": "Ready idea request."
+  },
+  "dcIdeaSweet": "Something sweet",
+  "@dcIdeaSweet": {
+    "description": "Ready idea request."
+  },
+  "dcIdeaNoCooking": "No cooking",
+  "@dcIdeaNoCooking": {
+    "description": "Ready idea request."
+  },
+  "dcIdeaVegetarian": "A vegetarian meal",
+  "@dcIdeaVegetarian": {
+    "description": "Ready idea request."
+  },
+  "dcIdeaDifferent": "Something different from my usual",
+  "@dcIdeaDifferent": {
+    "description": "Ready idea request (meal suggestions on)."
+  },
+  "dcIdeaNeedsMatch": "Needs a food match: {foods}. No totals until it is found.",
+  "@dcIdeaNeedsMatch": {
+    "description": "Idea card: a food with no record found.",
+    "placeholders": {
+      "foods": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIdeaUnknownTarget": "Some values are missing, so GoHard can’t say whether it meets what you asked.",
+  "@dcIdeaUnknownTarget": {
+    "description": "Idea card: a limit was asked but a needed value is unknown."
+  },
+  "dcIdeaCalculated": "Calculated from food records.",
+  "@dcIdeaCalculated": {
+    "description": "Idea card: every food matched and every value computed."
+  },
+  "dcIdeaLabel": "An idea from Leon or Leona",
+  "@dcIdeaLabel": {
+    "description": "Idea card caption: the idea itself is the AI’s, the values are not."
+  },
+  "dcIdeaUnmatchedFood": "{food} (not matched yet)",
+  "@dcIdeaUnmatchedFood": {
+    "description": "Idea card: a food without a record.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcIdeaStartAmount": "Amount set from the food’s own portion: {foods}. Change it in the review.",
+  "@dcIdeaStartAmount": {
+    "description": "Idea card: the proposed unit did not fit the record, so its own portion is used.",
+    "placeholders": {
+      "foods": {
+        "type": "String"
+      }
+    }
+  },
+  "dcReviewMeal": "Review meal",
+  "@dcReviewMeal": {
+    "description": "Idea card action: opens the review (nothing is logged)."
+  },
+  "dcFindFood": "Find food",
+  "@dcFindFood": {
+    "description": "Idea card action: opens food search with the food’s name."
+  },
+  "dcAnotherIdea": "Other ideas",
+  "@dcAnotherIdea": {
+    "description": "Daily coach action: asks for other ideas."
+  },
+  "dcAnotherIdeaText": "Other ideas, different from these",
+  "@dcAnotherIdeaText": {
+    "description": "The typed request sent by Other ideas."
   }
 }

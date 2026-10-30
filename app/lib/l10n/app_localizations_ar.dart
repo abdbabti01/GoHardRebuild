@@ -1686,20 +1686,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'الأطعمة التي حفظتها في «أطعمتي». اختر واحدًا وراجع الكمية ثم سجّله.';
 
   @override
-  String get eatSayGoalWater =>
-      'سجّل وجبة أو بعض الماء وشاهد حصيلة يومك مقارنةً بأهدافك.';
-
-  @override
-  String get eatSayGoal => 'سجّل وجبة وشاهد حصيلة يومك مقارنةً بأهدافك.';
-
-  @override
-  String get eatSayNoGoalWater =>
-      'سجّل وجبة أو بعض الماء، أو حدّد أهدافك اليومية.';
-
-  @override
-  String get eatSayNoGoal => 'سجّل وجبة، أو حدّد أهدافك اليومية.';
-
-  @override
   String eatMacroProtein(String value) {
     return 'بروتين $value غ';
   }
@@ -12092,17 +12078,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get reminderPrivateTitle => 'تذكير من GoHard';
-
-  @override
-  String get reminderPrivateBody => 'افتح GoHard لرؤيته.';
-
-  @override
-  String reminderMealBody(String meal) {
-    return 'حان وقت تسجيل $meal.';
-  }
-
-  @override
   String get reminderDoseBody => 'المس للتأكيد في GoHard.';
 
   @override
@@ -12300,7 +12275,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reminderPrivateLabel => 'إخفاء التفاصيل على شاشة القفل';
 
   @override
-  String get reminderPrivateHelp => 'يقول الإشعار فقط «تذكير من GoHard».';
+  String get reminderPrivateHelp =>
+      'يقول الإشعار فقط «حان وقت دوائك» أو «حان وقت مكمّلك»: بلا اسم أو جرعة أو تعليمات.';
 
   @override
   String get reminderOnLabel => 'مفعَّل';
@@ -12323,4 +12299,203 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get eatMealReminders => 'تذكيرات الوجبات';
+
+  @override
+  String reminderMealTitle(String meal) {
+    return 'حان وقت تسجيل $meal.';
+  }
+
+  @override
+  String get reminderMealTap => 'المس لفتح «الأكل».';
+
+  @override
+  String get reminderHiddenMedication => 'حان وقت دوائك.';
+
+  @override
+  String get reminderHiddenSupplement => 'حان وقت مكمّلك.';
+
+  @override
+  String ebPastEmpty(String day) {
+    return 'لم يُسجَّل شيء في $day.';
+  }
+
+  @override
+  String ebPast(String day, String totals) {
+    return 'في $day سجّلت $totals.';
+  }
+
+  @override
+  String ebPastOver(String kcal) {
+    return 'هذا أعلى من هدفك بـ $kcal سعرة.';
+  }
+
+  @override
+  String ebPastUnder(String kcal) {
+    return 'هذا أقل من هدفك بـ $kcal سعرة.';
+  }
+
+  @override
+  String ebAtLeastKcal(String kcal) {
+    return '$kcal سعرة على الأقل';
+  }
+
+  @override
+  String ebAtLeastProtein(String protein) {
+    return '$protein غ بروتين على الأقل';
+  }
+
+  @override
+  String ebEmpty(String meal) {
+    return 'لم يُسجَّل شيء اليوم بعد. هل تريد أفكارًا لـ$meal؟';
+  }
+
+  @override
+  String ebOver(String kcal) {
+    return 'السعرات المسجّلة اليوم أعلى من هدفك بـ $kcal سعرة. لا بأس. إن كنت ما زلت جائعًا، يمكنني اقتراح خيارات أخف.';
+  }
+
+  @override
+  String ebNear(String kcal) {
+    return 'أنت قريب من هدف السعرات (تبقّى $kcal سعرة)، وما زال في اليوم وقت. هل تريد مساعدة في التخطيط لوجبتك التالية؟';
+  }
+
+  @override
+  String ebProteinReached(String protein, String goal) {
+    return 'بلغت هدف البروتين: $protein غ من $goal غ. هل تريد أفكارًا لوجبتك التالية؟';
+  }
+
+  @override
+  String ebUnknownKcal(String kcal) {
+    return 'بعض أطعمة اليوم بلا قيمة سعرات، لذا المجموع غير مكتمل: $kcal سعرة مسجّلة على الأقل. هل تريد خيارات؟';
+  }
+
+  @override
+  String ebProteinIncomplete(String protein) {
+    return '$protein غ بروتين مسجّلة على الأقل؛ بعض القيم ناقصة.';
+  }
+
+  @override
+  String ebProteinLeft(String protein) {
+    return 'تبقّى $protein غ بروتين.';
+  }
+
+  @override
+  String ebOverPlain(String kcal) {
+    return 'السعرات المسجّلة اليوم أعلى من هدفك بـ $kcal سعرة.';
+  }
+
+  @override
+  String ebLeftBoth(String kcal, String protein) {
+    return 'تبقّى لك $kcal سعرة و$protein غ بروتين. هل تريد خيارات؟';
+  }
+
+  @override
+  String ebKcalLeft(String kcal) {
+    return 'تبقّى لك $kcal سعرة اليوم.';
+  }
+
+  @override
+  String get ebProteinDone => 'تم بلوغ هدف البروتين.';
+
+  @override
+  String get ebWantOptions => 'هل تريد خيارات؟';
+
+  @override
+  String ebLogged(String meal) {
+    return 'تم تسجيل $meal. هل تريد أفكارًا لوجبتك التالية؟';
+  }
+
+  @override
+  String get ebIdeas => 'ماذا يمكنني أن آكل؟';
+
+  @override
+  String get ebSetGoals => 'تحديد الأهداف';
+
+  @override
+  String get ebSettingTitle => 'تنبيهات التغذية';
+
+  @override
+  String get ebSettingBody =>
+      'في «الأكل» يمكن لليون أو ليونا أن يخبراك عندما تقترب من هدف السعرات أو تتجاوزه، أو عند بلوغ هدف البروتين، مرة في اليوم لكل منها. تظهر داخل GoHard فقط، وليست إشعارات ولا نصيحة طبية.';
+
+  @override
+  String get ebSettingSwitch => 'إظهار تنبيهات التغذية';
+
+  @override
+  String get dcIdeasToday =>
+      'الأفكار لليوم. ليوم سابق، أضف ما أُكل عبر «اختيار شيء آخر».';
+
+  @override
+  String get dcEatIntro =>
+      'بعض الخيارات. لأفكار جديدة، اطلب شيئًا محددًا، مثل «شيء سريع بمزيد من البروتين».';
+
+  @override
+  String get dcNoIdeas =>
+      'لا توجد فكرة مناسبة. جرّب كلمات أخرى، أو اختر بنفسك.';
+
+  @override
+  String get dcIdeasHeading => 'أفكار، وكل قيمة فيها محسوبة من سجلات الأطعمة:';
+
+  @override
+  String get dcNoPrices =>
+      'لا يعرف GoHard الأسعار، لذا لا يمكنه التحقق من التكلفة.';
+
+  @override
+  String get dcNotTimed => 'لا يعرف GoHard أوقات التحضير؛ تحقّق من الأطعمة.';
+
+  @override
+  String get dcNotChecked =>
+      'لا يتحقق GoHard من التصنيفات الغذائية مثل النباتي؛ تحقّق من الأطعمة.';
+
+  @override
+  String get dcIdeaQuickProtein => 'شيء سريع بمزيد من البروتين';
+
+  @override
+  String get dcIdeaSweet => 'شيء حلو';
+
+  @override
+  String get dcIdeaNoCooking => 'بدون طبخ';
+
+  @override
+  String get dcIdeaVegetarian => 'وجبة نباتية';
+
+  @override
+  String get dcIdeaDifferent => 'شيء مختلف عن المعتاد';
+
+  @override
+  String dcIdeaNeedsMatch(String foods) {
+    return 'يحتاج إلى مطابقة طعام: $foods. لا مجاميع حتى يُعثر عليه.';
+  }
+
+  @override
+  String get dcIdeaUnknownTarget =>
+      'بعض القيم ناقصة، لذا لا يستطيع GoHard القول إنه يطابق طلبك.';
+
+  @override
+  String get dcIdeaCalculated => 'محسوب من سجلات الأطعمة.';
+
+  @override
+  String get dcIdeaLabel => 'فكرة من ليون أو ليونا';
+
+  @override
+  String dcIdeaUnmatchedFood(String food) {
+    return '$food (لم يُطابَق بعد)';
+  }
+
+  @override
+  String dcIdeaStartAmount(String foods) {
+    return 'الكمية مأخوذة من حصة الطعام نفسه: $foods. غيّرها في المراجعة.';
+  }
+
+  @override
+  String get dcReviewMeal => 'مراجعة الوجبة';
+
+  @override
+  String get dcFindFood => 'البحث عن الطعام';
+
+  @override
+  String get dcAnotherIdea => 'أفكار أخرى';
+
+  @override
+  String get dcAnotherIdeaText => 'أفكار أخرى مختلفة عن هذه';
 }
