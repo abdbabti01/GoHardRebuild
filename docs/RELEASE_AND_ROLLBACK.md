@@ -144,6 +144,37 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Meal habits, reminders and the Eat companion — deployed 30 Oct 2026 (`main` 57ea806)
+
+- **What:** two features merged together (the second was built on the first).
+  - Meal habits, saved-meal amounts and Reminders (docs/MEAL_HABITS_REMINDERS.md): usual-meal suggestions worked out on
+    the phone (opt-in), Log this time / Update saved meal / Save as a variation, one food of a saved meal changed for
+    one time through the coach (`portion.ingredient`), Me › Reminders for workout, meal, medication and supplement
+    reminders (local to the phone and account; Taken / Snooze / Skip).
+  - Eat companion (docs/EAT_COMPANION.md): purpose-specific reminder wording (hidden details never show a name, dose
+    or instructions); Eat's day briefing and in-app heads-ups (once a day, switchable); What could I eat? with new meal
+    ideas proposed as words by the model and matched on the phone to real food records, with ambiguous records,
+    other preparations and unit mismatches confirmed by the person; the coach's message isolated so it can never block
+    the journal.
+- **Deployment:** owner approved 30 Oct 2026 after confirming IPA 62 on the iPhone. `main` fast-forwarded 12d7ce5 →
+  57ea806 (no newer work on `main`; other branches untouched). CI on `main`: passed
+  (https://github.com/abdbabti01/GoHardRebuild/actions/runs/41125465960). Railway **devoted-caring**: success.
+  Hosted `/health/ready`: 200. `/capabilities`: contract 2, minimum 2, declares `coach.daily` and the new `coach.ideas`
+  (with `coach.ask`, `food.saved-meals`, `restaurants.*`): the existing Groq settings were picked up unchanged; no secret or
+  variable was touched. `POST /coach/daily` without a session: 401. Railway diplomatic-intuition reported failure
+  (unused project, ignored as before).
+- **App:** IPA 62 (run 41116733213, built from 57ea806, the merged commit) — artifact `GoHard-Dev-unsigned-ipa`. No
+  rebuild.
+- **Compatibility:** additive. No migration, no contract change, no new configuration. `coach.ideas` is used only by a
+  phone that sends `features: ["ideas"]`; older phones get the saved-item suggestions as before. Reminders, their answers,
+  meal-suggestion choices and logging times stay on the phone (nothing new stored on the server). Rollback: redeploy
+  12d7ce5; nothing stored on the server depends on these features.
+- **Confirmed by the owner on iPhone:** Eat renders normally on IPA 62 (the blank grey page of IPA 59–61, caused by an
+  untyped reminder list for accounts with reminders, is fixed).
+- **Pending (unverified):** live Groq reading of ingredient changes and meal ideas; real food matching against the hosted
+  USDA search; notifications on the phone (delivery, lock-screen wording, Taken / Snooze / Skip buttons, background meal
+  suppression); VoiceOver. No hosted test account was created and no live coach request was made from here.
+
 ### Eating out — deployed 26 Oct 2026 (`main` 8458563)
 
 - **What:** Eating out (docs/EATING_OUT.md): verified Canadian menus for McDonald's (27 items, official calculator values

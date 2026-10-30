@@ -2520,3 +2520,11 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
   on or off and stored preferences, plus 2 isolation tests) fails with the old line put back and passes with the fix.
   Affected Eat tests (7 files, 76) pass; `flutter analyze` clean; `check-l10n` OK. The `avoid_dynamic_calls` lint would have
   caught it; enabling it repo-wide needs about 50 test/journey JSON accesses typed first (not done here).
+
+### 30 Oct 2026 — merged and deployed (owner approved)
+
+- Owner confirmed on iPhone: IPA 62 fixes Eat (the grey page). Approved merging `feature/eat-companion` with its
+  `feature/meal-habits-reminders` dependency. `main` fast-forwarded 12d7ce5 → 57ea806; CI 41125465960 passed on `main`;
+  Railway devoted-caring success; hosted health 200, contract 2, declares `coach.daily` and `coach.ideas`; unauthenticated
+  `POST /coach/daily` → 401. IPA 62 reused. Release notes: docs/RELEASE_AND_ROLLBACK.md.
+- Still unverified: live Groq (ingredient changes, ideas), hosted food matching, phone notifications, VoiceOver.
