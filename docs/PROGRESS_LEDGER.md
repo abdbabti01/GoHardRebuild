@@ -2506,17 +2506,17 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
 
 ### 30 Oct 2026 (fix) — Eat blank grey on iPhone for accounts with reminders
 
-- Cause (reproduced, not assumed):  (added in 99ee83d, so IPA 59, 60 and 61) iterated
-  . In a for-in, the untyped  made each element , and
-   is an extension type, so  was a dynamic call on the raw map: NoSuchMethodError
+- Cause (reproduced, not assumed): `_EatScreenState._briefing` (added in 99ee83d, so IPA 59, 60 and 61) iterated
+  `ref.watch(remindersProvider).value ?? const []`. In a for-in, the untyped `const []` made each element `dynamic`, and
+  `Reminder` is an extension type, so `r.enabled` was a dynamic call on the raw map: NoSuchMethodError
   ("Class '_Map<String, dynamic>' has no instance getter 'enabled'") thrown while building EatScreen, which a release
   build shows as a grey box filling the tab. Only accounts with at least one reminder of their own (enabled or paused),
   which is why fresh test accounts never showed it. No stored data was involved or changed.
-- Fix: the list is typed (, also in the reminder-offer check). Defence: the coach's optional message
-  (briefing, suggestions, introductions, the coach-off panel) is now worked out in one guarded step; a failure is
+- Fix (9cf808b): the list is typed (`const <Reminder>[]`, also in the reminder-offer check). Defence: the coach's optional
+  message (briefing, suggestions, introductions, the coach-off panel) is worked out in one guarded step; a failure is
   reported through FlutterError.reportError (still visible in logs and tests) and a notice with Retry takes the coach's
   place, while the day's summary, Log food and the meals render as usual.
-- Evidence:  (existing-account data with reminders, 12 combinations of goals, coach on
-  or off and stored preferences, plus 2 isolation tests) — fails with the old line put back, passes with the fix. Affected
-  Eat tests (7 files, 76) pass;  clean;  OK.  would have caught it; enabling it
-  repo-wide needs ~50 test/journey JSON accesses typed first (not done here).
+- Evidence: `test/eat_existing_account_test.dart` (existing-account data with reminders, 12 combinations of goals, coach
+  on or off and stored preferences, plus 2 isolation tests) fails with the old line put back and passes with the fix.
+  Affected Eat tests (7 files, 76) pass; `flutter analyze` clean; `check-l10n` OK. The `avoid_dynamic_calls` lint would have
+  caught it; enabling it repo-wide needs about 50 test/journey JSON accesses typed first (not done here).
