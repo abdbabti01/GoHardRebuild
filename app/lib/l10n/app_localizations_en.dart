@@ -12003,4 +12003,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dcChooseAmount => 'Choose amount';
+
+  @override
+  String dcIdeaPrepDiffers(String food, String asked) {
+    return 'You chose $food, not $asked as the idea said. Amounts differ between preparations, so the proposed amount is not used.';
+  }
 }

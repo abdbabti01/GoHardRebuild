@@ -12208,6 +12208,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dcChooseAmount => 'Choisir la quantité';
+
+  @override
+  String dcIdeaPrepDiffers(String food, String asked) {
+    return 'Tu as choisi $food, pas « $asked » comme l’idée le disait. Les quantités diffèrent selon la préparation, donc la quantité proposée n’est pas utilisée.';
+  }
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

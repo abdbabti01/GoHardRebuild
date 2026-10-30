@@ -115,10 +115,16 @@ void main() {
       expect(which['confirm'], 'record');
       expect([for (final o in which['options'] as List) (o as Map)['match']], ['Dry · uncooked'], reason: 'offered, with its preparation, never taken');
       expect((((ideas[1]['parts'] as List).single as Map)['match']), 'Whole · raw', reason: 'a record stating the preparation is taken');
-      // Confirming it places the proposed amount when the record has that unit.
+      // Choosing dry oats for "cooked oats" never reuses the 40 g proposed for cooked: a fresh amount, said why.
       final confirmed = confirmIdeaFood(ideas[0], 0, option: 0);
-      expect(((confirmed['parts'] as List).single as Map)['quantity'], 40);
-      expect(confirmed['confirm'], isEmpty);
+      expect(confirmed['parts'], isEmpty);
+      final amount = (confirmed['confirm'] as List).single as Map;
+      expect((amount['confirm'], amount['asked']), ('amount', 'cooked'));
+      final records = DayRecords(today: today, shown: today, entries: (_) => const [], mealNow: 'Lunch');
+      expect(((resolveDay(DayIntent('ideas', ideas: [confirmed]), records, l)['cards'] as List).single as Map).containsKey('kcal'), isFalse, reason: 'no totals before it');
+      final done = confirmIdeaFood(confirmed, 0, part: {'item': (amount['food'] as Map)['item'], 'quantity': 30, 'unit': 'g', 'name': 'Oats'});
+      expect(((done['parts'] as List).single as Map)['quantity'], 30);
+      expect(((resolveDay(DayIntent('ideas', ideas: [done]), records, l)['cards'] as List).single as Map).containsKey('kcal'), isTrue);
     });
 
     test('equally good records are a choice, never the first one; an amount chosen in the form completes the idea', () async {

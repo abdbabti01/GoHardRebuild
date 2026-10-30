@@ -698,6 +698,8 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
     final food = Map<String, dynamic>.from(x['food'] as Map);
     return [
       Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.dcIdeaAmountNeeded(food['name'] as String), style: context.sansStyle(15, weight: FontWeight.w600))),
+      if (x['asked'] is String)
+        Text(l.dcIdeaPrepDiffers(['${food['name']}', if (food['match'] is String) '(${food['match']})'].join(' '), x['asked'] as String), key: Key('day-prep-$id-$i-$k'), style: context.caption),
       Padding(
         padding: const EdgeInsets.only(top: 6),
         child: SecondaryButton(l.dcChooseAmount, key: Key('day-amount-$id-$i-$k'), icon: Icons.tune, onPressed: () async {

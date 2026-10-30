@@ -2486,3 +2486,18 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
   nothing → Log once). `flutter analyze` clean, `check-l10n` OK.
 - Code b52a8ed: CI 41083395123 passed on attempt 2 (attempt 1: the known AccountEmailTests 8-digit-in-GUID flake; no API change in this commit); unsigned IPA run 60 (b52a8ed) passed.
 - Emulator journey (one attempt, after a reboot, coach stub): briefing, What could I eat?, a matched idea asking for the toast amount, Choose amount, review with a changed amount and back (nothing logged), Log once (2 entries) passed. The final check, the briefing after logging, timed out again: back on Eat the coach bubble was not in the widget tree at all (neither its words nor its button). Not established whether that is the device-journey animation quirk or a real display issue: **unverified**, on the iPhone checklist.
+
+### 30 Oct 2026 (follow-up 2) — preparation amounts; the coach after returning to Eat
+
+- A record chosen with another preparation than the idea proposed (dry oats for cooked oats) no longer keeps the
+  proposed amount: the card explains the difference and asks for a fresh amount; no totals before it.
+- "The coach disappears after logging an idea": investigated. Not a visibility, scroll or navigation fault: the coach was
+  there, but after logging, Eat's one-time "save it as a meal" introduction took the bubble instead of the briefing. That
+  introduction is rich text with no buttons, and the journey's screen dump skipped rich text (and stopped at 34
+  items), so the bubble looked absent. Widget probes: returning from a pushed screen, and scrolling the header out of
+  the lazy list and back, both keep the coach. Fixed: when the day's food changed while Eat was not on screen, the visit
+  back shows the updated briefing and introductions wait for a later tab visit (coach off: the panel). Journey dump now
+  includes rich text.
+- Focused tests: `eat_companion_test` 11, `eat_companion_ui_test` 9 (+2: back from logging, scrolled to the top, coach
+  on and off), `day_coach_ui_test` 15, `move_ui_test` / `eating_out_ui_test` / `coach_companion_test` 46 (introduction
+  order). `flutter analyze` clean, `check-l10n` OK.

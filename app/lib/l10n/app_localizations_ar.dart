@@ -12509,4 +12509,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dcChooseAmount => 'اختيار الكمية';
+
+  @override
+  String dcIdeaPrepDiffers(String food, String asked) {
+    return 'اخترت $food، وليس «$asked» كما قالت الفكرة. تختلف الكميات بين طرق التحضير، لذا لا تُستخدم الكمية المقترحة.';
+  }
 }

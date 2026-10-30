@@ -44,7 +44,8 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     int? calorieGoal, int? proteinGoal, List<Json> savedFoods = const [], List<Json> seenFoods = const [], List<Json> runs = const [],
     int pending = 0, List<Rec> issues = const [], Json profile = const {}, bool profileLoaded = true, bool liveWorkouts = false,
     List<Json> weeklyGoals = const [], bool liveGoals = false, List<Json> bodyMetrics = const [], List<String> pendingMetrics = const [], bool liveMetrics = false, bool livePlans = false,
-    List<Json> reminders = const [], Json habitPrefs = const {}, List<({String day, String meal, int minute})> logTimes = const []}) async {
+    List<Json> reminders = const [], Json habitPrefs = const {}, List<({String day, String meal, int minute})> logTimes = const [],
+    Stream<List<Json>>? liveFood}) async {
   final sessions = SessionManager(MemorySecretStore());
   await sessions.signIn(authFor('one'));
   List<Stored<WorkoutSet>> setRows(String? workoutId) => [for (final s in sets) if (workoutId == null || s['workoutId'] == workoutId) stored(WorkoutSet(s), Kinds.set, s['id'] as String, s)];
@@ -53,7 +54,8 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
     if (appearance != null) appearanceStoreProvider.overrideWithValue(appearance),
     todayKeyProvider.overrideWith(() => FixedDay(day)),
     profileProvider.overrideWith((ref) => Stream.value(!profileLoaded ? null : Profile({...authFor('one')['profile'] as Json, 'displayName': 'Alex Sample', 'appearance': profileAppearance, 'calorieGoal': calorieGoal, 'proteinGoal': proteinGoal, ...profile}))),
-    foodJournalProvider.overrideWith((ref) => Stream.value([for (final f in food) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
+    // [liveFood]: a journal that changes during the test (another screen logging), instead of [food].
+    foodJournalProvider.overrideWith((ref) => (liveFood ?? Stream.value(food)).map((l) => [for (final f in l) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
     savedFoodsProvider.overrideWith((ref) => Stream.value([for (final f in savedFoods) stored(SavedFood(f), Kinds.savedFood, f['id'] as String, f)])),
     seenFoodsProvider.overrideWith((ref) => Stream.value([for (final f in seenFoods) FoodItem(f)])),
     contextRowProvider.overrideWith((ref) => Stream.value(stored(TrainingCtx({'contextRevision': 1, 'primaryPlanId': primaryPlanId}), Kinds.context, 'one', {}))),
@@ -67,7 +69,9 @@ Future<List<Override>> overridesFor({required String day, List<Json> plans = con
       runtimesProvider.overrideWith((ref) => Stream.value(const [])),
     ],
     restDaysProvider.overrideWith((ref) => Stream.value(const [])),
-    foodProvider.overrideWith((ref, d) => foodFails ? Stream.error(StateError('disk')) : Stream.value([for (final f in food) if (f['dayKey'] == d) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
+    foodProvider.overrideWith((ref, d) => foodFails
+        ? Stream.error(StateError('disk'))
+        : (liveFood ?? Stream.value(food)).map((l) => [for (final f in l) if (f['dayKey'] == d) stored(FoodEntry(f), Kinds.food, f['id'] as String, f)])),
     // [liveGoals]: weekly goals come from the real local database the test provides instead.
     if (!liveGoals) weeklyGoalsProvider.overrideWith((ref) => Stream.value([for (final g in weeklyGoals) stored(WeeklyGoal(g), Kinds.weeklyGoal, g['weekStart'] as String, g)])),
     runsProvider.overrideWith((ref) => Stream.value([for (final r in runs) stored(Run(r), Kinds.run, r['id'] as String, r)])),

@@ -106,6 +106,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     if (owner == null || day != today) return null;
     final meal = _mealNow(DateTime.now()), l = context.l10n;
     if (ref.watch(usualMealProvider(meal)) case final u?) return usualMealSay(context, ref, u, today);
+    if (_news) return null; // the day's food changed while away: the briefing says how it stands now
     final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
     if (!inView) return _habitHint == null ? null : _habitHintSay(l, owner, meal);
     if (_habitHint == null) {
@@ -139,9 +140,27 @@ class _EatScreenState extends ConsumerState<EatScreen> {
             onPressed: () => push(context, ReminderEditorScreen(meal: meal))));
   }
 
+  /// What the day's food was when Eat was last on screen, and whether it has changed since: then this visit is about
+  /// the day as it is now (the briefing), and the one-time introductions wait for a later visit. Cleared when another
+  /// tab is shown.
+  String? _seenFood;
+  bool _news = false;
+
+  void _noteFood(String day, List<FoodEntry> entries) {
+    final tab = ref.watch(shellProvider.select((s) => s.tab == 2));
+    if (!tab) {
+      _news = false;
+      return;
+    }
+    if (!(ModalRoute.isCurrentOf(context) ?? true)) return; // away (Help with today, a review): seen on return
+    final now = '$day#${[for (final e in entries) '${e.id}:${e.macros}'].join('|')}';
+    if (_seenFood != null && _seenFood != now) _news = true;
+    _seenFood = now;
+  }
+
   CoachSay? _hintSay(String day, List<SavedFood> saved, {required bool logged}) {
     final owner = ref.read(ownerProvider);
-    if (owner == null || !ref.read(savedFoodsProvider).hasValue) return null;
+    if (owner == null || !ref.read(savedFoodsProvider).hasValue || _news) return null;
     final has = saved.any((s) => s.isFavourite || s.isMine);
     // Tabs stay built off screen: a hint is chosen (and used up) only while Eat is the tab in view and its page current.
     // Nor while the keyboard is up (the view's own inset: the Scaffold takes it out of the page's MediaQuery).
@@ -287,6 +306,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
 
     final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
     final brief = _briefing(day, today, entries, profile);
+    _noteFood(day, entries);
     final guide = ref.watch(coachPrefsProvider.select((p) => p.guide));
 
     // With very large text the meal icon gives its room to the words.

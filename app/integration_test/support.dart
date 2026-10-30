@@ -21,7 +21,8 @@ class Journey {
     }
   }
 
-  String get onScreen => tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').where((s) => s.isNotEmpty).take(34).join(' | ');
+  /// Rich text (the coach's bubble) included.
+  String get onScreen => tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? t.textSpan?.toPlainText() ?? '').where((s) => s.isNotEmpty).take(40).join(' | ');
 
   Future<void> waitFor(Finder finder, {String? what, int seconds = 25}) async {
     for (var i = 0; i < seconds * 4; i++) {

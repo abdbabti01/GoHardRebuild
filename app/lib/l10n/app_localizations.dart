@@ -17825,6 +17825,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose amount'**
   String get dcChooseAmount;
+
+  /// Idea card: a record with another preparation was chosen, so a fresh amount is required. food = record name and preparation; asked = the idea’s preparation word.
+  ///
+  /// In en, this message translates to:
+  /// **'You chose {food}, not {asked} as the idea said. Amounts differ between preparations, so the proposed amount is not used.'**
+  String dcIdeaPrepDiffers(String food, String asked);
 }
 
 class _AppLocalizationsDelegate

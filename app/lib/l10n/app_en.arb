@@ -16868,5 +16868,17 @@
   "dcChooseAmount": "Choose amount",
   "@dcChooseAmount": {
     "description": "Idea card: opens the amount form for this food."
+  },
+  "dcIdeaPrepDiffers": "You chose {food}, not {asked} as the idea said. Amounts differ between preparations, so the proposed amount is not used.",
+  "@dcIdeaPrepDiffers": {
+    "description": "Idea card: a record with another preparation was chosen, so a fresh amount is required. food = record name and preparation; asked = the idea’s preparation word.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "asked": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -3,7 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/language.dart';
 import 'package:gohard_rebuild/data/models.dart';
+import 'dart:async';
+
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
+import 'package:gohard_rebuild/features/nutrition/eat_screen.dart' show EatScreen;
 import 'package:gohard_rebuild/features/coach/day_coach_screen.dart' show DayCoachScreen;
 import 'package:gohard_rebuild/features/me/reminders.dart' show Notice, ReminderScheduler, reminderSchedulerProvider;
 
@@ -29,7 +32,8 @@ class _Quiet implements ReminderScheduler {
   Future<void> replaceAll(List<Notice> notices) async {}
 }
 
-Future<void> _openEat(WidgetTester tester, {List<Json> food = const [], int? kcal, int? protein, Json prefs = const {}, bool coach = true, Size size = const Size(390, 1500), double text = 1, String? lang}) async {
+Future<void> _openEat(WidgetTester tester, {List<Json> food = const [], int? kcal, int? protein, Json prefs = const {}, bool coach = true, Size size = const Size(390, 1500), double text = 1, String? lang,
+    Stream<List<Json>>? liveFood, bool introsSeen = true}) async {
   // A real local database for the conversation What could I eat? opens; nothing reaches a server.
   final store = TestStore(), db = store.open();
   addTearDown(() async {
@@ -37,7 +41,7 @@ Future<void> _openEat(WidgetTester tester, {List<Json> food = const [], int? kca
     store.dispose();
   });
   final c = await pumpApp(tester, [
-    ...(await tester.runAsync(() => overridesFor(day: day, food: food, calorieGoal: kcal, proteinGoal: protein, habitPrefs: prefs)))!,
+    ...(await tester.runAsync(() => overridesFor(day: day, food: food, calorieGoal: kcal, proteinGoal: protein, habitPrefs: prefs, liveFood: liveFood)))!,
     ...FoodFakes().overrides,
     reminderSchedulerProvider.overrideWithValue(_Quiet()),
     dbProvider.overrideWithValue(db),
@@ -48,7 +52,7 @@ Future<void> _openEat(WidgetTester tester, {List<Json> food = const [], int? kca
     }),
   ], size: size, textScale: text);
   // The one-time introductions have had their turn: the briefing is what is said.
-  for (final id in ['eat.first', 'eat.saved.new', 'eat.saved.shortcut', 'eat.history', 'eat.meals', 'eat.out', 'eat.habits', 'eat.reminders']) {
+  for (final id in ['eat.first', if (introsSeen) ...['eat.saved.new', 'eat.saved.shortcut', 'eat.history', 'eat.meals', 'eat.out', 'eat.habits', 'eat.reminders']]) {
     c.read(coachPrefsProvider.notifier).markSeen('one', id);
   }
   if (!coach) c.read(coachPrefsProvider.notifier).setOnTabs(false);
@@ -95,6 +99,43 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(DayCoachScreen), findsOneWidget);
   });
+
+  // Back on Eat after logging elsewhere (an idea's review, Add food): scrolled back to the top, the coach is there and
+  // says the day as it is now; a one-time introduction waits for a later visit. Without the coach, the panel does.
+  for (final coach in [true, false]) {
+    testWidgets('back from logging, scrolled to the top: the updated briefing (coach ${coach ? 'on' : 'off'})', (tester) async {
+      final journal = StreamController<List<Json>>.broadcast();
+      addTearDown(journal.close);
+      Stream<List<Json>> live() async* {
+        yield const [];
+        yield* journal.stream;
+      }
+      await _openEat(tester, liveFood: live(), coach: coach, introsSeen: false, size: const Size(390, 760));
+      final shown = coach ? find.byKey(const Key('eat-coach')) : find.byKey(const Key('eat-brief-panel'));
+      // First visit with the coach: a one-time introduction may speak (Eating out); without it, the briefing.
+      expect(shown, findsOneWidget);
+      if (!coach) expect(find.descendant(of: shown, matching: find.textContaining('Nothing logged yet today')), findsOneWidget);
+
+      // Away: What could I eat? opens over Eat; the list was scrolled so the header left it; food is logged meanwhile.
+      final list = find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first;
+      await tester.drag(list, const Offset(0, -1200));
+      await tester.pumpAndSettle();
+      final nav = Navigator.of(tester.element(find.byType(EatScreen)));
+      nav.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('elsewhere'))));
+      await tester.pumpAndSettle();
+      journal.add([_lunch(650, 40)]);
+      await tester.pumpAndSettle();
+      nav.pop();
+      await tester.pumpAndSettle();
+      await tester.drag(list, const Offset(0, 3000));
+      await tester.pumpAndSettle();
+
+      expect(find.descendant(of: shown, matching: find.textContaining('Lunch is logged. Want ideas for your next meal?', findRichText: true)), findsOneWidget,
+          reason: 'not the one-time "save it as a meal" introduction');
+      if (coach) expect(find.descendant(of: shown, matching: find.byKey(const Key('eat-brief-ideas'))), findsOneWidget);
+      if (!coach) expect(find.byKey(const Key('eat-coach')), findsNothing, reason: 'the coach stays off');
+    });
+  }
 
   for (final lang in ['fr-CA', 'ar']) {
     testWidgets('$lang: Eat with a heads-up and incomplete values fits 320 px at 2× text', (tester) async {

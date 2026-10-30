@@ -143,8 +143,9 @@ Future<List<Json>> resolveIdeas(List<({String title, List<IdeaFood> foods})> ide
         final placed = placeFood(_food(options.single), label: f.label, quantity: f.quantity, unit: f.unit, noun: f.noun);
         placed['confirm'] == null ? parts.add(placed) : confirm.add(placed);
       } else {
+        // A record that does not state the proposed preparation is marked: choosing it asks for a fresh amount.
         confirm.add({'confirm': 'record', 'label': f.label, 'quantity': f.quantity, 'unit': f.unit, 'noun': f.noun,
-            'options': [for (final c in options.take(maxChoices)) _food(c)]});
+            'options': [for (final c in options.take(maxChoices)) {..._food(c), if (!m.sure.contains(c)) 'differs': f.preparation}]});
       }
     }
     out.add({'title': idea.title, 'parts': parts, 'unmatched': unmatched, 'confirm': confirm});
@@ -164,8 +165,13 @@ Json confirmIdeaFood(Json idea, int index, {int? option, Json? part}) {
   } else if (option != null && c['confirm'] == 'record') {
     final options = c['options'] as List;
     if (option < 0 || option >= options.length) return idea;
-    final placed = placeFood(Map<String, dynamic>.from(options[option] as Map), label: c['label'] as String,
-        quantity: (c['quantity'] as num?)?.toDouble(), unit: c['unit'] as String?, noun: c['noun'] as String?);
+    final chosen = Map<String, dynamic>.from(options[option] as Map);
+    final asked = chosen.remove('differs');
+    // Another preparation than proposed (dry oats for cooked oats): the amount proposed was for that preparation, so it
+    // is never reused; the person chooses a fresh one, told why.
+    final placed = asked is String
+        ? {'confirm': 'amount', 'label': c['label'], 'food': chosen, 'asked': asked}
+        : placeFood(chosen, label: c['label'] as String, quantity: (c['quantity'] as num?)?.toDouble(), unit: c['unit'] as String?, noun: c['noun'] as String?);
     placed['confirm'] == null ? parts.add(placed) : confirm.insert(index, placed);
   } else {
     return idea;
