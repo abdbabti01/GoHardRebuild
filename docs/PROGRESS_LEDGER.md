@@ -2484,3 +2484,5 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
   amount form); the automatic standard-portion substitution is removed. Totals and Review only once all is confirmed.
 - Focused tests only: `eat_companion_test` 11, `day_coach_ui_test` 15 (idea → choose amount → review → back logs
   nothing → Log once). `flutter analyze` clean, `check-l10n` OK.
+- Code b52a8ed: CI 41083395123 passed on attempt 2 (attempt 1: the known AccountEmailTests 8-digit-in-GUID flake; no API change in this commit); unsigned IPA run 60 (b52a8ed) passed.
+- Emulator journey (one attempt, after a reboot, coach stub): briefing, What could I eat?, a matched idea asking for the toast amount, Choose amount, review with a changed amount and back (nothing logged), Log once (2 entries) passed. The final check, the briefing after logging, timed out again: back on Eat the coach bubble was not in the widget tree at all (neither its words nor its button). Not established whether that is the device-journey animation quirk or a real display issue: **unverified**, on the iPhone checklist.
