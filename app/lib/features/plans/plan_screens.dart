@@ -141,6 +141,8 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
     // Fixed plans: their real dated first week. A rotation: its next sessions as the shared projection lays them out.
     final rows = rotating ? planOccasions(plan, today, workouts).take(6).toList() : plan.occasions.where((o) => o.weekNumber == 1).toList();
     final usable = !plan.isBuilt || PlanRules.usable(plan.j);
+    // A saved fixed plan whose start has passed would begin with missed workouts: a new start date comes first.
+    final startPassed = plan.isDraft && plan.isBuilt && !plan.isRotating && plan.startDate.compareTo(today) < 0;
     final minutes = plannedMinutes(plan);
     final schedule = plan.schedule;
     final names = {for (final w in plan.workouts) w.id: w.name};
@@ -153,12 +155,13 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
           : Column(mainAxisSize: MainAxisSize.min, children: [
               if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
               if (!usable) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.info_outline, l.planDraftNeedsExercises)),
+              if (startPassed) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.event_busy, l.planStartPassed(longDate(plan.startDate)), key: const Key('plan-start-passed'), tone: Tone.warning)),
               PrimaryButton(current == null ? l.planStartThis : widget.closePrimary ? l.planFinishBlockStart : l.planReplaceCurrent, key: const Key('plan-start'), busy: _busy,
-                  onPressed: usable ? () => _start(plan, current) : null),
+                  onPressed: usable && !startPassed ? () => _start(plan, current) : null),
               TextButton(key: const Key('plan-save-later'), onPressed: () => Navigator.pop(context), child: Text(l.planSaveForLater)),
             ]),
       children: [
-        SectionLabel(plan.isDraft ? l.planDraftNothingScheduled : l.planLifecycle(plan.lifecycle)),
+        SectionLabel(plan.isDraft ? l.planSavedNotActive : l.planLifecycle(plan.lifecycle)),
         const SizedBox(height: 10),
         Text(plan.isBuilt ? '${splitOf(ref, plan)} · ${scheduleMode(plan)}' : planSplit(plan, (_) => null), style: context.body),
         if (plan.isBuilt && minutes != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(l.planPlannedTime(minutes), style: context.caption)),
@@ -177,8 +180,14 @@ class _PlanReviewScreenState extends ConsumerState<PlanReviewScreen> {
         Text(l.planFirstWorkout(rows.isEmpty ? l.valueUnknown : l.planTitleDate(rows.first.title, longDate(rows.first.scheduledDate))), style: context.caption),
         if (plan.isDraft && !plan.isBuilt)
           Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('plan-edit-schedule'), onPressed: _busy ? null : () => _editSchedule(plan), icon: const Icon(Icons.edit_calendar_outlined, size: 18), label: Text(l.planChangeDates))),
-        if (plan.isDraft && plan.isBuilt)
-          Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('plan-edit'), onPressed: _busy ? null : () => openPlanEditor(context, ref, plan), icon: const Icon(Icons.edit_outlined, size: 18), label: Text(l.planEdit))),
+        if (plan.isDraft && plan.isBuilt) ...[
+          Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('plan-edit'), onPressed: _busy ? null : () => openPlanEditor(context, ref, plan), icon: const Icon(Icons.edit_outlined, size: 18), label: Text(startPassed ? l.planEditStart : l.planEdit))),
+          // A saved plan's other actions, each explicit; none of them activates anything.
+          if (!widget.closePrimary) ...[
+            Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('plan-duplicate'), onPressed: _busy ? null : () => duplicatePlan(context, ref, plan), icon: const Icon(Icons.copy_outlined, size: 18), label: Text(l.planDuplicateAsNew))),
+            Align(alignment: AlignmentDirectional.centerStart, child: ArchivePlanButton(plan: plan)),
+          ],
+        ],
         if (current != null) ...[
           const SizedBox(height: 8),
           Panel(child: StatusLine(Icons.swap_horiz, widget.closePrimary ? l.planFollowingFinish(current.title) : l.planFollowingPause(current.title))),
@@ -373,19 +382,8 @@ class PlanDetailScreen extends ConsumerWidget {
       if (plan.isBuilt && !plan.isClosed)
         Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('plan-edit'), icon: const Icon(Icons.edit_outlined, size: 18), label: Text(l.planEdit), onPressed: () => openPlanEditor(context, ref, plan))),
       if (plan.isBuilt)
-        Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('plan-duplicate'), icon: const Icon(Icons.copy_outlined, size: 18), label: Text(l.planDuplicateAsNew), onPressed: () => openPlanEditor(context, ref, plan, duplicate: true))),
-      if (!isPrimary)
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
-            key: const Key('plan-archive'),
-            icon: Icon(plan.isArchived ? Icons.unarchive_outlined : Icons.inventory_2_outlined, size: 18),
-            label: Text(plan.isArchived ? l.planUnarchive : l.planArchiveHide),
-            onPressed: () async {
-              if (await runPlanDecision(context, () => ref.read(planRepositoryProvider).archive(plan, !plan.isArchived), saved: plan.isArchived ? l.planRestoredToast : l.planArchivedToast) && context.mounted) Navigator.pop(context);
-            },
-          ),
-        ),
+        Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('plan-duplicate'), icon: const Icon(Icons.copy_outlined, size: 18), label: Text(l.planDuplicateAsNew), onPressed: () => duplicatePlan(context, ref, plan))),
+      if (!isPrimary) Align(alignment: AlignmentDirectional.centerStart, child: ArchivePlanButton(plan: plan)),
       const SizedBox(height: 10),
       // A closed rotation has nothing ahead; an open one shows its projected next sessions too.
       for (final o in plan.isClosed ? plan.occasions : planOccasions(plan, today, workouts, ahead: 3))
@@ -398,6 +396,35 @@ class PlanDetailScreen extends ConsumerWidget {
               plan.isClosed && statusOf(o, plan, today, workouts) == OccasionStatus.upcoming ? l.planNotDone : statusOf(o, plan, today, workouts).label,
             ].join(' · ')),
     ]);
+  }
+}
+
+/// Duplicate makes a new saved plan (docs/PLAN_LIBRARY_OVERLOAD.md): the builder opens on a copy, and the limit is
+/// explained when the copy is saved, so the copy itself is never lost.
+Future<void> duplicatePlan(BuildContext context, WidgetRef ref, Plan plan) => openPlanEditor(context, ref, plan, duplicate: true);
+
+/// Archive (visibility only) or move out of the archive. Moving one back counts it as a saved plan again, so it is
+/// limited like creating one; archiving is never limited.
+class ArchivePlanButton extends ConsumerWidget {
+  const ArchivePlanButton({super.key, required this.plan});
+  final Plan plan;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    return TextButton.icon(
+      key: const Key('plan-archive'),
+      icon: Icon(plan.isArchived ? Icons.unarchive_outlined : Icons.inventory_2_outlined, size: 18),
+      label: Text(plan.isArchived ? l.planUnarchive : l.planArchiveHide),
+      onPressed: () async {
+        if (plan.isArchived) {
+          final plans = ref.read(planListProvider);
+          final gate = planGate(ref.read(plusProvider), plans);
+          if (gate != CreateGate.ok) return showPlusLimit(context, PlusLimit.plans, gate: gate, existing: plans.where((p) => !p.isArchived).length);
+        }
+        if (await runPlanDecision(context, () => ref.read(planRepositoryProvider).archive(plan, !plan.isArchived), saved: plan.isArchived ? l.planRestoredToast : l.planArchivedToast) && context.mounted) Navigator.pop(context);
+      },
+    );
   }
 }
 

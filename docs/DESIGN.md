@@ -452,6 +452,17 @@ week, recorded", counts, distance, active time), Your weekly targets (check + "r
 for this week.", Strength highlight, the guide with the recorded counts (Show coach on Train and Eat), and the week's
 sessions. Every accent and mode come from the theme (no fixed green); large text drops the photographs and wraps rows.
 
+### Saved plans and Suggested today (31 Oct 2026; behaviour in `docs/PLAN_LIBRARY_OVERLOAD.md`)
+
+Builder Review: the deep **Save and activate**, then Back | **Save plan** (secondary), then a quiet **Save draft**.
+Train › Plan under the active plan: **Saved plans** (header with a quiet **Create plan** link; rows "Saved · not active ·
+kind · n workouts", the unfinished plan as a neutral row), then **Paused and finished**. A saved plan's page keeps the
+review layout: Activate at the bottom, Edit / Duplicate / Archive as icon text buttons. In the recorder, **Suggested
+today** is a plain `Panel` below Last time (overline "Suggested today · optional", one bold sentence, text buttons Use
+suggestion / Keep my targets / Edit, the quiet Why link, a caption saying what each changes); once used it shrinks to
+one secondary line; Free sees one secondary line with Learn more. No serif, no photo, nothing between the fields and
+Record set.
+
 ### Today's training states, guide and coach (15 Oct 2026; `docs/TRAINING_PLANS.md` › Today, `docs/COACH.md`)
 
 - **Today's Workout module** says what the plan says about today and nothing else: the occurrence's own name with

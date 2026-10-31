@@ -14,7 +14,9 @@ import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
+import 'package:drift/drift.dart' show Value, BooleanExpressionOperators;
 import 'package:gohard_rebuild/features/coach/guide.dart';
+import 'package:gohard_rebuild/features/plus/entitlement.dart';
 import 'package:gohard_rebuild/features/plans/builder/plan_builder_screen.dart';
 import 'package:gohard_rebuild/features/plans/plan_draft.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
@@ -40,6 +42,9 @@ class _Install {
   final sessions = SessionManager(MemorySecretStore());
   final appearance = AppearanceStore(MemorySecretStore());
   AppDb? db;
+
+  /// The account's answer as the app holds it; a server without limits unless a test says otherwise.
+  Entitlement plus = Entitlement.legacy;
   final _opened = <AppDb>[];
 
   Future<void> signIn() => sessions.signIn(authFor(_owner));
@@ -61,6 +66,7 @@ class _Install {
       catalogProvider.overrideWith((ref) => Stream.value(catalog ?? _catalog)),
       planTemplatesProvider.overrideWith((ref) async => _templates),
       coachGuideProvider.overrideWith((ref) async => _guide),
+      plusProvider.overrideWithValue(plus),
     ];
   }
 
@@ -223,6 +229,8 @@ void main() {
     expect(find.text('Pause Old plan and activate this plan?'), findsOneWidget);
     await _tapText(tester, 'Cancel');
     expect(await tester.runAsync(install.commands), isEmpty, reason: 'nothing happens without the confirmation');
+    expect((await _draft(tester, c))?.title, 'Upper / Lower', reason: 'cancelling keeps the new plan being built');
+    expect(find.bySemanticsLabel('Step 4 of 4: Review'), findsOneWidget);
 
     await _tap(tester, 'plan-activate');
     await _tapText(tester, 'Pause and activate');
@@ -498,7 +506,7 @@ void main() {
     await _tap(tester, 'builder-next');
     expect(find.byKey(const Key('plan-activate')), findsOneWidget);
     await _tap(tester, 'plan-save-draft');
-    expect(find.text('Draft saved on this phone. Nothing is active yet.'), findsOneWidget);
+    expect(find.text('Unfinished plan kept on this phone. Nothing is saved to your account or active yet.'), findsOneWidget);
     expect(await tester.runAsync(() => install.records(Kinds.plan)), isEmpty);
     expect(await tester.runAsync(install.commands), isEmpty);
     expect((await _draft(tester, c))!.step, 3);
@@ -870,5 +878,93 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pumpApp(tester, install.open(), home: const ExercisePicker(), size: const Size(320, 640), textScale: 2);
     expect(tester.takeException(), isNull, reason: 'picker');
+  });
+
+  // ------------------------------------------------------------------ Save plan vs activation (docs/PLAN_LIBRARY_OVERLOAD.md)
+
+  Future<ProviderContainer> toReview(WidgetTester tester) async {
+    final c = await _launch(tester, install);
+    await _path(tester, 'template');
+    await _tap(tester, 'builder-next');
+    await _tap(tester, 'builder-next');
+    await _tap(tester, 'builder-next');
+    return c;
+  }
+
+  testWidgets('Save plan with another plan active: one saved, inactive plan; the active plan, its schedule and the context are untouched', (tester) async {
+    final old = _activePlan();
+    await _seedPrimary(tester, install, old);
+    final c = await toReview(tester);
+    expect(find.byKey(const Key('plan-activate')), findsOneWidget, reason: 'Save and activate is offered beside Save plan');
+    await _tap(tester, 'plan-save');
+    await _settleStore(tester);
+    expect(find.textContaining('is saved. It isn’t active'), findsOneWidget);
+    expect(find.text('Pause Old plan and activate this plan?'), findsNothing, reason: 'saving never asks to replace anything');
+    final plans = {for (final p in (await tester.runAsync(() => install.records(Kinds.plan)))!) p['id']: p};
+    expect(plans.length, 2);
+    expect(plans.values.firstWhere((p) => p['id'] != _oldId)['lifecycle'], 'draft', reason: 'saved, never active, not paused');
+    expect(plans[_oldId], old, reason: 'the active plan is exactly as it was');
+    expect((await tester.runAsync(() => install.records(Kinds.context)))!.single['primaryPlanId'], _oldId);
+    expect([for (final c in (await tester.runAsync(install.commands))!) c.kind], ['plan.create'], reason: 'no activation, no schedule change');
+    expect(await _draft(tester, c), isNull, reason: 'the unfinished plan became the saved one');
+    expect((c.read(shellProvider).tab, c.read(shellProvider).trainView), (1, TrainView.plan));
+  });
+
+  testWidgets('a saved plan is activated later as itself: a refused activation is retried without a second plan', (tester) async {
+    await _seedPrimary(tester, install, _activePlan());
+    final c = await toReview(tester);
+    await _tap(tester, 'plan-save');
+    await _settleStore(tester);
+    final saved = Plan((await tester.runAsync(() => install.records(Kinds.plan)))!.firstWhere((p) => p['id'] != _oldId));
+    final repo = c.read(planRepositoryProvider);
+    // First activation, then (say) refused by the account and withdrawn; the retry is a new activation of the same plan.
+    await tester.runAsync(() => repo.activate(saved, today: _day, replacePrimaryId: _oldId));
+    final first = (await tester.runAsync(install.commands))!.last;
+    await tester.runAsync(() => c.read(syncProvider).abandon(first.operationId));
+    await tester.runAsync(() => repo.activate(saved, today: _day, replacePrimaryId: _oldId));
+    final cmds = (await tester.runAsync(install.commands))!;
+    expect([for (final c in cmds) c.kind], ['plan.create', 'plan.activate']);
+    expect(cmds.last.operationId == first.operationId, isFalse);
+    expect((await tester.runAsync(() => install.records(Kinds.plan)))!.length, 2, reason: 'never a duplicate plan');
+  });
+
+  testWidgets('Free with one saved plan: both saves explain the limit over the page, and the plan being built is kept', (tester) async {
+    install.plus = Entitlement({'tier': 'free', 'limits': {'savedPlans': 1, 'savedMeals': 10}, 'features': [], 'validForSeconds': 3600}, receivedAtUtc: DateTime.utc(2026, 10, 14));
+    await _seedPrimary(tester, install, _activePlan());
+    final c = await toReview(tester);
+    for (final key in ['plan-save', 'plan-activate']) {
+      await _tap(tester, key);
+      expect(find.byKey(const Key('plus-limit')), findsOneWidget, reason: key);
+      expect(find.textContaining('Free includes one saved plan, and you have 1'), findsOneWidget);
+      expect(find.byKey(const Key('plus-limit-view')), findsOneWidget);
+      await _tap(tester, 'plus-limit-back');
+      expect(find.bySemanticsLabel('Step 4 of 4: Review'), findsOneWidget);
+    }
+    expect(await tester.runAsync(install.commands), isEmpty);
+    expect((await tester.runAsync(() => install.records(Kinds.plan)))!.length, 1, reason: 'the existing plan is never replaced, archived or deleted');
+    expect(await _draft(tester, c), isNotNull);
+  });
+
+  testWidgets('a save the account refused goes back to the builder as the unfinished plan; the activation behind it is withdrawn', (tester) async {
+    await _seedPrimary(tester, install, _activePlan());
+    final c = await toReview(tester);
+    await _tap(tester, 'plan-activate');
+    await _tapText(tester, 'Pause and activate');
+    await _settleStore(tester);
+    final made = (await tester.runAsync(() => install.records(Kinds.plan)))!.firstWhere((p) => p['id'] != _oldId);
+    final create = (await tester.runAsync(install.commands))!.firstWhere((x) => x.kind == 'plan.create');
+    // As the outbox settles a refusal (another phone used the last place).
+    await tester.runAsync(() async {
+      final db = install.db!;
+      await (db.update(db.commands)..where((x) => x.operationId.equals(create.operationId))).write(const CommandsCompanion(state: Value('rejected'), lastError: Value('PLAN_LIMIT')));
+      await (db.update(db.records)..where((x) => x.kind.equals(Kinds.plan) & x.id.equals(made['id'] as String))).write(const RecordsCompanion(syncState: Value('rejected')));
+    });
+    expect(await tester.runAsync(() => c.read(planRepositoryProvider).keepRefusedAsDraft(create.operationId, today: _day)), isTrue);
+    final draft = await _draft(tester, c);
+    expect((draft?.title, draft?.mode, draft?.step), (made['title'], 'new', 3));
+    expect(draft!.planId == made['id'], isFalse, reason: 'a new ID: the refused one is never reused');
+    expect([for (final p in (await tester.runAsync(() => install.records(Kinds.plan)))!) p['id']], [_oldId]);
+    expect(await tester.runAsync(install.commands), isEmpty, reason: 'nothing left waiting forever');
+    expect(await tester.runAsync(() => c.read(planRepositoryProvider).keepRefusedAsDraft(create.operationId, today: _day)), isFalse, reason: 'twice changes nothing');
   });
 }

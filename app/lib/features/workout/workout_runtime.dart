@@ -103,6 +103,16 @@ extension type WorkoutRuntime(Json j) {
     (next['drafts'] as Json)[exerciseId] = draft.j;
     return WorkoutRuntime(next);
   }
+
+  /// What was done with an exercise's "Suggested today" in this workout: `kept` (declined, not offered again here)
+  /// or `used` (put into the entry). Null = not answered. Nothing else in the workout changes with it.
+  String? suggestionFor(String exerciseId) => (j['suggestions'] as Json? ?? const {})[exerciseId] as String?;
+
+  WorkoutRuntime withSuggestion(String exerciseId, String answer) {
+    final next = _copy();
+    next['suggestions'] = {...?(next['suggestions'] as Json?), exerciseId: answer};
+    return WorkoutRuntime(next);
+  }
 }
 
 extension type EntryDraft(Json j) {

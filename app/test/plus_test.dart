@@ -29,11 +29,11 @@ class PlusServer implements Transport {
 
   Json entitlement() => {
         'tier': tier, 'source': owner && tier == 'plus' ? 'preview_override' : 'default', 'preview': true, 'purchasesAvailable': false,
-        'limits': tier == 'plus' ? {'savedPlans': null, 'savedMeals': null} : {'savedPlans': 3, 'savedMeals': 10},
+        'limits': tier == 'plus' ? {'savedPlans': null, 'savedMeals': null} : {'savedPlans': 1, 'savedMeals': 10},
         'features': tier == 'plus' ? [Entitlement.progression, Entitlement.trendExplorer] : [],
         'allowance': {'used': used, 'limit': tier == 'plus' ? 300 : 15, 'remaining': (tier == 'plus' ? 300 : 15) - used, 'periodStartUtc': '2026-10-01T00:00:00Z', 'resetsAtUtc': '2026-11-01T00:00:00Z', 'dailyGuard': 40},
         'canManagePreview': owner, 'issuedAtUtc': '2026-10-31T12:00:00Z', 'validForSeconds': 72 * 3600,
-        'compare': {'free': {'savedPlans': 3, 'savedMeals': 10, 'monthlyAi': 15}, 'plus': {'savedPlans': null, 'savedMeals': null, 'monthlyAi': 300}},
+        'compare': {'free': {'savedPlans': 1, 'savedMeals': 10, 'monthlyAi': 15}, 'plus': {'savedPlans': null, 'savedMeals': null, 'monthlyAi': 300}},
       };
 
   @override
@@ -84,16 +84,17 @@ void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
   group('decisions', () {
-    test('Free counts plans that are not archived; Plus has no product limit; unknown never blocks below the smallest Free limit', () {
-      final free = _e({'tier': 'free', 'limits': {'savedPlans': 3, 'savedMeals': 10}});
+    test('Free is one saved plan, counting every plan not archived; Plus has no product limit; unknown never blocks a first plan', () {
+      final free = _e({'tier': 'free', 'limits': {'savedPlans': 1, 'savedMeals': 10}});
       final plus = _e({'tier': 'plus', 'limits': {'savedPlans': null, 'savedMeals': null}});
       final three = [for (final id in ['a', 'b', 'c']) Plan(_plan(id))];
-      expect(planGate(free, three.take(2)), CreateGate.ok);
-      expect(planGate(free, three), CreateGate.limit);
-      expect(planGate(free, [...three.take(2), Plan(_plan('d', archived: true)), Plan(_plan('e', archived: true))]), CreateGate.ok, reason: 'archived plans free a place');
+      expect(planGate(free, const []), CreateGate.ok);
+      expect(planGate(free, three.take(1)), CreateGate.limit, reason: 'active or saved, one plan is the Free place');
+      expect(planGate(free, three), CreateGate.limit, reason: 'over the limit after the change: the plans stay, a new one is explained');
+      expect(planGate(free, [Plan(_plan('d', archived: true)), Plan(_plan('e', archived: true))]), CreateGate.ok, reason: 'archived plans free a place');
       expect(planGate(plus, [for (var i = 0; i < 40; i++) Plan(_plan('$i'))]), CreateGate.ok);
-      expect(planGate(null, three.take(2)), CreateGate.ok);
-      expect(planGate(null, three), CreateGate.unknown, reason: 'not known: explained, never a paywall');
+      expect(planGate(null, const []), CreateGate.ok);
+      expect(planGate(null, three.take(1)), CreateGate.unknown, reason: 'not known: explained, never a paywall');
       expect(mealGate(free, 9), CreateGate.ok);
       expect(mealGate(free, 10), CreateGate.limit);
       expect(mealGate(free, 25), CreateGate.limit, reason: 'over the limit after a downgrade: the existing ones stay, a new one is explained');
@@ -185,7 +186,8 @@ void main() {
       expect(find.text('GoHard Plus preview'), findsOneWidget);
       expect(find.text('Purchases aren’t available yet.'), findsOneWidget);
       expect(find.text('This account is on Free.'), findsOneWidget);
-      expect(find.text('Up to 3'), findsOneWidget);
+      expect(find.text('One'), findsOneWidget, reason: 'Free: one saved plan');
+      expect(find.text('Up to 10'), findsOneWidget);
       expect(find.text('15 a month'), findsOneWidget);
       expect(find.text('300 a month'), findsOneWidget);
       expect(find.text('3 of 15 used'), findsOneWidget);
@@ -250,7 +252,7 @@ void main() {
         await tester.tap(find.byKey(const Key('limit')));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.textContaining(lang == 'ar' ? 'حتى 3' : 'jusqu’à 3'), findsOneWidget);
+        expect(find.textContaining(lang == 'ar' ? 'خطة محفوظة واحدة' : 'un programme enregistré'), findsOneWidget);
         await tester.ensureVisible(find.byKey(const Key('plus-limit-view')));
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('plus-limit-view')));

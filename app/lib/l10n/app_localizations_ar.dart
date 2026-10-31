@@ -3982,7 +3982,7 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String planLifecycle(String state) {
     String _temp0 = intl.Intl.selectLogic(state, {
-      'draft': 'مسودة',
+      'draft': 'محفوظة',
       'active': 'نشطة',
       'paused': 'متوقفة مؤقتًا',
       'closed': 'مغلقة',
@@ -4146,14 +4146,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get planStartDraftCoach =>
-      'خطتك محفوظة كمسودة. راجعها، ثم ابدأها عندما تكون مستعدًا.';
+      'لديك خطة محفوظة. راجعها، ثم فعّلها عندما تكون مستعدًا.';
 
   @override
-  String get planStartDraftTitle => 'خطتك جاهزة للمراجعة';
+  String get planStartDraftTitle => 'خطة محفوظة جاهزة';
 
   @override
   String get planStartDraftBody =>
-      'لا تُجدول المسودة المحفوظة أي شيء حتى تبدأها.';
+      'لا تُجدول الخطة المحفوظة أي شيء حتى تفعّلها.';
 
   @override
   String get planStartReview => 'مراجعة خطتي';
@@ -4287,12 +4287,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String planSavedDraftEmpty(String mode) {
-    return 'مسودة · $mode · أضف تمارين لاستخدامها';
+    return 'محفوظة · $mode · أضف تمارين لاستخدامها';
   }
 
   @override
   String planSavedDraftOld(String date) {
-    return 'مسودة · لم تبدأ · ستبدأ في $date';
+    return 'محفوظة · غير مفعّلة · ستبدأ في $date';
   }
 
   @override
@@ -4372,7 +4372,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get planCreateDifferentSubtitle =>
-      'سيُطلب تأكيدك قبل أن تحل محل هذه الخطة عند بدئها.';
+      'احفظها لوقت لاحق أو فعّلها. يُطلب تأكيدك قبل أن تحل محل هذه الخطة عند تفعيلها.';
 
   @override
   String get planArchiveNote =>
@@ -4772,7 +4772,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get planReplaceCurrent => 'استبدال خطتي الحالية';
 
   @override
-  String get planSaveForLater => 'حفظ لوقت لاحق';
+  String get planSaveForLater => 'ليس الآن';
 
   @override
   String get planDraftNothingScheduled => 'مسودة · لم يُجدول شيء بعد';
@@ -5260,7 +5260,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get builderDraftSaved =>
-      'حُفظت المسودة على هذا الهاتف. لا شيء نشط بعد.';
+      'حُفظت الخطة غير المكتملة على هذا الهاتف. لم يُحفظ شيء في حسابك ولا شيء نشط بعد.';
 
   @override
   String get builderChangesSaved => 'حُفظت التغييرات.';
@@ -5621,7 +5621,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String builderFollowingActivate(String title) {
-    return 'أنت تتبع \"$title\". يؤدي تفعيل هذه الخطة إلى إيقافها مؤقتًا. يُحتفظ بسجلها وحصصها المسجّلة، ويمكنك استئنافها لاحقًا.';
+    return 'أنت تتبع \"$title\". يؤدي \"حفظ وتفعيل\" إلى إيقافها مؤقتًا: يُحتفظ بسجلها وحصصها المسجّلة، ويمكنك استئنافها لاحقًا. أما \"حفظ الخطة\" فيتركها كما هي تمامًا.';
   }
 
   @override
@@ -12845,7 +12845,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String plusUpTo(int count) {
-    return 'حتى $count';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'حتى $count',
+      many: 'حتى $count',
+      few: 'حتى $count',
+      two: 'حتى $count',
+      one: 'واحدة',
+      zero: '0',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -12910,7 +12920,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String plusLimitPlansBody(int limit, int existing) {
-    return 'تتضمن الخطة المجانية حتى $limit من الخطط المحفوظة، ولديك $existing. تبقى كلها قابلة للاستخدام، ومسودتك محفوظة. أرشِف خطة لم تعد تحتاجها، أو اطّلع على ما يتضمنه GoHard Plus.';
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other: 'حتى $limit خطة محفوظة',
+      many: 'حتى $limit خطة محفوظة',
+      few: 'حتى $limit خطط محفوظة',
+      two: 'حتى خطتين محفوظتين',
+      one: 'خطة محفوظة واحدة',
+      zero: '0 خطط محفوظة',
+    );
+    return 'تتضمن الخطة المجانية $_temp0، ولديك $existing. تبقى كلها قابلة للاستخدام، والخطة التي كنت تحفظها محفوظة هنا. أرشِف خطة لم تعد تحتاجها، أو اطّلع على ما يتضمنه GoHard Plus.';
   }
 
   @override
@@ -12943,5 +12963,172 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String plusAiLeftLine(int remaining, int limit, String date) {
     return 'الذكاء الاصطناعي هذا الشهر: تبقّى $remaining من $limit · يُعاد الضبط في $date';
+  }
+
+  @override
+  String get builderSaveActivate => 'حفظ وتفعيل';
+
+  @override
+  String get builderSavePlan => 'حفظ الخطة';
+
+  @override
+  String builderPlanSaved(String title) {
+    return 'حُفظت \"$title\". إنها غير مفعّلة، ولم يتغيّر جدولك الحالي.';
+  }
+
+  @override
+  String get planSavedNotActive => 'خطة محفوظة · غير مفعّلة · لا شيء مجدول';
+
+  @override
+  String planStartPassed(String date) {
+    return 'كان من المقرر أن تبدأ هذه الخطة في $date. اختر تاريخ بدء جديدًا قبل تفعيلها، حتى لا تفوتك حصصها الأولى.';
+  }
+
+  @override
+  String get planEditStart => 'اختر تاريخ بدء جديدًا';
+
+  @override
+  String get planSavedPlans => 'الخطط المحفوظة';
+
+  @override
+  String get planCreatePlan => 'إنشاء خطة';
+
+  @override
+  String get planCreatePlanSaid => 'إنشاء خطة جديدة';
+
+  @override
+  String get planSavedNone =>
+      'لا توجد خطط محفوظة أخرى. الخطة التي تحفظها دون تفعيلها تنتظرك هنا.';
+
+  @override
+  String planSavedReady(String mode, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حصة',
+      many: '$count حصة',
+      few: '$count حصص',
+      two: 'حصتان',
+      one: 'حصة واحدة',
+      zero: '0 حصص',
+    );
+    return 'محفوظة · غير مفعّلة · $mode · $_temp0';
+  }
+
+  @override
+  String get planUnfinishedSubtitle =>
+      'غير مكتملة · على هذا الهاتف · تابع من حيث توقفت';
+
+  @override
+  String get planPausedAndFinished => 'متوقفة مؤقتًا ومنتهية';
+
+  @override
+  String get syncReasonPlanLimit =>
+      'يحتوي حسابك بالفعل على الخطط المحفوظة التي تتضمنها الخطة المجانية، لذلك لم تُحفظ هذه الخطة فيه. لا يزال محتواها على هذا الهاتف.';
+
+  @override
+  String get syncKeepAsUnfinished => 'الإبقاء عليها كخطة غير مكتملة';
+
+  @override
+  String get syncKeptAsUnfinished => 'عادت إلى \"إنشاء خطة\" كخطة غير مكتملة.';
+
+  @override
+  String get syncUnfinishedExists =>
+      'لديك بالفعل خطة غير مكتملة. احفظها أو تخلّص منها أولًا.';
+
+  @override
+  String get workoutTodayOverline => 'مقترح اليوم · اختياري';
+
+  @override
+  String get workoutTodayTitle => 'مقترح اليوم';
+
+  @override
+  String workoutTodayWeight(String load, String range) {
+    return 'جرّب $load اليوم، مع تكراراتك المخطط لها $range.';
+  }
+
+  @override
+  String workoutTodayReps(String load, int aim, int last) {
+    return 'حافظ على $load واستهدف تكرارًا واحدًا إضافيًا عبر مجموعاتك: $aim إجمالًا ($last في الحصة السابقة).';
+  }
+
+  @override
+  String workoutTodayChooseIncrement(String load) {
+    return 'وصلت حصتاك الأخيرتان إلى أعلى نطاقك عند $load. اختر زيادة الوزن لترى وزنًا مقترحًا.';
+  }
+
+  @override
+  String get workoutTodayUse => 'استخدام الاقتراح';
+
+  @override
+  String get workoutTodayKeep => 'الإبقاء على أهدافي';
+
+  @override
+  String get workoutTodayEdit => 'تعديل';
+
+  @override
+  String get workoutTodayEditSemantic => 'تعديل هدف خطتك للمرة القادمة';
+
+  @override
+  String get workoutTodayWhy => 'لماذا هذا الاقتراح؟';
+
+  @override
+  String get workoutTodayWhySemantic =>
+      'لماذا هذا الاقتراح: الحصص والقاعدة وراءه';
+
+  @override
+  String get workoutTodayScope =>
+      'يملأ \"استخدام الاقتراح\" وزن هذه المجموعة فقط. ويغيّر \"تعديل\" خطتك بدءًا من حصتك التالية.';
+
+  @override
+  String get workoutTodayScopeNoPlan =>
+      'يملأ \"استخدام الاقتراح\" وزن هذه المجموعة فقط. لا يُسجَّل شيء حتى تسجّل مجموعة.';
+
+  @override
+  String workoutTodayUsedLine(String text) {
+    return 'مقترح اليوم: $text';
+  }
+
+  @override
+  String get workoutTodayPlusLine => '\"مقترح اليوم\" جزء من GoHard Plus.';
+
+  @override
+  String get workoutTodayPlusLearn => 'اعرف المزيد';
+
+  @override
+  String get workoutTodayPlusLearnSemantic => 'اعرف المزيد عن \"مقترح اليوم\"';
+
+  @override
+  String get workoutTodayPlusBody =>
+      'مع GoHard Plus، يمكن لـ GoHard اقتراح وزن أو تكرار إضافي لليوم من حصصك المسجّلة المماثلة. في الخطة المجانية، تبقى خطتك وحصتك السابقة والتسجيل كما هي تمامًا.';
+
+  @override
+  String get workoutTodayWhyTitle => 'لماذا هذا الاقتراح؟';
+
+  @override
+  String workoutTodayWhyReps(String load, int total, String range) {
+    return 'في الحصة السابقة سجّلت كل المجموعات المخطط لها عند $load، بإجمالي $total تكرارًا، وكل منها ضمن نطاق خطتك $range. يهدف هذا الاقتراح إلى تكرار إضافي واحد عبر مجموعاتك، مع البقاء ضمن ذلك النطاق.';
+  }
+
+  @override
+  String workoutTodayWhyWeight(String target, String increment, String range) {
+    return 'في آخر حصتين من هذا التمرين وصلت إلى أعلى نطاقك $range في كل مجموعة مخطط لها عند $target. يضيف هذا الاقتراح زيادتك المحفوظة ($increment) ويحافظ على تكراراتك المخطط لها.';
+  }
+
+  @override
+  String workoutTodayWhyIncrement(String target) {
+    return 'وصلت حصتاك الأخيرتان إلى أعلى نطاقك عند $target. يحتاج GoHard إلى زيادة الوزن الخاصة بك قبل أن يقترح وزنًا أثقل؛ ولا يخمّنها أبدًا.';
+  }
+
+  @override
+  String get workoutTodayWhyLimits =>
+      'يرى GoHard ما سجّلته فقط. لا يمكنه معرفة شعورك في المجموعة أو كيف كان أسلوبك، لذا حافظ على أسلوبك المعتاد، وغيّر هذا أو تجاهله متى شئت. إنه اقتراح، وليس ضمانًا.';
+
+  @override
+  String get workoutTodayConfirmTitle => 'استبدال ما كتبته؟';
+
+  @override
+  String workoutTodayConfirmBody(String load) {
+    return 'سيعرض حقل الوزن $load. تبقى تكراراتك كما هي، ولا يُسجَّل شيء.';
   }
 }

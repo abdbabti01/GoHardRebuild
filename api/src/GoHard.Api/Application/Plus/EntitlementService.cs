@@ -13,7 +13,7 @@ public sealed class PlusOptions
     public string? PreviewOwnerUserId { get; set; }
     public int FreeMonthlyAi { get; set; } = 15;
     public int PlusMonthlyAi { get; set; } = 300;
-    public int FreeSavedPlans { get; set; } = 3;
+    public int FreeSavedPlans { get; set; } = 1;
     public int FreeSavedMeals { get; set; } = 10;
     /// <summary>Technical safety caps for every tier.</summary>
     public int MaxSavedPlans { get; set; } = 200;

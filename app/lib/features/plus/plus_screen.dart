@@ -209,13 +209,13 @@ Future<void> showPlusLimit(BuildContext context, PlusLimit kind, {required Creat
 }
 
 /// A Plus-only view, explained when the person chose it. Unknown says so instead of selling anything.
-Future<void> showPlusFeature(BuildContext context) {
+Future<void> showPlusFeature(BuildContext context, {String? title, String? body}) {
   final l = context.l10n;
   final known = ProviderScope.containerOf(context, listen: false).read(plusProvider) != null;
   return showGoSheet<void>(context,
-      title: l.plusFeatureTrendsTitle,
+      title: title ?? l.plusFeatureTrendsTitle,
       builder: (sheet) => Column(key: const Key('plus-feature'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(known ? l.plusFeatureTrendsBody : l.plusUnknown, style: context.sansStyle(15.5)),
+            Text(known ? body ?? l.plusFeatureTrendsBody : l.plusUnknown, style: context.sansStyle(15.5)),
             const SizedBox(height: 18),
             if (known) ...[
               PrimaryButton(l.plusViewPlus, key: const Key('plus-feature-view'), onPressed: () => push(sheet, const PlusScreen())),

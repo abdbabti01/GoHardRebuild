@@ -20,7 +20,7 @@ class Entitlement {
   static const capability = 'account.entitlement', progression = 'progression.suggestions', trendExplorer = 'trends.explorer';
 
   /// The smallest Free limits any account has: creating below them never waits for an answer.
-  static const minimumPlans = 3, minimumMeals = 10;
+  static const minimumPlans = 1, minimumMeals = 10;
 
   final Json j;
   final DateTime receivedAtUtc;

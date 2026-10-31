@@ -349,6 +349,31 @@ void main() {
     expect(find.text('Your own split · Rotating sequence'), findsOneWidget);
   });
 
+  testWidgets('the library: saved plans apart from paused ones, opened without activating; a fixed plan whose start passed asks for a new start first', (tester) async {
+    const third = '5a4b3c2d-1e0f-4a9b-8c7d-6e5f4a3b2c1d';
+    final saved = {...fixedPpl(lifecycle: 'draft'), 'id': _pid2, 'title': 'Saved PPL'};
+    final paused = {...rotatingPpl(lifecycle: 'paused', pausedOn: '2026-10-10'), 'id': third, 'title': 'Old rotation'};
+    for (final (day, passed) in [('2026-10-14', true), ('2026-10-10', false)]) {
+      final overrides = (await tester.runAsync(() => overridesFor(day: day, plans: [rotatingPpl(), saved, paused], primaryPlanId: _pid)))!;
+      await pumpApp(tester, overrides, size: _tall);
+      await _toPlan(tester);
+      expect(find.text('Saved plans'), findsOneWidget);
+      expect(find.text('Paused and finished'), findsOneWidget);
+      expect(find.byKey(const Key('library-create')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('saved-plan-$_pid2')), matching: find.textContaining('Saved · not active')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('saved-plan-$third')), matching: find.text('Paused · not your primary plan')), findsOneWidget,
+          reason: 'a plan that was active is never shown as merely saved, and the reverse');
+      await _tap(tester, 'saved-plan-$_pid2');
+      expect(find.byType(PlanReviewScreen), findsOneWidget, reason: 'opening is not activating');
+      for (final k in ['plan-start', 'plan-edit', 'plan-duplicate', 'plan-archive']) {
+        expect(find.byKey(Key(k)), findsOneWidget, reason: k);
+      }
+      expect(find.byKey(const Key('plan-start-passed')), passed ? findsOneWidget : findsNothing);
+      expect(tester.widget<PrimaryButton>(find.byKey(const Key('plan-start'))).onPressed == null, passed);
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
   testWidgets('the workout shows the plan\'s weight target apart from the last performance, and never puts the target in the entry', (tester) async {
     final plan = fixedPpl();
     final monday = _fixedOccasion(plan, '2026-10-12');

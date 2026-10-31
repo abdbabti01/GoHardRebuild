@@ -96,7 +96,8 @@ class TrainScreen extends ConsumerWidget {
 }
 
 /// The builder's plan in progress on this phone, if any (what Create plan offers to continue).
-final builderDraftProvider = FutureProvider.autoDispose<PlanDraft?>((ref) => ref.watch(planRepositoryProvider).builderDraft('new'));
+/// Read again after every page that can change it (invalidated by whoever opens one).
+final builderDraftProvider = FutureProvider<PlanDraft?>((ref) => ref.watch(planRepositoryProvider).builderDraft('new'));
 
 /// How someone without a primary plan starts one, the same with or without the coach: continue the builder's plan in
 /// progress (never discarded here), review a saved draft, or create one. Opens the existing builder or review page.
@@ -273,6 +274,12 @@ class _PlanViewState extends ConsumerState<_PlanView> {
     final workouts = ref.watch(workoutListProvider);
     final ctxRow = ref.watch(contextRowProvider).value;
     final others = plans.where((p) => p.id != primary?.id).toList();
+    final saved = [for (final p in others) if (!p.isArchived && p.isDraft) p], past = [for (final p in others) if (!p.isArchived && !p.isDraft) p];
+    final unfinished = ref.watch(builderDraftProvider).value;
+    Future<void> openLibrary(Widget page) async {
+      await push<void>(context, page);
+      ref.invalidate(builderDraftProvider); // saved, discarded or still unfinished: read again
+    }
     final l = context.l10n;
     final proposals = [for (final r in ref.watch(proposalsProvider).value ?? const <Stored<Proposal>>[]) if (r.value.planId == primary?.id && (r.value.state == 'open' || r.value.state == 'needs_review')) r.value];
 
@@ -294,24 +301,49 @@ class _PlanViewState extends ConsumerState<_PlanView> {
       ],
       if (primary != null)
         ..._primary(context, primary, today, workouts, proposals),
-      if (others.isNotEmpty) ...[
+      // The library (docs/PLAN_LIBRARY_OVERLOAD.md): saved plans (complete, never active), the builder's unfinished
+      // plan, then plans that were active. Opening a row never activates anything; Activate is on the plan's page.
+      if (saved.isNotEmpty || primary != null || unfinished != null) ...[
         _between,
-        SectionHeader(l.planSavedAndPast),
+        SectionHeader(l.planSavedPlans,
+            trailing: QuietLink(l.planCreatePlan, key: const Key('library-create'), said: l.planCreatePlanSaid, onPressed: () => openLibrary(const CreatePlanScreen()))),
+        _gap,
+        if (saved.isEmpty && unfinished == null) Text(l.planSavedNone, key: const Key('saved-plans-empty'), style: context.caption),
+        if (saved.isNotEmpty || unfinished != null)
+          GroupCard(children: [
+            for (final p in saved)
+              GroupRow(
+                key: Key('saved-plan-${p.id}'),
+                title: p.title,
+                subtitle: !p.isBuilt
+                    ? l.planSavedDraftOld(shortDate(p.startDate))
+                    : PlanRules.usable(p.j) ? l.planSavedReady(scheduleMode(p), p.workouts.length) : l.planSavedDraftEmpty(scheduleMode(p)),
+                onTap: () => push(context, PlanReviewScreen(planId: p.id)),
+              ),
+            if (unfinished != null)
+              GroupRow(
+                key: const Key('saved-unfinished'), icon: Icons.edit_note, tone: Tone.neutral,
+                title: unfinished.title.trim().isEmpty ? l.builderUntitled : unfinished.title.trim(), subtitle: l.planUnfinishedSubtitle,
+                onTap: () => openLibrary(const CreatePlanScreen()),
+              ),
+          ]),
+      ],
+      if (past.isNotEmpty || others.any((p) => p.isArchived)) ...[
+        _between,
+        SectionHeader(l.planPausedAndFinished),
         _gap,
         GroupCard(children: [
-          for (final p in others.where((p) => !p.isArchived))
+          for (final p in past)
             GroupRow(
               key: Key('saved-plan-${p.id}'),
               title: p.title,
               subtitle: switch (p.lifecycle) {
-                'draft' when p.isBuilt => PlanRules.usable(p.j) ? l.planSavedDraftReady(scheduleMode(p), shortDate(p.startDate)) : l.planSavedDraftEmpty(scheduleMode(p)),
-                'draft' => l.planSavedDraftOld(shortDate(p.startDate)),
                 'paused' => l.planSavedPaused,
                 'closed' => p.closureIntent == 'stopped_early' ? l.planStoppedEarly : l.planFinishedForNow,
                 'active' => l.planSavedActive,
                 _ => p.lifecycle,
               },
-              onTap: () => push(context, p.isDraft ? PlanReviewScreen(planId: p.id) : PlanDetailScreen(planId: p.id)),
+              onTap: () => push(context, PlanDetailScreen(planId: p.id)),
             ),
           if (others.any((p) => p.isArchived))
             GroupRow(icon: Icons.inventory_2_outlined, tone: Tone.neutral, title: l.planArchivedCount(others.where((p) => p.isArchived).length), onTap: () => push(context, const ArchivedPlansScreen())),
@@ -374,7 +406,10 @@ class _PlanViewState extends ConsumerState<_PlanView> {
         if (!plan.isRotating)
           GroupRow(icon: Icons.swap_horiz, tone: Tone.neutral, title: l.planReplaceMovement, onTap: () => push(context, SubstitutionRequestScreen(planId: plan.id))),
         GroupRow(icon: Icons.flag_outlined, tone: Tone.neutral, title: l.planReviewBlockRow, onTap: () => push(context, BlockReviewScreen(planId: plan.id))),
-        GroupRow(icon: Icons.add, tone: Tone.neutral, title: l.planCreateDifferent, subtitle: l.planCreateDifferentSubtitle, onTap: () => push(context, const CreatePlanScreen())),
+        GroupRow(icon: Icons.add, tone: Tone.neutral, title: l.planCreateDifferent, subtitle: l.planCreateDifferentSubtitle, onTap: () async {
+          await push<void>(context, const CreatePlanScreen());
+          ref.invalidate(builderDraftProvider); // saved, discarded or still unfinished: read again
+        }),
       ]),
       _gap,
       Text(l.planArchiveNote, style: context.caption),

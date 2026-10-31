@@ -3748,7 +3748,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String planLifecycle(String state) {
     String _temp0 = intl.Intl.selectLogic(state, {
-      'draft': 'draft',
+      'draft': 'saved',
       'active': 'active',
       'paused': 'paused',
       'closed': 'closed',
@@ -3917,14 +3917,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planStartDraftCoach =>
-      'Your plan is saved as a draft. Review it, then start it when you\'re ready.';
+      'You have a saved plan. Review it, then activate it when you’re ready.';
 
   @override
-  String get planStartDraftTitle => 'Your plan is ready to review';
+  String get planStartDraftTitle => 'A saved plan is ready';
 
   @override
   String get planStartDraftBody =>
-      'A saved draft does not schedule anything until you start it.';
+      'A saved plan schedules nothing until you activate it.';
 
   @override
   String get planStartReview => 'Review my plan';
@@ -4056,12 +4056,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planSavedDraftEmpty(String mode) {
-    return 'Draft · $mode · add exercises to use it';
+    return 'Saved · $mode · add exercises to use it';
   }
 
   @override
   String planSavedDraftOld(String date) {
-    return 'Draft · not started · would start $date';
+    return 'Saved · not active · would start $date';
   }
 
   @override
@@ -4141,7 +4141,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planCreateDifferentSubtitle =>
-      'Starting it will ask before replacing this one.';
+      'Save it for later or activate it. Activating asks before replacing this one.';
 
   @override
   String get planArchiveNote =>
@@ -4533,7 +4533,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planReplaceCurrent => 'Replace my current plan';
 
   @override
-  String get planSaveForLater => 'Save for later';
+  String get planSaveForLater => 'Not now';
 
   @override
   String get planDraftNothingScheduled => 'Draft · nothing is scheduled yet';
@@ -5016,7 +5016,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get builderDraftSaved =>
-      'Draft saved on this phone. Nothing is active yet.';
+      'Unfinished plan kept on this phone. Nothing is saved to your account or active yet.';
 
   @override
   String get builderChangesSaved => 'Changes saved.';
@@ -5366,7 +5366,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String builderFollowingActivate(String title) {
-    return 'You are following \"$title\". Activating this plan pauses it. Its history and recorded workouts are kept, and you can resume it later.';
+    return 'You are following \"$title\". Save and activate pauses it: its history and recorded workouts are kept, and you can resume it later. Save plan leaves it exactly as it is.';
   }
 
   @override
@@ -12343,7 +12343,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String plusUpTo(int count) {
-    return 'Up to $count';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Up to $count',
+      one: 'One',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -12408,7 +12414,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String plusLimitPlansBody(int limit, int existing) {
-    return 'Free includes up to $limit saved plans, and you have $existing. They all stay usable, and your draft is kept. Archive a plan you no longer need, or see what GoHard Plus includes.';
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other: 'up to $limit saved plans',
+      one: 'one saved plan',
+    );
+    return 'Free includes $_temp0, and you have $existing. They all stay usable, and the plan you were saving is kept here. Archive a plan you no longer need, or see what GoHard Plus includes.';
   }
 
   @override
@@ -12441,5 +12453,172 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String plusAiLeftLine(int remaining, int limit, String date) {
     return 'AI this month: $remaining of $limit left · resets $date';
+  }
+
+  @override
+  String get builderSaveActivate => 'Save and activate';
+
+  @override
+  String get builderSavePlan => 'Save plan';
+
+  @override
+  String builderPlanSaved(String title) {
+    return '\"$title\" is saved. It isn’t active, and your current schedule hasn’t changed.';
+  }
+
+  @override
+  String get planSavedNotActive =>
+      'Saved plan · not active · nothing is scheduled';
+
+  @override
+  String planStartPassed(String date) {
+    return 'This plan was set to start $date. Choose a new start date before activating it, so its first workouts aren’t missed.';
+  }
+
+  @override
+  String get planEditStart => 'Choose a new start date';
+
+  @override
+  String get planSavedPlans => 'Saved plans';
+
+  @override
+  String get planCreatePlan => 'Create plan';
+
+  @override
+  String get planCreatePlanSaid => 'Create a new plan';
+
+  @override
+  String get planSavedNone =>
+      'No other saved plans. A plan you save without activating it waits here.';
+
+  @override
+  String planSavedReady(String mode, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workouts',
+      one: '1 workout',
+    );
+    return 'Saved · not active · $mode · $_temp0';
+  }
+
+  @override
+  String get planUnfinishedSubtitle =>
+      'Unfinished · on this phone · continue where you left off';
+
+  @override
+  String get planPausedAndFinished => 'Paused and finished';
+
+  @override
+  String get syncReasonPlanLimit =>
+      'Your account already has the saved plans Free includes, so this plan wasn’t saved there. Its content is still on this phone.';
+
+  @override
+  String get syncKeepAsUnfinished => 'Keep as unfinished plan';
+
+  @override
+  String get syncKeptAsUnfinished =>
+      'It’s back in Create plan as your unfinished plan.';
+
+  @override
+  String get syncUnfinishedExists =>
+      'You already have an unfinished plan. Save or discard it first.';
+
+  @override
+  String get workoutTodayOverline => 'Suggested today · optional';
+
+  @override
+  String get workoutTodayTitle => 'Suggested today';
+
+  @override
+  String workoutTodayWeight(String load, String range) {
+    return 'Try $load today, for your planned $range reps.';
+  }
+
+  @override
+  String workoutTodayReps(String load, int aim, int last) {
+    return 'Keep $load and aim for one more rep across your sets: $aim in total ($last last session).';
+  }
+
+  @override
+  String workoutTodayChooseIncrement(String load) {
+    return 'Your last two sessions reached the top of your range at $load. Choose your weight increment to see a suggested weight.';
+  }
+
+  @override
+  String get workoutTodayUse => 'Use suggestion';
+
+  @override
+  String get workoutTodayKeep => 'Keep my targets';
+
+  @override
+  String get workoutTodayEdit => 'Edit';
+
+  @override
+  String get workoutTodayEditSemantic =>
+      'Edit your plan’s target for next time';
+
+  @override
+  String get workoutTodayWhy => 'Why this suggestion?';
+
+  @override
+  String get workoutTodayWhySemantic =>
+      'Why this suggestion: the sessions and the rule behind it';
+
+  @override
+  String get workoutTodayScope =>
+      'Use suggestion fills this set’s weight only. Edit changes your plan from your next session.';
+
+  @override
+  String get workoutTodayScopeNoPlan =>
+      'Use suggestion fills this set’s weight only. Nothing is recorded until you record a set.';
+
+  @override
+  String workoutTodayUsedLine(String text) {
+    return 'Suggested today: $text';
+  }
+
+  @override
+  String get workoutTodayPlusLine => 'Suggested today is part of GoHard Plus.';
+
+  @override
+  String get workoutTodayPlusLearn => 'Learn more';
+
+  @override
+  String get workoutTodayPlusLearnSemantic =>
+      'Learn more about Suggested today';
+
+  @override
+  String get workoutTodayPlusBody =>
+      'With GoHard Plus, GoHard can suggest a weight or one more rep for today from your comparable recorded sessions. On Free, your plan, your last session and recording stay exactly the same.';
+
+  @override
+  String get workoutTodayWhyTitle => 'Why this suggestion?';
+
+  @override
+  String workoutTodayWhyReps(String load, int total, String range) {
+    return 'Last session you recorded every planned set at $load, $total reps in total, each within your plan’s $range range. This suggestion aims for one extra rep across your sets, still within that range.';
+  }
+
+  @override
+  String workoutTodayWhyWeight(String target, String increment, String range) {
+    return 'In your last two sessions of this workout you reached the top of your $range range on every planned set at $target. This suggestion adds your saved increment ($increment) and keeps your planned reps.';
+  }
+
+  @override
+  String workoutTodayWhyIncrement(String target) {
+    return 'Your last two sessions reached the top of your range at $target. GoHard needs your own weight increment before it suggests a heavier weight; it never guesses one.';
+  }
+
+  @override
+  String get workoutTodayWhyLimits =>
+      'GoHard only sees what you recorded. It can’t tell how a set felt or how your technique was, so keep your usual technique, and change or ignore this anytime. It’s a suggestion, not a guarantee.';
+
+  @override
+  String get workoutTodayConfirmTitle => 'Replace what you typed?';
+
+  @override
+  String workoutTodayConfirmBody(String load) {
+    return 'The weight field will show $load. Your reps stay as they are, and nothing is recorded.';
   }
 }

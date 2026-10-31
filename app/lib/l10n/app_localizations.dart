@@ -5754,7 +5754,7 @@ abstract class AppLocalizations {
   /// A plan's state word (lower case in English).
   ///
   /// In en, this message translates to:
-  /// **'{state, select, draft{draft} active{active} paused{paused} closed{closed} other{{state}}}'**
+  /// **'{state, select, draft{saved} active{active} paused{paused} closed{closed} other{{state}}}'**
   String planLifecycle(String state);
 
   /// Where a recorded workout came from: a manual workout.
@@ -6000,19 +6000,19 @@ abstract class AppLocalizations {
   /// Coach line: a saved draft plan.
   ///
   /// In en, this message translates to:
-  /// **'Your plan is saved as a draft. Review it, then start it when you\'re ready.'**
+  /// **'You have a saved plan. Review it, then activate it when you’re ready.'**
   String get planStartDraftCoach;
 
   /// Title: a saved draft plan.
   ///
   /// In en, this message translates to:
-  /// **'Your plan is ready to review'**
+  /// **'A saved plan is ready'**
   String get planStartDraftTitle;
 
   /// Body under the draft title.
   ///
   /// In en, this message translates to:
-  /// **'A saved draft does not schedule anything until you start it.'**
+  /// **'A saved plan schedules nothing until you activate it.'**
   String get planStartDraftBody;
 
   /// Button: review the draft plan.
@@ -6216,13 +6216,13 @@ abstract class AppLocalizations {
   /// Subtitle of a saved built draft without exercises.
   ///
   /// In en, this message translates to:
-  /// **'Draft · {mode} · add exercises to use it'**
+  /// **'Saved · {mode} · add exercises to use it'**
   String planSavedDraftEmpty(String mode);
 
   /// Subtitle of a saved older draft.
   ///
   /// In en, this message translates to:
-  /// **'Draft · not started · would start {date}'**
+  /// **'Saved · not active · would start {date}'**
   String planSavedDraftOld(String date);
 
   /// Subtitle of a paused plan.
@@ -6360,7 +6360,7 @@ abstract class AppLocalizations {
   /// Row subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Starting it will ask before replacing this one.'**
+  /// **'Save it for later or activate it. Activating asks before replacing this one.'**
   String get planCreateDifferentSubtitle;
 
   /// Note under Manage this plan.
@@ -6948,7 +6948,7 @@ abstract class AppLocalizations {
   /// Button.
   ///
   /// In en, this message translates to:
-  /// **'Save for later'**
+  /// **'Not now'**
   String get planSaveForLater;
 
   /// Section label.
@@ -7734,7 +7734,7 @@ abstract class AppLocalizations {
   /// Snackbar.
   ///
   /// In en, this message translates to:
-  /// **'Draft saved on this phone. Nothing is active yet.'**
+  /// **'Unfinished plan kept on this phone. Nothing is saved to your account or active yet.'**
   String get builderDraftSaved;
 
   /// Snackbar.
@@ -8274,7 +8274,7 @@ abstract class AppLocalizations {
   /// Panel.
   ///
   /// In en, this message translates to:
-  /// **'You are following \"{title}\". Activating this plan pauses it. Its history and recorded workouts are kept, and you can resume it later.'**
+  /// **'You are following \"{title}\". Save and activate pauses it: its history and recorded workouts are kept, and you can resume it later. Save plan leaves it exactly as it is.'**
   String builderFollowingActivate(String title);
 
   /// Row title and picker title.
@@ -18345,7 +18345,7 @@ abstract class AppLocalizations {
   /// Comparison value: a creation limit.
   ///
   /// In en, this message translates to:
-  /// **'Up to {count}'**
+  /// **'{count, plural, =1{One} other{Up to {count}}}'**
   String plusUpTo(int count);
 
   /// Comparison value: requests a month.
@@ -18447,7 +18447,7 @@ abstract class AppLocalizations {
   /// Limit sheet body: saved plans.
   ///
   /// In en, this message translates to:
-  /// **'Free includes up to {limit} saved plans, and you have {existing}. They all stay usable, and your draft is kept. Archive a plan you no longer need, or see what GoHard Plus includes.'**
+  /// **'Free includes {limit, plural, =1{one saved plan} other{up to {limit} saved plans}}, and you have {existing}. They all stay usable, and the plan you were saving is kept here. Archive a plan you no longer need, or see what GoHard Plus includes.'**
   String plusLimitPlansBody(int limit, int existing);
 
   /// Limit sheet title: saved meals and recipes.
@@ -18497,6 +18497,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AI this month: {remaining} of {limit} left · resets {date}'**
   String plusAiLeftLine(int remaining, int limit, String date);
+
+  /// Builder review: create the plan and make it the active one.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and activate'**
+  String get builderSaveActivate;
+
+  /// Builder review: save the complete plan without activating it.
+  ///
+  /// In en, this message translates to:
+  /// **'Save plan'**
+  String get builderSavePlan;
+
+  /// Snack after Save plan.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" is saved. It isn’t active, and your current schedule hasn’t changed.'**
+  String builderPlanSaved(String title);
+
+  /// Label on a saved plan that was never active.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved plan · not active · nothing is scheduled'**
+  String get planSavedNotActive;
+
+  /// A saved fixed-weekday plan whose start date has passed cannot be activated as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan was set to start {date}. Choose a new start date before activating it, so its first workouts aren’t missed.'**
+  String planStartPassed(String date);
+
+  /// Opens the plan editor to choose a new start date.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new start date'**
+  String get planEditStart;
+
+  /// Train › Plan section: complete plans that are not active.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved plans'**
+  String get planSavedPlans;
+
+  /// Train › Plan: link to create a plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Create plan'**
+  String get planCreatePlan;
+
+  /// Screen reader label of Create plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new plan'**
+  String get planCreatePlanSaid;
+
+  /// Train › Plan when there is no other saved plan.
+  ///
+  /// In en, this message translates to:
+  /// **'No other saved plans. A plan you save without activating it waits here.'**
+  String get planSavedNone;
+
+  /// Row subtitle of a saved plan: schedule kind and number of workouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved · not active · {mode} · {count, plural, =1{1 workout} other{{count} workouts}}'**
+  String planSavedReady(String mode, int count);
+
+  /// Row subtitle of the builder’s unfinished plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfinished · on this phone · continue where you left off'**
+  String get planUnfinishedSubtitle;
+
+  /// Train › Plan section: plans that were active before.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused and finished'**
+  String get planPausedAndFinished;
+
+  /// Sync review: the account refused a new plan for the saved-plan limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account already has the saved plans Free includes, so this plan wasn’t saved there. Its content is still on this phone.'**
+  String get syncReasonPlanLimit;
+
+  /// Sync review: put a refused plan back into the builder.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep as unfinished plan'**
+  String get syncKeepAsUnfinished;
+
+  /// Toast after Keep as unfinished plan.
+  ///
+  /// In en, this message translates to:
+  /// **'It’s back in Create plan as your unfinished plan.'**
+  String get syncKeptAsUnfinished;
+
+  /// Keep as unfinished plan when another unfinished plan exists.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have an unfinished plan. Save or discard it first.'**
+  String get syncUnfinishedExists;
+
+  /// Overline of the optional suggestion in the recorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested today · optional'**
+  String get workoutTodayOverline;
+
+  /// Title of the Suggested today explanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested today'**
+  String get workoutTodayTitle;
+
+  /// Suggested today: one saved increment more, planned reps unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Try {load} today, for your planned {range} reps.'**
+  String workoutTodayWeight(String load, String range);
+
+  /// Suggested today: the same weight, one more rep in total.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep {load} and aim for one more rep across your sets: {aim} in total ({last} last session).'**
+  String workoutTodayReps(String load, int aim, int last);
+
+  /// Suggested today when the weight rule qualifies but no increment is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last two sessions reached the top of your range at {load}. Choose your weight increment to see a suggested weight.'**
+  String workoutTodayChooseIncrement(String load);
+
+  /// Fills the set entry with the suggestion. Records nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Use suggestion'**
+  String get workoutTodayUse;
+
+  /// Hides the suggestion for this workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my targets'**
+  String get workoutTodayKeep;
+
+  /// Opens the plan’s next-target review.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get workoutTodayEdit;
+
+  /// Screen reader label of Edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit your plan’s target for next time'**
+  String get workoutTodayEditSemantic;
+
+  /// Opens the explanation of the suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Why this suggestion?'**
+  String get workoutTodayWhy;
+
+  /// Screen reader label of Why this suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Why this suggestion: the sessions and the rule behind it'**
+  String get workoutTodayWhySemantic;
+
+  /// Under the suggestion: what each action changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Use suggestion fills this set’s weight only. Edit changes your plan from your next session.'**
+  String get workoutTodayScope;
+
+  /// Under the suggestion when the plan target cannot be edited from here.
+  ///
+  /// In en, this message translates to:
+  /// **'Use suggestion fills this set’s weight only. Nothing is recorded until you record a set.'**
+  String get workoutTodayScopeNoPlan;
+
+  /// Compact line once the suggestion was used.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested today: {text}'**
+  String workoutTodayUsedLine(String text);
+
+  /// Free: quiet line where Suggested today would be.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested today is part of GoHard Plus.'**
+  String get workoutTodayPlusLine;
+
+  /// Free: opens the explanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more'**
+  String get workoutTodayPlusLearn;
+
+  /// Screen reader label of Learn more.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more about Suggested today'**
+  String get workoutTodayPlusLearnSemantic;
+
+  /// Free: what Suggested today is.
+  ///
+  /// In en, this message translates to:
+  /// **'With GoHard Plus, GoHard can suggest a weight or one more rep for today from your comparable recorded sessions. On Free, your plan, your last session and recording stay exactly the same.'**
+  String get workoutTodayPlusBody;
+
+  /// Title of the explanation sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Why this suggestion?'**
+  String get workoutTodayWhyTitle;
+
+  /// Explanation of a rep suggestion, from the recorded facts.
+  ///
+  /// In en, this message translates to:
+  /// **'Last session you recorded every planned set at {load}, {total} reps in total, each within your plan’s {range} range. This suggestion aims for one extra rep across your sets, still within that range.'**
+  String workoutTodayWhyReps(String load, int total, String range);
+
+  /// Explanation of a weight suggestion, from the recorded facts.
+  ///
+  /// In en, this message translates to:
+  /// **'In your last two sessions of this workout you reached the top of your {range} range on every planned set at {target}. This suggestion adds your saved increment ({increment}) and keeps your planned reps.'**
+  String workoutTodayWhyWeight(String target, String increment, String range);
+
+  /// Explanation when an increment is needed first.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last two sessions reached the top of your range at {target}. GoHard needs your own weight increment before it suggests a heavier weight; it never guesses one.'**
+  String workoutTodayWhyIncrement(String target);
+
+  /// The limits of the suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard only sees what you recorded. It can’t tell how a set felt or how your technique was, so keep your usual technique, and change or ignore this anytime. It’s a suggestion, not a guarantee.'**
+  String get workoutTodayWhyLimits;
+
+  /// Before Use suggestion replaces a typed weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace what you typed?'**
+  String get workoutTodayConfirmTitle;
+
+  /// Before Use suggestion replaces a typed weight.
+  ///
+  /// In en, this message translates to:
+  /// **'The weight field will show {load}. Your reps stay as they are, and nothing is recorded.'**
+  String workoutTodayConfirmBody(String load);
 }
 
 class _AppLocalizationsDelegate

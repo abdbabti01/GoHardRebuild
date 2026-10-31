@@ -2613,3 +2613,22 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `account.entitlement`; the new routes answer 401 without a token. No hosted account created, no secret or variable
   changed. IPA 64 reused (no app change since c5d6f01).
 - **Pending:** `GOHARD_Plus__PreviewOwnerUserId` (owner sets it), iPhone checks. Payments remain absent.
+
+## 31 Oct 2026 — Saved plans, Free = one plan, Train › Plan library, Suggested today (`feature/plan-library-overload`, from `main` 5441d2a)
+
+- Design written first: docs/PLAN_LIBRARY_OVERLOAD.md. Draft (builder, phone only) / saved plan (`lifecycle draft`,
+  never active) / active plan are derived from existing state; no new model, table, command, capability or migration.
+- Builder Review: Save and activate (`plan.create` + separate `plan.activate`), Save plan (`plan.create` only; the
+  context, current plan, rotation and adherence untouched), Save draft unchanged. A saved plan's page activates it
+  (existing rules, plus: a fixed plan whose start passed asks for a new start first) and has Edit, Duplicate, Archive.
+- Free saved plans 3 → 1 (server default `Plus:FreeSavedPlans`, app `minimumPlans`); un-archiving is limited like
+  creating. A refused `plan.create` is explained in the sync review and can go back to the builder ("Keep as
+  unfinished plan"), withdrawing an activation queued behind it.
+- Suggested today (Plus): `ProgressionRules.today` reuses the two-session weight rule unchanged and adds a
+  newest-session one-more-rep rule; Use fills only the load field (asks before replacing typed input), Keep hides it
+  for the workout (runtime `suggestions`), Edit opens the existing next-target review, Why shows the evidence. Free
+  sees one quiet line.
+- Run: API plan/builder/Plus/workout classes 50/50; `flutter analyze` clean; `check-l10n` OK (3,093 messages); app
+  affected files (plans, Train, Today, Plus, progression, workout panel, Me, l10n, coach companion) passed.
+- **Not run:** emulator journey (Pixel_7 /data 489 MB free, the state that blocked installs on the last three
+  features). Not verified on iPhone, VoiceOver, hosted. Not merged, not deployed.

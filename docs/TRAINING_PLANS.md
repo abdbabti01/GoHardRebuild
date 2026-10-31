@@ -185,8 +185,9 @@ none materialized). Every accepted revise increments the plan revision, which al
 
 - Local drafts: record kind `plan_builder` (`id = "new"` for a new plan, or the plan's ID while editing it). Saved on
   every change; never dispatched; survives restart and sign-out (owner-scoped). Saving a draft never creates a plan.
-- Activate = `plan.create` (draft, writes the plan locally) then `plan.activate` (`after:` the plan), both queued, so a
-  plan can be built and activated offline. If the create is refused the activation waits behind it and the sync review
+- Save plan = `plan.create` only (a saved plan, `lifecycle = "draft"`, not active); Save and activate = `plan.create`
+  then `plan.activate` (`after:` the plan), both queued, so a plan can be built and activated offline
+  (docs/PLAN_LIBRARY_OVERLOAD.md). If the create is refused the activation waits behind it and the sync review
   shows both versions; nothing is activated on the account.
 - `plan_projection.dart` is the one projection used by Today, Train and the occurrence sheet: materialized occasions +
   locally started/credited rotating occurrences + projected virtual ones, with one status rule.

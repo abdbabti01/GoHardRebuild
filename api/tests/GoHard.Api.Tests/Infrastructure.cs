@@ -82,6 +82,9 @@ public sealed class ApiFactory(string connectionString) : WebApplicationFactory<
             builder.UseSetting("Email:CodeSecret", "test-only-code-secret-0123456789-abcdefghij");
             builder.UseSetting("Email:PerIpPerHour", "1000000");
         }
+        // Plan tests make several plans in one Free account; the saved-plan limit itself is tested in PlusPreviewTests,
+        // which registers its own PlusOptions (the real defaults).
+        builder.UseSetting("Plus:FreeSavedPlans", "200");
         foreach (var (key, value) in Settings ?? []) builder.UseSetting(key, value);
         // Outside providers are always replaced: by default with a recorded product, so no test run touches the network.
         builder.ConfigureServices(s => s.ConfigureAll<Microsoft.Extensions.Http.HttpClientFactoryOptions>(o =>

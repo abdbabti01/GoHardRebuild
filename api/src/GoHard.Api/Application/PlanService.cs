@@ -307,6 +307,8 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines, Plus.Ent
         if (plan.Revision != r.ExpectedPlanRevision) return await ConflictAsync(userId, Ack.RevisionConflict, ct);
         var ctx = await db.TrainingContexts.AsNoTracking().FirstAsync(c => c.UserId == userId, ct);
         if (r.IsArchived && ctx.PrimaryPlanId == plan.Id) return await ConflictAsync(userId, "PLAN_IS_PRIMARY", ct);
+        // Moving one out of the archive counts it again, so it is limited like creating one (docs/PLAN_LIBRARY_OVERLOAD.md).
+        if (!r.IsArchived && plan.IsArchived && await plus.PlanRefusalAsync(userId, ct) is { } limit) return Outcome.Rejected<PlanContextDto>(limit);
         plan.IsArchived = r.IsArchived; // visibility only: lifecycle and closure intent are untouched
         plan.Revision++;
         return await SavedAsync(userId, ct);

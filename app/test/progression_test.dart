@@ -16,7 +16,7 @@ final sets = <WorkoutSet>[];
 var _n = 0;
 
 /// A finished planned workout on [day] for [occasion], recording [reps] at [loads] (one load for all sets unless a list).
-Workout session(String day, String occasion, List<int?> reps, {Object load = 80.0, double frozen = 80, String outcome = 'full', bool deleted = false, int hi = 8,
+Workout session(String day, String occasion, List<int?> reps, {Object? load = 80.0, double? frozen = 80, String outcome = 'full', bool deleted = false, int hi = 8,
     String key = 'e1', List<(String, List<int?>)> also = const []}) {
   final id = 'w-$day-$occasion-${_n++}';
   Map<String, dynamic> exercise(String k, List<int?> r) {
@@ -130,5 +130,71 @@ void main() {
     expect((before.decision, after.decision), (ProgressionDecision.increase, ProgressionDecision.keepCurrent));
     expect(before.fingerprint == after.fingerprint, isFalse);
     expect(judge(two).fingerprint, after.fingerprint); // same facts, same fingerprint
+  });
+
+  // ------------------------------------------------------------------ Suggested today (docs/PLAN_LIBRARY_OVERLOAD.md › 5)
+
+  group('Suggested today', () {
+    TodaySuggestion today(List<Workout> workouts, {Prescription? exercise, double? increment = 2.5, String? equipment = 'Barbell'}) =>
+        ProgressionRules.today(planId: planId, definitionId: 'A', rx: exercise ?? rx(), equipment: equipment, workouts: workouts,
+            sets: [for (final s in sets) if (!s.isDeleted) s], definitionOf: defOf, incrementKg: increment);
+
+    test('reps: the newest comparable session at one weight, inside the range, suggests one more rep in total at that weight', () {
+      final t = today([session('2026-10-09', 'oA1', [6, 6, 6]), session('2026-10-13', 'oA2', [7, 7, 6])]);
+      expect((t.kind, t.loadKg, t.lastTotal, t.aimTotal), (TodayKind.reps, 80, 20, 21));
+      expect([for (final s in t.sessions) s.workout.dayKey], ['2026-10-13'], reason: 'the newest session alone is the evidence');
+      // Without a weight target the recorded weight is kept, never a new one.
+      final free = today([session('2026-10-13', 'oA1', [7, 6, 6], frozen: null, load: 60.0)], exercise: rx(load: null));
+      expect((free.kind, free.loadKg, free.lastTotal), (TodayKind.reps, 60, 19));
+    });
+
+    test('weight: the existing two-session rule and the saved increment, never more reps at the same time', () {
+      final two = [session('2026-10-13', 'oA1', [8, 8, 8]), session('2026-10-16', 'oA2', [8, 8, 8])];
+      final t = today(two);
+      expect((t.kind, t.loadKg, t.lastTotal, t.repsMin, t.repsMax), (TodayKind.weight, 82.5, null, 6, 8));
+      expect(today(two, increment: null).kind, TodayKind.chooseIncrement, reason: 'no step is ever invented');
+      expect(today(two, increment: 5).kind, TodayKind.none, reason: 'a step over the 5% guard stays a manual review');
+      // At the top once only: the weight rule waits for a second session, and no rep is asked beyond the range.
+      final once = today([session('2026-10-13', 'oA1', [8, 8, 8])]);
+      expect((once.kind, once.reason), (TodayKind.none, ProgressionReason.atTop));
+    });
+
+    test('a newer session that does not qualify is never skipped to reach an older one', () {
+      final older = session('2026-10-09', 'oA1', [7, 7, 6]);
+      expect(today([older, session('2026-10-13', 'oA2', [7, 7])]).reason, ProgressionReason.setsMissing);
+      expect(today([older, session('2026-10-13', 'oA2', [7, 7, 6, 6])]).reason, ProgressionReason.extraSets);
+      expect(today([older, session('2026-10-13', 'oA2', [7, 7, 6], load: [80.0, 77.5, 80.0])]).reason, ProgressionReason.loadDiffers, reason: 'inconsistent loads');
+      expect(today([older, session('2026-10-13', 'oA2', [7, 7, 6], load: [80.0, null, 80.0])]).reason, ProgressionReason.loadUnknown);
+      expect(today([older, session('2026-10-13', 'oA2', [5, 7, 7])]).reason, ProgressionReason.outsideRange, reason: 'a missed bottom of the range');
+      expect(today([older, session('2026-10-13', 'oA2', [7, 7, 6], outcome: 'partial')]).reason, ProgressionReason.partialWorkout);
+      // Changed targets: a session frozen at another weight, or another rep range, is not evidence for this one.
+      expect(today([older, session('2026-10-13', 'oA2', [7, 7, 6], frozen: 77.5, load: 77.5)]).reason, ProgressionReason.targetChanged);
+      expect(today([older, session('2026-10-13', 'oA2', [7, 7, 6], hi: 10)]).reason, ProgressionReason.targetChanged);
+      // A weight recorded that is not this workout's target weight: not comparable.
+      expect(today([session('2026-10-13', 'oA2', [7, 7, 6], load: 75.0)]).reason, ProgressionReason.loadDiffers);
+    });
+
+    test('no history, another workout, another occurrence or identity, and unsupported types give no personal suggestion', () {
+      expect(today([]).reason, ProgressionReason.fewerSessions);
+      expect(today([session('2026-10-13', 'oB1', [7, 7, 6])]).kind, TodayKind.none, reason: 'Upper B is another plan workout');
+      // Bench press twice in Upper A: each occurrence has its own evidence.
+      final both = [session('2026-10-13', 'oA1', [7, 6, 6], also: [('e3', [8, 8, 8])])];
+      expect((today(both).kind, today(both).lastTotal), (TodayKind.reps, 19));
+      expect(today(both, exercise: rx(key: 'e3')).reason, ProgressionReason.atTop);
+      // A custom exercise in the same place is another identity: the bench press sessions are not its history.
+      expect(today(both, exercise: rx(catalogKey: 'custom:0f6c')).reason, ProgressionReason.missingExercise);
+      final one = [session('2026-10-13', 'oA1', [7, 7, 6])];
+      expect(today(one, exercise: rx(timed: true)).reason, ProgressionReason.timed);
+      expect(today(one, equipment: 'Bodyweight').reason, ProgressionReason.bodyweight);
+      expect(today(one, exercise: rx(name: 'Assisted pull-up')).reason, ProgressionReason.assisted, reason: 'a heavier assist is not progress');
+      expect(today(one, exercise: rx(lo: null, hi: null)).kind, TodayKind.none);
+    });
+
+    test('pounds: the kept weight is the recorded one, shown in either unit without changing it', () {
+      final kg = ProgressionRules.round3(loadInputToKg(45, LoadUnit.lb));
+      final t = today([session('2026-10-13', 'oA1', [10, 9, 8], hi: 12, frozen: kg, load: kg)], exercise: rx(load: kg, hi: 12));
+      expect((t.kind, t.loadKg, t.lastTotal, t.aimTotal), (TodayKind.reps, kg, 27, 28));
+      expect(formatLoad(t.loadKg, LoadUnit.lb), '45 lb');
+    });
   });
 }

@@ -324,13 +324,44 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
     return [for (final code in draft.errors) planErrorText(l, code)];
   }
 
-  Future<void> _activate() async {
-    // A new or duplicated plan is a new saved definition (docs/PLUS_PREVIEW.md). Over the limit the draft stays here.
+  /// A new or duplicated plan is a new saved definition (docs/PLUS_PREVIEW.md): over the limit the limit is explained
+  /// here and the draft stays as it is. False when it may not be saved now.
+  Future<bool> _mayCreate() async {
     final plans = ref.read(planListProvider);
-    if (widget.editing == null && !plans.any((p) => p.id == draft.planId)) {
-      final gate = planGate(ref.read(plusProvider), plans);
-      if (gate != CreateGate.ok) return showPlusLimit(context, PlusLimit.plans, gate: gate, existing: plans.where((p) => !p.isArchived).length);
+    if (widget.editing != null || plans.any((p) => p.id == draft.planId)) return true;
+    final gate = planGate(ref.read(plusProvider), plans);
+    if (gate == CreateGate.ok) return true;
+    await showPlusLimit(context, PlusLimit.plans, gate: gate, existing: plans.where((p) => !p.isArchived).length);
+    return false;
+  }
+
+  /// Save plan: saved and ready, not active. Nothing about the current plan or Today changes.
+  Future<void> _savePlan() async {
+    if (_busy || !await _mayCreate() || !mounted) return;
+    setState(() => _busy = true);
+    await _saving;
+    if (!mounted) return;
+    final l = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    final shell = ref.read(shellProvider.notifier);
+    final message = l.builderPlanSaved(draft.title.trim());
+    try {
+      await ref.read(planRepositoryProvider).createPlan(draft);
+    } on ScheduleRefused catch (e) {
+      if (mounted) setState(() { _busy = false; _error = planErrorText(l, e.codes.first); });
+      return;
+    } on LocalSaveFailure {
+      if (mounted) setState(() { _busy = false; _error = l.planLocalSaveFailed; });
+      return;
     }
+    shell.switchTab(1, trainView: TrainView.plan);
+    nav.popUntil((r) => r.isFirst);
+    messenger.showSnackBar(SnackBar(content: Text(message), duration: const Duration(milliseconds: 2200)));
+  }
+
+  Future<void> _activate() async {
+    if (_busy || !await _mayCreate() || !mounted) return;
     final primary = ref.read(primaryPlanProvider);
     final replaces = primary != null && primary.id != draft.planId ? primary : null;
     final l = context.l10n;
@@ -409,13 +440,16 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
         pair(back, PrimaryButton(l.builderSaveChanges, key: const Key('plan-save-changes'), busy: _busy, onPressed: blocking.isEmpty ? _saveChanges : null)),
       ]);
     }
+    // Save and activate, Save plan (complete, not active) and Save draft (unfinished, on this phone) are three
+    // different things (docs/PLAN_LIBRARY_OVERLOAD.md); an unusable plan can only be kept as a draft.
+    final saveDraft = SecondaryButton(l.builderSaveDraft, key: const Key('plan-save-draft'), onPressed: _busy ? null : _saveDraft);
+    if (!draft.isUsable) return Column(mainAxisSize: MainAxisSize.min, children: [...notes, pair(back, saveDraft)]);
     return Column(mainAxisSize: MainAxisSize.min, children: [
       ...notes,
-      if (draft.isUsable) ...[
-        PrimaryButton(l.builderActivate, key: const Key('plan-activate'), busy: _busy, onPressed: _activate),
-        const SizedBox(height: 8),
-      ],
-      pair(back, SecondaryButton(l.builderSaveDraft, key: const Key('plan-save-draft'), onPressed: _busy ? null : _saveDraft)),
+      PrimaryButton(l.builderSaveActivate, key: const Key('plan-activate'), busy: _busy, onPressed: _activate),
+      const SizedBox(height: 8),
+      pair(back, SecondaryButton(l.builderSavePlan, key: const Key('plan-save'), onPressed: _busy ? null : _savePlan)),
+      Center(child: TextButton(key: const Key('plan-save-draft'), onPressed: _busy ? null : _saveDraft, child: Text(l.builderSaveDraft))),
     ]);
   }
 

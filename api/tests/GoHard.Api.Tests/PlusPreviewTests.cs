@@ -55,7 +55,7 @@ public class PlusPreviewTests(PostgresFixture pg)
         var e = await EntitlementAsync(a);
         Assert.Equal(("free", "default", true, false, false), (e.GetProperty("tier").GetString(), e.GetProperty("source").GetString(),
             e.GetProperty("preview").GetBoolean(), e.GetProperty("purchasesAvailable").GetBoolean(), e.GetProperty("canManagePreview").GetBoolean()));
-        Assert.Equal((3, 10), (e.GetProperty("limits").GetProperty("savedPlans").GetInt32(), e.GetProperty("limits").GetProperty("savedMeals").GetInt32()));
+        Assert.Equal((1, 10), (e.GetProperty("limits").GetProperty("savedPlans").GetInt32(), e.GetProperty("limits").GetProperty("savedMeals").GetInt32()));
         Assert.Empty(e.GetProperty("features").EnumerateArray());
         var allowance = e.GetProperty("allowance");
         Assert.Equal((0, 15, 15, 40), (allowance.GetProperty("used").GetInt32(), allowance.GetProperty("limit").GetInt32(), allowance.GetProperty("remaining").GetInt32(), allowance.GetProperty("dailyGuard").GetInt32()));
@@ -63,7 +63,7 @@ public class PlusPreviewTests(PostgresFixture pg)
         Assert.Equal((1, 0, 0), (resets.Day, resets.Hour, resets.Minute));                    // 00:00 UTC on the 1st
         Assert.Equal(72 * 3600, e.GetProperty("validForSeconds").GetInt32());
         var compare = e.GetProperty("compare");
-        Assert.Equal((3, 10, 15, 300), (compare.GetProperty("free").GetProperty("savedPlans").GetInt32(), compare.GetProperty("free").GetProperty("savedMeals").GetInt32(),
+        Assert.Equal((1, 10, 15, 300), (compare.GetProperty("free").GetProperty("savedPlans").GetInt32(), compare.GetProperty("free").GetProperty("savedMeals").GetInt32(),
             compare.GetProperty("free").GetProperty("monthlyAi").GetInt32(), compare.GetProperty("plus").GetProperty("monthlyAi").GetInt32()));
     }
 
@@ -108,32 +108,33 @@ public class PlusPreviewTests(PostgresFixture pg)
     }
 
     [Fact]
-    public async Task Free_accounts_make_three_saved_plans_and_archiving_one_frees_a_place()
+    public async Task Free_accounts_save_one_plan_and_archiving_frees_the_place_but_unarchiving_does_not_bypass_it()
     {
         var (api, _) = Api(pg);
         await using var _api = api;
         var a = await Account.RegisterAsync(api);
-        for (var i = 0; i < 3; i++) Assert.Equal("accepted", (await CreatePlanAsync(a, $"Plan {i}")).Status);
+        Assert.Equal("accepted", (await CreatePlanAsync(a, "Plan 1")).Status);
 
-        var fourth = await CreatePlanAsync(a, "Plan 4");
-        Assert.Equal(("rejected", EntitlementService.PlanLimit), (fourth.Status, fourth.Code));
+        var second = await CreatePlanAsync(a, "Plan 2");
+        Assert.Equal(("rejected", EntitlementService.PlanLimit), (second.Status, second.Code));
         var plans = (await a.ContextAsync()).Plans;
-        Assert.Equal(3, plans.Count);
+        Assert.Single(plans);
         // Duplicating (Continue) and the setup draft are new definitions too.
         var cont = await a.PostAsync<PlanContextDto>($"/plans/{plans[0].Id}/continue", new ContinueRequest(Guid.NewGuid(), Guid.NewGuid(), Monday.AddDays(21)));
         Assert.Equal(("rejected", EntitlementService.PlanLimit), (cont.Status, cont.Code));
         var draft = await a.PostAsync<PlanDraftResult>("/plan-drafts", new PlanDraftRequest(Guid.NewGuid(), Guid.NewGuid(), Account.Setup(), null, null));
         Assert.Equal(("rejected", EntitlementService.PlanLimit), (draft.Status, draft.Code));
 
-        // Existing plans keep working: edit, activate. Neither is creation.
-        var first = plans[0];
-        var activated = await a.PostAsync<PlanContextDto>($"/plans/{first.Id}/activate", a.ActivateRequestFor(first, (await a.ContextAsync()).ContextRevision));
-        Assert.Equal("accepted", activated.Status);
-
-        var archived = await a.PostAsync<PlanContextDto>($"/plans/{plans[2].Id}/archive", new ArchiveRequest(Guid.NewGuid(), plans[2].Revision, true));
+        // Archiving frees the place; the archived plan stays on the account.
+        var archived = await a.PostAsync<PlanContextDto>($"/plans/{plans[0].Id}/archive", new ArchiveRequest(Guid.NewGuid(), plans[0].Revision, true));
         Assert.Equal("accepted", archived.Status);
-        Assert.Equal("accepted", (await CreatePlanAsync(a, "Plan 4")).Status);
-        Assert.Equal(4, (await a.ContextAsync()).Plans.Count);                                   // the archived one is still there
+        Assert.Equal("accepted", (await CreatePlanAsync(a, "Plan 2")).Status);
+        Assert.Equal(2, (await a.ContextAsync()).Plans.Count);
+        // Moving it back out of the archive would be a second saved plan: refused, and nothing changes.
+        var back = (await a.ContextAsync()).Plans.First(p => p.Id == plans[0].Id);
+        var unarchive = await a.PostAsync<PlanContextDto>($"/plans/{back.Id}/archive", new ArchiveRequest(Guid.NewGuid(), back.Revision, false));
+        Assert.Equal(("rejected", EntitlementService.PlanLimit), (unarchive.Status, unarchive.Code));
+        Assert.True((await a.ContextAsync()).Plans.First(p => p.Id == back.Id).IsArchived);
     }
 
     [Fact]
@@ -165,6 +166,12 @@ public class PlusPreviewTests(PostgresFixture pg)
         var plan = snapshot.Context.Plans[0];
         Assert.Equal("accepted", (await a.PostAsync<PlanContextDto>($"/plans/{plan.Id}/activate", a.ActivateRequestFor(plan, snapshot.Context.ContextRevision))).Status);
         Assert.Equal(EntitlementService.PlanLimit, (await CreatePlanAsync(a)).Code);
+        // Switching which existing plan is active stays possible over the limit (activation is not creation).
+        var ctx = await a.ContextAsync();
+        var other = ctx.Plans.First(p => p.Id != plan.Id);
+        var switched = await a.PostAsync<PlanContextDto>($"/plans/{other.Id}/activate", a.ActivateRequestFor(other, ctx.ContextRevision, replace: plan.Id));
+        Assert.Equal("accepted", switched.Status);
+        Assert.Equal(other.Id, (await a.ContextAsync()).PrimaryPlanId);
         Assert.Equal(EntitlementService.MealLimit, (await PutMealAsync(a, Guid.NewGuid(), 0, "One more")).Code);
         // Deleting always works.
         Assert.Equal("accepted", (await a.PostAsync<SavedMealDto>($"/saved-meals/{meals[1]}/delete", new RevisionCommand(Guid.NewGuid(), 1))).Status);

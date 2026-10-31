@@ -3848,7 +3848,7 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String planLifecycle(String state) {
     String _temp0 = intl.Intl.selectLogic(state, {
-      'draft': 'brouillon',
+      'draft': 'enregistré',
       'active': 'actif',
       'paused': 'en pause',
       'closed': 'fermé',
@@ -4018,14 +4018,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get planStartDraftCoach =>
-      'Ton programme est enregistré comme brouillon. Révise-le, puis commence-le quand tu es prêt.';
+      'Tu as un programme enregistré. Révise-le, puis active-le quand tu es prêt.';
 
   @override
-  String get planStartDraftTitle => 'Ton programme est prêt à réviser';
+  String get planStartDraftTitle => 'Un programme enregistré est prêt';
 
   @override
   String get planStartDraftBody =>
-      'Un brouillon enregistré ne prévoit rien tant que tu ne le commences pas.';
+      'Un programme enregistré ne prévoit rien tant que tu ne l’actives pas.';
 
   @override
   String get planStartReview => 'Réviser mon programme';
@@ -4158,12 +4158,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String planSavedDraftEmpty(String mode) {
-    return 'Brouillon · $mode · ajoute des exercices pour l\'utiliser';
+    return 'Enregistré · $mode · ajoute des exercices pour l’utiliser';
   }
 
   @override
   String planSavedDraftOld(String date) {
-    return 'Brouillon · pas commencé · commencerait le $date';
+    return 'Enregistré · pas actif · commencerait le $date';
   }
 
   @override
@@ -4244,7 +4244,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get planCreateDifferentSubtitle =>
-      'Le commencer demandera une confirmation avant de remplacer celui-ci.';
+      'Enregistre-le pour plus tard ou active-le. L’activer demande une confirmation avant de remplacer celui-ci.';
 
   @override
   String get planArchiveNote =>
@@ -4638,7 +4638,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get planReplaceCurrent => 'Remplacer mon programme actuel';
 
   @override
-  String get planSaveForLater => 'Garder pour plus tard';
+  String get planSaveForLater => 'Pas maintenant';
 
   @override
   String get planDraftNothingScheduled =>
@@ -5125,7 +5125,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get builderDraftSaved =>
-      'Brouillon enregistré sur ce téléphone. Rien n\'est encore actif.';
+      'Programme inachevé gardé sur ce téléphone. Rien n’est encore enregistré dans ton compte ni actif.';
 
   @override
   String get builderChangesSaved => 'Changements enregistrés.';
@@ -5479,7 +5479,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String builderFollowingActivate(String title) {
-    return 'Tu suis « $title ». Activer ce programme le met en pause. Son historique et ses séances enregistrées sont conservés, et tu pourras le reprendre plus tard.';
+    return 'Tu suis « $title ». Enregistrer et activer le met en pause : son historique et ses séances enregistrées sont conservés, et tu pourras le reprendre plus tard. Enregistrer le programme le laisse exactement tel quel.';
   }
 
   @override
@@ -12548,7 +12548,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String plusUpTo(int count) {
-    return 'Jusqu’à $count';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Jusqu’à $count',
+      one: 'Un',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -12614,7 +12620,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String plusLimitPlansBody(int limit, int existing) {
-    return 'Gratuit comprend jusqu’à $limit programmes enregistrés, et tu en as $existing. Ils restent tous utilisables, et ton brouillon est conservé. Archive un programme dont tu n’as plus besoin, ou vois ce que comprend GoHard Plus.';
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other: 'jusqu’à $limit programmes enregistrés',
+      one: 'un programme enregistré',
+    );
+    return 'Gratuit comprend $_temp0, et tu en as $existing. Ils restent tous utilisables, et le programme que tu enregistrais est conservé ici. Archive un programme dont tu n’as plus besoin, ou vois ce que comprend GoHard Plus.';
   }
 
   @override
@@ -12647,6 +12659,174 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String plusAiLeftLine(int remaining, int limit, String date) {
     return 'IA ce mois-ci : $remaining sur $limit restantes · remise à zéro le $date';
+  }
+
+  @override
+  String get builderSaveActivate => 'Enregistrer et activer';
+
+  @override
+  String get builderSavePlan => 'Enregistrer le programme';
+
+  @override
+  String builderPlanSaved(String title) {
+    return '« $title » est enregistré. Il n’est pas actif, et ton horaire actuel n’a pas changé.';
+  }
+
+  @override
+  String get planSavedNotActive =>
+      'Programme enregistré · pas actif · rien n’est prévu';
+
+  @override
+  String planStartPassed(String date) {
+    return 'Ce programme devait commencer le $date. Choisis une nouvelle date de début avant de l’activer, pour que ses premières séances ne soient pas manquées.';
+  }
+
+  @override
+  String get planEditStart => 'Choisir une nouvelle date de début';
+
+  @override
+  String get planSavedPlans => 'Programmes enregistrés';
+
+  @override
+  String get planCreatePlan => 'Créer un programme';
+
+  @override
+  String get planCreatePlanSaid => 'Créer un nouveau programme';
+
+  @override
+  String get planSavedNone =>
+      'Aucun autre programme enregistré. Un programme enregistré sans être activé t’attend ici.';
+
+  @override
+  String planSavedReady(String mode, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count séances',
+      one: '1 séance',
+    );
+    return 'Enregistré · pas actif · $mode · $_temp0';
+  }
+
+  @override
+  String get planUnfinishedSubtitle =>
+      'Inachevé · sur ce téléphone · reprends là où tu t’es arrêté';
+
+  @override
+  String get planPausedAndFinished => 'En pause et terminés';
+
+  @override
+  String get syncReasonPlanLimit =>
+      'Ton compte a déjà les programmes enregistrés que comprend Gratuit, donc ce programme n’y a pas été enregistré. Son contenu est toujours sur ce téléphone.';
+
+  @override
+  String get syncKeepAsUnfinished => 'Garder comme programme inachevé';
+
+  @override
+  String get syncKeptAsUnfinished =>
+      'Il est de retour dans Créer un programme comme programme inachevé.';
+
+  @override
+  String get syncUnfinishedExists =>
+      'Tu as déjà un programme inachevé. Enregistre-le ou abandonne-le d’abord.';
+
+  @override
+  String get workoutTodayOverline => 'Suggéré aujourd’hui · facultatif';
+
+  @override
+  String get workoutTodayTitle => 'Suggéré aujourd’hui';
+
+  @override
+  String workoutTodayWeight(String load, String range) {
+    return 'Essaie $load aujourd’hui, pour tes $range répétitions prévues.';
+  }
+
+  @override
+  String workoutTodayReps(String load, int aim, int last) {
+    return 'Garde $load et vise une répétition de plus sur l’ensemble de tes séries : $aim au total ($last la dernière séance).';
+  }
+
+  @override
+  String workoutTodayChooseIncrement(String load) {
+    return 'Tes deux dernières séances ont atteint le haut de ta fourchette à $load. Choisis ton incrément de charge pour voir une charge suggérée.';
+  }
+
+  @override
+  String get workoutTodayUse => 'Utiliser la suggestion';
+
+  @override
+  String get workoutTodayKeep => 'Garder mes objectifs';
+
+  @override
+  String get workoutTodayEdit => 'Modifier';
+
+  @override
+  String get workoutTodayEditSemantic =>
+      'Modifier l’objectif de ton programme pour la prochaine fois';
+
+  @override
+  String get workoutTodayWhy => 'Pourquoi cette suggestion?';
+
+  @override
+  String get workoutTodayWhySemantic =>
+      'Pourquoi cette suggestion : les séances et la règle derrière';
+
+  @override
+  String get workoutTodayScope =>
+      'Utiliser la suggestion remplit seulement la charge de cette série. Modifier change ton programme à partir de ta prochaine séance.';
+
+  @override
+  String get workoutTodayScopeNoPlan =>
+      'Utiliser la suggestion remplit seulement la charge de cette série. Rien n’est enregistré avant que tu enregistres une série.';
+
+  @override
+  String workoutTodayUsedLine(String text) {
+    return 'Suggéré aujourd’hui : $text';
+  }
+
+  @override
+  String get workoutTodayPlusLine =>
+      'Suggéré aujourd’hui fait partie de GoHard Plus.';
+
+  @override
+  String get workoutTodayPlusLearn => 'En savoir plus';
+
+  @override
+  String get workoutTodayPlusLearnSemantic =>
+      'En savoir plus sur Suggéré aujourd’hui';
+
+  @override
+  String get workoutTodayPlusBody =>
+      'Avec GoHard Plus, GoHard peut suggérer une charge ou une répétition de plus pour aujourd’hui à partir de tes séances comparables enregistrées. Avec Gratuit, ton programme, ta dernière séance et l’enregistrement restent exactement les mêmes.';
+
+  @override
+  String get workoutTodayWhyTitle => 'Pourquoi cette suggestion?';
+
+  @override
+  String workoutTodayWhyReps(String load, int total, String range) {
+    return 'À la dernière séance, tu as enregistré toutes les séries prévues à $load, $total répétitions au total, chacune dans la fourchette $range de ton programme. Cette suggestion vise une répétition de plus sur l’ensemble de tes séries, toujours dans cette fourchette.';
+  }
+
+  @override
+  String workoutTodayWhyWeight(String target, String increment, String range) {
+    return 'À tes deux dernières séances de cet entraînement, tu as atteint le haut de ta fourchette $range à chaque série prévue à $target. Cette suggestion ajoute ton incrément enregistré ($increment) et garde tes répétitions prévues.';
+  }
+
+  @override
+  String workoutTodayWhyIncrement(String target) {
+    return 'Tes deux dernières séances ont atteint le haut de ta fourchette à $target. GoHard a besoin de ton propre incrément avant de suggérer une charge plus lourde; il n’en devine jamais un.';
+  }
+
+  @override
+  String get workoutTodayWhyLimits =>
+      'GoHard voit seulement ce que tu as enregistré. Il ne peut pas savoir comment une série s’est sentie ni comment était ta technique : garde ta technique habituelle, et change ou ignore ceci quand tu veux. C’est une suggestion, pas une garantie.';
+
+  @override
+  String get workoutTodayConfirmTitle => 'Remplacer ce que tu as saisi?';
+
+  @override
+  String workoutTodayConfirmBody(String load) {
+    return 'Le champ de charge affichera $load. Tes répétitions restent telles quelles, et rien n’est enregistré.';
   }
 }
 

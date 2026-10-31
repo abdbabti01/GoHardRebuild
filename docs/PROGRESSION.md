@@ -93,6 +93,9 @@ shows exactly 195 lb. Changing the unit never changes the stored target or incre
 
 ## Where it appears
 
+Since 31 Oct 2026 the recorder also shows the optional **Suggested today** (this rule unchanged, plus a one-more-rep
+rule on the newest session): docs/PLAN_LIBRARY_OVERLOAD.md › 5.
+
 * **Recording** (selected exercise panel): *Target in this workout* (the frozen one), then *Next target · 195 lb* with
   Review / Review suggestion, or *No next weight target* with *Set a target*. Shown only while the exercise is still in
   the plan workout it was started from. Opening it is a sheet over the recorder: the selected exercise, typed entry,

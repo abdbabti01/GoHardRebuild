@@ -5339,7 +5339,7 @@
   "@builderExperienceExperienced": {
     "description": "Training experience choice."
   },
-  "planLifecycle": "{state, select, draft{draft} active{active} paused{paused} closed{closed} other{{state}}}",
+  "planLifecycle": "{state, select, draft{saved} active{active} paused{paused} closed{closed} other{{state}}}",
   "@planLifecycle": {
     "description": "A plan's state word (lower case in English).",
     "placeholders": {
@@ -5531,15 +5531,15 @@
   "@planStartContinue": {
     "description": "Button: continue building the plan."
   },
-  "planStartDraftCoach": "Your plan is saved as a draft. Review it, then start it when you're ready.",
+  "planStartDraftCoach": "You have a saved plan. Review it, then activate it when you’re ready.",
   "@planStartDraftCoach": {
     "description": "Coach line: a saved draft plan."
   },
-  "planStartDraftTitle": "Your plan is ready to review",
+  "planStartDraftTitle": "A saved plan is ready",
   "@planStartDraftTitle": {
     "description": "Title: a saved draft plan."
   },
-  "planStartDraftBody": "A saved draft does not schedule anything until you start it.",
+  "planStartDraftBody": "A saved plan schedules nothing until you activate it.",
   "@planStartDraftBody": {
     "description": "Body under the draft title."
   },
@@ -5706,7 +5706,7 @@
       }
     }
   },
-  "planSavedDraftEmpty": "Draft · {mode} · add exercises to use it",
+  "planSavedDraftEmpty": "Saved · {mode} · add exercises to use it",
   "@planSavedDraftEmpty": {
     "description": "Subtitle of a saved built draft without exercises.",
     "placeholders": {
@@ -5715,7 +5715,7 @@
       }
     }
   },
-  "planSavedDraftOld": "Draft · not started · would start {date}",
+  "planSavedDraftOld": "Saved · not active · would start {date}",
   "@planSavedDraftOld": {
     "description": "Subtitle of a saved older draft.",
     "placeholders": {
@@ -5827,7 +5827,7 @@
   "@planCreateDifferent": {
     "description": "Row: create another plan."
   },
-  "planCreateDifferentSubtitle": "Starting it will ask before replacing this one.",
+  "planCreateDifferentSubtitle": "Save it for later or activate it. Activating asks before replacing this one.",
   "@planCreateDifferentSubtitle": {
     "description": "Row subtitle."
   },
@@ -6467,7 +6467,7 @@
   "@planReplaceCurrent": {
     "description": "Button."
   },
-  "planSaveForLater": "Save for later",
+  "planSaveForLater": "Not now",
   "@planSaveForLater": {
     "description": "Button."
   },
@@ -7125,7 +7125,7 @@
       }
     }
   },
-  "builderDraftSaved": "Draft saved on this phone. Nothing is active yet.",
+  "builderDraftSaved": "Unfinished plan kept on this phone. Nothing is saved to your account or active yet.",
   "@builderDraftSaved": {
     "description": "Snackbar."
   },
@@ -7632,7 +7632,7 @@
       }
     }
   },
-  "builderFollowingActivate": "You are following \"{title}\". Activating this plan pauses it. Its history and recorded workouts are kept, and you can resume it later.",
+  "builderFollowingActivate": "You are following \"{title}\". Save and activate pauses it: its history and recorded workouts are kept, and you can resume it later. Save plan leaves it exactly as it is.",
   "@builderFollowingActivate": {
     "description": "Panel.",
     "placeholders": {
@@ -17394,7 +17394,7 @@
   "@plusNoLimit": {
     "description": "Comparison value: no product limit (technical limits remain)."
   },
-  "plusUpTo": "Up to {count}",
+  "plusUpTo": "{count, plural, =1{One} other{Up to {count}}}",
   "@plusUpTo": {
     "description": "Comparison value: a creation limit.",
     "placeholders": {
@@ -17499,7 +17499,7 @@
   "@plusLimitPlansTitle": {
     "description": "Limit sheet title: saved plans."
   },
-  "plusLimitPlansBody": "Free includes up to {limit} saved plans, and you have {existing}. They all stay usable, and your draft is kept. Archive a plan you no longer need, or see what GoHard Plus includes.",
+  "plusLimitPlansBody": "Free includes {limit, plural, =1{one saved plan} other{up to {limit} saved plans}}, and you have {existing}. They all stay usable, and the plan you were saving is kept here. Archive a plan you no longer need, or see what GoHard Plus includes.",
   "@plusLimitPlansBody": {
     "description": "Limit sheet body: saved plans.",
     "placeholders": {
@@ -17563,6 +17563,253 @@
         "type": "int"
       },
       "date": {
+        "type": "String"
+      }
+    }
+  },
+  "builderSaveActivate": "Save and activate",
+  "@builderSaveActivate": {
+    "description": "Builder review: create the plan and make it the active one."
+  },
+  "builderSavePlan": "Save plan",
+  "@builderSavePlan": {
+    "description": "Builder review: save the complete plan without activating it."
+  },
+  "builderPlanSaved": "\"{title}\" is saved. It isn’t active, and your current schedule hasn’t changed.",
+  "@builderPlanSaved": {
+    "description": "Snack after Save plan.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "planSavedNotActive": "Saved plan · not active · nothing is scheduled",
+  "@planSavedNotActive": {
+    "description": "Label on a saved plan that was never active."
+  },
+  "planStartPassed": "This plan was set to start {date}. Choose a new start date before activating it, so its first workouts aren’t missed.",
+  "@planStartPassed": {
+    "description": "A saved fixed-weekday plan whose start date has passed cannot be activated as it is.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planEditStart": "Choose a new start date",
+  "@planEditStart": {
+    "description": "Opens the plan editor to choose a new start date."
+  },
+  "planSavedPlans": "Saved plans",
+  "@planSavedPlans": {
+    "description": "Train › Plan section: complete plans that are not active."
+  },
+  "planCreatePlan": "Create plan",
+  "@planCreatePlan": {
+    "description": "Train › Plan: link to create a plan."
+  },
+  "planCreatePlanSaid": "Create a new plan",
+  "@planCreatePlanSaid": {
+    "description": "Screen reader label of Create plan."
+  },
+  "planSavedNone": "No other saved plans. A plan you save without activating it waits here.",
+  "@planSavedNone": {
+    "description": "Train › Plan when there is no other saved plan."
+  },
+  "planSavedReady": "Saved · not active · {mode} · {count, plural, =1{1 workout} other{{count} workouts}}",
+  "@planSavedReady": {
+    "description": "Row subtitle of a saved plan: schedule kind and number of workouts.",
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planUnfinishedSubtitle": "Unfinished · on this phone · continue where you left off",
+  "@planUnfinishedSubtitle": {
+    "description": "Row subtitle of the builder’s unfinished plan."
+  },
+  "planPausedAndFinished": "Paused and finished",
+  "@planPausedAndFinished": {
+    "description": "Train › Plan section: plans that were active before."
+  },
+  "syncReasonPlanLimit": "Your account already has the saved plans Free includes, so this plan wasn’t saved there. Its content is still on this phone.",
+  "@syncReasonPlanLimit": {
+    "description": "Sync review: the account refused a new plan for the saved-plan limit."
+  },
+  "syncKeepAsUnfinished": "Keep as unfinished plan",
+  "@syncKeepAsUnfinished": {
+    "description": "Sync review: put a refused plan back into the builder."
+  },
+  "syncKeptAsUnfinished": "It’s back in Create plan as your unfinished plan.",
+  "@syncKeptAsUnfinished": {
+    "description": "Toast after Keep as unfinished plan."
+  },
+  "syncUnfinishedExists": "You already have an unfinished plan. Save or discard it first.",
+  "@syncUnfinishedExists": {
+    "description": "Keep as unfinished plan when another unfinished plan exists."
+  },
+  "workoutTodayOverline": "Suggested today · optional",
+  "@workoutTodayOverline": {
+    "description": "Overline of the optional suggestion in the recorder."
+  },
+  "workoutTodayTitle": "Suggested today",
+  "@workoutTodayTitle": {
+    "description": "Title of the Suggested today explanation."
+  },
+  "workoutTodayWeight": "Try {load} today, for your planned {range} reps.",
+  "@workoutTodayWeight": {
+    "description": "Suggested today: one saved increment more, planned reps unchanged.",
+    "placeholders": {
+      "load": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayReps": "Keep {load} and aim for one more rep across your sets: {aim} in total ({last} last session).",
+  "@workoutTodayReps": {
+    "description": "Suggested today: the same weight, one more rep in total.",
+    "placeholders": {
+      "load": {
+        "type": "String"
+      },
+      "aim": {
+        "type": "int"
+      },
+      "last": {
+        "type": "int"
+      }
+    }
+  },
+  "workoutTodayChooseIncrement": "Your last two sessions reached the top of your range at {load}. Choose your weight increment to see a suggested weight.",
+  "@workoutTodayChooseIncrement": {
+    "description": "Suggested today when the weight rule qualifies but no increment is saved.",
+    "placeholders": {
+      "load": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayUse": "Use suggestion",
+  "@workoutTodayUse": {
+    "description": "Fills the set entry with the suggestion. Records nothing."
+  },
+  "workoutTodayKeep": "Keep my targets",
+  "@workoutTodayKeep": {
+    "description": "Hides the suggestion for this workout."
+  },
+  "workoutTodayEdit": "Edit",
+  "@workoutTodayEdit": {
+    "description": "Opens the plan’s next-target review."
+  },
+  "workoutTodayEditSemantic": "Edit your plan’s target for next time",
+  "@workoutTodayEditSemantic": {
+    "description": "Screen reader label of Edit."
+  },
+  "workoutTodayWhy": "Why this suggestion?",
+  "@workoutTodayWhy": {
+    "description": "Opens the explanation of the suggestion."
+  },
+  "workoutTodayWhySemantic": "Why this suggestion: the sessions and the rule behind it",
+  "@workoutTodayWhySemantic": {
+    "description": "Screen reader label of Why this suggestion."
+  },
+  "workoutTodayScope": "Use suggestion fills this set’s weight only. Edit changes your plan from your next session.",
+  "@workoutTodayScope": {
+    "description": "Under the suggestion: what each action changes."
+  },
+  "workoutTodayScopeNoPlan": "Use suggestion fills this set’s weight only. Nothing is recorded until you record a set.",
+  "@workoutTodayScopeNoPlan": {
+    "description": "Under the suggestion when the plan target cannot be edited from here."
+  },
+  "workoutTodayUsedLine": "Suggested today: {text}",
+  "@workoutTodayUsedLine": {
+    "description": "Compact line once the suggestion was used.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayPlusLine": "Suggested today is part of GoHard Plus.",
+  "@workoutTodayPlusLine": {
+    "description": "Free: quiet line where Suggested today would be."
+  },
+  "workoutTodayPlusLearn": "Learn more",
+  "@workoutTodayPlusLearn": {
+    "description": "Free: opens the explanation."
+  },
+  "workoutTodayPlusLearnSemantic": "Learn more about Suggested today",
+  "@workoutTodayPlusLearnSemantic": {
+    "description": "Screen reader label of Learn more."
+  },
+  "workoutTodayPlusBody": "With GoHard Plus, GoHard can suggest a weight or one more rep for today from your comparable recorded sessions. On Free, your plan, your last session and recording stay exactly the same.",
+  "@workoutTodayPlusBody": {
+    "description": "Free: what Suggested today is."
+  },
+  "workoutTodayWhyTitle": "Why this suggestion?",
+  "@workoutTodayWhyTitle": {
+    "description": "Title of the explanation sheet."
+  },
+  "workoutTodayWhyReps": "Last session you recorded every planned set at {load}, {total} reps in total, each within your plan’s {range} range. This suggestion aims for one extra rep across your sets, still within that range.",
+  "@workoutTodayWhyReps": {
+    "description": "Explanation of a rep suggestion, from the recorded facts.",
+    "placeholders": {
+      "load": {
+        "type": "String"
+      },
+      "total": {
+        "type": "int"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayWhyWeight": "In your last two sessions of this workout you reached the top of your {range} range on every planned set at {target}. This suggestion adds your saved increment ({increment}) and keeps your planned reps.",
+  "@workoutTodayWhyWeight": {
+    "description": "Explanation of a weight suggestion, from the recorded facts.",
+    "placeholders": {
+      "target": {
+        "type": "String"
+      },
+      "increment": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayWhyIncrement": "Your last two sessions reached the top of your range at {target}. GoHard needs your own weight increment before it suggests a heavier weight; it never guesses one.",
+  "@workoutTodayWhyIncrement": {
+    "description": "Explanation when an increment is needed first.",
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayWhyLimits": "GoHard only sees what you recorded. It can’t tell how a set felt or how your technique was, so keep your usual technique, and change or ignore this anytime. It’s a suggestion, not a guarantee.",
+  "@workoutTodayWhyLimits": {
+    "description": "The limits of the suggestion."
+  },
+  "workoutTodayConfirmTitle": "Replace what you typed?",
+  "@workoutTodayConfirmTitle": {
+    "description": "Before Use suggestion replaces a typed weight."
+  },
+  "workoutTodayConfirmBody": "The weight field will show {load}. Your reps stay as they are, and nothing is recorded.",
+  "@workoutTodayConfirmBody": {
+    "description": "Before Use suggestion replaces a typed weight.",
+    "placeholders": {
+      "load": {
         "type": "String"
       }
     }

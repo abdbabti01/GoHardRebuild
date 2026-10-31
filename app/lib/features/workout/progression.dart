@@ -32,6 +32,45 @@ enum ProgressionDecision {
 enum ProgressionReason {
   none, timed, bodyweight, assisted, noIdentity, noLoadTarget, noRange,
   fewerSessions, targetChanged, partialWorkout, missingExercise, setsMissing, extraSets, loadUnknown, loadDiffers, belowTop,
+  /// Suggested today (reps): a set outside the planned range, or every set already at the top of it.
+  outsideRange, atTop,
+}
+
+/// What "Suggested today" offers for one exercise of an open workout (docs/PLAN_LIBRARY_OVERLOAD.md › 5).
+enum TodayKind {
+  /// No personalised suggestion: the plan and the last session are shown as they are.
+  none,
+
+  /// The existing two-session rule qualifies: one saved increment more, for the planned reps.
+  weight,
+
+  /// The newest session qualifies for one more rep in total, at the same weight.
+  reps,
+
+  /// The weight rule qualifies but no increment is saved: the increment editor, never an invented step.
+  chooseIncrement,
+}
+
+class TodaySuggestion {
+  const TodaySuggestion(this.kind, this.reason, {this.loadKg, this.lastTotal, this.sets, this.repsMin, this.repsMax, this.sessions = const [], this.weight});
+  final TodayKind kind;
+
+  /// Why there is no suggestion ([ProgressionReason.none] when there is one).
+  final ProgressionReason reason;
+
+  /// weight: the suggested load; reps: the load kept from the last session.
+  final double? loadKg;
+
+  /// reps: the total recorded across the planned sets last time (the aim is one more).
+  final int? lastTotal;
+  final int? sets, repsMin, repsMax;
+
+  /// The sessions the suggestion comes from, newest first.
+  final List<ProgressionSession> sessions;
+
+  /// The next-target result it reuses, when the weight rule decided.
+  final ProgressionResult? weight;
+  int? get aimTotal => lastTotal == null ? null : lastTotal! + 1;
 }
 
 /// One comparable session: the workout, its frozen exercise and the sets recorded for it, in order.
@@ -109,11 +148,7 @@ abstract final class ProgressionRules {
   }) {
     final unsupported = support(rx, equipment);
     if (unsupported != ProgressionReason.none) return ProgressionResult(ProgressionDecision.unsupported, unsupported);
-    // The sessions of this plan workout that count as training, newest first.
-    final comparable = [
-      for (final w in workouts)
-        if (countsAsTraining(w) && !w.isOpen && w.planId == planId && w.occasionId != null && definitionOf(w.occasionId!) == definitionId) w,
-    ]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
+    final comparable = _comparable(planId, definitionId, workouts, definitionOf);
     double? lastLoad;
     for (final w in comparable) {
       final e = _exercise(w, rx);
@@ -140,6 +175,59 @@ abstract final class ProgressionRules {
     if (incrementKg == null || incrementKg <= 0) return result(ProgressionDecision.configureIncrement, ProgressionReason.none);
     if (incrementKg > target * maxStepFraction + 1e-9) return result(ProgressionDecision.incrementTooLarge, ProgressionReason.none);
     return result(ProgressionDecision.increase, ProgressionReason.none, proposed: round3(target + incrementKg));
+  }
+
+  /// The finished sessions of this plan workout that count as training, newest first.
+  static List<Workout> _comparable(String planId, String definitionId, List<Workout> workouts, String? Function(String occasionId) definitionOf) => [
+        for (final w in workouts)
+          if (countsAsTraining(w) && !w.isOpen && w.planId == planId && w.occasionId != null && definitionOf(w.occasionId!) == definitionId) w,
+      ]..sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
+
+  /// Suggested today for one exercise of an open workout. [rx] is the prescription frozen into this workout (never the
+  /// plan's later edits), so the suggestion is about what this workout plans. The weight rule is [evaluate] unchanged;
+  /// only when it does not apply, the newest comparable session alone may suggest one more rep in total.
+  static TodaySuggestion today({
+    required String planId,
+    required String definitionId,
+    required Prescription rx,
+    required String? equipment,
+    required List<Workout> workouts,
+    required List<WorkoutSet> sets,
+    required String? Function(String occasionId) definitionOf,
+    required double? incrementKg,
+  }) {
+    final w = evaluate(planId: planId, definitionId: definitionId, rx: rx, equipment: equipment, workouts: workouts, sets: sets, definitionOf: definitionOf, incrementKg: incrementKg);
+    final n = rx.targetSets, lo = rx.targetRepsMin, hi = rx.targetRepsMax;
+    TodaySuggestion none(ProgressionReason r, [List<ProgressionSession> s = const []]) => TodaySuggestion(TodayKind.none, r, sets: n, repsMin: lo, repsMax: hi, sessions: s, weight: w);
+    if (w.decision == ProgressionDecision.unsupported) return none(w.reason);
+    if (w.decision == ProgressionDecision.increase) {
+      return TodaySuggestion(TodayKind.weight, ProgressionReason.none, loadKg: w.proposedKg, sets: n, repsMin: lo, repsMax: hi, sessions: w.sessions, weight: w);
+    }
+    if (w.decision == ProgressionDecision.configureIncrement) {
+      return TodaySuggestion(TodayKind.chooseIncrement, ProgressionReason.none, sets: n, repsMin: lo, repsMax: hi, sessions: w.sessions, weight: w);
+    }
+    // Weight is not suggested now (a step too large stays a manual review); the newest session decides reps.
+    if (w.decision == ProgressionDecision.incrementTooLarge || n == null || lo == null || hi == null) return none(ProgressionReason.noRange);
+    final newest = _comparable(planId, definitionId, workouts, definitionOf).firstOrNull;
+    if (newest == null) return none(ProgressionReason.fewerSessions);
+    final e = _exercise(newest, rx);
+    if (e == null) return none(ProgressionReason.missingExercise, [ProgressionSession(newest, null, const [], ProgressionReason.missingExercise)]);
+    final mine = [for (final s in sets) if (s.exerciseId == e.id && !s.isDeleted) s]..sort((a, b) => a.performedAtUtc.compareTo(b.performedAtUtc));
+    ProgressionSession session(ProgressionReason r) => ProgressionSession(newest, e, mine, r);
+    TodaySuggestion refuse(ProgressionReason r) => none(r, [session(r)]);
+    final sameTarget = rx.targetLoadKg == null ? e.targetLoadKg == null : sameLoad(e.targetLoadKg, rx.targetLoadKg);
+    if (!sameTarget || e.targetSets != n || e.targetRepsMin != lo || e.targetRepsMax != hi) return refuse(ProgressionReason.targetChanged);
+    if (newest.outcome == WorkoutResultRules.partial) return refuse(ProgressionReason.partialWorkout);
+    if (mine.length < n) return refuse(ProgressionReason.setsMissing);
+    if (mine.length > n) return refuse(ProgressionReason.extraSets);
+    if (mine.any((x) => x.loadKg == null || x.loadKg! <= 0)) return refuse(ProgressionReason.loadUnknown);
+    final load = mine.first.loadKg!;
+    // One weight on every set, and the one this workout plans when it plans one: otherwise the reps are not comparable.
+    if (mine.any((x) => !sameLoad(x.loadKg, load)) || (rx.targetLoadKg != null && !sameLoad(load, rx.targetLoadKg))) return refuse(ProgressionReason.loadDiffers);
+    if (mine.any((x) => x.reps == null || x.reps! < lo || x.reps! > hi)) return refuse(ProgressionReason.outsideRange);
+    final total = mine.fold(0, (a, x) => a + x.reps!);
+    if (total >= n * hi) return refuse(ProgressionReason.atTop);
+    return TodaySuggestion(TodayKind.reps, ProgressionReason.none, loadKg: load, lastTotal: total, sets: n, repsMin: lo, repsMax: hi, sessions: [session(ProgressionReason.none)], weight: w);
   }
 
   /// The same exercise in the same place of the workout: its occurrence key and identity, as planned (not a swap).

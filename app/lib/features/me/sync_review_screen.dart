@@ -15,6 +15,7 @@ import '../../core/compatibility.dart';
 import '../body/body_metrics.dart';
 import '../body/body_repository.dart';
 import '../nutrition/water.dart';
+import '../plans/train_screen.dart' show builderDraftProvider;
 import '../workout/workout_screen.dart';
 
 /// A plain description of one stored version, for comparing "on this phone" with "in your account". Names, titles and
@@ -81,6 +82,7 @@ String _reason(AppLocalizations l, String? code) => switch (code) {
       'SET_DEPENDENCY_MISMATCH' => l.syncReasonSetMismatch,
       'PRIMARY_EXISTS' || 'PLAN_NOT_DRAFT' || 'PLAN_NOT_ACTIVE' || 'PLAN_NOT_PAUSED' || 'STALE_REVIEW' => l.syncReasonPlansChanged,
       'NOT_FOUND' => l.syncReasonNotFound,
+      'PLAN_LIMIT' => l.syncReasonPlanLimit,
       _ => l.syncReasonOther(code == null ? l.syncReasonUnknownCode : ltr(code)),
     };
 
@@ -125,6 +127,8 @@ class _Issue extends ConsumerWidget {
       builder: (context, snap) {
         final cmd = snap.data;
         final refusedStart = cmd?.kind == 'workout.start';
+        // A refused new plan (docs/PLAN_LIBRARY_OVERLOAD.md): its content can go back to the builder, nothing lost.
+        final refusedPlan = cmd?.kind == 'plan.create' && rec.syncState == 'rejected' && rec.revision == 0;
         return Padding(
           padding: const EdgeInsets.only(top: 18),
           child: Panel(
@@ -152,6 +156,14 @@ class _Issue extends ConsumerWidget {
                           _ => ref.read(foodRepositoryProvider).keepLocal(cmd.operationId, FoodEntry(local)),
                         },
                     (l) => l.syncKeptLocal)),
+                const SizedBox(height: 8),
+              ],
+              if (refusedPlan) ...[
+                PrimaryButton(l.syncKeepAsUnfinished, key: Key('issue-unfinished-${rec.id}'), onPressed: () async {
+                  final kept = await ref.read(planRepositoryProvider).keepRefusedAsDraft(cmd!.operationId, today: ref.read(todayKeyProvider));
+                  ref.invalidate(builderDraftProvider);
+                  if (context.mounted) toast(context, kept ? l.syncKeptAsUnfinished : l.syncUnfinishedExists);
+                }),
                 const SizedBox(height: 8),
               ],
               if (refusedStart) ...[

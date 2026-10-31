@@ -11,7 +11,7 @@ server-authorized preview switch.
 |---|---|---|
 | Workout logging, timers, previous sets, manual targets | ✓ | ✓ |
 | Active training plan | one (unchanged scheduling rule) | one (unchanged: Plus is more *saved* plans, never two active schedules) |
-| Saved plan definitions (plans not archived, any lifecycle) | up to **3** | no product limit (technical cap 200) |
+| Saved plan definitions (plans not archived, any lifecycle; the builder's unfinished plan does not count) | **1** (was 3 until 31 Oct 2026, `feature/plan-library-overload`) | no product limit (technical cap 200) |
 | Food search, barcode, nutrition goals, water, coloured bars | ✓ | ✓ |
 | Saved meals + recipes (combined, not deleted) | up to **10** | no product limit (technical cap 500) |
 | Run / Walk, maps, steps, intervals, audio | ✓ | ✓ |
@@ -20,6 +20,7 @@ server-authorized preview switch.
 | An exercise's trend page opened from the overview previews or the weekly recap highlight (4 weeks / 12 weeks, rep count, its sessions, "All N sessions and sets") | ✓ | ✓ |
 | **Exercise-trend explorer**: Progress › Strength trends › See all (every recorded exercise) and the **All** range | — (explained on tap) | ✓ |
 | **Next-target (progression) suggestions** (Next time card, "Review suggestion") | — (hidden; manual targets stay) | ✓ |
+| **Suggested today** in the recorder (one more increment or one more rep, docs/PLAN_LIBRARY_OVERLOAD.md › 5) | — (one quiet "part of GoHard Plus" line; plan ranges, last session, manual targets and recording stay) | ✓ |
 | Meal, medication and supplement reminders | ✓ | ✓ |
 | Leon/Leona, briefings, navigation help, local habit suggestions, Quick guide | ✓ | ✓ |
 | Sync, export of records, deletion, languages, accessibility, account security | ✓ | ✓ |
@@ -108,7 +109,7 @@ allowance for this month. Your tracking, saved meals and built-in guidance still
   the preview table and endpoints can then be removed without touching the model.
 * No profile, sync, command or capability field can grant Plus: the tier is never read from a request.
 * Creation limits are enforced in `PlanService` (`plan.draft`, `plan.create`, `plan.continue` — every way a new plan
-  definition is made, duplicates included) and `SavedMealService.PutAsync` for a new ID. Answers: rejected
+  definition is made, duplicates included — and `plan.archive` moving a plan out of the archive, since 31 Oct 2026) and `SavedMealService.PutAsync` for a new ID. Answers: rejected
   `PLAN_LIMIT` / `MEAL_LIMIT`. Edits, activation, starting, logging, deleting, archiving and sync are never limited.
 * Capability `account.entitlement` (every new server). It says the endpoint exists; it is **not** an entitlement.
 * Migration `AddEntitlements` (additive): `PreviewOverrides (UserId PK → Users cascade, Tier, AllowanceResetAtUtc,
@@ -123,7 +124,7 @@ Configuration (`Plus` section, all optional; these are testing values, not comme
 |---|---|
 | `Plus:PreviewOwnerUserId` | empty (no account can switch) |
 | `Plus:FreeMonthlyAi` / `Plus:PlusMonthlyAi` | 15 / 300 |
-| `Plus:FreeSavedPlans` / `Plus:FreeSavedMeals` | 3 / 10 |
+| `Plus:FreeSavedPlans` / `Plus:FreeSavedMeals` | 1 / 10 (plans: 3 until 31 Oct 2026) |
 | `Plus:MaxSavedPlans` / `Plus:MaxSavedMeals` (technical, both tiers) | 200 / 500 |
 | `Plus:CacheHours` (how long the app may use the last answer) | 72 |
 
@@ -139,7 +140,8 @@ Configuration (`Plus` section, all optional; these are testing values, not comme
 * **Unknown** (loading, never fetched, expired, server unreachable): no paywall is ever shown for it. Existing
   content, logging, plans, saved meals and activities are untouched. Creating beyond the Free limits is not offered
   until the answer is known ("We couldn't confirm your GoHard Plus access right now"); Plus-only views say the same.
-* Gates (all from the one model): plan builder Activate for a new or duplicated plan, Continue this plan, saved-meal
+* Gates (all from the one model): plan builder Save plan / Save and activate for a new or duplicated plan, moving a plan
+  out of the archive, Continue this plan, saved-meal
   and recipe Save / Save as new, Strength trends › See all, the All range, progression suggestions.
 * Drafts survive: the plan builder's draft and the meal editor's draft are already local records; the limit sheet is
   a sheet over the page (View Plus pushes a page above it), so the page and its fields stay as they were.

@@ -13,6 +13,7 @@ import '../../data/sync.dart';
 import '../coach/coach_bubble.dart';
 import '../plans/plan_projection.dart';
 import '../plus/entitlement.dart';
+import '../plus/plus_screen.dart' show showPlusFeature;
 import '../plans/plan_repository.dart';
 import 'progression.dart';
 import 'progression_repository.dart';
@@ -253,8 +254,11 @@ Future<void> keepCurrentTarget(BuildContext context, WidgetRef ref, TargetKey k,
 /// The selected exercise's next target, apart from today's: "Next target · 195 lb" with Review, or Set a target when
 /// the plan has no weight target. Shown only while the exercise is still in the plan workout it was started from.
 class NextTargetLine extends ConsumerWidget {
-  const NextTargetLine({super.key, required this.slotKey});
+  const NextTargetLine({super.key, required this.slotKey, this.quiet = false});
   final TargetKey slotKey;
+
+  /// In the recorder "Suggested today" carries the suggestion, so this line only offers Review (no second card).
+  final bool quiet;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -262,7 +266,7 @@ class NextTargetLine extends ConsumerWidget {
     if (slot == null) return const SizedBox.shrink();
     final unit = ref.watch(loadUnitProvider);
     final load = slot.exercise.targetLoadKg;
-    final suggested = ref.watch(suggestionProvider(slotKey))?.decision == ProgressionDecision.increase;
+    final suggested = !quiet && ref.watch(suggestionProvider(slotKey))?.decision == ProgressionDecision.increase;
     final l = context.l10n, name = shownName(ref, context, slot.exercise.catalogKey, slot.exercise.name);
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -276,6 +280,136 @@ class NextTargetLine extends ConsumerWidget {
       ]),
     );
   }
+}
+
+// ---------------------------------------------------------------------------------------------- Suggested today
+
+/// One exercise of one open workout started from a plan workout ([definitionId]).
+typedef TodayKey = ({String planId, String definitionId, String workoutId, String exerciseId});
+
+/// "Suggested today" from the records, recomputed whenever they change (docs/PLAN_LIBRARY_OVERLOAD.md › 5). Computed
+/// on the phone for every tier; only Plus is shown it ([SuggestedToday]). Null when the exercise is gone.
+final todaySuggestionProvider = Provider.family<TodaySuggestion?, TodayKey>((ref, k) {
+  final workouts = ref.watch(workoutListProvider);
+  final e = workouts.where((w) => w.id == k.workoutId).firstOrNull?.exercises.where((x) => x.id == k.exerciseId).firstOrNull;
+  if (e == null) return null;
+  final rx = Prescription(e.j), defs = ref.watch(_definitionsProvider(k.planId));
+  return ProgressionRules.today(
+    planId: k.planId, definitionId: k.definitionId, rx: rx, equipment: _equipment(ref, rx.catalogKey), workouts: workouts,
+    sets: ref.watch(trustedSetsProvider), definitionOf: (id) => defs[id],
+    incrementKg: rx.catalogKey == null ? null : ref.watch(incrementsProvider).value?[rx.catalogKey]?.value.incrementKg,
+  );
+});
+
+String _range(TodaySuggestion t) => ltr('${t.repsMin}–${t.repsMax}');
+
+/// The suggestion in one sentence, in the person's unit. Never a per-set prescription.
+String todayText(TodaySuggestion t, LoadUnit unit, AppLocalizations l) => switch (t.kind) {
+      TodayKind.weight => l.workoutTodayWeight(formatLoad(t.loadKg, unit), _range(t)),
+      TodayKind.reps => l.workoutTodayReps(formatLoad(t.loadKg, unit), t.aimTotal!, t.lastTotal!),
+      TodayKind.chooseIncrement => l.workoutTodayChooseIncrement(formatLoad(t.weight?.targetKg, unit)),
+      TodayKind.none => '',
+    };
+
+/// The selected exercise's optional suggestion, below the last session and apart from the entry. Plus only: Free sees
+/// one quiet line on supported exercises with history; unknown shows nothing. Nothing here records a set or changes the
+/// workout's own targets; [onUse] fills the entry and [onKeep] hides it for this workout ([answer] is the stored one).
+class SuggestedToday extends ConsumerWidget {
+  const SuggestedToday({super.key, required this.todayKey, required this.exercise, required this.answer, required this.hasHistory, required this.onUse, required this.onKeep});
+  final TodayKey todayKey;
+  final WorkoutExercise exercise;
+  final String? answer;
+  final bool hasHistory;
+  final ValueChanged<TodaySuggestion> onUse;
+  final VoidCallback onKeep;
+
+  static const _unsupported = {ProgressionReason.timed, ProgressionReason.bodyweight, ProgressionReason.assisted, ProgressionReason.noIdentity};
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(todaySuggestionProvider(todayKey));
+    final plus = ref.watch(plusProvider);
+    if (t == null || plus == null || answer == 'kept') return const SizedBox.shrink();
+    final l = context.l10n, c = context.c, unit = ref.watch(loadUnitProvider);
+    if (!plusFeature(plus, Entitlement.progression)) {
+      if (!hasHistory || _unsupported.contains(t.reason)) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Wrap(key: const Key('today-plus'), crossAxisAlignment: WrapCrossAlignment.center, spacing: 4, children: [
+          Icon(Icons.tips_and_updates_outlined, size: 18, color: c.secondary),
+          Text(l.workoutTodayPlusLine, style: context.sansStyle(14.5, color: c.secondary)),
+          QuietLink(l.workoutTodayPlusLearn, key: const Key('today-plus-learn'), said: l.workoutTodayPlusLearnSemantic,
+              onPressed: () => showPlusFeature(appContext(context), title: l.workoutTodayTitle, body: l.workoutTodayPlusBody)),
+        ]),
+      );
+    }
+    if (t.kind == TodayKind.none) return const SizedBox.shrink();
+    final text = todayText(t, unit, l);
+    final slotKey = (planId: todayKey.planId, workoutId: todayKey.definitionId, occurrenceKey: exercise.occurrenceKey ?? '');
+    final slot = ref.watch(targetSlotProvider(slotKey));
+    final why = QuietLink(l.workoutTodayWhy, key: const Key('today-why'), said: l.workoutTodayWhySemantic, onPressed: () => showTodayWhy(appContext(context), t));
+    if (answer == 'used') {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Wrap(key: const Key('today-used'), crossAxisAlignment: WrapCrossAlignment.center, spacing: 4, children: [
+          Icon(Icons.tips_and_updates_outlined, size: 18, color: c.secondary),
+          Text(l.workoutTodayUsedLine(text), style: context.sansStyle(14.5, color: c.secondary)),
+          why,
+        ]),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Panel(
+        key: const Key('suggested-today'),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Overline(l.workoutTodayOverline),
+          const SizedBox(height: 4),
+          Text(text, key: const Key('today-text'), style: context.sansStyle(15.5, weight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            if (t.kind == TodayKind.chooseIncrement)
+              TextButton(key: const Key('today-increment'), onPressed: () => showIncrementSheet(appContext(context), Prescription(exercise.j)), child: Text(l.workoutChooseIncrement))
+            else
+              TextButton(key: const Key('today-use'), onPressed: () => onUse(t), child: Text(l.workoutTodayUse)),
+            TextButton(key: const Key('today-keep'), onPressed: onKeep, child: Text(l.workoutTodayKeep)),
+            if (slot != null)
+              TextButton(key: const Key('today-edit'), onPressed: () => showTargetReview(appContext(context), slotKey),
+                  child: Text(l.workoutTodayEdit, semanticsLabel: l.workoutTodayEditSemantic)),
+          ]),
+          why,
+          Text(slot != null ? l.workoutTodayScope : l.workoutTodayScopeNoPlan, style: context.caption),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Why this suggestion: the rule in words, the sessions it used and what GoHard cannot know. The selected Leon/Leona
+/// says it through the help sheet's speaker (plain text with the coach off); nothing floats over the recorder.
+Future<void> showTodayWhy(BuildContext context, TodaySuggestion t) {
+  final l = context.l10n;
+  return showGoSheet<void>(context, title: l.workoutTodayWhyTitle, builder: (sheet) {
+    final unit = ProviderScope.containerOf(sheet, listen: false).read(loadUnitProvider);
+    final rule = switch (t.kind) {
+      TodayKind.reps => l.workoutTodayWhyReps(formatLoad(t.loadKg, unit), t.lastTotal!, _range(t)),
+      TodayKind.weight => l.workoutTodayWhyWeight(formatLoad(t.weight?.targetKg, unit), formatLoad(t.weight?.incrementKg, unit), _range(t)),
+      _ => l.workoutTodayWhyIncrement(formatLoad(t.weight?.targetKg, unit)),
+    };
+    return Column(key: const Key('today-why-sheet'), crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+      CoachSpeaker(say: CoachSay(rule)),
+      const SizedBox(height: 12),
+      Overline(l.workoutYourLastSessions),
+      for (final s in t.sessions)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(l.workoutSessionLine(longDate(s.workout.dayKey), s.sets.isEmpty ? l.workoutNotRecordedLower : [for (final x in s.sets) setText(x, unit, l)].join(l.workoutListSeparator)),
+              style: sheet.numStyle(14, color: sheet.c.secondary, weight: FontWeight.w400)),
+        ),
+      const SizedBox(height: 12),
+      Text(l.workoutTodayWhyLimits, style: sheet.caption),
+    ]);
+  });
 }
 
 // ---------------------------------------------------------------------------------------------- review

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
+import 'package:gohard_rebuild/core/device_prefs.dart';
+import 'package:gohard_rebuild/core/language.dart';
 import 'package:gohard_rebuild/core/units.dart';
 import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
@@ -47,7 +49,7 @@ Json _plan() {
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
-  Future<(ProviderContainer, AppDb, Future<T> Function<T>(Future<T>), Future<void> Function())> setUpApp(WidgetTester tester, {Size size = const Size(390, 2600), double textScale = 1}) async {
+  Future<(ProviderContainer, AppDb, Future<T> Function<T>(Future<T>), Future<void> Function())> setUpApp(WidgetTester tester, {Size size = const Size(390, 2600), double textScale = 1, Entitlement? plus}) async {
     final db = AppDb(NativeDatabase.memory());
     addTearDown(db.close);
     final clock = FakeClock(DateTime.utc(2026, 10, 10, 7));
@@ -57,7 +59,7 @@ void main() {
         ...(await tester.runAsync(() => overridesFor(day: _today, primaryPlanId: _pid, profile: {'loadUnit': 'lb'}, liveWorkouts: true, livePlans: true)))!,
         dbProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(clock),
-        plusProvider.overrideWithValue(plusPreview), // next-target suggestions are a GoHard Plus feature (docs/PLUS_PREVIEW.md)
+        plusProvider.overrideWithValue(plus ?? plusPreview), // next-target suggestions are a GoHard Plus feature (docs/PLUS_PREVIEW.md)
         syncProvider.overrideWith((ref) {
           final engine = SyncEngine(db, Api(FakeServer()..offline = true, ref.watch(sessionsProvider)), ref.watch(sessionsProvider))..isBlocked = () => true;
           ref.onDispose(engine.dispose);
@@ -189,6 +191,126 @@ void main() {
     await settle();
     expect(find.byKey(const Key('review-confirm')).hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  // ------------------------------------------------------------------ Suggested today (docs/PLAN_LIBRARY_OVERLOAD.md › 5)
+
+  Future<String> startToday(WidgetTester tester, ProviderContainer container, Future<void> Function() settle) async {
+    final occasion = container.read(planListProvider).single.occasions.firstWhere((o) => o.scheduledDate == _today);
+    container.read(shellProvider.notifier).openWorkout(WorkoutFocus.preview(_pid, occasion.id));
+    await tester.tap(find.byKey(const Key('nav-train')));
+    await settle();
+    Scrollable.ensureVisible(tester.element(find.byKey(const Key('preview-start'))), alignment: 0.5);
+    await settle();
+    await tester.tap(find.byKey(const Key('preview-start')));
+    await settle();
+    return container.read(workoutListProvider).firstWhere((w) => w.isOpen).id;
+  }
+
+  testWidgets('Suggested today: weight and reps are offered apart from the facts; Use fills only the weight after asking, Keep hides it for this workout; nothing is recorded, sent or moved', (tester) async {
+    final (container, db, run, settle) = await setUpApp(tester);
+    Future<void> tap(String key) async {
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.tap(find.byKey(Key(key)));
+      await settle();
+    }
+
+    TextEditingController field(String key) => tester.widget<TextField>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(TextField))).controller!;
+    final id = await startToday(tester, container, settle);
+    Future<WorkoutRuntime> runtime() async => WorkoutRuntime(jsonDecode((await run(container.read(syncProvider).get('one', Kinds.runtime, id)))!.body) as Json);
+    final commandsBefore = (await run(db.select(db.commands).get())).length;
+
+    // --- Bench press: the plan (frozen 190 lb), last session and the optional weight suggestion, kept apart.
+    expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '190 lb');
+    expect(find.byKey(const Key('last-time')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('today-text'))).data, 'Try 195 lb today, for your planned 6–8 reps.');
+    expect(find.text('Review'), findsOneWidget, reason: 'the next-target line no longer repeats the suggestion');
+    final before = await runtime();
+
+    // --- A typed weight is replaced only after asking; Keep mine keeps it.
+    await tester.enterText(find.descendant(of: find.byKey(const Key('set-load')), matching: find.byType(TextField)), '200');
+    await settle();
+    await tap('today-use');
+    expect(find.text('Replace what you typed?'), findsOneWidget);
+    await tester.tap(find.text('Keep mine'));
+    await settle();
+    expect(field('set-load').text, '200');
+    await tap('today-use');
+    await tester.tap(find.widgetWithText(FilledButton, 'Use suggestion').last);
+    await settle();
+    expect(field('set-load').text, '195');
+    expect(find.byKey(const Key('today-used')), findsOneWidget);
+    final used = await runtime();
+    expect(used.suggestionFor(used.selectedExerciseId!), 'used');
+    expect((used.selectedExerciseId, used.j['runningAnchorUtc'], used.restDeadlineUtc), (before.selectedExerciseId, before.j['runningAnchorUtc'], before.restDeadlineUtc),
+        reason: 'same exercise, same clock, no rest started');
+    expect(used.draftFor(used.selectedExerciseId!).rawLoad, '195', reason: 'kept as this exercise\'s entry');
+
+    // --- Overhead press (no weight target): one more rep in total at last session's weight; Why shows the evidence.
+    await tap('next-exercise');
+    expect(find.textContaining('aim for one more rep across your sets: 19 in total (18 last session)'), findsOneWidget);
+    await tap('today-why');
+    expect(find.byKey(const Key('today-why-sheet')), findsOneWidget);
+    expect(find.textContaining('18 reps in total'), findsOneWidget);
+    expect(find.textContaining('can’t tell how a set felt'), findsOneWidget);
+    await tester.tapAt(const Offset(20, 20));
+    await settle();
+    await tap('today-keep');
+    expect(find.byKey(const Key('suggested-today')), findsNothing);
+
+    // --- Back to Bench press and again to Overhead press: the typed draft is there, the declined one stays declined.
+    await tap('exercise-row-1');
+    expect(field('set-load').text, '195');
+    await tap('exercise-row-2');
+    expect(find.byKey(const Key('suggested-today')), findsNothing, reason: 'declined: not offered again in this workout');
+    expect((await runtime()).suggestionFor((await runtime()).selectedExerciseId!), 'kept');
+
+    // --- Nothing was recorded or sent, the plan is unchanged; only Record set records.
+    expect(await run(container.read(workoutRepositoryProvider).sets(id)), isEmpty);
+    expect((await run(db.select(db.commands).get())).length, commandsBefore);
+    expect(container.read(planListProvider).single.workouts.single.exercises.first.targetLoadKg, closeTo(_target, 1e-9));
+    await tap('exercise-row-1');
+    await tap('complete-set');
+    final recorded = await run(container.read(workoutRepositoryProvider).sets(id));
+    expect(recorded, hasLength(1));
+    expect(formatLoad(recorded.single.loadKg, LoadUnit.lb), '195 lb', reason: 'stored in kilograms, the same physical load');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Free: plan, last session and recording as always, a quiet Plus line and no suggestion; opening the workout shows no paywall', (tester) async {
+    final free = Entitlement(const {'tier': 'free', 'limits': {'savedPlans': 1, 'savedMeals': 10}, 'features': [], 'validForSeconds': 259200}, receivedAtUtc: DateTime.utc(2026));
+    final (container, _, run, settle) = await setUpApp(tester, plus: free);
+    final id = await startToday(tester, container, settle);
+    expect(find.byKey(const Key('plus-limit')), findsNothing);
+    expect(find.byKey(const Key('plus-feature')), findsNothing);
+    expect(find.byKey(const Key('suggested-today')), findsNothing);
+    expect(find.byKey(const Key('last-time')), findsOneWidget);
+    expect(find.byKey(const Key('today-plus')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('today-plus-learn')));
+    await tester.tap(find.byKey(const Key('today-plus-learn')));
+    await settle();
+    expect(find.byKey(const Key('plus-feature')), findsOneWidget);
+    expect(find.textContaining('one more rep for today'), findsOneWidget);
+    await tester.tapAt(const Offset(20, 20));
+    await settle();
+    await tester.ensureVisible(find.byKey(const Key('complete-set')));
+    await tester.tap(find.byKey(const Key('complete-set')));
+    await settle();
+    expect(await run(container.read(workoutRepositoryProvider).sets(id)), hasLength(1), reason: 'recording is never gated');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('narrow screen, twice the text, Arabic: the suggestion panel fits and reads right to left', (tester) async {
+    await tester.runAsync(loadArabicFonts);
+    final (container, _, _, settle) = await setUpApp(tester, size: const Size(320, 700), textScale: 2);
+    container.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse('ar'));
+    await settle();
+    await startToday(tester, container, settle);
+    await tester.scrollUntilVisible(find.byKey(const Key('suggested-today')), 200, scrollable: find.byType(Scrollable).first);
+    await settle();
+    expect(tester.takeException(), isNull);
+    expect(Directionality.of(tester.element(find.byKey(const Key('suggested-today')))), TextDirection.rtl);
     await tester.pumpWidget(const SizedBox());
   });
 }

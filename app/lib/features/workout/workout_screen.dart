@@ -21,6 +21,7 @@ import '../plans/plan_progress.dart';
 import '../shell/home_shell.dart';
 import 'next_target.dart';
 import 'progress.dart';
+import 'progression.dart' show TodaySuggestion;
 import 'result_rules.dart';
 import 'workout_detail_screen.dart';
 import 'workout_flow.dart';
@@ -235,6 +236,36 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
       _typed = false;
     });
     _flushDraft();
+  }
+
+  /// Use suggestion (docs/PLAN_LIBRARY_OVERLOAD.md › 5): the suggested weight goes into this set's load field, nothing
+  /// else. Typed values are replaced only after asking; reps stay the person's. It records nothing, starts no rest,
+  /// sends no command and changes no target. The same values again do nothing.
+  Future<void> _useSuggestion(WorkoutExercise exercise, TodaySuggestion t, LoadUnit unit) async {
+    if (t.loadKg == null || _boundExerciseId != exercise.id) return;
+    final load = formatLoadValue(t.loadKg!, unit);
+    if (_load.text == load && (_entryUnit ?? unit) == unit && _runtime!.suggestionFor(exercise.id) == 'used') return;
+    final typed = _typed && _load.text.trim().isNotEmpty && _load.text != load;
+    if (typed &&
+        !await confirm(context, title: context.l10n.workoutTodayConfirmTitle, body: context.l10n.workoutTodayConfirmBody(withUnit(load, unit.label)),
+            action: context.l10n.workoutTodayUse, cancel: context.l10n.workoutUseLastKeepMine)) {
+      return;
+    }
+    if (!mounted || _boundExerciseId != exercise.id) return;
+    setState(() {
+      _load.text = load;
+      _entryUnit = unit;
+      _typed = true; // kept as this exercise's draft, like anything typed
+    });
+    _foldDraft();
+    await _save(_runtime!.withSuggestion(exercise.id, 'used'));
+  }
+
+  /// Keep my targets: the suggestion is not offered again for this exercise in this workout. Nothing else changes.
+  Future<void> _keepSuggestion(WorkoutExercise exercise) async {
+    if (_runtime!.suggestionFor(exercise.id) == 'kept') return;
+    _foldDraft();
+    await _save(_runtime!.withSuggestion(exercise.id, 'kept'));
   }
 
   Future<void> _complete(Workout workout, WorkoutExercise exercise) async {
@@ -546,7 +577,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           _Tile(icon: Icons.flag_outlined, label: l.workoutTargetInWorkout, value: formatLoad(selected.targetLoadKg, unit), valueKey: const Key('workout-target-load')),
         ],
         if (definitionOf(ref, workout) case final def? when selected.isPrescribed && selected.occurrenceKey != null)
-          NextTargetLine(slotKey: (planId: workout.planId!, workoutId: def, occurrenceKey: selected.occurrenceKey!)),
+          NextTargetLine(slotKey: (planId: workout.planId!, workoutId: def, occurrenceKey: selected.occurrenceKey!), quiet: true),
         if ((selected.notes ?? '').trim().isNotEmpty)
           Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.sticky_note_2_outlined, selected.notes!.trim())),
         const SizedBox(height: 16),
@@ -556,6 +587,13 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           today: [for (final r in mine) r.value], nextIndex: parked ? null : mine.length, rows: selected.targetSets,
           onAll: () => showExerciseHistory(context, name: nameOf(selected), history: history, unit: unit),
         ),
+        // Optional and apart from the facts above; only for an exercise as the plan workout prescribed it.
+        if (definitionOf(ref, workout) case final def? when !parked && selected.isPrescribed && selected.occurrenceKey != null && selected.substitutedForKey == null)
+          SuggestedToday(
+            todayKey: (planId: workout.planId!, definitionId: def, workoutId: workout.id, exerciseId: selected.id), exercise: selected,
+            answer: runtime.suggestionFor(selected.id), hasHistory: history.isNotEmpty,
+            onUse: (t) => _useSuggestion(selected, t, unit), onKeep: () => _keepSuggestion(selected),
+          ),
         const SizedBox(height: 16),
         if (!parked) ...[
           if (rest != null)

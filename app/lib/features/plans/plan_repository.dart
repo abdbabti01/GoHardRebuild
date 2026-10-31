@@ -275,21 +275,47 @@ class PlanRepository {
             if (((e as Json)['catalogKey'] as String?)?.startsWith('custom:') ?? false) (Kinds.customExercise, (e['catalogKey'] as String).substring(7)),
       ];
 
-  /// Activate plan: creates the user's own plan from the draft and makes it the primary plan. Both are saved on the
-  /// phone with their commands before any network use, so this works offline; the activation waits for the creation.
-  /// Replacing a current primary must be named, and pauses it (history kept), exactly like `activate`.
-  Future<Receipt> createAndActivate(PlanDraft draft, {required String today, String? replacePrimaryId}) async {
+  /// Save plan: the user's own complete plan from the draft, saved on the account and NOT activated
+  /// (docs/PLAN_LIBRARY_OVERLOAD.md). The context, the current plan, its schedule and rotation are not touched. Saved on
+  /// the phone with its command before any network use, so it works offline. The builder's draft is cleared.
+  Future<Plan> createPlan(PlanDraft draft) async {
     final errors = draft.errors;
     if (errors.isNotEmpty) throw ScheduleRefused(errors);
     if (!draft.isUsable) throw const ScheduleRefused([PlanRules.notUsable]);
-    final current = (await _contextBody())['primaryPlanId'] as String?;
-    if (current != null && current != replacePrimaryId) throw const ScheduleRefused(['PRIMARY_EXISTS']);
     final body = draft.toPlanJson();
     await _sync.submit(_owner, kind: 'plan.create', path: '/plans', targetKind: Kinds.plan, targetId: draft.planId,
         after: [_ctx, ..._customAfter(body)], writes: [_write(body)], payload: draft.createPayload());
-    final receipt = await activate(Plan(body), today: today, replacePrimaryId: replacePrimaryId);
     await discardBuilderDraft(draft.draftId);
-    return receipt;
+    return Plan(body);
+  }
+
+  /// Save and activate: [createPlan], then a separate `plan.activate` waiting behind it. If the activation is refused
+  /// the plan stays saved and can be activated again (same plan, a new activation). Replacing a current primary must
+  /// be named, and pauses it (history kept), exactly like `activate`.
+  Future<Receipt> createAndActivate(PlanDraft draft, {required String today, String? replacePrimaryId}) async {
+    final current = (await _contextBody())['primaryPlanId'] as String?;
+    if (current != null && current != replacePrimaryId) throw const ScheduleRefused(['PRIMARY_EXISTS']);
+    return activate(await createPlan(draft), today: today, replacePrimaryId: replacePrimaryId);
+  }
+
+  /// A save the account refused (a saved-plan limit reached on another phone, say): its content goes back into the
+  /// builder as the unfinished plan, the refused command and anything waiting behind it are withdrawn, and the
+  /// account's state is read again. False (nothing changed) when another unfinished plan is already open there.
+  Future<bool> keepRefusedAsDraft(String operationId, {required String today}) async {
+    final cmd = await _sync.command(operationId);
+    if (cmd == null || cmd.kind != 'plan.create' || cmd.ownerId != _owner || await builderDraft('new') != null) return false;
+    final rec = await _sync.get(_owner, Kinds.plan, cmd.targetId);
+    if (rec == null) return false;
+    final draft = PlanDraft.fromPlan(Plan(jsonDecode(rec.body) as Json), duplicate: true, today: today, copyName: (name) => name);
+    draft.j['mode'] = 'new';
+    draft.step = 3;
+    await saveBuilderDraft(draft);
+    // An activation queued behind the refused save would only be refused too; its local change is read again below.
+    for (final c in await _sync.commands(_owner, states: const ['pending'])) {
+      if ((jsonDecode(c.dependsOn) as List).contains(operationId)) await _sync.abandon(c.operationId);
+    }
+    await _sync.discard(_owner, operationId);
+    return true;
   }
 
   /// Save changes to an existing plan from the draft's effective date on (a draft plan is rebuilt in full). Recorded,
