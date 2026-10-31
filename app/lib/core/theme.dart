@@ -104,6 +104,18 @@ class GoColors extends ThemeExtension<GoColors> {
     );
   }
 
+  /// Progress against a goal the person chose (calorie and protein bars): green, yellow, red. Never food quality, health
+  /// or merit, and always paired with words. The fills hold 3:1 against the recessed track and the texts 4.5:1 against
+  /// the page, on the pale photo panels (every accent, Light and Dark: [panelOf] has a pale page) and on Dark's own page.
+  /// A true yellow cannot hold 3:1 on a pale panel, so the light "yellow" is a deep gold.
+  bool get _darkPage => page.computeLuminance() < 0.2;
+  Color get goalGreen => Color(_darkPage ? 0xFF6FCF97 : 0xFF1E7B4A);
+  Color get goalYellow => Color(_darkPage ? 0xFFE8B341 : 0xFF9A6700);
+  Color get goalRed => Color(_darkPage ? 0xFFFF8A80 : 0xFFB3261E);
+  Color get goalGreenText => Color(_darkPage ? 0xFF6FCF97 : 0xFF17663D);
+  Color get goalYellowText => Color(_darkPage ? 0xFFE8B341 : 0xFF7D5200);
+  Color get goalRedText => Color(_darkPage ? 0xFFFF8A80 : 0xFFB3261E);
+
   /// How much of the page a [scrim] lets through; 0.66 holds 4.5:1 for [text] over a black or a white pixel.
   static const scrimOpacity = 0.66;
 

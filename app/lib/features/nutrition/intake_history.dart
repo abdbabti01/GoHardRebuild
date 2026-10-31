@@ -1,10 +1,15 @@
+import 'dart:convert';
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/clock.dart';
 import '../../core/language.dart';
 import '../../data/models.dart';
+import '../../data/sync.dart' show LocalWrite;
 import 'nutrient_coverage.dart';
+import 'nutrition_assessment.dart';
 import 'water.dart';
 
 /// Eat › History & trends (docs/FOOD_DATA.md › History & trends): what was logged per day, week and month, built once
@@ -83,6 +88,40 @@ Map<String, List<Stored<T>>> _group<T>(List<Stored<T>> rows, bool Function(T) de
   }
   return out;
 }
+
+/// The goals in effect on a day, as this phone recorded them ([Kinds.goalDay]). [changed]: they changed during that day,
+/// so no single goal applied and the day is not compared with one.
+class GoalDay {
+  const GoalDay(this.calorieGoal, this.proteinGoal, {this.changed = false});
+  final int? calorieGoal, proteinGoal;
+  final bool changed;
+  static GoalDay of(Json j) => GoalDay(j['calorieGoal'] as int?, j['proteinGoal'] as int?, changed: j['changed'] == true);
+}
+
+/// Recorded goal days of this account on this phone, by day key.
+final goalDaysProvider = StreamProvider<Map<String, GoalDay>>((ref) {
+  final owner = ref.watch(ownerProvider);
+  if (owner == null) return Stream.value(const {});
+  return ref.watch(syncProvider).watch(owner, Kinds.goalDay).map((rows) => {for (final r in rows) r.id: GoalDay.of(jsonDecode(r.body) as Json)});
+});
+
+/// Records today's goals as they are now, once the account's profile and the recorded days have loaded: a new day gets
+/// its record, and a change during the day keeps the latest goals and marks the day `changed`, except the first goals
+/// set on a day that had none (that is the day's goal, not a change between two). Watched by the app root.
+/// Nothing is written for a day the app was not open, and nothing is guessed for earlier days.
+final goalHistorySyncProvider = Provider<void>((ref) {
+  final owner = ref.watch(ownerProvider);
+  final profile = ref.watch(profileProvider);
+  final days = ref.watch(goalDaysProvider);
+  if (owner == null || !profile.hasValue || profile.value == null || !days.hasValue) return;
+  final today = ref.watch(todayKeyProvider), p = profile.value!;
+  final had = days.value![today];
+  if (had != null && had.calorieGoal == p.calorieGoal && had.proteinGoal == p.proteinGoal) return;
+  final changed = had != null && (had.changed || had.calorieGoal != null || had.proteinGoal != null);
+  final body = {'calorieGoal': p.calorieGoal, 'proteinGoal': p.proteinGoal, 'changed': changed};
+  // A failed write only means this day may go unrecorded; nothing else depends on it.
+  ref.read(syncProvider).putLocal(owner, LocalWrite(Kinds.goalDay, today, body)).catchError((_) {});
+});
 
 IntakeDay intakeDay(String day, IntakeMetric m, {required String today, FoodDays food = const {}, WaterDays water = const {}}) {
   if (day.compareTo(today) > 0) return IntakeDay(day, DayState.future);
@@ -164,4 +203,117 @@ class IntakeSummary {
   /// [total] over the days with a known value.
   double? get average => known.isEmpty ? null : total! / known.length;
   double get maxValue => known.fold<double>(0, (m, d) => d.value! > m ? d.value! : m);
+}
+
+// ---------------------------------------------------------------------------- weekly report
+
+/// One nutrient over one report week (docs/EAT_COMPANION.md › Weekly report): the trends summary, the average over the
+/// days whose every logged food has the value, and how the days compare with the goals that applied (recorded ones only).
+class WeekNutrient {
+  WeekNutrient._(this.summary, this.compared, this.reached, this.over, this.undetermined);
+
+  factory WeekNutrient.build(IntakeSummary s, {FoodDays food = const {}, Map<String, GoalDay> goals = const {}}) {
+    final n = s.metric.nutrient!;
+    var compared = 0, reached = 0, over = 0, undetermined = 0;
+    for (final d in s.elapsed) {
+      final g = goals[d.dayKey];
+      final goal = g == null || g.changed ? null : n == Nutrient.calories ? g.calorieGoal : g.proteinGoal;
+      // Only a goal recorded for that day, and only a day with food: an unlogged day is not zero.
+      if (goal == null || d.foods == 0) continue;
+      final entries = [for (final r in food[d.dayKey] ?? const <Stored<FoodEntry>>[]) r.value];
+      final a = DayAssessment.of(entries, calorieGoal: n == Nutrient.calories ? goal : null, proteinGoal: n == Nutrient.protein ? goal : null);
+      final x = n == Nutrient.calories ? a.calories : a.protein;
+      // Below the goal with unknown values cannot be judged; reached is established by the known part.
+      if (x.state == GoalState.incomplete || !x.anyKnown) {
+        undetermined++;
+        continue;
+      }
+      compared++;
+      if (x.reached) reached++;
+      if (x.state == GoalState.over) over++;
+    }
+    return WeekNutrient._(s, compared, reached, over, undetermined);
+  }
+
+  final IntakeSummary summary;
+
+  /// Days with food and a recorded goal whose state could be judged; of them, at or above the goal, above it. Days with
+  /// a recorded goal but unknown values below it are [undetermined].
+  final int compared, reached, over, undetermined;
+
+  /// Days where every logged food has this value (a sum of explicit zeros included).
+  List<IntakeDay> get completeDays => [for (final d in summary.days) if (d.state == DayState.recorded) d];
+  double? get completeAverage => completeDays.isEmpty ? null : completeDays.fold<double>(0, (t, d) => t + d.value!) / completeDays.length;
+
+  /// The known-value average includes days with some foods missing this value: it may be understated.
+  bool get understated => summary.partialDays > 0;
+
+  /// The population standard deviation over complete days; null under [minDaysForSpread] of them.
+  double? get spread {
+    final v = [for (final d in completeDays) d.value!];
+    if (v.length < minDaysForSpread) return null;
+    final m = v.reduce((a, b) => a + b) / v.length;
+    return math.sqrt(v.map((x) => (x - m) * (x - m)).reduce((a, b) => a + b) / v.length);
+  }
+
+  static const minDaysForSpread = 4;
+}
+
+enum ObservationKind { coverage, proteinCoverage, steadier, variedMore, proteinGoal, calorieGoal }
+
+enum NextStepKind { completeValues, logDays }
+
+/// A deterministic, factual report of one Monday–Sunday week from local records only: nothing is fetched or asked of
+/// an AI. Observations appear only when their calculation supports them; at most [maxObservations].
+class WeeklyReport {
+  WeeklyReport._(this.week, this.today, this.calories, this.protein, this.loggedDays, this.goalDays, this.observations, this.steps, this.missingValueDays);
+
+  factory WeeklyReport.build(Period week, {required String today, FoodDays food = const {}, Map<String, GoalDay> goals = const {}, IntakeSummary? previousProtein}) {
+    final cal = WeekNutrient.build(IntakeSummary.build(week, IntakeMetric.calories, today: today, food: food), food: food, goals: goals);
+    final pro = WeekNutrient.build(IntakeSummary.build(week, IntakeMetric.protein, today: today, food: food), food: food, goals: goals);
+    final elapsed = cal.summary.elapsed;
+    final logged = cal.summary.loggedDays;
+    final goalDays = elapsed.where((d) => goals[d.dayKey] != null && !goals[d.dayKey]!.changed).length;
+    final missing = elapsed.where((d) => d.foods > 0 && (d.unknownFoods > 0 || pro.summary.days.firstWhere((p) => p.dayKey == d.dayKey).unknownFoods > 0)).length;
+
+    final obs = <(ObservationKind, List<num>)>[];
+    if (logged > 0) {
+      obs.add((ObservationKind.coverage, [cal.summary.known.length, elapsed.length]));
+      if (pro.summary.known.length != cal.summary.known.length) obs.add((ObservationKind.proteinCoverage, [pro.summary.known.length, elapsed.length]));
+    }
+    if (pro.compared > 0) obs.add((ObservationKind.proteinGoal, [pro.reached, pro.compared]));
+    if (cal.compared > 0) obs.add((ObservationKind.calorieGoal, [cal.over, cal.compared]));
+    // Spread against the previous week: both weeks need enough complete days, and the difference must be clear.
+    final before = previousProtein == null ? null : WeekNutrient.build(previousProtein, food: food).spread, now = pro.spread;
+    if (before != null && now != null && (now - before).abs() >= spreadMinGrams) {
+      if (now >= before * spreadRatio) obs.add((ObservationKind.variedMore, const []));
+      if (now * spreadRatio <= before) obs.add((ObservationKind.steadier, const []));
+    }
+
+    final steps = <(NextStepKind, int)>[
+      if (missing > 0) (NextStepKind.completeValues, missing),
+      if (logged > 0 && logged < elapsed.length && (week.end.compareTo(today) < 0 || elapsed.length - logged > 1)) (NextStepKind.logDays, elapsed.length - logged),
+    ];
+    return WeeklyReport._(week, today, cal, pro, logged, goalDays, obs.take(maxObservations).toList(), steps.take(2).toList(), missing);
+  }
+
+  static const maxObservations = 3;
+
+  /// A change in day-to-day spread is said only when the two weeks differ by this many grams and by this ratio.
+  static const spreadMinGrams = 10.0, spreadRatio = 1.5;
+
+  final Period week;
+  final String today;
+  final WeekNutrient calories, protein;
+  final int loggedDays;
+
+  /// Elapsed days with one recorded, unchanged goal record.
+  final int goalDays;
+  final int missingValueDays;
+  final List<(ObservationKind, List<num>)> observations;
+  final List<(NextStepKind, int)> steps;
+
+  bool get current => week.contains(today);
+  int get elapsed => calories.summary.elapsed.length;
+  int get unloggedDays => elapsed - loggedDays;
 }

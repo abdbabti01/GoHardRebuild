@@ -23,6 +23,7 @@ import 'food_repository.dart' show SavedFood, mealLabel;
 import 'log_food_screen.dart';
 import 'meal_habits_ui.dart';
 import 'eat_briefing.dart';
+import 'intake_history.dart' show goalDaysProvider;
 import 'nutrition_history.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart';
@@ -101,11 +102,13 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// Meal suggestions and meal reminders, before the other hints: the usual meal for the meal of the time of day
   /// (today only, suggestions on), else once each the offer to turn suggestions on and a reminder at the usual time.
   /// Words chosen here from the records; nothing is asked of a server.
-  CoachSay? _habitSay(String day, String today) {
+  CoachSay? _habitSay(String day, String today, {required bool allReached}) {
     final owner = ref.read(ownerProvider);
     if (owner == null || day != today) return null;
     final meal = _mealNow(DateTime.now()), l = context.l10n;
-    if (ref.watch(usualMealProvider(meal)) case final u?) return usualMealSay(context, ref, u, today);
+    // Every goal reached: no meal is put forward unasked (the briefing says where the day stands and still offers help).
+    final usual = allReached ? null : ref.watch(usualMealProvider(meal));
+    if (usual != null) return usualMealSay(context, ref, usual, today);
     if (_news) return null; // the day's food changed while away: the briefing says how it stands now
     final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
     if (!inView) return _habitHint == null ? null : _habitHintSay(l, owner, meal);
@@ -233,18 +236,21 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     _noteFood(day, entries);
     if (coachOn) {
       final saved = [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value];
-      return (say: _habitSay(day, today) ?? _hintSay(day, saved, logged: entries.isNotEmpty) ?? _briefSay(l, brief, day, today), panel: const []);
+      return (say: _habitSay(day, today, allReached: brief.allReached) ?? _hintSay(day, saved, logged: entries.isNotEmpty) ?? _briefSay(l, brief, day, today), panel: const []);
     }
-    final usual = day == today ? ref.watch(usualMealProvider(_mealNow(DateTime.now()))) : null;
+    final usual = day == today && !brief.allReached ? ref.watch(usualMealProvider(_mealNow(DateTime.now()))) : null;
     return (
       say: null,
       panel: [
         usual != null
             ? UsualMealPanel(usual: usual, day: today)
-            : BriefingPanel(text: briefingText(l, brief, dayLabel: longDate(day)), ideas: day == today ? () => openDayCoach(context, day: day, start: (const DayIntent('eat'), l.ebIdeas)) : null),
+            : BriefingPanel(text: briefingText(l, brief, dayLabel: longDate(day)), label: _ideasLabel(l, brief),
+                ideas: day == today ? () => openDayCoach(context, day: day, start: (const DayIntent('eat'), _ideasLabel(l, brief))) : null),
       ],
     );
   }
+
+  static String _ideasLabel(AppLocalizations l, Briefing b) => b.allReached ? l.ebFindSomething : l.ebIdeas;
 
   /// The heads-up on screen now, kept so its words do not change under the reader while the same state lasts.
   String? _headsUpShown;
@@ -254,8 +260,11 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   Briefing _briefing(String day, String today, List<FoodEntry> entries, Profile? profile) {
     final now = DateTime.now(), minute = now.hour * 60 + now.minute;
     final weekday = now.weekday;
+    // Today: the goals as they are. An earlier day: only the goals recorded for it, never today's in their place.
+    final past = day == today ? null : ref.watch(goalDaysProvider).value?[day];
+    final kept = past == null || past.changed ? null : past;
     final b = eatBriefing(
-      day: day, today: today, entries: entries, kcalGoal: profile?.calorieGoal, proteinGoal: profile?.proteinGoal, nowMinute: minute,
+      day: day, today: today, entries: entries, kcalGoal: day == today ? profile?.calorieGoal : kept?.calorieGoal, proteinGoal: day == today ? profile?.proteinGoal : kept?.proteinGoal, nowMinute: minute,
       nextMeal: nextMealAt(minute, reminders: [
         for (final r in ref.watch(remindersProvider).value ?? const <Reminder>[])
           if (r.enabled && r.meal != null && r.weekdays.contains(weekday)) (meal: r.meal!, minute: r.minute),
@@ -274,10 +283,11 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     return b;
   }
 
-  /// What the coach says: the briefing, with What could I eat? (today) and, without goals, a quiet way to set them.
+  /// What the coach says: the briefing, with What could I eat? (today) and, without goals, a quiet way to set them. Once
+  /// every goal is reached the action reads "Find something to eat": still there, never pushed.
   CoachSay _briefSay(AppLocalizations l, Briefing b, String day, String today) => CoachSay(briefingText(l, b, dayLabel: longDate(day)),
       onAsk: () => openDayCoach(context, day: day),
-      primary: day == today ? (label: l.ebIdeas, key: const Key('eat-brief-ideas'), onPressed: () => openDayCoach(context, day: day, start: (const DayIntent('eat'), l.ebIdeas))) : null,
+      primary: day == today ? (label: _ideasLabel(l, b), key: const Key('eat-brief-ideas'), onPressed: () => openDayCoach(context, day: day, start: (const DayIntent('eat'), _ideasLabel(l, b)))) : null,
       guide: b.noGoals && day == today ? (label: l.ebSetGoals, key: const Key('eat-brief-goals'), onPressed: () => showGoalsSheet(context, ref)) : null);
 
   /// The portion as it was saved, then the macros that are known (a recipe portion's partial sums marked "known"), then

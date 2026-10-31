@@ -155,7 +155,23 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
     final coach = TabCoach(key: const Key('trends-coach'), id: 'eat.trends', avatarLabel: l.trendsHelpLabel,
         say: CoachSay(l.trendsCoachSay), onAvatarTap: () => _help(context));
     return Scaffold(
-      appBar: AppBar(),
+      // The week's report (calories and protein, averages, the goals that applied): named at the top, taking no room.
+      // With large text or a long translation on a narrow phone, the icon alone (its name in the tooltip and to readers).
+      appBar: AppBar(actions: [
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 8),
+          child: () {
+            Future<void> open() async {
+              final day = await push<String>(context, WeeklyReportScreen(day: selected));
+              if (day != null) _open(day);
+            }
+            final roomy = MediaQuery.textScalerOf(context).scale(10) <= 13 && MediaQuery.sizeOf(context).width >= 360;
+            return roomy
+                ? TextButton.icon(key: const Key('trends-weekly-report'), icon: const Icon(Icons.summarize_outlined, size: 20), label: Text(l.wrTitle), onPressed: open)
+                : IconButton(key: const Key('trends-weekly-report'), tooltip: l.wrTitle, icon: const Icon(Icons.summarize_outlined), onPressed: open);
+          }(),
+        ),
+      ]),
       body: SafeArea(
         child: ListView(padding: EdgeInsets.fromLTRB(context.inset, 0, context.inset, 28), children: [
           if (coachOn) ...[
@@ -650,6 +666,174 @@ class NutritionDaysScreen extends ConsumerWidget {
               ),
             ),
       ],
+    );
+  }
+}
+
+/// Eat › History & trends › Weekly report (docs/EAT_COMPANION.md › Weekly report): one Monday–Sunday week of calories
+/// and protein from this phone's records, worked out here with no AI and no network. Completed weeks before and after;
+/// the current week is "so far"; never a future week. Goals are compared only on days with a goal this phone recorded.
+/// Choosing a day returns its key (History then opens it in Eat).
+class WeeklyReportScreen extends ConsumerStatefulWidget {
+  const WeeklyReportScreen({super.key, required this.day});
+
+  /// A day of the week to open on.
+  final String day;
+  @override
+  ConsumerState<WeeklyReportScreen> createState() => _WeeklyReportScreenState();
+}
+
+class _WeeklyReportScreenState extends ConsumerState<WeeklyReportScreen> {
+  late String _anchor = widget.day, _selected = widget.day;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = ref.watch(todayKeyProvider);
+    final unit = ref.watch(volumeUnitProvider);
+    final foodDays = ref.watch(foodDaysProvider);
+    final goals = ref.watch(goalDaysProvider).value ?? const <String, GoalDay>{};
+    final l = context.l10n;
+    final anchor = _anchor.compareTo(today) > 0 ? today : _anchor;
+    final week = Period.containing(PeriodKind.week, anchor);
+    final food = foodDays.value ?? const {};
+    final r = WeeklyReport.build(week, today: today, food: food, goals: goals,
+        previousProtein: IntakeSummary.build(week.shift(-1), IntakeMetric.protein, today: today, food: food));
+    final earliest = [...food.keys, addDays(today, -365)].reduce((a, b) => a.compareTo(b) < 0 ? a : b);
+    final selected = week.contains(_selected) && _selected.compareTo(today) <= 0 ? _selected : r.calories.summary.lastElapsed;
+    void shift(int by) => setState(() {
+          _anchor = week.shift(by).start;
+          _selected = _anchor;
+        });
+
+    return AppPage(
+      title: l.wrTitle,
+      subtitle: l.wrSubtitle,
+      children: [
+        _PeriodBar(
+          summary: r.calories.summary,
+          onPrevious: week.start.compareTo(earliest) <= 0 ? null : () => shift(-1),
+          onNext: r.current ? null : () => shift(1),
+          onPick: () async {
+            final d = await showDatePicker(context: context, initialDate: parseDayKey(selected), firstDate: parseDayKey(earliest), lastDate: parseDayKey(today),
+                currentDate: parseDayKey(today), helpText: l.trendsChooseDay);
+            if (d != null) setState(() => _anchor = _selected = dayKeyOf(d));
+          },
+          onToday: r.current ? null : () => setState(() => _anchor = _selected = today),
+        ),
+        if (foodDays.hasError)
+          Panel(child: StatusLine(Icons.error_outline, l.trendsFoodReadError, tone: Tone.error))
+        else if (!foodDays.hasValue)
+          Panel(child: StatusLine(Icons.hourglass_empty, l.trendsReading))
+        else ...[
+          Panel(
+            key: const Key('wr-days'),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(r.current ? l.wrWeekSoFarLabel : l.wrCompletedWeek, style: context.label),
+              const SizedBox(height: 4),
+              Text(l.wrDaysLogged(r.loggedDays, r.elapsed), key: const Key('wr-logged'), style: context.sansStyle(16.5, weight: FontWeight.w600)),
+              if (r.unloggedDays > 0) Text(l.wrUnlogged(r.unloggedDays), style: context.caption),
+              const SizedBox(height: 6),
+              // Goals that applied: only those this phone recorded, never today's goal laid over earlier days.
+              Text(r.goalDays == 0 ? l.wrGoalsUnavailable : r.goalDays < r.elapsed ? l.wrGoalsSome(r.goalDays, r.elapsed) : l.wrGoalsAll,
+                  key: const Key('wr-goal-history'), style: context.caption),
+            ]),
+          ),
+          for (final n in [r.calories, r.protein]) ...[const SizedBox(height: 12), _ReportNutrient(n: n, unit: unit, selected: selected, onSelect: (d) => setState(() => _selected = d))],
+          if (r.observations.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            SectionHeader(l.wrObservations),
+            const SizedBox(height: 8),
+            for (final (k, v) in r.observations)
+              Padding(padding: const EdgeInsets.only(bottom: 6), child: StatusLine(Icons.insights_outlined, _observation(l, k, v), key: Key('wr-obs-${k.name}'))),
+          ],
+          if (r.steps.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            SectionHeader(l.wrNextSteps),
+            const SizedBox(height: 8),
+            for (final (k, n) in r.steps)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: StatusLine(Icons.arrow_forward, k == NextStepKind.completeValues ? l.wrStepCompleteValues(n) : l.wrStepLogDays, key: Key('wr-step-${k.name}')),
+              ),
+          ],
+          const SizedBox(height: 20),
+          SectionHeader(l.trendsDaysInPeriod),
+          const SizedBox(height: 8),
+          GroupCard(children: [
+            for (final d in r.calories.summary.elapsed.reversed)
+              GroupRow(
+                key: Key('wr-day-${d.dayKey}'), title: d.dayKey == today ? l.eatTodayCaption : shortDate(d.dayKey),
+                subtitle: _daySummary(l, d, r.protein.summary.days.firstWhere((p) => p.dayKey == d.dayKey)),
+                onTap: () => Navigator.of(context).pop(d.dayKey),
+              ),
+          ]),
+          const SizedBox(height: 8),
+          Text(l.wrFootnote, style: context.caption),
+        ],
+      ],
+    );
+  }
+
+  /// "3 foods · 1,850 kcal · 92 g protein known": the day's calories and protein, each as known as it is.
+  static String _daySummary(AppLocalizations l, IntakeDay kcal, IntakeDay protein) {
+    if (kcal.state == DayState.notLogged) return l.trendsNoFoodLogged;
+    final k = !kcal.hasValue ? l.trendsCaloriesUnknownLower : kcal.state == DayState.partial ? l.eatKcalKnown(formatKcal(kcal.value!)) : l.eatKcalValue(formatKcal(kcal.value!));
+    final p = !protein.hasValue ? l.dcProteinUnknown : protein.state == DayState.partial ? l.dcProteinKnown(_grams(protein.value!)) : l.eatProteinGramsValue(_grams(protein.value!));
+    return [l.trendsFoodCount(kcal.foods), k, p, if (kcal.review) l.eatNeedsReview else if (kcal.pending) l.eatSyncPendingShort].join(' · ');
+  }
+
+  static String _observation(AppLocalizations l, ObservationKind k, List<num> v) => switch (k) {
+        ObservationKind.coverage => l.wrObsCoverage(v[0].toInt(), v[1].toInt()),
+        ObservationKind.proteinCoverage => l.wrObsProteinCoverage(v[0].toInt(), v[1].toInt()),
+        ObservationKind.proteinGoal => l.wrObsProteinGoal(v[0].toInt(), v[1].toInt()),
+        ObservationKind.calorieGoal => l.wrObsCalorieGoal(v[0].toInt(), v[1].toInt()),
+        ObservationKind.variedMore => l.wrObsVariedMore,
+        ObservationKind.steadier => l.wrObsSteadier,
+      };
+}
+
+/// One nutrient of the report: the known total, both averages with their denominators, how the days compare with the
+/// recorded goals, and the week's chart (the trends chart itself).
+class _ReportNutrient extends StatelessWidget {
+  const _ReportNutrient({required this.n, required this.unit, required this.selected, required this.onSelect});
+  final WeekNutrient n;
+  final VolumeUnit unit;
+  final String selected;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final s = n.summary, m = s.metric;
+    final label = intakeMetricLabel(l, m), noun = intakeMetricNoun(l, m);
+    final kcal = m == IntakeMetric.calories;
+    return Panel(
+      key: Key('wr-${m.name}'),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(l.trendsByDay(label), style: context.pageTitleStyle(22)),
+        Text(s.total == null ? l.trendsNoValues(noun) : '${n.understated ? l.trendsKnownLogged(label) : l.trendsLogged(label)}: ${intakeAmount(m, s.total!, unit)}',
+            key: Key('wr-${m.name}-total'), style: context.sansStyle(15.5, weight: FontWeight.w600)),
+        Text(l.trendsCoverage(s.known.length, s.elapsed.length, noun), style: context.caption),
+        if (s.average != null)
+          Text(
+              [
+                l.wrAverageKnown(intakeAmount(m, s.average!, unit), s.known.length),
+                if (n.understated) l.wrMayBeUnderstated(s.partialDays),
+              ].join(' '),
+              key: Key('wr-${m.name}-average'), style: context.body),
+        if (n.completeAverage != null)
+          Text(l.wrAverageComplete(intakeAmount(m, n.completeAverage!, unit), n.completeDays.length), key: Key('wr-${m.name}-complete'), style: context.body),
+        if (s.unknownDays > 0) Text(l.trendsDaysWithoutValue(s.unknownDays, noun), style: context.caption),
+        if (n.compared > 0)
+          Text(kcal ? l.wrCalorieGoalDays(n.compared, n.over) : l.wrProteinGoalDays(n.compared, n.reached), key: Key('wr-${m.name}-goal'), style: context.body),
+        if (n.undetermined > 0) Text(l.wrGoalUndetermined(n.undetermined), style: context.caption),
+        const SizedBox(height: 8),
+        IntakeChart(summary: s, selected: selected, unit: unit, onSelect: onSelect, height: 150),
+        const SizedBox(height: 6),
+        Wrap(spacing: 16, runSpacing: 4, children: [
+          _Key('–', l.trendsLegendNotLogged), _Key('?', l.trendsLegendNotEntered), _Key('★', l.trendsLegendPartial), _Key('○', l.trendsLegendZero),
+        ]),
+      ]),
     );
   }
 }

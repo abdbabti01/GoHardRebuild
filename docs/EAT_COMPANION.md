@@ -55,9 +55,10 @@ food are unchanged.
 3. A heads-up (below), if heads-ups are on and that one has not been said today.
 4. A calorie goal and an incomplete calorie total: "Some foods today have no calorie value, so the total is incomplete:
    at least N kcal recorded."
-5. Goals: "You have N kcal and N g protein left. Want some options?" (or the parts that apply; "Protein goal reached.";
-   above the target said plainly once its heads-up has been said).
-6. No goals: "Breakfast is logged. Want ideas for your next meal?"
+5. Every goal reached: said plainly, no question asking to eat more (see Shared assessment below).
+6. Goals: "You have N kcal and N g protein left. Want some options?" (or the parts that apply; "Protein goal reached.";
+   above the target said plainly once its heads-up has been said; "Calorie target reached." at the target).
+7. No goals: "Breakfast is logged. Want ideas for your next meal?"
 
 ### Heads-ups (in the app only)
 
@@ -128,6 +129,145 @@ logs nothing.
 
 A reply is marked stale when the day's journal or goals change (`dayRevision`) and its Review is refused until it is
 recalculated; matched records are snapshots, so an idea never changes under the person.
+
+## Shared assessment, goal colours and the weekly report (30 Oct 2026, `feature/nutrition-assessment-report`)
+
+Brief: "Improve GoHard's nutrition coaching, add a meaningful weekly nutrition report, and introduce clear colour states for
+calorie and protein progress." Built on `main` 19e2cf2 (Eat companion merged).
+
+### One assessment (`features/nutrition/nutrition_assessment.dart`, pure)
+
+`DayAssessment.of(entries, calorieGoal, proteinGoal)` reads a day's calories and protein against the goals that applied.
+Eat's briefing, What could I eat? (and its ranking), the bars on Today and Eat, Eat's "left/over" lines, the coach's goal
+lines and the weekly report all read it; none of them compares a total with a goal on its own.
+
+Per nutrient (`NutrientAssessment`), judged separately:
+
+| State | When | Calories bar | Protein bar |
+|---|---|---|---|
+| `noGoal` | no goal set | neutral, no percentage | neutral, no percentage |
+| `incomplete` | some values unknown and the known part below the goal | neutral, "Known intake" | neutral, "Known intake" |
+| `below` | under 80 % | green, "Room remaining" | yellow, "Below target" |
+| `near` | 80 % up to the goal | yellow, "Approaching target" | yellow, "Nearly there" |
+| `reached` | at the goal (display resolution) | green, "Target reached" | green, "Goal reached" |
+| `over` | above the goal (display resolution) | red, "N kcal over target" | green, "Goal reached · N g above target" |
+
+- Unknown is not zero. Known values at or above a goal establish reached/over even with unknown values (the known part
+  only grows); the label then keeps "· Known intake". An incomplete total below a goal never gives an amount left.
+- A day with nothing logged is judged against what was logged (nothing), never as a claim about what was eaten.
+- **Display-resolution policy.** An amount is compared with its goal as it is shown: whole kcal, tenths of a gram. 1,999.6
+  and 2,000.4 kcal both show as 2,000 and are "reached" (never "0 kcal left" or "over"); 2,000.6 shows as 2,001 and is 1
+  kcal over. The 80 % line is judged on the exact value (`known × 5 ≥ goal × 4`). The percentage shown is the exact share
+  rounded down below the goal (79.99 % → 79 %), exactly 100 % when reached and rounded up above it (100.03 % → 101 %), so
+  a percentage never contradicts its label.
+- The bar fills to the goal at most; the real total, percentage and overage are in words ("2,450 / 2,300 kcal · 107 %",
+  "150 kcal over target"). A green low calorie total means room against the chosen goal, not adequate intake.
+- Situations for the coach (`DaySituation`): no goals · remaining · calories reached, protein left · protein reached,
+  calories left · every goal reached (also when only one goal is set) · uncertain (a goal not reached and its values
+  incomplete).
+- Exercise calories are never added to what is left.
+
+### Goal colours (`core/theme.dart`, `nutrition_surface.dart`)
+
+Semantic tokens `goalGreen/goalYellow/goalRed` (bar fills) and `goalGreenText/goalYellowText/goalRedText` (words), chosen
+from the page they sit on: the pale photo panels (every accent, Light and Dark) and Dark's own page. Fills hold 3:1 on
+the bar's track and words 4.5:1 on the page in all six themes and with increased contrast (`theme_test`). A true yellow
+cannot hold 3:1 on a pale panel, so the light "yellow" is a deep gold. The state is always also said in words, beside
+the amount (not in a new row, so Today keeps its height), and read out with the amount, goal and percentage. Loading
+shows no bar (Today: "Loading", Eat: the journal's loading line), never zero or a false success. These colours describe
+progress against goals the person chose, never food quality, health or merit.
+
+### What could I eat? assesses before suggesting (`features/coach/day_coach.dart` › `assess`, `eatChoices`)
+
+For the selected day (today; an earlier day still gets no ideas), from the assessment:
+
+| Situation | Said first | Then |
+|---|---|---|
+| No goals | "You haven't set daily targets. I can still help you choose a meal or snack." | Edit goals (Eat's sheet, optional) and the usual options |
+| Remaining (values complete) | the exact amounts left | saved options within the calories left, most protein first while protein is still to reach; "These fit within …" or, when nothing does, "Nothing saved fits within … These are the nearest; each shows what it would add" (never relaxed silently) |
+| Calories reached or exceeded, protein left | "You've reached your calorie target, with N g protein remaining. Would you like protein-focused options? They'll add to your calorie total." (unknown protein values: no exact remainder) | **no options yet**: Show protein-focused options · Find something to eat · See today's summary |
+| Protein reached, calories left | "You've met your protein target and have N kcal remaining. What kind of food would you like?" | options within the calories left, no longer ranked by protein |
+| Every goal reached | "You've reached your calorie and protein targets based on what you logged. If you're still hungry or want something else, I can help you choose." | **no options yet**: Find something to eat · See today's summary |
+| Uncertain | each nutrient on its own ("…at least N kcal recorded", "N g protein remaining") | options without a calorie limit |
+
+Going on (a phone-only `proceed` on the request; a server answer can never set it) gives the options with "Anything you
+choose adds to your calorie total; each option shows how much." Protein-focused ranks by protein per kcal. Every card says
+what it would make of each goal still known exactly ("Adds 240 kcal: 2,240 of 2,000 kcal logged after this.", protein
+only while it is still a goal to reach). New AI ideas (typed requests) are answered whenever asked, ranked the same way
+unless the person asked for "more protein" or "lighter"; when none fits within the calories left that is said. Reaching a
+goal never blocks search, suggestions or logging. Matching, review, atomic logging and stale-reply protection are unchanged.
+
+### No "done eating"
+
+No button, flag or inferred state. GoHard says "You've reached your targets based on what you logged", never "you're
+done". Once every goal is reached Eat's briefing says so plainly with no question asking to eat more, its action becomes
+**Find something to eat** (still opens the same help), and the proactive usual-meal suggestion is not put forward. Any
+new entry, edit, deletion or goal change re-works the words (they are a pure function of the records).
+
+### Briefing changes (`eat_briefing.dart`)
+
+Built on the assessment: a "reached" kind (above), "Calorie target reached." instead of "0 kcal left" at display
+resolution, no "Want some options?" once the calorie target is reached, the near heads-up only while the bar is in its
+"approaching" state (so a 500 kcal goal at 72 % is not "near"), the protein heads-up not used when protein was the only
+goal (the reached briefing instead). **Earlier days** are compared only with the goal recorded for that day (below);
+before this change they were compared with today's goal.
+
+### Goal history (`Kinds.goalDay`, `goalHistorySyncProvider`)
+
+The account stores only the current calorie and protein goals (profile), with no history. From this build, the phone
+records the goals in effect each day it is open (`nutrition_goal_day`, id = day key, `{calorieGoal, proteinGoal, changed}`;
+`changed` when one goal replaced another during that day; the first goals set on a day that had none are that day's goals). It is **local only and additive**: no server change, no migration, no
+capability; it is per account (owner-scoped like every local record) and does not move to another phone. **History starts
+when this phone first records it; earlier days are never filled in.** A day with no record, or with `changed`, is not
+compared with any goal.
+
+### Weekly report (Eat › History & trends › Weekly report; `intake_history.dart` › `WeeklyReport`, `nutrition_history.dart` › `WeeklyReportScreen`)
+
+Entry: **Weekly report** at the top of History & trends (an icon with its name in the tooltip when text is large or the
+phone narrow); Eat's History & trends link says "with a weekly report". No new Eat panel. Monday–Sunday weeks; earlier and
+later weeks with the existing period bar; the current week is "Week so far"; never a future week. No AI and no network:
+everything is worked out from local records, offline.
+
+Shown: days with food logged of days elapsed; days with nothing logged (never zero); goal history availability; for
+calories and protein, the known total, **"Average N a day, over the K days with known values"** (and "It may be
+understated: days with some foods missing a value: P" when partial days are in it), **"Complete recorded days: N a day,
+over C days"**, days without any value, days compared with the recorded goal (calories: above it on N; protein: reached
+on N) and days that cannot be compared (unknown values below the goal); the week's chart for each (the trends chart);
+up to three observations and up to two next steps; every elapsed day as a row that opens its journal in Eat.
+
+Observations (only when supported): calorie values recorded on N of M days; protein values on N of M days (when it
+differs); protein goal reached on N of M days with a recorded goal; recorded calories above the target on N of M days
+with a recorded goal; protein spread between days more or steadier than last week (only with at least 4 complete
+protein days in both weeks and a difference of at least 10 g and 1.5×). Next steps: days with foods missing a value;
+days with nothing logged. Never: unlogged days as zero, improvement claims from sparse data, weight, muscle, deficiency
+or habit inferences, or protein reached as proof of adequacy. "Complete" means every logged food has a value, not that
+everything eaten was logged (said in the footnote).
+
+No deeper AI explanation was added (optional in the brief; not needed for a factual report).
+
+### Privacy and compatibility
+
+No new provider, secret, service, endpoint, capability or migration; the daily-coach request is unchanged (`proceed`
+never leaves the phone). Nothing nutritional is sent anywhere new; no notifications, no background work. Older servers
+are unaffected. **Deployment:** none needed beyond the app build.
+
+### Verification (this branch)
+
+- `test/nutrition_assessment_test.dart` (21): calorie and protein states at 79.99/80/100 % and above, display-resolution
+  edges (1,599.9, 1,999.4, 1,999.6, 2,000.4, 2,000.6 kcal; 139.94/139.96 g), percent and fill, protein never red,
+  incomplete and genuine zero, every goal combination; What could I eat? for no goals, both remaining, nothing fits,
+  calories reached (asks first, then protein per kcal with added calories), protein reached, every goal reached
+  (continuing works), incomplete values, stale after an edit or goal change, `proceed` not settable by a server; briefing
+  reached, "reached" at display resolution, near heads-up consistent with the bar, earlier days only against a recorded
+  goal; weekly report averages and denominators, unlogged/partial/zero days, no history, recorded goals with changed and
+  undeterminable days, the current week, spread only with enough data.
+- `test/nutrition_report_ui_test.dart` (7): red calories and green protein with words, percentage and semantics on Eat and
+  Today; "Known intake" with missing values; every goal reached → Find something to eat → asks first → continuing gives
+  options; the report from History & trends with no goal history, no future week, a day opening in Eat; recorded goals
+  compared and the previous week; French and Arabic at 320 px with 2× text (found and fixed: the History app-bar label
+  overflowed; now an icon with a tooltip there).
+- `theme_test`: goal tokens' contrast in all themes. Updated: `eat_companion_test` (reached briefings, no-goals reply),
+  `nutrition_trends_ui_test` (link wording).
 
 ## Privacy and compatibility
 

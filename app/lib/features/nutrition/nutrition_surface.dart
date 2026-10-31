@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import 'nutrient_coverage.dart';
+import 'nutrition_assessment.dart';
 
 // Thousands are grouped for reading only ("1,400", "1 400"); stored and editable values are never reformatted.
 String _grouped(num v) => formatGrouped(v);
@@ -42,16 +43,16 @@ class NutritionSurface extends StatelessWidget {
 
   static const photo = 'assets/images/nutrition-cover.webp';
 
-  /// Progress toward one goal, in words. What is left is stated only when every food has a value: a remainder
-  /// worked out from a partial sum would be invented.
-  String _detail(AppLocalizations l, Nutrient n, int goal) {
-    final t = coverage[n]!;
-    final eaten = t.knownTotal, kcal = n == Nutrient.calories;
-    final amount = kcal ? l.eatGoalProgressCalories(_amount(n, eaten), _grouped(goal)) : l.eatGoalProgressProtein(_amount(n, eaten), _grouped(goal));
-    if (!t.hasAnyKnown) return kcal ? l.eatGoalNoCalorieValue(_grouped(goal)) : l.eatGoalNoProteinValue(_grouped(goal));
-    if (!t.isComplete) return l.eatGoalKnownSoFar(amount);
-    if (eaten > goal) return kcal ? l.eatGoalOverKcal(amount, _amount(n, eaten - goal)) : l.eatGoalOverGrams(amount, _amount(n, eaten - goal));
-    return kcal ? l.eatGoalLeftKcal(amount, _amount(n, goal - eaten)) : l.eatGoalLeftGrams(amount, _amount(n, goal - eaten));
+  /// Progress toward one goal, in words, from the shared assessment. What is left is stated only when every food has a
+  /// value: a remainder worked out from a partial sum would be invented.
+  String _detail(AppLocalizations l, NutrientAssessment a) {
+    final n = a.nutrient, goal = a.goal!, kcal = a.isCalories;
+    final amount = kcal ? l.eatGoalProgressCalories(_amount(n, a.known), _grouped(goal)) : l.eatGoalProgressProtein(_amount(n, a.known), _grouped(goal));
+    if (!a.anyKnown) return kcal ? l.eatGoalNoCalorieValue(_grouped(goal)) : l.eatGoalNoProteinValue(_grouped(goal));
+    if (a.over case final over?) return kcal ? l.eatGoalOverKcal(amount, _amount(n, over)) : l.eatGoalOverGrams(amount, _amount(n, over));
+    if (a.reached) return '$amount · ${goalStatus(l, a)}';
+    if (a.left case final left?) return kcal ? l.eatGoalLeftKcal(amount, _amount(n, left)) : l.eatGoalLeftGrams(amount, _amount(n, left));
+    return l.eatGoalKnownSoFar(amount);
   }
 
   // Everything is built under the panel's theme: dark ink on the pale tint, the deep button, in Light and Dark.
@@ -90,9 +91,10 @@ class NutritionSurface extends StatelessWidget {
     // Carbs and fat, when shown: known totals and nothing more (no goal is stored for them).
     final more = [if (showCarbs) (Nutrient.carbs, l.eatCarbs), if (showFat) (Nutrient.fat, l.eatFat)];
     String value(Nutrient n) => coverage[n]!.hasAnyKnown ? l.eatGramsValue(_grouped(coverage[n]!.knownTotal)) : '—';
+    final a = DayAssessment.ofTotals(coverage, calorieGoal: calorieGoal, proteinGoal: proteinGoal, nothingLogged: entries.isEmpty);
     final details = [
-      if (calorieGoal != null) _detail(l, Nutrient.calories, calorieGoal!),
-      if (proteinGoal != null) _detail(l, Nutrient.protein, proteinGoal!),
+      if (calorieGoal != null) _detail(l, a.calories),
+      if (proteinGoal != null) _detail(l, a.protein),
     ];
     final below = <Widget>[
       // What is left or over, in words (Eat's own; Today keeps to the figures).
@@ -153,36 +155,47 @@ class NutritionSummary extends StatelessWidget {
 
   /// [display]: the calorie figure in the serif with its unit ("513 kcal"), as Today's panel shows it, and the goal or
   /// "known" under it. Otherwise one line ("6.4 g protein").
-  Widget _metric(BuildContext context, Nutrient n, String label, String unit, int? goal, {required bool display}) {
+  Widget _metric(BuildContext context, NutrientAssessment a, String label, String unit, {required bool display}) {
     final l = context.l10n;
-    final t = coverage[n]!;
+    final n = a.nutrient, t = a.total, goal = a.goal;
     final known = t.hasAnyKnown, partial = known && !t.isComplete, kcal = n == Nutrient.calories;
     final value = known ? _amount(n, t.knownTotal) : '—';
     final quiet = context.sansStyle(display ? 14 : 17, color: context.c.secondary);
     final knownTag = partial ? ' · ${l.eatKnown}' : '';
+    final status = goal == null || !known ? null : goalStatus(l, a);
+    final percent = a.percent == null ? '' : formatPercent(a.percent! / 100);
+    // The state in words beside the amount, in the state's readable colour, so colour is never the only signal.
+    final statusText = status == null
+        ? null
+        : Text(status, key: Key('$keyPrefix-goal-${n.name}-status'), style: context.sansStyle(display ? 14 : 15, color: goalText(context.c, a.tone), weight: FontWeight.w600));
     return Semantics(
       label: [
         !known ? l.eatNutrientUnknownSaid(label) : kcal ? l.eatSaidKcal(label, value) : l.eatSaidGrams(label, value),
         if (partial) l.eatSaidKnownFrom(t.knownEntries, t.knownEntries + t.unknownEntries),
         if (goal != null) kcal ? l.eatSaidGoalKcal(_grouped(goal)) : l.eatSaidGoalGrams(_grouped(goal)),
+        if (percent.isNotEmpty) percent,
+        ?status,
       ].join(l.eatListSeparator),
       child: ExcludeSemantics(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           if (display) ...[
             Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [Text(value, style: context.pageTitleStyle(44)), Text(unit, style: context.pageTitleStyle(44))]),
-            if (goal != null || partial) Text(goal == null ? l.eatKnownSoFar : '/ ${withUnit(_grouped(goal), unit)}$knownTag', style: quiet),
+            if (goal != null || partial)
+              Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 8, children: [Text(goal == null ? l.eatKnownSoFar : '/ ${withUnit(_grouped(goal), unit)}$knownTag', style: quiet), ?statusText]),
           ] else
             Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 5, children: [
               Text(value, style: context.numStyle(17, color: context.c.text)),
               Text('${goal == null ? unit : '/ ${withUnit(_grouped(goal), unit)}'}$knownTag', style: quiet),
+              ?statusText,
             ]),
           if (goal != null)
             Padding(
               key: Key('$keyPrefix-goal-${n.name}'), padding: const EdgeInsets.only(top: 6),
               child: Row(children: [
-                Expanded(child: ProgressRail(known ? t.knownTotal / goal : 0, label: kcal ? l.eatCaloriesGoalBar : l.eatProteinGoalBar, height: 6)),
+                // Filled up to the goal at most, in the state's colour; the real figures and share are in words.
+                Expanded(child: ProgressRail(a.fill, label: kcal ? l.eatCaloriesGoalBar : l.eatProteinGoalBar, height: 6, color: goalFill(context.c, a.tone))),
                 // The real share, also over 100 %; nothing for an unknown value.
-                ConstrainedBox(constraints: const BoxConstraints(minWidth: 48), child: Text(known ? formatPercent((t.knownTotal / goal * 100).round() / 100) : '', textAlign: TextAlign.end, style: context.numStyle(13, color: context.c.secondary, weight: FontWeight.w500))),
+                ConstrainedBox(constraints: const BoxConstraints(minWidth: 48), child: Text(percent, textAlign: TextAlign.end, style: context.numStyle(13, color: context.c.secondary, weight: FontWeight.w500))),
               ]),
             ),
         ]),
@@ -191,12 +204,44 @@ class NutritionSummary extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        _metric(context, Nutrient.calories, context.l10n.eatCalories, context.l10n.eatUnitKcal, calorieGoal, display: true),
-        const SizedBox(height: 4),
-        _metric(context, Nutrient.protein, context.l10n.eatProtein, context.l10n.eatUnitGramProtein, proteinGoal, display: false),
-      ]);
+  Widget build(BuildContext context) {
+    final a = DayAssessment.ofTotals(coverage, calorieGoal: calorieGoal, proteinGoal: proteinGoal);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      _metric(context, a.calories, context.l10n.eatCalories, context.l10n.eatUnitKcal, display: true),
+      const SizedBox(height: 4),
+      _metric(context, a.protein, context.l10n.eatProtein, context.l10n.eatUnitGramProtein, display: false),
+    ]);
+  }
 }
+
+/// The goal state in words, as the bars show it (docs/EAT_COMPANION.md › Goal colours). "Known intake" stays on any
+/// state worked out from a total with unknown values.
+String goalStatus(AppLocalizations l, NutrientAssessment a) {
+  final kcal = a.isCalories;
+  final said = switch (a.state) {
+    GoalState.noGoal => '',
+    GoalState.incomplete => l.goalKnownIntake,
+    GoalState.below => kcal ? l.goalRoomRemaining : l.goalBelowTarget,
+    GoalState.near => kcal ? l.goalApproaching : l.goalNearlyThere,
+    GoalState.reached => kcal ? l.goalTargetReached : l.goalReached,
+    GoalState.over => kcal ? l.goalOverKcal(formatKcal(a.over!)) : l.goalAboveGrams(_grouped(a.over!)),
+  };
+  return !a.complete && a.state != GoalState.incomplete ? '$said · ${l.goalKnownIntake}' : said;
+}
+
+Color goalFill(GoColors c, GoalTone t) => switch (t) {
+      GoalTone.neutral => c.outline,
+      GoalTone.green => c.goalGreen,
+      GoalTone.yellow => c.goalYellow,
+      GoalTone.red => c.goalRed,
+    };
+
+Color goalText(GoColors c, GoalTone t) => switch (t) {
+      GoalTone.neutral => c.secondary,
+      GoalTone.green => c.goalGreenText,
+      GoalTone.yellow => c.goalYellowText,
+      GoalTone.red => c.goalRedText,
+    };
 
 /// One line under Today's nutrition values when any food has no value for any nutrient. It says so and leads to
 /// Eat, where the journal explains which. Nothing is drawn when every value is known.

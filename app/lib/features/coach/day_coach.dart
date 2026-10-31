@@ -10,6 +10,7 @@ import '../nutrition/food_repository.dart';
 import '../nutrition/food_search.dart' show searchWords;
 import '../nutrition/meal_habits.dart' show UsualMeal, habitIdentity;
 import '../nutrition/nutrient_coverage.dart';
+import '../nutrition/nutrition_assessment.dart';
 import '../nutrition/nutrition_surface.dart' show formatKcal;
 import '../nutrition/saved_meals.dart';
 import '../today/daily.dart';
@@ -220,7 +221,7 @@ Suggestions suggest(List<CoachItem> items, {int? maxKcal, int? minProtein, ItemK
     near.add(best!);
   }
   if (fits.isNotEmpty) {
-    fits.sort((a, b) => minProtein != null || maxKcal == null
+    fits.sort((a, b) => minProtein != null || maxKcal == null || byProtein
         ? b.values[protein]!.knownTotal.compareTo(a.values[protein]!.knownTotal)
         : b.values[kcal]!.knownTotal.compareTo(a.values[kcal]!.knownTotal));
     return Suggestions(fits.take(3).toList(), leftOut: leftOut);
@@ -308,7 +309,11 @@ List<MealComponent>? ingredientParts(MealBody b, Object? change) {
 class DayIntent {
   const DayIntent(this.kind,
       {this.today = false, this.nutrient, this.source, this.items = const [], this.change, this.factor, this.servings, this.grams, this.maxCalories, this.minProtein,
-      this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient, this.ideas = const [], this.preferences = const [], this.proposed});
+      this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient, this.ideas = const [], this.preferences = const [], this.proposed, this.proceed = false});
+
+  /// `eat` only: the person chose to go on after being told where the day stands (a goal reached): the options follow
+  /// without the question again. Set on the phone only; a server answer never sets it.
+  final bool proceed;
 
   /// `ideas` only: the ideas as matched on the phone (`{title, parts, unmatched, confirm}`, features/coach/meal_ideas.dart).
   final List<Json> ideas;
@@ -319,7 +324,7 @@ class DayIntent {
 
   DayIntent withIdeas(List<Json> matched) => DayIntent(kind, today: today, nutrient: nutrient, source: source, items: items, change: change, factor: factor,
       servings: servings, grams: grams, maxCalories: maxCalories, minProtein: minProtein, meal: meal, clarification: clarification, unknownItems: unknownItems,
-      ai: ai, ingredient: ingredient, ideas: matched, preferences: preferences);
+      ai: ai, ingredient: ingredient, ideas: matched, preferences: preferences, proceed: proceed);
 
   /// today | recorded | goal | suggest | portion | compare | training | restaurant | clarify | unsupported
   final String kind;
@@ -353,6 +358,7 @@ class DayIntent {
         'kind': kind, 'today': today, 'nutrient': nutrient?.name, 'source': source?.name, 'items': [for (final i in items) {'kind': i.kind.name, 'id': i.id}],
         'change': change, 'factor': factor, 'servings': servings, 'grams': grams, 'maxCalories': maxCalories, 'minProtein': minProtein, 'meal': meal,
         'clarification': clarification, 'unknownItems': unknownItems, 'ai': ai, 'ingredient': ingredient, 'ideas': ideas, 'preferences': preferences,
+        if (proceed) 'proceed': true,
       };
 
   /// [j] as stored here, or the server's intent (`items`, `portion`, `day`). Anything off the allowlist reads as nothing.
@@ -376,7 +382,7 @@ class DayIntent {
         // Stored ideas are the phone's own matched ones; a server answer's raw ideas are read by meal_ideas.dart instead.
         ideas: [for (final i in j['ideas'] as List? ?? const []) if (i is Map && i['parts'] is List) Map<String, dynamic>.from(i)],
         preferences: [for (final p in j['preferences'] as List? ?? const []) if (p is String && preferenceIds.contains(p)) p],
-        proposed: ai && j['kind'] == 'ideas' ? j['ideas'] : null);
+        proposed: ai && j['kind'] == 'ideas' ? j['ideas'] : null, proceed: !ai && j['proceed'] == true);
   }
 }
 
@@ -458,7 +464,60 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
   List<FoodEntry>? entries() => r.entries?.call(day);
   Values? logged() => entries() == null ? null : NutrientCoverage.calculate(entries()!);
 
-  Json card(Pick p, {Nutrient? toward}) {
+  /// The shared assessment of the day (features/nutrition/nutrition_assessment.dart); null while the journal loads.
+  DayAssessment? assessed() => entries() == null ? null : DayAssessment.of(entries()!, calorieGoal: r.calorieGoal, proteinGoal: r.proteinGoal);
+
+  /// What [adds] would make of each goal that is set, today, when the day's value and the option's are both fully known:
+  /// calories always said with their real total (also above the target), protein while it is still a goal to reach.
+  List<String> towards(Values adds) {
+    final a = assessed();
+    if (a == null || day != r.today) return const [];
+    return [
+      for (final x in [a.calories, a.protein])
+        if (x.hasGoal && x.complete && adds[x.nutrient]!.isComplete && (x.isCalories || !x.reached))
+          x.isCalories
+              ? l.dcAddsKcal(formatKcal(adds[x.nutrient]!.knownTotal), formatKcal(x.known + adds[x.nutrient]!.knownTotal), formatKcal(x.goal!))
+              : l.dcAddsProtein(_g(adds[x.nutrient]!.knownTotal), _g(x.known + adds[x.nutrient]!.knownTotal), x.goal.toString()),
+    ];
+  }
+
+  /// Where the day stands against the goals, said before any option (docs/EAT_COMPANION.md › What could I eat?). True when
+  /// the reply stops at a question (a goal reached): the person chooses to go on, and nothing is offered meanwhile.
+  bool assess(DayAssessment a) {
+    final c = a.calories, p = a.protein;
+    String kcalLine() => c.left != null ? l.dcAssessKcalLeft(formatKcal(c.left!)) : c.reached ? l.dcAssessKcalReached : l.dcAssessKcalUnknown(formatKcal(c.known));
+    String proteinLine() => p.left != null ? l.dcAssessProteinLeft(_g(p.left!)) : p.reached ? l.dcAssessProteinReached : l.dcAssessProteinUnknown(_g(p.known));
+    switch (a.situation) {
+      case DaySituation.noGoals:
+        lines.add(l.dcAssessNoGoals);
+        actions.add(_action('goals'));
+        return false;
+      case DaySituation.bothReached:
+        if (intent.proceed) break;
+        lines.add(c.hasGoal && p.hasGoal ? l.dcAssessAllReached : c.hasGoal ? l.dcAssessOnlyKcalReached : l.dcAssessOnlyProteinReached);
+        if (c.over != null) lines.add(l.ebOverPlain(formatKcal(c.over!)));
+        actions.addAll([_action('proceed'), _action('summary')]);
+        return true;
+      case DaySituation.caloriesReachedProteinLeft:
+        if (intent.proceed) break;
+        lines.add(p.left != null ? l.dcAssessKcalReachedProteinLeft(_g(p.left!)) : l.dcAssessKcalReachedProteinUnknown(_g(p.known)));
+        if (c.over != null) lines.add(l.ebOverPlain(formatKcal(c.over!)));
+        actions.addAll([_action('proteinOptions'), _action('proceed'), _action('summary')]);
+        return true;
+      case DaySituation.proteinReachedCaloriesLeft:
+        lines.add(c.left != null ? l.dcAssessProteinReachedKcalLeft(formatKcal(c.left!)) : l.dcAssessProteinReachedKcalUnknown(formatKcal(c.known)));
+      case DaySituation.remaining:
+        lines.add(c.hasGoal && p.hasGoal ? l.dcAssessBothLeft(formatKcal(c.left!), _g(p.left!)) : c.hasGoal ? kcalLine() : proteinLine());
+      case DaySituation.uncertain:
+        if (c.hasGoal) lines.add(kcalLine());
+        if (p.hasGoal) lines.add(proteinLine());
+    }
+    // Going on after a goal was reached: anything chosen adds to the calorie total, and each option says by how much.
+    if (intent.proceed && c.hasGoal && c.reached) lines.add(l.dcAddsToCalories);
+    return false;
+  }
+
+  Json card(Pick p, {Nutrient? toward, bool all = false}) {
     final c = {
       'kind': p.item.kind.name, 'id': p.item.id, 'name': p.item.name, 'portion': p.portion.toJson(), 'amount': portionSaid(l, p.item, p.portion),
       'kcal': _total(p.values[Nutrient.calories]!), 'protein': _total(p.values[Nutrient.protein]!),
@@ -466,7 +525,10 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
     };
     // What it adds toward a goal, only when the day's logged value and the item's are both fully known.
     final t = logged();
-    if (toward != null && day == r.today && t != null) {
+    if (all) {
+      final said = towards(p.values);
+      if (said.isNotEmpty) c['toward'] = said.join('\n');
+    } else if (toward != null && day == r.today && t != null) {
       final goal = toward == Nutrient.protein ? r.proteinGoal : r.calorieGoal, have = t[toward]!, adds = p.values[toward]!;
       if (goal != null && have.isComplete && adds.isComplete) {
         c['toward'] = toward == Nutrient.protein
@@ -496,25 +558,29 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
       return;
     }
     if (t == null) return lines.add(l.dcJournalLoading);
+    final a = assessed()!, x = p ? a.protein : a.calories;
     final g = '$goal', have = t.knownTotal;
     if (!t.hasAnyKnown) {
       lines.add(p ? l.dcGoalProteinNone(g) : l.dcGoalKcalNone(formatKcal(goal)));
-    } else if (!t.isComplete) {
-      lines.add(p ? l.dcGoalProteinPartial(_g(have), g) : l.dcGoalKcalPartial(formatKcal(have), formatKcal(goal)));
-    } else if (have >= goal) {
+    } else if (x.reached) {
+      // Known values at or above the goal establish it, even with some unknown.
       lines.add(p ? l.dcGoalProteinReached(_g(have), g) : l.dcGoalKcalReached(formatKcal(have), formatKcal(goal)));
+    } else if (x.left case final left?) {
+      lines.add(p ? l.dcGoalProteinLeft(_g(have), g, _g(left)) : l.dcGoalKcalLeft(formatKcal(have), formatKcal(goal), formatKcal(left)));
     } else {
-      lines.add(p ? l.dcGoalProteinLeft(_g(have), g, _g(goal - have)) : l.dcGoalKcalLeft(formatKcal(have), formatKcal(goal), formatKcal(goal - have)));
+      lines.add(p ? l.dcGoalProteinPartial(_g(have), g) : l.dcGoalKcalPartial(formatKcal(have), formatKcal(goal)));
     }
   }
 
   List<CoachItem> named() => [for (final i in intent.items) ?r.item(i.id)];
 
-  Nutrient? toward() => r.proteinGoal != null ? Nutrient.protein : r.calorieGoal != null ? Nutrient.calories : null;
-
   /// What could I eat?, with no AI: the usual meal, a couple of the person's own saved items, and the ways to Eating
   /// out, Find food and Saved meals. New ideas are one tap further (the screen's idea requests).
   void eatChoices() {
+    final a = assessed();
+    if (a == null) return lines.add(l.dcJournalLoading);
+    if (assess(a)) return;
+    final c = a.calories, p = a.protein;
     lines.add(l.dcEatIntro);
     if (r.usual case final u?) {
       final v = NutrientCoverage.calculate(u.entries);
@@ -522,8 +588,28 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
           'kcal': _total(v[Nutrient.calories]!), 'protein': _total(v[Nutrient.protein]!), 'meal': u.meal});
       actions.add(_action('usual', card: cards.length - 1));
     }
-    for (final p in suggest(r.items, byProtein: r.proteinGoal != null).picks.take(2)) {
-      card(p, toward: toward());
+    // Ranked against the goals that still apply: within the calories left when that is known, by protein only while the
+    // protein goal is still to reach; with the calorie target reached, protein-focused means most protein per kcal.
+    final proteinStill = p.hasGoal && !p.reached;
+    final List<Pick> picks;
+    if (c.reached && intent.nutrient == Nutrient.protein) {
+      final known = [
+        for (final i in r.items)
+          if (CoachMath.values(i, CoachMath.base(i)) case final v? when v[Nutrient.protein]!.isComplete && v[Nutrient.calories]!.isComplete && v[Nutrient.calories]!.knownTotal > 0)
+            Pick(i, CoachMath.base(i), v),
+      ];
+      double density(Pick x) => x.values[Nutrient.protein]!.knownTotal / x.values[Nutrient.calories]!.knownTotal;
+      picks = (known..sort((x, y) => density(y).compareTo(density(x)))).take(2).toList();
+      if (picks.isNotEmpty) lines.add(l.dcProteinFocused);
+    } else if (c.left != null) {
+      final s = suggest(r.items, maxKcal: c.left!.floor(), byProtein: proteinStill);
+      picks = s.picks.take(2).toList();
+      if (picks.isNotEmpty) lines.add(s.fits ? l.dcFitsLeft(formatKcal(c.left!)) : l.dcNoneFitsLeft(formatKcal(c.left!)));
+    } else {
+      picks = suggest(r.items, byProtein: proteinStill).picks.take(2).toList();
+    }
+    for (final x in picks) {
+      card(x, all: true);
     }
     actions.addAll([_action('eatingOut'), _action('addFood'), _action('meals')]);
   }
@@ -547,6 +633,8 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
       return;
     }
     final built = <(Json, double)>[];
+    final goals = assessed();
+    var anyOver = false, anyWithin = false;
     for (final i in ideas) {
       final fit = fitIdea(i.parts, maxKcal: intent.maxCalories, minProtein: intent.minProtein);
       // Totals only once every food is matched and nothing is left for the person to confirm.
@@ -558,21 +646,40 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
         if (complete && fit.overKcal != null) 'overKcal': fit.overKcal, if (complete && fit.underProtein != null) 'underProtein': fit.underProtein,
         if (complete && fit.unknown) 'unknownTarget': true,
       };
-      // How it sits with the day's goals, only when the day's value and the idea's are both fully known.
-      final t = logged(), n = toward();
-      if (complete && t != null && n != null) {
-        final goal = n == Nutrient.protein ? r.proteinGoal : r.calorieGoal, have = t[n]!, adds = fit.values[n]!;
-        if (goal != null && have.isComplete && adds.isComplete) {
-          c['toward'] = n == Nutrient.protein
-              ? l.dcAddsProtein(_g(adds.knownTotal), _g(have.knownTotal + adds.knownTotal), '$goal')
-              : l.dcAddsKcal(formatKcal(adds.knownTotal), formatKcal(have.knownTotal + adds.knownTotal), formatKcal(goal));
-        }
+      // How it sits with each of the day's goals, only when the day's value and the idea's are both fully known.
+      if (complete) {
+        final said = towards(fit.values);
+        if (said.isNotEmpty) c['toward'] = said.join('\n');
       }
-      final sort = !complete ? double.infinity : intent.preferences.contains('lighter') ? fit.values[Nutrient.calories]!.knownTotal : -fit.values[Nutrient.protein]!.knownTotal;
-      built.add((c, intent.preferences.contains('moreProtein') || intent.preferences.contains('lighter') ? sort : built.length.toDouble()));
+      final kcalOf = fit.values[Nutrient.calories]!, proteinOf = fit.values[Nutrient.protein]!;
+      final double sort;
+      if (!complete) {
+        sort = double.infinity;
+      } else if (intent.preferences.contains('lighter')) {
+        sort = kcalOf.knownTotal;
+      } else if (intent.preferences.contains('moreProtein')) {
+        sort = -proteinOf.knownTotal;
+      } else if (goals != null && goals.calories.left != null && kcalOf.isComplete) {
+        // Within the calories left first (most protein first while protein is still to reach), then the rest by how far over.
+        final over = kcalOf.knownTotal - goals.calories.left!;
+        sort = over > 0 ? 1e6 + over : (goals.protein.hasGoal && !goals.protein.reached && proteinOf.isComplete ? -proteinOf.knownTotal : built.length.toDouble());
+        if (over > 0) {
+          anyOver = true;
+        } else {
+          anyWithin = true;
+        }
+      } else if (goals != null && goals.calories.reached && goals.protein.hasGoal && !goals.protein.reached && kcalOf.isComplete && proteinOf.isComplete && kcalOf.knownTotal > 0) {
+        sort = -proteinOf.knownTotal / kcalOf.knownTotal; // protein per kcal; the calories each adds are said on its card
+      } else {
+        sort = built.length.toDouble();
+      }
+      built.add((c, sort));
     }
     built.sort((a, b) => a.$2.compareTo(b.$2));
     lines.add(l.dcIdeasHeading);
+    // Nothing within the calories left: said, never relaxed silently.
+    if (anyOver && !anyWithin && goals?.calories.left != null) lines.add(l.dcIdeasNoneFitLeft(formatKcal(goals!.calories.left!)));
+    if (goals != null && goals.calories.reached) lines.add(l.dcAddsToCalories);
     for (final (c, _) in built.take(3)) {
       cards.add(c);
       // Review once complete; Find food for a food with no record. A confirmation is answered on the card itself.

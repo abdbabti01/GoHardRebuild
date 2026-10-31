@@ -2989,7 +2989,7 @@ abstract class AppLocalizations {
   /// History footnote.
   ///
   /// In en, this message translates to:
-  /// **'Totals add up only what was logged. A day with nothing logged, or a food without a value, is never counted as zero. Goals are not shown here: earlier days\' goals were not kept.'**
+  /// **'Totals add up only what was logged. A day with nothing logged, or a food without a value, is never counted as zero. Goals are not shown here; the weekly report compares days with a goal only where this phone recorded one.'**
   String get trendsFootnote;
 
   /// Under the current week.
@@ -15087,13 +15087,13 @@ abstract class AppLocalizations {
   /// Eat › History & trends panel subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Review your intake by week or month'**
+  /// **'Review your intake by week or month, with a weekly report'**
   String get eatHistoryTrendsSubtitle;
 
   /// Screen-reader label of the whole Eat › History & trends panel.
   ///
   /// In en, this message translates to:
-  /// **'History and trends. Review your intake by week or month'**
+  /// **'History and trends. Review your intake by week or month, with a weekly report'**
   String get eatHistoryTrendsSaid;
 
   /// Train › Workouts section header: the latest recorded sessions.
@@ -17837,6 +17837,384 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The coach’s message couldn’t be worked out. Your journal and Log food work as usual.'**
   String get eatCoachProblem;
+
+  /// Goal bar status when some foods have no value: the figures are known intake only.
+  ///
+  /// In en, this message translates to:
+  /// **'Known intake'**
+  String get goalKnownIntake;
+
+  /// Calorie goal bar below 80 % of the target (green): room remaining against the chosen target. Not a statement about adequacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Room remaining'**
+  String get goalRoomRemaining;
+
+  /// Protein goal bar below 80 % of the goal (yellow).
+  ///
+  /// In en, this message translates to:
+  /// **'Below target'**
+  String get goalBelowTarget;
+
+  /// Calorie goal bar from 80 % up to the target (yellow).
+  ///
+  /// In en, this message translates to:
+  /// **'Approaching target'**
+  String get goalApproaching;
+
+  /// Protein goal bar from 80 % up to the goal (yellow).
+  ///
+  /// In en, this message translates to:
+  /// **'Nearly there'**
+  String get goalNearlyThere;
+
+  /// Calorie goal bar at the target (green).
+  ///
+  /// In en, this message translates to:
+  /// **'Target reached'**
+  String get goalTargetReached;
+
+  /// Protein goal bar at the goal (green).
+  ///
+  /// In en, this message translates to:
+  /// **'Goal reached'**
+  String get goalReached;
+
+  /// Calorie goal bar above the target (red). kcal = the amount above, formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kcal over target'**
+  String goalOverKcal(String kcal);
+
+  /// Protein goal bar above the goal (still green: never shown as a problem). grams = amount above.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal reached · {grams} g above target'**
+  String goalAboveGrams(String grams);
+
+  /// Eat briefing, earlier day exactly at the calorie target recorded for that day.
+  ///
+  /// In en, this message translates to:
+  /// **'That is at your target.'**
+  String get ebPastAtTarget;
+
+  /// Eat briefing: both calorie and protein targets reached today. Never says the person is done eating.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your calorie and protein targets based on what you logged.'**
+  String get ebAllReached;
+
+  /// Eat briefing: the only goal set (calories) is reached today.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your calorie target based on what you logged.'**
+  String get ebKcalTargetReached;
+
+  /// Eat briefing: the only goal set (protein) is reached today.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your protein target based on what you logged.'**
+  String get ebProteinTargetReached;
+
+  /// Eat briefing: the calorie target is reached exactly (protein still to go may follow).
+  ///
+  /// In en, this message translates to:
+  /// **'Calorie target reached.'**
+  String get ebKcalReachedPlain;
+
+  /// Action once every goal is reached: still offers help choosing food, never pushes it.
+  ///
+  /// In en, this message translates to:
+  /// **'Find something to eat'**
+  String get ebFindSomething;
+
+  /// What could I eat?, no calorie or protein goal set. No allowance is invented.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven’t set daily targets. I can still help you choose a meal or snack.'**
+  String get dcAssessNoGoals;
+
+  /// What could I eat?, both goals with complete values remaining. kcal, protein = amounts left.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {kcal} kcal and {protein} g protein remaining, based on what you logged.'**
+  String dcAssessBothLeft(String kcal, String protein);
+
+  /// What could I eat?, calories left (every value known).
+  ///
+  /// In en, this message translates to:
+  /// **'You have {kcal} kcal remaining, based on what you logged.'**
+  String dcAssessKcalLeft(String kcal);
+
+  /// What could I eat?, protein left (every value known).
+  ///
+  /// In en, this message translates to:
+  /// **'You have {protein} g protein remaining, based on what you logged.'**
+  String dcAssessProteinLeft(String protein);
+
+  /// What could I eat?, the calorie target is reached (one line among others).
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your calorie target.'**
+  String get dcAssessKcalReached;
+
+  /// What could I eat?, the protein goal is reached (one line among others).
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve met your protein target.'**
+  String get dcAssessProteinReached;
+
+  /// What could I eat?, some calorie values unknown and the known total below the target. kcal = known total.
+  ///
+  /// In en, this message translates to:
+  /// **'Some foods today have no calorie value, so I can’t say exactly how many calories remain: at least {kcal} kcal recorded.'**
+  String dcAssessKcalUnknown(String kcal);
+
+  /// What could I eat?, some protein values unknown and the known total below the goal. protein = known grams.
+  ///
+  /// In en, this message translates to:
+  /// **'Some foods today have no protein value, so the protein remaining isn’t exact: at least {protein} g recorded.'**
+  String dcAssessProteinUnknown(String protein);
+
+  /// What could I eat?, both targets reached: said before offering more food; the person can still continue.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your calorie and protein targets based on what you logged. If you’re still hungry or want something else, I can help you choose.'**
+  String get dcAssessAllReached;
+
+  /// What could I eat?, the only goal set (calories) is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your calorie target based on what you logged. If you’re still hungry or want something else, I can help you choose.'**
+  String get dcAssessOnlyKcalReached;
+
+  /// What could I eat?, the only goal set (protein) is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your protein target based on what you logged. If you’re still hungry or want something else, I can help you choose.'**
+  String get dcAssessOnlyProteinReached;
+
+  /// What could I eat?, calorie target reached or exceeded, protein left (exact). Explains the trade-off before any option.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your calorie target, with {protein} g protein remaining. Would you like protein-focused options? They’ll add to your calorie total.'**
+  String dcAssessKcalReachedProteinLeft(String protein);
+
+  /// As dcAssessKcalReachedProteinLeft, but some protein values are unknown. protein = known grams.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached your calorie target. Some protein values are missing (at least {protein} g recorded), so I can’t say exactly how much protein remains. Would you like protein-focused options? They’ll add to your calorie total.'**
+  String dcAssessKcalReachedProteinUnknown(String protein);
+
+  /// What could I eat?, protein goal reached, calories left (exact). More protein is no longer the aim.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve met your protein target and have {kcal} kcal remaining. What kind of food would you like?'**
+  String dcAssessProteinReachedKcalLeft(String kcal);
+
+  /// As dcAssessProteinReachedKcalLeft, but some calorie values are unknown. kcal = known total.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve met your protein target. Some foods have no calorie value (at least {kcal} kcal recorded), so I can’t say exactly how many calories remain. What kind of food would you like?'**
+  String dcAssessProteinReachedKcalUnknown(String kcal);
+
+  /// After continuing past a reached calorie target: every option adds its real calories.
+  ///
+  /// In en, this message translates to:
+  /// **'Anything you choose adds to your calorie total; each option shows how much.'**
+  String get dcAddsToCalories;
+
+  /// Saved options that fit within the calories left. kcal = calories left.
+  ///
+  /// In en, this message translates to:
+  /// **'These fit within the {kcal} kcal remaining:'**
+  String dcFitsLeft(String kcal);
+
+  /// No saved option fits within the calories left: the nearest are shown with what they add (constraint never relaxed silently).
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved fits within the {kcal} kcal remaining. These are the nearest; each shows what it would add:'**
+  String dcNoneFitsLeft(String kcal);
+
+  /// Heading for protein-focused options after the calorie target is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Most protein for their calories:'**
+  String get dcProteinFocused;
+
+  /// None of the new ideas fits within the calories left.
+  ///
+  /// In en, this message translates to:
+  /// **'None of these ideas fits within the {kcal} kcal remaining; each shows what it would add.'**
+  String dcIdeasNoneFitLeft(String kcal);
+
+  /// Action: show protein-focused options (after the calorie target is reached).
+  ///
+  /// In en, this message translates to:
+  /// **'Show protein-focused options'**
+  String get dcActionProteinOptions;
+
+  /// Action: open today in Eat.
+  ///
+  /// In en, this message translates to:
+  /// **'See today’s summary'**
+  String get dcActionSummary;
+
+  /// Weekly nutrition report page title and its link in History & trends.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly report'**
+  String get wrTitle;
+
+  /// Weekly report subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories and protein, Monday to Sunday, from what you logged.'**
+  String get wrSubtitle;
+
+  /// Weekly report label for the current, unfinished week.
+  ///
+  /// In en, this message translates to:
+  /// **'Week so far'**
+  String get wrWeekSoFarLabel;
+
+  /// Weekly report label for a finished week.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed week'**
+  String get wrCompletedWeek;
+
+  /// Weekly report: days with food logged out of the days elapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with food logged: {logged} of {elapsed}'**
+  String wrDaysLogged(int logged, int elapsed);
+
+  /// Weekly report: days with nothing logged; never counted as zero.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with nothing logged: {count} (never counted as zero)'**
+  String wrUnlogged(int count);
+
+  /// Weekly report when no goal was recorded for any day of the week. Past goals are never guessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Historical goals are unavailable for this week, so days are not compared with a goal. Goal history starts when GoHard records it on this phone.'**
+  String get wrGoalsUnavailable;
+
+  /// Weekly report: goals recorded on some days only.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals recorded on this phone: {count} of {elapsed} days. Other days are not compared with a goal.'**
+  String wrGoalsSome(int count, int elapsed);
+
+  /// Weekly report: a goal was recorded for every day.
+  ///
+  /// In en, this message translates to:
+  /// **'Each day is compared with the goal recorded for that day.'**
+  String get wrGoalsAll;
+
+  /// Weekly report section: factual observations.
+  ///
+  /// In en, this message translates to:
+  /// **'What the records show'**
+  String get wrObservations;
+
+  /// Weekly report section: practical next steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Next steps'**
+  String get wrNextSteps;
+
+  /// Next step: some days have foods without a value.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with foods missing a value: {count}. Adding those values makes the totals complete.'**
+  String wrStepCompleteValues(int count);
+
+  /// Next step: some days have nothing logged.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with nothing logged are left out. Logging each day makes the averages more useful.'**
+  String get wrStepLogDays;
+
+  /// Weekly report footnote: what complete means and what the report never claims.
+  ///
+  /// In en, this message translates to:
+  /// **'A day is complete when every food logged has a value; that does not show that everything eaten was logged. Days with nothing logged are never zero. Nothing here is a judgement about health, weight or nutrition.'**
+  String get wrFootnote;
+
+  /// Observation: calorie values recorded on N of M days.
+  ///
+  /// In en, this message translates to:
+  /// **'Calorie values were recorded on {known} of {elapsed} days.'**
+  String wrObsCoverage(int known, int elapsed);
+
+  /// Observation: protein values recorded on N of M days.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein values were recorded on {known} of {elapsed} days.'**
+  String wrObsProteinCoverage(int known, int elapsed);
+
+  /// Observation: protein goal reached on N of M days with a recorded goal (not a claim about overall nutrition).
+  ///
+  /// In en, this message translates to:
+  /// **'Your protein goal was reached on {reached} of {compared} days with a recorded goal.'**
+  String wrObsProteinGoal(int reached, int compared);
+
+  /// Observation: recorded calories above the target on N of M days with a recorded goal. Neutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded calories were above the target on {over} of {compared} days with a recorded goal.'**
+  String wrObsCalorieGoal(int over, int compared);
+
+  /// Observation: protein on complete days spread more than the previous week (enough days in both).
+  ///
+  /// In en, this message translates to:
+  /// **'Your recorded protein varied more between days this week than last week.'**
+  String get wrObsVariedMore;
+
+  /// Observation: protein on complete days spread less than the previous week.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recorded protein was steadier between days this week than last week.'**
+  String get wrObsSteadier;
+
+  /// Weekly report: average of known values. amount = formatted value; count = days with a known value (the denominator).
+  ///
+  /// In en, this message translates to:
+  /// **'Average {amount} a day, over the {count} days with known values.'**
+  String wrAverageKnown(String amount, int count);
+
+  /// Weekly report: the known-value average includes days with some foods missing a value.
+  ///
+  /// In en, this message translates to:
+  /// **'It may be understated: days with some foods missing a value: {count}.'**
+  String wrMayBeUnderstated(int count);
+
+  /// Weekly report: average over complete recorded days only.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete recorded days: {amount} a day, over {count} days.'**
+  String wrAverageComplete(String amount, int count);
+
+  /// Weekly report: days compared with the recorded calorie target, and how many were above it.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared with the recorded target on {compared} days: above it on {over}.'**
+  String wrCalorieGoalDays(int compared, int over);
+
+  /// Weekly report: days compared with the recorded protein goal, and how many reached it.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared with the recorded goal on {compared} days: reached on {reached}.'**
+  String wrProteinGoalDays(int compared, int reached);
+
+  /// Weekly report: days with a recorded goal that cannot be compared because values are missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with a recorded goal that can’t be compared because values are missing: {count}.'**
+  String wrGoalUndetermined(int count);
 }
 
 class _AppLocalizationsDelegate

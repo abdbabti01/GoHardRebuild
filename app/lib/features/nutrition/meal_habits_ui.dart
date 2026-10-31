@@ -163,8 +163,11 @@ class UsualMealPanel extends ConsumerWidget {
 /// Eat's briefing without the coach (Show coach on Train and Eat off): its words and What could I eat?, in a compact
 /// pale panel, so the action is still there.
 class BriefingPanel extends StatelessWidget {
-  const BriefingPanel({super.key, required this.text, this.ideas});
+  const BriefingPanel({super.key, required this.text, this.ideas, this.label});
   final String text;
+
+  /// The action's words: What could I eat?, or Find something to eat once every goal is reached.
+  final String? label;
   final VoidCallback? ideas;
 
   @override
@@ -175,7 +178,7 @@ class BriefingPanel extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(16, 14, 12, ideas == null ? 14 : 6),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(text, key: const Key('eat-brief-text'), style: context.body),
-              if (ideas != null) TextButton(key: const Key('eat-brief-ideas'), onPressed: ideas, child: Text(context.l10n.ebIdeas)),
+              if (ideas != null) TextButton(key: const Key('eat-brief-ideas'), onPressed: ideas, child: Text(label ?? context.l10n.ebIdeas)),
             ]),
           ),
         ),

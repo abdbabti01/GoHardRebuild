@@ -109,11 +109,11 @@ void main() {
       final panel = find.byKey(const Key('eat-history'));
       expect(panel, findsOneWidget);
       expect(find.text('History & trends'), findsOneWidget, reason: 'the old link under the date is gone');
-      expect(find.descendant(of: panel, matching: find.text('Review your intake by week or month')), findsOneWidget);
+      expect(find.descendant(of: panel, matching: find.text('Review your intake by week or month, with a weekly report')), findsOneWidget);
       final box = tester.getRect(panel), summary = tester.getRect(find.byKey(const Key('eat-customize'))), meals = tester.getRect(find.text("Today's meals"));
       expect((box.top > summary.bottom, box.bottom < meals.top), (true, true), reason: 'below the summary and its tools, above the meals');
       expect(box.width, closeTo(390 - 2 * 20, 12), reason: 'full width');
-      expect(tester.getSemantics(panel), matchesSemantics(label: 'History and trends. Review your intake by week or month', isButton: true, hasTapAction: true));
+      expect(tester.getSemantics(panel), matchesSemantics(label: 'History and trends. Review your intake by week or month, with a weekly report', isButton: true, hasTapAction: true));
       await tester.tap(panel);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('trends-period-label')), findsOneWidget, reason: 'the existing History & trends, even with nothing logged');

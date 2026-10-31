@@ -718,6 +718,9 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
         'usual' => l.habitReview,
         'workout' => l.dcActionWorkout,
         'journal' => l.dcActionJournal,
+        'proceed' => l.ebFindSomething,
+        'proteinOptions' => l.dcActionProteinOptions,
+        'summary' => l.dcActionSummary,
         'goals' => l.dcActionGoals,
         'meals' => l.mealsLibraryTitle,
         'eatingOut' => l.eatHintEatingOutAction,
@@ -781,7 +784,10 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
         final f = a['workoutId'] is String ? WorkoutFocus.session(a['workoutId'] as String) : WorkoutFocus.preview(a['planId'] as String, a['occasionId'] as String);
         home();
         shell.openWorkout(f);
-      case 'journal':
+      case 'proceed' || 'proteinOptions':
+        // Going on after being told a goal is reached: the options, never blocked.
+        _builtIn(DayIntent('eat', proceed: true, nutrient: a['id'] == 'proteinOptions' ? Nutrient.protein : null), _actionLabel(l, a));
+      case 'journal' || 'summary':
         eat.show(day);
         home();
         shell.switchTab(2);

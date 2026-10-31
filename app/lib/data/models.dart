@@ -60,6 +60,10 @@ abstract final class Kinds {
   /// Meal suggestions on this phone: `prefs` (on, off, or not chosen yet, and the meals set aside for a day), and when
   /// each meal was first logged on its own day (id = `day|meal`). Local only.
   static const habit = 'habit', logTime = 'log_time';
+  /// The calorie and protein goals this phone saw in effect on a day (id = the day key): `{calorieGoal, proteinGoal,
+  /// changed}`, `changed` when one goal replaced another during that day. Local only and additive; history starts when this phone
+  /// first records it and is never filled in for earlier days (docs/EAT_COMPANION.md › Weekly report).
+  static const goalDay = 'nutrition_goal_day';
 }
 
 /// The server's word on whether this account may use its data (docs/AUTHENTICATION_EMAIL.md › Required verification).

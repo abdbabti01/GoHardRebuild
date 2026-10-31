@@ -1856,7 +1856,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trendsFootnote =>
-      'Totals add up only what was logged. A day with nothing logged, or a food without a value, is never counted as zero. Goals are not shown here: earlier days\' goals were not kept.';
+      'Totals add up only what was logged. A day with nothing logged, or a food without a value, is never counted as zero. Goals are not shown here; the weekly report compares days with a goal only where this phone recorded one.';
 
   @override
   String trendsWeekSoFar(String range) {
@@ -10198,11 +10198,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meEmailPaused => 'Syncing paused until verified';
 
   @override
-  String get eatHistoryTrendsSubtitle => 'Review your intake by week or month';
+  String get eatHistoryTrendsSubtitle =>
+      'Review your intake by week or month, with a weekly report';
 
   @override
   String get eatHistoryTrendsSaid =>
-      'History and trends. Review your intake by week or month';
+      'History and trends. Review your intake by week or month, with a weekly report';
 
   @override
   String get trainRecentWorkouts => 'Recent workouts';
@@ -12012,4 +12013,264 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get eatCoachProblem =>
       'The coach’s message couldn’t be worked out. Your journal and Log food work as usual.';
+
+  @override
+  String get goalKnownIntake => 'Known intake';
+
+  @override
+  String get goalRoomRemaining => 'Room remaining';
+
+  @override
+  String get goalBelowTarget => 'Below target';
+
+  @override
+  String get goalApproaching => 'Approaching target';
+
+  @override
+  String get goalNearlyThere => 'Nearly there';
+
+  @override
+  String get goalTargetReached => 'Target reached';
+
+  @override
+  String get goalReached => 'Goal reached';
+
+  @override
+  String goalOverKcal(String kcal) {
+    return '$kcal kcal over target';
+  }
+
+  @override
+  String goalAboveGrams(String grams) {
+    return 'Goal reached · $grams g above target';
+  }
+
+  @override
+  String get ebPastAtTarget => 'That is at your target.';
+
+  @override
+  String get ebAllReached =>
+      'You’ve reached your calorie and protein targets based on what you logged.';
+
+  @override
+  String get ebKcalTargetReached =>
+      'You’ve reached your calorie target based on what you logged.';
+
+  @override
+  String get ebProteinTargetReached =>
+      'You’ve reached your protein target based on what you logged.';
+
+  @override
+  String get ebKcalReachedPlain => 'Calorie target reached.';
+
+  @override
+  String get ebFindSomething => 'Find something to eat';
+
+  @override
+  String get dcAssessNoGoals =>
+      'You haven’t set daily targets. I can still help you choose a meal or snack.';
+
+  @override
+  String dcAssessBothLeft(String kcal, String protein) {
+    return 'You have $kcal kcal and $protein g protein remaining, based on what you logged.';
+  }
+
+  @override
+  String dcAssessKcalLeft(String kcal) {
+    return 'You have $kcal kcal remaining, based on what you logged.';
+  }
+
+  @override
+  String dcAssessProteinLeft(String protein) {
+    return 'You have $protein g protein remaining, based on what you logged.';
+  }
+
+  @override
+  String get dcAssessKcalReached => 'You’ve reached your calorie target.';
+
+  @override
+  String get dcAssessProteinReached => 'You’ve met your protein target.';
+
+  @override
+  String dcAssessKcalUnknown(String kcal) {
+    return 'Some foods today have no calorie value, so I can’t say exactly how many calories remain: at least $kcal kcal recorded.';
+  }
+
+  @override
+  String dcAssessProteinUnknown(String protein) {
+    return 'Some foods today have no protein value, so the protein remaining isn’t exact: at least $protein g recorded.';
+  }
+
+  @override
+  String get dcAssessAllReached =>
+      'You’ve reached your calorie and protein targets based on what you logged. If you’re still hungry or want something else, I can help you choose.';
+
+  @override
+  String get dcAssessOnlyKcalReached =>
+      'You’ve reached your calorie target based on what you logged. If you’re still hungry or want something else, I can help you choose.';
+
+  @override
+  String get dcAssessOnlyProteinReached =>
+      'You’ve reached your protein target based on what you logged. If you’re still hungry or want something else, I can help you choose.';
+
+  @override
+  String dcAssessKcalReachedProteinLeft(String protein) {
+    return 'You’ve reached your calorie target, with $protein g protein remaining. Would you like protein-focused options? They’ll add to your calorie total.';
+  }
+
+  @override
+  String dcAssessKcalReachedProteinUnknown(String protein) {
+    return 'You’ve reached your calorie target. Some protein values are missing (at least $protein g recorded), so I can’t say exactly how much protein remains. Would you like protein-focused options? They’ll add to your calorie total.';
+  }
+
+  @override
+  String dcAssessProteinReachedKcalLeft(String kcal) {
+    return 'You’ve met your protein target and have $kcal kcal remaining. What kind of food would you like?';
+  }
+
+  @override
+  String dcAssessProteinReachedKcalUnknown(String kcal) {
+    return 'You’ve met your protein target. Some foods have no calorie value (at least $kcal kcal recorded), so I can’t say exactly how many calories remain. What kind of food would you like?';
+  }
+
+  @override
+  String get dcAddsToCalories =>
+      'Anything you choose adds to your calorie total; each option shows how much.';
+
+  @override
+  String dcFitsLeft(String kcal) {
+    return 'These fit within the $kcal kcal remaining:';
+  }
+
+  @override
+  String dcNoneFitsLeft(String kcal) {
+    return 'Nothing saved fits within the $kcal kcal remaining. These are the nearest; each shows what it would add:';
+  }
+
+  @override
+  String get dcProteinFocused => 'Most protein for their calories:';
+
+  @override
+  String dcIdeasNoneFitLeft(String kcal) {
+    return 'None of these ideas fits within the $kcal kcal remaining; each shows what it would add.';
+  }
+
+  @override
+  String get dcActionProteinOptions => 'Show protein-focused options';
+
+  @override
+  String get dcActionSummary => 'See today’s summary';
+
+  @override
+  String get wrTitle => 'Weekly report';
+
+  @override
+  String get wrSubtitle =>
+      'Calories and protein, Monday to Sunday, from what you logged.';
+
+  @override
+  String get wrWeekSoFarLabel => 'Week so far';
+
+  @override
+  String get wrCompletedWeek => 'Completed week';
+
+  @override
+  String wrDaysLogged(int logged, int elapsed) {
+    return 'Days with food logged: $logged of $elapsed';
+  }
+
+  @override
+  String wrUnlogged(int count) {
+    return 'Days with nothing logged: $count (never counted as zero)';
+  }
+
+  @override
+  String get wrGoalsUnavailable =>
+      'Historical goals are unavailable for this week, so days are not compared with a goal. Goal history starts when GoHard records it on this phone.';
+
+  @override
+  String wrGoalsSome(int count, int elapsed) {
+    return 'Goals recorded on this phone: $count of $elapsed days. Other days are not compared with a goal.';
+  }
+
+  @override
+  String get wrGoalsAll =>
+      'Each day is compared with the goal recorded for that day.';
+
+  @override
+  String get wrObservations => 'What the records show';
+
+  @override
+  String get wrNextSteps => 'Next steps';
+
+  @override
+  String wrStepCompleteValues(int count) {
+    return 'Days with foods missing a value: $count. Adding those values makes the totals complete.';
+  }
+
+  @override
+  String get wrStepLogDays =>
+      'Days with nothing logged are left out. Logging each day makes the averages more useful.';
+
+  @override
+  String get wrFootnote =>
+      'A day is complete when every food logged has a value; that does not show that everything eaten was logged. Days with nothing logged are never zero. Nothing here is a judgement about health, weight or nutrition.';
+
+  @override
+  String wrObsCoverage(int known, int elapsed) {
+    return 'Calorie values were recorded on $known of $elapsed days.';
+  }
+
+  @override
+  String wrObsProteinCoverage(int known, int elapsed) {
+    return 'Protein values were recorded on $known of $elapsed days.';
+  }
+
+  @override
+  String wrObsProteinGoal(int reached, int compared) {
+    return 'Your protein goal was reached on $reached of $compared days with a recorded goal.';
+  }
+
+  @override
+  String wrObsCalorieGoal(int over, int compared) {
+    return 'Recorded calories were above the target on $over of $compared days with a recorded goal.';
+  }
+
+  @override
+  String get wrObsVariedMore =>
+      'Your recorded protein varied more between days this week than last week.';
+
+  @override
+  String get wrObsSteadier =>
+      'Your recorded protein was steadier between days this week than last week.';
+
+  @override
+  String wrAverageKnown(String amount, int count) {
+    return 'Average $amount a day, over the $count days with known values.';
+  }
+
+  @override
+  String wrMayBeUnderstated(int count) {
+    return 'It may be understated: days with some foods missing a value: $count.';
+  }
+
+  @override
+  String wrAverageComplete(String amount, int count) {
+    return 'Complete recorded days: $amount a day, over $count days.';
+  }
+
+  @override
+  String wrCalorieGoalDays(int compared, int over) {
+    return 'Compared with the recorded target on $compared days: above it on $over.';
+  }
+
+  @override
+  String wrProteinGoalDays(int compared, int reached) {
+    return 'Compared with the recorded goal on $compared days: reached on $reached.';
+  }
+
+  @override
+  String wrGoalUndetermined(int count) {
+    return 'Days with a recorded goal that can’t be compared because values are missing: $count.';
+  }
 }

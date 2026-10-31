@@ -15,6 +15,7 @@ import '../features/auth/account_security.dart' show VerifyEmailScreen;
 import '../features/auth/auth_screen.dart';
 import '../features/coach/coach_prefs.dart';
 import '../features/me/reminders.dart';
+import '../features/nutrition/intake_history.dart' show goalHistorySyncProvider;
 import '../features/setup/setup_screen.dart';
 import '../features/shell/home_shell.dart';
 import 'providers.dart';
@@ -75,6 +76,7 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
   @override
   Widget build(BuildContext context) {
     ref.watch(reminderSyncProvider); // keeps scheduled reminders equal to the accepted plan; removes them when signed out
+    ref.watch(goalHistorySyncProvider); // records the nutrition goals in effect today, for the weekly report
     final owner = ref.watch(ownerProvider);
     // A new account's setup, until it is finished or skipped (docs/COACH.md › Setup).
     final setup = owner == null ? null : ref.watch(coachPrefsProvider.select((p) => p.setup[owner]));

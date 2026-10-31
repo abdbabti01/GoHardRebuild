@@ -1885,7 +1885,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get trendsFootnote =>
-      'Les totaux additionnent seulement ce qui a été consigné. Un jour sans rien de consigné, ou un aliment sans valeur, n\'est jamais compté comme zéro. Les objectifs ne sont pas affichés ici : ceux des jours passés n\'ont pas été gardés.';
+      'Les totaux additionnent seulement ce qui a été consigné. Un jour sans rien de consigné, ou un aliment sans valeur, n’est jamais compté comme zéro. Les objectifs ne sont pas affichés ici; le rapport hebdomadaire compare les jours à un objectif seulement quand ce téléphone en a enregistré un.';
 
   @override
   String trendsWeekSoFar(String range) {
@@ -10379,11 +10379,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get eatHistoryTrendsSubtitle =>
-      'Revois tes apports par semaine ou par mois';
+      'Revois tes apports par semaine ou par mois, avec un rapport hebdomadaire';
 
   @override
   String get eatHistoryTrendsSaid =>
-      'Historique et tendances. Revois tes apports par semaine ou par mois';
+      'Historique et tendances. Revois tes apports par semaine ou par mois, avec un rapport hebdomadaire';
 
   @override
   String get trainRecentWorkouts => 'Séances récentes';
@@ -12217,6 +12217,267 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get eatCoachProblem =>
       'Le message du coach n’a pas pu être préparé. Ton journal et Consigner un aliment fonctionnent normalement.';
+
+  @override
+  String get goalKnownIntake => 'Apport connu';
+
+  @override
+  String get goalRoomRemaining => 'Marge restante';
+
+  @override
+  String get goalBelowTarget => 'Sous l’objectif';
+
+  @override
+  String get goalApproaching => 'Près de la cible';
+
+  @override
+  String get goalNearlyThere => 'Presque atteint';
+
+  @override
+  String get goalTargetReached => 'Cible atteinte';
+
+  @override
+  String get goalReached => 'Objectif atteint';
+
+  @override
+  String goalOverKcal(String kcal) {
+    return '$kcal kcal au-dessus de la cible';
+  }
+
+  @override
+  String goalAboveGrams(String grams) {
+    return 'Objectif atteint · $grams g au-dessus';
+  }
+
+  @override
+  String get ebPastAtTarget => 'C’est ta cible.';
+
+  @override
+  String get ebAllReached =>
+      'Tu as atteint tes cibles de calories et de protéines d’après ce que tu as consigné.';
+
+  @override
+  String get ebKcalTargetReached =>
+      'Tu as atteint ta cible de calories d’après ce que tu as consigné.';
+
+  @override
+  String get ebProteinTargetReached =>
+      'Tu as atteint ton objectif de protéines d’après ce que tu as consigné.';
+
+  @override
+  String get ebKcalReachedPlain => 'Cible de calories atteinte.';
+
+  @override
+  String get ebFindSomething => 'Trouver quelque chose à manger';
+
+  @override
+  String get dcAssessNoGoals =>
+      'Tu n’as pas fixé de cibles quotidiennes. Je peux quand même t’aider à choisir un repas ou une collation.';
+
+  @override
+  String dcAssessBothLeft(String kcal, String protein) {
+    return 'Il te reste $kcal kcal et $protein g de protéines, d’après ce que tu as consigné.';
+  }
+
+  @override
+  String dcAssessKcalLeft(String kcal) {
+    return 'Il te reste $kcal kcal, d’après ce que tu as consigné.';
+  }
+
+  @override
+  String dcAssessProteinLeft(String protein) {
+    return 'Il te reste $protein g de protéines, d’après ce que tu as consigné.';
+  }
+
+  @override
+  String get dcAssessKcalReached => 'Tu as atteint ta cible de calories.';
+
+  @override
+  String get dcAssessProteinReached =>
+      'Tu as atteint ton objectif de protéines.';
+
+  @override
+  String dcAssessKcalUnknown(String kcal) {
+    return 'Certains aliments n’ont pas de valeur de calories aujourd’hui, alors je ne peux pas dire exactement combien il en reste : au moins $kcal kcal consignées.';
+  }
+
+  @override
+  String dcAssessProteinUnknown(String protein) {
+    return 'Certains aliments n’ont pas de valeur de protéines aujourd’hui, alors les protéines restantes ne sont pas exactes : au moins $protein g consignés.';
+  }
+
+  @override
+  String get dcAssessAllReached =>
+      'Tu as atteint tes cibles de calories et de protéines d’après ce que tu as consigné. Si tu as encore faim ou envie d’autre chose, je peux t’aider à choisir.';
+
+  @override
+  String get dcAssessOnlyKcalReached =>
+      'Tu as atteint ta cible de calories d’après ce que tu as consigné. Si tu as encore faim ou envie d’autre chose, je peux t’aider à choisir.';
+
+  @override
+  String get dcAssessOnlyProteinReached =>
+      'Tu as atteint ton objectif de protéines d’après ce que tu as consigné. Si tu as encore faim ou envie d’autre chose, je peux t’aider à choisir.';
+
+  @override
+  String dcAssessKcalReachedProteinLeft(String protein) {
+    return 'Tu as atteint ta cible de calories et il te reste $protein g de protéines. Veux-tu des options riches en protéines? Elles s’ajouteront à ton total de calories.';
+  }
+
+  @override
+  String dcAssessKcalReachedProteinUnknown(String protein) {
+    return 'Tu as atteint ta cible de calories. Certaines valeurs de protéines manquent (au moins $protein g consignés), alors je ne peux pas dire exactement combien il en reste. Veux-tu des options riches en protéines? Elles s’ajouteront à ton total de calories.';
+  }
+
+  @override
+  String dcAssessProteinReachedKcalLeft(String kcal) {
+    return 'Tu as atteint ton objectif de protéines et il te reste $kcal kcal. Quel genre d’aliment aimerais-tu?';
+  }
+
+  @override
+  String dcAssessProteinReachedKcalUnknown(String kcal) {
+    return 'Tu as atteint ton objectif de protéines. Certains aliments n’ont pas de valeur de calories (au moins $kcal kcal consignées), alors je ne peux pas dire exactement combien il en reste. Quel genre d’aliment aimerais-tu?';
+  }
+
+  @override
+  String get dcAddsToCalories =>
+      'Tout ce que tu choisis s’ajoute à ton total de calories; chaque option indique combien.';
+
+  @override
+  String dcFitsLeft(String kcal) {
+    return 'Ces options entrent dans les $kcal kcal restantes :';
+  }
+
+  @override
+  String dcNoneFitsLeft(String kcal) {
+    return 'Rien d’enregistré n’entre dans les $kcal kcal restantes. Voici les plus proches; chacune indique ce qu’elle ajouterait :';
+  }
+
+  @override
+  String get dcProteinFocused => 'Le plus de protéines pour leurs calories :';
+
+  @override
+  String dcIdeasNoneFitLeft(String kcal) {
+    return 'Aucune de ces idées n’entre dans les $kcal kcal restantes; chacune indique ce qu’elle ajouterait.';
+  }
+
+  @override
+  String get dcActionProteinOptions => 'Voir des options riches en protéines';
+
+  @override
+  String get dcActionSummary => 'Voir le résumé d’aujourd’hui';
+
+  @override
+  String get wrTitle => 'Rapport hebdomadaire';
+
+  @override
+  String get wrSubtitle =>
+      'Calories et protéines, du lundi au dimanche, d’après ce que tu as consigné.';
+
+  @override
+  String get wrWeekSoFarLabel => 'Semaine en cours';
+
+  @override
+  String get wrCompletedWeek => 'Semaine terminée';
+
+  @override
+  String wrDaysLogged(int logged, int elapsed) {
+    return 'Jours avec des aliments consignés : $logged sur $elapsed';
+  }
+
+  @override
+  String wrUnlogged(int count) {
+    return 'Jours sans rien de consigné : $count (jamais comptés comme zéro)';
+  }
+
+  @override
+  String get wrGoalsUnavailable =>
+      'Les objectifs passés ne sont pas disponibles pour cette semaine, alors les jours ne sont pas comparés à un objectif. L’historique des objectifs commence quand GoHard l’enregistre sur ce téléphone.';
+
+  @override
+  String wrGoalsSome(int count, int elapsed) {
+    return 'Objectifs enregistrés sur ce téléphone : $count jours sur $elapsed. Les autres jours ne sont pas comparés à un objectif.';
+  }
+
+  @override
+  String get wrGoalsAll =>
+      'Chaque jour est comparé à l’objectif enregistré pour ce jour-là.';
+
+  @override
+  String get wrObservations => 'Ce que montrent les données';
+
+  @override
+  String get wrNextSteps => 'Prochaines étapes';
+
+  @override
+  String wrStepCompleteValues(int count) {
+    return 'Jours avec des aliments sans valeur : $count. Ajouter ces valeurs complète les totaux.';
+  }
+
+  @override
+  String get wrStepLogDays =>
+      'Les jours sans rien de consigné sont exclus. Consigner chaque jour rend les moyennes plus utiles.';
+
+  @override
+  String get wrFootnote =>
+      'Un jour est complet quand chaque aliment consigné a une valeur; cela ne montre pas que tout ce qui a été mangé a été consigné. Un jour sans rien de consigné n’est jamais zéro. Rien ici n’est un jugement sur la santé, le poids ou la nutrition.';
+
+  @override
+  String wrObsCoverage(int known, int elapsed) {
+    return 'Des valeurs de calories ont été consignées $known jours sur $elapsed.';
+  }
+
+  @override
+  String wrObsProteinCoverage(int known, int elapsed) {
+    return 'Des valeurs de protéines ont été consignées $known jours sur $elapsed.';
+  }
+
+  @override
+  String wrObsProteinGoal(int reached, int compared) {
+    return 'Ton objectif de protéines a été atteint $reached jours sur $compared avec un objectif enregistré.';
+  }
+
+  @override
+  String wrObsCalorieGoal(int over, int compared) {
+    return 'Les calories consignées ont dépassé la cible $over jours sur $compared avec un objectif enregistré.';
+  }
+
+  @override
+  String get wrObsVariedMore =>
+      'Tes protéines consignées ont varié davantage d’un jour à l’autre cette semaine que la semaine passée.';
+
+  @override
+  String get wrObsSteadier =>
+      'Tes protéines consignées ont été plus stables d’un jour à l’autre cette semaine que la semaine passée.';
+
+  @override
+  String wrAverageKnown(String amount, int count) {
+    return 'Moyenne de $amount par jour, sur les $count jours avec des valeurs connues.';
+  }
+
+  @override
+  String wrMayBeUnderstated(int count) {
+    return 'Elle peut être sous-estimée : jours avec des aliments sans valeur : $count.';
+  }
+
+  @override
+  String wrAverageComplete(String amount, int count) {
+    return 'Jours consignés complets : $amount par jour, sur $count jours.';
+  }
+
+  @override
+  String wrCalorieGoalDays(int compared, int over) {
+    return 'Comparé à la cible enregistrée sur $compared jours : au-dessus pendant $over.';
+  }
+
+  @override
+  String wrProteinGoalDays(int compared, int reached) {
+    return 'Comparé à l’objectif enregistré sur $compared jours : atteint pendant $reached.';
+  }
+
+  @override
+  String wrGoalUndetermined(int count) {
+    return 'Jours avec un objectif enregistré impossibles à comparer faute de valeurs : $count.';
+  }
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

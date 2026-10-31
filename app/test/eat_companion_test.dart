@@ -50,8 +50,10 @@ void main() {
       expect((over.kind, over.headsUp), (BriefKind.headsUp, HeadsUp.over));
       expect(say(over), allOf(contains('100 kcal above'), contains('lighter options'), isNot(contains('skip'))));
       final again = brief([e('Lunch', kcal: 2100, protein: 40)], kcalGoal: 2000, seen: {over.seenKey(today)!});
-      expect((again.kind, say(again)), (BriefKind.left, 'Recorded calories are 100 kcal above your target today.'));
-      expect(brief([e('Lunch', kcal: 2100)], kcalGoal: 2000, headsUps: false).kind, BriefKind.left);
+      // The only goal reached (above it): said plainly once its heads-up has been said, without offering more food.
+      expect((again.kind, say(again)), (BriefKind.reached, 'You’ve reached your calorie target based on what you logged. Recorded calories are 100 kcal above your target today.'));
+      expect(brief([e('Lunch', kcal: 2100)], kcalGoal: 2000, headsUps: false).kind, BriefKind.reached);
+      expect(say(brief([e('Lunch', kcal: 2100, protein: 40)], kcalGoal: 2000, proteinGoal: 120, seen: {over.seenKey(today)!})), 'Recorded calories are 100 kcal above your target today. 80 g protein left.');
 
       final near = brief([e('Lunch', kcal: 1900)], kcalGoal: 2000, minute: 13 * 60);
       expect(near.headsUp, HeadsUp.near);
@@ -60,8 +62,11 @@ void main() {
       expect(brief([e('Lunch', kcal: 1900, protein: 1)], kcalGoal: 3000, minute: 9 * 60).headsUp, isNull);
 
       // Reached is true even with an unknown protein value: the known part only grows.
-      final protein = brief([e('Lunch', kcal: 600, protein: 130), e('Snack', kcal: 100, protein: null)], proteinGoal: 120);
+      final protein = brief([e('Lunch', kcal: 600, protein: 130), e('Snack', kcal: 100, protein: null)], kcalGoal: 2000, proteinGoal: 120);
       expect((protein.headsUp, say(protein)), (HeadsUp.protein, 'You’ve reached your protein goal: 130 g of 120 g. Want ideas for your next meal?'));
+      // The only goal (protein) reached: no heads-up asking for more food, the plain reached briefing instead.
+      final only = brief([e('Lunch', kcal: 600, protein: 130), e('Snack', kcal: 100, protein: null)], proteinGoal: 120);
+      expect((only.kind, say(only)), (BriefKind.reached, 'You’ve reached your protein target based on what you logged.'));
     });
 
     test('an earlier day is told looking back, with no heads-up and no "eat now"', () {
@@ -177,7 +182,9 @@ void main() {
     test('What could I eat? needs no AI: the usual meal, saved items and the ways to Eating out and Find food', () {
       final records = DayRecords(today: today, shown: today, entries: (_) => const [], mealNow: 'Lunch');
       final r = resolveDay(const DayIntent('eat'), records, l);
-      expect([for (final a in r['actions'] as List) (a as Map)['id']], ['eatingOut', 'addFood', 'meals']);
+      // No goals: said first, with Edit goals offered (optional), then the options; nothing invented.
+      expect((r['lines'] as List).first, l.dcAssessNoGoals);
+      expect([for (final a in r['actions'] as List) (a as Map)['id']], ['goals', 'eatingOut', 'addFood', 'meals']);
     });
   });
 }

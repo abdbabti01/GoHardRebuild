@@ -2738,7 +2738,7 @@
       }
     }
   },
-  "trendsFootnote": "Totals add up only what was logged. A day with nothing logged, or a food without a value, is never counted as zero. Goals are not shown here: earlier days' goals were not kept.",
+  "trendsFootnote": "Totals add up only what was logged. A day with nothing logged, or a food without a value, is never counted as zero. Goals are not shown here; the weekly report compares days with a goal only where this phone recorded one.",
   "@trendsFootnote": {
     "description": "History footnote."
   },
@@ -14242,11 +14242,11 @@
   "@meEmailPaused": {
     "description": "Me › Email second line past the deadline."
   },
-  "eatHistoryTrendsSubtitle": "Review your intake by week or month",
+  "eatHistoryTrendsSubtitle": "Review your intake by week or month, with a weekly report",
   "@eatHistoryTrendsSubtitle": {
     "description": "Eat › History & trends panel subtitle."
   },
-  "eatHistoryTrendsSaid": "History and trends. Review your intake by week or month",
+  "eatHistoryTrendsSaid": "History and trends. Review your intake by week or month, with a weekly report",
   "@eatHistoryTrendsSaid": {
     "description": "Screen-reader label of the whole Eat › History & trends panel."
   },
@@ -16884,5 +16884,430 @@
   "eatCoachProblem": "The coach’s message couldn’t be worked out. Your journal and Log food work as usual.",
   "@eatCoachProblem": {
     "description": "Eat: shown in the coach’s place when its message failed; the journal still works. Followed by Try again."
+  },
+  "goalKnownIntake": "Known intake",
+  "@goalKnownIntake": {
+    "description": "Goal bar status when some foods have no value: the figures are known intake only."
+  },
+  "goalRoomRemaining": "Room remaining",
+  "@goalRoomRemaining": {
+    "description": "Calorie goal bar below 80 % of the target (green): room remaining against the chosen target. Not a statement about adequacy."
+  },
+  "goalBelowTarget": "Below target",
+  "@goalBelowTarget": {
+    "description": "Protein goal bar below 80 % of the goal (yellow)."
+  },
+  "goalApproaching": "Approaching target",
+  "@goalApproaching": {
+    "description": "Calorie goal bar from 80 % up to the target (yellow)."
+  },
+  "goalNearlyThere": "Nearly there",
+  "@goalNearlyThere": {
+    "description": "Protein goal bar from 80 % up to the goal (yellow)."
+  },
+  "goalTargetReached": "Target reached",
+  "@goalTargetReached": {
+    "description": "Calorie goal bar at the target (green)."
+  },
+  "goalReached": "Goal reached",
+  "@goalReached": {
+    "description": "Protein goal bar at the goal (green)."
+  },
+  "goalOverKcal": "{kcal} kcal over target",
+  "@goalOverKcal": {
+    "description": "Calorie goal bar above the target (red). kcal = the amount above, formatted.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "goalAboveGrams": "Goal reached · {grams} g above target",
+  "@goalAboveGrams": {
+    "description": "Protein goal bar above the goal (still green: never shown as a problem). grams = amount above.",
+    "placeholders": {
+      "grams": {
+        "type": "String"
+      }
+    }
+  },
+  "ebPastAtTarget": "That is at your target.",
+  "@ebPastAtTarget": {
+    "description": "Eat briefing, earlier day exactly at the calorie target recorded for that day."
+  },
+  "ebAllReached": "You’ve reached your calorie and protein targets based on what you logged.",
+  "@ebAllReached": {
+    "description": "Eat briefing: both calorie and protein targets reached today. Never says the person is done eating."
+  },
+  "ebKcalTargetReached": "You’ve reached your calorie target based on what you logged.",
+  "@ebKcalTargetReached": {
+    "description": "Eat briefing: the only goal set (calories) is reached today."
+  },
+  "ebProteinTargetReached": "You’ve reached your protein target based on what you logged.",
+  "@ebProteinTargetReached": {
+    "description": "Eat briefing: the only goal set (protein) is reached today."
+  },
+  "ebKcalReachedPlain": "Calorie target reached.",
+  "@ebKcalReachedPlain": {
+    "description": "Eat briefing: the calorie target is reached exactly (protein still to go may follow)."
+  },
+  "ebFindSomething": "Find something to eat",
+  "@ebFindSomething": {
+    "description": "Action once every goal is reached: still offers help choosing food, never pushes it."
+  },
+  "dcAssessNoGoals": "You haven’t set daily targets. I can still help you choose a meal or snack.",
+  "@dcAssessNoGoals": {
+    "description": "What could I eat?, no calorie or protein goal set. No allowance is invented."
+  },
+  "dcAssessBothLeft": "You have {kcal} kcal and {protein} g protein remaining, based on what you logged.",
+  "@dcAssessBothLeft": {
+    "description": "What could I eat?, both goals with complete values remaining. kcal, protein = amounts left.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessKcalLeft": "You have {kcal} kcal remaining, based on what you logged.",
+  "@dcAssessKcalLeft": {
+    "description": "What could I eat?, calories left (every value known).",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessProteinLeft": "You have {protein} g protein remaining, based on what you logged.",
+  "@dcAssessProteinLeft": {
+    "description": "What could I eat?, protein left (every value known).",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessKcalReached": "You’ve reached your calorie target.",
+  "@dcAssessKcalReached": {
+    "description": "What could I eat?, the calorie target is reached (one line among others)."
+  },
+  "dcAssessProteinReached": "You’ve met your protein target.",
+  "@dcAssessProteinReached": {
+    "description": "What could I eat?, the protein goal is reached (one line among others)."
+  },
+  "dcAssessKcalUnknown": "Some foods today have no calorie value, so I can’t say exactly how many calories remain: at least {kcal} kcal recorded.",
+  "@dcAssessKcalUnknown": {
+    "description": "What could I eat?, some calorie values unknown and the known total below the target. kcal = known total.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessProteinUnknown": "Some foods today have no protein value, so the protein remaining isn’t exact: at least {protein} g recorded.",
+  "@dcAssessProteinUnknown": {
+    "description": "What could I eat?, some protein values unknown and the known total below the goal. protein = known grams.",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessAllReached": "You’ve reached your calorie and protein targets based on what you logged. If you’re still hungry or want something else, I can help you choose.",
+  "@dcAssessAllReached": {
+    "description": "What could I eat?, both targets reached: said before offering more food; the person can still continue."
+  },
+  "dcAssessOnlyKcalReached": "You’ve reached your calorie target based on what you logged. If you’re still hungry or want something else, I can help you choose.",
+  "@dcAssessOnlyKcalReached": {
+    "description": "What could I eat?, the only goal set (calories) is reached."
+  },
+  "dcAssessOnlyProteinReached": "You’ve reached your protein target based on what you logged. If you’re still hungry or want something else, I can help you choose.",
+  "@dcAssessOnlyProteinReached": {
+    "description": "What could I eat?, the only goal set (protein) is reached."
+  },
+  "dcAssessKcalReachedProteinLeft": "You’ve reached your calorie target, with {protein} g protein remaining. Would you like protein-focused options? They’ll add to your calorie total.",
+  "@dcAssessKcalReachedProteinLeft": {
+    "description": "What could I eat?, calorie target reached or exceeded, protein left (exact). Explains the trade-off before any option.",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessKcalReachedProteinUnknown": "You’ve reached your calorie target. Some protein values are missing (at least {protein} g recorded), so I can’t say exactly how much protein remains. Would you like protein-focused options? They’ll add to your calorie total.",
+  "@dcAssessKcalReachedProteinUnknown": {
+    "description": "As dcAssessKcalReachedProteinLeft, but some protein values are unknown. protein = known grams.",
+    "placeholders": {
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessProteinReachedKcalLeft": "You’ve met your protein target and have {kcal} kcal remaining. What kind of food would you like?",
+  "@dcAssessProteinReachedKcalLeft": {
+    "description": "What could I eat?, protein goal reached, calories left (exact). More protein is no longer the aim.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAssessProteinReachedKcalUnknown": "You’ve met your protein target. Some foods have no calorie value (at least {kcal} kcal recorded), so I can’t say exactly how many calories remain. What kind of food would you like?",
+  "@dcAssessProteinReachedKcalUnknown": {
+    "description": "As dcAssessProteinReachedKcalLeft, but some calorie values are unknown. kcal = known total.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAddsToCalories": "Anything you choose adds to your calorie total; each option shows how much.",
+  "@dcAddsToCalories": {
+    "description": "After continuing past a reached calorie target: every option adds its real calories."
+  },
+  "dcFitsLeft": "These fit within the {kcal} kcal remaining:",
+  "@dcFitsLeft": {
+    "description": "Saved options that fit within the calories left. kcal = calories left.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcNoneFitsLeft": "Nothing saved fits within the {kcal} kcal remaining. These are the nearest; each shows what it would add:",
+  "@dcNoneFitsLeft": {
+    "description": "No saved option fits within the calories left: the nearest are shown with what they add (constraint never relaxed silently).",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcProteinFocused": "Most protein for their calories:",
+  "@dcProteinFocused": {
+    "description": "Heading for protein-focused options after the calorie target is reached."
+  },
+  "dcIdeasNoneFitLeft": "None of these ideas fits within the {kcal} kcal remaining; each shows what it would add.",
+  "@dcIdeasNoneFitLeft": {
+    "description": "None of the new ideas fits within the calories left.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "dcActionProteinOptions": "Show protein-focused options",
+  "@dcActionProteinOptions": {
+    "description": "Action: show protein-focused options (after the calorie target is reached)."
+  },
+  "dcActionSummary": "See today’s summary",
+  "@dcActionSummary": {
+    "description": "Action: open today in Eat."
+  },
+  "wrTitle": "Weekly report",
+  "@wrTitle": {
+    "description": "Weekly nutrition report page title and its link in History & trends."
+  },
+  "wrSubtitle": "Calories and protein, Monday to Sunday, from what you logged.",
+  "@wrSubtitle": {
+    "description": "Weekly report subtitle."
+  },
+  "wrWeekSoFarLabel": "Week so far",
+  "@wrWeekSoFarLabel": {
+    "description": "Weekly report label for the current, unfinished week."
+  },
+  "wrCompletedWeek": "Completed week",
+  "@wrCompletedWeek": {
+    "description": "Weekly report label for a finished week."
+  },
+  "wrDaysLogged": "Days with food logged: {logged} of {elapsed}",
+  "@wrDaysLogged": {
+    "description": "Weekly report: days with food logged out of the days elapsed.",
+    "placeholders": {
+      "logged": {
+        "type": "int"
+      },
+      "elapsed": {
+        "type": "int"
+      }
+    }
+  },
+  "wrUnlogged": "Days with nothing logged: {count} (never counted as zero)",
+  "@wrUnlogged": {
+    "description": "Weekly report: days with nothing logged; never counted as zero.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrGoalsUnavailable": "Historical goals are unavailable for this week, so days are not compared with a goal. Goal history starts when GoHard records it on this phone.",
+  "@wrGoalsUnavailable": {
+    "description": "Weekly report when no goal was recorded for any day of the week. Past goals are never guessed."
+  },
+  "wrGoalsSome": "Goals recorded on this phone: {count} of {elapsed} days. Other days are not compared with a goal.",
+  "@wrGoalsSome": {
+    "description": "Weekly report: goals recorded on some days only.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "elapsed": {
+        "type": "int"
+      }
+    }
+  },
+  "wrGoalsAll": "Each day is compared with the goal recorded for that day.",
+  "@wrGoalsAll": {
+    "description": "Weekly report: a goal was recorded for every day."
+  },
+  "wrObservations": "What the records show",
+  "@wrObservations": {
+    "description": "Weekly report section: factual observations."
+  },
+  "wrNextSteps": "Next steps",
+  "@wrNextSteps": {
+    "description": "Weekly report section: practical next steps."
+  },
+  "wrStepCompleteValues": "Days with foods missing a value: {count}. Adding those values makes the totals complete.",
+  "@wrStepCompleteValues": {
+    "description": "Next step: some days have foods without a value.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrStepLogDays": "Days with nothing logged are left out. Logging each day makes the averages more useful.",
+  "@wrStepLogDays": {
+    "description": "Next step: some days have nothing logged."
+  },
+  "wrFootnote": "A day is complete when every food logged has a value; that does not show that everything eaten was logged. Days with nothing logged are never zero. Nothing here is a judgement about health, weight or nutrition.",
+  "@wrFootnote": {
+    "description": "Weekly report footnote: what complete means and what the report never claims."
+  },
+  "wrObsCoverage": "Calorie values were recorded on {known} of {elapsed} days.",
+  "@wrObsCoverage": {
+    "description": "Observation: calorie values recorded on N of M days.",
+    "placeholders": {
+      "known": {
+        "type": "int"
+      },
+      "elapsed": {
+        "type": "int"
+      }
+    }
+  },
+  "wrObsProteinCoverage": "Protein values were recorded on {known} of {elapsed} days.",
+  "@wrObsProteinCoverage": {
+    "description": "Observation: protein values recorded on N of M days.",
+    "placeholders": {
+      "known": {
+        "type": "int"
+      },
+      "elapsed": {
+        "type": "int"
+      }
+    }
+  },
+  "wrObsProteinGoal": "Your protein goal was reached on {reached} of {compared} days with a recorded goal.",
+  "@wrObsProteinGoal": {
+    "description": "Observation: protein goal reached on N of M days with a recorded goal (not a claim about overall nutrition).",
+    "placeholders": {
+      "reached": {
+        "type": "int"
+      },
+      "compared": {
+        "type": "int"
+      }
+    }
+  },
+  "wrObsCalorieGoal": "Recorded calories were above the target on {over} of {compared} days with a recorded goal.",
+  "@wrObsCalorieGoal": {
+    "description": "Observation: recorded calories above the target on N of M days with a recorded goal. Neutral.",
+    "placeholders": {
+      "over": {
+        "type": "int"
+      },
+      "compared": {
+        "type": "int"
+      }
+    }
+  },
+  "wrObsVariedMore": "Your recorded protein varied more between days this week than last week.",
+  "@wrObsVariedMore": {
+    "description": "Observation: protein on complete days spread more than the previous week (enough days in both)."
+  },
+  "wrObsSteadier": "Your recorded protein was steadier between days this week than last week.",
+  "@wrObsSteadier": {
+    "description": "Observation: protein on complete days spread less than the previous week."
+  },
+  "wrAverageKnown": "Average {amount} a day, over the {count} days with known values.",
+  "@wrAverageKnown": {
+    "description": "Weekly report: average of known values. amount = formatted value; count = days with a known value (the denominator).",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrMayBeUnderstated": "It may be understated: days with some foods missing a value: {count}.",
+  "@wrMayBeUnderstated": {
+    "description": "Weekly report: the known-value average includes days with some foods missing a value.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrAverageComplete": "Complete recorded days: {amount} a day, over {count} days.",
+  "@wrAverageComplete": {
+    "description": "Weekly report: average over complete recorded days only.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrCalorieGoalDays": "Compared with the recorded target on {compared} days: above it on {over}.",
+  "@wrCalorieGoalDays": {
+    "description": "Weekly report: days compared with the recorded calorie target, and how many were above it.",
+    "placeholders": {
+      "compared": {
+        "type": "int"
+      },
+      "over": {
+        "type": "int"
+      }
+    }
+  },
+  "wrProteinGoalDays": "Compared with the recorded goal on {compared} days: reached on {reached}.",
+  "@wrProteinGoalDays": {
+    "description": "Weekly report: days compared with the recorded protein goal, and how many reached it.",
+    "placeholders": {
+      "compared": {
+        "type": "int"
+      },
+      "reached": {
+        "type": "int"
+      }
+    }
+  },
+  "wrGoalUndetermined": "Days with a recorded goal that can’t be compared because values are missing: {count}.",
+  "@wrGoalUndetermined": {
+    "description": "Weekly report: days with a recorded goal that cannot be compared because values are missing.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

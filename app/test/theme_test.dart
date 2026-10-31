@@ -78,6 +78,14 @@ void main() {
             atLeast(4.5, panel.text, c.tint, 'ink on the chosen segment');
             atLeast(4.5, panel.secondary, panel.page, 'secondary text on a photo panel');
             atLeast(4.5, panel.accent, panel.page, 'link text on a photo panel');
+            // Goal colours (calorie and protein bars): fills 3:1 on their track, words 4.5:1, on the pale panels and on
+            // this theme's own page and recessed fill.
+            for (final g in [panel, c]) {
+              for (final (name, fill, text) in [('green', g.goalGreen, g.goalGreenText), ('yellow', g.goalYellow, g.goalYellowText), ('red', g.goalRed, g.goalRedText)]) {
+                atLeast(3, fill, g.sunken, 'goal $name fill on its track${g == panel ? ' (panel)' : ''}');
+                atLeast(4.5, text, g.page, 'goal $name words${g == panel ? ' on a panel' : ' on the page'}');
+              }
+            }
             // In Dark the deep button carries a thin accent edge so its shape reads on the charcoal page.
             if (brightness == Brightness.dark) atLeast(3, Color.alphaBlend(c.accent.withValues(alpha: 0.55), c.page), c.page, 'the deep button\'s edge on the page');
             atLeast(4.5, c.page, c.error, 'label on a destructive action');
