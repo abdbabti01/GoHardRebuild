@@ -2660,3 +2660,4 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `RefreshRecoveryTests`, `FoundationTests`: 38 passed. App `account_security_test`, `verification_gate_test`,
   `l10n_me_test`, `localization_test`: 33 passed. `flutter analyze` clean; `check-l10n` OK (3,100).
 - **Deploy note:** older app builds cannot type a 4-digit code; install the new IPA first. Not merged, not deployed.
+- Code 1cf4013: CI 41245723498 passed; replacement unsigned IPA run 67 (41246802931, 1cf4013) passed.

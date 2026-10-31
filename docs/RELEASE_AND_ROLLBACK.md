@@ -154,7 +154,8 @@ no secrets; the API address is the only build-time setting.
 - **No migration, no new capability, contract unchanged.** Configuration defaults change in code:
   `Plus:FreeSavedPlans` 1, `Email:VerifyMaxAttemptsPerDay` 10, `Email:VerifyMaxSendsPerDay` 10. If Railway sets
   `GOHARD_Plus__FreeSavedPlans`, that value wins.
-- **Deploy order:** install the new IPA first (older builds cannot type a 4-digit code); then merge. Verification emails
+- **Build:** code 1cf4013, CI 41245723498 passed, unsigned IPA run 67 (artifact GoHard-Dev-unsigned-ipa).
+- **Deploy order:** install the new IPA (67) first (older builds cannot type a 4-digit code); then merge. Verification emails
   sent before the deploy (8 digits) keep working until they expire (10 minutes).
 - **Effect on existing accounts:** Free accounts with more than one plan keep every plan usable; only creating another is
   explained. Existing passwords keep signing in.
