@@ -2566,3 +2566,27 @@ Design: docs/EAT_COMPANION.md › Shared assessment, goal colours and the weekly
 
 - Owner confirmed IPA 63 on iPhone and approved. `main` fast-forwarded 19e2cf2 → 05a998d; CI 41166239621 passed on `main`; Railway devoted-caring redeployed (success, 14 migrations, no API change). IPA 63 reused. Release notes: docs/RELEASE_AND_ROLLBACK.md.
 - Still unverified: real Groq idea ranking, VoiceOver/TalkBack on the bars, the emulator journey.
+
+## 31 Oct 2026 — GoHard Free and GoHard Plus preview (`feature/plus-preview`, from `main` 7398a39)
+
+Design and exact matrix: docs/PLUS_PREVIEW.md. A preview only: no StoreKit, payment SDK, checkout, Apple product or
+price; no Subscribe / trial / Restore action. Unmerged work and the deferred video work were not touched.
+
+- API (0c15f63 + c5d6f01): `EntitlementService` (sources: owner preview override → Plus, else Free), `AiAllowance`,
+  `GET /entitlement`, owner-only `PUT /preview/entitlement` and `POST /preview/allowance/reset` (404 for anyone else),
+  creation limits in `plan.draft` / `plan.create` / `plan.continue` (`PLAN_LIMIT`) and new saved meals (`MEAL_LIMIT`),
+  one monthly allowance checked and recorded in `CoachService.GuardedAsync` (`429 COACH_LIMIT reason=monthly`),
+  migration `AddEntitlements` (additive: `PreviewOverrides`, `AiUsage`), capability `account.entitlement`.
+- App (c5d6f01): `features/plus/` (model, controller, cache 72 h from receipt per account, Plus page, limit and feature
+  sheets, allowance line), Me › GoHard Plus, gates in the plan builder, Continue this plan, saved-meal save, See all /
+  All range, next-target suggestions; allowance message in Ask GoHard, Help with today, Eating out. +47 strings en/fr/ar.
+- Tests run: API `PlusPreviewTests` (7) + 4 allowance tests: passed; full API suite once: 251/254 — 2 existing
+  `Bad_proposals…` cases exceeded the new Free month (test given a higher allowance, then passed) and the known
+  `AccountEmailTests.Provider_trouble…` flake (passed on rerun). App: `plus_test` (14) passed; full app suite once:
+  891 passed, 1 failed (`theme_test` serif check: Me grew one row, the lazily built title left the surface; test
+  surface raised, file rerun 35/35); `progression_ui_test`, `me_ui_test` adjusted (Plus override; taller surface).
+  `flutter analyze` clean, `check-l10n` OK (3,051 messages).
+- CI 41181024131 (c5d6f01) passed. Unsigned IPA run 64 (41181963066, c5d6f01) passed (artifact GoHard-Dev-unsigned-ipa).
+- **Not run:** the emulator flow (Free → limit → owner Plus → Free), so no device evidence. Not verified on iPhone,
+  VoiceOver, hosted. Hosted needs the deploy (migration) and `GOHARD_Plus__PreviewOwnerUserId` set by the owner.
+  Not merged, not deployed.
