@@ -4,6 +4,7 @@ using GoHard.Api.Application;
 using GoHard.Api.Application.AccountEmail;
 using GoHard.Api.Application.Coach;
 using GoHard.Api.Application.FoodDiscovery;
+using GoHard.Api.Application.Plus;
 using GoHard.Api.Application.Restaurants;
 using GoHard.Api.Application.Weather;
 using GoHard.Api.Persistence;
@@ -24,6 +25,7 @@ public static class GoHardEndpoints
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
         "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes", WeeklyGoalService.Capability,
         ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability, AccountEmailRegistration.Capability, SavedMealService.Capability,
+        EntitlementService.Capability,
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -34,6 +36,7 @@ public static class GoHardEndpoints
         .AddFoodDiscovery(config)
         .AddWeather(config)
         .AddCoach(config)
+        .AddPlus(config)
         .AddSingleton<RestaurantService>()
         .AddSingleton<DailyCoachService>()
         .AddScoped<PlanService>().AddScoped<WorkoutService>().AddScoped<FoodService>().AddScoped<SavedFoodService>().AddScoped<SavedMealService>().AddScoped<WaterService>()
@@ -71,6 +74,10 @@ public static class GoHardEndpoints
         CodeCheckStatus.Unavailable => Results.Json(new AuthError("EMAIL_UNAVAILABLE"), statusCode: 503),
         _ => Results.Json(new AuthError("INVALID_CODE"), statusCode: 400),
     };
+
+    /// <summary>This month's AI allowance is used up: the same code older apps know, with the reason and the reset date.</summary>
+    private static async Task<IResult> AllowanceUsedAsync(EntitlementService plus, ClaimsPrincipal u, CancellationToken ct) =>
+        Results.Json(new { code = "COACH_LIMIT", reason = "monthly", allowance = await plus.AllowanceAsync(u.UserId(), await plus.ResolveAsync(u.UserId(), ct), ct) }, CommandRunner.Json, statusCode: 429);
 
     private static IResult Changed(string? error) => error is null ? Results.NoContent()
         : Results.Json(new AuthError(error), statusCode: error == "EMAIL_UNAVAILABLE" ? 503 : 400);
@@ -273,7 +280,18 @@ public static class GoHardEndpoints
 
         // Ask GoHard (docs/COACH.md). Reads only, never a command. The body is read here so a malformed or oversized
         // one is COACH_INVALID, and so its size is bounded before anything is parsed.
-        me.MapPost("/coach/ask", async (HttpRequest req, ClaimsPrincipal u, CoachService coach, GoHardDb db, CancellationToken ct) =>
+        // GoHard Plus preview (docs/PLUS_PREVIEW.md). The tier comes from the account's sources, never from the request.
+        me.MapGet("/entitlement", async (ClaimsPrincipal u, EntitlementService s, CancellationToken ct) => Results.Json(await s.DescribeAsync(u.UserId(), ct), CommandRunner.Json));
+        // Owner-only: anyone else gets the same 404 as a route that does not exist, and nothing changes.
+        me.MapPut("/preview/entitlement", async (PreviewTierRequest r, ClaimsPrincipal u, EntitlementService s, CancellationToken ct) =>
+        {
+            if (r.Tier is not ("free" or "plus")) return Results.Json(new { code = "VALIDATION_FAILED" }, statusCode: 400);
+            return await s.SetPreviewTierAsync(u.UserId(), r.Tier, ct) ? Results.Json(await s.DescribeAsync(u.UserId(), ct), CommandRunner.Json) : Results.NotFound();
+        });
+        me.MapPost("/preview/allowance/reset", async (ClaimsPrincipal u, EntitlementService s, CancellationToken ct) =>
+            await s.ResetAllowanceAsync(u.UserId(), ct) ? Results.Json(await s.DescribeAsync(u.UserId(), ct), CommandRunner.Json) : Results.NotFound());
+
+        me.MapPost("/coach/ask", async (HttpRequest req, ClaimsPrincipal u, CoachService coach, GoHardDb db, EntitlementService plus, CancellationToken ct) =>
         {
             if (req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = CoachService.MaxBodyBytes;
             CoachAskRequest? r = null;
@@ -286,6 +304,7 @@ public static class GoHardEndpoints
                 CoachStatus.Ok => Results.Json(outcome.Answer, CommandRunner.Json),
                 CoachStatus.Invalid => Results.Json(new { code = "COACH_INVALID" }, statusCode: 400),
                 CoachStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
+                CoachStatus.Allowance => await AllowanceUsedAsync(plus, u, ct),
                 // The provider's rate limit or overload: not the person's own limit, so not COACH_LIMIT.
                 CoachStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
                 _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
@@ -294,7 +313,7 @@ public static class GoHardEndpoints
 
         // Help with today and food (docs/COACH.md › Help with today): words → a checked intent naming this account's own
         // saved items. Reads only, never a command; the same per-account limits and daily allowance as Ask GoHard.
-        me.MapPost("/coach/daily", async (HttpRequest req, ClaimsPrincipal u, DailyCoachService s, GoHardDb db, CancellationToken ct) =>
+        me.MapPost("/coach/daily", async (HttpRequest req, ClaimsPrincipal u, DailyCoachService s, GoHardDb db, EntitlementService plus, CancellationToken ct) =>
         {
             if (req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = DailyCoachService.MaxBodyBytes;
             DailyCoachRequest? r = null;
@@ -307,6 +326,7 @@ public static class GoHardEndpoints
                 DailyStatus.Ok => Results.Json(outcome.Answer, CommandRunner.Json),
                 DailyStatus.Invalid => Results.Json(new { code = "COACH_INVALID" }, statusCode: 400),
                 DailyStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
+                DailyStatus.Allowance => await AllowanceUsedAsync(plus, u, ct),
                 DailyStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
                 _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
             };
@@ -317,7 +337,7 @@ public static class GoHardEndpoints
             ? Results.Json(new { code = "RESTAURANTS_UNAVAILABLE" }, statusCode: 503)
             : have == c.Version ? Results.Ok(new { upToDate = true, version = c.Version }) : Results.Text(c.Json, "application/json"));
         // Words → checked preferences. Reads only, never a command; the same per-account limits as Ask GoHard.
-        me.MapPost("/restaurants/interpret", async (HttpRequest req, ClaimsPrincipal u, RestaurantService s, CancellationToken ct) =>
+        me.MapPost("/restaurants/interpret", async (HttpRequest req, ClaimsPrincipal u, RestaurantService s, EntitlementService plus, CancellationToken ct) =>
         {
             if (req.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = RestaurantService.MaxBodyBytes;
             RestaurantInterpretRequest? r = null;
@@ -331,6 +351,7 @@ public static class GoHardEndpoints
                 RestaurantStatus.Invalid => Results.Json(new { code = "RESTAURANT_INVALID" }, statusCode: 400),
                 RestaurantStatus.Mismatch => Results.Json(new { code = "RESTAURANT_CATALOG_MISMATCH", catalogVersion = s.Catalog?.Version }, statusCode: 409),
                 RestaurantStatus.Limit => Results.Json(new { code = "COACH_LIMIT" }, statusCode: 429),
+                RestaurantStatus.Allowance => await AllowanceUsedAsync(plus, u, ct),
                 RestaurantStatus.Busy => Results.Json(new { code = "COACH_BUSY", retryAfterSeconds = outcome.RetryAfterSeconds }, statusCode: 503),
                 _ => Results.Json(new { code = "COACH_UNAVAILABLE" }, statusCode: 503),
             };

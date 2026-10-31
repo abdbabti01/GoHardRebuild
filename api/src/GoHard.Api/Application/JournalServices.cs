@@ -202,7 +202,7 @@ public sealed class SavedFoodService(GoHardDb db)
 /// Saved meals and recipes (docs/FOOD_DATA.md › Saved meals and recipes). Owned, revision-checked templates with
 /// tombstones, like saved foods. Never a record of anything eaten, and never read to work out logged food.
 /// </summary>
-public sealed class SavedMealService(GoHardDb db)
+public sealed class SavedMealService(GoHardDb db, Plus.EntitlementService plus)
 {
     public const string Capability = "food.saved-meals";
     public const int MaxComponents = 30, BodyLimit = FoodService.CompositeSnapshotLimit;
@@ -239,6 +239,8 @@ public sealed class SavedMealService(GoHardDb db)
         if (meal is null)
         {
             if (r.ExpectedRevision != 0) return Outcome.NotFound<SavedMealDto>();
+            // Only a new definition counts toward the limit; editing, using or deleting one never does (docs/PLUS_PREVIEW.md).
+            if (await plus.MealRefusalAsync(userId, ct) is { } limit) return Outcome.Rejected<SavedMealDto>(limit);
             meal = new SavedMeal { Id = id, UserId = userId, CreatedAtUtc = DateTime.UtcNow, Revision = 0 };
             db.SavedMeals.Add(meal);
         }

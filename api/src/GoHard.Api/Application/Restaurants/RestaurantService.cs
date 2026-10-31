@@ -63,7 +63,7 @@ public sealed record RestaurantIntent(string Kind, string? Mode, string? ChainId
     List<string> UnknownItems, string? Problem, List<string> Dropped);
 public sealed record RestaurantInterpretation(Guid RequestId, string CatalogVersion, string ChainId, string? OrderRevision, RestaurantIntent Intent);
 
-public enum RestaurantStatus { Ok, Invalid, Mismatch, Limit, Unavailable, Busy }
+public enum RestaurantStatus { Ok, Invalid, Mismatch, Limit, Unavailable, Busy, Allowance }
 public sealed record RestaurantOutcome(RestaurantStatus Status, RestaurantInterpretation? Answer = null, int? RetryAfterSeconds = null);
 
 public sealed class RestaurantService
@@ -94,7 +94,8 @@ public sealed class RestaurantService
         if (r.CatalogVersion != catalog.Version) return new(RestaurantStatus.Mismatch);
         if (catalog.Chains.FirstOrDefault(c => c.Id == r.ChainId && c.Status == "available") is not { } chain) return new(RestaurantStatus.Invalid);
         return await _coach.GuardedAsync(userId, "restaurants", r.RequestId, t => RunAsync(userId, r, catalog, chain, t), o => o.Status == RestaurantStatus.Ok,
-            new RestaurantOutcome(RestaurantStatus.Limit), new RestaurantOutcome(RestaurantStatus.Unavailable), ct);
+            new RestaurantOutcome(RestaurantStatus.Limit), new RestaurantOutcome(RestaurantStatus.Unavailable), ct, new RestaurantOutcome(RestaurantStatus.Allowance),
+            counts: o => o.Answer?.Intent.Kind != "unsupported");
     }
 
     private async Task<RestaurantOutcome> RunAsync(Guid userId, RestaurantInterpretRequest r, RestaurantCatalog catalog, RestaurantChain chain, CancellationToken ct)

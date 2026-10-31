@@ -27,6 +27,8 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
     public DbSet<Proposal> Proposals => Set<Proposal>();
     public DbSet<AuthChallenge> AuthChallenges => Set<AuthChallenge>();
     public DbSet<MailMessage> MailMessages => Set<MailMessage>();
+    public DbSet<PreviewOverride> PreviewOverrides => Set<PreviewOverride>();
+    public DbSet<AiUsage> AiUsage => Set<AiUsage>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -144,6 +146,16 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
             e.Property(x => x.Language).HasMaxLength(8);
             e.Property(x => x.State).HasMaxLength(16);
             e.HasOne<AuthChallenge>().WithMany().HasForeignKey(x => x.ChallengeId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GoHard Plus preview (docs/PLUS_PREVIEW.md). One charge per request, whatever retries or instances do.
+        Owned<PreviewOverride>(b, x => x.UserId).HasKey(x => x.UserId);
+        b.Entity<PreviewOverride>().Property(x => x.Tier).HasMaxLength(8);
+        Owned<AiUsage>(b, x => x.UserId).HasIndex(x => new { x.UserId, x.AtUtc });
+        b.Entity<AiUsage>(e =>
+        {
+            e.Property(x => x.Scope).HasMaxLength(16);
+            e.HasIndex(x => new { x.UserId, x.Scope, x.RequestId }).IsUnique().HasFilter("\"Counted\"");
         });
     }
 

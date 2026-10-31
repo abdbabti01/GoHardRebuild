@@ -49,7 +49,7 @@ public sealed record DailyIdea(string Title, List<DailyIdeaFood> Foods);
 public sealed record DailyIdeaFood(string Name, string Label, string? Preparation, double? Quantity, string? Unit, string? Noun);
 public sealed record DailyAnswer(Guid RequestId, string DayKey, string? ContextRevision, DailyIntent Intent);
 
-public enum DailyStatus { Ok, Invalid, Limit, Unavailable, Busy }
+public enum DailyStatus { Ok, Invalid, Limit, Unavailable, Busy, Allowance }
 public sealed record DailyOutcome(DailyStatus Status, DailyAnswer? Answer = null, int? RetryAfterSeconds = null);
 
 public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachService> log)
@@ -71,7 +71,9 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
         if (r is null || !Valid(r)) return new(DailyStatus.Invalid);
         if (!Enabled) return new(DailyStatus.Unavailable);
         return await coach.GuardedAsync(userId, "daily", r.RequestId, t => RunAsync(userId, r, db, t), o => o.Status == DailyStatus.Ok,
-            new DailyOutcome(DailyStatus.Limit), new DailyOutcome(DailyStatus.Unavailable), ct);
+            new DailyOutcome(DailyStatus.Limit), new DailyOutcome(DailyStatus.Unavailable), ct, new DailyOutcome(DailyStatus.Allowance),
+            // An "unsupported" reply helps nobody: not charged (docs/PLUS_PREVIEW.md › Charging policy).
+            counts: o => o.Answer?.Intent.Kind != "unsupported");
     }
 
     public static bool Valid(DailyCoachRequest r)

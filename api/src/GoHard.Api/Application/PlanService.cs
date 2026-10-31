@@ -35,7 +35,7 @@ public sealed class BaselineCatalog
     }
 }
 
-public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
+public sealed class PlanService(GoHardDb db, BaselineCatalog baselines, Plus.EntitlementService plus)
 {
     private static readonly JsonSerializerOptions Json = CommandRunner.Json;
 
@@ -111,6 +111,8 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
         var s = r.Setup;
         if (s is null || s.BlockWeeks is < 1 or > 52 || s.SessionsPerWeek is < 1 or > 7) return Outcome.Rejected<PlanDraftResult>(Ack.Invalid);
         if (await db.Plans.AnyAsync(p => p.Id == r.PlanId, ct)) return Outcome.Conflict<PlanDraftResult>("DUPLICATE_ID");
+        // Every way a new plan definition is made checks the saved-plan limit (docs/PLUS_PREVIEW.md); nothing else does.
+        if (await plus.PlanRefusalAsync(userId, ct) is { } limit) return Outcome.Rejected<PlanDraftResult>(limit);
 
         List<ManualWorkoutSpec> workouts; string title; string? baselineId = null; var recovery = 1;
         if (r.ManualWorkouts is { Count: > 0 } manual)
@@ -316,6 +318,7 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
         var source = await PlanAsync(userId, planId, ct);
         if (source is null) return Outcome.NotFound<PlanContextDto>();
         if (await db.Plans.AnyAsync(p => p.Id == r.NewPlanId, ct)) return await ConflictAsync(userId, "DUPLICATE_ID", ct);
+        if (await plus.PlanRefusalAsync(userId, ct) is { } limit) return Outcome.Rejected<PlanContextDto>(limit);
         if (source.ScheduleJson is not null)
         {
             // Same workouts and schedule from the new start; a rotation starts again from its first workout.
@@ -451,6 +454,7 @@ public sealed class PlanService(GoHardDb db, BaselineCatalog baselines)
         if (r.PlanId == Guid.Empty || r.TemplateId is { Length: > 64 }) return Outcome.Rejected<PlanContextDto>(Ack.Invalid);
         var owner = await db.Plans.Where(p => p.Id == r.PlanId).Select(p => (Guid?)p.UserId).FirstOrDefaultAsync(ct);
         if (owner is not null) return owner == userId ? await ConflictAsync(userId, "DUPLICATE_ID", ct) : Outcome.NotFound<PlanContextDto>();
+        if (await plus.PlanRefusalAsync(userId, ct) is { } limit) return Outcome.Rejected<PlanContextDto>(limit);
         if (await CheckAsync(userId, r.Title, r.DurationWeeks, r.TimeBudgetMinutes, r.Workouts, r.Schedule, ct) is { } error)
             return Outcome.Rejected<PlanContextDto>(error);
         var plan = new Plan

@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Runtime.CompilerServices;
+using GoHard.Api.Application.Plus;
 using GoHard.Api.Domain;
 using GoHard.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +43,8 @@ public sealed class CoachOptions
     public bool KeyConfigured => !string.IsNullOrWhiteSpace(ProviderName switch { Anthropic => AnthropicApiKey, Groq => GroqApiKey, _ => null });
 }
 
-public enum CoachStatus { Ok, Invalid, Limit, Unavailable, Busy }
+/// <summary>Allowance: this month's AI allowance is used up (docs/PLUS_PREVIEW.md); Limit: the daily guard or one at a time.</summary>
+public enum CoachStatus { Ok, Invalid, Limit, Unavailable, Busy, Allowance }
 /// <param name="RetryAfterSeconds">Busy only: the provider's retry-after, when it gave one.</param>
 public sealed record CoachOutcome(CoachStatus Status, CoachAnswer? Answer = null, int? RetryAfterSeconds = null);
 
@@ -51,8 +54,8 @@ public sealed record CoachOutcome(CoachStatus Status, CoachAnswer? Answer = null
 /// every operation names what the sent draft, the catalog or the caller's own custom exercises really contain.
 /// Reads only; nothing here writes a plan.
 /// </summary>
-// ponytail: limits, dedup and the daily count live in this process; a second instance needs a shared store
-// (each instance would allow its own DailyLimit and its own concurrent request).
+// ponytail: one-at-a-time, dedup and the daily guard live in this process; a second instance needs a shared store
+// (each instance would allow its own DailyLimit and its own concurrent request). The monthly allowance is in the database.
 public sealed class CoachService
 {
     public const string Capability = "coach.ask";
@@ -65,6 +68,9 @@ public sealed class CoachService
     private readonly ILogger<CoachService> _log;
     private readonly TimeProvider _time;
     private readonly CoachGuide? _guide;
+    private readonly AiAllowance? _allowance;
+    /// <summary>Set for the duration of one guarded request; Charge marks it once the provider has been reached.</summary>
+    private static readonly AsyncLocal<StrongBox<bool>?> Reached = new();
 
     private sealed class Seen(Task<object> outcome) { public readonly Task<object> Outcome = outcome; public DateTimeOffset? DoneAt; }
     private readonly Lock _gate = new();
@@ -72,9 +78,9 @@ public sealed class CoachService
     private readonly HashSet<Guid> _busy = [];
     private readonly Dictionary<Guid, (DateOnly Day, int Count)> _daily = [];
 
-    public CoachService(ICoachProvider provider, CoachOptions options, ILogger<CoachService> log, TimeProvider? time = null)
+    public CoachService(ICoachProvider provider, CoachOptions options, ILogger<CoachService> log, TimeProvider? time = null, AiAllowance? allowance = null)
     {
-        (_provider, _options, _log, _time) = (provider, options, log, time ?? TimeProvider.System);
+        (_provider, _options, _log, _time, _allowance) = (provider, options, log, time ?? TimeProvider.System, allowance);
         if (options.ProviderName is null) log.LogError("Coach:Provider is not Anthropic or Groq; Ask GoHard is unavailable");
         _guide = CoachGuide.Load(string.IsNullOrWhiteSpace(options.GuidePath) ? Path.Combine(AppContext.BaseDirectory, "Data", "coach-guide.json") : options.GuidePath, log);
     }
@@ -87,7 +93,7 @@ public sealed class CoachService
         if (r is null || !Valid(r)) return new(CoachStatus.Invalid);
         if (!Enabled) return new(CoachStatus.Unavailable);
         return await GuardedAsync(userId, "coach", r.RequestId, t => RunAsync(userId, r, db, t), o => o.Status == CoachStatus.Ok,
-            new CoachOutcome(CoachStatus.Limit), new CoachOutcome(CoachStatus.Unavailable), ct);
+            new CoachOutcome(CoachStatus.Limit), new CoachOutcome(CoachStatus.Unavailable), ct, new CoachOutcome(CoachStatus.Allowance));
     }
 
     /// <summary>
@@ -95,8 +101,12 @@ public sealed class CoachService
     /// time per account, ONE daily allowance between them, and the same requestId (within its <paramref name="scope"/>)
     /// shares one call and one answer. Only an answer (<paramref name="ok"/>) is remembered; after a failure the same
     /// requestId may ask again. Another account never receives this account's answer.
+    /// The monthly allowance (docs/PLUS_PREVIEW.md) is checked before the provider is called (<paramref name="allowance"/>
+    /// when used up) and charged only for an answer that <paramref name="counts"/> (default: <paramref name="ok"/>).
+    /// Every request that reached the provider is recorded, charged or not.
     /// </summary>
-    internal async Task<T> GuardedAsync<T>(Guid userId, string scope, Guid requestId, Func<CancellationToken, Task<T>> run, Func<T, bool> ok, T limit, T failed, CancellationToken ct)
+    internal async Task<T> GuardedAsync<T>(Guid userId, string scope, Guid requestId, Func<CancellationToken, Task<T>> run, Func<T, bool> ok, T limit, T failed,
+        CancellationToken ct, T? allowance = null, Func<T, bool>? counts = null)
         where T : class
     {
         Task<object> shared;
@@ -120,7 +130,16 @@ public sealed class CoachService
         if (mine is not null)
         {
             var outcome = failed;
-            try { outcome = await run(ct); }
+            var reached = new StrongBox<bool>();
+            try
+            {
+                if (_allowance is not null && !await _allowance.HasRoomAsync(userId, ct)) outcome = allowance ?? limit;
+                else
+                {
+                    Reached.Value = reached;
+                    outcome = await run(ct);
+                }
+            }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { _log.LogInformation("Coach request abandoned by the client"); }
             catch (Exception ex) { _log.LogError(ex, "Coach request failed"); }
             finally
@@ -130,6 +149,7 @@ public sealed class CoachService
                     _busy.Remove(userId);
                     if (!ok(outcome)) _seen.Remove(key); else _seen[key].DoneAt = _time.GetUtcNow();
                 }
+                if (reached.Value && _allowance is not null) await _allowance.RecordAsync(userId, scope, requestId, ok(outcome) && (counts ?? ok)(outcome));
                 mine.SetResult(outcome);
             }
         }
@@ -147,6 +167,7 @@ public sealed class CoachService
             var now = _time.GetUtcNow();
             _daily[userId] = (DateOnly.FromDateTime(now.UtcDateTime), Used(userId, now) + 1);
         }
+        Reached.Value?.Value = true;
     }
 
     private async Task<CoachOutcome> RunAsync(Guid userId, CoachAskRequest r, GoHardDb db, CancellationToken ct)

@@ -223,7 +223,7 @@ public partial class CoachTests(PostgresFixture pg)
     public async Task Bad_proposals_are_dropped_and_the_answer_is_kept(string provider)
     {
         var fake = new FakeAnthropic();
-        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = Using(provider), Provider = fake.Handler() };
+        await using var api = new ApiFactory(pg.Api.ConnectionString) { Settings = new(Using(provider)) { ["Plus:FreeMonthlyAi"] = "100" }, Provider = fake.Handler() };   // more questions than a month's Free allowance
         var a = await Account.RegisterAsync(api);
         var b = await Account.RegisterAsync(api);
         var mine = Guid.NewGuid();

@@ -22,6 +22,42 @@ namespace GoHard.Api.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GoHard.Api.Persistence.AiUsage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Counted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "AtUtc");
+
+                    b.HasIndex("UserId", "Scope", "RequestId")
+                        .IsUnique()
+                        .HasFilter("\"Counted\"");
+
+                    b.ToTable("AiUsage");
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.AuthChallenge", b =>
                 {
                     b.Property<Guid>("Id")
@@ -545,6 +581,27 @@ namespace GoHard.Api.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Plans");
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.PreviewOverride", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AllowanceResetAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("PreviewOverrides");
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.Proposal", b =>
@@ -1134,6 +1191,15 @@ namespace GoHard.Api.Persistence.Migrations
                     b.ToTable("WorkoutSets");
                 });
 
+            modelBuilder.Entity("GoHard.Api.Persistence.AiUsage", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("GoHard.Api.Persistence.AuthChallenge", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
@@ -1217,6 +1283,15 @@ namespace GoHard.Api.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GoHard.Api.Persistence.Plan", b =>
+                {
+                    b.HasOne("GoHard.Api.Persistence.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GoHard.Api.Persistence.PreviewOverride", b =>
                 {
                     b.HasOne("GoHard.Api.Persistence.User", null)
                         .WithMany()

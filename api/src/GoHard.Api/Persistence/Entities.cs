@@ -432,3 +432,32 @@ public class Proposal
     public int Revision { get; set; } = 1;
     public DateTime CreatedAtUtc { get; set; }
 }
+
+/// <summary>
+/// The GoHard Plus preview switch (docs/PLUS_PREVIEW.md): written only through the owner-authorized preview routes and
+/// honoured only while this row's account is the configured preview owner. Not a purchase, never read from a request.
+/// </summary>
+public class PreviewOverride
+{
+    public Guid UserId { get; set; }
+    /// <summary>"free" or "plus".</summary>
+    public string Tier { get; set; } = "free";
+    /// <summary>The owner's test reset: AI requests before it no longer count for this month. Rows are kept.</summary>
+    public DateTime? AllowanceResetAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
+}
+
+/// <summary>
+/// One provider-backed AI request that reached the provider (docs/PLUS_PREVIEW.md › Charging policy). Counted = it ended
+/// with a usable answer and is charged to the monthly allowance; the others are kept as internal provider use only.
+/// </summary>
+public class AiUsage
+{
+    public long Id { get; set; }
+    public Guid UserId { get; set; }
+    /// <summary>coach | daily | restaurants: the requestId's scope.</summary>
+    public string Scope { get; set; } = "";
+    public Guid RequestId { get; set; }
+    public DateTime AtUtc { get; set; }
+    public bool Counted { get; set; }
+}
