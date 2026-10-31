@@ -2528,3 +2528,36 @@ Design: docs/EAT_COMPANION.md. **Depends on `feature/meal-habits-reminders`** (n
   Railway devoted-caring success; hosted health 200, contract 2, declares `coach.daily` and `coach.ideas`; unauthenticated
   `POST /coach/daily` → 401. IPA 62 reused. Release notes: docs/RELEASE_AND_ROLLBACK.md.
 - Still unverified: live Groq (ingredient changes, ideas), hosted food matching, phone notifications, VoiceOver.
+
+## 30 Oct 2026 — Shared nutrition assessment, goal colours, weekly report (`feature/nutrition-assessment-report`, from `main` 19e2cf2)
+
+Design: docs/EAT_COMPANION.md › Shared assessment, goal colours and the weekly report.
+
+- One pure assessment (`nutrition_assessment.dart`) now feeds Eat's briefing, What could I eat? and its ranking, the
+  Today/Eat goal bars, Eat's left/over lines, the coach's goal lines and the weekly report. Display-resolution policy:
+  compare at whole kcal / tenths of a gram, 80 % on the exact value, percent rounded down below the goal and up above it.
+- Bars: calories green (<80 %) / yellow (80 %–target) / green (reached) / red (above); protein yellow / yellow / green,
+  never red. Words beside the amount (Today keeps its height), read out with amount, goal and percentage; "Known intake"
+  when values are missing; neutral without a goal. New theme tokens `goal*` / `goal*Text`, contrast checked in all themes.
+- What could I eat? assesses first: no goals, remaining, calories reached with protein left (asks before any option),
+  protein reached, every goal reached (asks first; continuing always works and says the calories add), incomplete
+  values. Ranking follows the goals that still apply; "nothing fits" is said, never relaxed.
+- Briefing: "reached" state with no food pushed; the usual-meal suggestion is not put forward once every goal is reached;
+  **earlier days are now compared only with a goal recorded for that day** (before: today's goal).
+- Goal history: the account keeps only current goals. New local, additive `nutrition_goal_day` records the goals in
+  effect each day the app is open (`changed` when one goal replaced another that day). History starts on this phone
+  now; nothing is backfilled. No API change, no migration, no capability.
+- Weekly report (History & trends top bar): Monday–Sunday, "Week so far", no future weeks, averages with denominators
+  (known-value and complete-day), unlogged/partial/unknown/zero days, goal comparison only on recorded days, ≤3
+  observations, ≤2 next steps, day rows opening the journal. Local only, no AI.
+- Found and fixed by tests: the History app-bar label overflowed in French/Arabic at 320 px with 2× text (icon with
+  tooltip there now); the near heads-up could contradict a green bar for small goals; "0 kcal left" at display resolution.
+- Tests: `nutrition_assessment_test` (21), `nutrition_report_ui_test` (7), `theme_test` (goal tokens); updated
+  `eat_companion_test`, `nutrition_trends_ui_test`. Full app suite once: **878 passed**; `flutter analyze` clean;
+  `check-l10n` OK (3,004 messages). No API tests run (no server change).
+- Code 71f0b48: CI 41162680886 passed; unsigned IPA run 63 (71f0b48) passed (artifact GoHard-Dev-unsigned-ipa).
+- Native `journey_nutrition_report_test` (new, one process, not default; branch API on 127.0.0.1:5136, disposable DB
+  `gohard_nr_journey` dropped, coach stub — not a model): **not run** — two attempts (cold boot, then reboot + trim-caches,
+  491 MB free) both failed to install with INSTALL_FAILED_INSUFFICIENT_STORAGE. Stopped there.
+- **Unverified:** emulator and iPhone behaviour, VoiceOver/TalkBack reading of the bars, real Groq ideas ranking.
+  Not merged, not deployed (nothing to deploy server-side).
