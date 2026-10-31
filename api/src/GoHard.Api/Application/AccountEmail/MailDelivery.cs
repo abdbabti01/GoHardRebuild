@@ -151,7 +151,7 @@ public sealed class MailWorker(IServiceScopeFactory scopes, IMailSender sender, 
 
         // Minutes as of when the message was queued: fixed per message, so every retry carries identical content.
         var minutes = c is null ? 0 : (int)Math.Ceiling((c.ExpiresAtUtc - m.CreatedAtUtc).TotalMinutes);
-        var (subject, text, html) = MailTemplates.Render(m.Kind, m.Language, c is null ? null : AccountEmailService.CodeFor(options.CodeSecret, c.Id), minutes);
+        var (subject, text, html) = MailTemplates.Render(m.Kind, m.Language, c is null ? null : AccountEmailService.CodeFor(options.CodeSecret, c.Id, AccountEmailService.DigitsFor(m.Kind)), minutes);
         using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
         bound.CancelAfter(TimeSpan.FromSeconds(options.SendTimeoutSeconds));
         SendResult result;

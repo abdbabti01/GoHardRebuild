@@ -135,7 +135,7 @@ public sealed class Account(HttpClient http, AuthResponse auth, string password)
         await using (var db = PostgresFixture.NewDb(api.ConnectionString))
             challenge = await db.AuthChallenges.Where(c => c.UserId == userId && c.Purpose == AccountEmailService.Verify)
                 .OrderByDescending(c => c.CreatedAtUtc).Select(c => c.Id).FirstAsync();
-        var code = AccountEmailService.CodeFor(api.Services.GetRequiredService<EmailOptions>().CodeSecret, challenge);
+        var code = AccountEmailService.CodeFor(api.Services.GetRequiredService<EmailOptions>().CodeSecret, challenge, AccountEmailService.VerifyDigits);
         var confirmed = await http.PostAsJsonAsync("/api/v1/account/email-verification/confirm", new { code });
         confirmed.EnsureSuccessStatusCode();
         return (await confirmed.Content.ReadFromJsonAsync<ProfileDto>(Json))!;

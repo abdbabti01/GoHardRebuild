@@ -38,7 +38,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         {
             await Deliver();
             var mail = Box.All.LastOrDefault(m => m.To == email && m.Subject.Contains(reset ? "reset" : "Verify")) ?? throw new InvalidOperationException("no mail captured");
-            return Regex.Match(mail.Text, @"\b\d{8}\b").Value;
+            return Regex.Match(mail.Text, reset ? @"\b\d{8}\b" : @"\b\d{4}\b").Value;
         }
 
         public Task<HttpResponseMessage> Post(string path, object body, string? bearer = null)
@@ -156,7 +156,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         Assert.Equal(HttpStatusCode.Unauthorized, await e.Me(grant));
         Assert.Equal(HttpStatusCode.OK, await e.Me(rotated.AccessToken));
 
-        var weak = await e.CompleteReset(grant, "too short");
+        var weak = await e.CompleteReset(grant, "seven77");
         Assert.Equal("WEAK_PASSWORD", await Code(weak));
         var tooLong = await e.CompleteReset(grant, new string('x', PasswordPolicy.MaxLength + 1));
         Assert.Equal("PASSWORD_TOO_LONG", await Code(tooLong));
@@ -327,7 +327,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
 
         var wrong = await e.Post("/account/password", new { currentPassword = "not the password at all", newPassword = NewPassword }, a.Auth.AccessToken);
         Assert.Equal("WRONG_PASSWORD", await Code(wrong));
-        var weak = await e.Post("/account/password", new { currentPassword = a.Password, newPassword = "short one" }, a.Auth.AccessToken);
+        var weak = await e.Post("/account/password", new { currentPassword = a.Password, newPassword = "seven77" }, a.Auth.AccessToken);
         Assert.Equal("WEAK_PASSWORD", await Code(weak));
         // Neither changed anything: the session works, the old password signs in.
         Assert.Equal(HttpStatusCode.OK, await e.Me(a.Auth.AccessToken));
@@ -374,6 +374,109 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         Assert.Equal(HttpStatusCode.OK, older.StatusCode);
         Assert.True((await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!.EmailVerified);
         Assert.True((await a.SnapshotAsync()).Profile.EmailVerified);
+    }
+
+    [Fact]
+    public async Task Verification_codes_are_4_digits_reset_codes_stay_8_and_an_8_digit_verification_code_sent_before_the_change_still_works()
+    {
+        // Uniform over 0000–9999, leading zeros kept, and the last 4 digits of the 8-digit form of the same challenge.
+        var codes = Enumerable.Range(0, 2000).Select(_ => Guid.NewGuid()).Select(id => (Short: AccountEmailService.CodeFor("s3cret-s3cret-s3cret-s3cret-s3cret", id, 4), Long: AccountEmailService.CodeFor("s3cret-s3cret-s3cret-s3cret-s3cret", id))).ToList();
+        Assert.All(codes, c => Assert.Matches("^[0-9]{4}$", c.Short));
+        Assert.All(codes, c => Assert.Equal(c.Long[4..], c.Short));
+        Assert.Contains(codes, c => c.Short.StartsWith('0'));
+        Assert.Equal("0042", AccountEmailService.NormalizeCode("٠٠٤٢"));
+        Assert.Null(AccountEmailService.NormalizeCode("123"));
+
+        await using var e = await Start();
+        var a = await Account.RegisterAsync(e.Api, verify: false);
+        var email = a.Auth.Profile.Email;
+        var code = await e.CodeFor(email, reset: false);
+        Assert.Matches("^[0-9]{4}$", code);
+        await e.RequestReset(email);
+        Assert.Matches("^[0-9]{8}$", await e.CodeFor(email));
+        // A reset code is never accepted in 4 digits.
+        Assert.Equal("INVALID_CODE", await Code(await e.VerifyReset(email, (await e.CodeFor(email))[4..])));
+
+        // Transition: the 8-digit form of a verification code (an email sent before the change) is accepted once.
+        Guid challenge;
+        await using (var db = PostgresFixture.NewDb(e.Api.ConnectionString))
+            challenge = await db.AuthChallenges.Where(c => c.UserId == a.UserId && c.Purpose == AccountEmailService.Verify).Select(c => c.Id).SingleAsync();
+        var legacy = AccountEmailService.CodeFor("test-only-code-secret-0123456789-abcdefghij", challenge);
+        Assert.Equal(HttpStatusCode.OK, (await e.Post("/account/email-verification/confirm", new { code = legacy[..4] + " " + legacy[4..] }, a.Auth.AccessToken)).StatusCode);
+        Assert.True((await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!.EmailVerified);
+        // Codes never reach the logs.
+        Assert.DoesNotContain(code, string.Join("\n", e.Logs.Lines).Split(['-', ' ', '"', '\n', ':', '/', '(', ')', ','], StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    [Fact]
+    public async Task Verification_guesses_are_capped_per_code_and_per_day_and_resending_never_buys_more_guesses_or_mail()
+    {
+        await using var e = await Start(new() { ["Email:CooldownSeconds"] = "1" });
+        var a = await Account.RegisterAsync(e.Api, verify: false);
+        var email = a.Auth.Profile.Email;
+        var right = await e.CodeFor(email, reset: false);
+        var wrong = ((int.Parse(right) + 1) % 10000).ToString("D4");
+        Task<HttpResponseMessage> Confirm(string c) => e.Post("/account/email-verification/confirm", new { code = c }, a.Auth.AccessToken);
+        Task<HttpResponseMessage> Resend() => e.Post("/account/email-verification/request", new { language = "en" }, a.Auth.AccessToken);
+
+        // Five wrong guesses use up this code; even the right one is refused now.
+        for (var i = 0; i < 4; i++) Assert.Equal("INVALID_CODE", await Code(await Confirm(wrong)));
+        Assert.Equal("TOO_MANY_ATTEMPTS", await Code(await Confirm(wrong)));
+        Assert.Equal("TOO_MANY_ATTEMPTS", await Code(await Confirm(right)));
+
+        // A new code gives five more, but the day's budget of 10 guesses is shared by every code of the address.
+        e.Time.Now += TimeSpan.FromSeconds(2);
+        Assert.Equal(HttpStatusCode.Accepted, (await Resend()).StatusCode);
+        var second = await e.CodeFor(email, reset: false);
+        var miss = ((int.Parse(second) + 1) % 10000).ToString("D4");
+        for (var i = 0; i < 5; i++) await Confirm(miss);
+        Assert.Equal("TOO_MANY_ATTEMPTS", await Code(await Confirm(second)));
+        // Resending is refused for the rest of the day: no new code, no new mail.
+        e.Time.Now += TimeSpan.FromSeconds(2);
+        await e.Deliver();
+        var mails = e.Box.All.Count(m => m.To == email);
+        var refused = await Resend();
+        Assert.Equal(("EMAIL_COOLDOWN", (HttpStatusCode)429), (await Code(refused), refused.StatusCode));
+        await e.Deliver();
+        Assert.Equal(mails, e.Box.All.Count(m => m.To == email));
+        Assert.False((await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!.EmailVerified);
+
+        // A day later a fresh code works, single use.
+        e.Time.Now += TimeSpan.FromDays(1);
+        Assert.Equal(HttpStatusCode.Accepted, (await Resend()).StatusCode);
+        var third = await e.CodeFor(email, reset: false);
+        Assert.Equal(HttpStatusCode.OK, (await Confirm(third)).StatusCode);
+        Assert.True((await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!.EmailVerified);
+    }
+
+    [Fact]
+    public async Task Verification_sends_are_capped_per_day_even_without_guessing()
+    {
+        await using var e = await Start(new() { ["Email:CooldownSeconds"] = "1", ["Email:MaxSendsPerHour"] = "100", ["Email:CodeMinutes"] = "1" });
+        var a = await Account.RegisterAsync(e.Api, verify: false); // send 1
+        var accepted = 1;
+        for (var i = 0; i < 20; i++)
+        {
+            e.Time.Now += TimeSpan.FromSeconds(2);
+            if ((await e.Post("/account/email-verification/request", new { language = "en" }, a.Auth.AccessToken)).StatusCode == HttpStatusCode.Accepted) accepted++;
+        }
+        Assert.Equal(10, accepted);
+    }
+
+    [Fact]
+    public async Task New_passwords_need_8_characters_everywhere_and_existing_ones_keep_working()
+    {
+        await using var e = await Start();
+        var reg = await e.Post("/auth/register", new { email = $"eight-{Guid.NewGuid():N}@example.test", password = "seven77", displayName = "Eight" });
+        Assert.Equal("WEAK_PASSWORD", await Code(reg));
+        var ok = await e.Post("/auth/register", new { email = $"eight-{Guid.NewGuid():N}@example.test", password = "eight888", displayName = "Eight" });
+        Assert.True(ok.IsSuccessStatusCode, await ok.Content.ReadAsStringAsync());
+        // An account made under the old rule signs in with its password as before, and may change to an 8-character one.
+        var a = await Account.RegisterAsync(e.Api, verify: false);
+        Assert.Equal(HttpStatusCode.OK, (await e.Login(a.Auth.Profile.Email, a.Password)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await e.Post("/account/password", new { currentPassword = a.Password, newPassword = "eight888" }, a.Auth.AccessToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await e.Login(a.Auth.Profile.Email, "eight888")).StatusCode);
+        Assert.Equal("PASSWORD_TOO_LONG", await Code(await e.Post("/auth/register", new { email = $"long-{Guid.NewGuid():N}@example.test", password = new string('x', PasswordPolicy.MaxLength + 1), displayName = "Long" })));
     }
 
     private static string ToArabic(string code) => string.Concat(code.Select(d => (char)('٠' + (d - '0'))));

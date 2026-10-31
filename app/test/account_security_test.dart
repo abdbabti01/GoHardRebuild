@@ -22,7 +22,7 @@ import 'ui_support.dart';
 
 /// Answers the account-email routes like the real API; everything else is "not found".
 class _Accounts implements Transport {
-  final code = '01234567';
+  final code = '01234567', verifyCode = '0123';
   final calls = <({String path, Object? data})>[];
   bool offline = false, loseComplete = false, noSender = false;
   List<String> capabilities = ['account.security', 'account.email'];
@@ -55,7 +55,7 @@ class _Accounts implements Transport {
       case '/account/email-verification/request':
         return const ApiResponse(202, {'cooldownSeconds': 60});
       case '/account/email-verification/confirm':
-        return d['code'] == code ? const ApiResponse(200, {}) : const ApiResponse(400, {'code': 'INVALID_CODE'});
+        return d['code'] == verifyCode ? const ApiResponse(200, {}) : const ApiResponse(400, {'code': 'INVALID_CODE'});
     }
     return const ApiResponse(404, null);
   }
@@ -136,9 +136,13 @@ void main() {
     expect(normalizeCode('۰۱۲۳۴۵۶۷'), '01234567', reason: 'Eastern Arabic (Persian)');
     expect(normalizeCode('Your GoHard code: 0123 4567.'), '01234567', reason: 'pasted with words and a space');
     expect(normalizeCode('\u20660123-4567\u2069'), '01234567', reason: 'isolates and a dash from the Arabic email');
-    expect(checkNewPassword('short', 'short'), AuthError.weakPassword);
+    expect(normalizeCode('رمز التحقق: ٠٠٤٢'), '0042', reason: 'a 4-digit code keeps its leading zeros');
+    expect((verifyCodeDigits, resetCodeDigits), (4, 8));
+    expect(checkNewPassword('seven77', 'seven77'), AuthError.weakPassword);
+    expect(checkNewPassword('eight888', 'eight888'), isNull, reason: '8 characters is enough');
     expect(checkNewPassword('a long enough phrase', 'a long enough phrase!'), AuthError.passwordMismatch);
-    expect(checkNewPassword('é' * 15, 'é' * 15), isNull, reason: 'characters, not bytes');
+    expect(checkNewPassword('é' * 8, 'é' * 8), isNull, reason: 'characters, not bytes');
+    expect(checkNewPassword('é' * 7, 'é' * 7), AuthError.weakPassword);
     expect(checkNewPassword('x' * 257, 'x' * 257), AuthError.passwordTooLong);
   });
 
@@ -169,10 +173,10 @@ void main() {
     expect(field.autofillHints, contains(AutofillHints.oneTimeCode));
     await _tap(tester, 'reset-verify');
 
-    await _type(tester, 'new-password', 'too short');
-    await _type(tester, 'new-password-confirm', 'too short');
+    await _type(tester, 'new-password', 'seven77');
+    await _type(tester, 'new-password-confirm', 'seven77');
     await _tap(tester, 'reset-complete');
-    expect(find.textContaining('at least 15 characters'), findsWidgets);
+    expect(find.textContaining('at least 8 characters'), findsWidgets);
     await _type(tester, 'new-password', 'a brand new passphrase');
     await _type(tester, 'new-password-confirm', 'a brand new passphrase');
     await _tap(tester, 'reset-complete');
@@ -253,12 +257,22 @@ void main() {
     expect(tester.widget<PrimaryButton>(find.byKey(const Key('change-password-submit'))).onPressed, isNull);
   });
 
-  testWidgets('verify email: send, enter, done', (tester) async {
+  testWidgets('verify email: a 4-digit field (paste, Arabic digits, autofill, leading zero), incomplete said so, then done', (tester) async {
     final (_, server) = await _open(tester, home: const VerifyEmailScreen(), signedIn: true, profile: {'emailVerified': false});
+    expect(find.textContaining('4-digit code'), findsWidgets);
     await _tap(tester, 'verify-send');
-    await _type(tester, 'code-field', '01234567');
+    final field = tester.widget<TextField>(find.byKey(const Key('code-field')));
+    expect((field.textDirection, field.keyboardType), (TextDirection.ltr, TextInputType.number));
+    expect(field.autofillHints, [AutofillHints.oneTimeCode]);
+    await _type(tester, 'code-field', '012');
     await _tap(tester, 'verify-confirm');
-    expect(server.calls.map((c) => c.path), containsAllInOrder(['/account/email-verification/request', '/account/email-verification/confirm']));
+    expect(find.text('Enter all 4 digits of the code.'), findsOneWidget);
+    expect(server.calls.map((c) => c.path), isNot(contains('/account/email-verification/confirm')), reason: 'checked before asking the server');
+    await _type(tester, 'code-field', 'Your GoHard code: ٠١٢٣ thanks');
+    expect(field.controller!.text, '0123', reason: 'pasted with words, Arabic digits, cut to 4');
+    await _tap(tester, 'verify-confirm');
+    expect(server.calls.last.path, '/account/email-verification/confirm');
+    expect(server.calls.last.data, {'code': '0123'});
   });
 
   testWidgets('the new-account gate: the code field at once, nothing sent on opening, no Later or Back, Check again and sign out', (tester) async {

@@ -66,7 +66,9 @@ exist) and `account.email` (a sender is configured; absent = "not available yet"
 (null on old rows), tables `AuthChallenges` and `MailMessages`, both cascading with the account (erasure removes codes
 and unsent mail). Hosted deploy needs the usual pre-deploy `migrate`.
 
-**Codes.** 8 digits = HMAC-SHA256(`Email:CodeSecret`, challenge id) mod 10^8, leading zeros kept. Nothing about a code
+**Codes.** HMAC-SHA256(`Email:CodeSecret`, challenge id) — the id is a random v4 GUID from the system CSPRNG — mod
+10^8 for **password reset (8 digits)** and mod 10^4 for **email verification (4 digits, since 31 Oct 2026; § 11)**,
+leading zeros kept. Nothing about a code
 is stored (no raw code, no hash an attacker could enumerate offline without the secret); it is re-derived to send and
 to check (constant-time). Addresses in `AuthChallenges` are a keyed hash. Each challenge has a purpose
 (`password-reset` / `email-verification`), the account (null for an unknown address), the account's security stamp,
@@ -77,6 +79,7 @@ other route).
 | Limit (initial product setting, configurable) | Value |
 |---|---|
 | Code lifetime / attempts per code | 10 min / 5 (the 5th wrong one locks it) |
+| Email verification only (4-digit codes): guesses / codes sent per address, rolling 24 h | 10 / 10; at either, no new code until it frees up (`EMAIL_COOLDOWN`) and further guesses are `TOO_MANY_ATTEMPTS` |
 | Cooldown between sends to one address / sends per address per hour | 60 s / 5 |
 | Reset authorization lifetime | 10 min, single use |
 | Emailed-code routes per IP (in-memory, per instance) | 60 per hour |
@@ -103,10 +106,10 @@ the reset inserts its replacement after it. Requesting a code alone changes noth
 state.
 
 **Password policy** (one rule for registration, reset and change; existing passwords keep signing in, no forced
-migration, hasher unchanged): 15 to 256 characters counted as Unicode code points, any characters, no composition rules,
-never truncated. 15 because NIST SP 800-63B rev. 4 §3.1.1.2 and the OWASP Authentication Cheat Sheet (both read 21 Oct
-2026) set 15 as the minimum for a password that is the only factor, which it is here; both ask to allow at least 64.
-The previous minimum was 8. Not done: a breached-password blocklist and NFC normalization (would change how existing
+migration, hasher unchanged): **8** to 256 characters counted as Unicode code points, any characters, no composition
+rules, never truncated. 8 since 31 Oct 2026, the owner's decision (it was 15 from 21 Oct). NIST SP 800-63B rev. 4
+§3.1.1.2 and the OWASP Authentication Cheat Sheet set 15 for a password that is the only factor, which it is here, so
+this is below that guidance (§ 11). Not done: a breached-password blocklist and NFC normalization (would change how existing
 non-normalized passwords verify).
 
 **Delivery.** `MailMessages` is the outbox: one row per message, no address or body (the recipient is the account's
@@ -277,6 +280,43 @@ snapshot, confirm); no code or password is stored. A 403 `EMAIL_VERIFICATION_REQ
 pending, untouched, same operation ids, no retry counted) and asks `/me`; the next successful pull or a confirmation
 resumes it. No answer never changes the record. Local dev: `scripts\start-api.ps1` now uses the capture mailbox unless
 `-Lan` (then registration needs a real sender).
+
+## 11. Shorter passwords and 4-digit verification codes (31 Oct 2026, `feature/plan-library-overload`)
+
+**Passwords.** New passwords need 8 characters (was 15); the maximum stays 256. Same rule on the server
+(`PasswordPolicy.MinLength`) and the app (`passwordMin`), in registration, change and reset, the field's rule text and the
+error, in English, French and Arabic. Existing passwords are untouched and keep signing in. Below NIST/OWASP's 15 for a
+single-factor password: consider a breached-password check before a public launch.
+
+**Email verification codes: 4 digits.** Password-reset codes stay 8 digits. A 4-digit code is the same HMAC of the
+challenge's random ID, mod 10^4: uniform over 0000–9999, leading zeros kept, never stored, never logged (the worker logs
+message id, kind and outcome only; a test checks the code is absent from every log line). Still single use and
+10 minutes. Because only 10,000 values exist, guessing is bounded per address, not just per code:
+
+| Bound | Value | Where |
+|---|---|---|
+| Wrong guesses per code | 5 (then the code is locked) | conditional update, atomic |
+| Guesses per address, all its verification codes, rolling 24 h | 10, then `TOO_MANY_ATTEMPTS` even for a right code | counted under an advisory lock, so parallel guesses cannot pass it |
+| New codes once the day's guesses are used up | none (`EMAIL_COOLDOWN` with the wait) | so a resend never buys more guesses |
+| Verification emails per address, rolling 24 h | 10, on top of 60 s cooldown, 5 an hour, the global budget and the per-IP route limit | so resending never means unlimited mail |
+
+At most 10 guesses a day: 1 in 1,000 for an account's whole day. Asking again while a code is live still re-sends the
+same code with its attempt count (unchanged policy).
+
+**Transition (deploying while 8-digit verification codes are out).** The 4-digit code is exactly the last 4 digits of
+the 8-digit code of the same challenge. The server accepts, for verification only, either 4 digits or the full 8-digit
+form of the current challenge's code, with the same attempt counting and single use. So:
+- an email sent before the deploy (8 digits) still verifies within its 10 minutes; nobody is locked out by the deploy;
+- a resend after the deploy of a still-live challenge sends its 4-digit form of the same code;
+- after 10 minutes every pre-deploy code has expired; the 8-digit acceptance can be removed in a later release
+  (it adds no guessing room: an 8-digit guess is one of 10^8 and counts as an attempt).
+- **Older app builds** (IPA 66 and earlier) only accept 8 digits in their code field, so they cannot type a 4-digit code
+  sent after the deploy: install the new IPA before or with the deploy. Their reset flow is unaffected (still 8 digits).
+
+**App.** The verification field takes 4 digits ("4-digit code", "Enter all 4 digits of the code."); the reset field
+keeps 8. Both keep paste with words around the code, one-time-code autofill, a numbers keyboard, Arabic-Indic and
+Eastern Arabic digits, leading zeros and left-to-right entry in Arabic. Emails are unchanged apart from the code they
+carry (they never named a length).
 
 ## Design note: required verification (written before implementation, 23 Oct 2026)
 

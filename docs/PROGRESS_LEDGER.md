@@ -2646,3 +2646,17 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Run: `progression_ui_test` (8), `progression_test`, `train_plan_ui_test`, `l10n_workout_test`: 44 passed;
   `flutter analyze` clean; `check-l10n` OK (3,098). No API change. Not merged, not deployed.
 - Code e3763d8: CI 41237944340 passed; replacement unsigned IPA run 66 (41238940711, e3763d8) passed.
+
+### 31 Oct 2026 — 8-character passwords, 4-digit email verification codes (same branch, before any deploy)
+
+- Owner request. Passwords: minimum 15 → 8 on the server (`PasswordPolicy`) and the app (`passwordMin`), rule text and
+  error in en/fr/ar; maximum 256 and existing passwords unchanged. Verification codes: 4 digits (HMAC of the random
+  challenge id mod 10^4, leading zeros kept, never stored or logged); reset codes stay 8. New per-address rolling 24 h
+  caps for verification: 10 guesses (under an advisory lock) and 10 codes sent; no new code once guesses are used up.
+  Transition: the full 8-digit form of a current verification code is still accepted (docs/AUTHENTICATION_EMAIL.md › 11).
+  App: 4-digit field for verification (paste, autofill, Arabic digits, leading zeros), 8 for reset. Release notes updated.
+- Tests: API `AccountEmailTests` (+4: 4/8 digits and the transition, per-code and daily guess caps with no extra mail,
+  daily send cap, 8-character rule everywhere with an existing password still signing in), `VerificationPolicyTests`,
+  `RefreshRecoveryTests`, `FoundationTests`: 38 passed. App `account_security_test`, `verification_gate_test`,
+  `l10n_me_test`, `localization_test`: 33 passed. `flutter analyze` clean; `check-l10n` OK (3,100).
+- **Deploy note:** older app builds cannot type a 4-digit code; install the new IPA first. Not merged, not deployed.

@@ -2123,7 +2123,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get accountErrorWeakPassword =>
-      'استخدم كلمة مرور من 15 حرفًا على الأقل.';
+      'استخدم كلمة مرور من 8 أحرف على الأقل.';
 
   @override
   String get accountErrorInvalidEmail => 'أدخل عنوان بريد إلكتروني صالحًا.';
@@ -10508,7 +10508,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get passwordRule =>
-      '15 حرفًا على الأقل. بضع كلمات غير مترابطة تفي بالغرض؛ وكل الأحرف مسموح بها.';
+      '8 أحرف على الأقل. بضع كلمات غير مترابطة تفي بالغرض؛ وكل الأحرف مسموح بها.';
 
   @override
   String get authForgotPassword => 'نسيت كلمة المرور؟';
@@ -10581,7 +10581,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String verifyLead(String email) {
-    return 'سنرسل رمزًا من 8 أرقام إلى $email لتأكيد أنه يخصّك.';
+    return 'سنرسل رمزًا من 4 أرقام إلى $email لتأكيد أنه يخصّك.';
   }
 
   @override
@@ -10623,7 +10623,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String verifyGateLead(String email) {
-    return 'أدخل الرمز المكوّن من 8 أرقام الذي أرسلناه إلى $email.';
+    return 'أدخل الرمز المكوّن من 4 أرقام الذي أرسلناه إلى $email.';
   }
 
   @override
@@ -13154,4 +13154,11 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get workoutTodayScopeEdit =>
       'يغيّر \"تعديل الأهداف القادمة\" خطتك بدءًا من حصتك التالية.';
+
+  @override
+  String get codeFieldLabelShort => 'الرمز المكوَّن من 4 أرقام';
+
+  @override
+  String get accountErrorCodeIncompleteShort =>
+      'أدخل أرقام الرمز الأربعة كلها.';
 }

@@ -201,15 +201,15 @@ public sealed class AuthService(GoHardDb db, AuthOptions options, AccountAccess 
 
 /// <summary>
 /// The one policy for every NEW password (registration, reset, change). Existing passwords keep signing in unchanged.
-/// NIST SP 800-63B rev. 4 §3.1.1.2 and the OWASP Authentication Cheat Sheet (read 21 Oct 2026): at least 15 characters
-/// for a password that is the only factor (it is here), allow at least 64, no composition rules, never truncate, count
-/// each Unicode code point as one character. 256 is the ceiling so a request cannot make hashing arbitrarily expensive;
+/// At least 8 characters (the owner's decision, 31 Oct 2026; was 15). NIST SP 800-63B rev. 4 §3.1.1.2 asks for 15 when
+/// the password is the only factor, as it is here, so this is below that guidance (docs/AUTHENTICATION_EMAIL.md › 11).
+/// Kept from it: allow at least 64, no composition rules, never truncate, count each Unicode code point as one character. 256 is the ceiling so a request cannot make hashing arbitrarily expensive;
 /// longer is refused, never cut. Not done: a breached-password blocklist (needs an outside corpus) and NFC
 /// normalization (would change how existing passwords verify).
 /// </summary>
 public static class PasswordPolicy
 {
-    public const int MinLength = 15, MaxLength = 256;
+    public const int MinLength = 8, MaxLength = 256;
 
     /// <summary>An error code, or null when the password is acceptable.</summary>
     public static string? Check(string? password)

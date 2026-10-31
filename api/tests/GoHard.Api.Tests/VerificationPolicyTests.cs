@@ -135,8 +135,8 @@ public sealed class VerificationPolicyTests(PostgresFixture pg)
         Assert.Equal((HttpStatusCode.OK, true), (login.StatusCode, signedIn.Profile.VerificationRequired));
         Assert.Equal(HttpStatusCode.Forbidden, await Snapshot(signedIn.AccessToken));
 
-        // A password change keeps the 15-character rule, revokes sessions, and changes nothing about verification.
-        Assert.Equal("WEAK_PASSWORD", await Code(await http.SendAsync(Request("POST", "/api/v1/account/password", signedIn.AccessToken, new { currentPassword = waiting.Password, newPassword = "too short" }))));
+        // A password change keeps the 8-character rule, revokes sessions, and changes nothing about verification.
+        Assert.Equal("WEAK_PASSWORD", await Code(await http.SendAsync(Request("POST", "/api/v1/account/password", signedIn.AccessToken, new { currentPassword = waiting.Password, newPassword = "short77" }))));
         Assert.Equal(HttpStatusCode.NoContent, (await http.SendAsync(Request("POST", "/api/v1/account/password", signedIn.AccessToken, new { currentPassword = waiting.Password, newPassword = "a brand new passphrase" }))).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, await Snapshot(signedIn.AccessToken));
         var after = (await (await http.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(waiting.Auth.Profile.Email, "a brand new passphrase"))).Content.ReadFromJsonAsync<AuthResponse>(Json))!;

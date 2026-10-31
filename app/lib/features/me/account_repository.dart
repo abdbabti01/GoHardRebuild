@@ -7,7 +7,7 @@ import '../../data/sync.dart';
 enum AuthError {
   invalidCredentials, emailInUse, weakPassword, invalidEmail, invalidDisplayName, wrongPassword, tooManyAttempts, unknown, unreachable, unreachableDelete, nameLength, calorieGoal, proteinGoal, waterGoal,
   // Emailed codes and password changes (docs/AUTHENTICATION_EMAIL.md).
-  passwordTooLong, passwordMismatch, codeIncomplete, codeInvalid, codeExpired, codeAttempts, cooldown, emailUnavailable, emailBusy, resetExpired, notSupported,
+  passwordTooLong, passwordMismatch, codeIncomplete, codeIncompleteShort, codeInvalid, codeExpired, codeAttempts, cooldown, emailUnavailable, emailBusy, resetExpired, notSupported,
   uncertainReset, uncertainChange,
   // Required verification: a new account cannot be created without a sender.
   registrationUnavailable,
@@ -44,6 +44,7 @@ class AuthFailure implements Exception {
         AuthError.passwordTooLong => l.accountErrorPasswordTooLong,
         AuthError.passwordMismatch => l.accountErrorPasswordMismatch,
         AuthError.codeIncomplete => l.accountErrorCodeIncomplete,
+        AuthError.codeIncompleteShort => l.accountErrorCodeIncompleteShort,
         AuthError.codeInvalid => l.accountErrorCodeInvalid,
         AuthError.codeExpired => l.accountErrorCodeExpired,
         AuthError.codeAttempts => l.accountErrorCodeAttempts,

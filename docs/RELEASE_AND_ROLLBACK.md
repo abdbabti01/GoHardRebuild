@@ -145,6 +145,23 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Saved plans, Suggested today, 8-character passwords, 4-digit verification codes — NOT merged or deployed (branch `feature/plan-library-overload`)
+
+- **What:** Save plan apart from activation and the Train › Plan library (docs/PLAN_LIBRARY_OVERLOAD.md); Free saved
+  plans 3 → 1 and un-archiving limited like creating; Suggested today in the recorder (Plus); new passwords need 8
+  characters (was 15); email-verification codes are 4 digits with per-address daily caps (password-reset codes stay 8)
+  (docs/AUTHENTICATION_EMAIL.md › 11).
+- **No migration, no new capability, contract unchanged.** Configuration defaults change in code:
+  `Plus:FreeSavedPlans` 1, `Email:VerifyMaxAttemptsPerDay` 10, `Email:VerifyMaxSendsPerDay` 10. If Railway sets
+  `GOHARD_Plus__FreeSavedPlans`, that value wins.
+- **Deploy order:** install the new IPA first (older builds cannot type a 4-digit code); then merge. Verification emails
+  sent before the deploy (8 digits) keep working until they expire (10 minutes).
+- **Effect on existing accounts:** Free accounts with more than one plan keep every plan usable; only creating another is
+  explained. Existing passwords keep signing in.
+- **Rollback:** redeploy `main` 5441d2a. A 4-digit code sent by this build is not accepted by the older server (it
+  expects 8 digits): ask for a new code after a rollback. Passwords of 8–14 characters set meanwhile keep signing in on
+  the older server (it checks length only for new passwords).
+
 ### GoHard Free and Plus preview — deployed 31 Oct 2026 (`main` d31a29c)
 
 - **What** (docs/PLUS_PREVIEW.md): one entitlement model, Free limits (3 saved plans, 10 saved meals/recipes, 15 AI

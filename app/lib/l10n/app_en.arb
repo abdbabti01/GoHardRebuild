@@ -3023,7 +3023,7 @@
   "@accountErrorEmailInUse": {
     "description": "Server code EMAIL_IN_USE on registration."
   },
-  "accountErrorWeakPassword": "Use a password of at least 15 characters.",
+  "accountErrorWeakPassword": "Use a password of at least 8 characters.",
   "@accountErrorWeakPassword": {
     "description": "Server code WEAK_PASSWORD."
   },
@@ -14016,7 +14016,7 @@
   "@currentPasswordLabel": {
     "description": "Field: the password in use now."
   },
-  "passwordRule": "At least 15 characters. A few unrelated words work well; any characters are fine.",
+  "passwordRule": "At least 8 characters. A few unrelated words work well; any characters are fine.",
   "@passwordRule": {
     "description": "The one password rule, shown beside every new-password field."
   },
@@ -14105,7 +14105,7 @@
   "@verifyTitle": {
     "description": "Verify email page title."
   },
-  "verifyLead": "We'll send an 8-digit code to {email} to confirm it's yours.",
+  "verifyLead": "We'll send a 4-digit code to {email} to confirm it's yours.",
   "@verifyLead": {
     "description": "Verify email lead. email = the account address (user content).",
     "placeholders": {
@@ -14162,7 +14162,7 @@
   "@verifyGateTitle": {
     "description": "Title of the step every new account completes before setup."
   },
-  "verifyGateLead": "Enter the 8-digit code we sent to {email}.",
+  "verifyGateLead": "Enter the 4-digit code we sent to {email}.",
   "@verifyGateLead": {
     "description": "Under the title: where the code went (the registered address).",
     "placeholders": {
@@ -17846,5 +17846,13 @@
   "workoutTodayScopeEdit": "Edit future targets changes your plan from your next session.",
   "@workoutTodayScopeEdit": {
     "description": "Under a suggestion that only offers the increment editor: what Edit future targets changes."
+  },
+  "codeFieldLabelShort": "4-digit code",
+  "@codeFieldLabelShort": {
+    "description": "Label of the 4-digit email verification code field."
+  },
+  "accountErrorCodeIncompleteShort": "Enter all 4 digits of the code.",
+  "@accountErrorCodeIncompleteShort": {
+    "description": "A 4-digit verification code was not typed in full."
   }
 }

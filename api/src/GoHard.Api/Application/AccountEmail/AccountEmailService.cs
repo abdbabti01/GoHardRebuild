@@ -33,6 +33,10 @@ public sealed class EmailOptions
     public int ResetGrantMinutes { get; set; } = 10;
     public int PerIpPerHour { get; set; } = 60;
     public int MaxDeliveryAttempts { get; set; } = 5;
+    /// <summary>Email verification uses 4-digit codes, so on top of the per-code attempts it has a rolling 24-hour budget
+    /// per address: guesses across all its codes, and codes sent. Reaching either stops new codes until it frees up.</summary>
+    public int VerifyMaxAttemptsPerDay { get; set; } = 10;
+    public int VerifyMaxSendsPerDay { get; set; } = 10;
     public int SendTimeoutSeconds { get; set; } = 15;
     /// <summary>Tests turn the background loop off and run passes themselves.</summary>
     public bool WorkerEnabled { get; set; } = true;
@@ -112,11 +116,18 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     private static readonly TimeSpan MinRemaining = TimeSpan.FromMinutes(2);
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
-    /// <summary>The 8-digit code of a challenge: HMAC-SHA256 under the server-only secret, never stored. Leading zeros kept.</summary>
-    public static string CodeFor(string secret, Guid challengeId)
+    /// <summary>Code length by purpose: email verification 4 digits, password reset 8.</summary>
+    public const int VerifyDigits = 4, ResetDigits = 8;
+    public static int DigitsFor(string purpose) => purpose == Verify ? VerifyDigits : ResetDigits;
+
+    /// <summary>The code of a challenge: HMAC-SHA256 under the server-only secret over its random ID, never stored, so it
+    /// is uniform over every value of that length (leading zeros kept). The 4-digit code is the last 4 digits of the
+    /// 8-digit one, which is what lets an 8-digit verification code sent before the change still work (see CheckCodeAsync).</summary>
+    public static string CodeFor(string secret, Guid challengeId, int digits = ResetDigits)
     {
         var mac = HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes("gohard.code|" + challengeId.ToString("N")));
-        return (BinaryPrimitives.ReadUInt64BigEndian(mac) % 100_000_000UL).ToString("D8", CultureInfo.InvariantCulture);
+        var mod = digits == VerifyDigits ? 10_000UL : 100_000_000UL;
+        return (BinaryPrimitives.ReadUInt64BigEndian(mac) % mod).ToString("D" + digits, CultureInfo.InvariantCulture);
     }
 
     /// <summary>A keyed hash of the normalized address, so challenges for unknown addresses store no address.</summary>
@@ -124,7 +135,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
         HMACSHA256.HashData(Encoding.UTF8.GetBytes(options.CodeSecret), Encoding.UTF8.GetBytes("gohard.email|" + normalizedEmail)));
 
     /// <summary>Digits in any script (Arabic-Indic, Eastern Arabic…) become ASCII; spaces and dashes are dropped.
-    /// Anything else, or not exactly 8 digits, is null.</summary>
+    /// Anything else, or not exactly 4 or 8 digits, is null (the caller compares with the code of its own length).</summary>
     public static string? NormalizeCode(string? code)
     {
         var sb = new StringBuilder(8);
@@ -135,7 +146,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
             if (d < 0) return null;
             sb.Append((char)('0' + d));
         }
-        return sb.Length == 8 ? sb.ToString() : null;
+        return sb.Length is VerifyDigits or ResetDigits ? sb.ToString() : null;
     }
 
     /// <summary>en, fr or ar for an email; anything else (or nothing, from an older app) is English.</summary>
@@ -195,6 +206,14 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
             return new(CodeRequestStatus.Cooldown, Seconds(last.LastSentAtUtc.AddSeconds(options.CooldownSeconds) - now));
         if (recent.Sum(c => c.SendCount) >= options.MaxSendsPerHour)
             return new(CodeRequestStatus.Cooldown, Seconds(recent.Min(c => c.CreatedAtUtc).AddHours(1) - now));
+        // Verification (short codes): no new code once the day's guesses or sends are used up, so resending can never
+        // buy unlimited guesses or unlimited mail.
+        if (purpose == Verify)
+        {
+            var day = await db.AuthChallenges.Where(c => c.EmailKey == key && c.Purpose == Verify && c.CreatedAtUtc > now.AddDays(-1)).ToListAsync(ct);
+            if (day.Count > 0 && (day.Sum(c => c.Attempts) >= options.VerifyMaxAttemptsPerDay || day.Sum(c => c.SendCount) >= options.VerifyMaxSendsPerDay))
+                return new(CodeRequestStatus.Cooldown, Seconds(day.Min(c => c.CreatedAtUtc).AddDays(1) - now));
+        }
         // The global budget is checked for every address alike, so "busy" says nothing about any one account.
         if (await db.MailMessages.CountAsync(m => m.CreatedAtUtc > hourAgo, ct) >= options.DeliveryBudgetPerHour)
         {
@@ -240,6 +259,22 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     /// </summary>
     private async Task<(CodeCheckStatus, AuthChallenge?)> CheckCodeAsync(string purpose, string key, Guid? userId, string? code, CancellationToken ct)
     {
+        if (purpose != Verify) return await CheckOnceAsync(purpose, key, userId, code, ct);
+        // Verification: the day's guesses across every code of this address are capped too, under a lock so concurrent
+        // guesses cannot pass the cap between the count and the attempt.
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var lockKey = "verify-check|" + key;
+        await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({lockKey}, 0))", ct);
+        var dayAgo = Now.AddDays(-1);
+        if (await db.AuthChallenges.Where(x => x.EmailKey == key && x.Purpose == Verify && x.CreatedAtUtc > dayAgo).SumAsync(x => x.Attempts, ct) >= options.VerifyMaxAttemptsPerDay)
+            return (CodeCheckStatus.TooManyAttempts, null);
+        var result = await CheckOnceAsync(purpose, key, userId, code, ct);
+        await tx.CommitAsync(ct);
+        return result;
+    }
+
+    private async Task<(CodeCheckStatus, AuthChallenge?)> CheckOnceAsync(string purpose, string key, Guid? userId, string? code, CancellationToken ct)
+    {
         var now = Now;
         var c = await db.AuthChallenges.AsNoTracking()
             .Where(x => x.EmailKey == key && x.Purpose == purpose && x.ConsumedAtUtc == null && x.InvalidatedAtUtc == null && x.VerifiedAtUtc == null)
@@ -250,8 +285,11 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Attempts, x => x.Attempts + 1), ct);
         if (counted == 0) return (CodeCheckStatus.TooManyAttempts, null);
         var given = NormalizeCode(code);
-        var ok = c.UserId is not null && (userId is null || c.UserId == userId) && given is not null
-                 && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(given), Encoding.ASCII.GetBytes(CodeFor(options.CodeSecret, c.Id)));
+        // Reset: 8 digits only. Verification: 4 digits, or the 8-digit form of the same code, which an email sent before
+        // the change carries (transition only: such codes expire within CodeMinutes; docs/AUTHENTICATION_EMAIL.md › 11).
+        var digits = purpose == Verify && given?.Length == ResetDigits ? ResetDigits : DigitsFor(purpose);
+        var ok = c.UserId is not null && (userId is null || c.UserId == userId) && given is not null && given.Length == digits
+                 && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(given), Encoding.ASCII.GetBytes(CodeFor(options.CodeSecret, c.Id, digits)));
         if (ok) return (CodeCheckStatus.Ok, c);
         return (c.Attempts + 1 >= options.MaxAttempts ? CodeCheckStatus.TooManyAttempts : CodeCheckStatus.Invalid, null);
     }

@@ -2028,7 +2028,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountErrorWeakPassword =>
-      'Use a password of at least 15 characters.';
+      'Use a password of at least 8 characters.';
 
   @override
   String get accountErrorInvalidEmail => 'Enter a valid email address.';
@@ -10029,7 +10029,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordRule =>
-      'At least 15 characters. A few unrelated words work well; any characters are fine.';
+      'At least 8 characters. A few unrelated words work well; any characters are fine.';
 
   @override
   String get authForgotPassword => 'Forgot password?';
@@ -10102,7 +10102,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String verifyLead(String email) {
-    return 'We\'ll send an 8-digit code to $email to confirm it\'s yours.';
+    return 'We\'ll send a 4-digit code to $email to confirm it\'s yours.';
   }
 
   @override
@@ -10144,7 +10144,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String verifyGateLead(String email) {
-    return 'Enter the 8-digit code we sent to $email.';
+    return 'Enter the 4-digit code we sent to $email.';
   }
 
   @override
@@ -12643,4 +12643,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workoutTodayScopeEdit =>
       'Edit future targets changes your plan from your next session.';
+
+  @override
+  String get codeFieldLabelShort => '4-digit code';
+
+  @override
+  String get accountErrorCodeIncompleteShort =>
+      'Enter all 4 digits of the code.';
 }

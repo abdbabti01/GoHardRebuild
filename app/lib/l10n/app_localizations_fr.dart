@@ -2057,7 +2057,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get accountErrorWeakPassword =>
-      'Utilise un mot de passe d\'au moins 15 caractères.';
+      'Utilise un mot de passe d\'au moins 8 caractères.';
 
   @override
   String get accountErrorInvalidEmail => 'Entre une adresse courriel valide.';
@@ -10208,7 +10208,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get passwordRule =>
-      'Au moins 15 caractères. Quelques mots sans lien entre eux font très bien l\'affaire; tous les caractères sont permis.';
+      'Au moins 8 caractères. Quelques mots sans lien entre eux font très bien l\'affaire; tous les caractères sont permis.';
 
   @override
   String get authForgotPassword => 'Mot de passe oublié?';
@@ -10281,7 +10281,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String verifyLead(String email) {
-    return 'Nous enverrons un code à 8 chiffres à $email pour confirmer que c\'est bien ton adresse.';
+    return 'Nous enverrons un code à 4 chiffres à $email pour confirmer que c\'est bien ton adresse.';
   }
 
   @override
@@ -10323,7 +10323,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String verifyGateLead(String email) {
-    return 'Entre le code à 8 chiffres envoyé à $email.';
+    return 'Entre le code à 4 chiffres envoyé à $email.';
   }
 
   @override
@@ -12850,6 +12850,12 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get workoutTodayScopeEdit =>
       'Modifier les objectifs futurs change ton programme à partir de ta prochaine séance.';
+
+  @override
+  String get codeFieldLabelShort => 'Code à 4 chiffres';
+
+  @override
+  String get accountErrorCodeIncompleteShort => 'Entre les 4 chiffres du code.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

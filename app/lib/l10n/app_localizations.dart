@@ -3199,7 +3199,7 @@ abstract class AppLocalizations {
   /// Server code WEAK_PASSWORD.
   ///
   /// In en, this message translates to:
-  /// **'Use a password of at least 15 characters.'**
+  /// **'Use a password of at least 8 characters.'**
   String get accountErrorWeakPassword;
 
   /// Server code INVALID_EMAIL.
@@ -14799,7 +14799,7 @@ abstract class AppLocalizations {
   /// The one password rule, shown beside every new-password field.
   ///
   /// In en, this message translates to:
-  /// **'At least 15 characters. A few unrelated words work well; any characters are fine.'**
+  /// **'At least 8 characters. A few unrelated words work well; any characters are fine.'**
   String get passwordRule;
 
   /// Sign-in: link to password recovery.
@@ -14925,7 +14925,7 @@ abstract class AppLocalizations {
   /// Verify email lead. email = the account address (user content).
   ///
   /// In en, this message translates to:
-  /// **'We\'ll send an 8-digit code to {email} to confirm it\'s yours.'**
+  /// **'We\'ll send a 4-digit code to {email} to confirm it\'s yours.'**
   String verifyLead(String email);
 
   /// Button: send a verification code.
@@ -15003,7 +15003,7 @@ abstract class AppLocalizations {
   /// Under the title: where the code went (the registered address).
   ///
   /// In en, this message translates to:
-  /// **'Enter the 8-digit code we sent to {email}.'**
+  /// **'Enter the 4-digit code we sent to {email}.'**
   String verifyGateLead(String email);
 
   /// Why the step is required (new account).
@@ -18779,6 +18779,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit future targets changes your plan from your next session.'**
   String get workoutTodayScopeEdit;
+
+  /// Label of the 4-digit email verification code field.
+  ///
+  /// In en, this message translates to:
+  /// **'4-digit code'**
+  String get codeFieldLabelShort;
+
+  /// A 4-digit verification code was not typed in full.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter all 4 digits of the code.'**
+  String get accountErrorCodeIncompleteShort;
 }
 
 class _AppLocalizationsDelegate
