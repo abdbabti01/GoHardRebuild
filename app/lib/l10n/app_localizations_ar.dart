@@ -13058,16 +13058,14 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get workoutTodayUse => 'استخدام الاقتراح';
-
-  @override
   String get workoutTodayKeep => 'الإبقاء على أهدافي';
 
   @override
-  String get workoutTodayEdit => 'تعديل';
+  String get workoutTodayEdit => 'تعديل الأهداف القادمة';
 
   @override
-  String get workoutTodayEditSemantic => 'تعديل هدف خطتك للمرة القادمة';
+  String get workoutTodayEditSemantic =>
+      'تعديل الأهداف القادمة: يغيّر خطتك بدءًا من حصتك التالية';
 
   @override
   String get workoutTodayWhy => 'لماذا هذا الاقتراح؟';
@@ -13078,11 +13076,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get workoutTodayScope =>
-      'يملأ \"استخدام الاقتراح\" وزن هذه المجموعة فقط. ويغيّر \"تعديل\" خطتك بدءًا من حصتك التالية.';
+      'يملأ هذا وزن هذه المجموعة فقط. ويغيّر \"تعديل الأهداف القادمة\" خطتك بدءًا من حصتك التالية.';
 
   @override
   String get workoutTodayScopeNoPlan =>
-      'يملأ \"استخدام الاقتراح\" وزن هذه المجموعة فقط. لا يُسجَّل شيء حتى تسجّل مجموعة.';
+      'يملأ هذا وزن هذه المجموعة فقط. لا يُسجَّل شيء حتى تسجّل مجموعة.';
 
   @override
   String workoutTodayUsedLine(String text) {
@@ -13131,4 +13129,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String workoutTodayConfirmBody(String load) {
     return 'سيعرض حقل الوزن $load. تبقى تكراراتك كما هي، ولا يُسجَّل شيء.';
   }
+
+  @override
+  String workoutTodayUseLoad(String load) {
+    return 'استخدام $load';
+  }
+
+  @override
+  String get workoutTodayKeepAim => 'الإبقاء على هذا الهدف';
+
+  @override
+  String workoutTodayAimLine(int aim, int last) {
+    return 'هدفك: تكرار إضافي واحد إجمالًا، $aim في المجموع ($last في الحصة السابقة).';
+  }
+
+  @override
+  String get workoutTodayScopeAim =>
+      'يُبقي \"الإبقاء على هذا الهدف\" الهدفَ ظاهرًا لهذا التمرين؛ لا يُملأ أي حقل ولا يُسجَّل شيء. ويغيّر \"تعديل الأهداف القادمة\" خطتك بدءًا من حصتك التالية.';
+
+  @override
+  String get workoutTodayScopeAimNoPlan =>
+      'يُبقي \"الإبقاء على هذا الهدف\" الهدفَ ظاهرًا لهذا التمرين؛ لا يُملأ أي حقل ولا يُسجَّل شيء.';
+
+  @override
+  String get workoutTodayScopeEdit =>
+      'يغيّر \"تعديل الأهداف القادمة\" خطتك بدءًا من حصتك التالية.';
 }

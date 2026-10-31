@@ -104,8 +104,8 @@ extension type WorkoutRuntime(Json j) {
     return WorkoutRuntime(next);
   }
 
-  /// What was done with an exercise's "Suggested today" in this workout: `kept` (declined, not offered again here)
-  /// or `used` (put into the entry). Null = not answered. Nothing else in the workout changes with it.
+  /// What was done with an exercise's "Suggested today" in this workout: `kept` (declined, not offered again here),
+  /// `used` (a weight put into the entry) or `aim` (a rep aim kept on screen). Null = not answered. Nothing else in the workout changes with it.
   String? suggestionFor(String exerciseId) => (j['suggestions'] as Json? ?? const {})[exerciseId] as String?;
 
   WorkoutRuntime withSuggestion(String exerciseId, String answer) {

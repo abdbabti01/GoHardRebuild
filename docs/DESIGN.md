@@ -458,9 +458,10 @@ Builder Review: the deep **Save and activate**, then Back | **Save plan** (secon
 Train › Plan under the active plan: **Saved plans** (header with a quiet **Create plan** link; rows "Saved · not active ·
 kind · n workouts", the unfinished plan as a neutral row), then **Paused and finished**. A saved plan's page keeps the
 review layout: Activate at the bottom, Edit / Duplicate / Archive as icon text buttons. In the recorder, **Suggested
-today** is a plain `Panel` below Last time (overline "Suggested today · optional", one bold sentence, text buttons Use
-suggestion / Keep my targets / Edit, the quiet Why link, a caption saying what each changes); once used it shrinks to
-one secondary line; Free sees one secondary line with Learn more. No serif, no photo, nothing between the fields and
+today** is a plain `Panel` below Last time (overline "Suggested today · optional", one bold sentence, text buttons Use 47.5 lb (weight) or Keep this
+aim (reps) / Keep my targets / Edit future targets, the quiet Why link, a caption saying what each changes); once
+answered it shrinks to one semi-bold secondary line, icon beside the wrapped words (renders: docs/evidence/plan-library,
+light and dark, `plan_overload_render_test`, gated); Free sees one secondary line with Learn more. No serif, no photo, nothing between the fields and
 Record set.
 
 ### Today's training states, guide and coach (15 Oct 2026; `docs/TRAINING_PLANS.md` › Today, `docs/COACH.md`)

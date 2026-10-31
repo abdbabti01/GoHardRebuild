@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
+import 'package:gohard_rebuild/core/appearance.dart';
 import 'package:gohard_rebuild/core/device_prefs.dart';
+import 'package:gohard_rebuild/core/theme.dart';
 import 'package:gohard_rebuild/core/language.dart';
 import 'package:gohard_rebuild/core/units.dart';
 import 'package:gohard_rebuild/data/db.dart';
@@ -49,14 +51,14 @@ Json _plan() {
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
-  Future<(ProviderContainer, AppDb, Future<T> Function<T>(Future<T>), Future<void> Function())> setUpApp(WidgetTester tester, {Size size = const Size(390, 2600), double textScale = 1, Entitlement? plus}) async {
+  Future<(ProviderContainer, AppDb, Future<T> Function<T>(Future<T>), Future<void> Function())> setUpApp(WidgetTester tester, {Size size = const Size(390, 2600), double textScale = 1, Entitlement? plus, AppearanceStore? appearance}) async {
     final db = AppDb(NativeDatabase.memory());
     addTearDown(db.close);
     final clock = FakeClock(DateTime.utc(2026, 10, 10, 7));
     final container = await pumpApp(
       tester,
       [
-        ...(await tester.runAsync(() => overridesFor(day: _today, primaryPlanId: _pid, profile: {'loadUnit': 'lb'}, liveWorkouts: true, livePlans: true)))!,
+        ...(await tester.runAsync(() => overridesFor(day: _today, primaryPlanId: _pid, profile: {'loadUnit': 'lb'}, liveWorkouts: true, livePlans: true, appearance: appearance)))!,
         dbProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(clock),
         plusProvider.overrideWithValue(plus ?? plusPreview), // next-target suggestions are a GoHard Plus feature (docs/PLUS_PREVIEW.md)
@@ -208,7 +210,7 @@ void main() {
     return container.read(workoutListProvider).firstWhere((w) => w.isOpen).id;
   }
 
-  testWidgets('Suggested today: weight and reps are offered apart from the facts; Use fills only the weight after asking, Keep hides it for this workout; nothing is recorded, sent or moved', (tester) async {
+  testWidgets('Suggested today: Use 195 lb fills only the weight after asking; a rep aim fills nothing and stays on screen; nothing is recorded, sent or moved', (tester) async {
     final (container, db, run, settle) = await setUpApp(tester);
     Future<void> tap(String key) async {
       await tester.ensureVisible(find.byKey(Key(key)));
@@ -226,6 +228,8 @@ void main() {
     expect(find.byKey(const Key('last-time')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('today-text'))).data, 'Try 195 lb today, for your planned 6–8 reps.');
     expect(find.text('Review'), findsOneWidget, reason: 'the next-target line no longer repeats the suggestion');
+    expect(find.text('Edit future targets'), findsOneWidget, reason: 'it changes the plan, not today');
+    expect(find.descendant(of: find.byKey(const Key('today-use')), matching: find.text('Use 195 lb')), findsOneWidget);
     final before = await runtime();
 
     // --- A typed weight is replaced only after asking; Keep mine keeps it.
@@ -237,7 +241,7 @@ void main() {
     await settle();
     expect(field('set-load').text, '200');
     await tap('today-use');
-    await tester.tap(find.widgetWithText(FilledButton, 'Use suggestion').last);
+    await tester.tap(find.widgetWithText(FilledButton, 'Use 195 lb').last);
     await settle();
     expect(field('set-load').text, '195');
     expect(find.byKey(const Key('today-used')), findsOneWidget);
@@ -250,21 +254,25 @@ void main() {
     // --- Overhead press (no weight target): one more rep in total at last session's weight; Why shows the evidence.
     await tap('next-exercise');
     expect(find.textContaining('aim for one more rep across your sets: 19 in total (18 last session)'), findsOneWidget);
+    expect(find.byKey(const Key('today-use')), findsNothing, reason: 'a rep suggestion is never turned into a set entry');
+    final ohpEntry = (field('set-load').text, field('set-reps').text);
     await tap('today-why');
     expect(find.byKey(const Key('today-why-sheet')), findsOneWidget);
     expect(find.textContaining('18 reps in total'), findsOneWidget);
     expect(find.textContaining('can’t tell how a set felt'), findsOneWidget);
     await tester.tapAt(const Offset(20, 20));
     await settle();
-    await tap('today-keep');
+    await tap('today-aim');
     expect(find.byKey(const Key('suggested-today')), findsNothing);
+    expect(find.text('Your aim: one more rep overall, 19 in total (18 last session).'), findsOneWidget);
+    expect((field('set-load').text, field('set-reps').text), ohpEntry, reason: 'Keep this aim fills nothing');
 
-    // --- Back to Bench press and again to Overhead press: the typed draft is there, the declined one stays declined.
+    // --- Back to Bench press and again to Overhead press: the weight draft is there, the aim is still on screen.
     await tap('exercise-row-1');
     expect(field('set-load').text, '195');
     await tap('exercise-row-2');
-    expect(find.byKey(const Key('suggested-today')), findsNothing, reason: 'declined: not offered again in this workout');
-    expect((await runtime()).suggestionFor((await runtime()).selectedExerciseId!), 'kept');
+    expect(find.byKey(const Key('today-aim-kept')), findsOneWidget, reason: 'kept visible during the exercise');
+    expect((await runtime()).suggestionFor((await runtime()).selectedExerciseId!), 'aim');
 
     // --- Nothing was recorded or sent, the plan is unchanged; only Record set records.
     expect(await run(container.read(workoutRepositoryProvider).sets(id)), isEmpty);
@@ -276,6 +284,48 @@ void main() {
     expect(recorded, hasLength(1));
     expect(formatLoad(recorded.single.loadKg, LoadUnit.lb), '195 lb', reason: 'stored in kilograms, the same physical load');
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Keep my targets hides the suggestion for this exercise for the rest of the workout and changes nothing else', (tester) async {
+    final (container, db, run, settle) = await setUpApp(tester);
+    final id = await startToday(tester, container, settle);
+    final before = (await run(db.select(db.commands).get())).length;
+    await tester.ensureVisible(find.byKey(const Key('today-keep')));
+    await tester.tap(find.byKey(const Key('today-keep')));
+    await settle();
+    expect(find.byKey(const Key('suggested-today')), findsNothing);
+    for (final row in ['exercise-row-2', 'exercise-row-1']) {
+      await tester.ensureVisible(find.byKey(Key(row)));
+      await tester.tap(find.byKey(Key(row)));
+      await settle();
+    }
+    expect(find.byKey(const Key('suggested-today')), findsNothing, reason: 'declined: not offered again in this workout');
+    expect(find.byKey(const Key('today-used')), findsNothing);
+    final r = WorkoutRuntime(jsonDecode((await run(container.read(syncProvider).get('one', Kinds.runtime, id)))!.body) as Json);
+    expect(r.suggestionFor(r.selectedExerciseId!), 'kept');
+    expect((await run(db.select(db.commands).get())).length, before);
+    expect(await run(container.read(workoutRepositoryProvider).sets(id)), isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('dark mode: the suggestion panel and its lines meet the text contrast guideline in every accent', (tester) async {
+    final handle = tester.ensureSemantics();
+    for (final accent in Accent.values) {
+      final (container, _, _, settle) = await setUpApp(tester, appearance: AppearanceStore(MemorySecretStore())..accent = accent..mode = ThemeMode.dark);
+      await startToday(tester, container, settle);
+      await tester.ensureVisible(find.byKey(const Key('suggested-today')));
+      await settle();
+      await expectLater(tester, meetsGuideline(textContrastGuideline), reason: '${accent.name} dark, weight panel');
+      await tester.ensureVisible(find.byKey(const Key('next-exercise')));
+      await tester.tap(find.byKey(const Key('next-exercise')));
+      await settle();
+      await tester.ensureVisible(find.byKey(const Key('today-aim')));
+      await tester.tap(find.byKey(const Key('today-aim')));
+      await settle();
+      await expectLater(tester, meetsGuideline(textContrastGuideline), reason: '${accent.name} dark, kept aim line');
+      await tester.pumpWidget(const SizedBox());
+    }
+    handle.dispose();
   });
 
   testWidgets('Free: plan, last session and recording as always, a quiet Plus line and no suggestion; opening the workout shows no paywall', (tester) async {

@@ -17697,19 +17697,15 @@
       }
     }
   },
-  "workoutTodayUse": "Use suggestion",
-  "@workoutTodayUse": {
-    "description": "Fills the set entry with the suggestion. Records nothing."
-  },
   "workoutTodayKeep": "Keep my targets",
   "@workoutTodayKeep": {
     "description": "Hides the suggestion for this workout."
   },
-  "workoutTodayEdit": "Edit",
+  "workoutTodayEdit": "Edit future targets",
   "@workoutTodayEdit": {
     "description": "Opens the plan’s next-target review."
   },
-  "workoutTodayEditSemantic": "Edit your plan’s target for next time",
+  "workoutTodayEditSemantic": "Edit future targets: changes your plan from your next session",
   "@workoutTodayEditSemantic": {
     "description": "Screen reader label of Edit."
   },
@@ -17721,11 +17717,11 @@
   "@workoutTodayWhySemantic": {
     "description": "Screen reader label of Why this suggestion."
   },
-  "workoutTodayScope": "Use suggestion fills this set’s weight only. Edit changes your plan from your next session.",
+  "workoutTodayScope": "This fills this set’s weight only. Edit future targets changes your plan from your next session.",
   "@workoutTodayScope": {
     "description": "Under the suggestion: what each action changes."
   },
-  "workoutTodayScopeNoPlan": "Use suggestion fills this set’s weight only. Nothing is recorded until you record a set.",
+  "workoutTodayScopeNoPlan": "This fills this set’s weight only. Nothing is recorded until you record a set.",
   "@workoutTodayScopeNoPlan": {
     "description": "Under the suggestion when the plan target cannot be edited from here."
   },
@@ -17813,5 +17809,42 @@
         "type": "String"
       }
     }
+  },
+  "workoutTodayUseLoad": "Use {load}",
+  "@workoutTodayUseLoad": {
+    "description": "Suggested today (weight): fills the weight field with this load. Records nothing.",
+    "placeholders": {
+      "load": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayKeepAim": "Keep this aim",
+  "@workoutTodayKeepAim": {
+    "description": "Suggested today (reps): keeps the one-more-rep aim on screen for this exercise. Fills nothing."
+  },
+  "workoutTodayAimLine": "Your aim: one more rep overall, {aim} in total ({last} last session).",
+  "@workoutTodayAimLine": {
+    "description": "The rep aim kept on screen for this exercise.",
+    "placeholders": {
+      "aim": {
+        "type": "int"
+      },
+      "last": {
+        "type": "int"
+      }
+    }
+  },
+  "workoutTodayScopeAim": "Keep this aim keeps it on screen for this exercise; nothing is filled in or recorded. Edit future targets changes your plan from your next session.",
+  "@workoutTodayScopeAim": {
+    "description": "Under a rep suggestion: what each action changes."
+  },
+  "workoutTodayScopeAimNoPlan": "Keep this aim keeps it on screen for this exercise; nothing is filled in or recorded.",
+  "@workoutTodayScopeAimNoPlan": {
+    "description": "Under a rep suggestion when the plan target cannot be edited from here."
+  },
+  "workoutTodayScopeEdit": "Edit future targets changes your plan from your next session.",
+  "@workoutTodayScopeEdit": {
+    "description": "Under a suggestion that only offers the increment editor: what Edit future targets changes."
   }
 }

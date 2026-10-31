@@ -12752,17 +12752,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get workoutTodayUse => 'Utiliser la suggestion';
-
-  @override
   String get workoutTodayKeep => 'Garder mes objectifs';
 
   @override
-  String get workoutTodayEdit => 'Modifier';
+  String get workoutTodayEdit => 'Modifier les objectifs futurs';
 
   @override
   String get workoutTodayEditSemantic =>
-      'Modifier l’objectif de ton programme pour la prochaine fois';
+      'Modifier les objectifs futurs : change ton programme à partir de ta prochaine séance';
 
   @override
   String get workoutTodayWhy => 'Pourquoi cette suggestion?';
@@ -12773,11 +12770,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get workoutTodayScope =>
-      'Utiliser la suggestion remplit seulement la charge de cette série. Modifier change ton programme à partir de ta prochaine séance.';
+      'Ceci remplit seulement la charge de cette série. Modifier les objectifs futurs change ton programme à partir de ta prochaine séance.';
 
   @override
   String get workoutTodayScopeNoPlan =>
-      'Utiliser la suggestion remplit seulement la charge de cette série. Rien n’est enregistré avant que tu enregistres une série.';
+      'Ceci remplit seulement la charge de cette série. Rien n’est enregistré avant que tu enregistres une série.';
 
   @override
   String workoutTodayUsedLine(String text) {
@@ -12828,6 +12825,31 @@ class AppLocalizationsFr extends AppLocalizations {
   String workoutTodayConfirmBody(String load) {
     return 'Le champ de charge affichera $load. Tes répétitions restent telles quelles, et rien n’est enregistré.';
   }
+
+  @override
+  String workoutTodayUseLoad(String load) {
+    return 'Utiliser $load';
+  }
+
+  @override
+  String get workoutTodayKeepAim => 'Garder cet objectif';
+
+  @override
+  String workoutTodayAimLine(int aim, int last) {
+    return 'Ton objectif : une répétition de plus au total, $aim ($last la dernière séance).';
+  }
+
+  @override
+  String get workoutTodayScopeAim =>
+      'Garder cet objectif le laisse à l’écran pour cet exercice; rien n’est rempli ni enregistré. Modifier les objectifs futurs change ton programme à partir de ta prochaine séance.';
+
+  @override
+  String get workoutTodayScopeAimNoPlan =>
+      'Garder cet objectif le laisse à l’écran pour cet exercice; rien n’est rempli ni enregistré.';
+
+  @override
+  String get workoutTodayScopeEdit =>
+      'Modifier les objectifs futurs change ton programme à partir de ta prochaine séance.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

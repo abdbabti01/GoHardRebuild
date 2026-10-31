@@ -12546,17 +12546,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get workoutTodayUse => 'Use suggestion';
-
-  @override
   String get workoutTodayKeep => 'Keep my targets';
 
   @override
-  String get workoutTodayEdit => 'Edit';
+  String get workoutTodayEdit => 'Edit future targets';
 
   @override
   String get workoutTodayEditSemantic =>
-      'Edit your plan’s target for next time';
+      'Edit future targets: changes your plan from your next session';
 
   @override
   String get workoutTodayWhy => 'Why this suggestion?';
@@ -12567,11 +12564,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutTodayScope =>
-      'Use suggestion fills this set’s weight only. Edit changes your plan from your next session.';
+      'This fills this set’s weight only. Edit future targets changes your plan from your next session.';
 
   @override
   String get workoutTodayScopeNoPlan =>
-      'Use suggestion fills this set’s weight only. Nothing is recorded until you record a set.';
+      'This fills this set’s weight only. Nothing is recorded until you record a set.';
 
   @override
   String workoutTodayUsedLine(String text) {
@@ -12621,4 +12618,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String workoutTodayConfirmBody(String load) {
     return 'The weight field will show $load. Your reps stay as they are, and nothing is recorded.';
   }
+
+  @override
+  String workoutTodayUseLoad(String load) {
+    return 'Use $load';
+  }
+
+  @override
+  String get workoutTodayKeepAim => 'Keep this aim';
+
+  @override
+  String workoutTodayAimLine(int aim, int last) {
+    return 'Your aim: one more rep overall, $aim in total ($last last session).';
+  }
+
+  @override
+  String get workoutTodayScopeAim =>
+      'Keep this aim keeps it on screen for this exercise; nothing is filled in or recorded. Edit future targets changes your plan from your next session.';
+
+  @override
+  String get workoutTodayScopeAimNoPlan =>
+      'Keep this aim keeps it on screen for this exercise; nothing is filled in or recorded.';
+
+  @override
+  String get workoutTodayScopeEdit =>
+      'Edit future targets changes your plan from your next session.';
 }

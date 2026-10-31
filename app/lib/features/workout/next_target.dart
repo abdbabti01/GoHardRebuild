@@ -313,15 +313,16 @@ String todayText(TodaySuggestion t, LoadUnit unit, AppLocalizations l) => switch
 
 /// The selected exercise's optional suggestion, below the last session and apart from the entry. Plus only: Free sees
 /// one quiet line on supported exercises with history; unknown shows nothing. Nothing here records a set or changes the
-/// workout's own targets; [onUse] fills the entry and [onKeep] hides it for this workout ([answer] is the stored one).
+/// workout's own targets. A weight suggestion's [onUse] fills the weight; a rep suggestion is never turned into per-set
+/// reps: [onAim] keeps the aim on screen for this exercise. [onKeep] hides it for this workout ([answer] is the stored one).
 class SuggestedToday extends ConsumerWidget {
-  const SuggestedToday({super.key, required this.todayKey, required this.exercise, required this.answer, required this.hasHistory, required this.onUse, required this.onKeep});
+  const SuggestedToday({super.key, required this.todayKey, required this.exercise, required this.answer, required this.hasHistory, required this.onUse, required this.onAim, required this.onKeep});
   final TodayKey todayKey;
   final WorkoutExercise exercise;
   final String? answer;
   final bool hasHistory;
   final ValueChanged<TodaySuggestion> onUse;
-  final VoidCallback onKeep;
+  final VoidCallback onAim, onKeep;
 
   static const _unsupported = {ProgressionReason.timed, ProgressionReason.bodyweight, ProgressionReason.assisted, ProgressionReason.noIdentity};
 
@@ -348,13 +349,25 @@ class SuggestedToday extends ConsumerWidget {
     final slotKey = (planId: todayKey.planId, workoutId: todayKey.definitionId, occurrenceKey: exercise.occurrenceKey ?? '');
     final slot = ref.watch(targetSlotProvider(slotKey));
     final why = QuietLink(l.workoutTodayWhy, key: const Key('today-why'), said: l.workoutTodayWhySemantic, onPressed: () => showTodayWhy(appContext(context), t));
-    if (answer == 'used') {
+    // Once answered, one line stays: the weight put in the entry, or the aim kept for this exercise.
+    final answered = switch ((answer, t.kind)) {
+      ('used', TodayKind.weight) => (const Key('today-used'), l.workoutTodayUsedLine(text)),
+      ('aim', TodayKind.reps) => (const Key('today-aim-kept'), l.workoutTodayAimLine(t.aimTotal!, t.lastTotal!)),
+      _ => null,
+    };
+    if (answered case (final key, final line)) {
+      // The icon beside the words, the words wrapping in their own column (never under the icon).
       return Padding(
         padding: const EdgeInsets.only(top: 12),
-        child: Wrap(key: const Key('today-used'), crossAxisAlignment: WrapCrossAlignment.center, spacing: 4, children: [
-          Icon(Icons.tips_and_updates_outlined, size: 18, color: c.secondary),
-          Text(l.workoutTodayUsedLine(text), style: context.sansStyle(14.5, color: c.secondary)),
-          why,
+        child: Row(key: key, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Icons.tips_and_updates_outlined, size: 18, color: c.secondary)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(line, style: context.sansStyle(14.5, color: c.secondary, weight: FontWeight.w600)),
+              why,
+            ]),
+          ),
         ]),
       );
     }
@@ -368,17 +381,27 @@ class SuggestedToday extends ConsumerWidget {
           Text(text, key: const Key('today-text'), style: context.sansStyle(15.5, weight: FontWeight.w600)),
           const SizedBox(height: 6),
           Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            if (t.kind == TodayKind.chooseIncrement)
-              TextButton(key: const Key('today-increment'), onPressed: () => showIncrementSheet(appContext(context), Prescription(exercise.j)), child: Text(l.workoutChooseIncrement))
-            else
-              TextButton(key: const Key('today-use'), onPressed: () => onUse(t), child: Text(l.workoutTodayUse)),
+            switch (t.kind) {
+              TodayKind.chooseIncrement => TextButton(key: const Key('today-increment'), onPressed: () => showIncrementSheet(appContext(context), Prescription(exercise.j)), child: Text(l.workoutChooseIncrement)),
+              TodayKind.reps => TextButton(key: const Key('today-aim'), onPressed: onAim, child: Text(l.workoutTodayKeepAim)),
+              _ => TextButton(key: const Key('today-use'), onPressed: () => onUse(t), child: Text(l.workoutTodayUseLoad(formatLoad(t.loadKg, unit)))),
+            },
             TextButton(key: const Key('today-keep'), onPressed: onKeep, child: Text(l.workoutTodayKeep)),
             if (slot != null)
               TextButton(key: const Key('today-edit'), onPressed: () => showTargetReview(appContext(context), slotKey),
                   child: Text(l.workoutTodayEdit, semanticsLabel: l.workoutTodayEditSemantic)),
           ]),
           why,
-          Text(slot != null ? l.workoutTodayScope : l.workoutTodayScopeNoPlan, style: context.caption),
+          // What each action here changes; the increment editor speaks for itself.
+          if (switch ((t.kind, slot != null)) {
+            (TodayKind.weight, true) => l.workoutTodayScope,
+            (TodayKind.weight, false) => l.workoutTodayScopeNoPlan,
+            (TodayKind.reps, true) => l.workoutTodayScopeAim,
+            (TodayKind.reps, false) => l.workoutTodayScopeAimNoPlan,
+            (_, true) => l.workoutTodayScopeEdit,
+            _ => null,
+          } case final scope?)
+            Text(scope, style: context.caption),
         ]),
       ),
     );

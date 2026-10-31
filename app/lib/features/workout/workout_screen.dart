@@ -21,7 +21,7 @@ import '../plans/plan_progress.dart';
 import '../shell/home_shell.dart';
 import 'next_target.dart';
 import 'progress.dart';
-import 'progression.dart' show TodaySuggestion;
+import 'progression.dart' show TodayKind, TodaySuggestion;
 import 'result_rules.dart';
 import 'workout_detail_screen.dart';
 import 'workout_flow.dart';
@@ -238,17 +238,17 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
     _flushDraft();
   }
 
-  /// Use suggestion (docs/PLAN_LIBRARY_OVERLOAD.md › 5): the suggested weight goes into this set's load field, nothing
-  /// else. Typed values are replaced only after asking; reps stay the person's. It records nothing, starts no rest,
+  /// Use 47.5 lb (docs/PLAN_LIBRARY_OVERLOAD.md › 5): a weight suggestion's load goes into this set's load field,
+  /// nothing else. Typed values are replaced only after asking; reps stay the person's. It records nothing, starts no rest,
   /// sends no command and changes no target. The same values again do nothing.
   Future<void> _useSuggestion(WorkoutExercise exercise, TodaySuggestion t, LoadUnit unit) async {
-    if (t.loadKg == null || _boundExerciseId != exercise.id) return;
+    if (t.kind != TodayKind.weight || t.loadKg == null || _boundExerciseId != exercise.id) return;
     final load = formatLoadValue(t.loadKg!, unit);
     if (_load.text == load && (_entryUnit ?? unit) == unit && _runtime!.suggestionFor(exercise.id) == 'used') return;
     final typed = _typed && _load.text.trim().isNotEmpty && _load.text != load;
     if (typed &&
         !await confirm(context, title: context.l10n.workoutTodayConfirmTitle, body: context.l10n.workoutTodayConfirmBody(withUnit(load, unit.label)),
-            action: context.l10n.workoutTodayUse, cancel: context.l10n.workoutUseLastKeepMine)) {
+            action: context.l10n.workoutTodayUseLoad(withUnit(load, unit.label)), cancel: context.l10n.workoutUseLastKeepMine)) {
       return;
     }
     if (!mounted || _boundExerciseId != exercise.id) return;
@@ -261,11 +261,12 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
     await _save(_runtime!.withSuggestion(exercise.id, 'used'));
   }
 
-  /// Keep my targets: the suggestion is not offered again for this exercise in this workout. Nothing else changes.
-  Future<void> _keepSuggestion(WorkoutExercise exercise) async {
-    if (_runtime!.suggestionFor(exercise.id) == 'kept') return;
+  /// Keep my targets (`kept`: not offered again for this exercise in this workout) or Keep this aim (`aim`: the
+  /// one-more-rep aim stays on screen for this exercise; no field is filled). Nothing else changes.
+  Future<void> _answerSuggestion(WorkoutExercise exercise, String answer) async {
+    if (_runtime!.suggestionFor(exercise.id) == answer) return;
     _foldDraft();
-    await _save(_runtime!.withSuggestion(exercise.id, 'kept'));
+    await _save(_runtime!.withSuggestion(exercise.id, answer));
   }
 
   Future<void> _complete(Workout workout, WorkoutExercise exercise) async {
@@ -592,7 +593,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           SuggestedToday(
             todayKey: (planId: workout.planId!, definitionId: def, workoutId: workout.id, exerciseId: selected.id), exercise: selected,
             answer: runtime.suggestionFor(selected.id), hasHistory: history.isNotEmpty,
-            onUse: (t) => _useSuggestion(selected, t, unit), onKeep: () => _keepSuggestion(selected),
+            onUse: (t) => _useSuggestion(selected, t, unit), onAim: () => _answerSuggestion(selected, 'aim'), onKeep: () => _answerSuggestion(selected, 'kept'),
           ),
         const SizedBox(height: 16),
         if (!parked) ...[

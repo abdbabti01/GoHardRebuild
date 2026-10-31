@@ -18630,12 +18630,6 @@ abstract class AppLocalizations {
   /// **'Your last two sessions reached the top of your range at {load}. Choose your weight increment to see a suggested weight.'**
   String workoutTodayChooseIncrement(String load);
 
-  /// Fills the set entry with the suggestion. Records nothing.
-  ///
-  /// In en, this message translates to:
-  /// **'Use suggestion'**
-  String get workoutTodayUse;
-
   /// Hides the suggestion for this workout.
   ///
   /// In en, this message translates to:
@@ -18645,13 +18639,13 @@ abstract class AppLocalizations {
   /// Opens the plan’s next-target review.
   ///
   /// In en, this message translates to:
-  /// **'Edit'**
+  /// **'Edit future targets'**
   String get workoutTodayEdit;
 
   /// Screen reader label of Edit.
   ///
   /// In en, this message translates to:
-  /// **'Edit your plan’s target for next time'**
+  /// **'Edit future targets: changes your plan from your next session'**
   String get workoutTodayEditSemantic;
 
   /// Opens the explanation of the suggestion.
@@ -18669,13 +18663,13 @@ abstract class AppLocalizations {
   /// Under the suggestion: what each action changes.
   ///
   /// In en, this message translates to:
-  /// **'Use suggestion fills this set’s weight only. Edit changes your plan from your next session.'**
+  /// **'This fills this set’s weight only. Edit future targets changes your plan from your next session.'**
   String get workoutTodayScope;
 
   /// Under the suggestion when the plan target cannot be edited from here.
   ///
   /// In en, this message translates to:
-  /// **'Use suggestion fills this set’s weight only. Nothing is recorded until you record a set.'**
+  /// **'This fills this set’s weight only. Nothing is recorded until you record a set.'**
   String get workoutTodayScopeNoPlan;
 
   /// Compact line once the suggestion was used.
@@ -18749,6 +18743,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The weight field will show {load}. Your reps stay as they are, and nothing is recorded.'**
   String workoutTodayConfirmBody(String load);
+
+  /// Suggested today (weight): fills the weight field with this load. Records nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {load}'**
+  String workoutTodayUseLoad(String load);
+
+  /// Suggested today (reps): keeps the one-more-rep aim on screen for this exercise. Fills nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this aim'**
+  String get workoutTodayKeepAim;
+
+  /// The rep aim kept on screen for this exercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Your aim: one more rep overall, {aim} in total ({last} last session).'**
+  String workoutTodayAimLine(int aim, int last);
+
+  /// Under a rep suggestion: what each action changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this aim keeps it on screen for this exercise; nothing is filled in or recorded. Edit future targets changes your plan from your next session.'**
+  String get workoutTodayScopeAim;
+
+  /// Under a rep suggestion when the plan target cannot be edited from here.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this aim keeps it on screen for this exercise; nothing is filled in or recorded.'**
+  String get workoutTodayScopeAimNoPlan;
+
+  /// Under a suggestion that only offers the increment editor: what Edit future targets changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit future targets changes your plan from your next session.'**
+  String get workoutTodayScopeEdit;
 }
 
 class _AppLocalizationsDelegate

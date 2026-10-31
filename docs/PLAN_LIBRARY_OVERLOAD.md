@@ -115,13 +115,18 @@ assisted load as progress, deciding whether a dumbbell weight is per hand.
 
 ### Actions
 
-* **Use suggestion** fills this set's entry only (session only): weight → the load field; reps → the load field with
-  the kept weight (reps stay the person's to enter, the aim stays visible). Typed values are replaced only after the
-  existing confirmation. It records nothing, starts no rest, writes no command and changes no target; the selected
-  exercise, other drafts, recorded sets, rest and clock are untouched. A second tap with the same values does nothing.
-* **Keep my targets** hides the suggestion for this exercise for the rest of this workout (stored in the workout's
-  local runtime, so it survives a restart). Nothing else changes.
-* **Edit** opens the existing next-target review (plan from the next session, revision-checked `plan.revise`) — the
+The action matches the suggestion (revised 31 Oct 2026 after review):
+
+* Weight: **Use 47.5 lb** (the suggested load in the person's unit) fills this set's load field only (session only).
+  A typed weight is replaced only after the existing confirmation. It records nothing, starts no rest, writes no command
+  and changes no target; the selected exercise, other drafts, recorded sets, rest and clock are untouched. A second tap
+  with the same value does nothing. Afterwards one line stays: "Suggested today: …".
+* Reps: **Keep this aim** fills nothing (no per-set reps are ever invented); the aim stays on screen for that exercise
+  for the rest of the workout: "Your aim: one more rep overall, 28 in total (27 last session)."
+* No increment saved: **Choose your weight increment** (the existing editor) instead of Use.
+* **Keep my targets** hides the suggestion for this exercise for the rest of this workout. Nothing else changes.
+* Answers are stored in the workout's local runtime (`used`, `aim`, `kept`), so they survive a restart.
+* **Edit future targets** opens the existing next-target review (plan from the next session, revision-checked `plan.revise`) — the
   only way a suggestion can change the plan. The frozen targets of this workout never change.
 * **Why this suggestion?** — the rule in words and the sessions it used, with GoHard's limits ("GoHard only sees what
   you recorded"). The selected Leon/Leona speaks only through the existing help sheet; nothing new floats over the
@@ -142,7 +147,7 @@ own. A downgrade changes nothing recorded or already accepted.
 ## Data and deployment
 
 * No migration, no new capability, no new table or command. Client-only: runtime key `suggestions`
-  (`{exerciseId: "kept" | "used"}`) inside the existing local `workout_runtime` record.
+  (`{exerciseId: "kept" | "used" | "aim"}`) inside the existing local `workout_runtime` record.
 * Server: `Plus:FreeSavedPlans` default 1; `plan.archive` refuses un-archiving past the limit (`PLAN_LIMIT`).
   Takes effect on the hosted API only after a deploy of `main`; if Railway has `GOHARD_Plus__FreeSavedPlans` set,
   that value wins.

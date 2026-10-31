@@ -374,6 +374,27 @@ void main() {
     }
   });
 
+  testWidgets('dark mode: the plan library and a saved plan\'s page meet the text contrast guideline in every accent', (tester) async {
+    final handle = tester.ensureSemantics();
+    final saved = {...fixedPpl(lifecycle: 'draft'), 'id': _pid2, 'title': 'Saved PPL'};
+    final paused = {...rotatingPpl(lifecycle: 'paused', pausedOn: '2026-10-10'), 'id': '5a4b3c2d-1e0f-4a9b-8c7d-6e5f4a3b2c1d', 'title': 'Old rotation'};
+    for (final accent in Accent.values) {
+      final store = AppearanceStore(MemorySecretStore())
+        ..accent = accent
+        ..mode = ThemeMode.dark;
+      final overrides = (await tester.runAsync(() => overridesFor(day: '2026-10-14', plans: [rotatingPpl(), saved, paused], primaryPlanId: _pid, appearance: store)))!;
+      await pumpApp(tester, overrides, size: _tall);
+      await _toPlan(tester);
+      await tester.ensureVisible(find.byKey(const Key('library-create')));
+      await tester.pumpAndSettle();
+      await expectLater(tester, meetsGuideline(textContrastGuideline), reason: '${accent.name} dark, library');
+      await _tap(tester, 'saved-plan-$_pid2');
+      await expectLater(tester, meetsGuideline(textContrastGuideline), reason: '${accent.name} dark, saved plan page');
+      await tester.pumpWidget(const SizedBox());
+    }
+    handle.dispose();
+  });
+
   testWidgets('the workout shows the plan\'s weight target apart from the last performance, and never puts the target in the entry', (tester) async {
     final plan = fixedPpl();
     final monday = _fixedOccasion(plan, '2026-10-12');
