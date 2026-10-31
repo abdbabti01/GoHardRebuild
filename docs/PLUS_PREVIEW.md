@@ -80,8 +80,11 @@ database state, not process state (`EntitlementService.ReserveAsync` / `Finalize
    same instance shares the one call and answer. A retry that lands on another instance asks the provider again,
    within the same limits, and is not charged again.
 
-Known edge: a request finalized after its own lease ran out, while another request of the same account was reserved
-in the gap, can take the month one past the limit. That needs an instance stalled for over a minute.
+**Open before a paid launch (late finalization).** A request finalized after its own lease ran out, while another
+request of the same account was reserved in the gap, can take the month one past the limit. It needs an instance
+stalled for over a minute, which is acceptable for a free preview but not for a paid quota. Fix options: refuse to
+count a finalize that arrives after its lease unless the month still has room (check under the same advisory lock),
+or extend the lease while the provider call is running. Listed again under "Before real Apple subscriptions".
 
 **Period and reset.** Calendar month in **UTC**: it starts 00:00 UTC on the 1st and resets 00:00 UTC on the 1st of
 the next month (in Toronto that is the evening of the last day). The server's clock decides; the phone's clock never
@@ -149,20 +152,24 @@ Configuration (`Plus` section, all optional; these are testing values, not comme
 
 ## Testing both tiers (preview activation)
 
-**Against the server deployed today (no `account.entitlement`), IPA 64 applies no limits at all**: the app treats an
-older server as having no entitlements (no limits, no Plus-only views, no allowance shown) and Me › GoHard Plus can
-only show the preview text. Free/Plus switching, the AI quotas and the creation limits need the new API deployed
-**and** your owner ID configured:
+Two separate switches; neither involves a payment:
 
-1. Deploy this API (migration `AddEntitlements` runs in the pre-deploy step).
-2. Find your account ID (it is in the sign-in response's `profile.userId`, or `GET /api/v1/me`).
-3. Set `GOHARD_Plus__PreviewOwnerUserId=<that ID>` on the hosted API (Railway devoted-caring) and redeploy. This is
-   the user's to do; it is a configuration value, not a secret, and no other value changes.
-4. In the app: Me › GoHard Plus shows "Preview controls (owner only)": switch Free / Plus, Reset test allowance.
-   Every other account sees only the comparison and its own allowance, and is Free.
+| State of the hosted API | What every account gets | Owner preview controls |
+|---|---|---|
+| Before this deploy (no `account.entitlement`) | No limits at all: IPA 64 treats the server as older (no limits, no Plus-only views, no allowance shown) | none |
+| **Deployed** (migration `AddEntitlements` applied, `account.entitlement` declared) | **Free, enforced at once for everyone**: 3 saved plans, 10 saved meals/recipes, 15 AI requests a month, the explorer and suggestions explained/hidden. Existing content over a limit stays usable | none: nobody can switch |
+| Deployed **and** `GOHARD_Plus__PreviewOwnerUserId` set | Unchanged for every other account | Me › GoHard Plus › Preview controls on the owner's account only: Free / Plus, Reset test allowance |
+
+Setting the owner ID (the owner does this; no password or token is shared with anyone):
+
+1. Railway → project **devoted-caring** → the **Postgres** service → **Data** → table `Users` → the row with your email
+   → copy its `Id` (a UUID).
+2. Railway → the **GoHardRebuild** API service → **Variables** → New variable
+   `GOHARD_Plus__PreviewOwnerUserId` = that UUID → Deploy. It is an identifier, not a secret; no other value changes.
+3. On the iPhone: close and reopen GoHard, then Me › GoHard Plus. "Preview controls (owner only)" appears.
 
 Lowering the limits for a quick test is configuration too (`GOHARD_Plus__FreeMonthlyAi=2`, …); none of it needs a
-code change. Without `PreviewOwnerUserId` nobody can switch and everyone is Free.
+code change.
 
 ## Before real Apple subscriptions
 
@@ -172,4 +179,4 @@ code change. Without `PreviewOwnerUserId` nobody can switch and everyone is Free
   new entitlement **source** in `EntitlementService.ResolveAsync`, with expiry, grace period and billing retry.
 * Final quotas and prices (the CA$6.99/month, CA$49.99/year figures are tentative), localized price display from
   StoreKit, terms and privacy text, App Review notes, and a decision on whether the preview routes are removed.
-* Move the per-process daily guard and one-at-a-time rule to a shared store before running more than one API instance.
+* Resolve the late-finalization edge (Shared limits › Open before a paid launch).
