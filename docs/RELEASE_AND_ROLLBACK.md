@@ -145,6 +145,22 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### GoHard Free and Plus preview — deployed 31 Oct 2026 (`main` d31a29c)
+
+- **What** (docs/PLUS_PREVIEW.md): one entitlement model, Free limits (3 saved plans, 10 saved meals/recipes, 15 AI
+  requests a month), the shared AI limits in the database, Me › GoHard Plus, owner-only preview controls. **No
+  payments**: no StoreKit, checkout, products or prices.
+- **Effect of this deploy:** every hosted account is now Free with those limits enforced. Existing content over a limit
+  stays usable; only creating more is explained. Nobody can switch tiers until `GOHARD_Plus__PreviewOwnerUserId` is set.
+- **Verified on the hosted API** (no account created): `/health/ready` 200 "Ready, 15 migration(s) applied"
+  (`AddEntitlements` included), `/capabilities` declares `account.entitlement` (contract 2, minimum 2),
+  `/entitlement` and `/preview/entitlement` refuse a request without a token (401). Railway devoted-caring: success
+  (diplomatic-intuition failing as before; unused).
+- CI on `main` 41202879304: attempt 1 failed on the known `coach_companion_test` "no replay" flake, attempt 2
+  passed; the same code passed on the branch (41202875156). App unchanged since IPA 64 (c5d6f01), which is reused.
+- **Rollback:** redeploy 7398a39. The two new tables are ignored by the older build; with it, nothing is limited.
+- **Pending:** the owner ID variable (owner), the owner's iPhone checks of Free, Plus, downgrade and allowances.
+
 ### Shared nutrition assessment, goal colours and the weekly report — merged 31 Oct 2026 (`main` 05a998d)
 
 - **What** (docs/EAT_COMPANION.md › Shared assessment, goal colours and the weekly report): one assessment of the day's

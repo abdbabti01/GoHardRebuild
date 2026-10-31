@@ -2603,3 +2603,13 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   late and racing finalizes charge one request once. Updated `PlusPreviewTests`/allowance tests for the new row shape.
 - Run: `CoachTests` + `PlusPreviewTests` (50) passed; the 5 new tests passed 3 more times in a row. Nothing else rerun.
 - Code db70f3b: CI 41201287379 passed. Not merged, not deployed, Railway variables unchanged.
+
+### 31 Oct 2026 — merged and deployed (owner approved)
+
+- Owner approved merge and deploy. `main` fast-forwarded 7398a39 → d31a29c (includes the checklist correction and the
+  late-finalization note as open before a paid launch). CI 41202879304: attempt 1 failed on the known
+  `coach_companion_test` "no replay" flake, attempt 2 passed.
+- Railway devoted-caring: success. Hosted `/health/ready`: Ready, 15 migrations; `/capabilities` declares
+  `account.entitlement`; the new routes answer 401 without a token. No hosted account created, no secret or variable
+  changed. IPA 64 reused (no app change since c5d6f01).
+- **Pending:** `GOHARD_Plus__PreviewOwnerUserId` (owner sets it), iPhone checks. Payments remain absent.
