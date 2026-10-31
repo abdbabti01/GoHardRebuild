@@ -218,7 +218,7 @@ public class PlusPreviewTests(PostgresFixture pg)
         await using var db = PostgresFixture.NewDb(api.ConnectionString);
         foreach (var (at, counted) in new[] { (new DateTime(2026, 10, 31, 23, 59, 59, DateTimeKind.Utc), true), (new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc), true),
                      (new DateTime(2026, 11, 1, 0, 0, 1, DateTimeKind.Utc), false) })
-            db.AiUsage.Add(new AiUsage { UserId = a.UserId, Scope = "coach", RequestId = Guid.NewGuid(), AtUtc = at, Counted = counted });
+            db.AiUsage.Add(new AiUsage { UserId = a.UserId, Scope = "coach", RequestId = Guid.NewGuid(), AtUtc = at, LeaseUntilUtc = at, Reached = true, State = counted ? AiUsage.Counted : AiUsage.Released });
         await db.SaveChangesAsync();
         var service = new EntitlementService(db, plus, new CoachOptions(), clock);
 
@@ -293,8 +293,9 @@ public partial class CoachTests
         Assert.Equal(HttpStatusCode.TooManyRequests, (await Post(a, Ask())).Status);
 
         await using var db = PostgresFixture.NewDb(api.ConnectionString);
-        var rows = await db.AiUsage.Where(u => u.UserId == a.UserId).OrderBy(u => u.Id).Select(u => u.Counted).ToListAsync();
-        Assert.Equal([false, false, false, true], rows);                                      // actual provider use, tracked internally
+        var rows = await db.AiUsage.Where(u => u.UserId == a.UserId).OrderBy(u => u.Id).Select(u => new { u.State, u.Reached }).ToListAsync();
+        Assert.Equal(["released", "released", "released", "counted"], rows.Select(r => r.State));   // the refused 5th reserved nothing
+        Assert.All(rows, r => Assert.True(r.Reached));                                               // actual provider use, tracked internally
     }
 
     [Fact]
@@ -317,10 +318,12 @@ public partial class CoachTests
         Assert.Single(fake.Calls);
         Assert.Equal(1, (await AllowanceOf(a)).GetProperty("used").GetInt32());
 
-        // Even if an answer were recorded twice (another instance, a restart), the database keeps one charge.
+        // The same request answered again elsewhere (another instance, a restart) is never charged twice.
         var allowance = api.Services.GetRequiredService<AiAllowance>();
-        await allowance.RecordAsync(a.UserId, "coach", request.RequestId, counted: true);
-        await allowance.RecordAsync(a.UserId, "coach", request.RequestId, counted: true);
+        var (status, id) = await allowance.ReserveAsync(a.UserId, "coach", request.RequestId, default);
+        Assert.Equal(ReserveStatus.Ok, status);
+        await allowance.FinalizeAsync(id, reached: true, counted: true);
+        await allowance.FinalizeAsync(id, reached: true, counted: true);                    // a second finalize changes nothing
         Assert.Equal(1, (await AllowanceOf(a)).GetProperty("used").GetInt32());
     }
 

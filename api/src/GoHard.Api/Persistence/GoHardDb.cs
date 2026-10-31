@@ -155,7 +155,8 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         b.Entity<AiUsage>(e =>
         {
             e.Property(x => x.Scope).HasMaxLength(16);
-            e.HasIndex(x => new { x.UserId, x.Scope, x.RequestId }).IsUnique().HasFilter("\"Counted\"");
+            e.Property(x => x.State).HasMaxLength(10);
+            e.HasIndex(x => new { x.UserId, x.Scope, x.RequestId }).IsUnique().HasFilter("\"State\" = 'counted'");
         });
     }
 

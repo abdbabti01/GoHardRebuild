@@ -54,8 +54,9 @@ public sealed record CoachOutcome(CoachStatus Status, CoachAnswer? Answer = null
 /// every operation names what the sent draft, the catalog or the caller's own custom exercises really contain.
 /// Reads only; nothing here writes a plan.
 /// </summary>
-// ponytail: one-at-a-time, dedup and the daily guard live in this process; a second instance needs a shared store
-// (each instance would allow its own DailyLimit and its own concurrent request). The monthly allowance is in the database.
+// One-at-a-time, the daily guard and the monthly allowance are database state shared by every instance (AiAllowance).
+// Only the answer cache below lives in this process: a retry that reaches another instance asks the provider again,
+// within the same limits, and is never charged twice.
 public sealed class CoachService
 {
     public const string Capability = "coach.ask";
@@ -68,17 +69,15 @@ public sealed class CoachService
     private readonly ILogger<CoachService> _log;
     private readonly TimeProvider _time;
     private readonly CoachGuide? _guide;
-    private readonly AiAllowance? _allowance;
+    private readonly AiAllowance _allowance;
     /// <summary>Set for the duration of one guarded request; Charge marks it once the provider has been reached.</summary>
     private static readonly AsyncLocal<StrongBox<bool>?> Reached = new();
 
     private sealed class Seen(Task<object> outcome) { public readonly Task<object> Outcome = outcome; public DateTimeOffset? DoneAt; }
     private readonly Lock _gate = new();
     private readonly Dictionary<(Guid User, string Scope, Guid Request), Seen> _seen = [];
-    private readonly HashSet<Guid> _busy = [];
-    private readonly Dictionary<Guid, (DateOnly Day, int Count)> _daily = [];
 
-    public CoachService(ICoachProvider provider, CoachOptions options, ILogger<CoachService> log, TimeProvider? time = null, AiAllowance? allowance = null)
+    public CoachService(ICoachProvider provider, CoachOptions options, ILogger<CoachService> log, AiAllowance allowance, TimeProvider? time = null)
     {
         (_provider, _options, _log, _time, _allowance) = (provider, options, log, time ?? TimeProvider.System, allowance);
         if (options.ProviderName is null) log.LogError("Coach:Provider is not Anthropic or Groq; Ask GoHard is unavailable");
@@ -97,13 +96,12 @@ public sealed class CoachService
     }
 
     /// <summary>
-    /// The per-account rules every model request goes through, whatever it is about (Ask GoHard, Eating out): one at a
-    /// time per account, ONE daily allowance between them, and the same requestId (within its <paramref name="scope"/>)
-    /// shares one call and one answer. Only an answer (<paramref name="ok"/>) is remembered; after a failure the same
-    /// requestId may ask again. Another account never receives this account's answer.
-    /// The monthly allowance (docs/PLUS_PREVIEW.md) is checked before the provider is called (<paramref name="allowance"/>
-    /// when used up) and charged only for an answer that <paramref name="counts"/> (default: <paramref name="ok"/>).
-    /// Every request that reached the provider is recorded, charged or not.
+    /// The per-account rules every model request goes through, whatever it is about (Ask GoHard, help with today, Eating
+    /// out), on every instance: a reservation in the database (one at a time per account, ONE daily guard and ONE monthly
+    /// allowance between them; docs/PLUS_PREVIEW.md › Shared limits), finalized once the request ends: charged only for an
+    /// answer that <paramref name="counts"/> (default: <paramref name="ok"/>), released otherwise. On this instance the
+    /// same requestId (within its <paramref name="scope"/>) shares one call and one answer; only an answer is remembered,
+    /// so after a failure the same requestId may ask again. Another account never receives this account's answer.
     /// </summary>
     internal async Task<T> GuardedAsync<T>(Guid userId, string scope, Guid requestId, Func<CancellationToken, Task<T>> run, Func<T, bool> ok, T limit, T failed,
         CancellationToken ct, T? allowance = null, Func<T, bool>? counts = null)
@@ -119,9 +117,6 @@ public sealed class CoachService
             if (_seen.TryGetValue(key, out var seen)) shared = seen.Outcome;   // a retry: the same answer, no second call
             else
             {
-                // Checked here, counted once the provider is reached (Charge): one request per account at a time, so no race.
-                if (_busy.Contains(userId) || Used(userId, now) >= _options.DailyLimit) return limit;
-                _busy.Add(userId);
                 mine = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 _seen[key] = new Seen(shared = mine.Task);
             }
@@ -131,11 +126,15 @@ public sealed class CoachService
         {
             var outcome = failed;
             var reached = new StrongBox<bool>();
+            long? reservation = null;
             try
             {
-                if (_allowance is not null && !await _allowance.HasRoomAsync(userId, ct)) outcome = allowance ?? limit;
+                var (status, id) = await _allowance.ReserveAsync(userId, scope, requestId, ct);
+                if (status == ReserveStatus.Monthly) outcome = allowance ?? limit;
+                else if (status != ReserveStatus.Ok) outcome = limit;
                 else
                 {
+                    reservation = id;
                     Reached.Value = reached;
                     outcome = await run(ct);
                 }
@@ -146,29 +145,17 @@ public sealed class CoachService
             {
                 lock (_gate)
                 {
-                    _busy.Remove(userId);
                     if (!ok(outcome)) _seen.Remove(key); else _seen[key].DoneAt = _time.GetUtcNow();
                 }
-                if (reached.Value && _allowance is not null) await _allowance.RecordAsync(userId, scope, requestId, ok(outcome) && (counts ?? ok)(outcome));
+                if (reservation is { } held) await _allowance.FinalizeAsync(held, reached.Value, ok(outcome) && (counts ?? ok)(outcome));
                 mine.SetResult(outcome);
             }
         }
         return (T)await shared.WaitAsync(ct);
     }
 
-    private int Used(Guid userId, DateTimeOffset now) =>
-        _daily.TryGetValue(userId, out var d) && d.Day == DateOnly.FromDateTime(now.UtcDateTime) ? d.Count : 0;
-
-    /// <summary>Counts one question against the daily cap.</summary>
-    private void Charge(Guid userId)
-    {
-        lock (_gate)
-        {
-            var now = _time.GetUtcNow();
-            _daily[userId] = (DateOnly.FromDateTime(now.UtcDateTime), Used(userId, now) + 1);
-        }
-        Reached.Value?.Value = true;
-    }
+    /// <summary>The provider was reached: the request counts toward the daily guard when it is finalized.</summary>
+    private static void Charge(Guid _) => Reached.Value?.Value = true;
 
     private async Task<CoachOutcome> RunAsync(Guid userId, CoachAskRequest r, GoHardDb db, CancellationToken ct)
     {

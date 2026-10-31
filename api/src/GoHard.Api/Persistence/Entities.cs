@@ -448,16 +448,23 @@ public class PreviewOverride
 }
 
 /// <summary>
-/// One provider-backed AI request that reached the provider (docs/PLUS_PREVIEW.md › Charging policy). Counted = it ended
-/// with a usable answer and is charged to the monthly allowance; the others are kept as internal provider use only.
+/// One provider-backed AI request (docs/PLUS_PREVIEW.md › Shared limits): reserved before the provider is called, then
+/// finalized once. The shared state behind the monthly allowance, the daily guard and one-at-a-time, for every instance.
 /// </summary>
 public class AiUsage
 {
+    public const string Reserved = "reserved", Counted = "counted", Released = "released";
     public long Id { get; set; }
     public Guid UserId { get; set; }
     /// <summary>coach | daily | restaurants: the requestId's scope.</summary>
     public string Scope { get; set; } = "";
     public Guid RequestId { get; set; }
+    /// <summary>When it was reserved (the month and the UTC day it belongs to).</summary>
     public DateTime AtUtc { get; set; }
-    public bool Counted { get; set; }
+    /// <summary>A reservation not finalized by then belongs to an instance that died: it holds nothing any more.</summary>
+    public DateTime LeaseUntilUtc { get; set; }
+    /// <summary>reserved | counted (charged to the month) | released (not charged).</summary>
+    public string State { get; set; } = Reserved;
+    /// <summary>The provider answered (or our timeout ran while it worked): actual provider use, for the daily guard.</summary>
+    public bool Reached { get; set; }
 }

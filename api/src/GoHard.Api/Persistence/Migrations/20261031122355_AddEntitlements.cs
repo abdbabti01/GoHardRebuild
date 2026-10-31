@@ -22,7 +22,9 @@ namespace GoHard.Api.Persistence.Migrations
                     Scope = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     RequestId = table.Column<Guid>(type: "uuid", nullable: false),
                     AtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Counted = table.Column<bool>(type: "boolean", nullable: false)
+                    LeaseUntilUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    State = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Reached = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -65,7 +67,7 @@ namespace GoHard.Api.Persistence.Migrations
                 table: "AiUsage",
                 columns: new[] { "UserId", "Scope", "RequestId" },
                 unique: true,
-                filter: "\"Counted\"");
+                filter: "\"State\" = 'counted'");
         }
 
         /// <inheritdoc />

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GoHard.Api.Persistence.Migrations
 {
     [DbContext(typeof(GoHardDb))]
-    [Migration("20261031070038_AddEntitlements")]
+    [Migration("20261031122355_AddEntitlements")]
     partial class AddEntitlements
     {
         /// <inheritdoc />
@@ -36,7 +36,10 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<DateTime>("AtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Counted")
+                    b.Property<DateTime>("LeaseUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Reached")
                         .HasColumnType("boolean");
 
                     b.Property<Guid>("RequestId")
@@ -47,6 +50,11 @@ namespace GoHard.Api.Persistence.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -56,7 +64,7 @@ namespace GoHard.Api.Persistence.Migrations
 
                     b.HasIndex("UserId", "Scope", "RequestId")
                         .IsUnique()
-                        .HasFilter("\"Counted\"");
+                        .HasFilter("\"State\" = 'counted'");
 
                     b.ToTable("AiUsage");
                 });

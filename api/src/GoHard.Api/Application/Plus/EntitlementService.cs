@@ -76,13 +76,62 @@ public sealed class EntitlementService(GoHardDb db, PlusOptions options, CoachOp
         var (start, end) = Month(time.GetUtcNow().UtcDateTime);
         var reset = await db.PreviewOverrides.AsNoTracking().Where(o => o.UserId == userId).Select(o => o.AllowanceResetAtUtc).FirstOrDefaultAsync(ct);
         var from = reset is { } r && r > start ? r : start;
-        var used = await db.AiUsage.CountAsync(u => u.UserId == userId && u.Counted && u.AtUtc >= from && u.AtUtc < end, ct);
+        var used = await db.AiUsage.CountAsync(u => u.UserId == userId && u.State == AiUsage.Counted && u.AtUtc >= from && u.AtUtc < end, ct);
         var limit = MonthlyLimit(e);
         return new(used, limit, Math.Max(0, limit - used), from, end, coach.DailyLimit);
     }
 
-    public async Task<bool> HasAllowanceAsync(Guid userId, CancellationToken ct) =>
-        (await AllowanceAsync(userId, await ResolveAsync(userId, ct), ct)).Remaining > 0;
+    // ---------------------------------------------------------------- shared AI limits (every instance, every restart)
+
+    /// <summary>
+    /// Reserves one provider-backed request, atomically for the account across instances (an advisory transaction lock
+    /// on the account): refused while another of its requests is in flight (Busy), when the UTC day's attempts reached
+    /// the daily guard (Daily), or when the month's charged requests reached the allowance (Monthly). A retry of a request
+    /// already charged is never refused for the month: it cannot be charged again. A reservation whose lease ran out
+    /// (its instance died) holds nothing: it neither blocks nor counts for the month, and counts for the day as an
+    /// attempt whose cost is unknown.
+    /// </summary>
+    public async Task<(ReserveStatus Status, long Id)> ReserveAsync(Guid userId, string scope, Guid requestId, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({"ai:" + userId}, 0))", ct);
+        var now = time.GetUtcNow().UtcDateTime;
+        var mine = db.AiUsage.Where(u => u.UserId == userId);
+        if (await mine.AnyAsync(u => u.State == AiUsage.Reserved && u.LeaseUntilUtc > now, ct)) return (ReserveStatus.Busy, 0);
+        var day = now.Date;
+        if (await mine.CountAsync(u => u.AtUtc >= day && (u.Reached || u.State == AiUsage.Reserved), ct) >= coach.DailyLimit) return (ReserveStatus.Daily, 0);
+        var charged = await mine.AnyAsync(u => u.Scope == scope && u.RequestId == requestId && u.State == AiUsage.Counted, ct);
+        if (!charged && (await AllowanceAsync(userId, await ResolveAsync(userId, ct), ct)).Remaining <= 0) return (ReserveStatus.Monthly, 0);
+        var row = new AiUsage { UserId = userId, Scope = scope, RequestId = requestId, AtUtc = now, LeaseUntilUtc = now.Add(Lease), State = AiUsage.Reserved };
+        db.AiUsage.Add(row);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return (ReserveStatus.Ok, row.Id);
+    }
+
+    /// <summary>Longer than one request can take (its time budget, one short retry, the backstop), so only a dead instance outlives it.</summary>
+    public TimeSpan Lease => TimeSpan.FromSeconds(coach.TimeoutSeconds * 2 + 30);
+
+    /// <summary>
+    /// Finalizes a reservation once: charged only when <paramref name="counted"/> and no other row already charged this
+    /// request (the partial unique index decides a race); otherwise released. A second finalize changes nothing.
+    /// </summary>
+    public async Task FinalizeAsync(long id, bool reached, bool counted)
+    {
+        try
+        {
+            await db.Database.ExecuteSqlAsync($"""
+                UPDATE "AiUsage" u SET "Reached" = {reached}, "State" = CASE WHEN {counted} AND NOT EXISTS (SELECT 1 FROM "AiUsage" o
+                    WHERE o."UserId" = u."UserId" AND o."Scope" = u."Scope" AND o."RequestId" = u."RequestId" AND o."State" = 'counted') THEN 'counted' ELSE 'released' END
+                WHERE u."Id" = {id} AND u."State" = 'reserved'
+                """);
+        }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == Npgsql.PostgresErrorCodes.UniqueViolation)
+        {
+            // Another instance charged the same request at the same moment: this one is not charged.
+            await db.Database.ExecuteSqlAsync($"""UPDATE "AiUsage" SET "Reached" = {reached}, "State" = 'released' WHERE "Id" = {id} AND "State" = 'reserved'""");
+        }
+    }
 
     public async Task<EntitlementDto> DescribeAsync(Guid userId, CancellationToken ct)
     {
@@ -133,32 +182,29 @@ public sealed class EntitlementService(GoHardDb db, PlusOptions options, CoachOp
     }
 }
 
+public enum ReserveStatus { Ok, Busy, Daily, Monthly }
+
 /// <summary>
-/// The monthly AI allowance as the singleton coach sees it: checked before a provider call and recorded after one, each
-/// in its own short database scope. A request is charged at most once (partial unique index), whatever retries do.
+/// The shared AI limits as the singleton coach sees them, each call in its own short database scope
+/// (docs/PLUS_PREVIEW.md › Shared limits).
 /// </summary>
-public sealed class AiAllowance(IServiceScopeFactory scopes, TimeProvider time, ILogger<AiAllowance> log)
+public sealed class AiAllowance(IServiceScopeFactory scopes, ILogger<AiAllowance> log)
 {
-    public async Task<bool> HasRoomAsync(Guid userId, CancellationToken ct)
+    public async Task<(ReserveStatus Status, long Id)> ReserveAsync(Guid userId, string scope, Guid requestId, CancellationToken ct)
     {
-        await using var scope = scopes.CreateAsyncScope();
-        return await scope.ServiceProvider.GetRequiredService<EntitlementService>().HasAllowanceAsync(userId, ct);
+        await using var s = scopes.CreateAsyncScope();
+        return await s.ServiceProvider.GetRequiredService<EntitlementService>().ReserveAsync(userId, scope, requestId, ct);
     }
 
-    /// <summary>Records one request that reached the provider. Never throws: a lost record must not lose the answer.</summary>
-    public async Task RecordAsync(Guid userId, string scope, Guid requestId, bool counted)
+    /// <summary>Never throws: a lost update must not lose the answer. An unfinalized reservation ends with its lease.</summary>
+    public async Task FinalizeAsync(long id, bool reached, bool counted)
     {
         try
         {
             await using var s = scopes.CreateAsyncScope();
-            var db = s.ServiceProvider.GetRequiredService<GoHardDb>();
-            var at = time.GetUtcNow().UtcDateTime;
-            await db.Database.ExecuteSqlAsync($"""
-                INSERT INTO "AiUsage" ("UserId", "Scope", "RequestId", "AtUtc", "Counted") VALUES ({userId}, {scope}, {requestId}, {at}, {counted})
-                ON CONFLICT ("UserId", "Scope", "RequestId") WHERE "Counted" DO NOTHING
-                """);
+            await s.ServiceProvider.GetRequiredService<EntitlementService>().FinalizeAsync(id, reached, counted);
         }
-        catch (Exception ex) { log.LogError(ex, "AI usage could not be recorded"); }
+        catch (Exception ex) { log.LogError(ex, "AI reservation {Id} could not be finalized; its lease will end it", id); }
     }
 }
 

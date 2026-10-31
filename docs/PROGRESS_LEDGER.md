@@ -2590,3 +2590,16 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - **Not run:** the emulator flow (Free → limit → owner Plus → Free), so no device evidence. Not verified on iPhone,
   VoiceOver, hosted. Hosted needs the deploy (migration) and `GOHARD_Plus__PreviewOwnerUserId` set by the owner.
   Not merged, not deployed.
+
+### 31 Oct 2026 — shared AI limits across instances (before any deploy)
+
+- The daily guard and one-at-a-time moved from process memory to the database; the monthly allowance now reserves
+  before the provider call and finalizes once (docs/PLUS_PREVIEW.md › Shared limits). `AiUsage` gained `State`,
+  `LeaseUntilUtc`, `Reached`; the unreleased migration was regenerated as `20261031122355_AddEntitlements` (never
+  applied anywhere but disposable test databases). API only: no app change, so no new IPA (IPA 64 stands).
+- New tests `SharedAiLimitsTests` (5, in `CoachTests`): two API instances on one database share one-at-a-time and
+  the month; the daily guard counts attempts on both; 20 concurrent reservations from two instances admit exactly one
+  and refusals write nothing; a dead instance's reservation blocks only until its lease and never uses the month;
+  late and racing finalizes charge one request once. Updated `PlusPreviewTests`/allowance tests for the new row shape.
+- Run: `CoachTests` + `PlusPreviewTests` (50) passed; the 5 new tests passed 3 more times in a row. Nothing else rerun.
+- Not merged, not deployed, Railway variables unchanged.

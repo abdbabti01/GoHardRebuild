@@ -53,14 +53,35 @@ catalog, built-in (suggested) requests.
   out interpretation whose kind is not `unsupported`.
 * Not charged: invalid requests, refusals by the guards, provider unreachable, timeouts, provider errors, busy
   (rate limited), schema failures, empty answers, `unsupported` interpretations. These provider attempts are still
-  recorded internally (`AiUsage.Counted = false`) and still count against the **daily guard**, so failures cannot
-  create unbounded provider cost.
-* Retries: the same `requestId` within its scope is one request. In memory, a retry within 2 minutes shares the one
-  call and answer; in the database a partial unique index `(UserId, Scope, RequestId) WHERE Counted` makes a second
-  charge for the same request impossible, across instances and restarts.
-* Concurrency: one request per account at a time (existing), and the allowance is checked before the provider is
-  called. ponytail: across several API instances two simultaneous requests could each see the last unit free
-  (overspend by at most instances − 1); a row lock on the period is the upgrade if that ever matters.
+  recorded internally (`AiUsage` row `released`, `Reached = true`) and still count against the **daily guard**,
+  so failures cannot create unbounded provider cost.
+
+**Shared limits (every API instance, every restart).** One-at-a-time, the daily guard and the monthly allowance are
+database state, not process state (`EntitlementService.ReserveAsync` / `FinalizeAsync`, via `AiAllowance`):
+
+1. **Reserve** before the provider is called, in one transaction under a per-account advisory lock
+   (`pg_advisory_xact_lock(hashtextextended('ai:' || userId))`, separate from the command lock): refused as busy if
+   the account has a live reservation; as the daily guard if today's attempts (UTC day: rows that reached the
+   provider, plus expired reservations whose cost is unknown) reached `Coach:DailyLimit`; as the month if this
+   month's charged rows reached the allowance. Otherwise one `reserved` row is inserted with a lease. Refusals write
+   nothing.
+2. **Finalize once** when the request ends: `counted` for a usable answer, `released` for anything else; `Reached`
+   records whether the provider answered. Only a row still `reserved` changes, so a second finalize is a no-op.
+3. **Charged once per request.** A partial unique index `(UserId, Scope, RequestId) WHERE State = 'counted'` and a
+   `NOT EXISTS` in the finalize make a second charge impossible; if two instances finalize the same request at the
+   same moment the index refuses one and it becomes `released`. A retry of a request already charged is never
+   refused for the month (it cannot cost the person anything more); it still needs a free slot and the daily guard.
+4. **Crashes.** The lease is `Coach:TimeoutSeconds × 2 + 30 s` (70 s by default), longer than any live request
+   (its time budget, one ≤ 5 s retry, the HTTP backstop). A reservation whose instance died is never finalized: once
+   its lease ends it stops blocking and never counts for the month, so no allowance is lost; it does count as a
+   daily attempt, because whether the provider was reached is unknown. A finalize that arrives after the lease (a
+   stalled instance) still records the truth, and still cannot charge a request twice.
+5. **Same instance.** Only the answer cache stays in memory: a retry of the same `requestId` within 2 minutes on the
+   same instance shares the one call and answer. A retry that lands on another instance asks the provider again,
+   within the same limits, and is not charged again.
+
+Known edge: a request finalized after its own lease ran out, while another request of the same account was reserved
+in the gap, can take the month one past the limit. That needs an instance stalled for over a minute.
 
 **Period and reset.** Calendar month in **UTC**: it starts 00:00 UTC on the 1st and resets 00:00 UTC on the 1st of
 the next month (in Toronto that is the evening of the last day). The server's clock decides; the phone's clock never
@@ -88,7 +109,8 @@ allowance for this month. Your tracking, saved meals and built-in guidance still
   `PLAN_LIMIT` / `MEAL_LIMIT`. Edits, activation, starting, logging, deleting, archiving and sync are never limited.
 * Capability `account.entitlement` (every new server). It says the endpoint exists; it is **not** an entitlement.
 * Migration `AddEntitlements` (additive): `PreviewOverrides (UserId PK → Users cascade, Tier, AllowanceResetAtUtc,
-  UpdatedAtUtc)` and `AiUsage (Id, UserId → Users cascade, Scope, RequestId, AtUtc, Counted)`.
+  UpdatedAtUtc)` and `AiUsage (Id, UserId → Users cascade, Scope, RequestId, AtUtc, LeaseUntilUtc, State
+  reserved|counted|released, Reached)`, indexes `(UserId, AtUtc)` and the partial unique one above.
 * `compare` in the answer carries both tiers' figures (`savedPlans`, `savedMeals`, `monthlyAi`), so the comparison
   shows the server's configured values and the app hard-codes none of them.
 
@@ -126,6 +148,11 @@ Configuration (`Plus` section, all optional; these are testing values, not comme
   test allowance, and a "Preview override active" notice. No Subscribe, trial, Restore purchases or prices.
 
 ## Testing both tiers (preview activation)
+
+**Against the server deployed today (no `account.entitlement`), IPA 64 applies no limits at all**: the app treats an
+older server as having no entitlements (no limits, no Plus-only views, no allowance shown) and Me › GoHard Plus can
+only show the preview text. Free/Plus switching, the AI quotas and the creation limits need the new API deployed
+**and** your owner ID configured:
 
 1. Deploy this API (migration `AddEntitlements` runs in the pre-deploy step).
 2. Find your account ID (it is in the sign-in response's `profile.userId`, or `GET /api/v1/me`).
