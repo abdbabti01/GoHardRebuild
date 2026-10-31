@@ -2645,3 +2645,4 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `plan_overload_render_test` (docs/evidence/plan-library, light and dark), looked at.
 - Run: `progression_ui_test` (8), `progression_test`, `train_plan_ui_test`, `l10n_workout_test`: 44 passed;
   `flutter analyze` clean; `check-l10n` OK (3,098). No API change. Not merged, not deployed.
+- Code e3763d8: CI 41237944340 passed; replacement unsigned IPA run 66 (41238940711, e3763d8) passed.
