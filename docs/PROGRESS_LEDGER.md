@@ -2632,3 +2632,5 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   affected files (plans, Train, Today, Plus, progression, workout panel, Me, l10n, coach companion) passed.
 - **Not run:** emulator journey (Pixel_7 /data 489 MB free, the state that blocked installs on the last three
   features). Not verified on iPhone, VoiceOver, hosted. Not merged, not deployed.
+- Code 1fcccd7: CI 41213633735 passed (app + api). Unsigned IPA run 65 (41214576597, 1fcccd7) passed (artifact
+  GoHard-Dev-unsigned-ipa). Railway variables unchanged; no hosted account created.
