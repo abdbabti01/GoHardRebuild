@@ -2602,4 +2602,4 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   and refusals write nothing; a dead instance's reservation blocks only until its lease and never uses the month;
   late and racing finalizes charge one request once. Updated `PlusPreviewTests`/allowance tests for the new row shape.
 - Run: `CoachTests` + `PlusPreviewTests` (50) passed; the 5 new tests passed 3 more times in a row. Nothing else rerun.
-- Not merged, not deployed, Railway variables unchanged.
+- Code db70f3b: CI 41201287379 passed. Not merged, not deployed, Railway variables unchanged.
