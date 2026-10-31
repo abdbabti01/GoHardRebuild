@@ -2561,3 +2561,8 @@ Design: docs/EAT_COMPANION.md › Shared assessment, goal colours and the weekly
   491 MB free) both failed to install with INSTALL_FAILED_INSUFFICIENT_STORAGE. Stopped there.
 - **Unverified:** emulator and iPhone behaviour, VoiceOver/TalkBack reading of the bars, real Groq ideas ranking.
   Not merged, not deployed (nothing to deploy server-side).
+
+### 31 Oct 2026 — merged (owner approved)
+
+- Owner confirmed IPA 63 on iPhone and approved. `main` fast-forwarded 19e2cf2 → 05a998d; CI 41166239621 passed on `main`; Railway devoted-caring redeployed (success, 14 migrations, no API change). IPA 63 reused. Release notes: docs/RELEASE_AND_ROLLBACK.md.
+- Still unverified: real Groq idea ranking, VoiceOver/TalkBack on the bars, the emulator journey.

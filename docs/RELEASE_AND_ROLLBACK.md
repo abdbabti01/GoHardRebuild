@@ -144,6 +144,27 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Shared nutrition assessment, goal colours and the weekly report — merged 31 Oct 2026 (`main` 05a998d)
+
+- **What** (docs/EAT_COMPANION.md › Shared assessment, goal colours and the weekly report): one assessment of the day's
+  calories and protein against the goals, read by Eat's briefing, What could I eat? and its ranking, the Today/Eat goal
+  bars and the weekly report; red/yellow/green goal bars with words (protein never red); the coach says where the day
+  stands before offering food and asks first once a goal is reached (continuing always works); no food pushed once every
+  goal is reached; earlier days compared only with a goal recorded for that day; local goal history (starts now, never
+  backfilled); Eat › History & trends › Weekly report (local, no AI).
+- **Deployment:** owner approved 31 Oct 2026 after confirming IPA 63 on the iPhone. `main` fast-forwarded 19e2cf2 →
+  05a998d (no newer work on `main`). CI on `main`: passed (https://github.com/abdbabti01/GoHardRebuild/actions/runs/41166239621).
+  Railway **devoted-caring** redeployed automatically: success; hosted `/health/ready` 200, 14 migrations (unchanged).
+  diplomatic-intuition reported failure (unused project, ignored as before). No API change was needed.
+- **App:** IPA 63 (run 41163916782, built from 71f0b48, the same app code as 05a998d, which adds only the ledger) —
+  artifact `GoHard-Dev-unsigned-ipa`. No rebuild.
+- **Compatibility:** app only. No migration, contract change, capability, secret or configuration. The goal history is a
+  local record on each phone (`nutrition_goal_day`), not synced. Rollback: redeploy/reinstall from 19e2cf2; nothing on the
+  server depends on this feature.
+- **Confirmed by the owner on iPhone:** IPA 63 passed the owner's iPhone checks.
+- **Pending (unverified):** real Groq behaviour for idea ranking after goals change; VoiceOver/TalkBack reading of the
+  goal bars; the emulator journey `journey_nutrition_report_test` (never ran: emulator storage).
+
 ### Meal habits, reminders and the Eat companion — deployed 30 Oct 2026 (`main` 57ea806)
 
 - **What:** two features merged together (the second was built on the first).
