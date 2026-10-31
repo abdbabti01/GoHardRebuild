@@ -8,6 +8,8 @@ import '../../core/language.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
+import '../plus/entitlement.dart';
+import '../plus/plus_screen.dart';
 import '../shell/home_shell.dart';
 import '../today/daily.dart';
 import '../workout/workout_flow.dart';
@@ -323,10 +325,15 @@ class BlockReviewScreen extends ConsumerWidget {
       else ...[
         const SizedBox(height: 22),
         PrimaryButton(l.planContinueGoal, key: const Key('block-continue'), onPressed: () async {
+          // Continuing makes a new saved plan (docs/PLUS_PREVIEW.md): the limit is explained before anything is asked.
+          final plans = ref.read(planListProvider), existing = plans.where((p) => !p.isArchived).length;
+          final gate = planGate(ref.read(plusProvider), plans);
+          if (gate != CreateGate.ok) return showPlusLimit(context, PlusLimit.plans, gate: gate, existing: existing);
           final start = await pickDay(context, initial: today, first: today, help: l.planNextBlockStarts);
           if (start == null || !context.mounted) return;
           final answer = await repo.continueGoal(plan, start);
           if (!context.mounted) return;
+          if (answer.code == 'PLAN_LIMIT') return showPlusLimit(context, PlusLimit.plans, gate: CreateGate.limit, existing: existing);
           if (!answer.accepted) return toast(context, answer.unreachable ? l.planUnreachableNothingCreated : planErrorText(l, answer.code ?? ''));
           await push(context, PlanReviewScreen(planId: answer.data!['planId'] as String, closePrimary: true));
         }),

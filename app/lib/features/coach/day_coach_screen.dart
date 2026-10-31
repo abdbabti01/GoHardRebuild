@@ -26,7 +26,7 @@ import '../nutrition/saved_meals.dart';
 import '../nutrition/saved_meals_screens.dart' show MealReviewScreen, openMealsLibrary;
 import '../shell/home_shell.dart' show WorkoutFocus, shellProvider;
 import 'coach_avatar.dart';
-import 'coach_client.dart' show AskFailure, AskProblem, AskState, askLanguage;
+import 'coach_client.dart' show AskFailure, AskProblem, AskState, askLanguage, limitProblem;
 import 'coach_companion.dart';
 import 'coach_contract.dart';
 import 'coach_prefs.dart';
@@ -37,6 +37,8 @@ import '../nutrition/food_discovery.dart' show LookupFailure;
 import '../nutrition/food_item.dart' show FoodItem;
 import '../nutrition/food_search.dart' show CommonFood, foodLang;
 import '../nutrition/meal_habits_ui.dart' show usualMealProvider, reviewUsualMeal;
+import '../plus/entitlement.dart' show entitlementProvider;
+import '../plus/plus_screen.dart' show AiAllowanceLine;
 
 /// Opens help with today and food about [day] over [context]'s page. Opening it sends nothing and changes nothing; the
 /// page underneath (a workout being recorded, a food form) keeps everything typed in it.
@@ -50,8 +52,9 @@ String mealAt(DateTime t) => t.hour < 11 ? 'Breakfast' : t.hour < 16 ? 'Lunch' :
 
 /// `POST /coach/daily` through the signed-in owner's [Api]: typed words → a checked intent. A read, never queued.
 class DayCoachClient {
-  DayCoachClient(this._api);
+  DayCoachClient(this._api, {this.onCharged});
   final Api _api;
+  final void Function()? onCharged;
   static const timeout = Duration(seconds: 25);
 
   Future<DayIntent> interpret(Json request) async {
@@ -64,16 +67,20 @@ class DayCoachClient {
       throw AskFailure(e.message.toLowerCase().contains('timeout') ? AskProblem.unavailable : AskProblem.unreached);
     }
     final d = r.data;
-    if (r.status == 429) throw const AskFailure(AskProblem.limit);
+    if (r.status == 429) {
+      onCharged?.call();
+      throw AskFailure(limitProblem(d));
+    }
     if (r.status == 400) throw const AskFailure(AskProblem.invalid);
     if (r.status == 503 && d is Map && d['code'] == 'COACH_BUSY') throw const AskFailure(AskProblem.busy);
+    if (r.ok) onCharged?.call();
     final intent = d is Map && r.ok && d['requestId'] == request['requestId'] ? DayIntent.fromJson(d['intent'], ai: true) : null;
     if (intent == null) throw const AskFailure(AskProblem.unavailable);
     return intent;
   }
 }
 
-final dayCoachClientProvider = Provider((ref) => DayCoachClient(ref.watch(apiProvider)));
+final dayCoachClientProvider = Provider((ref) => DayCoachClient(ref.watch(apiProvider), onCharged: () => ref.read(entitlementProvider.notifier).refresh()));
 
 /// Whether the account's server reads typed requests. Unknown counts as no: an older server never gets the request.
 final dayCoachAvailableProvider = Provider<bool>((ref) => ref.watch(compatibilityProvider).capabilities?.contains('coach.daily') ?? false);
@@ -528,15 +535,17 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   StatusLine(Icons.info_outline, switch (problem) {
                     AskProblem.limit => l.dcProblemLimit,
+                    AskProblem.allowance => l.plusAiUsed,
                     AskProblem.busy => l.dcProblemBusy,
                     AskProblem.unreached => l.dcProblemUnreached,
                     AskProblem.invalid => l.coachAskProblemInvalid,
                     AskProblem.interrupted => l.dcProblemInterrupted,
                     AskProblem.unavailable => l.dcProblemUnavailable,
                   }, key: const Key('day-problem'), tone: Tone.warning),
+                  if (problem == AskProblem.allowance) const AiAllowanceLine(),
                   Text(l.dcStillWorks, style: context.caption),
                   Wrap(spacing: 8, children: [
-                    if (problem != AskProblem.invalid) TextButton(key: const Key('day-retry'), onPressed: () => _send(p['question'] as String, retry: true), child: Text(l.coachAskRetry)),
+                    if (problem != AskProblem.invalid && problem != AskProblem.allowance) TextButton(key: const Key('day-retry'), onPressed: () => _send(p['question'] as String, retry: true), child: Text(l.coachAskRetry)),
                     TextButton(key: const Key('day-edit'), onPressed: _convo.edit, child: Text(l.coachAskEditQuestion)),
                   ]),
                 ]),

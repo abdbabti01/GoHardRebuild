@@ -8,6 +8,7 @@ import 'package:gohard_rebuild/data/db.dart';
 import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
+import 'package:gohard_rebuild/features/plus/entitlement.dart';
 
 final Json fixture = jsonDecode(File('../contracts/contract_fixture.json').readAsStringSync()) as Json;
 
@@ -248,3 +249,6 @@ class Harness {
   Future<List<Json>> bodies(String owner, String kind, {String? parentId}) async =>
       [for (final r in await sync.list(owner, kind, parentId: parentId)) jsonDecode(r.body) as Json];
 }
+
+/// An account on GoHard Plus (the preview), as its server would describe it. For tests of Plus features.
+final plusPreview = Entitlement(const {'tier': 'plus', 'source': 'preview_override', 'features': [Entitlement.progression, Entitlement.trendExplorer], 'validForSeconds': 259200}, receivedAtUtc: DateTime.utc(2026));

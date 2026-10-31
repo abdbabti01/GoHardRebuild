@@ -17,6 +17,7 @@ import 'food_form.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
 import 'log_food_screen.dart';
+import '../plus/plus_screen.dart';
 import 'nutrient_coverage.dart';
 import 'nutrition_surface.dart' show formatKcal;
 import 'saved_meals.dart';
@@ -65,6 +66,9 @@ Future<bool> _attempt(BuildContext context, void Function(String?) error, Future
     if (context.mounted) error(foodProblemText(context.l10n, e));
   } on LocalSaveFailure {
     if (context.mounted) error(context.l10n.foodSaveFailedLocal);
+  } on MealLimitReached catch (e) {
+    // Over the limit: explained in a sheet over the editor, which keeps everything entered.
+    if (context.mounted) await showPlusLimit(context, PlusLimit.meals, gate: e.gate, existing: e.existing);
   }
   return false;
 }

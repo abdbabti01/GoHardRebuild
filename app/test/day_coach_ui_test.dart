@@ -46,6 +46,8 @@ Json food(String id, {double? kcal, double? protein}) =>
 
 /// The server's reading of typed words, scripted. Every request is recorded; nothing is sent anywhere.
 class ScriptedDay implements DayCoachClient {
+  @override
+  void Function()? get onCharged => null;
   final requests = <Json>[];
   Future<DayIntent> Function(Json request) reply = (r) async => const DayIntent('today', ai: true);
   @override

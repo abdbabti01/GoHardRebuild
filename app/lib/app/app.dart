@@ -19,6 +19,7 @@ import '../features/nutrition/intake_history.dart' show goalHistorySyncProvider;
 import '../features/setup/setup_screen.dart';
 import '../features/shell/home_shell.dart';
 import 'providers.dart';
+import '../features/plus/entitlement.dart' show entitlementProvider;
 
 class GoHardApp extends ConsumerStatefulWidget {
   const GoHardApp({super.key});
@@ -53,6 +54,7 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
       unawaited(ref.read(sessionsProvider).persistIfNeeded());
       ref.read(dateServiceProvider).refresh();
       ref.invalidate(reminderSyncProvider); // the phone's zone may have changed: re-time future reminders, never the plan's dates
+      if (ref.read(ownerProvider) != null) unawaited(ref.read(entitlementProvider.notifier).refresh()); // GoHard Plus preview: the server's answer, never the phone's clock
       _check();
     }
   }
@@ -77,6 +79,7 @@ class _GoHardAppState extends ConsumerState<GoHardApp> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     ref.watch(reminderSyncProvider); // keeps scheduled reminders equal to the accepted plan; removes them when signed out
     ref.watch(goalHistorySyncProvider); // records the nutrition goals in effect today, for the weekly report
+    ref.listen(entitlementProvider, (_, _) {}); // GoHard Plus preview: asked for at sign-in, so no gate starts from nothing
     final owner = ref.watch(ownerProvider);
     // A new account's setup, until it is finished or skipped (docs/COACH.md › Setup).
     final setup = owner == null ? null : ref.watch(coachPrefsProvider.select((p) => p.setup[owner]));

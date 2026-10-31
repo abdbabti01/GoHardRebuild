@@ -10,6 +10,8 @@ import '../../core/language.dart';
 import '../../core/search_fold.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../plus/entitlement.dart';
+import '../plus/plus_screen.dart' show showPlusFeature;
 import '../workout/workout_detail_screen.dart';
 import '../workout/workout_screen.dart' show setText;
 import 'progress_view.dart';
@@ -117,7 +119,9 @@ class _ExerciseTrendScreenState extends ConsumerState<ExerciseTrendScreen> {
         ],
       ),
       const SizedBox(height: 16),
-      Segmented<TrendRange>(values: TrendRange.values, selected: _range, keyPrefix: 'trend-range', label: (r) => r.label, onChanged: (r) => setState(() => _range = r)),
+      // The whole history (All) is the explorer's, a GoHard Plus view; 4 and 12 weeks are the overview's (docs/PLUS_PREVIEW.md).
+      Segmented<TrendRange>(values: TrendRange.values, selected: _range, keyPrefix: 'trend-range', label: (r) => r.label,
+          onChanged: (r) => r == TrendRange.all && !plusFeature(ref.read(plusProvider), Entitlement.trendExplorer) ? showPlusFeature(context) : setState(() => _range = r)),
       if (t.metric == TrendMetric.load && t.repOptions.length > 1) ...[
         const SizedBox(height: 12),
         Text(l.progressCompareSetsOf, style: context.caption),

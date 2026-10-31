@@ -11,13 +11,18 @@ import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../data/sync.dart';
 import '../plans/plan_draft.dart';
+import '../plus/entitlement.dart' show entitlementProvider;
 import 'coach_contract.dart';
 import 'coach_proposal.dart';
 
 /// Why a question got no answer. `unreached`: the request did not get through; the app cannot tell a phone without
 /// a connection from a server in trouble, so it never says "Offline". `interrupted`: the app closed while it waited.
 /// `busy`: the AI provider is rate limited or overloaded (503 COACH_BUSY), not the person's own limit (429 COACH_LIMIT).
-enum AskProblem { unavailable, limit, unreached, invalid, interrupted, busy }
+/// `allowance`: this month's AI allowance is used up (429 COACH_LIMIT, reason "monthly"; docs/PLUS_PREVIEW.md).
+enum AskProblem { unavailable, limit, unreached, invalid, interrupted, busy, allowance }
+
+/// 429 is the person's own limit: the month's allowance when the server says so, otherwise the daily guard.
+AskProblem limitProblem(Object? body) => body is Map && body['reason'] == 'monthly' ? AskProblem.allowance : AskProblem.limit;
 
 class AskFailure implements Exception {
   const AskFailure(this.problem);
@@ -46,8 +51,11 @@ Json askRequestBody(String requestId, String question, List<Json> messages, Coac
 
 /// `POST /coach/ask` (docs/COACH.md) through the signed-in owner's [Api]. A read, never a queued command.
 class CoachClient {
-  CoachClient(this._api);
+  CoachClient(this._api, {this.onCharged});
   final Api _api;
+
+  /// Called after an answer or an allowance refusal, so the shown allowance follows the server.
+  final void Function()? onCharged;
   static const timeout = Duration(seconds: 25);
 
   /// The 200 body, or [AskFailure]. A body that is not an answer to [request] counts as unavailable.
@@ -60,13 +68,17 @@ class CoachClient {
     } on TransportFailure catch (e) {
       throw AskFailure(e.message.toLowerCase().contains('timeout') ? AskProblem.unavailable : AskProblem.unreached);
     }
-    if (r.status == 429) throw const AskFailure(AskProblem.limit);
-    if (r.status == 400) throw const AskFailure(AskProblem.invalid);
     final d = r.data;
+    if (r.status == 429) {
+      onCharged?.call();
+      throw AskFailure(limitProblem(d));
+    }
+    if (r.status == 400) throw const AskFailure(AskProblem.invalid);
     if (r.status == 503 && d is Map && d['code'] == 'COACH_BUSY') throw const AskFailure(AskProblem.busy);
     if (!r.ok || d is! Map || d['requestId'] != request['requestId'] || d['answer'] is! String || (d['answer'] as String).trim().isEmpty) {
       throw const AskFailure(AskProblem.unavailable);
     }
+    onCharged?.call();
     return Map<String, dynamic>.from(d);
   }
 }
@@ -102,7 +114,7 @@ class AskConversation extends Notifier<AskState> {
   late SyncEngine _sync;
   late SessionManager _sessions;
   /// Made at the first Send: opening Ask GoHard touches no transport.
-  CoachClient get _client => CoachClient(ref.read(apiProvider));
+  CoachClient get _client => CoachClient(ref.read(apiProvider), onCharged: () => ref.read(entitlementProvider.notifier).refresh());
   String? _owner;
   int _turn = 0;
   String _unsent = '';

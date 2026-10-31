@@ -28,6 +28,7 @@ import 'package:gohard_rebuild/data/sync.dart' show Receipt;
 
 import 'food_fakes.dart';
 import 'ui_support.dart';
+import 'package:gohard_rebuild/features/plus/entitlement.dart' show CreateGate;
 
 /// Eating out on screen (docs/EATING_OUT.md). The AI is a STUB here (ScriptedEatingOut): these tests show what the app
 /// does with an answer and when it asks — never how well a live model reads a request.
@@ -50,6 +51,8 @@ class MemoryEatOut implements EatOutStore {
 
 /// The server's interpretation, scripted. Every request is recorded; nothing is sent anywhere.
 class ScriptedEatingOut implements EatingOutClient {
+  @override
+  void Function()? get onCharged => null;
   final requests = <Json>[];
   Future<Json> Function(Json request) reply = (r) async => answer(r, const {});
   @override
@@ -61,6 +64,8 @@ class ScriptedEatingOut implements EatingOutClient {
 
 /// Saved meals, recorded: Save as meal must reach only this, never the journal.
 class RecordingMeals implements SavedMealRepository {
+  @override
+  (CreateGate, int) Function()? get mayCreate => null;
   final puts = <MealBody>[];
   @override
   Future<String> put(MealBody body, {String? id}) async {

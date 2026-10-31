@@ -18215,6 +18215,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Days with a recorded goal that can’t be compared because values are missing: {count}.'**
   String wrGoalUndetermined(int count);
+
+  /// Me row and page title of the GoHard Plus preview. A brand name: same in every language.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard Plus'**
+  String get plusTitle;
+
+  /// Me › GoHard Plus row subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview: what Free and Plus include'**
+  String get plusMeSubtitle;
+
+  /// The Free tier, as a short value.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get plusTierFree;
+
+  /// The Plus tier, as a short value. A brand word: same in every language.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus'**
+  String get plusTierPlus;
+
+  /// Heading of the preview panel.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard Plus preview'**
+  String get plusPreviewTitle;
+
+  /// Shown on the Plus page: no billing exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases aren’t available yet.'**
+  String get plusNoPurchases;
+
+  /// What the preview page is.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview shows what GoHard Plus is planned to include. Nothing is sold or charged, and your tracking works the same either way.'**
+  String get plusPreviewBody;
+
+  /// Which tier this account is on: Free.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is on Free.'**
+  String get plusCurrentFree;
+
+  /// Which tier this account is on: Plus through the preview.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is on GoHard Plus (preview).'**
+  String get plusCurrentPlus;
+
+  /// Leon/Leona introduce the Plus page once.
+  ///
+  /// In en, this message translates to:
+  /// **'This is GoHard Plus, still a preview. Everything you track stays free; Plus adds room and a little extra analysis. Nothing can be bought yet.'**
+  String get plusCoachIntro;
+
+  /// Section header of the Free/Plus comparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Free and Plus'**
+  String get plusCompareHeader;
+
+  /// Comparison row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts, food, water, Run / Walk, reminders and history'**
+  String get plusRowTracking;
+
+  /// Comparison row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly reports and the progress overview'**
+  String get plusRowReports;
+
+  /// Comparison row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved training plans'**
+  String get plusRowPlans;
+
+  /// Comparison row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved meals and recipes'**
+  String get plusRowMeals;
+
+  /// Comparison row label: provider-backed AI requests.
+  ///
+  /// In en, this message translates to:
+  /// **'AI assistance (answered requests)'**
+  String get plusRowAi;
+
+  /// Comparison row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise-trend explorer: every exercise, all time'**
+  String get plusRowTrends;
+
+  /// Comparison row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Next-target suggestions'**
+  String get plusRowProgression;
+
+  /// Comparison value.
+  ///
+  /// In en, this message translates to:
+  /// **'Included'**
+  String get plusIncluded;
+
+  /// Comparison value.
+  ///
+  /// In en, this message translates to:
+  /// **'Not included'**
+  String get plusNotIncluded;
+
+  /// Comparison value: no product limit (technical limits remain).
+  ///
+  /// In en, this message translates to:
+  /// **'No product limit'**
+  String get plusNoLimit;
+
+  /// Comparison value: a creation limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count}'**
+  String plusUpTo(int count);
+
+  /// Comparison value: requests a month.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} a month'**
+  String plusPerMonth(int count);
+
+  /// Screen reader: one comparison row.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}. Free: {free}. Plus: {plus}.'**
+  String plusRowSemantic(String label, String free, String plus);
+
+  /// Section header for this month’s AI allowance.
+  ///
+  /// In en, this message translates to:
+  /// **'AI assistance this month'**
+  String get plusAllowanceHeader;
+
+  /// Allowance used.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {limit} used'**
+  String plusAllowanceUsed(int used, int limit);
+
+  /// Allowance left and its reset date.
+  ///
+  /// In en, this message translates to:
+  /// **'Left: {remaining} · Resets {date}'**
+  String plusAllowanceLeft(int remaining, String date);
+
+  /// Screen reader label of the allowance bar.
+  ///
+  /// In en, this message translates to:
+  /// **'AI requests used this month'**
+  String get plusAllowanceRail;
+
+  /// What counts toward the allowance and when it resets.
+  ///
+  /// In en, this message translates to:
+  /// **'Only answered AI requests count: Ask GoHard, typed help with today, new meal ideas and Eating out in your own words. Briefings, built-in guidance, food search and reports never count. It resets at 00:00 UTC on the 1st of each month.'**
+  String get plusAllowanceNote;
+
+  /// Owner-only preview controls header.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview controls (owner only)'**
+  String get plusOwnerHeader;
+
+  /// Owner control: which tier to test.
+  ///
+  /// In en, this message translates to:
+  /// **'Tier to test on this account'**
+  String get plusOwnerTier;
+
+  /// Owner action: reset the test allowance.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset test allowance'**
+  String get plusOwnerReset;
+
+  /// Toast after the owner reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Test allowance reset.'**
+  String get plusOwnerResetDone;
+
+  /// Toast when an owner action did not reach the account.
+  ///
+  /// In en, this message translates to:
+  /// **'That didn’t go through. Nothing changed.'**
+  String get plusOwnerFailed;
+
+  /// Notice while the owner override is on.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview override active: this account is on Plus for testing.'**
+  String get plusOverrideActive;
+
+  /// The entitlement is not known (no answer, expired).
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t confirm your GoHard Plus access right now. Your records, tracking and saved items are unaffected.'**
+  String get plusUnknown;
+
+  /// Creating past the smallest Free limit while the entitlement is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t confirm your GoHard Plus access right now, so this can’t be added yet. Your draft is kept; try again once you’re connected.'**
+  String get plusUnknownCreate;
+
+  /// Limit sheet title: saved plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved plan limit'**
+  String get plusLimitPlansTitle;
+
+  /// Limit sheet body: saved plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Free includes up to {limit} saved plans, and you have {existing}. They all stay usable, and your draft is kept. Archive a plan you no longer need, or see what GoHard Plus includes.'**
+  String plusLimitPlansBody(int limit, int existing);
+
+  /// Limit sheet title: saved meals and recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved meals and recipes limit'**
+  String get plusLimitMealsTitle;
+
+  /// Limit sheet body: saved meals and recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Free includes up to {limit} saved meals and recipes together, and you have {existing}. They all stay usable, and what you entered here is kept. Delete one you no longer use, or see what GoHard Plus includes.'**
+  String plusLimitMealsBody(int limit, int existing);
+
+  /// Button: open the Plus page.
+  ///
+  /// In en, this message translates to:
+  /// **'View Plus'**
+  String get plusViewPlus;
+
+  /// Feature sheet title: the trend explorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore every exercise'**
+  String get plusFeatureTrendsTitle;
+
+  /// Feature sheet body: the trend explorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching all your recorded exercises and their whole history is part of GoHard Plus. Your progress overview, its trends and every workout record stay free.'**
+  String get plusFeatureTrendsBody;
+
+  /// Shown when this month’s AI allowance is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve used your AI allowance for this month. Your tracking, saved meals and built-in guidance still work.'**
+  String get plusAiUsed;
+
+  /// Next to the allowance message: when it resets.
+  ///
+  /// In en, this message translates to:
+  /// **'It resets on {date}.'**
+  String plusAiResets(String date);
+
+  /// Small line near an AI composer.
+  ///
+  /// In en, this message translates to:
+  /// **'AI this month: {remaining} of {limit} left · resets {date}'**
+  String plusAiLeftLine(int remaining, int limit, String date);
 }
 
 class _AppLocalizationsDelegate

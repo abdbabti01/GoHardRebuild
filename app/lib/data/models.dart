@@ -49,6 +49,9 @@ abstract final class Kinds {
   static const accountAccess = 'account_access';
   /// Saved meals and recipes: templates, never food eaten (features/nutrition/saved_meals.dart).
   static const savedMeal = 'saved_meal';
+  /// What the account's server last said about GoHard Plus (id = the owner), with when this phone received it. Local
+  /// only, written only from server answers (docs/PLUS_PREVIEW.md).
+  static const entitlement = 'entitlement';
   /// An unfinished saved meal or recipe being edited (id = the definition's ID, or `new:meal` / `new:recipe`). Local only.
   static const mealDraft = 'meal_draft';
   /// Eating out on this phone (docs/EATING_OUT.md): `draft` (the order being built, with its chain and preferences) and

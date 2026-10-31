@@ -12273,4 +12273,173 @@ class AppLocalizationsEn extends AppLocalizations {
   String wrGoalUndetermined(int count) {
     return 'Days with a recorded goal that can’t be compared because values are missing: $count.';
   }
+
+  @override
+  String get plusTitle => 'GoHard Plus';
+
+  @override
+  String get plusMeSubtitle => 'Preview: what Free and Plus include';
+
+  @override
+  String get plusTierFree => 'Free';
+
+  @override
+  String get plusTierPlus => 'Plus';
+
+  @override
+  String get plusPreviewTitle => 'GoHard Plus preview';
+
+  @override
+  String get plusNoPurchases => 'Purchases aren’t available yet.';
+
+  @override
+  String get plusPreviewBody =>
+      'This preview shows what GoHard Plus is planned to include. Nothing is sold or charged, and your tracking works the same either way.';
+
+  @override
+  String get plusCurrentFree => 'This account is on Free.';
+
+  @override
+  String get plusCurrentPlus => 'This account is on GoHard Plus (preview).';
+
+  @override
+  String get plusCoachIntro =>
+      'This is GoHard Plus, still a preview. Everything you track stays free; Plus adds room and a little extra analysis. Nothing can be bought yet.';
+
+  @override
+  String get plusCompareHeader => 'Free and Plus';
+
+  @override
+  String get plusRowTracking =>
+      'Workouts, food, water, Run / Walk, reminders and history';
+
+  @override
+  String get plusRowReports => 'Weekly reports and the progress overview';
+
+  @override
+  String get plusRowPlans => 'Saved training plans';
+
+  @override
+  String get plusRowMeals => 'Saved meals and recipes';
+
+  @override
+  String get plusRowAi => 'AI assistance (answered requests)';
+
+  @override
+  String get plusRowTrends =>
+      'Exercise-trend explorer: every exercise, all time';
+
+  @override
+  String get plusRowProgression => 'Next-target suggestions';
+
+  @override
+  String get plusIncluded => 'Included';
+
+  @override
+  String get plusNotIncluded => 'Not included';
+
+  @override
+  String get plusNoLimit => 'No product limit';
+
+  @override
+  String plusUpTo(int count) {
+    return 'Up to $count';
+  }
+
+  @override
+  String plusPerMonth(int count) {
+    return '$count a month';
+  }
+
+  @override
+  String plusRowSemantic(String label, String free, String plus) {
+    return '$label. Free: $free. Plus: $plus.';
+  }
+
+  @override
+  String get plusAllowanceHeader => 'AI assistance this month';
+
+  @override
+  String plusAllowanceUsed(int used, int limit) {
+    return '$used of $limit used';
+  }
+
+  @override
+  String plusAllowanceLeft(int remaining, String date) {
+    return 'Left: $remaining · Resets $date';
+  }
+
+  @override
+  String get plusAllowanceRail => 'AI requests used this month';
+
+  @override
+  String get plusAllowanceNote =>
+      'Only answered AI requests count: Ask GoHard, typed help with today, new meal ideas and Eating out in your own words. Briefings, built-in guidance, food search and reports never count. It resets at 00:00 UTC on the 1st of each month.';
+
+  @override
+  String get plusOwnerHeader => 'Preview controls (owner only)';
+
+  @override
+  String get plusOwnerTier => 'Tier to test on this account';
+
+  @override
+  String get plusOwnerReset => 'Reset test allowance';
+
+  @override
+  String get plusOwnerResetDone => 'Test allowance reset.';
+
+  @override
+  String get plusOwnerFailed => 'That didn’t go through. Nothing changed.';
+
+  @override
+  String get plusOverrideActive =>
+      'Preview override active: this account is on Plus for testing.';
+
+  @override
+  String get plusUnknown =>
+      'We couldn’t confirm your GoHard Plus access right now. Your records, tracking and saved items are unaffected.';
+
+  @override
+  String get plusUnknownCreate =>
+      'We couldn’t confirm your GoHard Plus access right now, so this can’t be added yet. Your draft is kept; try again once you’re connected.';
+
+  @override
+  String get plusLimitPlansTitle => 'Saved plan limit';
+
+  @override
+  String plusLimitPlansBody(int limit, int existing) {
+    return 'Free includes up to $limit saved plans, and you have $existing. They all stay usable, and your draft is kept. Archive a plan you no longer need, or see what GoHard Plus includes.';
+  }
+
+  @override
+  String get plusLimitMealsTitle => 'Saved meals and recipes limit';
+
+  @override
+  String plusLimitMealsBody(int limit, int existing) {
+    return 'Free includes up to $limit saved meals and recipes together, and you have $existing. They all stay usable, and what you entered here is kept. Delete one you no longer use, or see what GoHard Plus includes.';
+  }
+
+  @override
+  String get plusViewPlus => 'View Plus';
+
+  @override
+  String get plusFeatureTrendsTitle => 'Explore every exercise';
+
+  @override
+  String get plusFeatureTrendsBody =>
+      'Searching all your recorded exercises and their whole history is part of GoHard Plus. Your progress overview, its trends and every workout record stay free.';
+
+  @override
+  String get plusAiUsed =>
+      'You’ve used your AI allowance for this month. Your tracking, saved meals and built-in guidance still work.';
+
+  @override
+  String plusAiResets(String date) {
+    return 'It resets on $date.';
+  }
+
+  @override
+  String plusAiLeftLine(int remaining, int limit, String date) {
+    return 'AI this month: $remaining of $limit left · resets $date';
+  }
 }

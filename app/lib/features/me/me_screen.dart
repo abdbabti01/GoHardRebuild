@@ -29,6 +29,8 @@ import '../coach/coach_prefs.dart';
 import '../nutrition/nutrition_tools.dart';
 import '../nutrition/water.dart';
 import '../weather/weather.dart';
+import '../plus/entitlement.dart';
+import '../plus/plus_screen.dart';
 import 'account_repository.dart';
 import 'permissions_screen.dart';
 import '../nutrition/meal_habits_ui.dart' show MealSuggestionsScreen, habitSuggestProvider;
@@ -241,6 +243,13 @@ class MeScreen extends ConsumerWidget {
 
         _Group(l.meGroupAccount),
         GroupCard(children: [
+          // The preview of Free and Plus (docs/PLUS_PREVIEW.md). Nothing here can be bought.
+          if (session != null)
+            GroupRow(
+              key: const Key('me-plus'), icon: Icons.workspace_premium_outlined, title: l.plusTitle, subtitle: l.plusMeSubtitle,
+              value: switch (ref.watch(plusProvider)) { final e? when !e.isLegacy => e.isPlus ? l.plusTierPlus : l.plusTierFree, _ => null },
+              onTap: () => push(context, const PlusScreen()),
+            ),
           // The address and what the server says about it; a server from before verification says nothing, so neither does Me.
           if (profile?.emailVerified case final verified? when session != null)
             GroupRow(

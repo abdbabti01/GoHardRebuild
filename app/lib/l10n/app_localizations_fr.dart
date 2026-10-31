@@ -12478,6 +12478,176 @@ class AppLocalizationsFr extends AppLocalizations {
   String wrGoalUndetermined(int count) {
     return 'Jours avec un objectif enregistré impossibles à comparer faute de valeurs : $count.';
   }
+
+  @override
+  String get plusTitle => 'GoHard Plus';
+
+  @override
+  String get plusMeSubtitle => 'Aperçu : ce que comprennent Gratuit et Plus';
+
+  @override
+  String get plusTierFree => 'Gratuit';
+
+  @override
+  String get plusTierPlus => 'Plus';
+
+  @override
+  String get plusPreviewTitle => 'Aperçu de GoHard Plus';
+
+  @override
+  String get plusNoPurchases => 'Les achats ne sont pas encore offerts.';
+
+  @override
+  String get plusPreviewBody =>
+      'Cet aperçu montre ce que GoHard Plus devrait comprendre. Rien n’est vendu ni facturé, et ton suivi fonctionne de la même façon dans les deux cas.';
+
+  @override
+  String get plusCurrentFree => 'Ce compte est sur Gratuit.';
+
+  @override
+  String get plusCurrentPlus => 'Ce compte est sur GoHard Plus (aperçu).';
+
+  @override
+  String get plusCoachIntro =>
+      'Voici GoHard Plus, encore en aperçu. Tout ce que tu suis reste gratuit; Plus ajoute de la place et un peu plus d’analyse. Rien ne peut être acheté pour l’instant.';
+
+  @override
+  String get plusCompareHeader => 'Gratuit et Plus';
+
+  @override
+  String get plusRowTracking =>
+      'Entraînements, repas, eau, Course / Marche, rappels et historique';
+
+  @override
+  String get plusRowReports => 'Rapports hebdomadaires et aperçu des progrès';
+
+  @override
+  String get plusRowPlans => 'Programmes d’entraînement enregistrés';
+
+  @override
+  String get plusRowMeals => 'Repas et recettes enregistrés';
+
+  @override
+  String get plusRowAi => 'Aide de l’IA (demandes répondues)';
+
+  @override
+  String get plusRowTrends =>
+      'Explorateur de tendances : tous les exercices, tout l’historique';
+
+  @override
+  String get plusRowProgression => 'Suggestions de prochaine cible';
+
+  @override
+  String get plusIncluded => 'Inclus';
+
+  @override
+  String get plusNotIncluded => 'Non inclus';
+
+  @override
+  String get plusNoLimit => 'Aucune limite de produit';
+
+  @override
+  String plusUpTo(int count) {
+    return 'Jusqu’à $count';
+  }
+
+  @override
+  String plusPerMonth(int count) {
+    return '$count par mois';
+  }
+
+  @override
+  String plusRowSemantic(String label, String free, String plus) {
+    return '$label. Gratuit : $free. Plus : $plus.';
+  }
+
+  @override
+  String get plusAllowanceHeader => 'Aide de l’IA ce mois-ci';
+
+  @override
+  String plusAllowanceUsed(int used, int limit) {
+    return '$used sur $limit utilisées';
+  }
+
+  @override
+  String plusAllowanceLeft(int remaining, String date) {
+    return 'Restantes : $remaining · Remise à zéro le $date';
+  }
+
+  @override
+  String get plusAllowanceRail => 'Demandes d’IA utilisées ce mois-ci';
+
+  @override
+  String get plusAllowanceNote =>
+      'Seules les demandes d’IA répondues comptent : Demande à GoHard, l’aide écrite pour aujourd’hui, les nouvelles idées de repas et Au restaurant dans tes mots. Les résumés, les conseils intégrés, la recherche d’aliments et les rapports ne comptent jamais. Remise à zéro à 0 h UTC le 1er de chaque mois.';
+
+  @override
+  String get plusOwnerHeader =>
+      'Commandes de l’aperçu (propriétaire seulement)';
+
+  @override
+  String get plusOwnerTier => 'Niveau à tester sur ce compte';
+
+  @override
+  String get plusOwnerReset => 'Réinitialiser l’allocation de test';
+
+  @override
+  String get plusOwnerResetDone => 'Allocation de test réinitialisée.';
+
+  @override
+  String get plusOwnerFailed => 'Ça n’a pas fonctionné. Rien n’a changé.';
+
+  @override
+  String get plusOverrideActive =>
+      'Remplacement d’aperçu actif : ce compte est sur Plus pour des tests.';
+
+  @override
+  String get plusUnknown =>
+      'Impossible de confirmer ton accès à GoHard Plus pour l’instant. Tes données, ton suivi et tes éléments enregistrés ne sont pas touchés.';
+
+  @override
+  String get plusUnknownCreate =>
+      'Impossible de confirmer ton accès à GoHard Plus pour l’instant, alors ceci ne peut pas encore être ajouté. Ton brouillon est conservé; réessaie une fois connecté.';
+
+  @override
+  String get plusLimitPlansTitle => 'Limite de programmes enregistrés';
+
+  @override
+  String plusLimitPlansBody(int limit, int existing) {
+    return 'Gratuit comprend jusqu’à $limit programmes enregistrés, et tu en as $existing. Ils restent tous utilisables, et ton brouillon est conservé. Archive un programme dont tu n’as plus besoin, ou vois ce que comprend GoHard Plus.';
+  }
+
+  @override
+  String get plusLimitMealsTitle => 'Limite de repas et recettes enregistrés';
+
+  @override
+  String plusLimitMealsBody(int limit, int existing) {
+    return 'Gratuit comprend jusqu’à $limit repas et recettes enregistrés au total, et tu en as $existing. Ils restent tous utilisables, et ce que tu as saisi ici est conservé. Supprime-en un que tu n’utilises plus, ou vois ce que comprend GoHard Plus.';
+  }
+
+  @override
+  String get plusViewPlus => 'Voir Plus';
+
+  @override
+  String get plusFeatureTrendsTitle => 'Explorer tous les exercices';
+
+  @override
+  String get plusFeatureTrendsBody =>
+      'Chercher parmi tous tes exercices enregistrés et tout leur historique fait partie de GoHard Plus. Ton aperçu des progrès, ses tendances et chaque séance enregistrée restent gratuits.';
+
+  @override
+  String get plusAiUsed =>
+      'Tu as utilisé ton allocation d’IA pour ce mois-ci. Ton suivi, tes repas enregistrés et les conseils intégrés fonctionnent toujours.';
+
+  @override
+  String plusAiResets(String date) {
+    return 'Remise à zéro le $date.';
+  }
+
+  @override
+  String plusAiLeftLine(int remaining, int limit, String date) {
+    return 'IA ce mois-ci : $remaining sur $limit restantes · remise à zéro le $date';
+  }
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

@@ -153,7 +153,7 @@ void main() {
 
   testWidgets('every row opens something real: units, motion, appearance, body, goals, delete, sign out', (tester) async {
     final profiles = _Profiles();
-    await _openMe(tester, [...(await tester.runAsync(() => overridesFor(day: _day)))!, profileRepositoryProvider.overrideWithValue(profiles)], size: const Size(390, 1700));
+    await _openMe(tester, [...(await tester.runAsync(() => overridesFor(day: _day)))!, profileRepositoryProvider.overrideWithValue(profiles)], size: const Size(390, 1900));
     Future<void> tap(String key) async {
       await tester.ensureVisible(find.byKey(Key(key)));
       await tester.tap(find.byKey(Key(key)));

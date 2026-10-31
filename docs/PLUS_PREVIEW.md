@@ -17,7 +17,7 @@ server-authorized preview switch.
 | Run / Walk, maps, steps, intervals, audio | ✓ | ✓ |
 | History, Train › Workouts records, weekly reports, recap | ✓ | ✓ |
 | Progress overview: weekly goals, counts, the two strength-trend previews, adherence, recap, personal bests | ✓ | ✓ |
-| A previewed exercise's trend page (4 weeks / 12 weeks, rep count, its sessions, "All N sessions and sets") | ✓ | ✓ |
+| An exercise's trend page opened from the overview previews or the weekly recap highlight (4 weeks / 12 weeks, rep count, its sessions, "All N sessions and sets") | ✓ | ✓ |
 | **Exercise-trend explorer**: Progress › Strength trends › See all (every recorded exercise) and the **All** range | — (explained on tap) | ✓ |
 | **Next-target (progression) suggestions** (Next time card, "Review suggestion") | — (hidden; manual targets stay) | ✓ |
 | Meal, medication and supplement reminders | ✓ | ✓ |
@@ -89,6 +89,8 @@ allowance for this month. Your tracking, saved meals and built-in guidance still
 * Capability `account.entitlement` (every new server). It says the endpoint exists; it is **not** an entitlement.
 * Migration `AddEntitlements` (additive): `PreviewOverrides (UserId PK → Users cascade, Tier, AllowanceResetAtUtc,
   UpdatedAtUtc)` and `AiUsage (Id, UserId → Users cascade, Scope, RequestId, AtUtc, Counted)`.
+* `compare` in the answer carries both tiers' figures (`savedPlans`, `savedMeals`, `monthlyAi`), so the comparison
+  shows the server's configured values and the app hard-codes none of them.
 
 Configuration (`Plus` section, all optional; these are testing values, not commercial quotas):
 
@@ -103,7 +105,8 @@ Configuration (`Plus` section, all optional; these are testing values, not comme
 ## App
 
 * `features/plus/entitlement.dart`: the typed `Entitlement` (from the server's answer), `EntitlementController`
-  (fetches on sign-in, on resume and after AI answers; caches the last valid answer as local record kind
+  (kept alive by the app from sign-in; fetches then, on resume, on opening the Plus page and after AI answers or
+  allowance refusals; caches the last valid answer as local record kind
   `entitlement`, id = owner, so caches are isolated per account).
 * **Cache bound.** The last answer is used for `Plus:CacheHours` (72 h) from when the phone received it. A phone
   clock earlier than the receipt time, or later than the bound, makes it **unknown**; changing the clock can only
@@ -115,7 +118,31 @@ Configuration (`Plus` section, all optional; these are testing values, not comme
   and recipe Save / Save as new, Strength trends › See all, the All range, progression suggestions.
 * Drafts survive: the plan builder's draft and the meal editor's draft are already local records; the limit sheet is
   a sheet over the page (View Plus pushes a page above it), so the page and its fields stay as they were.
+* A server without `account.entitlement` (older deployment) limits nothing, so the app treats it as `legacy`: no
+  limits, every existing feature available, no allowance shown.
 * Never interrupted: the recorder, Run / Walk, timers and food review contain no gate; nothing is shown at launch.
 * **Me › GoHard Plus**: "GoHard Plus preview", "Purchases aren't available yet.", Free vs Plus comparison (only the
   rows above), this month's AI allowance with its reset date, and for the owner only: the Free/Plus switch, Reset
   test allowance, and a "Preview override active" notice. No Subscribe, trial, Restore purchases or prices.
+
+## Testing both tiers (preview activation)
+
+1. Deploy this API (migration `AddEntitlements` runs in the pre-deploy step).
+2. Find your account ID (it is in the sign-in response's `profile.userId`, or `GET /api/v1/me`).
+3. Set `GOHARD_Plus__PreviewOwnerUserId=<that ID>` on the hosted API (Railway devoted-caring) and redeploy. This is
+   the user's to do; it is a configuration value, not a secret, and no other value changes.
+4. In the app: Me › GoHard Plus shows "Preview controls (owner only)": switch Free / Plus, Reset test allowance.
+   Every other account sees only the comparison and its own allowance, and is Free.
+
+Lowering the limits for a quick test is configuration too (`GOHARD_Plus__FreeMonthlyAi=2`, …); none of it needs a
+code change. Without `PreviewOwnerUserId` nobody can switch and everyone is Free.
+
+## Before real Apple subscriptions
+
+* App Store Connect products and a subscription group; StoreKit 2 in the app (purchase, restore, manage, refund and
+  revocation handling), shown only once they work.
+* Server verification of transactions (App Store Server API / signed JWS) and App Store Server Notifications v2 as a
+  new entitlement **source** in `EntitlementService.ResolveAsync`, with expiry, grace period and billing retry.
+* Final quotas and prices (the CA$6.99/month, CA$49.99/year figures are tentative), localized price display from
+  StoreKit, terms and privacy text, App Review notes, and a decision on whether the preview routes are removed.
+* Move the per-process daily guard and one-at-a-time rule to a shared store before running more than one API instance.

@@ -62,6 +62,9 @@ public class PlusPreviewTests(PostgresFixture pg)
         var resets = allowance.GetProperty("resetsAtUtc").GetDateTime();
         Assert.Equal((1, 0, 0), (resets.Day, resets.Hour, resets.Minute));                    // 00:00 UTC on the 1st
         Assert.Equal(72 * 3600, e.GetProperty("validForSeconds").GetInt32());
+        var compare = e.GetProperty("compare");
+        Assert.Equal((3, 10, 15, 300), (compare.GetProperty("free").GetProperty("savedPlans").GetInt32(), compare.GetProperty("free").GetProperty("savedMeals").GetInt32(),
+            compare.GetProperty("free").GetProperty("monthlyAi").GetInt32(), compare.GetProperty("plus").GetProperty("monthlyAi").GetInt32()));
     }
 
     [Fact]

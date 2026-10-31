@@ -12,6 +12,7 @@ import '../../data/models.dart';
 import '../../data/sync.dart';
 import '../coach/coach_bubble.dart';
 import '../plans/plan_projection.dart';
+import '../plus/entitlement.dart';
 import '../plans/plan_repository.dart';
 import 'progression.dart';
 import 'progression_repository.dart';
@@ -63,9 +64,11 @@ String? _equipment(Ref ref, String? key) {
 }
 
 /// The deterministic result for one exercise of one plan workout, recomputed from the records whenever they change.
+/// A GoHard Plus feature (docs/PLUS_PREVIEW.md): without it there is no suggestion, and Review stays the manual
+/// target editor it always was. Nothing recorded or planned changes either way.
 final progressionProvider = Provider.family<ProgressionResult?, TargetKey>((ref, k) {
   final slot = ref.watch(targetSlotProvider(k));
-  if (slot == null) return null;
+  if (slot == null || !plusFeature(ref.watch(plusProvider), Entitlement.progression)) return null;
   final defs = ref.watch(_definitionsProvider(k.planId));
   return ProgressionRules.evaluate(
     planId: k.planId, definitionId: k.workoutId, rx: slot.exercise, equipment: _equipment(ref, slot.exercise.catalogKey),

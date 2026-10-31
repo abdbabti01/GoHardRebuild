@@ -35,8 +35,11 @@ public sealed record Entitlement(Tier Tier, string Source)
 public sealed record AllowanceDto(int Used, int Limit, int Remaining, DateTime PeriodStartUtc, DateTime ResetsAtUtc, int DailyGuard);
 /// <summary>Product creation limits; null = none (the technical caps still apply).</summary>
 public sealed record PlusLimitsDto(int? SavedPlans, int? SavedMeals);
+/// <summary>What each tier includes, for the comparison: product limits (null = none) and the monthly AI allowance.</summary>
+public sealed record TierDto(int? SavedPlans, int? SavedMeals, int MonthlyAi);
 public sealed record EntitlementDto(string Tier, string Source, bool Preview, bool PurchasesAvailable, PlusLimitsDto Limits,
-    IReadOnlyList<string> Features, AllowanceDto Allowance, bool CanManagePreview, DateTime IssuedAtUtc, int ValidForSeconds);
+    IReadOnlyList<string> Features, AllowanceDto Allowance, bool CanManagePreview, DateTime IssuedAtUtc, int ValidForSeconds,
+    IReadOnlyDictionary<string, TierDto> Compare);
 public sealed record PreviewTierRequest(string? Tier);
 
 /// <summary>
@@ -87,7 +90,10 @@ public sealed class EntitlementService(GoHardDb db, PlusOptions options, CoachOp
         return new(e.IsPlus ? "plus" : "free", e.Source, Preview: true, PurchasesAvailable: false,
             e.IsPlus ? new(null, null) : new(options.FreeSavedPlans, options.FreeSavedMeals),
             e.IsPlus ? [Progression, TrendExplorer] : [], await AllowanceAsync(userId, e, ct), options.Owner == userId,
-            time.GetUtcNow().UtcDateTime, options.CacheHours * 3600);
+            time.GetUtcNow().UtcDateTime, options.CacheHours * 3600, new Dictionary<string, TierDto>
+            {
+                ["free"] = new(options.FreeSavedPlans, options.FreeSavedMeals, options.FreeMonthlyAi), ["plus"] = new(null, null, options.PlusMonthlyAi),
+            });
     }
 
     // ---------------------------------------------------------------- creation limits (inside the command's account lock)

@@ -15,6 +15,8 @@ import '../../data/sync.dart';
 import '../activity/move_widgets.dart' show PersonalBestsCard;
 import '../body/body_screens.dart' show BodyProgressScreen;
 import '../plans/plan_progress.dart' show dateRange;
+import '../plus/entitlement.dart';
+import '../plus/plus_screen.dart' show showPlusFeature;
 import '../shell/home_shell.dart';
 import '../workout/workout_flow.dart';
 import 'goal_repository.dart';
@@ -69,7 +71,7 @@ class ProgressView extends ConsumerWidget {
       const _WeekPanel(),
       between,
       SectionHeader(l.progressStrengthTrends,
-          trailing: index.trends.isEmpty ? null : QuietLink(l.progressSeeAll, key: const Key('trends-see-all'), said: l.progressSeeAllTrendsSemantic, onPressed: () => push(context, const ExerciseListScreen()))),
+          trailing: index.trends.isEmpty ? null : QuietLink(l.progressSeeAll, key: const Key('trends-see-all'), said: l.progressSeeAllTrendsSemantic, onPressed: () => plusFeature(ref.read(plusProvider), Entitlement.trendExplorer) ? push(context, const ExerciseListScreen()) : showPlusFeature(context))),
       gap,
       if (previews.isEmpty)
         // History is offered in every state, including an account with nothing recorded yet.

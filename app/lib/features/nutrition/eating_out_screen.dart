@@ -24,6 +24,7 @@ import 'nutrition_surface.dart' show formatKcal;
 import 'restaurants.dart';
 import 'saved_meals.dart';
 import 'saved_meals_screens.dart';
+import '../plus/plus_screen.dart' show AiAllowanceLine;
 
 /// Eating out (docs/EATING_OUT.md), opened for [dayKey] and [meal] from Eat or Add food. Pops `true` when an order was
 /// logged. Nothing here records food: Review and log opens the saved-meal review, whose Log is the only action that
@@ -253,7 +254,8 @@ class _EatingOutScreenState extends ConsumerState<EatingOutScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: Wrap(alignment: WrapAlignment.end, crossAxisAlignment: WrapCrossAlignment.center, children: [
               StatusLine(Icons.error_outline, _problemText(l, _problem!), key: const Key('eatout-problem'), tone: Tone.warning),
-              if (_problem != AskProblem.limit && _problem != AskProblem.invalid)
+              if (_problem == AskProblem.allowance) const AiAllowanceLine(),
+              if (_problem != AskProblem.limit && _problem != AskProblem.invalid && _problem != AskProblem.allowance)
                 TextButton(key: const Key('eatout-retry'), onPressed: () => _send(catalog, chain, retry: true), child: Text(l.coachAskRetry)),
             ]),
           ),
@@ -351,6 +353,7 @@ class _EatingOutScreenState extends ConsumerState<EatingOutScreen> {
 
   String _problemText(AppLocalizations l, AskProblem p) => switch (p) {
         AskProblem.limit => l.eatOutProblemLimit,
+        AskProblem.allowance => l.plusAiUsed,
         AskProblem.busy => l.eatOutProblemBusy,
         AskProblem.unreached => l.eatOutProblemUnreached,
         AskProblem.invalid => l.eatOutAskInvalid,

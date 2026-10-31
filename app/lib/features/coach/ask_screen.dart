@@ -21,6 +21,7 @@ import 'coach_prefs.dart';
 import 'coach_rig.dart' show RigFrame;
 import 'coach_proposal.dart';
 import 'guide.dart' show loadCoachGuide;
+import '../plus/plus_screen.dart' show AiAllowanceLine;
 
 // ------------------------------------------------------------------ reviewed content (Quick guide, sources)
 
@@ -320,8 +321,9 @@ class _AskScreenState extends ConsumerState<AskScreen> {
                 liveRegion: true,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   StatusLine(Icons.info_outline, _problemText(l, problem ?? AskProblem.unavailable), key: const Key('ask-problem'), tone: Tone.warning),
+                  if (problem == AskProblem.allowance) const AiAllowanceLine(),
                   Wrap(spacing: 8, children: [
-                    if (problem != AskProblem.invalid)
+                    if (problem != AskProblem.invalid && problem != AskProblem.allowance)
                       TextButton(key: const Key('ask-retry'), onPressed: () => _send(p['question'] as String, retry: true), child: Text(l.coachAskRetry)),
                     TextButton(key: const Key('ask-edit'), onPressed: _convo.edit, child: Text(l.coachAskEditQuestion)),
                   ]),
@@ -334,6 +336,7 @@ class _AskScreenState extends ConsumerState<AskScreen> {
 
   static String _problemText(AppLocalizations l, AskProblem p) => switch (p) {
         AskProblem.limit => l.coachAskProblemLimit,
+        AskProblem.allowance => l.plusAiUsed,
         AskProblem.busy => l.coachAskProblemBusy,
         AskProblem.unreached => l.coachAskProblemUnreached,
         AskProblem.invalid => l.coachAskProblemInvalid,

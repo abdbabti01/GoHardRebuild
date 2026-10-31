@@ -356,7 +356,7 @@ void main() {
 
   group('Daily Rhythm type and Appearance', () {
     testWidgets('the serif is for titles and key figures only; controls, rows, fields and the navigation stay in Inter', (tester) async {
-      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, calorieGoal: 2200, proteinGoal: 140)))!, size: const Size(390, 1600));
+      await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _day, calorieGoal: 2200, proteinGoal: 140)))!, size: const Size(390, 1900));
       String? family(Text t) => t.style?.fontFamily;
       // Where the serif must never appear: what is pressed, typed or read as a row.
       final controls = find.byWidgetPredicate((w) => w is ButtonStyleButton || w is GroupRow || w is ListRow || w is TextField || w is InputDecorator || w is Segmented || w is GoNavigationBar || w is ChoiceCard,

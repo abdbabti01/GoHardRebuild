@@ -12775,4 +12775,173 @@ class AppLocalizationsAr extends AppLocalizations {
   String wrGoalUndetermined(int count) {
     return 'أيام لها هدف مسجّل يتعذّر مقارنتها لنقص القيم: $count.';
   }
+
+  @override
+  String get plusTitle => 'GoHard Plus';
+
+  @override
+  String get plusMeSubtitle => 'معاينة: ما تتضمنه الخطة المجانية وPlus';
+
+  @override
+  String get plusTierFree => 'مجاني';
+
+  @override
+  String get plusTierPlus => 'Plus';
+
+  @override
+  String get plusPreviewTitle => 'معاينة GoHard Plus';
+
+  @override
+  String get plusNoPurchases => 'عمليات الشراء غير متاحة بعد.';
+
+  @override
+  String get plusPreviewBody =>
+      'تعرض هذه المعاينة ما يُخطَّط أن يتضمنه GoHard Plus. لا يُباع شيء ولا يُحتسب أي مبلغ، ويعمل تتبّعك بالطريقة نفسها في الحالتين.';
+
+  @override
+  String get plusCurrentFree => 'هذا الحساب على الخطة المجانية.';
+
+  @override
+  String get plusCurrentPlus => 'هذا الحساب على GoHard Plus (معاينة).';
+
+  @override
+  String get plusCoachIntro =>
+      'هذا GoHard Plus، وما زال معاينة. كل ما تتتبّعه يبقى مجانيًا؛ ويضيف Plus مساحة أكبر وقليلًا من التحليل الإضافي. لا يمكن شراء أي شيء بعد.';
+
+  @override
+  String get plusCompareHeader => 'المجانية وPlus';
+
+  @override
+  String get plusRowTracking =>
+      'التمارين والطعام والماء والجري / المشي والتذكيرات والسجل';
+
+  @override
+  String get plusRowReports => 'التقارير الأسبوعية ونظرة عامة على التقدم';
+
+  @override
+  String get plusRowPlans => 'خطط التدريب المحفوظة';
+
+  @override
+  String get plusRowMeals => 'الوجبات والوصفات المحفوظة';
+
+  @override
+  String get plusRowAi => 'مساعدة الذكاء الاصطناعي (الطلبات المُجابة)';
+
+  @override
+  String get plusRowTrends =>
+      'مستكشف اتجاهات التمارين: كل التمارين، كل الفترات';
+
+  @override
+  String get plusRowProgression => 'اقتراحات الهدف التالي';
+
+  @override
+  String get plusIncluded => 'مضمَّن';
+
+  @override
+  String get plusNotIncluded => 'غير مضمَّن';
+
+  @override
+  String get plusNoLimit => 'بلا حد للمنتج';
+
+  @override
+  String plusUpTo(int count) {
+    return 'حتى $count';
+  }
+
+  @override
+  String plusPerMonth(int count) {
+    return '$count شهريًا';
+  }
+
+  @override
+  String plusRowSemantic(String label, String free, String plus) {
+    return '$label. المجانية: $free. Plus: $plus.';
+  }
+
+  @override
+  String get plusAllowanceHeader => 'مساعدة الذكاء الاصطناعي هذا الشهر';
+
+  @override
+  String plusAllowanceUsed(int used, int limit) {
+    return 'استُخدم $used من $limit';
+  }
+
+  @override
+  String plusAllowanceLeft(int remaining, String date) {
+    return 'المتبقي: $remaining · يُعاد الضبط في $date';
+  }
+
+  @override
+  String get plusAllowanceRail => 'طلبات الذكاء الاصطناعي المستخدمة هذا الشهر';
+
+  @override
+  String get plusAllowanceNote =>
+      'لا تُحتسب إلا طلبات الذكاء الاصطناعي المُجابة: «اسأل GoHard»، والمساعدة المكتوبة لليوم، وأفكار الوجبات الجديدة، وتناول الطعام في الخارج بكلماتك. لا تُحتسب الملخصات ولا الإرشادات المدمجة ولا البحث عن الأطعمة ولا التقارير أبدًا. يُعاد الضبط في الساعة 00:00 بالتوقيت العالمي في اليوم الأول من كل شهر.';
+
+  @override
+  String get plusOwnerHeader => 'عناصر تحكم المعاينة (للمالك فقط)';
+
+  @override
+  String get plusOwnerTier => 'الخطة المراد اختبارها على هذا الحساب';
+
+  @override
+  String get plusOwnerReset => 'إعادة ضبط حصة الاختبار';
+
+  @override
+  String get plusOwnerResetDone => 'أُعيد ضبط حصة الاختبار.';
+
+  @override
+  String get plusOwnerFailed => 'لم يتم ذلك. لم يتغيّر شيء.';
+
+  @override
+  String get plusOverrideActive =>
+      'تجاوز المعاينة مفعَّل: هذا الحساب على Plus للاختبار.';
+
+  @override
+  String get plusUnknown =>
+      'تعذّر تأكيد وصولك إلى GoHard Plus الآن. سجلاتك وتتبّعك وعناصرك المحفوظة لم تتأثر.';
+
+  @override
+  String get plusUnknownCreate =>
+      'تعذّر تأكيد وصولك إلى GoHard Plus الآن، لذا لا يمكن إضافة هذا بعد. مسودتك محفوظة؛ حاول مجددًا عند الاتصال.';
+
+  @override
+  String get plusLimitPlansTitle => 'حد الخطط المحفوظة';
+
+  @override
+  String plusLimitPlansBody(int limit, int existing) {
+    return 'تتضمن الخطة المجانية حتى $limit من الخطط المحفوظة، ولديك $existing. تبقى كلها قابلة للاستخدام، ومسودتك محفوظة. أرشِف خطة لم تعد تحتاجها، أو اطّلع على ما يتضمنه GoHard Plus.';
+  }
+
+  @override
+  String get plusLimitMealsTitle => 'حد الوجبات والوصفات المحفوظة';
+
+  @override
+  String plusLimitMealsBody(int limit, int existing) {
+    return 'تتضمن الخطة المجانية حتى $limit من الوجبات والوصفات المحفوظة معًا، ولديك $existing. تبقى كلها قابلة للاستخدام، وما أدخلته هنا محفوظ. احذف واحدة لم تعد تستخدمها، أو اطّلع على ما يتضمنه GoHard Plus.';
+  }
+
+  @override
+  String get plusViewPlus => 'عرض Plus';
+
+  @override
+  String get plusFeatureTrendsTitle => 'استكشاف كل التمارين';
+
+  @override
+  String get plusFeatureTrendsBody =>
+      'البحث في كل تمارينك المسجلة وسجلها الكامل جزء من GoHard Plus. تبقى نظرة التقدم العامة واتجاهاتها وكل سجل تمرين مجانية.';
+
+  @override
+  String get plusAiUsed =>
+      'لقد استخدمت حصتك من الذكاء الاصطناعي لهذا الشهر. لا يزال تتبّعك ووجباتك المحفوظة والإرشادات المدمجة تعمل.';
+
+  @override
+  String plusAiResets(String date) {
+    return 'يُعاد الضبط في $date.';
+  }
+
+  @override
+  String plusAiLeftLine(int remaining, int limit, String date) {
+    return 'الذكاء الاصطناعي هذا الشهر: تبقّى $remaining من $limit · يُعاد الضبط في $date';
+  }
 }

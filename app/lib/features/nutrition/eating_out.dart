@@ -10,8 +10,9 @@ import '../../core/compatibility.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../data/sync.dart';
-import '../coach/coach_client.dart' show AskFailure, AskProblem, askLanguage;
+import '../coach/coach_client.dart' show AskFailure, AskProblem, askLanguage, limitProblem;
 import 'restaurants.dart';
+import '../plus/entitlement.dart' show entitlementProvider;
 
 /// Eating out's state on the phone (docs/EATING_OUT.md): which catalog is in use, the order being built, and asking
 /// Leon or Leona in words. Browsing, building and suggestions are worked out here with no connection; only Send asks
@@ -165,8 +166,9 @@ Json interpretRequest({required String requestId, required RestaurantCatalog cat
 
 /// `POST /restaurants/interpret` through the signed-in owner's [Api]: a read, never a queued command.
 class EatingOutClient {
-  EatingOutClient(this._api);
+  EatingOutClient(this._api, {this.onCharged});
   final Api _api;
+  final void Function()? onCharged;
   static const timeout = Duration(seconds: 25);
 
   Future<Json> interpret(Json request) async {
@@ -180,12 +182,16 @@ class EatingOutClient {
     }
     final d = r.data;
     if (r.status == 409) throw const CatalogMismatch();
-    if (r.status == 429) throw const AskFailure(AskProblem.limit);
+    if (r.status == 429) {
+      onCharged?.call();
+      throw AskFailure(limitProblem(d));
+    }
     if (r.status == 400) throw const AskFailure(AskProblem.invalid);
     if (r.status == 503 && d is Map && d['code'] == 'COACH_BUSY') throw const AskFailure(AskProblem.busy);
     if (!r.ok || d is! Map) throw const AskFailure(AskProblem.unavailable);
+    onCharged?.call();
     return Map<String, dynamic>.from(d);
   }
 }
 
-final eatingOutClientProvider = Provider((ref) => EatingOutClient(ref.watch(apiProvider)));
+final eatingOutClientProvider = Provider((ref) => EatingOutClient(ref.watch(apiProvider), onCharged: () => ref.read(entitlementProvider.notifier).refresh()));

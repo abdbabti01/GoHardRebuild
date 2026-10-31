@@ -12,6 +12,7 @@ import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
 import 'package:gohard_rebuild/features/plans/plan_rules.dart';
+import 'package:gohard_rebuild/features/plus/entitlement.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 import 'package:gohard_rebuild/features/workout/progression.dart';
 import 'package:gohard_rebuild/features/workout/workout_runtime.dart';
@@ -56,6 +57,7 @@ void main() {
         ...(await tester.runAsync(() => overridesFor(day: _today, primaryPlanId: _pid, profile: {'loadUnit': 'lb'}, liveWorkouts: true, livePlans: true)))!,
         dbProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(clock),
+        plusProvider.overrideWithValue(plusPreview), // next-target suggestions are a GoHard Plus feature (docs/PLUS_PREVIEW.md)
         syncProvider.overrideWith((ref) {
           final engine = SyncEngine(db, Api(FakeServer()..offline = true, ref.watch(sessionsProvider)), ref.watch(sessionsProvider))..isBlocked = () => true;
           ref.onDispose(engine.dispose);

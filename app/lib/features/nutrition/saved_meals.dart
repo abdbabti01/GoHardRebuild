@@ -4,6 +4,7 @@ import '../../core/units.dart' show formatNumber2;
 import '../../data/db.dart' show Cmd;
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../plus/entitlement.dart' show CreateGate;
 import 'food_item.dart';
 import 'food_repository.dart';
 import 'nutrient_coverage.dart';
@@ -230,10 +231,20 @@ abstract final class MealMath {
 }
 
 /// Saved meals and recipes through the same local-first outbox as everything else. Nothing here logs food.
+/// Saving one more saved meal or recipe is over this account's limit (docs/PLUS_PREVIEW.md); nothing was written.
+class MealLimitReached implements Exception {
+  const MealLimitReached(this.gate, this.existing);
+  final CreateGate gate;
+  final int existing;
+}
+
 class SavedMealRepository {
-  SavedMealRepository(this._sync, this._owner);
+  SavedMealRepository(this._sync, this._owner, {this.mayCreate});
   final SyncEngine _sync;
   final String _owner;
+
+  /// Asked before a new definition is saved (never for an edit, a log or a deletion): ok, over the limit, or unknown.
+  final (CreateGate, int) Function()? mayCreate;
 
   static const capability = 'food.saved-meals', maxComponents = 30;
 
@@ -269,6 +280,10 @@ class SavedMealRepository {
   /// Saves [body] as the definition [id] (a new one when null: Save as new). Returns its ID.
   Future<String> put(MealBody body, {String? id}) async {
     validate(body);
+    if (id == null && mayCreate != null) {
+      final (gate, existing) = mayCreate!();
+      if (gate != CreateGate.ok) throw MealLimitReached(gate, existing);
+    }
     final key = id ?? SyncEngine.newId();
     final wire = _wire(body);
     await _sync.submit(_owner, kind: 'savedmeal.put', method: 'PUT', path: '/saved-meals/$key', targetKind: Kinds.savedMeal, targetId: key,

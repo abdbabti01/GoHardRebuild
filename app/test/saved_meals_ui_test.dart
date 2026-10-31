@@ -22,6 +22,7 @@ import 'package:gohard_rebuild/features/shell/home_shell.dart';
 import 'food_fakes.dart';
 import 'saved_meals_test.dart' show breakfast, chili;
 import 'ui_support.dart';
+import 'package:gohard_rebuild/features/plus/entitlement.dart' show CreateGate;
 
 /// The saved meals & recipes screens with recorded collaborators: what each action asks for, and what it never does.
 /// With `--dart-define=GOHARD_RENDER=true` (and GOHARD_RENDER_LANG=fr|ar) the last group also writes renders of the
@@ -33,6 +34,8 @@ const _render = bool.fromEnvironment('GOHARD_RENDER');
 const _out = renderLanguage == '' ? '../docs/evidence/saved-meals' : '../docs/evidence/localization/$renderLanguage/saved-meals';
 
 class RecordingMeals implements SavedMealRepository {
+  @override
+  (CreateGate, int) Function()? get mayCreate => null;
   final puts = <({MealBody body, String? id})>[];
   final removed = <SavedMeal>[];
   @override

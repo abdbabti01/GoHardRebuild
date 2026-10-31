@@ -9,6 +9,7 @@ Internal QA preparation only. Nothing here deploys, publishes to a store, or tou
 | `20261011011030_Initial` | users, refresh tokens, operations, training contexts, plans, occasions, workouts, exercises, sets, food entries, exercise catalog |
 | `20261011011041_AddActivitiesAndProposals` | runs, body metrics, proposals (additive only) |
 | `20261020200446_AddExerciseIncrements` | new table `ExerciseIncrements` (owner + exercise key, nullable `IncrementKg` numeric(9,5), revision), cascade-deleted with the account; additive only (docs/PROGRESSION.md) |
+| `20261031070038_AddEntitlements` | new tables `PreviewOverrides` (owner preview tier, test-allowance reset) and `AiUsage` (one row per provider-backed AI request that reached the provider; partial unique index on `(UserId, Scope, RequestId) WHERE Counted`), both cascade-deleted with the account; additive only (docs/PLUS_PREVIEW.md). Rollback: the previous build ignores both tables |
 | `20261012172306_AddFoodDiscoveryAndGoals` | `Users.CalorieGoal`, `Users.ProteinGoalG` (nullable), `FoodEntries.SourceJson` (nullable jsonb), new table `SavedFoods` (additive only; no existing row is rewritten) |
 
 - Apply: `dotnet run --project api\src\GoHard.Api -- migrate` (what `scripts\setup.ps1` does). It prints the readiness

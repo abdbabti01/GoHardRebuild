@@ -26,6 +26,7 @@ import '../features/nutrition/nutrient_coverage.dart';
 import '../features/nutrition/water.dart';
 import '../features/plans/plan_draft.dart';
 import '../features/plans/plan_repository.dart';
+import '../features/plus/entitlement.dart';
 import '../features/progress/goal_repository.dart';
 import '../features/progress/trends.dart';
 import '../features/today/daily.dart';
@@ -229,7 +230,10 @@ final planRepositoryProvider = Provider((ref) => _owned(ref, PlanRepository.new)
 final foodRepositoryProvider = Provider((ref) => _owned(ref, FoodRepository.new));
 final waterRepositoryProvider = Provider((ref) => _owned(ref, WaterRepository.new));
 final savedFoodRepositoryProvider = Provider((ref) => _owned(ref, SavedFoodRepository.new));
-final savedMealRepositoryProvider = Provider((ref) => _owned(ref, SavedMealRepository.new));
+final savedMealRepositoryProvider = Provider((ref) => _owned(ref, (s, o) => SavedMealRepository(s, o, mayCreate: () {
+      final existing = (ref.read(savedMealsProvider).value ?? const <Stored<SavedMeal>>[]).where((m) => !m.value.isDeleted).length;
+      return (mealGate(ref.read(plusProvider), existing), existing);
+    })));
 /// Whether saved meals and recipes reach the account: false only once its server has said it has none (unknown is not
 /// "unsupported", so an account known to work keeps working offline).
 final savedMealsSupportedProvider = Provider<bool>((ref) => ref.watch(compatibilityProvider).supports(SavedMealRepository.capability));

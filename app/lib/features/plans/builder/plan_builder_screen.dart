@@ -12,6 +12,8 @@ import '../../coach/coach_bubble.dart';
 import '../../coach/guide.dart';
 import '../../coach/guide_sheets.dart';
 import '../../coach/coach_contract.dart';
+import '../../plus/entitlement.dart';
+import '../../plus/plus_screen.dart';
 import '../../shell/home_shell.dart';
 import '../plan_actions.dart' show runPlanDecision;
 import '../plan_draft.dart';
@@ -323,6 +325,12 @@ class _PlanBuilderState extends ConsumerState<PlanBuilder> {
   }
 
   Future<void> _activate() async {
+    // A new or duplicated plan is a new saved definition (docs/PLUS_PREVIEW.md). Over the limit the draft stays here.
+    final plans = ref.read(planListProvider);
+    if (widget.editing == null && !plans.any((p) => p.id == draft.planId)) {
+      final gate = planGate(ref.read(plusProvider), plans);
+      if (gate != CreateGate.ok) return showPlusLimit(context, PlusLimit.plans, gate: gate, existing: plans.where((p) => !p.isArchived).length);
+    }
     final primary = ref.read(primaryPlanProvider);
     final replaces = primary != null && primary.id != draft.planId ? primary : null;
     final l = context.l10n;

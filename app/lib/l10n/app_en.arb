@@ -17309,5 +17309,262 @@
         "type": "int"
       }
     }
+  },
+  "plusTitle": "GoHard Plus",
+  "@plusTitle": {
+    "description": "Me row and page title of the GoHard Plus preview. A brand name: same in every language."
+  },
+  "plusMeSubtitle": "Preview: what Free and Plus include",
+  "@plusMeSubtitle": {
+    "description": "Me › GoHard Plus row subtitle."
+  },
+  "plusTierFree": "Free",
+  "@plusTierFree": {
+    "description": "The Free tier, as a short value."
+  },
+  "plusTierPlus": "Plus",
+  "@plusTierPlus": {
+    "description": "The Plus tier, as a short value. A brand word: same in every language."
+  },
+  "plusPreviewTitle": "GoHard Plus preview",
+  "@plusPreviewTitle": {
+    "description": "Heading of the preview panel."
+  },
+  "plusNoPurchases": "Purchases aren’t available yet.",
+  "@plusNoPurchases": {
+    "description": "Shown on the Plus page: no billing exists."
+  },
+  "plusPreviewBody": "This preview shows what GoHard Plus is planned to include. Nothing is sold or charged, and your tracking works the same either way.",
+  "@plusPreviewBody": {
+    "description": "What the preview page is."
+  },
+  "plusCurrentFree": "This account is on Free.",
+  "@plusCurrentFree": {
+    "description": "Which tier this account is on: Free."
+  },
+  "plusCurrentPlus": "This account is on GoHard Plus (preview).",
+  "@plusCurrentPlus": {
+    "description": "Which tier this account is on: Plus through the preview."
+  },
+  "plusCoachIntro": "This is GoHard Plus, still a preview. Everything you track stays free; Plus adds room and a little extra analysis. Nothing can be bought yet.",
+  "@plusCoachIntro": {
+    "description": "Leon/Leona introduce the Plus page once."
+  },
+  "plusCompareHeader": "Free and Plus",
+  "@plusCompareHeader": {
+    "description": "Section header of the Free/Plus comparison."
+  },
+  "plusRowTracking": "Workouts, food, water, Run / Walk, reminders and history",
+  "@plusRowTracking": {
+    "description": "Comparison row label."
+  },
+  "plusRowReports": "Weekly reports and the progress overview",
+  "@plusRowReports": {
+    "description": "Comparison row label."
+  },
+  "plusRowPlans": "Saved training plans",
+  "@plusRowPlans": {
+    "description": "Comparison row label."
+  },
+  "plusRowMeals": "Saved meals and recipes",
+  "@plusRowMeals": {
+    "description": "Comparison row label."
+  },
+  "plusRowAi": "AI assistance (answered requests)",
+  "@plusRowAi": {
+    "description": "Comparison row label: provider-backed AI requests."
+  },
+  "plusRowTrends": "Exercise-trend explorer: every exercise, all time",
+  "@plusRowTrends": {
+    "description": "Comparison row label."
+  },
+  "plusRowProgression": "Next-target suggestions",
+  "@plusRowProgression": {
+    "description": "Comparison row label."
+  },
+  "plusIncluded": "Included",
+  "@plusIncluded": {
+    "description": "Comparison value."
+  },
+  "plusNotIncluded": "Not included",
+  "@plusNotIncluded": {
+    "description": "Comparison value."
+  },
+  "plusNoLimit": "No product limit",
+  "@plusNoLimit": {
+    "description": "Comparison value: no product limit (technical limits remain)."
+  },
+  "plusUpTo": "Up to {count}",
+  "@plusUpTo": {
+    "description": "Comparison value: a creation limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plusPerMonth": "{count} a month",
+  "@plusPerMonth": {
+    "description": "Comparison value: requests a month.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plusRowSemantic": "{label}. Free: {free}. Plus: {plus}.",
+  "@plusRowSemantic": {
+    "description": "Screen reader: one comparison row.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "plus": {
+        "type": "String"
+      }
+    }
+  },
+  "plusAllowanceHeader": "AI assistance this month",
+  "@plusAllowanceHeader": {
+    "description": "Section header for this month’s AI allowance."
+  },
+  "plusAllowanceUsed": "{used} of {limit} used",
+  "@plusAllowanceUsed": {
+    "description": "Allowance used.",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "plusAllowanceLeft": "Left: {remaining} · Resets {date}",
+  "@plusAllowanceLeft": {
+    "description": "Allowance left and its reset date.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "plusAllowanceRail": "AI requests used this month",
+  "@plusAllowanceRail": {
+    "description": "Screen reader label of the allowance bar."
+  },
+  "plusAllowanceNote": "Only answered AI requests count: Ask GoHard, typed help with today, new meal ideas and Eating out in your own words. Briefings, built-in guidance, food search and reports never count. It resets at 00:00 UTC on the 1st of each month.",
+  "@plusAllowanceNote": {
+    "description": "What counts toward the allowance and when it resets."
+  },
+  "plusOwnerHeader": "Preview controls (owner only)",
+  "@plusOwnerHeader": {
+    "description": "Owner-only preview controls header."
+  },
+  "plusOwnerTier": "Tier to test on this account",
+  "@plusOwnerTier": {
+    "description": "Owner control: which tier to test."
+  },
+  "plusOwnerReset": "Reset test allowance",
+  "@plusOwnerReset": {
+    "description": "Owner action: reset the test allowance."
+  },
+  "plusOwnerResetDone": "Test allowance reset.",
+  "@plusOwnerResetDone": {
+    "description": "Toast after the owner reset."
+  },
+  "plusOwnerFailed": "That didn’t go through. Nothing changed.",
+  "@plusOwnerFailed": {
+    "description": "Toast when an owner action did not reach the account."
+  },
+  "plusOverrideActive": "Preview override active: this account is on Plus for testing.",
+  "@plusOverrideActive": {
+    "description": "Notice while the owner override is on."
+  },
+  "plusUnknown": "We couldn’t confirm your GoHard Plus access right now. Your records, tracking and saved items are unaffected.",
+  "@plusUnknown": {
+    "description": "The entitlement is not known (no answer, expired)."
+  },
+  "plusUnknownCreate": "We couldn’t confirm your GoHard Plus access right now, so this can’t be added yet. Your draft is kept; try again once you’re connected.",
+  "@plusUnknownCreate": {
+    "description": "Creating past the smallest Free limit while the entitlement is unknown."
+  },
+  "plusLimitPlansTitle": "Saved plan limit",
+  "@plusLimitPlansTitle": {
+    "description": "Limit sheet title: saved plans."
+  },
+  "plusLimitPlansBody": "Free includes up to {limit} saved plans, and you have {existing}. They all stay usable, and your draft is kept. Archive a plan you no longer need, or see what GoHard Plus includes.",
+  "@plusLimitPlansBody": {
+    "description": "Limit sheet body: saved plans.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      },
+      "existing": {
+        "type": "int"
+      }
+    }
+  },
+  "plusLimitMealsTitle": "Saved meals and recipes limit",
+  "@plusLimitMealsTitle": {
+    "description": "Limit sheet title: saved meals and recipes."
+  },
+  "plusLimitMealsBody": "Free includes up to {limit} saved meals and recipes together, and you have {existing}. They all stay usable, and what you entered here is kept. Delete one you no longer use, or see what GoHard Plus includes.",
+  "@plusLimitMealsBody": {
+    "description": "Limit sheet body: saved meals and recipes.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      },
+      "existing": {
+        "type": "int"
+      }
+    }
+  },
+  "plusViewPlus": "View Plus",
+  "@plusViewPlus": {
+    "description": "Button: open the Plus page."
+  },
+  "plusFeatureTrendsTitle": "Explore every exercise",
+  "@plusFeatureTrendsTitle": {
+    "description": "Feature sheet title: the trend explorer."
+  },
+  "plusFeatureTrendsBody": "Searching all your recorded exercises and their whole history is part of GoHard Plus. Your progress overview, its trends and every workout record stay free.",
+  "@plusFeatureTrendsBody": {
+    "description": "Feature sheet body: the trend explorer."
+  },
+  "plusAiUsed": "You’ve used your AI allowance for this month. Your tracking, saved meals and built-in guidance still work.",
+  "@plusAiUsed": {
+    "description": "Shown when this month’s AI allowance is used up."
+  },
+  "plusAiResets": "It resets on {date}.",
+  "@plusAiResets": {
+    "description": "Next to the allowance message: when it resets.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "plusAiLeftLine": "AI this month: {remaining} of {limit} left · resets {date}",
+  "@plusAiLeftLine": {
+    "description": "Small line near an AI composer.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }
