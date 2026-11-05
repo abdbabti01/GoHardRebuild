@@ -137,6 +137,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
         {
             e.Property(x => x.Purpose).HasMaxLength(32);
             e.Property(x => x.EmailKey).HasMaxLength(64);
+            e.Property(x => x.CodeDigits).HasDefaultValue(8);
             e.HasIndex(x => x.GrantHash).IsUnique();
         });
         Owned<MailMessage>(b, x => x.UserId).HasIndex(x => new { x.State, x.NextAttemptAtUtc });

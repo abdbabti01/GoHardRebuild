@@ -3098,6 +3098,6 @@
   "workoutTodayScopeAim": "Garder cet objectif le laisse à l’écran pour cet exercice; rien n’est rempli ni enregistré. Modifier les objectifs futurs change ton programme à partir de ta prochaine séance.",
   "workoutTodayScopeAimNoPlan": "Garder cet objectif le laisse à l’écran pour cet exercice; rien n’est rempli ni enregistré.",
   "workoutTodayScopeEdit": "Modifier les objectifs futurs change ton programme à partir de ta prochaine séance.",
-  "codeFieldLabelShort": "Code à 4 chiffres",
-  "accountErrorCodeIncompleteShort": "Entre les 4 chiffres du code."
+  "codeFieldLabelShort": "Code de vérification",
+  "accountErrorCodeIncompleteShort": "Entre le code du courriel : 4 chiffres, ou 8 si ton courriel en affiche 8."
 }

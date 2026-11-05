@@ -138,6 +138,7 @@ void main() {
     expect(normalizeCode('\u20660123-4567\u2069'), '01234567', reason: 'isolates and a dash from the Arabic email');
     expect(normalizeCode('رمز التحقق: ٠٠٤٢'), '0042', reason: 'a 4-digit code keeps its leading zeros');
     expect((verifyCodeDigits, resetCodeDigits), (4, 8));
+    expect([for (final c in ['0123', '01234567', '012', '012345', '012345678']) verificationCodeComplete(c)], [true, true, false, false, false]);
     expect(checkNewPassword('seven77', 'seven77'), AuthError.weakPassword);
     expect(checkNewPassword('eight888', 'eight888'), isNull, reason: '8 characters is enough');
     expect(checkNewPassword('a long enough phrase', 'a long enough phrase!'), AuthError.passwordMismatch);
@@ -257,19 +258,26 @@ void main() {
     expect(tester.widget<PrimaryButton>(find.byKey(const Key('change-password-submit'))).onPressed, isNull);
   });
 
-  testWidgets('verify email: a 4-digit field (paste, Arabic digits, autofill, leading zero), incomplete said so, then done', (tester) async {
+  testWidgets('verify email: asks for a 4-digit code; the field takes 4 or 8 digits (paste, Arabic digits, autofill, leading zero) and cuts nothing', (tester) async {
     final (_, server) = await _open(tester, home: const VerifyEmailScreen(), signedIn: true, profile: {'emailVerified': false});
     expect(find.textContaining('4-digit code'), findsWidgets);
     await _tap(tester, 'verify-send');
+    expect(server.calls.last.data, {'language': 'en', 'codeDigits': 4}, reason: 'this app opts into 4 digits');
     final field = tester.widget<TextField>(find.byKey(const Key('code-field')));
     expect((field.textDirection, field.keyboardType), (TextDirection.ltr, TextInputType.number));
     expect(field.autofillHints, [AutofillHints.oneTimeCode]);
     await _type(tester, 'code-field', '012');
     await _tap(tester, 'verify-confirm');
-    expect(find.text('Enter all 4 digits of the code.'), findsOneWidget);
+    expect(find.text('Enter the code from the email: 4 digits, or 8 if your email shows 8.'), findsOneWidget);
     expect(server.calls.map((c) => c.path), isNot(contains('/account/email-verification/confirm')), reason: 'checked before asking the server');
+    // A pasted 8-digit code (issued before 4-digit codes) is kept whole and sent as it is, never cut to 4.
+    await _type(tester, 'code-field', 'Code: 8765 4321');
+    expect(field.controller!.text, '87654321');
+    await _tap(tester, 'verify-confirm');
+    expect(server.calls.last.data, {'code': '87654321'});
+    expect(find.textContaining("That code isn't right"), findsOneWidget, reason: 'the server decides; this fixture expects 0123');
     await _type(tester, 'code-field', 'Your GoHard code: ٠١٢٣ thanks');
-    expect(field.controller!.text, '0123', reason: 'pasted with words, Arabic digits, cut to 4');
+    expect(field.controller!.text, '0123', reason: 'pasted with words and Arabic digits');
     await _tap(tester, 'verify-confirm');
     expect(server.calls.last.path, '/account/email-verification/confirm');
     expect(server.calls.last.data, {'code': '0123'});
@@ -303,13 +311,14 @@ void main() {
   });
 
   testWidgets('without a sender, creating an account says why and that nothing was created', (tester) async {
-    final (container, _) = await _open(tester, server: _Accounts()..noSender = true);
+    final (container, server) = await _open(tester, server: _Accounts()..noSender = true);
     await _tap(tester, 'auth-toggle');
     await _type(tester, 'auth-name', 'New');
     await _type(tester, 'auth-email', 'new@example.test');
     await _type(tester, 'auth-password', 'a long enough passphrase');
     await _tap(tester, 'auth-submit');
     expect(find.textContaining("New accounts can't be created right now"), findsOneWidget);
+    expect((server.calls.lastWhere((c) => c.path == '/auth/register').data as Map)['verificationCodeDigits'], 4, reason: 'signup opts into a 4-digit code');
     expect(container.read(sessionsProvider).current, isNull);
   });
 

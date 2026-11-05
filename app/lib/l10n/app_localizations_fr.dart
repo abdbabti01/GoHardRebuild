@@ -12852,10 +12852,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Modifier les objectifs futurs change ton programme à partir de ta prochaine séance.';
 
   @override
-  String get codeFieldLabelShort => 'Code à 4 chiffres';
+  String get codeFieldLabelShort => 'Code de vérification';
 
   @override
-  String get accountErrorCodeIncompleteShort => 'Entre les 4 chiffres du code.';
+  String get accountErrorCodeIncompleteShort =>
+      'Entre le code du courriel : 4 chiffres, ou 8 si ton courriel en affiche 8.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

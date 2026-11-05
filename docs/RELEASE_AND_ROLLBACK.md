@@ -149,19 +149,19 @@ no secrets; the API address is the only build-time setting.
 
 - **What:** Save plan apart from activation and the Train › Plan library (docs/PLAN_LIBRARY_OVERLOAD.md); Free saved
   plans 3 → 1 and un-archiving limited like creating; Suggested today in the recorder (Plus); new passwords need 8
-  characters (was 15); email-verification codes are 4 digits with per-address daily caps (password-reset codes stay 8)
-  (docs/AUTHENTICATION_EMAIL.md › 11).
-- **No migration, no new capability, contract unchanged.** Configuration defaults change in code:
+  characters (was 15); email verification sends 4-digit codes to apps that ask (IPA 68) and 8 digits otherwise, with
+  per-address daily caps; password-reset codes stay 8 (docs/AUTHENTICATION_EMAIL.md › 11).
+- **One additive migration** (`AddChallengeCodeDigits`: `AuthChallenges.CodeDigits`, default 8) → 16 migrations. No
+  new capability, contract unchanged, no minimum-version change. Configuration defaults change in code:
   `Plus:FreeSavedPlans` 1, `Email:VerifyMaxAttemptsPerDay` 10, `Email:VerifyMaxSendsPerDay` 10. If Railway sets
   `GOHARD_Plus__FreeSavedPlans`, that value wins.
-- **Build:** code 1cf4013, CI 41245723498 passed, unsigned IPA run 67 (artifact GoHard-Dev-unsigned-ipa).
-- **Deploy order:** install the new IPA (67) first (older builds cannot type a 4-digit code); then merge. Verification emails
-  sent before the deploy (8 digits) keep working until they expire (10 minutes).
+- **Deploy order:** any. Older builds still get and enter 8-digit codes; an 8-digit code issued before the deploy still
+  works in IPA 68. Cross-device: a 4-digit code cannot be typed into an older build; resend from that build for 8 digits.
 - **Effect on existing accounts:** Free accounts with more than one plan keep every plan usable; only creating another is
   explained. Existing passwords keep signing in.
-- **Rollback:** redeploy `main` 5441d2a. A 4-digit code sent by this build is not accepted by the older server (it
-  expects 8 digits): ask for a new code after a rollback. Passwords of 8–14 characters set meanwhile keep signing in on
-  the older server (it checks length only for new passwords).
+- **Rollback:** redeploy `main` 5441d2a (the extra column is ignored by it). A 4-digit code sent by this build is
+  refused by the older server: ask for a new code. Passwords of 8–14 characters set meanwhile keep signing in on the
+  older server (it checks length only for new passwords).
 
 ### GoHard Free and Plus preview — deployed 31 Oct 2026 (`main` d31a29c)
 

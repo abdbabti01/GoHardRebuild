@@ -17847,12 +17847,12 @@
   "@workoutTodayScopeEdit": {
     "description": "Under a suggestion that only offers the increment editor: what Edit future targets changes."
   },
-  "codeFieldLabelShort": "4-digit code",
+  "codeFieldLabelShort": "Verification code",
   "@codeFieldLabelShort": {
-    "description": "Label of the 4-digit email verification code field."
+    "description": "Label of the email verification code field (4 or 8 digits)."
   },
-  "accountErrorCodeIncompleteShort": "Enter all 4 digits of the code.",
+  "accountErrorCodeIncompleteShort": "Enter the code from the email: 4 digits, or 8 if your email shows 8.",
   "@accountErrorCodeIncompleteShort": {
-    "description": "A 4-digit verification code was not typed in full."
+    "description": "A verification code that is neither 4 nor 8 digits."
   }
 }

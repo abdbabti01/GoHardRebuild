@@ -2661,3 +2661,15 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `l10n_me_test`, `localization_test`: 33 passed. `flutter analyze` clean; `check-l10n` OK (3,100).
 - **Deploy note:** older app builds cannot type a 4-digit code; install the new IPA first. Not merged, not deployed.
 - Code 1cf4013: CI 41245723498 passed; replacement unsigned IPA run 67 (41246802931, 1cf4013) passed.
+
+### 5 Nov 2026 — verification code length chosen by the requesting app (before any deploy)
+
+- Pre-merge check found two gaps in 1cf4013: older builds could not enter a 4-digit code (no update prompt either), and
+  IPA 67 cut a pasted 8-digit code to its first 4 digits. Fixed without a minimum-version change: signup
+  (`verificationCodeDigits`) and resend (`codeDigits`) opt into 4 digits; no opt-in = 8; each challenge stores its length
+  (additive migration `AddChallengeCodeDigits`, default 8) and needs exactly that many digits; a live code is re-sent
+  only in the asked length. The app opts in and its verification field takes 4 or 8 digits without cutting. Reset stays 8.
+- Tests: API auth suites 38 passed (new flow test: older app 8/8 and last-4 refused, new app 4/4 single use, pre-deploy
+  8-digit code, cross-device resend to 8 voiding the 4, reset always 8, no code in logs). App `account_security_test`,
+  `verification_gate_test`, `l10n_me_test`, `localization_test`: 33 passed. `flutter analyze` clean; `check-l10n` OK.
+- Not merged, not deployed.

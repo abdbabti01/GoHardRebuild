@@ -109,7 +109,9 @@ class AuthRepository {
   /// Without a sender the server creates no account (it could never be verified): said as such, not as "recovery".
   Future<void> register(String email, String password, String displayName, {void Function(String ownerId)? onCreated}) async {
     try {
-      await _enter('/auth/register', {'email': email.trim(), 'password': password, 'displayName': displayName.trim(), 'language': mailLanguage}, onCreated);
+      await _enter('/auth/register', {'email': email.trim(), 'password': password, 'displayName': displayName.trim(), 'language': mailLanguage,
+        // This app can enter a 4-digit verification code; a server before them ignores the field (docs/AUTHENTICATION_EMAIL.md › 11).
+        'verificationCodeDigits': 4}, onCreated);
     } on AuthFailure catch (e) {
       throw e.code == AuthError.emailUnavailable ? const AuthFailure.of(AuthError.registrationUnavailable) : e;
     }
@@ -175,7 +177,7 @@ class AuthRepository {
 
   /// Sends (or re-sends) the verification code. Returns the cooldown; 0 when the address turned out to be verified already.
   Future<int> requestVerification() async {
-    final r = await _call('/account/email-verification/request', {'language': mailLanguage}, auth: true);
+    final r = await _call('/account/email-verification/request', {'language': mailLanguage, 'codeDigits': 4}, auth: true);
     if (r.status == 409) {
       await _sync.pull();
       return 0;

@@ -288,35 +288,45 @@ resumes it. No answer never changes the record. Local dev: `scripts\start-api.ps
 error, in English, French and Arabic. Existing passwords are untouched and keep signing in. Below NIST/OWASP's 15 for a
 single-factor password: consider a breached-password check before a public launch.
 
-**Email verification codes: 4 digits.** Password-reset codes stay 8 digits. A 4-digit code is the same HMAC of the
-challenge's random ID, mod 10^4: uniform over 0000–9999, leading zeros kept, never stored, never logged (the worker logs
-message id, kind and outcome only; a test checks the code is absent from every log line). Still single use and
-10 minutes. Because only 10,000 values exist, guessing is bounded per address, not just per code:
+**Email verification codes: 4 digits for apps that ask, 8 otherwise.** Revised 5 Nov 2026 (the first version cut every
+verification code to 4 digits, which older builds could not enter). The requesting app says which format it can enter:
+`POST /auth/register` with `verificationCodeDigits: 4` (the code sent right after signup) and
+`POST /account/email-verification/request` with `codeDigits: 4` (resend). Anything else, including no field from an
+older app, gets **8 digits**. The server does not need to know which app will read the email, only which format the
+requesting app supports. Password-reset codes are always 8 digits; a reset request's `codeDigits` is ignored.
 
-| Bound | Value | Where |
+Each challenge stores its length (`AuthChallenges.CodeDigits`, migration `AddChallengeCodeDigits`, additive, default 8,
+so every challenge from before has 8). The email carries the challenge's own length; a code is accepted only in exactly
+that length: an 8-digit challenge needs all 8 digits (its last 4 are refused). A live code is re-sent only when its
+length matches the request; otherwise a new code of the asked length replaces it (the previous one is voided). Codes are
+the same HMAC of the challenge's random ID mod 10^4 or 10^8: uniform, leading zeros kept, never stored, never logged (a
+test checks every code is absent from every log line). Still single use and 10 minutes.
+
+| Bound (verification, either length) | Value | Where |
 |---|---|---|
 | Wrong guesses per code | 5 (then the code is locked) | conditional update, atomic |
 | Guesses per address, all its verification codes, rolling 24 h | 10, then `TOO_MANY_ATTEMPTS` even for a right code | counted under an advisory lock, so parallel guesses cannot pass it |
 | New codes once the day's guesses are used up | none (`EMAIL_COOLDOWN` with the wait) | so a resend never buys more guesses |
-| Verification emails per address, rolling 24 h | 10, on top of 60 s cooldown, 5 an hour, the global budget and the per-IP route limit | so resending never means unlimited mail |
+| Verification emails per address, rolling 24 h | 10, on top of 60 s cooldown, 5 an hour, the global budget and the per-IP route limit | so resending never means unlimited mail, and switching formats is bounded the same way |
 
-At most 10 guesses a day: 1 in 1,000 for an account's whole day. Asking again while a code is live still re-sends the
-same code with its attempt count (unchanged policy).
+At most 10 guesses a day: 1 in 1,000 for a 4-digit code over an account's whole day.
 
-**Transition (deploying while 8-digit verification codes are out).** The 4-digit code is exactly the last 4 digits of
-the 8-digit code of the same challenge. The server accepts, for verification only, either 4 digits or the full 8-digit
-form of the current challenge's code, with the same attempt counting and single use. So:
-- an email sent before the deploy (8 digits) still verifies within its 10 minutes; nobody is locked out by the deploy;
-- a resend after the deploy of a still-live challenge sends its 4-digit form of the same code;
-- after 10 minutes every pre-deploy code has expired; the 8-digit acceptance can be removed in a later release
-  (it adds no guessing room: an 8-digit guess is one of 10^8 and counts as an attempt).
-- **Older app builds** (IPA 66 and earlier) only accept 8 digits in their code field, so they cannot type a 4-digit code
-  sent after the deploy: install the new IPA before or with the deploy. Their reset flow is unaffected (still 8 digits).
+**Flows (each covered by `AccountEmailTests`):**
+- *Older app* (IPA 67 and earlier): asks for nothing, gets 8 digits, enters 8. Unchanged from before.
+- *New app* (IPA 68): asks for 4, gets 4, enters 4.
+- *New app with an 8-digit code issued before the deploy* (or asked for from an older app): the verification field takes
+  4 or 8 digits and never cuts a paste, so all 8 digits are sent and accepted.
+- *Cross-device*: a 4-digit code asked for on the new app cannot be typed into an older app (its field takes exactly 8).
+  On the older app, *Resend code* asks for an 8-digit code, which replaces the 4-digit one; normal resend limits apply
+  (60 s cooldown, 5 an hour, 10 a day). The reverse needs nothing: the new app accepts an 8-digit code.
 
-**App.** The verification field takes 4 digits ("4-digit code", "Enter all 4 digits of the code."); the reset field
-keeps 8. Both keep paste with words around the code, one-time-code autofill, a numbers keyboard, Arabic-Indic and
-Eastern Arabic digits, leading zeros and left-to-right entry in Arabic. Emails are unchanged apart from the code they
-carry (they never named a length).
+**Deploy order:** any. Older builds keep working against the new server, and the new build works against the old server
+(an older server ignores the opt-in field and sends 8 digits, which the new field accepts). No minimum-version change.
+
+**App.** The verification field ("Verification code") takes 4 or 8 digits and cuts nothing; anything else is "Enter the
+code from the email: 4 digits, or 8 if your email shows 8." The reset field keeps exactly 8. Both keep paste with words
+around the code, one-time-code autofill, a numbers keyboard, Arabic-Indic and Eastern Arabic digits, leading zeros and
+left-to-right entry in Arabic. Emails are unchanged apart from the code they carry (they never named a length).
 
 ## Design note: required verification (written before implementation, 23 Oct 2026)
 

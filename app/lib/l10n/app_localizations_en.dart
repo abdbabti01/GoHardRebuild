@@ -12645,9 +12645,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Edit future targets changes your plan from your next session.';
 
   @override
-  String get codeFieldLabelShort => '4-digit code';
+  String get codeFieldLabelShort => 'Verification code';
 
   @override
   String get accountErrorCodeIncompleteShort =>
-      'Enter all 4 digits of the code.';
+      'Enter the code from the email: 4 digits, or 8 if your email shows 8.';
 }

@@ -105,7 +105,7 @@ public static class GoHardEndpoints
             if (!sender.Configured) return Results.Json(new AuthError("EMAIL_UNAVAILABLE"), statusCode: 503);
             var (ok, error) = await s.RegisterAsync(r, ct);
             if (ok is null) return Results.Json(new AuthError(error!), statusCode: error == "EMAIL_IN_USE" ? 409 : 400);
-            await email.OfferVerificationAsync(ok.Profile.UserId, r.Language); // queued only; never fails the registration
+            await email.OfferVerificationAsync(ok.Profile.UserId, r.Language, r.VerificationCodeDigits); // queued only; never fails the registration
             return Results.Ok(ok);
         });
         auth.MapPost("/login", async (LoginRequest r, AuthService s, CancellationToken ct) =>
@@ -127,7 +127,7 @@ public static class GoHardEndpoints
         // Signed in, verified or not: these are how an account becomes verified or recovers.
         var signedCodes = codes.MapGroup("").RequireAuthorization(AccountAccess.IdentityPolicy);
         signedCodes.MapPost("/account/email-verification/request", async (LanguageRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
-            Requested(await s.RequestVerificationAsync(u.UserId(), r.Language, ct)));
+            Requested(await s.RequestVerificationAsync(u.UserId(), r.Language, ct, r.CodeDigits)));
         signedCodes.MapPost("/account/email-verification/confirm", async (CodeConfirmRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
         {
             var (status, profile) = await s.ConfirmVerificationAsync(u.UserId(), r.Code, ct);

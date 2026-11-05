@@ -38,7 +38,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         {
             await Deliver();
             var mail = Box.All.LastOrDefault(m => m.To == email && m.Subject.Contains(reset ? "reset" : "Verify")) ?? throw new InvalidOperationException("no mail captured");
-            return Regex.Match(mail.Text, reset ? @"\b\d{8}\b" : @"\b\d{4}\b").Value;
+            return Regex.Match(mail.Text, reset ? @"\b\d{8}\b" : @"\b(\d{4}|\d{8})\b").Value;
         }
 
         public Task<HttpResponseMessage> Post(string path, object body, string? bearer = null)
@@ -377,35 +377,69 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     }
 
     [Fact]
-    public async Task Verification_codes_are_4_digits_reset_codes_stay_8_and_an_8_digit_verification_code_sent_before_the_change_still_works()
+    public async Task Verification_code_length_follows_what_the_requesting_app_supports_and_an_8_digit_challenge_needs_all_8()
     {
-        // Uniform over 0000–9999, leading zeros kept, and the last 4 digits of the 8-digit form of the same challenge.
-        var codes = Enumerable.Range(0, 2000).Select(_ => Guid.NewGuid()).Select(id => (Short: AccountEmailService.CodeFor("s3cret-s3cret-s3cret-s3cret-s3cret", id, 4), Long: AccountEmailService.CodeFor("s3cret-s3cret-s3cret-s3cret-s3cret", id))).ToList();
-        Assert.All(codes, c => Assert.Matches("^[0-9]{4}$", c.Short));
-        Assert.All(codes, c => Assert.Equal(c.Long[4..], c.Short));
-        Assert.Contains(codes, c => c.Short.StartsWith('0'));
+        // 4-digit codes: uniform over 0000–9999, leading zeros kept; any script's digits are read.
+        var codes = Enumerable.Range(0, 2000).Select(_ => AccountEmailService.CodeFor("s3cret-s3cret-s3cret-s3cret-s3cret", Guid.NewGuid(), 4)).ToList();
+        Assert.All(codes, c => Assert.Matches("^[0-9]{4}$", c));
+        Assert.Contains(codes, c => c.StartsWith('0'));
         Assert.Equal("0042", AccountEmailService.NormalizeCode("٠٠٤٢"));
         Assert.Null(AccountEmailService.NormalizeCode("123"));
 
-        await using var e = await Start();
-        var a = await Account.RegisterAsync(e.Api, verify: false);
-        var email = a.Auth.Profile.Email;
-        var code = await e.CodeFor(email, reset: false);
-        Assert.Matches("^[0-9]{4}$", code);
-        await e.RequestReset(email);
-        Assert.Matches("^[0-9]{8}$", await e.CodeFor(email));
-        // A reset code is never accepted in 4 digits.
-        Assert.Equal("INVALID_CODE", await Code(await e.VerifyReset(email, (await e.CodeFor(email))[4..])));
+        await using var e = await Start(new() { ["Email:CooldownSeconds"] = "1" });
+        async Task<(string Email, string Token)> Register(int? digits)
+        {
+            var email = $"len-{Guid.NewGuid():N}@example.test";
+            var r = await e.Post("/auth/register", new { email, password = "eight888", displayName = "Len", language = "en", verificationCodeDigits = digits });
+            Assert.True(r.IsSuccessStatusCode, await r.Content.ReadAsStringAsync());
+            return (email, (await r.Content.ReadFromJsonAsync<AuthResponse>(Json))!.AccessToken);
+        }
+        Task<HttpResponseMessage> Confirm(string token, string code) => e.Post("/account/email-verification/confirm", new { code }, token);
+        Task<HttpResponseMessage> Resend(string token, int? digits) => e.Post("/account/email-verification/request", new { language = "en", codeDigits = digits }, token);
 
-        // Transition: the 8-digit form of a verification code (an email sent before the change) is accepted once.
-        Guid challenge;
-        await using (var db = PostgresFixture.NewDb(e.Api.ConnectionString))
-            challenge = await db.AuthChallenges.Where(c => c.UserId == a.UserId && c.Purpose == AccountEmailService.Verify).Select(c => c.Id).SingleAsync();
-        var legacy = AccountEmailService.CodeFor("test-only-code-secret-0123456789-abcdefghij", challenge);
-        Assert.Equal(HttpStatusCode.OK, (await e.Post("/account/email-verification/confirm", new { code = legacy[..4] + " " + legacy[4..] }, a.Auth.AccessToken)).StatusCode);
-        Assert.True((await a.Http.GetFromJsonAsync<ProfileDto>("/api/v1/me", Json))!.EmailVerified);
+        // Older app: asks for nothing, gets 8 digits, and must enter all 8 (the last 4 alone are refused).
+        var old = await Register(null);
+        var eight = await e.CodeFor(old.Email, reset: false);
+        Assert.Matches("^[0-9]{8}$", eight);
+        Assert.Equal("INVALID_CODE", await Code(await Confirm(old.Token, eight[4..])));
+        Assert.Equal(HttpStatusCode.OK, (await Confirm(old.Token, eight)).StatusCode);
+
+        // New app: opts in at signup, gets 4 digits, enters 4; the code is single use.
+        var neu = await Register(4);
+        var four = await e.CodeFor(neu.Email, reset: false);
+        Assert.Matches("^[0-9]{4}$", four);
+        Assert.Equal(HttpStatusCode.OK, (await Confirm(neu.Token, four)).StatusCode);
+        Assert.False((await Resend(neu.Token, 4)).IsSuccessStatusCode, "already verified");
+
+        // New app with an 8-digit code issued before the deploy (a challenge without the opt-in): all 8 digits verify.
+        var before = await Register(null);
+        var pending = await e.CodeFor(before.Email, reset: false);
+        Assert.Equal(HttpStatusCode.OK, (await Confirm(before.Token, pending[..4] + " " + pending[4..])).StatusCode);
+
+        // Cross-device: a 4-digit code asked for on the new app cannot be typed into an older app; asking from the older
+        // app (no opt-in) sends a new 8-digit code and voids the 4-digit one, within the normal resend limits.
+        var cross = await Register(4);
+        var short4 = await e.CodeFor(cross.Email, reset: false);
+        e.Time.Now += TimeSpan.FromSeconds(2);
+        Assert.Equal(HttpStatusCode.Accepted, (await Resend(cross.Token, null)).StatusCode);
+        var long8 = await e.CodeFor(cross.Email, reset: false);
+        Assert.Matches("^[0-9]{8}$", long8);
+        Assert.Equal("INVALID_CODE", await Code(await Confirm(cross.Token, short4)));
+        // Asking again in the same length re-sends the same code (unchanged resend policy).
+        e.Time.Now += TimeSpan.FromSeconds(2);
+        Assert.Equal(HttpStatusCode.Accepted, (await Resend(cross.Token, null)).StatusCode);
+        Assert.Equal(long8, await e.CodeFor(cross.Email, reset: false));
+        Assert.Equal(HttpStatusCode.OK, (await Confirm(cross.Token, long8)).StatusCode);
+
+        // Password reset stays 8 digits, whatever a request says, and needs all 8.
+        Assert.Equal(HttpStatusCode.Accepted, (await e.Post("/auth/password-reset/request", new { email = old.Email, language = "en", codeDigits = 4 })).StatusCode);
+        var reset = await e.CodeFor(old.Email);
+        Assert.Matches("^[0-9]{8}$", reset);
+        Assert.Equal("INVALID_CODE", await Code(await e.VerifyReset(old.Email, reset[4..])));
+
         // Codes never reach the logs.
-        Assert.DoesNotContain(code, string.Join("\n", e.Logs.Lines).Split(['-', ' ', '"', '\n', ':', '/', '(', ')', ','], StringSplitOptions.RemoveEmptyEntries));
+        var words = string.Join("\n", e.Logs.Lines).Split(['-', ' ', '"', '\n', ':', '/', '(', ')', ','], StringSplitOptions.RemoveEmptyEntries);
+        foreach (var c in new[] { eight, four, pending, short4, long8, reset }) Assert.DoesNotContain(c, words);
     }
 
     [Fact]
@@ -415,7 +449,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         var a = await Account.RegisterAsync(e.Api, verify: false);
         var email = a.Auth.Profile.Email;
         var right = await e.CodeFor(email, reset: false);
-        var wrong = ((int.Parse(right) + 1) % 10000).ToString("D4");
+        var wrong = Other(right);
         Task<HttpResponseMessage> Confirm(string c) => e.Post("/account/email-verification/confirm", new { code = c }, a.Auth.AccessToken);
         Task<HttpResponseMessage> Resend() => e.Post("/account/email-verification/request", new { language = "en" }, a.Auth.AccessToken);
 
@@ -428,7 +462,7 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         e.Time.Now += TimeSpan.FromSeconds(2);
         Assert.Equal(HttpStatusCode.Accepted, (await Resend()).StatusCode);
         var second = await e.CodeFor(email, reset: false);
-        var miss = ((int.Parse(second) + 1) % 10000).ToString("D4");
+        var miss = Other(second);
         for (var i = 0; i < 5; i++) await Confirm(miss);
         Assert.Equal("TOO_MANY_ATTEMPTS", await Code(await Confirm(second)));
         // Resending is refused for the rest of the day: no new code, no new mail.
@@ -478,6 +512,9 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         Assert.Equal(HttpStatusCode.OK, (await e.Login(a.Auth.Profile.Email, "eight888")).StatusCode);
         Assert.Equal("PASSWORD_TOO_LONG", await Code(await e.Post("/auth/register", new { email = $"long-{Guid.NewGuid():N}@example.test", password = new string('x', PasswordPolicy.MaxLength + 1), displayName = "Long" })));
     }
+
+    /// <summary>Another code of the same length: the last digit changed.</summary>
+    private static string Other(string code) => code[..^1] + (char)('0' + (code[^1] - '0' + 1) % 10);
 
     private static string ToArabic(string code) => string.Concat(code.Select(d => (char)('٠' + (d - '0'))));
 

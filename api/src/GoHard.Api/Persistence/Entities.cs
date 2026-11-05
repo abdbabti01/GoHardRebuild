@@ -72,6 +72,9 @@ public class AuthChallenge
     public DateTime? GrantExpiresAtUtc { get; set; }
     public DateTime? ConsumedAtUtc { get; set; }
     public DateTime? InvalidatedAtUtc { get; set; }
+    /// <summary>Digits of this challenge's code: 8, or 4 for a verification code the requesting app opted into. Rows from
+    /// before this column are 8 (the length their email carried).</summary>
+    public int CodeDigits { get; set; } = 8;
 }
 
 /// <summary>The outbox: one message to send to an account's current address. No address, code or body is stored.</summary>

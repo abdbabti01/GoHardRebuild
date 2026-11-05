@@ -18780,16 +18780,16 @@ abstract class AppLocalizations {
   /// **'Edit future targets changes your plan from your next session.'**
   String get workoutTodayScopeEdit;
 
-  /// Label of the 4-digit email verification code field.
+  /// Label of the email verification code field (4 or 8 digits).
   ///
   /// In en, this message translates to:
-  /// **'4-digit code'**
+  /// **'Verification code'**
   String get codeFieldLabelShort;
 
-  /// A 4-digit verification code was not typed in full.
+  /// A verification code that is neither 4 nor 8 digits.
   ///
   /// In en, this message translates to:
-  /// **'Enter all 4 digits of the code.'**
+  /// **'Enter the code from the email: 4 digits, or 8 if your email shows 8.'**
   String get accountErrorCodeIncompleteShort;
 }
 

@@ -31,8 +31,10 @@ String? emailCodesBlocked(AppLocalizations l, Compatibility c) => c.capabilities
 /// The one password rule, as the server applies it to every new password: 8 to 256 characters, any characters.
 const passwordMin = 8, passwordMax = 256;
 
-/// Emailed code lengths, as the server makes them: email verification 4 digits, password reset 8.
+/// Emailed code lengths: this app asks for 4-digit verification codes, but a verification code issued before that (or
+/// asked for from an older app) has 8, so the verification field takes either. Password reset is always 8.
 const verifyCodeDigits = 4, resetCodeDigits = 8;
+bool verificationCodeComplete(String code) => code.length == verifyCodeDigits || code.length == resetCodeDigits;
 AuthError? checkNewPassword(String password, String confirmation) {
   final length = password.runes.length;
   if (length < passwordMin) return AuthError.weakPassword;
@@ -58,22 +60,25 @@ String normalizeCode(String raw) {
   return out.toString();
 }
 
+/// Keeps the digits only; with a [limit] (reset: 8) longer input is cut, without one (verification) nothing is cut, so a
+/// pasted 8-digit code is never shortened into a different 4-digit one.
 class _CodeFormatter extends TextInputFormatter {
-  _CodeFormatter(this.length);
-  final int length;
+  _CodeFormatter(this.limit);
+  final int? limit;
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     final digits = normalizeCode(newValue.text);
-    final text = digits.length > length ? digits.substring(0, length) : digits;
+    final text = limit != null && digits.length > limit! ? digits.substring(0, limit) : digits;
     return TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length));
   }
 }
 
-/// One accessible field for a [digits]-digit code: paste and one-time-code autofill, numbers keyboard, always left to right.
+/// One accessible field for an emailed code: paste and one-time-code autofill, numbers keyboard, always left to right.
+/// [verification]: 4 or 8 digits, nothing cut; otherwise a password-reset code of 8.
 class CodeField extends StatelessWidget {
-  const CodeField({super.key, required this.controller, required this.digits, this.onSubmitted});
+  const CodeField({super.key, required this.controller, required this.verification, this.onSubmitted});
   final TextEditingController controller;
-  final int digits;
+  final bool verification;
   final VoidCallback? onSubmitted;
 
   @override
@@ -82,11 +87,11 @@ class CodeField extends StatelessWidget {
     return TextField(
       key: const Key('code-field'), controller: controller, autofocus: true,
       keyboardType: TextInputType.number, textInputAction: TextInputAction.done, autocorrect: false, enableSuggestions: false,
-      autofillHints: const [AutofillHints.oneTimeCode], inputFormatters: [_CodeFormatter(digits)],
+      autofillHints: const [AutofillHints.oneTimeCode], inputFormatters: [_CodeFormatter(verification ? null : resetCodeDigits)],
       textDirection: TextDirection.ltr, textAlign: TextAlign.center,
       style: context.sansStyle(26, weight: FontWeight.w600).copyWith(letterSpacing: 6, fontFeatures: const [FontFeature.tabularFigures()]),
       onSubmitted: (_) => onSubmitted?.call(),
-      decoration: InputDecoration(labelText: digits == verifyCodeDigits ? l.codeFieldLabelShort : l.codeFieldLabel, helperText: l.codeFieldHelper, helperMaxLines: 3),
+      decoration: InputDecoration(labelText: verification ? l.codeFieldLabelShort : l.codeFieldLabel, helperText: l.codeFieldHelper, helperMaxLines: 3),
     );
   }
 }
@@ -270,7 +275,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> wit
             TextButton(key: const Key('reset-change-email'), onPressed: _busy ? null : _back, child: Text(l.resetUseAnotherEmail)),
           ]),
           [
-            CodeField(controller: _code, digits: resetCodeDigits, onSubmitted: _verify),
+            CodeField(controller: _code, verification: false, onSubmitted: _verify),
             const SizedBox(height: 14),
             StatusLine(Icons.mark_email_unread_outlined, l.codeDeliveryNote),
           ],
@@ -432,7 +437,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> with _Coo
       });
 
   Future<void> _confirm() => _run((auth) async {
-        if (_code.text.length != verifyCodeDigits) throw const AuthFailure.of(AuthError.codeIncompleteShort);
+        if (!verificationCodeComplete(_code.text)) throw const AuthFailure.of(AuthError.codeIncompleteShort);
         await auth.confirmVerification(_code.text);
         if (!mounted) return;
         toast(context, context.l10n.verifyDone);
@@ -496,7 +501,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> with _Coo
           else ...[
             if (blocked != null) Padding(padding: const EdgeInsets.only(bottom: 14), child: StatusLine(Icons.mail_lock_outlined, blocked, tone: Tone.warning)),
             if (_sent) ...[
-              CodeField(controller: _code, digits: verifyCodeDigits, onSubmitted: _confirm),
+              CodeField(controller: _code, verification: true, onSubmitted: _confirm),
               const SizedBox(height: 14),
               StatusLine(Icons.mark_email_unread_outlined, l.codeDeliveryNote),
             ],

@@ -53,7 +53,9 @@ public sealed class AccountAccess(AuthOptions options, TimeProvider time)
 }
 
 /// <param name="Language">Optional (en, fr-CA, ar): the language of the verification email. Older apps omit it.</param>
-public sealed record RegisterRequest(string Email, string Password, string DisplayName, string? Language = null);
+/// <param name="VerificationCodeDigits">4 when the app can enter a 4-digit verification code; anything else (an older app
+/// sends nothing) gets 8 (docs/AUTHENTICATION_EMAIL.md › 11).</param>
+public sealed record RegisterRequest(string Email, string Password, string DisplayName, string? Language = null, int? VerificationCodeDigits = null);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 public sealed record ProfileDto(Guid UserId, string Email, string DisplayName, string Appearance, string LoadUnit,

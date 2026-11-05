@@ -44,7 +44,8 @@ public sealed class EmailOptions
 }
 
 public sealed record CodeRequest(string? Email, string? Language);
-public sealed record LanguageRequest(string? Language);
+/// <summary>[CodeDigits] 4 opts a verification request into a 4-digit code; absent or anything else is 8.</summary>
+public sealed record LanguageRequest(string? Language, int? CodeDigits = null);
 public sealed record CodeVerifyRequest(string? Email, string? Code);
 public sealed record CodeConfirmRequest(string? Code);
 public sealed record ResetCompleteRequest(string? ResetToken, string? NewPassword, string? Language);
@@ -116,13 +117,13 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     private static readonly TimeSpan MinRemaining = TimeSpan.FromMinutes(2);
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
-    /// <summary>Code length by purpose: email verification 4 digits, password reset 8.</summary>
+    /// <summary>Code lengths: 8 (password reset always, verification by default) or 4 (verification, when the requesting
+    /// app opts in). Each challenge keeps its own length; a code is accepted only in exactly that length.</summary>
     public const int VerifyDigits = 4, ResetDigits = 8;
-    public static int DigitsFor(string purpose) => purpose == Verify ? VerifyDigits : ResetDigits;
+    public static int RequestedDigits(int? codeDigits) => codeDigits == VerifyDigits ? VerifyDigits : ResetDigits;
 
     /// <summary>The code of a challenge: HMAC-SHA256 under the server-only secret over its random ID, never stored, so it
-    /// is uniform over every value of that length (leading zeros kept). The 4-digit code is the last 4 digits of the
-    /// 8-digit one, which is what lets an 8-digit verification code sent before the change still work (see CheckCodeAsync).</summary>
+    /// is uniform over every value of that length (leading zeros kept).</summary>
     public static string CodeFor(string secret, Guid challengeId, int digits = ResetDigits)
     {
         var mac = HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes("gohard.code|" + challengeId.ToString("N")));
@@ -166,20 +167,20 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
         return await IssueAsync(Reset, normalized, user, language, ct);
     }
 
-    public async Task<CodeRequestResult> RequestVerificationAsync(Guid userId, string? language, CancellationToken ct)
+    public async Task<CodeRequestResult> RequestVerificationAsync(Guid userId, string? language, CancellationToken ct, int? codeDigits = null)
     {
         if (!options.Configured) return new(CodeRequestStatus.Unavailable);
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
         if (user.EmailVerifiedAtUtc is not null) return new(CodeRequestStatus.AlreadyVerified);
-        return await IssueAsync(Verify, user.Email, user, language, ct);
+        return await IssueAsync(Verify, user.Email, user, language, ct, RequestedDigits(codeDigits));
     }
 
     /// <summary>Right after registration: one verification email, only when a sender is configured. A problem here is
     /// logged and never turns the created account into a failed registration.</summary>
-    public async Task OfferVerificationAsync(Guid userId, string? language)
+    public async Task OfferVerificationAsync(Guid userId, string? language, int? codeDigits = null)
     {
         if (!options.Configured) return;
-        try { await RequestVerificationAsync(userId, language, CancellationToken.None); }
+        try { await RequestVerificationAsync(userId, language, CancellationToken.None, codeDigits); }
         catch (Exception ex) when (ex is DbUpdateException or Npgsql.NpgsqlException or InvalidOperationException)
         {
             log.LogWarning("Verification email after registration was not queued ({Error})", ex.GetType().Name);
@@ -191,7 +192,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     /// so the reply never says whether an account exists. A code that is still live is sent again rather than replaced:
     /// asking again cannot void someone else's code, and its attempt count is kept.
     /// </summary>
-    private async Task<CodeRequestResult> IssueAsync(string purpose, string email, User? user, string? language, CancellationToken ct)
+    private async Task<CodeRequestResult> IssueAsync(string purpose, string email, User? user, string? language, CancellationToken ct, int digits = ResetDigits)
     {
         var now = Now;
         var key = EmailKey(email);
@@ -222,7 +223,9 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
         }
 
         var live = recent.Where(c => c.ConsumedAtUtc == null && c.InvalidatedAtUtc == null && c.VerifiedAtUtc == null
-                && c.Attempts < options.MaxAttempts && c.ExpiresAtUtc - now >= MinRemaining && c.SecurityStamp == user?.SecurityStamp)
+                && c.Attempts < options.MaxAttempts && c.ExpiresAtUtc - now >= MinRemaining && c.SecurityStamp == user?.SecurityStamp
+                // Re-sent only in the length asked for: an app that can enter only 8 digits gets a new 8-digit code.
+                && c.CodeDigits == digits)
             .MaxBy(c => c.CreatedAtUtc);
         if (live is null)
         {
@@ -232,7 +235,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
             live = new AuthChallenge
             {
                 Id = Guid.NewGuid(), UserId = user?.Id, Purpose = purpose, EmailKey = key, SecurityStamp = user?.SecurityStamp,
-                CreatedAtUtc = now, ExpiresAtUtc = now.AddMinutes(options.CodeMinutes),
+                CreatedAtUtc = now, ExpiresAtUtc = now.AddMinutes(options.CodeMinutes), CodeDigits = digits,
             };
             db.AuthChallenges.Add(live);
         }
@@ -285,11 +288,9 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Attempts, x => x.Attempts + 1), ct);
         if (counted == 0) return (CodeCheckStatus.TooManyAttempts, null);
         var given = NormalizeCode(code);
-        // Reset: 8 digits only. Verification: 4 digits, or the 8-digit form of the same code, which an email sent before
-        // the change carries (transition only: such codes expire within CodeMinutes; docs/AUTHENTICATION_EMAIL.md › 11).
-        var digits = purpose == Verify && given?.Length == ResetDigits ? ResetDigits : DigitsFor(purpose);
-        var ok = c.UserId is not null && (userId is null || c.UserId == userId) && given is not null && given.Length == digits
-                 && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(given), Encoding.ASCII.GetBytes(CodeFor(options.CodeSecret, c.Id, digits)));
+        // Exactly the challenge's own length: an 8-digit code needs all 8 digits (codes from before 4-digit codes are 8).
+        var ok = c.UserId is not null && (userId is null || c.UserId == userId) && given is not null && given.Length == c.CodeDigits
+                 && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(given), Encoding.ASCII.GetBytes(CodeFor(options.CodeSecret, c.Id, c.CodeDigits)));
         if (ok) return (CodeCheckStatus.Ok, c);
         return (c.Attempts + 1 >= options.MaxAttempts ? CodeCheckStatus.TooManyAttempts : CodeCheckStatus.Invalid, null);
     }

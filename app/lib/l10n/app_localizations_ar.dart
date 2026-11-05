@@ -13156,9 +13156,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'يغيّر \"تعديل الأهداف القادمة\" خطتك بدءًا من حصتك التالية.';
 
   @override
-  String get codeFieldLabelShort => 'الرمز المكوَّن من 4 أرقام';
+  String get codeFieldLabelShort => 'رمز التحقق';
 
   @override
   String get accountErrorCodeIncompleteShort =>
-      'أدخل أرقام الرمز الأربعة كلها.';
+      'أدخل الرمز الوارد في البريد: 4 أرقام، أو 8 إذا كان بريدك يعرض 8.';
 }
