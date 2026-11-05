@@ -145,7 +145,7 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
-### Saved plans, Suggested today, 8-character passwords, 4-digit verification codes — NOT merged or deployed (branch `feature/plan-library-overload`)
+### Saved plans, Suggested today, 8-character passwords, 4-digit verification codes — deployed 5 Nov 2026 (`main` 92dd85f)
 
 - **What:** Save plan apart from activation and the Train › Plan library (docs/PLAN_LIBRARY_OVERLOAD.md); Free saved
   plans 3 → 1 and un-archiving limited like creating; Suggested today in the recorder (Plus); new passwords need 8
@@ -156,6 +156,12 @@ no secrets; the API address is the only build-time setting.
   `Plus:FreeSavedPlans` 1, `Email:VerifyMaxAttemptsPerDay` 10, `Email:VerifyMaxSendsPerDay` 10. If Railway sets
   `GOHARD_Plus__FreeSavedPlans`, that value wins.
 - **Build:** code 0bd50b8, CI 42105743824 passed, unsigned IPA run 68 (artifact GoHard-Dev-unsigned-ipa).
+- **Deployed:** owner approved 5 Nov 2026. `main` fast-forwarded 5441d2a → 92dd85f (nothing newer on main). CI on `main`
+  42114195492 passed. Railway devoted-caring: success (diplomatic-intuition failing as before; unused). Hosted
+  `/health/ready`: Ready, 16 migrations applied; `/capabilities`: contract 2, minimum 2, `account.email` declared. No
+  secret or variable changed, no hosted account created. IPA 68 reused (app code unchanged since 0bd50b8).
+- **Unverified until the owner confirms on iPhone:** real delivery of a 4-digit verification email, iPhone one-time-code
+  autofill, registration with an 8-character password on the hosted API. Password-reset codes stay 8 digits.
 - **Deploy order:** any. Older builds still get and enter 8-digit codes; an 8-digit code issued before the deploy still
   works in IPA 68. Cross-device: a 4-digit code cannot be typed into an older build; resend from that build for 8 digits.
 - **Effect on existing accounts:** Free accounts with more than one plan keep every plan usable; only creating another is

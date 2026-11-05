@@ -2673,3 +2673,11 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   8-digit code, cross-device resend to 8 voiding the 4, reset always 8, no code in logs). App `account_security_test`,
   `verification_gate_test`, `l10n_me_test`, `localization_test`: 33 passed. `flutter analyze` clean; `check-l10n` OK.
 - Code 0bd50b8: CI 42105743824 passed; unsigned IPA run 68 (42107837821, 0bd50b8) passed. Not merged, not deployed.
+
+### 5 Nov 2026 — merged and deployed (owner approved)
+
+- `main` fast-forwarded 5441d2a → 92dd85f (no newer work on main). CI 42114195492 passed. Railway devoted-caring:
+  success. Hosted `/health/ready`: Ready, 16 migrations (`AddChallengeCodeDigits` included); `/capabilities` contract 2,
+  minimum 2, `account.email` declared. No secret or variable changed, no hosted account created. IPA 68 reused.
+- **Unverified until the owner confirms:** real 4-digit verification email delivery, iPhone autofill, hosted
+  registration with an 8-character password, everything else listed in P2 and S3 on a real device.
