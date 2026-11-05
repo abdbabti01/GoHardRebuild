@@ -155,6 +155,7 @@ no secrets; the API address is the only build-time setting.
   new capability, contract unchanged, no minimum-version change. Configuration defaults change in code:
   `Plus:FreeSavedPlans` 1, `Email:VerifyMaxAttemptsPerDay` 10, `Email:VerifyMaxSendsPerDay` 10. If Railway sets
   `GOHARD_Plus__FreeSavedPlans`, that value wins.
+- **Build:** code 0bd50b8, CI 42105743824 passed, unsigned IPA run 68 (artifact GoHard-Dev-unsigned-ipa).
 - **Deploy order:** any. Older builds still get and enter 8-digit codes; an 8-digit code issued before the deploy still
   works in IPA 68. Cross-device: a 4-digit code cannot be typed into an older build; resend from that build for 8 digits.
 - **Effect on existing accounts:** Free accounts with more than one plan keep every plan usable; only creating another is

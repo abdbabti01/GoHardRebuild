@@ -2672,4 +2672,4 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Tests: API auth suites 38 passed (new flow test: older app 8/8 and last-4 refused, new app 4/4 single use, pre-deploy
   8-digit code, cross-device resend to 8 voiding the 4, reset always 8, no code in logs). App `account_security_test`,
   `verification_gate_test`, `l10n_me_test`, `localization_test`: 33 passed. `flutter analyze` clean; `check-l10n` OK.
-- Not merged, not deployed.
+- Code 0bd50b8: CI 42105743824 passed; unsigned IPA run 68 (42107837821, 0bd50b8) passed. Not merged, not deployed.
