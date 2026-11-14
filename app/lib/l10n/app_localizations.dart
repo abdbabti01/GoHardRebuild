@@ -2051,6 +2051,36 @@ abstract class AppLocalizations {
   /// **'Amount'**
   String get foodAmountLabel;
 
+  /// Field: how much of a food is logged this time. The saved food never changes with it.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount for this log'**
+  String get foodAmountForLog;
+
+  /// Create food: what the typed nutrition is for (1 serving, 100 g, 100 ml).
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition is per'**
+  String get foodBasisLabel;
+
+  /// Create food: nutrition is for one serving, described in the How much field.
+  ///
+  /// In en, this message translates to:
+  /// **'1 serving'**
+  String get foodBasisServing;
+
+  /// Create food: under the per-100 g/ml nutrition.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved with the food. The amount for this log never changes it.'**
+  String get foodBasisSavedNote;
+
+  /// Amount form: what the food's saved nutrition is based on. basis is "per 100 g" etc.; values is "260 kcal · 9 g protein".
+  ///
+  /// In en, this message translates to:
+  /// **'Saved nutrition {basis}: {values}. The amount for this log never changes it.'**
+  String foodSavedBasis(String basis, String values);
+
   /// Unit dropdown label (g, cup, egg…). The French word or symbol may match English.
   ///
   /// In en, this message translates to:
@@ -2122,6 +2152,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save to My foods without logging'**
   String get foodSaveToMine;
+
+  /// Amount form: replaces the saved food (My foods) with the name and values shown. Logs nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Update saved food'**
+  String get foodUpdateSaved;
+
+  /// Toast after Update saved food.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved food updated. Nothing was logged, and past logs are unchanged.'**
+  String get foodUpdatedSaved;
 
   /// Screen-reader hint on the food header.
   ///
@@ -2516,14 +2558,20 @@ abstract class AppLocalizations {
   /// Manual entry row title.
   ///
   /// In en, this message translates to:
-  /// **'Enter it yourself'**
+  /// **'Create food'**
   String get foodManualTitle;
 
   /// Manual entry row subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Can\'t find it? Create your own food'**
+  /// **'Save one item with its own nutrition.'**
   String get foodManualSubtitle;
+
+  /// Create food row: example. Use an arrow that points in reading direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: Baguette → log 60 g today or 90 g tomorrow.'**
+  String get foodCreateExample;
 
   /// Add food footer.
   ///
@@ -15252,6 +15300,42 @@ abstract class AppLocalizations {
   /// **'New recipe'**
   String get mealsNewRecipe;
 
+  /// Library button: starts a new saved meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Create meal'**
+  String get mealsCreateMeal;
+
+  /// Library button: starts a new recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Create recipe'**
+  String get mealsCreateRecipe;
+
+  /// Under Create meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Save foods you eat together. Change each amount when you log it.'**
+  String get mealsCreateMealAbout;
+
+  /// Under Create meal: example.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: Breakfast → 2 eggs + 60 g of baguette.'**
+  String get mealsCreateMealExample;
+
+  /// Under Create recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ingredients for a batch, then log the portion you ate.'**
+  String get mealsCreateRecipeAbout;
+
+  /// Under Create recipe: example.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: Chicken filling → log 170 g from the batch.'**
+  String get mealsCreateRecipeExample;
+
   /// Editor title for an existing saved meal.
   ///
   /// In en, this message translates to:
@@ -15648,6 +15732,18 @@ abstract class AppLocalizations {
   /// **'Use this amount'**
   String get mealsUseAmount;
 
+  /// Amount field when setting a food's amount in a saved meal or recipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved amount'**
+  String get mealsSavedAmount;
+
+  /// Review row: the saved meal's amount, when this log's differs.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved amount: {amount}'**
+  String mealsSavedAmountWas(String amount);
+
   /// Subtitle of the log review.
   ///
   /// In en, this message translates to:
@@ -15659,6 +15755,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Amounts this time'**
   String get mealsAmountsHeading;
+
+  /// Meal review: how to change amounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a food to change its amount for this log. A multiplier changes every amount at once.'**
+  String get mealsAmountsHint;
 
   /// Chip opening a custom multiplier.
   ///
@@ -15689,12 +15791,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log meal'**
   String get mealsLogMeal;
-
-  /// Review main action for a recipe portion.
-  ///
-  /// In en, this message translates to:
-  /// **'Log portion'**
-  String get mealsLogPortion;
 
   /// Toast after logging.
   ///
@@ -15759,7 +15855,7 @@ abstract class AppLocalizations {
   /// Recipe portion field.
   ///
   /// In en, this message translates to:
-  /// **'Amount'**
+  /// **'Amount for this log'**
   String get mealsPortionAmount;
 
   /// Recipe portion measure.
@@ -15777,7 +15873,7 @@ abstract class AppLocalizations {
   /// Recipe review: why grams are not offered.
   ///
   /// In en, this message translates to:
-  /// **'To log grams, add the finished batch’s weight to the recipe.'**
+  /// **'To log grams, weigh the whole batch once it’s cooked and add that weight with Edit recipe. The raw ingredients’ weight isn’t used: cooking changes it.'**
   String get mealsNoWeight;
 
   /// Nutrition panel title for the portion being logged.

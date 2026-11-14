@@ -133,7 +133,13 @@ class _MealsLibraryScreenState extends ConsumerState<MealsLibraryScreen> {
           label: (k) => k == MealBody.recipe ? l.mealsTabRecipes : l.mealsTabMeals, onChanged: (k) => setState(() => _kind = k),
         ),
         const SizedBox(height: 14),
-        SecondaryButton(recipes ? l.mealsNewRecipe : l.mealsNewMeal, key: const Key('meals-new'), icon: Icons.add, onPressed: () => _edit()),
+        SecondaryButton(recipes ? l.mealsCreateRecipe : l.mealsCreateMeal, key: const Key('meals-new'), icon: Icons.add, onPressed: () => _edit()),
+        // What this one is for, and an example, where it is chosen.
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text('${recipes ? l.mealsCreateRecipeAbout : l.mealsCreateMealAbout}\n${recipes ? l.mealsCreateRecipeExample : l.mealsCreateMealExample}',
+              key: const Key('meals-new-about'), style: context.caption),
+        ),
         if (all.length > 3) ...[
           const SizedBox(height: 12),
           TextField(
@@ -206,18 +212,21 @@ class _SavedRow extends StatelessWidget {
 /// One food of a meal or recipe: its name, its amount and its energy; tapping it changes the amount in the shared
 /// amount form, the remove button takes it out. Neither logs anything.
 class _ComponentRow extends StatelessWidget {
-  const _ComponentRow(this.c, {required this.index, required this.onTap, required this.onRemove});
+  const _ComponentRow(this.c, {required this.index, required this.onTap, required this.onRemove, this.saved});
   final MealComponent c;
   final int index;
   final VoidCallback onTap;
   final VoidCallback? onRemove;
+
+  /// The saved meal's amount of this food, said beside this log's when the two differ.
+  final String? saved;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final kcal = c.values['calories'];
     return GroupRow(
-      key: Key('meal-part-$index'), title: c.name, subtitle: c.amount, value: kcal == null ? l.eatKcalValue('—') : l.eatKcalValue(formatKcal(kcal)), onTap: onTap,
+      key: Key('meal-part-$index'), title: c.name, subtitle: saved == null || saved == c.amount ? c.amount : '${c.amount} · ${l.mealsSavedAmountWas(saved!)}', value: kcal == null ? l.eatKcalValue('—') : l.eatKcalValue(formatKcal(kcal)), onTap: onTap,
       trailing: onRemove == null ? null : IconButton(key: Key('meal-part-remove-$index'), tooltip: l.mealsRemoveFood(c.name), icon: const Icon(Icons.close), onPressed: onRemove),
     );
   }
@@ -273,9 +282,10 @@ Future<MealComponent?> _pick(BuildContext context, {required String dayKey}) asy
   return d == null ? null : MealComponent.ofDraft(d);
 }
 
-/// Changes one food's amount (and unit) in the shared amount form, in its selection mode. Logs nothing.
-Future<MealComponent?> _change(BuildContext context, MealComponent c, {required String dayKey}) async {
-  final d = await push<FoodDraft>(context, FoodFormScreen(draft: c.draft(dayKey: dayKey, meal: meals.first), pick: true));
+/// Changes one food's amount (and unit) in the shared amount form, in its selection mode. Logs nothing. [amountLabel]
+/// says which amount it is: the saved one (an editor) or this log's (a review, the default).
+Future<MealComponent?> _change(BuildContext context, MealComponent c, {required String dayKey, String? amountLabel}) async {
+  final d = await push<FoodDraft>(context, FoodFormScreen(draft: c.draft(dayKey: dayKey, meal: meals.first), pick: true, amountLabel: amountLabel));
   return d == null ? null : MealComponent.ofDraft(d);
 }
 
@@ -375,7 +385,7 @@ class _MealEditorScreenState extends ConsumerState<MealEditorScreen> {
   }
 
   Future<void> _edit(int i) async {
-    final c = await _change(context, _parts[i], dayKey: widget.dayKey);
+    final c = await _change(context, _parts[i], dayKey: widget.dayKey, amountLabel: context.l10n.mealsSavedAmount);
     if (c != null && mounted) _changed(() => _parts = [..._parts]..[i] = c);
   }
 
@@ -518,7 +528,15 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
   final _op = SyncEngine.newId();
   late String _day = widget.dayKey, _meal = meals.contains(widget.meal) ? widget.meal : meals.first;
   late List<MealComponent> _parts = widget.initialParts ?? widget.body.components;
+
+  /// The saved meal's amount of each food on screen (null for one added this time), kept in step with [_parts].
+  late List<String?> _savedAmounts = _savedOf(_parts.length);
   late double? _factor = widget.initialParts == null ? 1 : null;
+
+  List<String?> _savedOf(int length) {
+    final saved = widget.body.components;
+    return saved.length == length ? [for (final c in saved) c.amount] : List.filled(length, null);
+  }
   late MealBody _batch = widget.body;
   late final _from = widget.entry == null ? null : MealMath.ofEntry(widget.entry!);
   late PortionMeasure _measure = _from?.measure ?? (widget.initialMeasure == PortionMeasure.gram && widget.body.preparedWeightG != null ? PortionMeasure.gram : PortionMeasure.serving);
@@ -550,6 +568,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
   void _multiply(double f) => setState(() {
         _factor = f;
         _parts = MealMath.scaled(widget.body.components, f, (c, q) => _describe(ref, context.l10n, c, q));
+        _savedAmounts = _savedOf(_parts.length);
       });
 
   Future<void> _custom() async {
@@ -577,6 +596,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           _batchChanged = true;
         } else {
           _parts = [..._parts]..removeAt(i);
+          _savedAmounts = [..._savedAmounts]..removeAt(i);
           _factor = null;
         }
       });
@@ -590,6 +610,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
         _batchChanged = true;
       } else {
         _parts = [..._parts, c];
+        _savedAmounts = [..._savedAmounts, null];
         _factor = null;
       }
     });
@@ -694,7 +715,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
       actions: [if (_recipe) CoachHelpEntry(id: 'meals.recipes', label: l.mealsHelpLabel)],
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, key: const Key('meal-error'), tone: Tone.error)),
-        PrimaryButton(entry != null ? l.foodSaveChanges : _recipe ? l.mealsLogPortion : l.mealsLogThisTime, key: const Key('meal-log'), busy: _busy, onPressed: supported ? _log : null),
+        PrimaryButton(entry != null ? l.foodSaveChanges : l.mealsLogThisTime, key: const Key('meal-log'), busy: _busy, onPressed: supported ? _log : null),
         // The template actions are quieter than Log, and say what they change.
         if (!_recipe && saved != null && live != null && !live.isDeleted)
           Wrap(alignment: WrapAlignment.center, children: [
@@ -745,7 +766,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           Padding(padding: const EdgeInsets.only(top: 4, bottom: 8), child: Text(_batchChanged ? l.mealsThisTimeChanged : l.mealsThisTimeNote, style: context.caption)),
         ] else ...[
           Semantics(header: true, child: Text(l.mealsAmountsHeading, style: context.titleStyle(20))),
-          const SizedBox(height: 8),
+          Padding(padding: const EdgeInsets.only(top: 4, bottom: 8), child: Text(l.mealsAmountsHint, style: context.caption)),
           Wrap(spacing: 8, runSpacing: 4, children: [
             for (final f in factors)
               ChoiceChip(
@@ -762,7 +783,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
         if (parts.isNotEmpty)
           GroupCard(children: [
             for (final (i, c) in parts.indexed)
-              _ComponentRow(c, index: i, onTap: () => _editPart(i), onRemove: parts.length > 1 ? () => _removePart(i) : null),
+              _ComponentRow(c, index: i, onTap: () => _editPart(i), onRemove: parts.length > 1 ? () => _removePart(i) : null, saved: _recipe || entry != null || _factor != null ? null : _savedAmounts[i]),
           ]),
         Align(
           alignment: AlignmentDirectional.centerStart,

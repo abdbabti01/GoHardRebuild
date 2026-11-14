@@ -223,11 +223,16 @@ class SavedFoodRepository {
     final key = id ?? SyncEngine.newId();
     final Json item;
     if (from != null && (quantity ?? 0) > 0) {
-      final amountOfBasis = quantity! * FoodScaling.unit(from, unitId).basisPerUnit;
+      final unit = FoodScaling.unit(from, unitId);
+      final amountOfBasis = quantity! * unit.basisPerUnit, scaled = FoodScaling.scale(from, quantity, unit);
       item = {
         ...copyJson(from.j), 'source': 'user', 'sourceId': key, 'name': name.trim(),
-        // Stored back on the food's own basis, so it can be scaled to any amount again.
-        'nutrients': {for (final e in values.entries) e.key: e.value == null ? null : (e.value! / amountOfBasis * 100).roundToDouble() / 100},
+        // Stored back on the food's own basis, so it can be scaled to any amount again. A value only rescaled for the
+        // amount on screen keeps the food's own exact value: the amount of one log never changes the saved basis.
+        'nutrients': {
+          for (final e in values.entries)
+            e.key: e.value == null ? null : e.value == scaled[e.key] && from.nutrient(e.key) != null ? from.nutrient(e.key) : (e.value! / amountOfBasis * 100).roundToDouble() / 100,
+        },
         if (from.source != 'user') 'basedOn': {'source': from.source, 'sourceId': from.sourceId},
       }..remove('imageUrl')..remove('imageAttribution');
     } else {

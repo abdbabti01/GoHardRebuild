@@ -2682,6 +2682,17 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - **Unverified until the owner confirms:** real 4-digit verification email delivery, iPhone autofill, hosted
   registration with an 8-character password, everything else listed in P2 and S3 on a real device.
 
+### 13 Nov 2026 — Eat: save once, log any amount (`feature/eat-reusable-amounts`, from main 5a0ee30)
+
+- Create food per serving / 100 g / 100 ml with Amount for this log and a live preview; the saved basis is shown and a
+  log amount never changes it (`saveMine` fix); Saved amount vs Amount for this log; Log this time for food, meal and
+  recipe; Create meal / Create recipe descriptions and examples; a recipe portion inside a saved meal is editable in
+  grams or servings. docs/FOOD_DATA.md › Save once, log any amount. No API, migration or contract change.
+- Verified: focused app suites (saved_meals, saved_meals_ui, food, food_ui, theme, eat_ui, l10n_eat, widget) passed;
+  `flutter analyze` clean; `check-l10n` OK; renders en/fr/ar. NOT run: full `scripts\test.ps1`, emulator journeys, CI,
+  IPA, iPhone. Not merged, not deployed.
+- 14 Nov: pushed ceeefd5: CI 198 passed (attempt 2; companion "no replay" flake on attempt 1); unsigned IPA run 69.
+
 ### 14 Nov 2026 — Change email (`feature/change-email`, from main 5a0ee30; separate from the Eat branch)
 
 - Me › Account › Change email: new address + current password, code to the new address, resend, cancel; nothing changes

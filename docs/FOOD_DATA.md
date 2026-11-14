@@ -406,6 +406,32 @@ Code: app `features/nutrition/saved_meals.dart` (model, `MealMath`, repository),
 `test/saved_meals_ui_test.dart` (renders with `GOHARD_RENDER`), API `SavedMealTests`, native
 `journey_meals_test`.
 
+### Save once, log any amount (13 Nov 2026, feature/eat-reusable-amounts)
+
+- **Create food** (Add food › Create food, formerly "Enter it yourself") asks what the values are for: **1 serving**
+  (as before: the free "How much?" words, the values for exactly that), **100 g** or **100 ml**. Per 100 g/ml it is a
+  food of its own (`source: user`, that basis): the values are typed for the basis, **Amount for this log** is a number of
+  g/ml, and the preview and the entry are `FoodScaling.scale` of that basis. Saving it twice updates the same My food.
+- A food of the person's own shows "Saved nutrition per …: … The amount for this log never changes it." Its button reads
+  **Update saved food** once it is in My foods. `SavedFoodRepository.saveMine` keeps a nutrient's exact basis value when
+  the value on screen is only that basis rescaled (rebasing a rounded 0.05 g at 0.5 g gave 10 g per 100 g instead of 9);
+  a value the person corrected is rebased as before.
+- The amount field is **Amount for this log** (food form, recipe portion, a meal's food in the review) and **Saved
+  amount** in the meal/recipe editor. Logging is **Log this time** for food, meal and recipe. In the meal review a food
+  changed on its own reads "90 g · Saved amount: 60 g" (not under a whole-meal multiplier, whose chip already says it).
+- Library: **Create meal / Create recipe**, each with its description and example under the button; Add food's Create
+  food row has its own. With no weighed batch the recipe review explains weighing the cooked batch and adding it with
+  Edit recipe; the raw ingredients' weight is never used.
+- A recipe portion saved into a meal (Save as meal from a logged portion) becomes a food made from its frozen batch: per
+  100 g of the weighed batch (plus one serving's weight when the yield is known) or per serving, at the amount it was
+  logged in, so its amount changes on its own like any food. A nutrient some ingredient lacks is unknown there (its
+  partial sum is not carried). Before, it became a fixed "1 × 170 g" serving with no grams. No API or contract change:
+  components already accept any food snapshot.
+- Known, unchanged: amount words such as "60 g" are stored with a Latin g, which an Arabic paragraph shows as "g 60".
+- Tests: `food_ui_test` › create food, log any amount; `saved_meals_ui_test` (one meal food changed alone; 170 g and
+  242 g of one recipe; no weight; 320 px 2× text in ar/fr-CA; render `create-food-320-large`); `saved_meals_test`
+  (recipe portion in a meal; `saveMine` keeps the basis).
+
 ### Suggested portions from the coach (28 Oct 2026)
 
 Leon or Leona can suggest a portion of a saved meal, recipe or saved food (docs/COACH.md › Help with today). The values

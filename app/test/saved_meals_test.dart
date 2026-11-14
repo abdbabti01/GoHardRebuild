@@ -95,6 +95,31 @@ void main() {
       expect((b.quantity, b.amount, b.values['calories'], b.values['protein']), (1, '1 bowl', null, 5));
     });
 
+    test('a recipe portion saved into a meal keeps an amount of its own: grams of the weighed batch, servings otherwise', () {
+      FoodEntry logged(MealBody r, double amount, PortionMeasure m, String said) {
+        final d = MealMath.portion(r, amount: amount, measure: m, dayKey: '2026-10-09', meal: 'Lunch', amountText: said, recipeId: 'r1', recipeRevision: 3);
+        return FoodEntry({'id': 'p', 'dayKey': '2026-10-09', 'meal': 'Lunch', 'name': 'Chicken filling', 'amountDescription': said, 'macros': d.macros, 'source': d.recipe});
+      }
+      final filling = MealBody({'kind': 'recipe', 'name': 'Chicken filling', 'servings': 4, 'preparedWeightG': 1200, 'components': [part(oats(), 100, 'g').j]});
+      final c = MealComponent.fromEntry(logged(filling, 170, PortionMeasure.gram, '170 g'));
+      expect((c.quantity, c.unitId, c.amount, c.item.basis), (170, 'g', '170 g', FoodItem.per100g));
+      expect(c.item.j['basedOn'], {'recipe': 'r1', 'revision': 3});
+      expect(c.values['calories'], closeTo(379 * 170 / 1200, 1e-9));
+      // Today 242 g of it, worked out from the same frozen batch; nothing is rounded before display.
+      expect(c.withAmount(242, 'g', '242 g').values['calories'], closeTo(379 * 242 / 1200, 1e-9));
+      expect(FoodScaling.exact(1, FoodScaling.unit(c.item, 'serving:0'), FoodScaling.unit(c.item, 'g')), closeTo(300, 1e-9), reason: 'one of 4 servings of 1,200 g');
+
+      // Not weighed: servings only, and no weight is made up from the raw ingredients.
+      final unweighed = MealComponent.fromEntry(logged(filling.copyWith(clearWeight: true), 1.5, PortionMeasure.serving, '1.5 servings'));
+      expect((unweighed.quantity, unweighed.unitId, unweighed.item.basis), (1.5, 'serving:0', FoodItem.perServing));
+      expect([for (final u in FoodScaling.units(unweighed.item)) u.id], ['serving:0']);
+      expect(unweighed.values['protein'], closeTo(13.2 / 4 * 1.5, 1e-9));
+
+      // A nutrient some ingredient lacks stays unknown in the meal; a stated zero stays zero.
+      final partial = MealComponent.fromEntry(logged(chili(weight: 1200), 300, PortionMeasure.gram, '300 g'));
+      expect((partial.values['calories'], partial.values['fat']), (null, 0));
+    });
+
     test('a definition the account echoes back with its keys reordered and 2 written for 2.0 is the same definition', () {
       final mine = breakfast();
       final echoed = MealBody(jsonDecode(jsonEncode({'components': [for (final c in mine.components) {...c.j, 'quantity': c.quantity.round()}], 'name': 'Breakfast', 'kind': 'meal'})) as Json);
@@ -136,6 +161,18 @@ void main() {
     SavedMealRepository saved() => SavedMealRepository(h.sync, owner);
     Future<List<FoodEntry>> food() async => [for (final j in await h.bodies(owner, Kinds.food)) FoodEntry(j)];
     List<FoodDraft> drafts(String day) => MealMath.mealEntries(breakfast().components, dayKey: day, meal: 'Breakfast');
+
+    test('saving a food again at another log amount keeps its saved values exactly', () async {
+      final own = FoodItem({'source': 'user', 'sourceId': 'b1', 'name': 'Baguette', 'basis': FoodItem.per100g, 'nutrients': {'calories': 260, 'protein': 9, 'carbs': null, 'fat': null}, 'servings': const []});
+      // At 0.5 g the values on screen round to 1.3 kcal and about 0.05 g protein; rebasing those would not give 9 g back.
+      final g = FoodScaling.unit(own, 'g');
+      await SavedFoodRepository(h.sync, owner).saveMine(id: 'b1', name: 'Baguette', values: FoodScaling.scale(own, 0.5, g), from: own, quantity: 0.5, unitId: 'g');
+      final kept = (await h.bodies(owner, Kinds.savedFood)).single;
+      expect(kept['item']['nutrients'], {'calories': 260, 'protein': 9, 'carbs': null, 'fat': null});
+      // A value the person corrected for this amount is still rebased onto the basis, as before.
+      await SavedFoodRepository(h.sync, owner).saveMine(id: 'b1', name: 'Baguette', values: {...FoodScaling.scale(own, 50, g), 'calories': 150}, from: own, quantity: 50, unitId: 'g');
+      expect(((await h.bodies(owner, Kinds.savedFood)).single['item']['nutrients'] as Map)['calories'], 300);
+    });
 
     test('saving, updating, saving as new and drafts log nothing; logging changes no definition', () async {
       final id = await saved().put(breakfast());

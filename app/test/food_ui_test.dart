@@ -948,4 +948,53 @@ void main() {
       expect(tester.takeException(), isNull, reason: 'goals');
     });
   });
+
+  group('create food, log any amount', () {
+    testWidgets('a food created per 100 g is logged at 60 g, then at 90 g another day; its saved values never move', (tester) async {
+      final fakes = FoodFakes();
+      final overrides = await _overrides(tester, fakes);
+      await pumpApp(tester, overrides, home: FoodFormScreen(draft: FoodDraft(dayKey: _day, meal: 'Lunch')), size: const Size(390, 1800));
+      await _tap(tester, 'food-basis-100g');
+      await tester.enterText(find.byKey(const Key('food-name')), 'Baguette');
+      await tester.enterText(find.byKey(const Key('food-calories')), '260');
+      await tester.enterText(find.byKey(const Key('food-protein')), '9'); // carbs and fat left blank: unknown, never zero
+      await tester.enterText(find.byKey(const Key('food-log-quantity')), '60');
+      await tester.pumpAndSettle();
+      expect(find.text('Nutrition for 100 g'), findsOneWidget, reason: 'the values are typed for the basis, not for this log');
+      expect(tester.widget<Text>(find.byKey(const Key('food-amount-line'))).data, '60 g');
+      expect(find.text('156 kcal'), findsOneWidget, reason: '260 kcal per 100 g at 60 g');
+      expect(find.text('5.4 g'), findsOneWidget, reason: '9 g protein per 100 g at 60 g');
+      expect(find.widgetWithText(FilledButton, 'Log this time'), findsOneWidget);
+      await _tap(tester, 'food-save');
+      final first = fakes.journal.saved.single;
+      expect((first.quantity, first.unitId, first.amount, first.calories, first.protein, first.carbs, first.fat), (60, 'g', '60 g', 156, 5.4, null, null));
+      expect(first.item!.basis, FoodItem.per100g);
+      expect(first.item!.nutrients, {'calories': 260, 'protein': 9, 'carbs': null, 'fat': null});
+      await tester.pumpWidget(const SizedBox());
+
+      // Tomorrow, the same food again (from Recent or My foods): 90 g of the same saved basis.
+      await pumpApp(tester, overrides, home: FoodFormScreen(draft: FoodDraft.of(first.item!, dayKey: '2026-10-10', meal: 'Lunch')), size: const Size(390, 1800));
+      expect(find.text('Amount for this log'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('food-saved-basis'))).data, 'Saved nutrition per 100 g: 260 kcal · 9 g protein. The amount for this log never changes it.');
+      await tester.enterText(find.byKey(const Key('food-quantity')), '90');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'food-save');
+      final second = fakes.journal.saved.last;
+      expect((second.dayKey, second.quantity, second.calories, second.protein, second.carbs), ('2026-10-10', 90, 234, 8.1, null));
+      expect(second.item!.nutrients, {'calories': 260, 'protein': 9, 'carbs': null, 'fat': null}, reason: 'the log amount never changes the saved basis');
+      expect((first.quantity, first.calories), (60, 156), reason: 'the earlier log is its own copy');
+    });
+
+    testWidgets('one serving stays the default with its free "How much?" words; a value that is not a number shows no preview', (tester) async {
+      final fakes = FoodFakes();
+      await pumpApp(tester, await _overrides(tester, fakes), home: FoodFormScreen(draft: FoodDraft(dayKey: _day, meal: 'Lunch')), size: const Size(390, 1800));
+      expect(find.byKey(const Key('food-amount')), findsOneWidget);
+      expect(find.byKey(const Key('food-log-quantity')), findsNothing);
+      await _tap(tester, 'food-basis-100ml');
+      await tester.enterText(find.byKey(const Key('food-calories')), 'abc');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('food-amount-line')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }
