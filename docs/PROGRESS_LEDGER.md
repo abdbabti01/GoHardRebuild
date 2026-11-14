@@ -2693,3 +2693,8 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   App `account_security_test` (18), verification/l10n/session/data-layer suites (48), me/theme/widget/today UI (83):
   passed; `flutter analyze` clean; `check-l10n` OK. NOT run: full suites, emulator journeys, CI, IPA, real email.
   Not merged, not deployed.
+- 14 Nov follow-up: pushed 9e5826d: CI 199 passed; unsigned IPA run 70 (9e5826d) passed. Then `Email:SupportAddress`
+  (validated; without it change email is not offered with a real sender: no capability, 503) named in the changed-email
+  notice; owner to choose the monitored address before deployment. Release check test: another phone signed out by the
+  change keeps its pending command and sends it once after signing in with the new address. API focused 36 passed; app
+  account_security/data_layer/session_refresh 47 passed. No app/lib change since 9e5826d (IPA 70 stands). Not merged/deployed.

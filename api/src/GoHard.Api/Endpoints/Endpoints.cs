@@ -25,7 +25,7 @@ public static class GoHardEndpoints
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
         "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes", WeeklyGoalService.Capability,
         ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability, AccountEmailRegistration.Capability, SavedMealService.Capability,
-        EntitlementService.Capability, AccountEmailRegistration.ChangeCapability,
+        EntitlementService.Capability,
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -100,7 +100,9 @@ public static class GoHardEndpoints
                 .Concat(coach.Enabled ? [CoachService.Capability, DailyCoachService.Capability, DailyCoachService.IdeasCapability] : [])
                 .Concat(restaurants.Catalog is not null ? [RestaurantService.CatalogCapability] : [])
                 .Concat(restaurants.InterpretEnabled ? [RestaurantService.InterpretCapability] : [])
-                .Concat(email.Configured ? [AccountEmailRegistration.DeliveryCapability] : []).ToArray(),
+                .Concat(email.Configured ? [AccountEmailRegistration.DeliveryCapability] : [])
+                // Change email only once its notice can name a real support address (docs/AUTHENTICATION_EMAIL.md › 12).
+                .Concat(email.EmailChangeOffered ? [AccountEmailRegistration.ChangeCapability] : []).ToArray(),
         }));
 
         var auth = api.MapGroup("/auth").RequireRateLimiting("auth");

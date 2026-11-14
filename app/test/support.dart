@@ -57,6 +57,10 @@ class FakeServer implements Transport {
   final lookups = <String, ApiResponse>{};
   Json capabilities = {'contractVersion': 1, 'minimumClientContract': 1, 'capabilities': ['food.search', 'food.barcode', 'food.saved', 'profile.nutrition-goals', 'water.entries']};
   bool offline = false, loseNextResponse = false;
+
+  /// Every token this phone holds was ended elsewhere (a password or email change on another phone): every request and
+  /// every refresh is 401, as on the real server after its security stamp changed.
+  bool revoked = false;
   Completer<void>? hold;
 
   List<({String method, String path, String body, String? bearer})> callsTo(String fragment) => calls.where((c) => c.path.contains(fragment)).toList();
@@ -69,6 +73,7 @@ class FakeServer implements Transport {
     final body = jsonEncode(data);
     calls.add((method: method, path: path, body: body, bearer: bearer));
     if (offline) throw const TransportFailure('offline');
+    if (revoked) return const ApiResponse(401, {'code': 'INVALID_REFRESH_TOKEN'});
     if (hold != null) await hold!.future;
     final response = _handle(method, path, data is Map ? data as Json : null, body);
     if (loseNextResponse) {

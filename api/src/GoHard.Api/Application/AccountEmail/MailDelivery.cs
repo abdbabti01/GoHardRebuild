@@ -151,7 +151,7 @@ public sealed class MailWorker(IServiceScopeFactory scopes, IMailSender sender, 
 
         // Minutes as of when the message was queued: fixed per message, so every retry carries identical content.
         var minutes = c is null ? 0 : (int)Math.Ceiling((c.ExpiresAtUtc - m.CreatedAtUtc).TotalMinutes);
-        var (subject, text, html) = MailTemplates.Render(m.Kind, m.Language, c is null ? null : AccountEmailService.CodeFor(options.CodeSecret, c.Id, c.CodeDigits), minutes);
+        var (subject, text, html) = MailTemplates.Render(m.Kind, m.Language, c is null ? null : AccountEmailService.CodeFor(options.CodeSecret, c.Id, c.CodeDigits), minutes, options.SupportAddress);
         using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
         bound.CancelAfter(TimeSpan.FromSeconds(options.SendTimeoutSeconds));
         SendResult result;
@@ -223,7 +223,7 @@ public static class MailTemplates
         [(AccountEmailService.EmailChanged, "en")] = new("Your GoHard email was changed",
             ["The email address of your GoHard account was just changed to a new address, and every device was signed out. This address no longer signs in to the account or receives its password reset codes."],
             ["If this was you, there is nothing else to do.",
-             "If you didn't make this change, contact GoHard support right away: someone else may be using your account."]),
+             "{support}"]),
 
         [(AccountEmailService.Reset, "fr")] = new("Ton code de réinitialisation GoHard",
             ["Entre ce code dans l'app GoHard pour réinitialiser ton mot de passe :"],
@@ -244,7 +244,7 @@ public static class MailTemplates
         [(AccountEmailService.EmailChanged, "fr")] = new("Ton adresse courriel GoHard a été changée",
             ["L'adresse courriel de ton compte GoHard vient d'être remplacée par une nouvelle adresse, et tous les appareils ont été déconnectés. Cette adresse ne permet plus de se connecter au compte ni d'en recevoir les codes de réinitialisation."],
             ["Si c'est toi, tu n'as rien d'autre à faire.",
-             "Sinon, contacte le soutien GoHard tout de suite : quelqu'un d'autre utilise peut-être ton compte."]),
+             "{support}"]),
 
         [(AccountEmailService.Reset, "ar")] = new("رمز إعادة تعيين كلمة مرور GoHard",
             ["أدخل هذا الرمز في تطبيق GoHard لإعادة تعيين كلمة المرور:"],
@@ -265,7 +265,19 @@ public static class MailTemplates
         [(AccountEmailService.EmailChanged, "ar")] = new("تم تغيير بريدك الإلكتروني في GoHard",
             ["تم للتو تغيير عنوان البريد الإلكتروني لحسابك في GoHard إلى عنوان جديد، وتم تسجيل الخروج من جميع الأجهزة. لم يعد هذا العنوان يسجّل الدخول إلى الحساب ولا يتلقى رموز إعادة تعيين كلمة المرور."],
             ["إذا كنت أنت من قام بذلك، فلا حاجة لفعل أي شيء آخر.",
-             "إذا لم تقم بهذا التغيير، فاتصل بدعم GoHard فورًا: قد يكون شخص آخر يستخدم حسابك."]),
+             "{support}"]),
+    };
+
+    /// <summary>The email-changed notice's "this wasn't me" line: with the configured support address ({a}), or, only where
+    /// change email runs without one (local capture), without an address.</summary>
+    private static readonly Dictionary<(string Lang, bool Address), string> Support = new()
+    {
+        [("en", true)] = "If you didn't make this change, write to GoHard support at {a} right away: someone else may be using your account.",
+        [("en", false)] = "If you didn't make this change, contact GoHard support right away: someone else may be using your account.",
+        [("fr", true)] = "Sinon, écris tout de suite au soutien GoHard à {a} : quelqu'un d'autre utilise peut-être ton compte.",
+        [("fr", false)] = "Sinon, contacte le soutien GoHard tout de suite : quelqu'un d'autre utilise peut-être ton compte.",
+        [("ar", true)] = "إذا لم تقم بهذا التغيير، فراسل دعم GoHard فورًا على {a}: قد يكون شخص آخر يستخدم حسابك.",
+        [("ar", false)] = "إذا لم تقم بهذا التغيير، فاتصل بدعم GoHard فورًا: قد يكون شخص آخر يستخدم حسابك.",
     };
 
     private static readonly Dictionary<string, string> Footer = new()
@@ -275,11 +287,14 @@ public static class MailTemplates
         ["ar"] = "هذه رسالة تلقائية من GoHard.",
     };
 
-    public static (string Subject, string Text, string Html) Render(string kind, string language, string? code, int minutes)
+    public static (string Subject, string Text, string Html) Render(string kind, string language, string? code, int minutes, string supportAddress = "")
     {
         var lang = All.ContainsKey((kind, language)) ? language : "en";
         var w = All[(kind, lang)];
-        string Fill(string s) => s.Replace("{m}", minutes.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var rtlLang = lang == "ar";
+        var address = supportAddress.Trim();
+        var support = Support[(lang, address.Length > 0)].Replace("{a}", rtlLang ? "\u2066" + address + "\u2069" : address);
+        string Fill(string s) => s.Replace("{m}", minutes.ToString(System.Globalization.CultureInfo.InvariantCulture)).Replace("{support}", support);
         var rtl = lang == "ar";
 
         var text = new StringBuilder("GoHard\n\n");

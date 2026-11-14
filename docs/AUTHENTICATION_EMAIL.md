@@ -364,6 +364,20 @@ and its unsent mail cancelled, and a notice queued to the **old** address ("Your
 The account keeps its ID, so everything it owns (workouts, food, settings, Plus, operations) stays. On the phone local
 data and the outbox are keyed by that ID, so pending changes resume after signing in with the new address.
 
+**Support address (owner decision, pending).** The notice to the old address tells a person who did not make the change
+to "write to GoHard support at {address}". The address is `Email:SupportAddress` (`GOHARD_Email__SupportAddress`); no
+inbox is assumed to be monitored. It is validated at startup (a malformed one stops the API). **Without it, change email
+is not offered** wherever mail really goes out: `account.email-change` is not declared and request/resend/confirm answer
+503 `EMAIL_UNAVAILABLE`, so no notice can go out without a real contact. Local capture works without it (the notice then
+says "contact GoHard support"). Before deploying: the owner chooses a monitored address and sets it in Railway.
+
+**Every device signs out: pending offline changes.** Commands are stored per account ID, never per address. This phone
+signs out non-destructively on confirmation. Another phone meets 401 on its next request; its refresh is refused, it signs
+out with "sign in again" (nothing deleted), and the refused command stays `pending` with no attempt counted. Signing in
+with the new address is the same account ID, so the outbox resumes and each change is sent once (operation IDs make a
+replay harmless). Covered by `account_security_test` (this phone; another phone). Not covered: a real device, a command
+in flight at the exact moment, the iOS keychain.
+
 **Unchanged.** Signup verification, password reset and password change; their routes and limits. Before confirmation the
 old address signs in and receives reset codes; the new one does neither.
 

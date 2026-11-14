@@ -732,6 +732,48 @@ public sealed class AccountEmailTests(PostgresFixture pg)
     }
 
     [Fact]
+    public async Task The_changed_notice_names_the_configured_support_address_and_without_one_a_real_sender_does_not_offer_the_change()
+    {
+        const string support = "help@support.example.test";
+        await using (var e = await Start(new() { ["Email:SupportAddress"] = support }))
+        {
+            var a = await Account.RegisterAsync(e.Api);
+            var (old, to) = (a.Auth.Profile.Email, Fresh());
+            await RequestChange(e, a, to);
+            Assert.Equal(HttpStatusCode.NoContent, (await ConfirmChange(e, a, await ChangeCode(e, to))).StatusCode);
+            await e.Deliver();
+            var notice = Assert.Single(e.Box.All, m => m.To == old && m.Subject == ChangedSubject);
+            Assert.Contains($"write to GoHard support at {support}", notice.Text);
+            Assert.Contains(support, notice.Html);
+        }
+
+        // A real sender without a chosen support address: change email is not offered (capability absent, routes unavailable).
+        var resend = new StubProvider(_ => Task.FromResult(StubProvider.Json("{\"id\":\"re-1\"}")));
+        await using (var e = await Start(new()
+        {
+            ["Email:Provider"] = "Resend", ["Email:ResendApiKey"] = "re_test_secret_key_value", ["Email:FromAddress"] = "noreply@auth.example.test",
+        }, provider: resend))
+        {
+            Assert.DoesNotContain("\"account.email-change\"", await e.Anonymous.GetStringAsync("/api/v1/capabilities"));
+            var a = await Account.RegisterAsync(e.Api);
+            var r = await RequestChange(e, a, Fresh());
+            Assert.Equal((HttpStatusCode.ServiceUnavailable, "EMAIL_UNAVAILABLE"), (r.StatusCode, await Code(r)));
+        }
+
+        // A support address that is not an address stops the API at startup instead of going into mail.
+        await using var bad = new ApiFactory(await pg.CreateDatabaseAsync(migrate: true))
+        {
+            Environment = "Production",
+            Settings = new()
+            {
+                ["Email:Provider"] = "Resend", ["Email:ResendApiKey"] = "re_x", ["Email:FromAddress"] = "a@b.test", ["Email:CodeSecret"] = new string('k', 40),
+                ["Email:SupportAddress"] = "not an address",
+            },
+        };
+        Assert.Contains("Email:SupportAddress", Assert.ThrowsAny<Exception>(() => bad.CreateClient()).ToString());
+    }
+
+    [Fact]
     public async Task Change_email_needs_the_current_password_and_a_new_free_address()
     {
         await using var e = await Start();

@@ -171,6 +171,33 @@ void main() {
     expect((await h.sync.commands(owner)).single.state, 'pending', reason: 'still waiting to sync, not discarded');
   });
 
+  test('another phone signed out by an email change keeps its pending work and syncs it once after signing in with the new address', () async {
+    final h = Harness();
+    addTearDown(h.dispose);
+    final owner = await h.signIn('one');
+    h.server.offline = true;
+    await FoodRepository(h.sync, owner).save(FoodDraft(dayKey: '2026-10-21', meal: 'Breakfast', name: 'Oats', amount: '60 g', calories: 230));
+    // Back online after the email was changed on the other phone: this phone's access and refresh tokens are refused.
+    h.server
+      ..offline = false
+      ..revoked = true;
+    await h.sync.flush();
+    expect((h.sessions.current, h.sessions.notice), (null, SignOutReason.expired), reason: 'signed out, without deleting anything');
+    expect((await h.sync.commands(owner)).single.state, 'pending', reason: 'the refused request is not counted as a failure');
+    expect((await h.bodies(owner, Kinds.food)).single['name'], 'Oats');
+    expect(h.server.food, isEmpty);
+
+    // Signing in with the new address is the same account (its ID): the waiting change goes, once.
+    h.server.revoked = false;
+    final auth = authFor('one');
+    await h.sessions.signIn({...auth, 'profile': {...auth['profile'] as Json, 'email': 'new@example.test'}});
+    await h.sync.flush();
+    await h.sync.flush();
+    expect(h.server.food.values.single['name'], 'Oats');
+    expect(h.server.callsTo('/food-entries').length, 2, reason: 'the refused attempt, then the one that was taken; nothing more');
+    expect(await h.sync.commands(owner, states: const ['pending', 'conflict', 'rejected']), isEmpty);
+  });
+
   test('a code keeps its leading zeros and any script\'s digits become ASCII', () {
     expect(normalizeCode('01234567'), '01234567');
     expect(normalizeCode('٠١٢٣٤٥٦٧'), '01234567', reason: 'Arabic-Indic');

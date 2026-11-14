@@ -23,6 +23,9 @@ public sealed class EmailOptions
     public string FromName { get; set; } = "GoHard";
     /// <summary>Optional. Only an address that really receives replies.</summary>
     public string ReplyTo { get; set; } = "";
+    /// <summary>The address the "your email was changed" notice gives for "this wasn't me". The owner chooses a monitored
+    /// inbox; none is assumed. Without it, change email is not offered except with local capture (docs › 12).</summary>
+    public string SupportAddress { get; set; } = "";
     /// <summary>Server-only key the codes are derived from (and addresses hashed with). At least 32 characters.</summary>
     public string CodeSecret { get; set; } = "";
     public int CodeMinutes { get; set; } = 10;
@@ -41,6 +44,9 @@ public sealed class EmailOptions
     /// <summary>Tests turn the background loop off and run passes themselves.</summary>
     public bool WorkerEnabled { get; set; } = true;
     public bool Configured => Provider is Resend or Capture;
+    /// <summary>Change email sends a security notice that must name a real support address, so it is offered only once one
+    /// is set (local capture, which sends nothing, works without).</summary>
+    public bool EmailChangeOffered => Configured && (Provider == Capture || SupportAddress.Length > 0);
 }
 
 public sealed record CodeRequest(string? Email, string? Language);
@@ -66,6 +72,9 @@ public static class AccountEmailRegistration
     public static IServiceCollection AddAccountEmail(this IServiceCollection services, IConfiguration config, IHostEnvironment env)
     {
         var o = config.GetSection("Email").Get<EmailOptions>() ?? new();
+        o.SupportAddress = o.SupportAddress.Trim();
+        if (o.SupportAddress.Length > 0 && !MailAddress.TryCreate(o.SupportAddress, out _))
+            throw new InvalidOperationException("Email:SupportAddress must be a valid email address (or empty: change email is then not offered).");
         switch (o.Provider)
         {
             case "":
@@ -425,7 +434,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     /// </summary>
     public async Task<CodeRequestResult> RequestEmailChangeAsync(Guid userId, string? newEmail, string? currentPassword, string? language, int? codeDigits, CancellationToken ct)
     {
-        if (!options.Configured) return new(CodeRequestStatus.Unavailable);
+        if (!options.EmailChangeOffered) return new(CodeRequestStatus.Unavailable);
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
         if (!AuthService.VerifyPassword(user, currentPassword)) return new(CodeRequestStatus.WrongPassword);
         var normalized = AuthService.NormalizeEmail(newEmail);
@@ -449,7 +458,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     /// The password was checked when the request was made; a password change since then voided the request.</summary>
     public async Task<CodeRequestResult> ResendEmailChangeAsync(Guid userId, string? language, int? codeDigits, CancellationToken ct)
     {
-        if (!options.Configured) return new(CodeRequestStatus.Unavailable);
+        if (!options.EmailChangeOffered) return new(CodeRequestStatus.Unavailable);
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
         if (await PendingChangeAsync(userId, ct) is not { NewEmail: { } to } pending || pending.SecurityStamp != user.SecurityStamp)
             return new(CodeRequestStatus.NoPendingChange);
@@ -476,7 +485,7 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     /// </summary>
     public async Task<CodeCheckStatus> ConfirmEmailChangeAsync(Guid userId, string? code, string? language, CancellationToken ct)
     {
-        if (!options.Configured) return CodeCheckStatus.Unavailable;
+        if (!options.EmailChangeOffered) return CodeCheckStatus.Unavailable;
         var (status, c) = await CheckCodeAsync(EmailChange, "", userId, code, ct);
         if (status != CodeCheckStatus.Ok) return status;
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
