@@ -1283,6 +1283,24 @@ class AppLocalizationsFr extends AppLocalizations {
   String get foodAmountLabel => 'Quantité';
 
   @override
+  String get foodAmountForLog => 'Quantité pour cette fois';
+
+  @override
+  String get foodBasisLabel => 'Valeurs nutritives par';
+
+  @override
+  String get foodBasisServing => '1 portion';
+
+  @override
+  String get foodBasisSavedNote =>
+      'Enregistrées avec l’aliment. La quantité de cette fois ne les change jamais.';
+
+  @override
+  String foodSavedBasis(String basis, String values) {
+    return 'Valeurs enregistrées $basis : $values. La quantité de cette fois ne les change jamais.';
+  }
+
+  @override
   String get foodPortionLabel => 'Portion';
 
   @override
@@ -1333,6 +1351,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get foodSaveToMine => 'Enregistrer dans Mes aliments sans consigner';
+
+  @override
+  String get foodUpdateSaved => 'Mettre à jour l’aliment enregistré';
+
+  @override
+  String get foodUpdatedSaved =>
+      'Aliment enregistré mis à jour. Rien n’a été consigné et les entrées passées restent telles quelles.';
 
   @override
   String get foodShowsDetailsHint => 'Affiche les détails de l\'aliment';
@@ -1588,10 +1613,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'Cherche un aliment, scanne un code-barres ou entre le tien. Récents, Favoris et Mes aliments sont à portée de main.';
 
   @override
-  String get foodManualTitle => 'L\'entrer toi-même';
+  String get foodManualTitle => 'Créer un aliment';
 
   @override
-  String get foodManualSubtitle => 'Introuvable? Crée ton propre aliment';
+  String get foodManualSubtitle =>
+      'Enregistre un aliment avec ses propres valeurs nutritives.';
+
+  @override
+  String get foodCreateExample =>
+      'Exemple : Baguette → 60 g aujourd’hui ou 90 g demain.';
 
   @override
   String get foodFooter =>
@@ -10419,6 +10449,28 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealsNewRecipe => 'Nouvelle recette';
 
   @override
+  String get mealsCreateMeal => 'Créer un repas';
+
+  @override
+  String get mealsCreateRecipe => 'Créer une recette';
+
+  @override
+  String get mealsCreateMealAbout =>
+      'Enregistre des aliments que tu manges ensemble. Change chaque quantité au moment de consigner.';
+
+  @override
+  String get mealsCreateMealExample =>
+      'Exemple : Déjeuner → 2 œufs + 60 g de baguette.';
+
+  @override
+  String get mealsCreateRecipeAbout =>
+      'Ajoute les ingrédients d’une fournée, puis consigne la portion que tu as mangée.';
+
+  @override
+  String get mealsCreateRecipeExample =>
+      'Exemple : Garniture au poulet → consigne 170 g de la fournée.';
+
+  @override
   String get mealsEditMeal => 'Modifier le repas';
 
   @override
@@ -10686,11 +10738,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealsUseAmount => 'Utiliser cette quantité';
 
   @override
+  String get mealsSavedAmount => 'Quantité enregistrée';
+
+  @override
+  String mealsSavedAmountWas(String amount) {
+    return 'Quantité enregistrée : $amount';
+  }
+
+  @override
   String get mealsReviewNote =>
       'Vérifie les quantités. Rien n’est consigné avant que tu confirmes.';
 
   @override
   String get mealsAmountsHeading => 'Quantités cette fois';
+
+  @override
+  String get mealsAmountsHint =>
+      'Touche un aliment pour changer sa quantité pour cette fois. Un multiplicateur change toutes les quantités d’un coup.';
 
   @override
   String get mealsMultiplierCustom => 'Autre…';
@@ -10750,7 +10814,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealsPortionHeading => 'Combien tu en as pris';
 
   @override
-  String get mealsPortionAmount => 'Quantité';
+  String get mealsPortionAmount => 'Quantité pour cette fois';
 
   @override
   String get mealsMeasureServings => 'Portions';
@@ -10760,7 +10824,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mealsNoWeight =>
-      'Pour consigner des grammes, ajoute le poids de la fournée cuite à la recette.';
+      'Pour consigner des grammes, pèse toute la fournée une fois cuite et ajoute ce poids avec Modifier la recette. Le poids des ingrédients crus n’est pas utilisé : la cuisson le change.';
 
   @override
   String mealsThisPortion(String amount) {

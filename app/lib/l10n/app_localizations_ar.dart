@@ -1289,6 +1289,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get foodAmountLabel => 'الكمية';
 
   @override
+  String get foodAmountForLog => 'الكمية لهذا التسجيل';
+
+  @override
+  String get foodBasisLabel => 'القيم الغذائية لكل';
+
+  @override
+  String get foodBasisServing => 'حصة واحدة';
+
+  @override
+  String get foodBasisSavedNote =>
+      'تُحفظ مع الطعام. لا تغيّرها كمية هذا التسجيل أبدًا.';
+
+  @override
+  String foodSavedBasis(String basis, String values) {
+    return 'القيم المحفوظة $basis: $values. لا تغيّرها كمية هذا التسجيل أبدًا.';
+  }
+
+  @override
   String get foodPortionLabel => 'الحصة';
 
   @override
@@ -1345,6 +1363,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get foodSaveToMine => 'الحفظ في «أطعمتي» دون تسجيل';
+
+  @override
+  String get foodUpdateSaved => 'تحديث الطعام المحفوظ';
+
+  @override
+  String get foodUpdatedSaved =>
+      'تم تحديث الطعام المحفوظ. لم يُسجَّل شيء، والتسجيلات السابقة كما هي.';
 
   @override
   String get foodShowsDetailsHint => 'يعرض تفاصيل الطعام';
@@ -1599,10 +1624,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'ابحث عن طعام أو امسح رمزًا شريطيًا أو أدخل طعامك. «الأخيرة» و«المفضلة» و«أطعمتي» على بُعد نقرة.';
 
   @override
-  String get foodManualTitle => 'أدخله بنفسك';
+  String get foodManualTitle => 'إنشاء طعام';
 
   @override
-  String get foodManualSubtitle => 'لم تجده؟ أنشئ طعامك الخاص';
+  String get foodManualSubtitle => 'احفظ طعامًا واحدًا بقيمه الغذائية الخاصة.';
+
+  @override
+  String get foodCreateExample => 'مثال: باغيت ← 60 غ اليوم أو 90 غ غدًا.';
 
   @override
   String get foodFooter => 'اختر طعامًا لمراجعة الكمية قبل التسجيل.';
@@ -10718,6 +10746,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mealsNewRecipe => 'وصفة جديدة';
 
   @override
+  String get mealsCreateMeal => 'إنشاء وجبة';
+
+  @override
+  String get mealsCreateRecipe => 'إنشاء وصفة';
+
+  @override
+  String get mealsCreateMealAbout =>
+      'احفظ أطعمة تتناولها معًا. غيّر كل كمية عند التسجيل.';
+
+  @override
+  String get mealsCreateMealExample =>
+      'مثال: الفطور ← بيضتان + 60 غ من الباغيت.';
+
+  @override
+  String get mealsCreateRecipeAbout =>
+      'أضف مكونات طبخة كاملة، ثم سجّل الحصة التي تناولتها.';
+
+  @override
+  String get mealsCreateRecipeExample =>
+      'مثال: حشوة الدجاج ← سجّل 170 غ من الطبخة.';
+
+  @override
   String get mealsEditMeal => 'تعديل الوجبة';
 
   @override
@@ -10993,10 +11043,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mealsUseAmount => 'استخدم هذه الكمية';
 
   @override
+  String get mealsSavedAmount => 'الكمية المحفوظة';
+
+  @override
+  String mealsSavedAmountWas(String amount) {
+    return 'الكمية المحفوظة: $amount';
+  }
+
+  @override
   String get mealsReviewNote => 'راجع الكميات. لا يُسجَّل شيء حتى تؤكّد.';
 
   @override
   String get mealsAmountsHeading => 'الكميات هذه المرة';
+
+  @override
+  String get mealsAmountsHint =>
+      'المس طعامًا لتغيير كميته لهذا التسجيل. يغيّر المضاعِف كل الكميات مرة واحدة.';
 
   @override
   String get mealsMultiplierCustom => 'غير ذلك…';
@@ -11055,7 +11117,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mealsPortionHeading => 'الكمية التي تناولتها';
 
   @override
-  String get mealsPortionAmount => 'الكمية';
+  String get mealsPortionAmount => 'الكمية لهذا التسجيل';
 
   @override
   String get mealsMeasureServings => 'حصص';
@@ -11065,7 +11127,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mealsNoWeight =>
-      'لتسجيل الغرامات، أضف وزن الكمية بعد التحضير إلى الوصفة.';
+      'لتسجيل الغرامات، زِن الطبخة كاملة بعد الطهي وأضف وزنها عبر «تعديل الوصفة». لا يُستخدم وزن المكونات النيئة لأن الطهي يغيّره.';
 
   @override
   String mealsThisPortion(String amount) {

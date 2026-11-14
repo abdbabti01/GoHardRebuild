@@ -1259,6 +1259,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foodAmountLabel => 'Amount';
 
   @override
+  String get foodAmountForLog => 'Amount for this log';
+
+  @override
+  String get foodBasisLabel => 'Nutrition is per';
+
+  @override
+  String get foodBasisServing => '1 serving';
+
+  @override
+  String get foodBasisSavedNote =>
+      'Saved with the food. The amount for this log never changes it.';
+
+  @override
+  String foodSavedBasis(String basis, String values) {
+    return 'Saved nutrition $basis: $values. The amount for this log never changes it.';
+  }
+
+  @override
   String get foodPortionLabel => 'Portion';
 
   @override
@@ -1309,6 +1327,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foodSaveToMine => 'Save to My foods without logging';
+
+  @override
+  String get foodUpdateSaved => 'Update saved food';
+
+  @override
+  String get foodUpdatedSaved =>
+      'Saved food updated. Nothing was logged, and past logs are unchanged.';
 
   @override
   String get foodShowsDetailsHint => 'Shows the food details';
@@ -1564,10 +1589,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Search for a food, scan a barcode or enter your own. Recent, Favourites and My foods are one tap away.';
 
   @override
-  String get foodManualTitle => 'Enter it yourself';
+  String get foodManualTitle => 'Create food';
 
   @override
-  String get foodManualSubtitle => 'Can\'t find it? Create your own food';
+  String get foodManualSubtitle => 'Save one item with its own nutrition.';
+
+  @override
+  String get foodCreateExample =>
+      'Example: Baguette → log 60 g today or 90 g tomorrow.';
 
   @override
   String get foodFooter => 'Choose a food to check the amount before logging.';
@@ -10239,6 +10268,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealsNewRecipe => 'New recipe';
 
   @override
+  String get mealsCreateMeal => 'Create meal';
+
+  @override
+  String get mealsCreateRecipe => 'Create recipe';
+
+  @override
+  String get mealsCreateMealAbout =>
+      'Save foods you eat together. Change each amount when you log it.';
+
+  @override
+  String get mealsCreateMealExample =>
+      'Example: Breakfast → 2 eggs + 60 g of baguette.';
+
+  @override
+  String get mealsCreateRecipeAbout =>
+      'Add ingredients for a batch, then log the portion you ate.';
+
+  @override
+  String get mealsCreateRecipeExample =>
+      'Example: Chicken filling → log 170 g from the batch.';
+
+  @override
   String get mealsEditMeal => 'Edit meal';
 
   @override
@@ -10502,11 +10553,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealsUseAmount => 'Use this amount';
 
   @override
+  String get mealsSavedAmount => 'Saved amount';
+
+  @override
+  String mealsSavedAmountWas(String amount) {
+    return 'Saved amount: $amount';
+  }
+
+  @override
   String get mealsReviewNote =>
       'Check the amounts. Nothing is logged until you confirm.';
 
   @override
   String get mealsAmountsHeading => 'Amounts this time';
+
+  @override
+  String get mealsAmountsHint =>
+      'Tap a food to change its amount for this log. A multiplier changes every amount at once.';
 
   @override
   String get mealsMultiplierCustom => 'Other…';
@@ -10565,7 +10628,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealsPortionHeading => 'How much you had';
 
   @override
-  String get mealsPortionAmount => 'Amount';
+  String get mealsPortionAmount => 'Amount for this log';
 
   @override
   String get mealsMeasureServings => 'Servings';
@@ -10575,7 +10638,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mealsNoWeight =>
-      'To log grams, add the finished batch’s weight to the recipe.';
+      'To log grams, weigh the whole batch once it’s cooked and add that weight with Edit recipe. The raw ingredients’ weight isn’t used: cooking changes it.';
 
   @override
   String mealsThisPortion(String amount) {

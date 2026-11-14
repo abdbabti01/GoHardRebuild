@@ -55,11 +55,15 @@ Future<void> openFoodForm(BuildContext context, {required String dayKey, FoodEnt
 /// The one form every way of finding a food leads to: review the food and its source, say how much, pick the
 /// meal and date, then confirm. Pops `true` when an entry was logged or changed.
 class FoodFormScreen extends ConsumerStatefulWidget {
-  const FoodFormScreen({super.key, required this.draft, this.existing, this.pick = false});
+  const FoodFormScreen({super.key, required this.draft, this.existing, this.pick = false, this.amountLabel});
 
   /// Selection only: confirming pops the reviewed [FoodDraft] (a food for a saved meal or recipe) and logs nothing.
   /// The meal and date are not asked for.
   final bool pick;
+
+  /// What the amount field is called: "Amount for this log" unless the caller sets something else ("Saved amount" in a
+  /// saved meal's or recipe's editor).
+  final String? amountLabel;
 
   /// The date in this draft was pinned when the form opened. Midnight passing does not change it.
   final FoodDraft draft;
@@ -95,6 +99,15 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
   /// Counts portions defined here, so the unit list is rebuilt with the new one selected.
   int _portions = 0;
 
+  /// A food created here: what the typed values are for. One serving keeps the free "How much?" words, the values being
+  /// for exactly that; per 100 g or 100 ml makes it a food of its own, logged (and saved) at any amount of that unit.
+  String _basis = FoodItem.perServing;
+  late final _logQuantity = TextEditingController(text: _text(100));
+
+  /// One identity for the food created here, so saving it to My foods again updates it instead of adding another.
+  final _ownId = SyncEngine.newId();
+  bool get _measured => _item == null && _basis != FoodItem.perServing;
+
   static String _text(double? v) => v == null ? '' : formatNumber2(v);
 
   @override
@@ -102,6 +115,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     _name.dispose();
     _amount.dispose();
     _quantity.dispose();
+    _logQuantity.dispose();
     for (final c in _macros.values) {
       c.dispose();
     }
@@ -171,7 +185,20 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     });
   }
 
+  /// The food being created here, on its basis, with the values as typed (blank is unknown, never zero).
+  FoodItem _own() => FoodItem({
+        'source': 'user', 'sourceId': _ownId, 'name': _name.text.trim(), 'basis': _basis,
+        'nutrients': {for (final k in FoodItem.nutrientKeys) k: _macro(k)}, 'servings': const <Json>[],
+      });
+
   FoodDraft _draft() {
+    if (_measured) {
+      final own = _own(), quantity = parseNonNegative(_logQuantity.text.trim());
+      if (!((quantity ?? 0) > 0)) throw const InvalidFood(FoodProblem.noQuantity);
+      final unit = FoodScaling.units(own).first, v = FoodScaling.scale(own, quantity!, unit);
+      return FoodDraft(id: widget.draft.id, dayKey: _dayKey, meal: _meal, name: _name.text, amount: FoodScaling.describe(own, quantity, unit),
+          calories: v['calories'], protein: v['protein'], carbs: v['carbs'], fat: v['fat'], item: own, quantity: quantity, unitId: unit.id);
+    }
     final item = _item;
     final quantity = _amountEaten;
     if (item != null && !((quantity ?? 0) > 0)) throw const InvalidFood(FoodProblem.noQuantity);
@@ -226,14 +253,17 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
 
   /// Keeps this food for next time. It is not eaten by being kept: no journal entry is written.
   Future<void> _saveReusable() async {
+    var updated = false;
     final ok = await _guarded(() async {
       final d = _draft();
       FoodRepository.validate(d);
       final mine = _saved(mine: true);
+      updated = mine != null;
       await ref.read(savedFoodRepositoryProvider).saveMine(
-          id: mine?.id, name: d.name, values: d.macros, from: d.item, quantity: d.quantity, unitId: d.unitId, amount: d.amount, isFavourite: mine?.isFavourite ?? false);
+          id: mine?.id ?? (_item == null ? _ownId : null), name: d.name, values: d.macros, from: d.item, quantity: d.quantity, unitId: d.unitId, amount: d.amount,
+          isFavourite: mine?.isFavourite ?? false);
     });
-    if (ok && mounted) toast(context, context.l10n.foodSavedToMine);
+    if (ok && mounted) toast(context, updated ? context.l10n.foodUpdatedSaved : context.l10n.foodSavedToMine);
   }
 
   Future<void> _toggleFavourite() async {
@@ -274,6 +304,22 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
     if (item != null && (_amountEaten ?? 0) > 0) {
       amountLine = _describe(item, _amountEaten!, common);
     }
+    // A food created per 100 g or 100 ml: what this log's amount brings, from the values typed for that basis.
+    final basisAmount = _basis == FoodItem.per100ml ? '100 ${l.waterUnitMl}' : '100 ${l.eatUnitGram}';
+    Map<String, double?>? logValues;
+    if (_measured) {
+      final q = parseNonNegative(_logQuantity.text.trim());
+      try {
+        final own = _own(), unit = FoodScaling.units(own).first;
+        if ((q ?? 0) > 0) {
+          logValues = FoodScaling.scale(own, q!, unit);
+          amountLine = FoodScaling.describe(own, q, unit);
+        }
+      } on InvalidFood {
+        // A value that is not a number yet: no preview until it is one.
+      }
+    }
+    final mine = item != null && _saved(mine: true) != null;
     final unit = item == null ? null : FoodScaling.unit(item, _unitId);
     // A unit's label as its source gives it, except a catalog food's start portion, said in the app's language.
     String named(FoodUnit u) => u.label == common?.portion ? common!.portionIn(lang)! : u.label;
@@ -349,7 +395,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
       ],
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
-        PrimaryButton(widget.pick ? l.mealsUseAmount : editing ? l.foodSaveChanges : l.foodLogButton, key: const Key('food-save'), onPressed: _save, busy: _busy),
+        PrimaryButton(widget.pick ? l.mealsUseAmount : editing ? l.foodSaveChanges : l.mealsLogThisTime, key: const Key('food-save'), onPressed: _save, busy: _busy),
         TextButton(key: const Key('food-cancel'), onPressed: () => Navigator.pop(context), child: Text(editing ? l.foodCancelKeep : l.actionCancel)),
       ]),
       children: [
@@ -363,7 +409,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
                 _exact = parseNonNegative(v);
                 _rescale();
               }),
-              decoration: InputDecoration(labelText: l.foodAmountLabel),
+              decoration: InputDecoration(labelText: widget.amountLabel ?? l.foodAmountForLog),
             ),
             KeyedSubtree(
               key: const Key('food-unit'),
@@ -382,6 +428,9 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
             ),
           ),
           if (definition != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(definition, key: const Key('food-unit-definition'), style: context.caption)),
+          // A food of the person's own: what its saved values are for, which no amount entered here changes.
+          if (item.source == 'user')
+            Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.foodSavedBasis(FoodScaling.basisText(item, l), _basisValues(l, item)), key: const Key('food-saved-basis'), style: context.caption)),
           // The amount in full, with its weight when the food states one, so the number and unit are read together,
           // and what it brings as the fields below say now.
           if (amountLine != null) Padding(padding: const EdgeInsets.only(top: 14), child: _Logging(amountLine, calories: _macros['calories']!.text, protein: _macros['protein']!.text)),
@@ -399,14 +448,38 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
           const SizedBox(height: 8),
           if (!widget.pick) ...[...mealAndDate, const Rule()],
         ] else ...[
-          TextField(key: const Key('food-amount'), controller: _amount, textInputAction: TextInputAction.next,
-              decoration: InputDecoration(labelText: l.foodHowMuch, helperText: l.foodHowMuchHelper)),
+          // Creating a food: what its values are for. Per 100 g or 100 ml it is logged at any amount, worked out here.
+          if (!editing) ...[
+            Text(l.foodBasisLabel, style: context.label),
+            const SizedBox(height: 6),
+            Segmented<String>(
+              keyPrefix: 'food-basis', values: const [FoodItem.perServing, FoodItem.per100g, FoodItem.per100ml], selected: _basis,
+              label: (b) => switch (b) { FoodItem.per100g => '100 ${l.eatUnitGram}', FoodItem.per100ml => '100 ${l.waterUnitMl}', _ => l.foodBasisServing },
+              onChanged: (b) => setState(() => _basis = b),
+            ),
+            const SizedBox(height: 14),
+          ],
+          if (_measured) ...[
+            TextField(
+              key: const Key('food-log-quantity'), controller: _logQuantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.done,
+              style: context.numStyle(18), onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(labelText: widget.amountLabel ?? l.foodAmountForLog, suffixText: _basis == FoodItem.per100ml ? l.waterUnitMl : l.eatUnitGram),
+            ),
+            if (amountLine != null && logValues != null)
+              Padding(padding: const EdgeInsets.only(top: 14), child: _Logging(amountLine, calories: _text(logValues['calories']), protein: _text(logValues['protein']))),
+          ] else
+            TextField(key: const Key('food-amount'), controller: _amount, textInputAction: TextInputAction.next,
+                decoration: InputDecoration(labelText: l.foodHowMuch, helperText: l.foodHowMuchHelper)),
         ],
         const SizedBox(height: 18),
-        // The amount is spelled out with its unit: "1 g" and "1 cup" look the same in the number field alone.
-        Semantics(header: true, child: Text(amountLine == null ? l.foodNutritionHeading : l.foodNutritionFor(amountLine), key: const Key('food-amount-echo'), style: context.titleStyle(20))),
+        // The amount is spelled out with its unit: "1 g" and "1 cup" look the same in the number field alone. A food created
+        // per 100 g or 100 ml is typed for that basis, which the amount above never changes.
+        Semantics(
+          header: true,
+          child: Text(_measured ? l.foodNutritionFor(basisAmount) : amountLine == null ? l.foodNutritionHeading : l.foodNutritionFor(amountLine), key: const Key('food-amount-echo'), style: context.titleStyle(20)),
+        ),
         const SizedBox(height: 4),
-        Text(item == null ? l.foodNutritionOptional : l.foodNutritionFromSource, style: context.caption),
+        Text(_measured ? '${l.foodBasisSavedNote} ${l.foodNutritionOptional}' : item == null ? l.foodNutritionOptional : l.foodNutritionFromSource, style: context.caption),
         const SizedBox(height: 12),
         GroupCard(children: [
           macro('calories', l.eatCalories, l.eatUnitKcal), macro('protein', l.eatProtein, l.eatUnitGram), macro('carbs', l.eatCarbs, l.eatUnitGram), macro('fat', l.eatFat, l.eatUnitGram),
@@ -434,7 +507,7 @@ class _FoodFormScreenState extends ConsumerState<FoodFormScreen> {
           Align(
             alignment: AlignmentDirectional.centerStart,
             // Plain text, so a long label wraps at large text sizes instead of running off a narrow phone.
-            child: TextButton(key: const Key('food-save-reusable'), onPressed: _busy ? null : _saveReusable, child: Text(l.foodSaveToMine)),
+            child: TextButton(key: const Key('food-save-reusable'), onPressed: _busy ? null : _saveReusable, child: Text(mine ? l.foodUpdateSaved : l.foodSaveToMine)),
           ),
         if (editing)
           Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('food-remove'), onPressed: _remove, icon: const Icon(Icons.delete_outline, size: 18), label: Text(l.foodRemoveAction))),
@@ -517,6 +590,12 @@ class _FoodHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "260 kcal · 9 g protein": a food's own values on its basis, nothing rounded away; a dash for one it does not state.
+String _basisValues(AppLocalizations l, FoodItem item) {
+  final kcal = item.nutrient('calories'), protein = item.nutrient('protein');
+  return [l.eatKcalValue(kcal == null ? '—' : formatNumber2(kcal)), protein == null ? l.foodRowProteinUnknown : l.eatProteinGramsValue(formatNumber2(protein))].join(' · ');
 }
 
 /// "Source: USDA FoodData Central", "Barcode 0123…": the provider's name and the code stay as they are.

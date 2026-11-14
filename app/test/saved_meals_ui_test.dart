@@ -15,6 +15,8 @@ import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
 import 'package:gohard_rebuild/features/nutrition/eat_screen.dart';
+import 'package:gohard_rebuild/features/nutrition/food_form.dart' show FoodFormScreen;
+import 'package:gohard_rebuild/features/nutrition/food_repository.dart' show FoodDraft;
 import 'package:gohard_rebuild/features/nutrition/saved_meals.dart';
 import 'package:gohard_rebuild/features/nutrition/saved_meals_screens.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
@@ -172,6 +174,51 @@ void main() {
     expect(d.recipe!['portion'], {'quantity': 450.0, 'unit': 'g'});
   });
 
+  testWidgets('one food of a meal changed for this log only: the other keeps its saved amount, the saved meal stays', (tester) async {
+    final (overrides, fakes, meals) = await _fixture(tester);
+    await pumpApp(tester, overrides, home: const MealsLibraryScreen(dayKey: day, meal: 'Breakfast'), size: const Size(390, 1400));
+    expect(find.text('Create meal'), findsOneWidget);
+    expect(find.text('Save foods you eat together. Change each amount when you log it.\nExample: Breakfast → 2 eggs + 60 g of baguette.'), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('meals-row-m1')));
+    await _tap(tester, find.byKey(const Key('meal-part-1')));
+    expect(find.text('Amount for this log'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('food-quantity')), '90');
+    await tester.pumpAndSettle();
+    await _tap(tester, find.byKey(const Key('food-save')));
+    expect(fakes.journal.saved, isEmpty, reason: 'changing an amount logs nothing');
+    expect(find.text('2 eggs (100 g)'), findsOneWidget, reason: 'the eggs keep their saved amount');
+    expect(find.text('90 g · Saved amount: 60 g'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('meal-review-totals')), matching: find.text('484 kcal')), findsOneWidget, reason: '143 + 379 × 0.9');
+    await _tap(tester, find.byKey(const Key('meal-log')));
+    expect([for (final d in fakes.journal.meals.single) (d.quantity, d.unitId)], [(2, 'serving:0'), (90, 'g')]);
+    expect(meals.puts, isEmpty, reason: 'Log this time never updates the saved meal');
+  });
+
+  testWidgets('two gram portions of one weighed recipe, each its share of the batch; without a weight, grams are explained, not guessed', (tester) async {
+    final portions = <FoodDraft>[];
+    for (final grams in ['170', '242']) {
+      final (overrides, fakes, meals) = await _fixture(tester);
+      await pumpApp(tester, overrides, home: MealReviewScreen(body: chili(weight: 1200), saved: SavedMeal(_saved('r1', chili(weight: 1200))), dayKey: day, meal: 'Dinner'), size: const Size(390, 1600));
+      await _tap(tester, find.byKey(const Key('recipe-measure-gram')));
+      await tester.enterText(find.byKey(const Key('recipe-amount')), grams);
+      await tester.pumpAndSettle();
+      expect(find.text('Amount for this log'), findsOneWidget);
+      await _tap(tester, find.byKey(const Key('meal-log')));
+      portions.add(fakes.journal.saved.single);
+      expect(meals.puts, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    }
+    // 379 known kcal and 13.2 g known protein in a 1,200 g batch; the spice's are unknown, so both stay partial.
+    expect([for (final d in portions) (d.calories, d.recipe!['partial']['calories'], d.recipe!['partial']['protein'], d.fat, d.amount)],
+        [(null, 53.69, 1.87, 0, '170 g'), (null, 76.43, 2.66, 0, '242 g')]);
+    expect([for (final d in portions) d.recipe!['recipe']['preparedWeightG']], [1200, 1200], reason: 'each log keeps the batch it came from');
+
+    final (overrides, _, _) = await _fixture(tester);
+    await pumpApp(tester, overrides, home: MealReviewScreen(body: chili(), saved: SavedMeal(_saved('r1', chili(weight: 1200))), dayKey: day, meal: 'Dinner'), size: const Size(390, 1600));
+    expect(find.byKey(const Key('recipe-measure-gram')), findsNothing, reason: 'no weighed batch: no grams');
+    expect(find.textContaining('weigh the whole batch once it’s cooked'), findsOneWidget);
+  });
+
   testWidgets('the editor saves only a valid definition and never logs', (tester) async {
     final (overrides, fakes, meals) = await _fixture(tester);
     await pumpApp(tester, overrides, home: const MealEditorScreen(dayKey: day, kind: MealBody.recipe), size: const Size(390, 1400));
@@ -205,6 +252,29 @@ void main() {
       semantics.dispose();
       tester.view.resetViewInsets();
       await tester.pumpWidget(const SizedBox());
+    }
+  });
+
+  testWidgets('Create food, Create meal and Create recipe fit at 320 px with 2× text, and run right to left in Arabic', (tester) async {
+    for (final lang in ['ar', 'fr-CA']) {
+      for (final (home, then) in <(Widget, String?)>[
+        (FoodFormScreen(draft: FoodDraft(dayKey: day, meal: 'Lunch')), 'food-basis-100g'),
+        (const MealsLibraryScreen(dayKey: day, meal: 'Breakfast'), 'meals-tab-recipe'),
+        (MealReviewScreen(body: chili(), saved: SavedMeal(_saved('r1', chili(weight: 1200))), dayKey: day, meal: 'Dinner'), null),
+      ]) {
+        final (overrides, _, _) = await _fixture(tester);
+        final c = await pumpApp(tester, overrides, home: home, size: const Size(320, 2400), textScale: 2, settle: false);
+        c.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(lang));
+        await tester.pumpAndSettle();
+        if (then != null) await _tap(tester, find.byKey(Key(then)));
+        expect(tester.takeException(), isNull, reason: '$lang ${home.runtimeType}');
+        expect(Directionality.of(tester.element(find.byType(Scaffold).first)), lang == 'ar' ? TextDirection.rtl : TextDirection.ltr);
+        final l = c.read(appL10nProvider);
+        if (home is FoodFormScreen) expect(find.text(l.foodAmountForLog), findsOneWidget, reason: lang);
+        if (home is MealsLibraryScreen) expect(find.text('${l.mealsCreateRecipeAbout}\n${l.mealsCreateRecipeExample}'), findsOneWidget, reason: lang);
+        if (home is MealReviewScreen) expect(find.text(l.mealsNoWeight), findsOneWidget, reason: lang);
+        await tester.pumpWidget(const SizedBox());
+      }
     }
   });
 
@@ -248,6 +318,14 @@ void main() {
       await shot(tester, MealEditorScreen(dayKey: day, saved: SavedMeal(_saved('r1', chili(weight: 1200)))), 'recipe-editor-320-large', size: const Size(320, 2400), text: 2);
       await shot(tester, const MealsLibraryScreen(dayKey: day, meal: 'Breakfast'), 'library-recipes', then: () async {
         await tester.tap(find.byKey(const Key('meals-tab-recipe')));
+        await tester.pumpAndSettle();
+      });
+      await shot(tester, FoodFormScreen(draft: FoodDraft(dayKey: day, meal: 'Lunch')), 'create-food-320-large', size: const Size(320, 2000), text: 2, then: () async {
+        await _tap(tester, find.byKey(const Key('food-basis-100g')));
+        await tester.enterText(find.byKey(const Key('food-name')), 'Baguette');
+        await tester.enterText(find.byKey(const Key('food-calories')), '260');
+        await tester.enterText(find.byKey(const Key('food-protein')), '9');
+        await tester.enterText(find.byKey(const Key('food-log-quantity')), '60');
         await tester.pumpAndSettle();
       });
       await shot(tester, const HomeShell(), 'eat-entry', size: const Size(390, 1500), then: () async {

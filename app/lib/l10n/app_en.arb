@@ -1893,6 +1893,36 @@
   "@foodAmountLabel": {
     "description": "Food quantity field label."
   },
+  "foodAmountForLog": "Amount for this log",
+  "@foodAmountForLog": {
+    "description": "Field: how much of a food is logged this time. The saved food never changes with it."
+  },
+  "foodBasisLabel": "Nutrition is per",
+  "@foodBasisLabel": {
+    "description": "Create food: what the typed nutrition is for (1 serving, 100 g, 100 ml)."
+  },
+  "foodBasisServing": "1 serving",
+  "@foodBasisServing": {
+    "description": "Create food: nutrition is for one serving, described in the How much field."
+  },
+  "foodBasisSavedNote": "Saved with the food. The amount for this log never changes it.",
+  "@foodBasisSavedNote": {
+    "description": "Create food: under the per-100 g/ml nutrition."
+  },
+  "foodSavedBasis": "Saved nutrition {basis}: {values}. The amount for this log never changes it.",
+  "@foodSavedBasis": {
+    "description": "Amount form: what the food's saved nutrition is based on. basis is \"per 100 g\" etc.; values is \"260 kcal · 9 g protein\".",
+    "placeholders": {
+      "basis": {
+        "type": "String",
+        "example": "per 100 g"
+      },
+      "values": {
+        "type": "String",
+        "example": "260 kcal · 9 g protein"
+      }
+    }
+  },
   "foodPortionLabel": "Portion",
   "@foodPortionLabel": {
     "description": "Unit dropdown label (g, cup, egg…). The French word or symbol may match English."
@@ -1955,6 +1985,14 @@
   "foodSaveToMine": "Save to My foods without logging",
   "@foodSaveToMine": {
     "description": "Keeps the food for later; nothing is logged."
+  },
+  "foodUpdateSaved": "Update saved food",
+  "@foodUpdateSaved": {
+    "description": "Amount form: replaces the saved food (My foods) with the name and values shown. Logs nothing."
+  },
+  "foodUpdatedSaved": "Saved food updated. Nothing was logged, and past logs are unchanged.",
+  "@foodUpdatedSaved": {
+    "description": "Toast after Update saved food."
   },
   "foodShowsDetailsHint": "Shows the food details",
   "@foodShowsDetailsHint": {
@@ -2340,13 +2378,17 @@
   "@foodSearchCoach": {
     "description": "Coach tip on Add food. Names the three tabs."
   },
-  "foodManualTitle": "Enter it yourself",
+  "foodManualTitle": "Create food",
   "@foodManualTitle": {
     "description": "Manual entry row title."
   },
-  "foodManualSubtitle": "Can't find it? Create your own food",
+  "foodManualSubtitle": "Save one item with its own nutrition.",
   "@foodManualSubtitle": {
     "description": "Manual entry row subtitle."
+  },
+  "foodCreateExample": "Example: Baguette → log 60 g today or 90 g tomorrow.",
+  "@foodCreateExample": {
+    "description": "Create food row: example. Use an arrow that points in reading direction."
   },
   "foodFooter": "Choose a food to check the amount before logging.",
   "@foodFooter": {
@@ -14298,6 +14340,30 @@
   "@mealsNewRecipe": {
     "description": "Button and editor title: create a recipe."
   },
+  "mealsCreateMeal": "Create meal",
+  "@mealsCreateMeal": {
+    "description": "Library button: starts a new saved meal."
+  },
+  "mealsCreateRecipe": "Create recipe",
+  "@mealsCreateRecipe": {
+    "description": "Library button: starts a new recipe."
+  },
+  "mealsCreateMealAbout": "Save foods you eat together. Change each amount when you log it.",
+  "@mealsCreateMealAbout": {
+    "description": "Under Create meal."
+  },
+  "mealsCreateMealExample": "Example: Breakfast → 2 eggs + 60 g of baguette.",
+  "@mealsCreateMealExample": {
+    "description": "Under Create meal: example."
+  },
+  "mealsCreateRecipeAbout": "Add ingredients for a batch, then log the portion you ate.",
+  "@mealsCreateRecipeAbout": {
+    "description": "Under Create recipe."
+  },
+  "mealsCreateRecipeExample": "Example: Chicken filling → log 170 g from the batch.",
+  "@mealsCreateRecipeExample": {
+    "description": "Under Create recipe: example."
+  },
   "mealsEditMeal": "Edit meal",
   "@mealsEditMeal": {
     "description": "Editor title for an existing saved meal."
@@ -14623,6 +14689,20 @@
   "@mealsUseAmount": {
     "description": "Amount form in selection mode: confirms a food for a meal or recipe (logs nothing)."
   },
+  "mealsSavedAmount": "Saved amount",
+  "@mealsSavedAmount": {
+    "description": "Amount field when setting a food's amount in a saved meal or recipe."
+  },
+  "mealsSavedAmountWas": "Saved amount: {amount}",
+  "@mealsSavedAmountWas": {
+    "description": "Review row: the saved meal's amount, when this log's differs.",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "170 g"
+      }
+    }
+  },
   "mealsReviewNote": "Check the amounts. Nothing is logged until you confirm.",
   "@mealsReviewNote": {
     "description": "Subtitle of the log review."
@@ -14630,6 +14710,10 @@
   "mealsAmountsHeading": "Amounts this time",
   "@mealsAmountsHeading": {
     "description": "Heading over the review's foods."
+  },
+  "mealsAmountsHint": "Tap a food to change its amount for this log. A multiplier changes every amount at once.",
+  "@mealsAmountsHint": {
+    "description": "Meal review: how to change amounts."
   },
   "mealsMultiplierCustom": "Other…",
   "@mealsMultiplierCustom": {
@@ -14655,10 +14739,6 @@
   "mealsLogMeal": "Log meal",
   "@mealsLogMeal": {
     "description": "Review main action for a meal."
-  },
-  "mealsLogPortion": "Log portion",
-  "@mealsLogPortion": {
-    "description": "Review main action for a recipe portion."
   },
   "mealsLogged": "Logged to {meal}.",
   "@mealsLogged": {
@@ -14715,7 +14795,7 @@
   "@mealsPortionHeading": {
     "description": "Recipe review heading."
   },
-  "mealsPortionAmount": "Amount",
+  "mealsPortionAmount": "Amount for this log",
   "@mealsPortionAmount": {
     "description": "Recipe portion field."
   },
@@ -14727,7 +14807,7 @@
   "@mealsMeasureGrams": {
     "description": "Recipe portion measure (finished batch)."
   },
-  "mealsNoWeight": "To log grams, add the finished batch’s weight to the recipe.",
+  "mealsNoWeight": "To log grams, weigh the whole batch once it’s cooked and add that weight with Edit recipe. The raw ingredients’ weight isn’t used: cooking changes it.",
   "@mealsNoWeight": {
     "description": "Recipe review: why grams are not offered."
   },

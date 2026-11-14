@@ -256,7 +256,7 @@ void main() {
       expect(_colors(tester).accent, GoColors.of(Accent.pink, Brightness.dark).accent, reason: 'the look really changed under the form');
       expect(find.text('Chicken and rice'), findsOneWidget);
       expect(find.text('650'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Log food'), findsOneWidget, reason: 'still the same form, not a rebuilt one');
+      expect(find.widgetWithText(FilledButton, 'Log this time'), findsOneWidget, reason: 'still the same form, not a rebuilt one');
     });
   });
 

@@ -73,10 +73,31 @@ extension type MealComponent(Json j) {
   /// corrected are kept by rebasing them onto the food's basis; a hand-typed entry or a recipe portion becomes a food of its
   /// own with the values it was logged with (a recipe portion's partial sums stay unknown: never a guess).
   static MealComponent fromEntry(FoodEntry e) {
+    if (MealMath.ofEntry(e) case final p? when p.recipe.servings != null || p.recipe.preparedWeightG != null) return _ofPortion(e.name, e.amountDescription, p.recipe, p.amount, p.measure);
     final source = e.source, quantity = (source?['quantity'] as num?)?.toDouble();
     if (source?['item'] is! Map || quantity == null || quantity <= 0) return _typed(e.name, e.amountDescription, e.macros.map((k, v) => MapEntry(k, (v as num?)?.toDouble())));
     final item = FoodItem(source!['item'] as Json);
     return _of(item, quantity, FoodScaling.unit(item, source['unit'] as String?), {for (final k in FoodItem.nutrientKeys) k: (e.macros[k] as num?)?.toDouble()}, e.name, e.amountDescription);
+  }
+
+  /// A logged recipe portion as a food of its own, made from the frozen batch it was logged from, so its amount can be
+  /// changed on its own in a meal: per 100 g of the finished batch when it was weighed (with one serving's weight when the
+  /// yield is known too), otherwise per serving. A nutrient some ingredient lacks is unknown (its partial sum is never a
+  /// value), and no weight is taken from the raw ingredients.
+  static MealComponent _ofPortion(String name, String said, MealBody recipe, double amount, PortionMeasure measure) {
+    final weight = recipe.preparedWeightG, servings = recipe.servings;
+    final perGram = weight != null && weight > 0;
+    final basisShare = perGram ? 100 / weight : 1 / servings!;
+    final totals = recipe.totals;
+    final item = FoodItem({
+      'source': 'user', 'sourceId': SyncEngine.newId(), 'name': name.trim(), 'basis': perGram ? FoodItem.per100g : FoodItem.perServing,
+      'nutrients': {for (final n in Nutrient.values) n.name: totals[n]!.isComplete ? totals[n]!.knownTotal * basisShare : null},
+      'servings': [if (servings != null && servings > 0) {'label': '1 serving', 'grams': perGram ? weight / servings : null, 'milliliters': null}],
+      'basedOn': {'recipe': ?recipe.j['id'], 'revision': ?recipe.j['revision']},
+    });
+    // Grams stay grams; servings stay servings (the batch's own serving, by its weight when it was weighed).
+    final unit = FoodScaling.unit(item, measure == PortionMeasure.gram && perGram ? 'g' : 'serving:0');
+    return MealComponent({'item': item.j, 'quantity': amount, 'unit': unit.id, 'name': name.trim(), 'amount': said.trim()});
   }
 
   /// This food as a draft for the shared amount form (in its selection mode), at its amount and with its values.

@@ -418,7 +418,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
         padding: const EdgeInsets.only(top: 16),
         child: GroupCard(children: [
           GroupRow(
-            key: const Key('food-manual'), icon: Icons.edit_outlined, title: l.foodManualTitle, subtitle: l.foodManualSubtitle,
+            key: const Key('food-manual'), icon: Icons.edit_outlined, title: l.foodManualTitle, subtitle: '${l.foodManualSubtitle}\n${l.foodCreateExample}',
             onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
           ),
           // Several foods at once, for this day and the meal chosen above. Not offered while picking one food for a meal.
