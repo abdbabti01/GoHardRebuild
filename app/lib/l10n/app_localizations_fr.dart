@@ -2056,6 +2056,21 @@ class AppLocalizationsFr extends AppLocalizations {
       'Un compte existe déjà avec ce courriel. Connecte-toi plutôt.';
 
   @override
+  String get accountErrorSameEmail => 'C’est déjà ton adresse courriel.';
+
+  @override
+  String get accountErrorEmailChangeTaken =>
+      'Un autre compte utilise déjà cette adresse. Choisis-en une autre.';
+
+  @override
+  String get accountErrorNoPendingChange =>
+      'Cette demande est terminée. Recommence avec ta nouvelle adresse.';
+
+  @override
+  String get accountErrorUncertainEmailChange =>
+      'Le serveur n’a pas répondu, alors le changement n’a pas pu être confirmé. S’il a eu lieu, on te demandera de te connecter avec la nouvelle adresse.';
+
+  @override
   String get accountErrorWeakPassword =>
       'Utilise un mot de passe d\'au moins 8 caractères.';
 
@@ -10218,6 +10233,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ton mot de passe a été changé. Connecte-toi avec le nouveau; tout ce qui est sur ce téléphone est toujours là.';
 
   @override
+  String authNoticeEmailChanged(String email) {
+    return 'Ton adresse courriel est maintenant $email. Tous les appareils ont été déconnectés : connecte-toi avec ta nouvelle adresse. Tout ce qui est sur ce téléphone est toujours là.';
+  }
+
+  @override
   String get resetTitle => 'Réinitialiser le mot de passe';
 
   @override
@@ -10277,6 +10297,41 @@ class AppLocalizationsFr extends AppLocalizations {
       'Changer ton mot de passe demande une connexion. Rien n\'est gardé pour plus tard.';
 
   @override
+  String changeEmailLead(String email) {
+    return 'Ton compte utilise $email. On enverra un code à la nouvelle adresse. Rien ne change tant que tu ne l’as pas entré.';
+  }
+
+  @override
+  String get changeEmailNewLabel => 'Nouvelle adresse courriel';
+
+  @override
+  String get changeEmailSignsOut =>
+      'Une fois le changement confirmé, tous les appareils sont déconnectés, celui-ci aussi. Reconnecte-toi avec la nouvelle adresse : tes entraînements, ton alimentation, tes réglages et Plus restent dans ton compte.';
+
+  @override
+  String get changeEmailOffline =>
+      'Changer d’adresse courriel demande une connexion. Rien n’est gardé pour plus tard.';
+
+  @override
+  String get changeEmailCodeTitle => 'Vérifie ta nouvelle adresse';
+
+  @override
+  String changeEmailCodeLead(String email) {
+    return 'Entre le code envoyé à $email. D’ici là, ton adresse actuelle sert toujours à te connecter et à récupérer ton mot de passe.';
+  }
+
+  @override
+  String get changeEmailConfirm => 'Confirmer la nouvelle adresse';
+
+  @override
+  String get changeEmailCancel => 'Annuler le changement';
+
+  @override
+  String changeEmailCancelled(String email) {
+    return 'Changement annulé. Ton adresse courriel est toujours $email.';
+  }
+
+  @override
   String get verifyTitle => 'Confirmer le courriel';
 
   @override
@@ -10313,6 +10368,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mePasswordSubtitle => 'Changer le mot de passe';
+
+  @override
+  String get meChangeEmail => 'Changer d’adresse courriel';
+
+  @override
+  String get meChangeEmailSubtitle =>
+      'Te connecter avec une autre adresse; tes données restent';
 
   @override
   String get accountErrorRegistrationUnavailable =>

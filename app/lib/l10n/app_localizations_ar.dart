@@ -2122,6 +2122,21 @@ class AppLocalizationsAr extends AppLocalizations {
       'يوجد حساب بهذا البريد الإلكتروني بالفعل. سجّل الدخول بدلًا من ذلك.';
 
   @override
+  String get accountErrorSameEmail => 'هذا هو بريدك الإلكتروني بالفعل.';
+
+  @override
+  String get accountErrorEmailChangeTaken =>
+      'يستخدم حساب آخر هذا البريد بالفعل. اختر عنوانًا مختلفًا.';
+
+  @override
+  String get accountErrorNoPendingChange =>
+      'انتهى هذا الطلب. ابدأ من جديد بعنوانك الجديد.';
+
+  @override
+  String get accountErrorUncertainEmailChange =>
+      'لم يستجب الخادم، لذا تعذّر تأكيد التغيير. إذا تم، فسيُطلب منك تسجيل الدخول بالعنوان الجديد.';
+
+  @override
   String get accountErrorWeakPassword =>
       'استخدم كلمة مرور من 8 أحرف على الأقل.';
 
@@ -10518,6 +10533,11 @@ class AppLocalizationsAr extends AppLocalizations {
       'تم تغيير كلمة مرورك. سجّل الدخول بكلمة المرور الجديدة؛ كل ما على هذا الهاتف لا يزال موجودًا.';
 
   @override
+  String authNoticeEmailChanged(String email) {
+    return 'أصبح بريدك الإلكتروني $email. تم تسجيل الخروج من جميع الأجهزة: سجّل الدخول بعنوانك الجديد. كل ما على هذا الهاتف لا يزال موجودًا.';
+  }
+
+  @override
   String get resetTitle => 'إعادة تعيين كلمة المرور';
 
   @override
@@ -10577,6 +10597,41 @@ class AppLocalizationsAr extends AppLocalizations {
       'يتطلّب تغيير كلمة المرور اتصالًا. لا يُحفَظ شيء لوقت لاحق.';
 
   @override
+  String changeEmailLead(String email) {
+    return 'يستخدم حسابك $email. سنرسل رمزًا إلى العنوان الجديد. لا يتغيّر شيء حتى تُدخله.';
+  }
+
+  @override
+  String get changeEmailNewLabel => 'البريد الإلكتروني الجديد';
+
+  @override
+  String get changeEmailSignsOut =>
+      'عند تأكيد التغيير، يتم تسجيل الخروج من جميع الأجهزة، ومنها هذا الجهاز. سجّل الدخول مجددًا بالعنوان الجديد: تبقى تمارينك وطعامك وإعداداتك واشتراك Plus في حسابك.';
+
+  @override
+  String get changeEmailOffline =>
+      'يتطلب تغيير البريد الإلكتروني اتصالًا. لا يُحفظ شيء لوقت لاحق.';
+
+  @override
+  String get changeEmailCodeTitle => 'تحقّق من بريدك الجديد';
+
+  @override
+  String changeEmailCodeLead(String email) {
+    return 'أدخل الرمز الذي أرسلناه إلى $email. إلى أن تفعل، يبقى بريدك الحالي صالحًا لتسجيل الدخول واستعادة كلمة المرور.';
+  }
+
+  @override
+  String get changeEmailConfirm => 'تأكيد البريد الجديد';
+
+  @override
+  String get changeEmailCancel => 'إلغاء التغيير';
+
+  @override
+  String changeEmailCancelled(String email) {
+    return 'تم إلغاء التغيير. لا يزال بريدك $email.';
+  }
+
+  @override
   String get verifyTitle => 'تأكيد البريد الإلكتروني';
 
   @override
@@ -10613,6 +10668,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mePasswordSubtitle => 'تغيير كلمة المرور';
+
+  @override
+  String get meChangeEmail => 'تغيير البريد الإلكتروني';
+
+  @override
+  String get meChangeEmailSubtitle => 'سجّل الدخول بعنوان آخر؛ تبقى بياناتك';
 
   @override
   String get accountErrorRegistrationUnavailable =>

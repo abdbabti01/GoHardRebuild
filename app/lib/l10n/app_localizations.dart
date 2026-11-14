@@ -3196,6 +3196,30 @@ abstract class AppLocalizations {
   /// **'An account with that email already exists. Sign in instead.'**
   String get accountErrorEmailInUse;
 
+  /// Change email: the new address is the current one.
+  ///
+  /// In en, this message translates to:
+  /// **'That’s already your email.'**
+  String get accountErrorSameEmail;
+
+  /// Change email: the address belongs to another account (asked, or taken before confirming).
+  ///
+  /// In en, this message translates to:
+  /// **'Another account already uses that email. Choose a different address.'**
+  String get accountErrorEmailChangeTaken;
+
+  /// Change email: resend after the request was cancelled, replaced or ended.
+  ///
+  /// In en, this message translates to:
+  /// **'That request has ended. Start again with your new address.'**
+  String get accountErrorNoPendingChange;
+
+  /// Change email: the confirmation got no answer.
+  ///
+  /// In en, this message translates to:
+  /// **'The server didn’t answer, so the change couldn’t be confirmed. If it went through, you’ll be asked to sign in with the new address.'**
+  String get accountErrorUncertainEmailChange;
+
   /// Server code WEAK_PASSWORD.
   ///
   /// In en, this message translates to:
@@ -14814,6 +14838,12 @@ abstract class AppLocalizations {
   /// **'Your password was changed. Sign in with your new password; everything on this phone is still here.'**
   String get authNoticePasswordChanged;
 
+  /// Sign-in notice after an email change; email is the new address.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email is now {email}. Every device was signed out: sign in with your new address. Everything on this phone is still here.'**
+  String authNoticeEmailChanged(String email);
+
   /// Forgot password, step 1 title.
   ///
   /// In en, this message translates to:
@@ -14916,6 +14946,60 @@ abstract class AppLocalizations {
   /// **'Changing your password needs a connection. Nothing is saved for later.'**
   String get changePasswordOffline;
 
+  /// Change email: lead; email is the current address.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account uses {email}. We’ll send a code to the new address. Nothing changes until you enter it.'**
+  String changeEmailLead(String email);
+
+  /// Change email: field for the new address.
+  ///
+  /// In en, this message translates to:
+  /// **'New email'**
+  String get changeEmailNewLabel;
+
+  /// Change email: warning above the fields.
+  ///
+  /// In en, this message translates to:
+  /// **'When the change is confirmed, every device is signed out, this one too. Sign in again with the new address: your workouts, food, settings and Plus stay with your account.'**
+  String get changeEmailSignsOut;
+
+  /// Change email: offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing your email needs a connection. Nothing is saved for later.'**
+  String get changeEmailOffline;
+
+  /// Change email: code step title.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your new email'**
+  String get changeEmailCodeTitle;
+
+  /// Change email: code step lead; email is the new address.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code we sent to {email}. Until you do, your current email keeps working for sign-in and password recovery.'**
+  String changeEmailCodeLead(String email);
+
+  /// Change email: confirms the code; commits the change.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new email'**
+  String get changeEmailConfirm;
+
+  /// Change email: cancels the request; the code stops working.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel change'**
+  String get changeEmailCancel;
+
+  /// Toast after Cancel change.
+  ///
+  /// In en, this message translates to:
+  /// **'Email change cancelled. Your email is still {email}.'**
+  String changeEmailCancelled(String email);
+
   /// Verify email page title.
   ///
   /// In en, this message translates to:
@@ -14987,6 +15071,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change password'**
   String get mePasswordSubtitle;
+
+  /// Me › Account row and page title: change the sign-in email.
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get meChangeEmail;
+
+  /// Me › Change email row subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with another address; your data stays'**
+  String get meChangeEmailSubtitle;
 
   /// Sign-up refused: the server has no email sender, so a new account could never be verified. No account exists.
   ///

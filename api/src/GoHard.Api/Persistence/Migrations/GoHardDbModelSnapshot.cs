@@ -106,6 +106,10 @@ namespace GoHard.Api.Persistence.Migrations
                     b.Property<DateTime>("LastSentAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("NewEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
                     b.Property<string>("Purpose")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -412,6 +416,10 @@ namespace GoHard.Api.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
+
+                    b.Property<string>("ToEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");

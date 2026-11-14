@@ -2681,3 +2681,15 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   minimum 2, `account.email` declared. No secret or variable changed, no hosted account created. IPA 68 reused.
 - **Unverified until the owner confirms:** real 4-digit verification email delivery, iPhone autofill, hosted
   registration with an 8-character password, everything else listed in P2 and S3 on a real device.
+
+### 14 Nov 2026 — Change email (`feature/change-email`, from main 5a0ee30; separate from the Eat branch)
+
+- Me › Account › Change email: new address + current password, code to the new address, resend, cancel; nothing changes
+  until the code is confirmed; then the account (same ID and data) signs in and recovers with the new address, every
+  device is signed out, the old address gets a notice. docs/AUTHENTICATION_EMAIL.md › 12.
+- API: routes `/account/email-change/{request,resend,confirm,cancel}`, capability `account.email-change`, migration
+  `AddEmailChange` (additive: `AuthChallenges.NewEmail`, `MailMessages.ToEmail`; 17 migrations). No contract change.
+- Verified: API `AccountEmailTests`, `VerificationPolicyTests`, `RefreshRecoveryTests`, `PlusPreviewTests`: 40 passed.
+  App `account_security_test` (18), verification/l10n/session/data-layer suites (48), me/theme/widget/today UI (83):
+  passed; `flutter analyze` clean; `check-l10n` OK. NOT run: full suites, emulator journeys, CI, IPA, real email.
+  Not merged, not deployed.

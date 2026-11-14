@@ -650,6 +650,169 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         Assert.Equal(HttpStatusCode.TooManyRequests, (await e.RequestReset("fourth@example.test")).StatusCode);
         Assert.Equal("EMAIL_BUSY", await Code(limited));
     }
+
+    // ---------------------------------------------------------------- change email (docs/AUTHENTICATION_EMAIL.md › 12)
+
+    private const string ChangeSubject = "Confirm your new GoHard email", ChangedSubject = "Your GoHard email was changed";
+    private static string Fresh() => $"new-{Guid.NewGuid():N}@example.test";
+
+    private static Task<HttpResponseMessage> RequestChange(Env e, Account a, string newEmail, string? password = null) =>
+        e.Post("/account/email-change/request", new { newEmail, currentPassword = password ?? a.Password, language = "en", codeDigits = 4 }, a.Auth.AccessToken);
+    private static Task<HttpResponseMessage> ResendChange(Env e, Account a) => e.Post("/account/email-change/resend", new { language = "en", codeDigits = 4 }, a.Auth.AccessToken);
+    private static Task<HttpResponseMessage> ConfirmChange(Env e, Account a, string code) => e.Post("/account/email-change/confirm", new { code, language = "en" }, a.Auth.AccessToken);
+
+    /// <summary>The newest change code captured for [to] (4 digits: this app opts in).</summary>
+    private static async Task<string> ChangeCode(Env e, string to)
+    {
+        await e.Deliver();
+        var mail = e.Box.All.LastOrDefault(m => m.To == to && m.Subject == ChangeSubject) ?? throw new InvalidOperationException("no change code captured");
+        return Regex.Match(mail.Text, @"\b\d{4}\b").Value;
+    }
+
+    [Fact]
+    public async Task Changing_email_keeps_the_account_and_its_data_and_moves_sign_in_and_recovery_only_when_confirmed()
+    {
+        await using var e = await Start();
+        var a = await Account.RegisterAsync(e.Api);
+        var (old, to) = (a.Auth.Profile.Email, Fresh());
+        Assert.Equal("accepted", (await a.PostAsync<JsonElement>("/food-entries", new FoodCreateRequest(Guid.NewGuid(), Guid.NewGuid(), Account.Friday, "Lunch",
+            "Tuna salad", "1 bowl", new Macros(432.1m, 31.7m, null, 12)))).Status);
+        // Plus access (the preview owner's override, docs/PLUS_PREVIEW.md), keyed by the account, not its address.
+        e.Api.Services.GetRequiredService<GoHard.Api.Application.Plus.PlusOptions>().PreviewOwnerUserId = a.UserId.ToString();
+        using (var scope = e.Api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GoHardDb>();
+            db.PreviewOverrides.Add(new PreviewOverride { UserId = a.UserId, Tier = "plus", UpdatedAtUtc = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+        }
+        Assert.Equal("plus", (await a.Http.GetFromJsonAsync<JsonElement>("/api/v1/entitlement")).GetProperty("tier").GetString());
+        var otherDevice = (await (await e.Login(old, a.Password)).Content.ReadFromJsonAsync<AuthResponse>(Json))!;
+
+        Assert.Equal(HttpStatusCode.Accepted, (await RequestChange(e, a, to)).StatusCode);
+        // Until the code is confirmed nothing changes: the current address signs in and receives reset codes, the new one neither.
+        Assert.Equal(HttpStatusCode.OK, (await e.Login(old, a.Password)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await e.Login(to, a.Password)).StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, (await e.RequestReset(old)).StatusCode);
+        var oldResetCode = await e.CodeFor(old);
+        var code = await ChangeCode(e, to);
+        Assert.Matches(@"^\d{4}$", code);
+        Assert.DoesNotContain(e.Box.All, m => m.To == old && m.Subject == ChangeSubject);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await ConfirmChange(e, a, code)).StatusCode);
+        // Every device is signed out: this one, the other one, and their refresh tokens.
+        Assert.Equal(HttpStatusCode.Unauthorized, await e.Me(a.Auth.AccessToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, await e.Me(otherDevice.AccessToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await e.Refresh(otherDevice.RefreshToken)).StatusCode);
+        // Sign-in moved to the new address, verified, same account.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await e.Login(old, a.Password)).StatusCode);
+        var auth = (await (await e.Login(to, a.Password)).Content.ReadFromJsonAsync<AuthResponse>(Json))!;
+        Assert.Equal((a.UserId, to, true, false), (auth.Profile.UserId, auth.Profile.Email, auth.Profile.EmailVerified, auth.Profile.VerificationRequired));
+        var http = e.Api.CreateClient();
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+        var snapshot = (await http.GetFromJsonAsync<SnapshotDto>("/api/v1/sync/snapshot", Json))!;
+        Assert.Equal("Tuna salad", Assert.Single(snapshot.FoodEntries).Name);
+        Assert.Equal(a.Auth.Profile.DisplayName, snapshot.Profile.DisplayName);
+        Assert.Equal("plus", (await http.GetFromJsonAsync<JsonElement>("/api/v1/entitlement")).GetProperty("tier").GetString());
+
+        // Recovery moved too: the reset code the old address got before is void, and the old address gets no new ones.
+        Assert.Equal(HttpStatusCode.BadRequest, (await e.VerifyReset(old, oldResetCode)).StatusCode);
+        await e.Deliver();
+        Assert.Contains(e.Box.All, m => m.To == old && m.Subject == ChangedSubject);
+        e.Time.Now = e.Time.Now.AddSeconds(61);
+        var before = e.Box.All.Count;
+        Assert.Equal(HttpStatusCode.Accepted, (await e.RequestReset(old)).StatusCode);
+        await e.Deliver();
+        Assert.Equal(before, e.Box.All.Count);
+        Assert.Equal(HttpStatusCode.Accepted, (await e.RequestReset(to)).StatusCode);
+        Assert.Matches(@"^\d{8}$", await e.CodeFor(to));
+        // An address is kept on a message only until it has ended; codes never reach the logs.
+        using (var scope = e.Api.Services.CreateScope())
+            Assert.All(await scope.ServiceProvider.GetRequiredService<GoHardDb>().MailMessages.Where(m => m.State != "pending").ToListAsync(), m => Assert.Null(m.ToEmail));
+        Assert.DoesNotContain(e.Logs.Lines, l => l.Contains(code) || l.Contains(to) || l.Contains(old));
+    }
+
+    [Fact]
+    public async Task Change_email_needs_the_current_password_and_a_new_free_address()
+    {
+        await using var e = await Start();
+        var (a, b) = (await Account.RegisterAsync(e.Api), await Account.RegisterAsync(e.Api));
+        var wrong = await RequestChange(e, a, Fresh(), "not my password");
+        Assert.Equal((HttpStatusCode.BadRequest, "WRONG_PASSWORD"), (wrong.StatusCode, await Code(wrong)));
+        Assert.Equal("INVALID_EMAIL", await Code(await RequestChange(e, a, "not-an-address")));
+        Assert.Equal("SAME_EMAIL", await Code(await RequestChange(e, a, a.Auth.Profile.Email.ToUpperInvariant())));
+        var taken = await RequestChange(e, a, b.Auth.Profile.Email);
+        Assert.Equal((HttpStatusCode.Conflict, "EMAIL_IN_USE"), (taken.StatusCode, await Code(taken)));
+        await e.Deliver();
+        Assert.DoesNotContain(e.Box.All, m => m.Subject == ChangeSubject);
+        // Nothing was asked for, so there is nothing to confirm or resend.
+        Assert.Equal("INVALID_CODE", await Code(await ConfirmChange(e, a, "1234")));
+        Assert.Equal("NO_PENDING_CHANGE", await Code(await ResendChange(e, a)));
+        Assert.Equal(HttpStatusCode.OK, (await e.Login(a.Auth.Profile.Email, a.Password)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Change_codes_expire_are_replaced_by_a_new_request_die_on_cancel_and_lock_after_five_wrong_guesses()
+    {
+        await using var e = await Start();
+        var a = await Account.RegisterAsync(e.Api);
+        var (first, second) = (Fresh(), Fresh());
+        await RequestChange(e, a, first);
+        var expired = await ChangeCode(e, first);
+        e.Time.Now = e.Time.Now.AddMinutes(11);
+        Assert.Equal("CODE_EXPIRED", await Code(await ConfirmChange(e, a, expired)));
+
+        // Resend gives a fresh code to the same address; asking for another address replaces it.
+        Assert.Equal(HttpStatusCode.Accepted, (await ResendChange(e, a)).StatusCode);
+        var resent = await ChangeCode(e, first);
+        Assert.Equal(HttpStatusCode.Accepted, (await RequestChange(e, a, second)).StatusCode);
+        var current = await ChangeCode(e, second);
+        if (resent != current) Assert.Equal("INVALID_CODE", await Code(await ConfirmChange(e, a, resent)));
+
+        // Cancel: the code stops working and there is nothing left to resend; the account is untouched.
+        Assert.Equal(HttpStatusCode.NoContent, (await e.Post("/account/email-change/cancel", new { }, a.Auth.AccessToken)).StatusCode);
+        Assert.Equal("INVALID_CODE", await Code(await ConfirmChange(e, a, current)));
+        Assert.Equal("NO_PENDING_CHANGE", await Code(await ResendChange(e, a)));
+
+        // Five wrong guesses lock a code; the right one is then refused too.
+        e.Time.Now = e.Time.Now.AddSeconds(61);
+        await RequestChange(e, a, second);
+        var locked = await ChangeCode(e, second);
+        var guess = locked == "0000" ? "1111" : "0000";
+        for (var i = 1; i <= 4; i++) Assert.Equal("INVALID_CODE", await Code(await ConfirmChange(e, a, guess)));
+        Assert.Equal("TOO_MANY_ATTEMPTS", await Code(await ConfirmChange(e, a, guess)));
+        Assert.Equal("TOO_MANY_ATTEMPTS", await Code(await ConfirmChange(e, a, locked)));
+        Assert.Equal(HttpStatusCode.OK, (await e.Login(a.Auth.Profile.Email, a.Password)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await e.Login(second, a.Password)).StatusCode);
+    }
+
+    [Fact]
+    public async Task An_address_taken_before_confirmation_is_refused_then_and_two_accounts_cannot_both_claim_one()
+    {
+        await using var e = await Start();
+        var (a, b, c) = (await Account.RegisterAsync(e.Api), await Account.RegisterAsync(e.Api), await Account.RegisterAsync(e.Api));
+        var shared = Fresh();
+        await RequestChange(e, a, shared);
+        var codeA = await ChangeCode(e, shared);
+        e.Time.Now = e.Time.Now.AddSeconds(61);
+        Assert.Equal(HttpStatusCode.Accepted, (await RequestChange(e, b, shared)).StatusCode); // still free: each account its own code
+        var codeB = await ChangeCode(e, shared);
+        Assert.Equal(HttpStatusCode.NoContent, (await ConfirmChange(e, a, codeA)).StatusCode);
+        var lost = await ConfirmChange(e, b, codeB);
+        Assert.Equal((HttpStatusCode.Conflict, "EMAIL_IN_USE"), (lost.StatusCode, await Code(lost)));
+        Assert.Equal(HttpStatusCode.OK, (await e.Login(b.Auth.Profile.Email, b.Password)).StatusCode);
+
+        // A registration that takes the address between the request and the code.
+        var target = Fresh();
+        await RequestChange(e, c, target);
+        var codeC = await ChangeCode(e, target);
+        Assert.Equal(HttpStatusCode.OK, (await e.Post("/auth/register", new RegisterRequest(target, "correct horse battery", "Someone else"))).StatusCode);
+        Assert.Equal("EMAIL_IN_USE", await Code(await ConfirmChange(e, c, codeC)));
+        Assert.Equal(HttpStatusCode.OK, (await e.Login(c.Auth.Profile.Email, c.Password)).StatusCode);
+        using var scope = e.Api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GoHardDb>();
+        Assert.Equal(1, await db.Users.CountAsync(u => u.Email == shared));
+        Assert.Equal(a.UserId, (await db.Users.SingleAsync(u => u.Email == shared)).Id);
+    }
 }
 
 public sealed class LogSink : ILoggerProvider

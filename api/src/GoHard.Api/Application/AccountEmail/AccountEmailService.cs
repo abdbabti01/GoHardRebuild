@@ -51,14 +51,17 @@ public sealed record CodeConfirmRequest(string? Code);
 public sealed record ResetCompleteRequest(string? ResetToken, string? NewPassword, string? Language);
 public sealed record PasswordChangeRequest(string? CurrentPassword, string? NewPassword, string? Language);
 public sealed record ResetGrant(string ResetToken, DateTime ExpiresAtUtc);
+/// <summary>Change email: the new address and the current password. [CodeDigits] 4 opts into a 4-digit code.</summary>
+public sealed record EmailChangeRequest(string? NewEmail, string? CurrentPassword, string? Language, int? CodeDigits = null);
+public sealed record EmailChangeConfirmRequest(string? Code, string? Language);
 
-public enum CodeRequestStatus { Accepted, InvalidEmail, Cooldown, Unavailable, Busy, AlreadyVerified }
+public enum CodeRequestStatus { Accepted, InvalidEmail, Cooldown, Unavailable, Busy, AlreadyVerified, WrongPassword, SameEmail, EmailInUse, NoPendingChange }
 public sealed record CodeRequestResult(CodeRequestStatus Status, int Seconds = 0);
-public enum CodeCheckStatus { Ok, Invalid, Expired, TooManyAttempts, Unavailable }
+public enum CodeCheckStatus { Ok, Invalid, Expired, TooManyAttempts, Unavailable, EmailInUse }
 
 public static class AccountEmailRegistration
 {
-    public const string Capability = "account.security", DeliveryCapability = "account.email";
+    public const string Capability = "account.security", DeliveryCapability = "account.email", ChangeCapability = "account.email-change";
 
     public static IServiceCollection AddAccountEmail(this IServiceCollection services, IConfiguration config, IHostEnvironment env)
     {
@@ -113,6 +116,10 @@ public static class AccountEmailRegistration
 public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeProvider time, AccountAccess access, ILogger<AccountEmailService> log)
 {
     public const string Reset = "password-reset", Verify = "email-verification", Changed = "password-changed";
+    /// <summary>Change email: the code sent to the proposed address, and the notice sent to the old one once it changed.</summary>
+    public const string EmailChange = "email-change", EmailChanged = "email-changed";
+    /// <summary>Purposes with short codes and a per-address daily budget of guesses and sends.</summary>
+    private static bool ShortCodes(string purpose) => purpose is Verify or EmailChange;
     /// <summary>A live code with less time left than this is replaced rather than sent again.</summary>
     private static readonly TimeSpan MinRemaining = TimeSpan.FromMinutes(2);
     private DateTime Now => time.GetUtcNow().UtcDateTime;
@@ -196,7 +203,15 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     {
         var now = Now;
         var key = EmailKey(email);
+        var change = purpose == EmailChange;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
+        // An email change is also one request per account at a time (taken first, always in this order), so asking for two
+        // addresses at once cannot leave two live codes.
+        if (change)
+        {
+            var userLock = EmailChange + "|user|" + user!.Id.ToString("N");
+            await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({userLock}, 0))", ct);
+        }
         // One request per address and purpose at a time, across every instance: the limits below cannot be raced.
         var lockKey = purpose + "|" + key;
         await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({lockKey}, 0))", ct);
@@ -209,9 +224,12 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
             return new(CodeRequestStatus.Cooldown, Seconds(recent.Min(c => c.CreatedAtUtc).AddHours(1) - now));
         // Verification (short codes): no new code once the day's guesses or sends are used up, so resending can never
         // buy unlimited guesses or unlimited mail.
-        if (purpose == Verify)
+        if (ShortCodes(purpose))
         {
-            var day = await db.AuthChallenges.Where(c => c.EmailKey == key && c.Purpose == Verify && c.CreatedAtUtc > now.AddDays(-1)).ToListAsync(ct);
+            var dayAgo = now.AddDays(-1);
+            var day = await db.AuthChallenges.Where(c => c.EmailKey == key && c.Purpose == purpose && c.CreatedAtUtc > dayAgo).ToListAsync(ct);
+            // An email change also has the same budget per account, across every address it tries.
+            if (change) day = [.. day.UnionBy(await db.AuthChallenges.Where(c => c.UserId == user!.Id && c.Purpose == purpose && c.CreatedAtUtc > dayAgo).ToListAsync(ct), c => c.Id)];
             if (day.Count > 0 && (day.Sum(c => c.Attempts) >= options.VerifyMaxAttemptsPerDay || day.Sum(c => c.SendCount) >= options.VerifyMaxSendsPerDay))
                 return new(CodeRequestStatus.Cooldown, Seconds(day.Min(c => c.CreatedAtUtc).AddDays(1) - now));
         }
@@ -225,33 +243,38 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
         var live = recent.Where(c => c.ConsumedAtUtc == null && c.InvalidatedAtUtc == null && c.VerifiedAtUtc == null
                 && c.Attempts < options.MaxAttempts && c.ExpiresAtUtc - now >= MinRemaining && c.SecurityStamp == user?.SecurityStamp
                 // Re-sent only in the length asked for: an app that can enter only 8 digits gets a new 8-digit code.
-                && c.CodeDigits == digits)
+                && c.CodeDigits == digits
+                // An email change's code belongs to one account and one proposed address.
+                && (!change || (c.UserId == user!.Id && c.NewEmail == email)))
             .MaxBy(c => c.CreatedAtUtc);
         if (live is null)
         {
             // Only the newest code is accepted. A code already exchanged for a reset authorization keeps that authorization.
-            await db.AuthChallenges.Where(c => c.EmailKey == key && c.Purpose == purpose && c.ConsumedAtUtc == null && c.InvalidatedAtUtc == null && c.VerifiedAtUtc == null)
+            // An email change replaces the account's earlier request, whatever address it was for (another account's
+            // request for the same address is not this account's to void).
+            var open = db.AuthChallenges.Where(c => c.Purpose == purpose && c.ConsumedAtUtc == null && c.InvalidatedAtUtc == null && c.VerifiedAtUtc == null);
+            await (change ? open.Where(c => c.UserId == user!.Id) : open.Where(c => c.EmailKey == key))
                 .ExecuteUpdateAsync(s => s.SetProperty(c => c.InvalidatedAtUtc, now), ct);
             live = new AuthChallenge
             {
                 Id = Guid.NewGuid(), UserId = user?.Id, Purpose = purpose, EmailKey = key, SecurityStamp = user?.SecurityStamp,
-                CreatedAtUtc = now, ExpiresAtUtc = now.AddMinutes(options.CodeMinutes), CodeDigits = digits,
+                CreatedAtUtc = now, ExpiresAtUtc = now.AddMinutes(options.CodeMinutes), CodeDigits = digits, NewEmail = change ? email : null,
             };
             db.AuthChallenges.Add(live);
         }
         live.SendCount++;
         live.LastSentAtUtc = now;
-        if (user is not null) Queue(user.Id, purpose, language, now, live.ExpiresAtUtc, live.Id);
+        if (user is not null) Queue(user.Id, purpose, language, now, live.ExpiresAtUtc, live.Id, change ? email : null);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
         return new(CodeRequestStatus.Accepted, options.CooldownSeconds);
     }
 
-    private void Queue(Guid userId, string kind, string? language, DateTime now, DateTime expires, Guid? challengeId) =>
+    private void Queue(Guid userId, string kind, string? language, DateTime now, DateTime expires, Guid? challengeId, string? to = null) =>
         db.MailMessages.Add(new MailMessage
         {
             Id = Guid.NewGuid(), UserId = userId, ChallengeId = challengeId, Kind = kind, Language = MailLanguage(language),
-            CreatedAtUtc = now, NextAttemptAtUtc = now, ExpiresAtUtc = expires,
+            CreatedAtUtc = now, NextAttemptAtUtc = now, ExpiresAtUtc = expires, ToEmail = to,
         });
 
     private static int Seconds(TimeSpan t) => Math.Max(1, (int)Math.Ceiling(t.TotalSeconds));
@@ -262,14 +285,16 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     /// </summary>
     private async Task<(CodeCheckStatus, AuthChallenge?)> CheckCodeAsync(string purpose, string key, Guid? userId, string? code, CancellationToken ct)
     {
-        if (purpose != Verify) return await CheckOnceAsync(purpose, key, userId, code, ct);
-        // Verification: the day's guesses across every code of this address are capped too, under a lock so concurrent
-        // guesses cannot pass the cap between the count and the attempt.
+        if (!ShortCodes(purpose)) return await CheckOnceAsync(purpose, key, userId, code, ct);
+        // Short codes: the day's guesses across every code of this address (an email change: of this account) are capped
+        // too, under a lock so concurrent guesses cannot pass the cap between the count and the attempt.
+        var change = purpose == EmailChange;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        var lockKey = "verify-check|" + key;
+        var lockKey = change ? "email-change-check|" + userId : "verify-check|" + key;
         await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({lockKey}, 0))", ct);
         var dayAgo = Now.AddDays(-1);
-        if (await db.AuthChallenges.Where(x => x.EmailKey == key && x.Purpose == Verify && x.CreatedAtUtc > dayAgo).SumAsync(x => x.Attempts, ct) >= options.VerifyMaxAttemptsPerDay)
+        var day = db.AuthChallenges.Where(x => x.Purpose == purpose && x.CreatedAtUtc > dayAgo);
+        if (await (change ? day.Where(x => x.UserId == userId) : day.Where(x => x.EmailKey == key)).SumAsync(x => x.Attempts, ct) >= options.VerifyMaxAttemptsPerDay)
             return (CodeCheckStatus.TooManyAttempts, null);
         var result = await CheckOnceAsync(purpose, key, userId, code, ct);
         await tx.CommitAsync(ct);
@@ -279,8 +304,9 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
     private async Task<(CodeCheckStatus, AuthChallenge?)> CheckOnceAsync(string purpose, string key, Guid? userId, string? code, CancellationToken ct)
     {
         var now = Now;
-        var c = await db.AuthChallenges.AsNoTracking()
-            .Where(x => x.EmailKey == key && x.Purpose == purpose && x.ConsumedAtUtc == null && x.InvalidatedAtUtc == null && x.VerifiedAtUtc == null)
+        var open = db.AuthChallenges.AsNoTracking().Where(x => x.Purpose == purpose && x.ConsumedAtUtc == null && x.InvalidatedAtUtc == null && x.VerifiedAtUtc == null);
+        // An email change's code is the account's own newest request, never another account's for the same address.
+        var c = await (purpose == EmailChange ? open.Where(x => x.UserId == userId) : open.Where(x => x.EmailKey == key))
             .OrderByDescending(x => x.CreatedAtUtc).FirstOrDefaultAsync(ct);
         if (c is null) return (CodeCheckStatus.Invalid, null);
         if (c.ExpiresAtUtc <= now) return (CodeCheckStatus.Expired, null);
@@ -388,5 +414,108 @@ public sealed class AccountEmailService(GoHardDb db, EmailOptions options, TimeP
         await tx.CommitAsync(ct);
         user.EmailVerifiedAtUtc = now;
         return (CodeCheckStatus.Ok, access.Profile(user));
+    }
+
+    // ---------------------------------------------------------------- change email (docs/AUTHENTICATION_EMAIL.md › 12)
+
+    /// <summary>
+    /// Signed in, with the current password: sends a code to [newEmail]. Nothing about the account changes until the code
+    /// is confirmed: the current address keeps signing in and receiving password-reset codes. A request for another address
+    /// replaces this account's earlier one (its code stops working).
+    /// </summary>
+    public async Task<CodeRequestResult> RequestEmailChangeAsync(Guid userId, string? newEmail, string? currentPassword, string? language, int? codeDigits, CancellationToken ct)
+    {
+        if (!options.Configured) return new(CodeRequestStatus.Unavailable);
+        var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
+        if (!AuthService.VerifyPassword(user, currentPassword)) return new(CodeRequestStatus.WrongPassword);
+        var normalized = AuthService.NormalizeEmail(newEmail);
+        if (!AuthService.PlausibleEmail(normalized)) return new(CodeRequestStatus.InvalidEmail);
+        if (normalized == user.Email) return new(CodeRequestStatus.SameEmail);
+        // Said as registration says it (EMAIL_IN_USE); checked again when the change is committed.
+        if (await db.Users.AnyAsync(u => u.Email == normalized && u.Id != userId, ct)) return new(CodeRequestStatus.EmailInUse);
+        return await IssueAsync(EmailChange, normalized, user, language, ct, RequestedDigits(codeDigits));
+    }
+
+    /// <summary>The account's open request, if any (newest, not confirmed, cancelled or replaced, at most a day old).</summary>
+    private Task<AuthChallenge?> PendingChangeAsync(Guid userId, CancellationToken ct)
+    {
+        var dayAgo = Now.AddDays(-1);
+        return db.AuthChallenges.AsNoTracking()
+            .Where(c => c.UserId == userId && c.Purpose == EmailChange && c.ConsumedAtUtc == null && c.InvalidatedAtUtc == null && c.CreatedAtUtc > dayAgo)
+            .OrderByDescending(c => c.CreatedAtUtc).FirstOrDefaultAsync(ct);
+    }
+
+    /// <summary>Resend: the open request's code again (or a new one when it expired or was locked), to the same address.
+    /// The password was checked when the request was made; a password change since then voided the request.</summary>
+    public async Task<CodeRequestResult> ResendEmailChangeAsync(Guid userId, string? language, int? codeDigits, CancellationToken ct)
+    {
+        if (!options.Configured) return new(CodeRequestStatus.Unavailable);
+        var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
+        if (await PendingChangeAsync(userId, ct) is not { NewEmail: { } to } pending || pending.SecurityStamp != user.SecurityStamp)
+            return new(CodeRequestStatus.NoPendingChange);
+        if (await db.Users.AnyAsync(u => u.Email == to && u.Id != userId, ct)) return new(CodeRequestStatus.EmailInUse);
+        return await IssueAsync(EmailChange, to, user, language, ct, RequestedDigits(codeDigits));
+    }
+
+    /// <summary>Cancel: the open request's code stops working and its unsent mail is not sent. Nothing else changes.</summary>
+    public async Task CancelEmailChangeAsync(Guid userId, CancellationToken ct)
+    {
+        var now = Now;
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var open = db.AuthChallenges.Where(c => c.UserId == userId && c.Purpose == EmailChange && c.ConsumedAtUtc == null && c.InvalidatedAtUtc == null);
+        await db.MailMessages.Where(m => m.State == "pending" && open.Any(c => c.Id == m.ChallengeId)).ExecuteUpdateAsync(s => s.SetProperty(m => m.State, "cancelled"), ct);
+        await open.ExecuteUpdateAsync(s => s.SetProperty(c => c.InvalidatedAtUtc, now), ct);
+        await tx.CommitAsync(ct);
+    }
+
+    /// <summary>
+    /// The code from the new address commits the change, in one transaction: the address is checked to be free again
+    /// (and the unique index decides a race), the account keeps its ID and everything it owns, the new address becomes its
+    /// sign-in and recovery address (verified: the code proved it), every session ends as for a password change, every
+    /// other open code is voided, and a notice goes to the old address.
+    /// </summary>
+    public async Task<CodeCheckStatus> ConfirmEmailChangeAsync(Guid userId, string? code, string? language, CancellationToken ct)
+    {
+        if (!options.Configured) return CodeCheckStatus.Unavailable;
+        var (status, c) = await CheckCodeAsync(EmailChange, "", userId, code, ct);
+        if (status != CodeCheckStatus.Ok) return status;
+        var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
+        if (c!.NewEmail is not { } to || c.SecurityStamp != user.SecurityStamp) return CodeCheckStatus.Invalid;
+        var now = Now;
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var addressLock = EmailChange + "|commit|" + EmailKey(to);
+        await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({addressLock}, 0))", ct);
+        if (await db.Users.AnyAsync(u => u.Email == to && u.Id != userId, ct))
+        {
+            await db.AuthChallenges.Where(x => x.Id == c.Id).ExecuteUpdateAsync(s => s.SetProperty(x => x.InvalidatedAtUtc, now), ct);
+            await tx.CommitAsync(ct);
+            return CodeCheckStatus.EmailInUse;
+        }
+        var spent = await db.AuthChallenges.Where(x => x.Id == c.Id && x.ConsumedAtUtc == null && x.InvalidatedAtUtc == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.ConsumedAtUtc, now), ct);
+        if (spent == 0) return CodeCheckStatus.Invalid;
+        var stamp = AuthService.NewSecret();
+        int updated;
+        try
+        {
+            // Conditional on what was read: a password change or another email change in between wins, this one does not.
+            updated = await db.Users.Where(u => u.Id == userId && u.SecurityStamp == user.SecurityStamp && u.Email == user.Email)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.Email, to).SetProperty(u => u.EmailVerifiedAtUtc, now).SetProperty(u => u.SecurityStamp, stamp), ct);
+        }
+        catch (Npgsql.PostgresException e) when (e.SqlState == Npgsql.PostgresErrorCodes.UniqueViolation)
+        {
+            return CodeCheckStatus.EmailInUse; // another account took it (registration) after the check: nothing changed
+        }
+        if (updated == 0) return CodeCheckStatus.Invalid;
+        await db.RefreshTokens.Where(t => t.UserId == userId && t.RevokedAtUtc == null).ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAtUtc, now), ct);
+        await db.AuthChallenges.Where(x => x.UserId == userId && x.ConsumedAtUtc == null && x.InvalidatedAtUtc == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.InvalidatedAtUtc, now), ct);
+        await db.MailMessages.Where(m => m.UserId == userId && m.State == "pending" && m.ChallengeId != null)
+            .ExecuteUpdateAsync(s => s.SetProperty(m => m.State, "cancelled"), ct);
+        Queue(userId, EmailChanged, language, now, now.AddDays(1), null, user.Email);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        log.LogInformation("Account email changed ({UserId})", userId);
+        return CodeCheckStatus.Ok;
     }
 }

@@ -22,11 +22,15 @@ import 'ui_support.dart';
 
 /// Answers the account-email routes like the real API; everything else is "not found".
 class _Accounts implements Transport {
-  final code = '01234567', verifyCode = '0123';
+  final code = '01234567', verifyCode = '0123', changeCode = '4321';
   final calls = <({String path, Object? data})>[];
-  bool offline = false, loseComplete = false, noSender = false;
-  List<String> capabilities = ['account.security', 'account.email'];
+  bool offline = false, loseComplete = false, noSender = false, loseConfirm = false;
+  List<String> capabilities = ['account.security', 'account.email', 'account.email-change'];
   String? password = 'the old long passphrase';
+  /// Change email: the account's address, and the address of the open request (none until one is made).
+  String email = 'one@example.test';
+  String? pendingEmail;
+  int changeCooldown = 60;
 
   @override
   Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) async {
@@ -56,6 +60,24 @@ class _Accounts implements Transport {
         return const ApiResponse(202, {'cooldownSeconds': 60});
       case '/account/email-verification/confirm':
         return d['code'] == verifyCode ? const ApiResponse(200, {}) : const ApiResponse(400, {'code': 'INVALID_CODE'});
+      case '/account/email-change/request':
+        if (d['currentPassword'] != password) return const ApiResponse(400, {'code': 'WRONG_PASSWORD'});
+        final to = (d['newEmail'] as String).trim().toLowerCase();
+        if (to == email) return const ApiResponse(400, {'code': 'SAME_EMAIL'});
+        if (to == 'taken@example.test') return const ApiResponse(409, {'code': 'EMAIL_IN_USE'});
+        pendingEmail = to;
+        return ApiResponse(202, {'cooldownSeconds': changeCooldown});
+      case '/account/email-change/resend':
+        return pendingEmail == null ? const ApiResponse(400, {'code': 'NO_PENDING_CHANGE'}) : ApiResponse(202, {'cooldownSeconds': changeCooldown});
+      case '/account/email-change/cancel':
+        pendingEmail = null;
+        return const ApiResponse(204, null);
+      case '/account/email-change/confirm':
+        if (pendingEmail == null || d['code'] != changeCode) return const ApiResponse(400, {'code': 'INVALID_CODE'});
+        email = pendingEmail!;
+        pendingEmail = null;
+        if (loseConfirm) throw const TransportFailure('response lost after commit');
+        return const ApiResponse(204, null);
     }
     return const ApiResponse(404, null);
   }
@@ -97,13 +119,13 @@ Future<void> _tap(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
 }
 
-/// The real data layer's authority, plus the password route.
+/// The real data layer's authority, plus the password and email-change routes.
 class _WithPassword implements Transport {
   _WithPassword(this.inner);
   final FakeServer inner;
   @override
   Future<ApiResponse> send(String method, String path, {Object? data, String? bearer}) async =>
-      path == '/account/password' ? const ApiResponse(204, null) : inner.send(method, path, data: data, bearer: bearer);
+      path == '/account/password' || path == '/account/email-change/confirm' ? const ApiResponse(204, null) : inner.send(method, path, data: data, bearer: bearer);
 }
 
 void main() {
@@ -126,6 +148,25 @@ void main() {
     }
 
     await h.signIn('one'); // the same account, with the new password
+    expect((await h.bodies(owner, Kinds.food)).single['name'], 'Oats');
+    expect((await h.sync.commands(owner)).single.state, 'pending', reason: 'still waiting to sync, not discarded');
+  });
+
+  test('an email change keeps this account\'s data and pending work on the phone; signing in again finds them', () async {
+    final h = Harness();
+    addTearDown(h.dispose);
+    final owner = await h.signIn('one');
+    h.server.offline = true;
+    await FoodRepository(h.sync, owner).save(FoodDraft(dayKey: '2026-10-21', meal: 'Breakfast', name: 'Oats', amount: '60 g', calories: 230));
+    h.server.offline = false;
+
+    await AuthRepository(Api(_WithPassword(h.server), h.sessions), h.sessions, h.sync).confirmEmailChange('4321', ' New@Example.test ');
+    expect((h.sessions.current, h.sessions.notice, h.sessions.retainedEmail), (null, SignOutReason.emailChanged, 'new@example.test'));
+    final queued = await h.sync.commands(owner, states: const ['pending', 'accepted', 'conflict', 'rejected', 'superseded']);
+    expect(queued.map((c) => c.kind), ['food.create'], reason: 'the change and its code never enter the outbox');
+    expect(queued.map((c) => '${c.payload}${c.outbound}').join(), isNot(contains('4321')));
+
+    await h.signIn('one'); // the same account (its ID), now with its new address
     expect((await h.bodies(owner, Kinds.food)).single['name'], 'Oats');
     expect((await h.sync.commands(owner)).single.state, 'pending', reason: 'still waiting to sync, not discarded');
   });
@@ -222,6 +263,82 @@ void main() {
     await _open(tester, home: const Scaffold(body: MeScreen()), signedIn: true, size: const Size(390, 1800), server: _Accounts()..capabilities = []);
     expect(find.byKey(const Key('me-password')), findsNothing);
     expect(find.byKey(const Key('me-email')), findsNothing, reason: 'the profile says nothing about verification');
+    expect(find.byKey(const Key('me-change-email')), findsNothing, reason: 'a server without the routes offers no change');
+  });
+
+  testWidgets('change email from Me: password and address checked, code to the new address, resend, then signed out onto the new address', (tester) async {
+    final (container, server) = await _open(tester, home: const Scaffold(body: MeScreen()), signedIn: true, size: const Size(390, 1800), profile: {'emailVerified': true});
+    await _tap(tester, 'me-change-email');
+    expect(find.textContaining('one@example.test'), findsOneWidget, reason: 'the current address is said');
+    expect(find.textContaining('every device is signed out'), findsOneWidget);
+
+    await _type(tester, 'change-email-new', 'new@example.test');
+    await _type(tester, 'current-password', 'not my password');
+    await _tap(tester, 'change-email-send');
+    expect(find.textContaining('That password is not correct'), findsOneWidget);
+    await _type(tester, 'current-password', 'the old long passphrase');
+    await _type(tester, 'change-email-new', 'taken@example.test');
+    await _tap(tester, 'change-email-send');
+    expect(find.text('Another account already uses that email. Choose a different address.'), findsOneWidget);
+    await _type(tester, 'change-email-new', 'ONE@example.test');
+    await _tap(tester, 'change-email-send');
+    expect(find.text('That’s already your email.'), findsOneWidget);
+    expect(server.pendingEmail, isNull, reason: 'nothing was asked for');
+
+    await _type(tester, 'change-email-new', 'new@example.test');
+    await _tap(tester, 'change-email-send');
+    expect(server.calls.last.data, {'newEmail': 'new@example.test', 'currentPassword': 'the old long passphrase', 'language': 'en', 'codeDigits': 4});
+    expect(find.text('Check your new email'), findsOneWidget);
+    expect(find.textContaining('new@example.test'), findsOneWidget);
+    expect(find.textContaining('your current email keeps working'), findsOneWidget);
+    expect(container.read(sessionsProvider).current, isNotNull, reason: 'nothing changes until the code is confirmed');
+
+    await _type(tester, 'code-field', '9999');
+    await _tap(tester, 'change-email-confirm');
+    expect(find.textContaining("That code isn't right"), findsOneWidget);
+    expect(container.read(sessionsProvider).current, isNotNull);
+
+    await _type(tester, 'code-field', '٤٣٢١');
+    await _tap(tester, 'change-email-confirm');
+    final sessions = container.read(sessionsProvider);
+    expect((sessions.current, sessions.notice, sessions.retainedEmail), (null, SignOutReason.emailChanged, 'new@example.test'));
+    expect(server.email, 'new@example.test');
+
+    // The sign-in screen opens on the new address and says why.
+    tester.state<NavigatorState>(find.byType(Navigator).first).push(MaterialPageRoute<void>(builder: (_) => const AuthScreen()));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Your email is now'), findsOneWidget);
+    expect(tester.widget<TextField>(find.byKey(const Key('auth-email'))).controller!.text, 'new@example.test');
+  });
+
+  testWidgets('change email: Cancel voids the request; a lost answer is never taken as done', (tester) async {
+    final (container, server) = await _open(tester, home: const Scaffold(body: MeScreen()), signedIn: true, size: const Size(390, 1800), profile: {'emailVerified': true});
+    await _tap(tester, 'me-change-email');
+    await _type(tester, 'change-email-new', 'new@example.test');
+    await _type(tester, 'current-password', 'the old long passphrase');
+    await _tap(tester, 'change-email-send');
+    await _tap(tester, 'change-email-cancel');
+    expect(server.pendingEmail, isNull);
+    expect(server.calls.last.path, '/account/email-change/cancel');
+    expect(find.byKey(const Key('me-change-email')), findsOneWidget, reason: 'back in Me');
+    await tester.pump(const Duration(seconds: 4));
+
+    server.changeCooldown = 0; // Resend is otherwise disabled for its 60 s
+    await _tap(tester, 'me-change-email');
+    await _type(tester, 'change-email-new', 'other@example.test');
+    await _type(tester, 'current-password', 'the old long passphrase');
+    await _tap(tester, 'change-email-send');
+    server.pendingEmail = null; // cancelled from another phone
+    await _tap(tester, 'change-email-resend');
+    expect(find.textContaining('That request has ended'), findsOneWidget);
+    expect(find.byKey(const Key('change-email-new')), findsOneWidget, reason: 'back to the address step');
+
+    await _tap(tester, 'change-email-send');
+    server.loseConfirm = true;
+    await _type(tester, 'code-field', '4321');
+    await _tap(tester, 'change-email-confirm');
+    expect(find.textContaining("couldn’t be confirmed"), findsOneWidget);
+    expect(container.read(sessionsProvider).current, isNotNull, reason: 'no answer is not a success: nothing is signed out by guess');
   });
 
   testWidgets('Me shows the server\'s verification state and changes the password, signing out without losing the address', (tester) async {
@@ -333,6 +450,21 @@ void main() {
       expect(Directionality.of(tester.element(find.byKey(const Key('code-field')))), language == 'ar' ? TextDirection.rtl : TextDirection.ltr);
       await _tap(tester, 'reset-verify');
       expect(find.byKey(const Key('new-password')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('$language at 320 px with 2× text: change email lays out, addresses and the code stay left to right', (tester) async {
+      final (container, _) = await _open(tester, home: const ChangeEmailScreen(), signedIn: true, language: language == 'fr' ? 'fr-CA' : 'ar', size: const Size(320, 640), textScale: 2);
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<TextField>(find.byKey(const Key('change-email-new'))).textDirection, TextDirection.ltr);
+      final l = container.read(appL10nProvider);
+      await _type(tester, 'change-email-new', 'new@example.test');
+      await _type(tester, 'current-password', 'the old long passphrase');
+      await _tap(tester, 'change-email-send');
+      expect(find.text(l.changeEmailCodeTitle), findsOneWidget);
+      expect(tester.widget<TextField>(find.byKey(const Key('code-field'))).textDirection, TextDirection.ltr);
+      expect(Directionality.of(tester.element(find.byKey(const Key('code-field')))), language == 'ar' ? TextDirection.rtl : TextDirection.ltr);
+      await tester.ensureVisible(find.byKey(const Key('change-email-cancel')));
       expect(tester.takeException(), isNull);
     });
   }

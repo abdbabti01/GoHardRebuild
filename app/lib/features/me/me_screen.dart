@@ -264,6 +264,10 @@ class MeScreen extends ConsumerWidget {
               value: verified ? l.meEmailVerified : l.meEmailNotVerified,
               onTap: verified ? null : () => push(context, const VerifyEmailScreen()),
             ),
+          // Change email: for an account that may use its data (one still waiting for its first verification verifies first).
+          if (session != null && ref.watch(compatibilityProvider).supports(changeEmailCapability) && !(ref.watch(accountAccessProvider).value?.required ?? false))
+            GroupRow(key: const Key('me-change-email'), icon: Icons.alternate_email, title: l.meChangeEmail, subtitle: l.meChangeEmailSubtitle,
+                onTap: () => push(context, const ChangeEmailScreen())),
           if (ref.watch(compatibilityProvider).supports(securityCapability))
             GroupRow(key: const Key('me-password'), icon: Icons.password, title: l.mePassword, subtitle: l.mePasswordSubtitle,
                 onTap: () => push(context, const ChangePasswordScreen())),

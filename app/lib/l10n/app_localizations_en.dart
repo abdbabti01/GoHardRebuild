@@ -2027,6 +2027,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'An account with that email already exists. Sign in instead.';
 
   @override
+  String get accountErrorSameEmail => 'That’s already your email.';
+
+  @override
+  String get accountErrorEmailChangeTaken =>
+      'Another account already uses that email. Choose a different address.';
+
+  @override
+  String get accountErrorNoPendingChange =>
+      'That request has ended. Start again with your new address.';
+
+  @override
+  String get accountErrorUncertainEmailChange =>
+      'The server didn’t answer, so the change couldn’t be confirmed. If it went through, you’ll be asked to sign in with the new address.';
+
+  @override
   String get accountErrorWeakPassword =>
       'Use a password of at least 8 characters.';
 
@@ -10039,6 +10054,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your password was changed. Sign in with your new password; everything on this phone is still here.';
 
   @override
+  String authNoticeEmailChanged(String email) {
+    return 'Your email is now $email. Every device was signed out: sign in with your new address. Everything on this phone is still here.';
+  }
+
+  @override
   String get resetTitle => 'Reset password';
 
   @override
@@ -10098,6 +10118,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'Changing your password needs a connection. Nothing is saved for later.';
 
   @override
+  String changeEmailLead(String email) {
+    return 'Your account uses $email. We’ll send a code to the new address. Nothing changes until you enter it.';
+  }
+
+  @override
+  String get changeEmailNewLabel => 'New email';
+
+  @override
+  String get changeEmailSignsOut =>
+      'When the change is confirmed, every device is signed out, this one too. Sign in again with the new address: your workouts, food, settings and Plus stay with your account.';
+
+  @override
+  String get changeEmailOffline =>
+      'Changing your email needs a connection. Nothing is saved for later.';
+
+  @override
+  String get changeEmailCodeTitle => 'Check your new email';
+
+  @override
+  String changeEmailCodeLead(String email) {
+    return 'Enter the code we sent to $email. Until you do, your current email keeps working for sign-in and password recovery.';
+  }
+
+  @override
+  String get changeEmailConfirm => 'Confirm new email';
+
+  @override
+  String get changeEmailCancel => 'Cancel change';
+
+  @override
+  String changeEmailCancelled(String email) {
+    return 'Email change cancelled. Your email is still $email.';
+  }
+
+  @override
   String get verifyTitle => 'Verify email';
 
   @override
@@ -10134,6 +10189,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mePasswordSubtitle => 'Change password';
+
+  @override
+  String get meChangeEmail => 'Change email';
+
+  @override
+  String get meChangeEmailSubtitle =>
+      'Sign in with another address; your data stays';
 
   @override
   String get accountErrorRegistrationUnavailable =>

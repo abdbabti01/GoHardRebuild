@@ -143,7 +143,7 @@ public sealed class MailWorker(IServiceScopeFactory scopes, IMailSender sender, 
                 ? "cancelled" : null;
         if (stop is not null)
         {
-            m.State = stop;
+            (m.State, m.ToEmail) = (stop, null);
             await db.SaveChangesAsync(ct);
             log.LogInformation("Mail {Id} ({Kind}) {State} before sending", m.Id, m.Kind, stop);
             return;
@@ -155,7 +155,9 @@ public sealed class MailWorker(IServiceScopeFactory scopes, IMailSender sender, 
         using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
         bound.CancelAfter(TimeSpan.FromSeconds(options.SendTimeoutSeconds));
         SendResult result;
-        try { result = await sender.SendAsync(new OutgoingMail(user!.Email, subject, text, html), "gohard-mail-" + m.Id.ToString("N"), bound.Token); }
+        // The account's current address, unless the message names another (an email change: the new address for its code,
+        // the old one for its notice).
+        try { result = await sender.SendAsync(new OutgoingMail(m.ToEmail ?? user!.Email, subject, text, html), "gohard-mail-" + m.Id.ToString("N"), bound.Token); }
         catch (Exception ex) when (ex is HttpRequestException || (ex is OperationCanceledException && !ct.IsCancellationRequested))
         {
             // No answer: perhaps sent, perhaps not. The retry uses the same key, so the provider sends it at most once.
@@ -175,6 +177,7 @@ public sealed class MailWorker(IServiceScopeFactory scopes, IMailSender sender, 
                 (m.State, m.LastError) = ("failed", result.Error);
                 break;
         }
+        if (m.State != "pending") m.ToEmail = null; // an address is kept only while it may still be needed
         await db.SaveChangesAsync(CancellationToken.None);
         log.LogInformation("Mail {Id} ({Kind}) attempt {Attempt}: {Outcome} {Error}", m.Id, m.Kind, m.Attempts, result.Outcome, result.Error);
     }
@@ -213,6 +216,14 @@ public static class MailTemplates
             ["The password of your GoHard account was just changed, and every device was signed out."],
             ["If this was you, there is nothing else to do.",
              "If you didn't change it, reset your password now from the GoHard sign-in screen (Forgot password?)."]),
+        [(AccountEmailService.EmailChange, "en")] = new("Confirm your new GoHard email",
+            ["Enter this code in the GoHard app to make this address the email of your GoHard account:"],
+            ["It expires in {m} minutes. Until you enter it, your account keeps its current email.",
+             "If you didn't ask to use this address with GoHard, ignore this email. Nothing will change."]),
+        [(AccountEmailService.EmailChanged, "en")] = new("Your GoHard email was changed",
+            ["The email address of your GoHard account was just changed to a new address, and every device was signed out. This address no longer signs in to the account or receives its password reset codes."],
+            ["If this was you, there is nothing else to do.",
+             "If you didn't make this change, contact GoHard support right away: someone else may be using your account."]),
 
         [(AccountEmailService.Reset, "fr")] = new("Ton code de réinitialisation GoHard",
             ["Entre ce code dans l'app GoHard pour réinitialiser ton mot de passe :"],
@@ -226,6 +237,14 @@ public static class MailTemplates
             ["Le mot de passe de ton compte GoHard vient d'être changé, et tous les appareils ont été déconnectés."],
             ["Si c'est toi, tu n'as rien d'autre à faire.",
              "Sinon, réinitialise ton mot de passe tout de suite depuis l'écran de connexion de GoHard (Mot de passe oublié?)."]),
+        [(AccountEmailService.EmailChange, "fr")] = new("Confirme ta nouvelle adresse courriel GoHard",
+            ["Entre ce code dans l'app GoHard pour faire de cette adresse le courriel de ton compte GoHard :"],
+            ["Il expire dans {m} minutes. Tant que tu ne l'as pas entré, ton compte garde son adresse actuelle.",
+             "Si tu n'as pas demandé à utiliser cette adresse avec GoHard, ignore ce courriel. Rien ne changera."]),
+        [(AccountEmailService.EmailChanged, "fr")] = new("Ton adresse courriel GoHard a été changée",
+            ["L'adresse courriel de ton compte GoHard vient d'être remplacée par une nouvelle adresse, et tous les appareils ont été déconnectés. Cette adresse ne permet plus de se connecter au compte ni d'en recevoir les codes de réinitialisation."],
+            ["Si c'est toi, tu n'as rien d'autre à faire.",
+             "Sinon, contacte le soutien GoHard tout de suite : quelqu'un d'autre utilise peut-être ton compte."]),
 
         [(AccountEmailService.Reset, "ar")] = new("رمز إعادة تعيين كلمة مرور GoHard",
             ["أدخل هذا الرمز في تطبيق GoHard لإعادة تعيين كلمة المرور:"],
@@ -239,6 +258,14 @@ public static class MailTemplates
             ["تم للتو تغيير كلمة مرور حسابك في GoHard، وتم تسجيل الخروج من جميع الأجهزة."],
             ["إذا كنت أنت من غيّرها، فلا حاجة لفعل أي شيء آخر.",
              "إذا لم تغيّرها أنت، فأعد تعيين كلمة المرور الآن من شاشة تسجيل الدخول في GoHard (نسيت كلمة المرور؟)."]),
+        [(AccountEmailService.EmailChange, "ar")] = new("تأكيد بريدك الإلكتروني الجديد في GoHard",
+            ["أدخل هذا الرمز في تطبيق GoHard لجعل هذا العنوان البريد الإلكتروني لحسابك في GoHard:"],
+            ["تنتهي صلاحيته بعد {m} دقائق. إلى أن تُدخله، يحتفظ حسابك ببريده الحالي.",
+             "إذا لم تطلب استخدام هذا العنوان مع GoHard، فتجاهل هذه الرسالة. لن يتغيّر شيء."]),
+        [(AccountEmailService.EmailChanged, "ar")] = new("تم تغيير بريدك الإلكتروني في GoHard",
+            ["تم للتو تغيير عنوان البريد الإلكتروني لحسابك في GoHard إلى عنوان جديد، وتم تسجيل الخروج من جميع الأجهزة. لم يعد هذا العنوان يسجّل الدخول إلى الحساب ولا يتلقى رموز إعادة تعيين كلمة المرور."],
+            ["إذا كنت أنت من قام بذلك، فلا حاجة لفعل أي شيء آخر.",
+             "إذا لم تقم بهذا التغيير، فاتصل بدعم GoHard فورًا: قد يكون شخص آخر يستخدم حسابك."]),
     };
 
     private static readonly Dictionary<string, string> Footer = new()

@@ -3023,6 +3023,22 @@
   "@accountErrorEmailInUse": {
     "description": "Server code EMAIL_IN_USE on registration."
   },
+  "accountErrorSameEmail": "That’s already your email.",
+  "@accountErrorSameEmail": {
+    "description": "Change email: the new address is the current one."
+  },
+  "accountErrorEmailChangeTaken": "Another account already uses that email. Choose a different address.",
+  "@accountErrorEmailChangeTaken": {
+    "description": "Change email: the address belongs to another account (asked, or taken before confirming)."
+  },
+  "accountErrorNoPendingChange": "That request has ended. Start again with your new address.",
+  "@accountErrorNoPendingChange": {
+    "description": "Change email: resend after the request was cancelled, replaced or ended."
+  },
+  "accountErrorUncertainEmailChange": "The server didn’t answer, so the change couldn’t be confirmed. If it went through, you’ll be asked to sign in with the new address.",
+  "@accountErrorUncertainEmailChange": {
+    "description": "Change email: the confirmation got no answer."
+  },
   "accountErrorWeakPassword": "Use a password of at least 8 characters.",
   "@accountErrorWeakPassword": {
     "description": "Server code WEAK_PASSWORD."
@@ -14028,6 +14044,16 @@
   "@authNoticePasswordChanged": {
     "description": "Sign-in notice after a password reset or change."
   },
+  "authNoticeEmailChanged": "Your email is now {email}. Every device was signed out: sign in with your new address. Everything on this phone is still here.",
+  "@authNoticeEmailChanged": {
+    "description": "Sign-in notice after an email change; email is the new address.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "new@example.com"
+      }
+    }
+  },
   "resetTitle": "Reset password",
   "@resetTitle": {
     "description": "Forgot password, step 1 title."
@@ -14101,6 +14127,60 @@
   "@changePasswordOffline": {
     "description": "Change password needs a connection."
   },
+  "changeEmailLead": "Your account uses {email}. We’ll send a code to the new address. Nothing changes until you enter it.",
+  "@changeEmailLead": {
+    "description": "Change email: lead; email is the current address.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "new@example.com"
+      }
+    }
+  },
+  "changeEmailNewLabel": "New email",
+  "@changeEmailNewLabel": {
+    "description": "Change email: field for the new address."
+  },
+  "changeEmailSignsOut": "When the change is confirmed, every device is signed out, this one too. Sign in again with the new address: your workouts, food, settings and Plus stay with your account.",
+  "@changeEmailSignsOut": {
+    "description": "Change email: warning above the fields."
+  },
+  "changeEmailOffline": "Changing your email needs a connection. Nothing is saved for later.",
+  "@changeEmailOffline": {
+    "description": "Change email: offline."
+  },
+  "changeEmailCodeTitle": "Check your new email",
+  "@changeEmailCodeTitle": {
+    "description": "Change email: code step title."
+  },
+  "changeEmailCodeLead": "Enter the code we sent to {email}. Until you do, your current email keeps working for sign-in and password recovery.",
+  "@changeEmailCodeLead": {
+    "description": "Change email: code step lead; email is the new address.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "new@example.com"
+      }
+    }
+  },
+  "changeEmailConfirm": "Confirm new email",
+  "@changeEmailConfirm": {
+    "description": "Change email: confirms the code; commits the change."
+  },
+  "changeEmailCancel": "Cancel change",
+  "@changeEmailCancel": {
+    "description": "Change email: cancels the request; the code stops working."
+  },
+  "changeEmailCancelled": "Email change cancelled. Your email is still {email}.",
+  "@changeEmailCancelled": {
+    "description": "Toast after Cancel change.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "new@example.com"
+      }
+    }
+  },
   "verifyTitle": "Verify email",
   "@verifyTitle": {
     "description": "Verify email page title."
@@ -14153,6 +14233,14 @@
   "mePasswordSubtitle": "Change password",
   "@mePasswordSubtitle": {
     "description": "Me › Password row subtitle."
+  },
+  "meChangeEmail": "Change email",
+  "@meChangeEmail": {
+    "description": "Me › Account row and page title: change the sign-in email."
+  },
+  "meChangeEmailSubtitle": "Sign in with another address; your data stays",
+  "@meChangeEmailSubtitle": {
+    "description": "Me › Change email row subtitle."
   },
   "accountErrorRegistrationUnavailable": "New accounts can't be created right now because email verification isn't available. Nothing was created; please try again later.",
   "@accountErrorRegistrationUnavailable": {

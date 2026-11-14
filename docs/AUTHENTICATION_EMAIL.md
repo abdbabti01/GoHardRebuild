@@ -328,6 +328,56 @@ code from the email: 4 digits, or 8 if your email shows 8." The reset field keep
 around the code, one-time-code autofill, a numbers keyboard, Arabic-Indic and Eastern Arabic digits, leading zeros and
 left-to-right entry in Arabic. Emails are unchanged apart from the code they carry (they never named a length).
 
+## 12. Change email (14 Nov 2026, `feature/change-email`; not merged or deployed)
+
+**What the person sees.** Me › Account › *Change email* (shown when the server declares `account.email-change`, or
+before the app knows; not for an account still waiting for its first verification). Step 1: the current address said,
+a warning that confirming signs every device out (this one too) while workouts, food, settings and Plus stay; *New email*
+and *Current password*; *Send code*. Step 2: "Enter the code we sent to {new}. Until you do, your current email keeps
+working for sign-in and password recovery." The same code field (4 or 8 digits), *Resend code* with its cooldown, *Use a
+different email* (back to step 1; a new request replaces the old one), *Cancel change* (voids the code). Confirming signs
+this phone out non-destructively (as a password change does) and sign-in opens on the new address with "Your email is now
+{new}…". A lost answer says the change could not be confirmed and is never resent. Needs a connection.
+
+| Route (`/api/v1`, signed in, default policy) | Body | Answers |
+|---|---|---|
+| `POST /account/email-change/request` | `newEmail`, `currentPassword`, `language?`, `codeDigits?` | 202 `{cooldownSeconds}`; 400 `WRONG_PASSWORD` / `INVALID_EMAIL` / `SAME_EMAIL`; 409 `EMAIL_IN_USE`; 429 `EMAIL_COOLDOWN`; 503 as above |
+| `POST /account/email-change/resend` | `language?`, `codeDigits?` | 202; 400 `NO_PENDING_CHANGE` (none open, a day old, or voided by a password change); 409; 429; 503 |
+| `POST /account/email-change/confirm` | `code`, `language?` | 204; 400 `INVALID_CODE` / `CODE_EXPIRED`; 429 `TOO_MANY_ATTEMPTS`; 409 `EMAIL_IN_USE` |
+| `POST /account/email-change/cancel` | — | 204 |
+
+Behind the `auth-email` per-IP limit like every emailed-code route. Capability `account.email-change`.
+
+**Codes.** Purpose `email-change`, built on the same challenge machinery as verification: HMAC of the challenge ID, never
+stored, 10 minutes, single use, 5 wrong guesses lock it, 60 s cooldown and 5 sends an hour per address, the global budget.
+Like verification (short codes), a rolling 24 h budget of 10 guesses and 10 sends, here per new address **and per
+account** (across every address it tries). Each challenge is bound to the account (`UserId`), the proposed address
+(`NewEmail`, plus its keyed hash) and the account's security stamp. A code is checked only against the account's own newest
+request, never another account's for the same address. A new request (any address) voids the account's open one; Cancel
+voids it and cancels its unsent mail; a password change voids it (as every open code).
+
+**Commit** (one transaction): the advisory lock on the address, uniqueness checked again (and the unique index on
+`Users.Email` decides a race with a registration: 409, nothing changed), the code consumed, then a conditional update on
+the stamp and address read: `Email` = new, `EmailVerifiedAtUtc` = now (the code proved it), a new security stamp (every
+access token fails), every refresh token revoked, every other open code voided (a reset code sent to the old address dies)
+and its unsent mail cancelled, and a notice queued to the **old** address ("Your GoHard email was changed"; en/fr/ar).
+The account keeps its ID, so everything it owns (workouts, food, settings, Plus, operations) stays. On the phone local
+data and the outbox are keyed by that ID, so pending changes resume after signing in with the new address.
+
+**Unchanged.** Signup verification, password reset and password change; their routes and limits. Before confirmation the
+old address signs in and receives reset codes; the new one does neither.
+
+**Migration `AddEmailChange`** (additive): `AuthChallenges.NewEmail` and `MailMessages.ToEmail` (both nullable,
+varchar(320)). `ToEmail` is set only for these two messages (code → new address, notice → old) and cleared once the
+message ends; other mail still goes to the account's current address at send time. No contract change.
+
+**Deploy order.** API first (Railway pre-deploy migrates, 17 migrations). An app with this flow against an older server
+gets 404 on the first request and says the server doesn't offer it yet.
+
+Tests: API `AccountEmailTests` (success with data, Plus and other devices; wrong password, invalid, same and taken
+addresses; expired, replaced, cancelled and locked codes; two accounts for one address and a registration in between),
+app `account_security_test` (Me flow, cancel, lost answer, pending work kept, fr/ar at 320 px with 2× text).
+
 ## Design note: required verification (written before implementation, 23 Oct 2026)
 
 - **Eligibility policy.** One rule, `AccountAccess.MayUseData`: verified, or an unverified account still inside a legacy

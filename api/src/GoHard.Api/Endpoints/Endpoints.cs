@@ -25,7 +25,7 @@ public static class GoHardEndpoints
         "profile.nutrition-goals", "food.sources", "food.saved", "food.barcode", "plans.builder", "exercises.custom",
         "water.entries", "profile.tracking-display", "runs.activity-type", "runs.routes", WeeklyGoalService.Capability,
         ActivityService.MeasurementsCapability, ExerciseIncrementService.Capability, AccountEmailRegistration.Capability, SavedMealService.Capability,
-        EntitlementService.Capability,
+        EntitlementService.Capability, AccountEmailRegistration.ChangeCapability,
     ];
     /// <summary>Text search exists only where a USDA key is configured, so it is declared only there.</summary>
     public const string SearchCapability = "food.search";
@@ -64,11 +64,16 @@ public static class GoHardEndpoints
         CodeRequestStatus.Cooldown => Results.Json(new { code = "EMAIL_COOLDOWN", retryAfterSeconds = r.Seconds }, statusCode: 429),
         CodeRequestStatus.AlreadyVerified => Results.Json(new AuthError("ALREADY_VERIFIED"), statusCode: 409),
         CodeRequestStatus.Busy => Results.Json(new AuthError("EMAIL_BUSY"), statusCode: 503),
+        CodeRequestStatus.WrongPassword => Results.Json(new AuthError("WRONG_PASSWORD"), statusCode: 400),
+        CodeRequestStatus.SameEmail => Results.Json(new AuthError("SAME_EMAIL"), statusCode: 400),
+        CodeRequestStatus.EmailInUse => Results.Json(new AuthError("EMAIL_IN_USE"), statusCode: 409),
+        CodeRequestStatus.NoPendingChange => Results.Json(new AuthError("NO_PENDING_CHANGE"), statusCode: 400),
         _ => Results.Json(new AuthError("EMAIL_UNAVAILABLE"), statusCode: 503),
     };
 
     private static IResult Checked(CodeCheckStatus s) => s switch
     {
+        CodeCheckStatus.EmailInUse => Results.Json(new AuthError("EMAIL_IN_USE"), statusCode: 409),
         CodeCheckStatus.Expired => Results.Json(new AuthError("CODE_EXPIRED"), statusCode: 400),
         CodeCheckStatus.TooManyAttempts => Results.Json(new AuthError("TOO_MANY_ATTEMPTS"), statusCode: 429),
         CodeCheckStatus.Unavailable => Results.Json(new AuthError("EMAIL_UNAVAILABLE"), statusCode: 503),
@@ -135,6 +140,17 @@ public static class GoHardEndpoints
         });
         signedCodes.MapPost("/account/password", async (PasswordChangeRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
             Changed(await s.ChangePasswordAsync(u.UserId(), r.CurrentPassword, r.NewPassword, r.Language, ct)));
+        // Change email (docs/AUTHENTICATION_EMAIL.md › 12): an account that may use its data (the default policy), so an
+        // account still waiting for its first verification keeps that flow unchanged.
+        var emailChange = codes.MapGroup("/account/email-change").RequireAuthorization();
+        emailChange.MapPost("/request", async (EmailChangeRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
+            Requested(await s.RequestEmailChangeAsync(u.UserId(), r.NewEmail, r.CurrentPassword, r.Language, r.CodeDigits, ct)));
+        emailChange.MapPost("/resend", async (LanguageRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
+            Requested(await s.ResendEmailChangeAsync(u.UserId(), r.Language, r.CodeDigits, ct)));
+        emailChange.MapPost("/confirm", async (EmailChangeConfirmRequest r, ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
+            await s.ConfirmEmailChangeAsync(u.UserId(), r.Code, r.Language, ct) is var status && status == CodeCheckStatus.Ok ? Results.NoContent() : Checked(status));
+        emailChange.MapPost("/cancel", async (ClaimsPrincipal u, AccountEmailService s, CancellationToken ct) =>
+        { await s.CancelEmailChangeAsync(u.UserId(), ct); return Results.NoContent(); });
         // Local mail capture (Development/Testing only; refused at startup anywhere else): the newest message to an address.
         if (app.Services.GetRequiredService<EmailOptions>().Provider == EmailOptions.Capture)
             app.MapGet("/dev/mail/latest", (string to, CaptureMailbox box) => box.Latest(to) is { } m

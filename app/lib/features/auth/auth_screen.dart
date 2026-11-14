@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/format.dart' show ltr;
 import '../../core/language.dart';
 import '../../core/language_picker.dart';
 import '../../core/theme.dart';
@@ -30,7 +31,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   void initState() {
     super.initState();
-    // After a password change the address that was signed in is filled in again.
+    // After a password change the address that was signed in is filled in again; after an email change, the new one.
     _email.text = ref.read(sessionsProvider).retainedEmail ?? '';
   }
 
@@ -82,6 +83,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       SignOutReason.expired => l.authNoticeExpired,
       SignOutReason.accountDeleted => l.authNoticeAccountDeleted,
       SignOutReason.passwordChanged => l.authNoticePasswordChanged,
+      SignOutReason.emailChanged => l.authNoticeEmailChanged(ltr(ref.read(sessionsProvider).retainedEmail ?? '')),
       null => _passwordReset ? l.authNoticePasswordChanged : null,
     };
     return Scaffold(

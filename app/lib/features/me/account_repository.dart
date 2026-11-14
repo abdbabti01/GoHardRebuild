@@ -9,6 +9,8 @@ enum AuthError {
   // Emailed codes and password changes (docs/AUTHENTICATION_EMAIL.md).
   passwordTooLong, passwordMismatch, codeIncomplete, codeIncompleteShort, codeInvalid, codeExpired, codeAttempts, cooldown, emailUnavailable, emailBusy, resetExpired, notSupported,
   uncertainReset, uncertainChange,
+  // Change email.
+  sameEmail, emailChangeTaken, noPendingChange, uncertainEmailChange,
   // Required verification: a new account cannot be created without a sender.
   registrationUnavailable,
 }
@@ -56,6 +58,10 @@ class AuthFailure implements Exception {
         AuthError.uncertainReset => l.accountErrorUncertainReset,
         AuthError.uncertainChange => l.accountErrorUncertainChange,
         AuthError.registrationUnavailable => l.accountErrorRegistrationUnavailable,
+        AuthError.sameEmail => l.accountErrorSameEmail,
+        AuthError.emailChangeTaken => l.accountErrorEmailChangeTaken,
+        AuthError.noPendingChange => l.accountErrorNoPendingChange,
+        AuthError.uncertainEmailChange => l.accountErrorUncertainEmailChange,
       };
 }
 
@@ -75,6 +81,8 @@ AuthFailure _authFailure(ApiResponse r) => AuthFailure.of(seconds: r.data is Map
       'EMAIL_UNAVAILABLE' => AuthError.emailUnavailable,
       'EMAIL_BUSY' => AuthError.emailBusy,
       'INVALID_RESET_TOKEN' => AuthError.resetExpired,
+      'SAME_EMAIL' => AuthError.sameEmail,
+      'NO_PENDING_CHANGE' => AuthError.noPendingChange,
       // A server from before these routes: say so once, never retry.
       _ when r.status == 404 || r.status == 405 => AuthError.notSupported,
       _ => r.status == 429 ? AuthError.tooManyAttempts : AuthError.unknown,
@@ -196,6 +204,47 @@ class AuthRepository {
     _sync.kick();
     await _sync.pull();
   }
+
+  // ---- Change email (docs/AUTHENTICATION_EMAIL.md › 12). Nothing about the account changes until the code is confirmed.
+
+  /// "Another account uses it", in words for this flow (registration's says "sign in instead").
+  static AuthFailure _changeFailure(ApiResponse r) => switch (_authFailure(r)) {
+        AuthFailure(code: AuthError.emailInUse) => const AuthFailure.of(AuthError.emailChangeTaken),
+        final f => f,
+      };
+
+  /// The server checks [currentPassword], then sends a code to [newEmail]. Returns the resend cooldown.
+  Future<int> requestEmailChange(String newEmail, String currentPassword) async {
+    final r = await _call('/account/email-change/request',
+        {'newEmail': newEmail.trim(), 'currentPassword': currentPassword, 'language': mailLanguage, 'codeDigits': verifyDigits}, auth: true);
+    if (r.status != 202) throw _changeFailure(r);
+    return (r.data as Json)['cooldownSeconds'] as int? ?? 60;
+  }
+
+  /// The open request's code again, to the same new address. Returns the cooldown.
+  Future<int> resendEmailChange() async {
+    final r = await _call('/account/email-change/resend', {'language': mailLanguage, 'codeDigits': verifyDigits}, auth: true);
+    if (r.status != 202) throw _changeFailure(r);
+    return (r.data as Json)['cooldownSeconds'] as int? ?? 60;
+  }
+
+  /// The open request's code stops working; the account keeps its address.
+  Future<void> cancelEmailChange() async {
+    final r = await _call('/account/email-change/cancel', const {}, auth: true);
+    if (r.status != 204) throw _authFailure(r);
+  }
+
+  /// Commits the change. The server signs every device out; this one signs out without deleting anything (its data and
+  /// pending changes belong to the account, not the address), and sign-in opens on [newEmail]. No answer is not a
+  /// failure ([AuthError.uncertainEmailChange]); it is never resent by itself.
+  Future<void> confirmEmailChange(String code, String newEmail) async {
+    final r = await _call('/account/email-change/confirm', {'code': code, 'language': mailLanguage}, auth: true, noAnswer: AuthError.uncertainEmailChange);
+    if (r.status != 204) throw _changeFailure(r);
+    await _sessions.signOut(code: SignOutReason.emailChanged, email: newEmail.trim().toLowerCase());
+  }
+
+  /// This app asks for 4-digit codes (docs/AUTHENTICATION_EMAIL.md › 11).
+  static const verifyDigits = 4;
 
   /// "Check again": verified on another phone, or a confirmation whose answer was lost. Asks the account; no code.
   Future<void> checkAccess() async {

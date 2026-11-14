@@ -138,6 +138,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
             e.Property(x => x.Purpose).HasMaxLength(32);
             e.Property(x => x.EmailKey).HasMaxLength(64);
             e.Property(x => x.CodeDigits).HasDefaultValue(8);
+            e.Property(x => x.NewEmail).HasMaxLength(320);
             e.HasIndex(x => x.GrantHash).IsUnique();
         });
         Owned<MailMessage>(b, x => x.UserId).HasIndex(x => new { x.State, x.NextAttemptAtUtc });
@@ -146,6 +147,7 @@ public class GoHardDb(DbContextOptions<GoHardDb> options) : DbContext(options)
             e.Property(x => x.Kind).HasMaxLength(32);
             e.Property(x => x.Language).HasMaxLength(8);
             e.Property(x => x.State).HasMaxLength(16);
+            e.Property(x => x.ToEmail).HasMaxLength(320);
             e.HasOne<AuthChallenge>().WithMany().HasForeignKey(x => x.ChallengeId).OnDelete(DeleteBehavior.Cascade);
         });
 

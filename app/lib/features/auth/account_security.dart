@@ -17,7 +17,7 @@ import '../me/account_repository.dart';
 /// into one field; nothing here needs a link, a website or a particular mail app.
 
 /// What the server says about these features: a server from before them, or one without a sender, is said up front.
-const securityCapability = 'account.security', emailCapability = 'account.email';
+const securityCapability = 'account.security', emailCapability = 'account.email', changeEmailCapability = 'account.email-change';
 
 /// Null when emailed codes can be asked for (or nothing is known yet: the request will say).
 String? emailCodesBlocked(AppLocalizations l, Compatibility c) => c.capabilities == null
@@ -378,6 +378,160 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           ]),
         ),
       ],
+    );
+  }
+}
+
+/// Signed in: the new address and the current password, then the code sent to the new address (docs/AUTHENTICATION_EMAIL.md
+/// › 12). Nothing changes until the code is confirmed: the current address keeps signing in and recovering the password.
+/// Confirming signs every device out, this one without deleting anything, and sign-in opens on the new address. The
+/// request lives in this screen: after the app is closed, start again (the new request replaces the old one).
+class ChangeEmailScreen extends ConsumerStatefulWidget {
+  const ChangeEmailScreen({super.key});
+  @override
+  ConsumerState<ChangeEmailScreen> createState() => _ChangeEmailScreenState();
+}
+
+class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> with _Cooldown {
+  final _email = TextEditingController(), _password = TextEditingController(), _code = TextEditingController();
+  bool _busy = false, _showPassword = false, _sent = false;
+  AuthFailure? _error;
+
+  @override
+  void dispose() {
+    for (final c in [_email, _password, _code]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _run(Future<void> Function(AuthRepository auth) action) async {
+    if (_busy) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await action(ref.read(authRepositoryProvider));
+    } on AuthFailure catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e;
+        if (e.code == AuthError.cooldown) startCooldown(e.seconds ?? 60);
+        // Cancelled, replaced or ended elsewhere: only a new request helps.
+        if (e.code == AuthError.noPendingChange) _sent = false;
+      });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _send() => _run((auth) async {
+        if (_email.text.trim().isEmpty) throw const AuthFailure.of(AuthError.invalidEmail);
+        if (_password.text.isEmpty) throw const AuthFailure.of(AuthError.wrongPassword);
+        final cooldown = await auth.requestEmailChange(_email.text, _password.text);
+        if (!mounted) return;
+        startCooldown(cooldown);
+        _code.clear();
+        setState(() => _sent = true);
+      });
+
+  Future<void> _resend() => _run((auth) async {
+        final cooldown = await auth.resendEmailChange();
+        if (mounted) startCooldown(cooldown);
+      });
+
+  Future<void> _confirm() => _run((auth) async {
+        if (!verificationCodeComplete(_code.text)) throw const AuthFailure.of(AuthError.codeIncompleteShort);
+        // On success the session ends here; the app returns to sign-in with the new address filled in.
+        await auth.confirmEmailChange(_code.text, _email.text);
+        if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+      });
+
+  Future<void> _cancel() => _run((auth) async {
+        await auth.cancelEmailChange();
+        if (!mounted) return;
+        toast(context, context.l10n.changeEmailCancelled(ltr(ref.read(sessionProvider)?.email ?? '')));
+        Navigator.pop(context);
+      });
+
+  /// Back from the code step goes to the address (a new request replaces this one); from the first step it leaves.
+  void _back() => setState(() {
+        _sent = false;
+        _error = null;
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final offline = ref.watch(connectionProvider) == false;
+    final compat = ref.watch(compatibilityProvider);
+    final blocked = emailCodesBlocked(l, compat) ?? (compat.capabilities != null && !compat.supports(changeEmailCapability) ? l.accountErrorNotSupported : null);
+    final current = ref.watch(sessionProvider)?.email ?? '';
+    final lines = [
+      if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!.text(l), key: const Key('change-email-error'), tone: Tone.error)),
+      if (offline) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.cloud_off, l.changeEmailOffline)),
+    ];
+    return PopScope(
+      canPop: !_sent && !_busy,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_busy) _back();
+      },
+      child: AppPage(
+        title: _sent ? l.changeEmailCodeTitle : l.meChangeEmail,
+        subtitle: _sent ? l.changeEmailCodeLead(ltr(_email.text.trim())) : l.changeEmailLead(ltr(current)),
+        bottom: Column(mainAxisSize: MainAxisSize.min, children: [
+          ...lines,
+          if (!_sent) ...[
+            PrimaryButton(l.resetSendCode, key: const Key('change-email-send'), busy: _busy, onPressed: offline || blocked != null || cooldownLeft > 0 ? null : _send),
+            TextButton(onPressed: _busy ? null : () => Navigator.pop(context), child: Text(l.actionCancel)),
+          ] else ...[
+            PrimaryButton(l.changeEmailConfirm, key: const Key('change-email-confirm'), busy: _busy, onPressed: offline ? null : _confirm),
+            Wrap(alignment: WrapAlignment.center, children: [
+              TextButton(key: const Key('change-email-resend'), onPressed: _busy || offline || cooldownLeft > 0 ? null : _resend,
+                  child: Text(cooldownLeft > 0 ? l.codeResendIn(cooldownLeft) : l.codeResend)),
+              TextButton(key: const Key('change-email-other'), onPressed: _busy ? null : _back, child: Text(l.resetUseAnotherEmail)),
+              TextButton(key: const Key('change-email-cancel'), onPressed: _busy || offline ? null : _cancel, child: Text(l.changeEmailCancel)),
+            ]),
+          ],
+        ]),
+        children: _sent
+            ? [
+                CodeField(controller: _code, verification: true, onSubmitted: _confirm),
+                const SizedBox(height: 14),
+                StatusLine(Icons.mark_email_unread_outlined, l.codeDeliveryNote),
+              ]
+            : [
+                StatusLine(Icons.devices_outlined, l.changeEmailSignsOut, tone: Tone.warning),
+                if (blocked != null) Padding(padding: const EdgeInsets.only(top: 14), child: StatusLine(Icons.mail_lock_outlined, blocked, tone: Tone.warning)),
+                const SizedBox(height: 16),
+                AutofillGroup(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    TextField(
+                      key: const Key('change-email-new'), controller: _email, keyboardType: TextInputType.emailAddress, autocorrect: false, enableSuggestions: false,
+                      textInputAction: TextInputAction.next, autofillHints: const [AutofillHints.email], textDirection: TextDirection.ltr,
+                      decoration: InputDecoration(labelText: l.changeEmailNewLabel),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key('current-password'), controller: _password, obscureText: !_showPassword, autocorrect: false, enableSuggestions: false,
+                      textInputAction: TextInputAction.send, autofillHints: const [AutofillHints.password],
+                      onSubmitted: (_) => offline || blocked != null || cooldownLeft > 0 ? null : _send(),
+                      decoration: InputDecoration(
+                        labelText: l.currentPasswordLabel,
+                        suffixIcon: IconButton(
+                          tooltip: _showPassword ? l.authHidePassword : l.authShowPassword,
+                          icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                          onPressed: () => setState(() => _showPassword = !_showPassword),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+                if (cooldownLeft > 0) Padding(padding: const EdgeInsets.only(top: 14), child: StatusLine(Icons.schedule, l.codeResendIn(cooldownLeft))),
+              ],
+      ),
     );
   }
 }

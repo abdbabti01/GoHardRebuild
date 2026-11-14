@@ -75,16 +75,22 @@ public class AuthChallenge
     /// <summary>Digits of this challenge's code: 8, or 4 for a verification code the requesting app opted into. Rows from
     /// before this column are 8 (the length their email carried).</summary>
     public int CodeDigits { get; set; } = 8;
+    /// <summary>email-change only: the normalized address the account asked to move to. Its code is valid only for this
+    /// account and this address; asking for another address or cancelling voids it.</summary>
+    public string? NewEmail { get; set; }
 }
 
-/// <summary>The outbox: one message to send to an account's current address. No address, code or body is stored.</summary>
+/// <summary>The outbox: one message to send, by default to the account's current address. No code or body is stored.</summary>
 public class MailMessage
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public Guid? ChallengeId { get; set; }
-    /// <summary>password-reset | email-verification | password-changed</summary>
+    /// <summary>password-reset | email-verification | password-changed | email-change | email-changed</summary>
     public string Kind { get; set; } = "";
+    /// <summary>Only when the recipient is not the account's current address: an email change's code goes to the new
+    /// address, its security notice to the old one. Cleared once the message has ended.</summary>
+    public string? ToEmail { get; set; }
     public string Language { get; set; } = "en";
     public DateTime CreatedAtUtc { get; set; }
     public DateTime NextAttemptAtUtc { get; set; }
