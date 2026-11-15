@@ -2698,3 +2698,11 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   notice; owner to choose the monitored address before deployment. Release check test: another phone signed out by the
   change keeps its pending command and sends it once after signing in with the new address. API focused 36 passed; app
   account_security/data_layer/session_refresh 47 passed. No app/lib change since 9e5826d (IPA 70 stands). Not merged/deployed.
+
+### 14 Nov 2026 — Change email merged and deployed (owner approved)
+
+- `main` fast-forwarded 5a0ee30 → e072c6d (CI 200 passed). Railway devoted-caring: success. Hosted Ready, 17 migrations
+  (`AddEmailChange`). Owner set `GOHARD_Email__SupportAddress=contact@lesdeserts.ca`; after Railway's redeploy
+  `/capabilities` declares `account.email-change`. Routes answer 401 unauthenticated (unknown route 404). IPA 70 reused.
+  No hosted account created, no email sent. `feature/eat-reusable-amounts` not merged.
+- **Unverified until the owner confirms:** real emails (code and notice), iPhone flow, other-device sign-out and offline resume.

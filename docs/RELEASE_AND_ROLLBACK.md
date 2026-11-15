@@ -145,6 +145,27 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Change email — deployed 14 Nov 2026 (`main` e072c6d)
+
+- **What:** Me › Account › Change email: new address + current password, a code to the new address (resend, cancel);
+  nothing changes until it is confirmed; then the same account (ID, data, Plus, pending offline changes) signs in and
+  recovers with the new address, every device is signed out, and the old address gets a notice naming the support
+  address (docs/AUTHENTICATION_EMAIL.md › 12).
+- **One additive migration** (`AddEmailChange`: `AuthChallenges.NewEmail`, `MailMessages.ToEmail`) → 17 migrations.
+  New capability `account.email-change`, declared only when `Email:SupportAddress` is set. Contract unchanged.
+- **Configuration:** owner set `GOHARD_Email__SupportAddress=contact@lesdeserts.ca` in Railway (devoted-caring).
+- **Build:** code e072c6d (branch `feature/change-email`), CI 200 passed (9e5826d: CI 199); unsigned IPA run 70 from
+  9e5826d (app code unchanged since).
+- **Deployed:** owner approved 14 Nov 2026. `main` fast-forwarded 5a0ee30 → e072c6d (the Eat branch stays separate).
+  Railway devoted-caring: success. Hosted `/health/ready`: Ready, 17 migrations; after the owner's variable,
+  `/capabilities` declares `account.email-change`; the four routes answer 401 without sign-in. No hosted account created,
+  no email sent by these checks. IPA 70 reused.
+- **Unverified until the owner confirms on iPhone:** real code delivery to the new address and the notice to the old one,
+  sign-out of other devices, offline changes resuming after signing in with the new address.
+- **Deploy order:** API first (done). IPA 70 against an older server would say the feature is not offered yet.
+- **Rollback:** redeploy `main` 5a0ee30 (the extra columns are ignored by it); addresses already changed stay changed.
+  To switch the feature off without a rollback, remove `GOHARD_Email__SupportAddress` (routes then answer 503).
+
 ### Saved plans, Suggested today, 8-character passwords, 4-digit verification codes — deployed 5 Nov 2026 (`main` 92dd85f)
 
 - **What:** Save plan apart from activation and the Train › Plan library (docs/PLAN_LIBRARY_OVERLOAD.md); Free saved
