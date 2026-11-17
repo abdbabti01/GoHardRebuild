@@ -835,7 +835,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eatGoalsNoSuggestion =>
-      'GoHard does not suggest a calorie or protein goal. If you are unsure what suits you, a dietitian or doctor can help.';
+      'These are your numbers to choose. In Eat, Help me set my targets gives a starting estimate, and a doctor or dietitian can help too.';
 
   @override
   String get eatGoalsSheetTitle => 'Daily goals';
@@ -12772,4 +12772,236 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get accountErrorCodeIncompleteShort =>
       'Enter the code from the email: 4 digits, or 8 if your email shows 8.';
+
+  @override
+  String get tgtHelpAction => 'Help me set my targets';
+
+  @override
+  String tgtStep(int step) {
+    return 'Step $step of 3';
+  }
+
+  @override
+  String get tgtGoalTitle => 'What\'s your goal?';
+
+  @override
+  String get tgtGoalMaintain => 'Maintain weight';
+
+  @override
+  String get tgtGoalMaintainLine => 'Keep my weight roughly steady.';
+
+  @override
+  String get tgtGoalLose => 'Lose weight';
+
+  @override
+  String get tgtGoalLoseLine => 'Aim to gradually lower my weight.';
+
+  @override
+  String get tgtGoalGain => 'Gain muscle';
+
+  @override
+  String get tgtGoalGainLine =>
+      'Support strength training and muscle growth; my weight may go up.';
+
+  @override
+  String get tgtGoalRecomp => 'Lose fat and build muscle';
+
+  @override
+  String get tgtGoalRecompLine =>
+      'Focus on body composition; my weight may change slowly.';
+
+  @override
+  String get tgtAboutTitle => 'Tell us about yourself';
+
+  @override
+  String get tgtAboutIntro =>
+      'The estimate needs only these. Nothing here is saved to your account.';
+
+  @override
+  String get tgtAge => 'Age';
+
+  @override
+  String get tgtYears => 'years';
+
+  @override
+  String get tgtHeight => 'Height';
+
+  @override
+  String get tgtFeet => 'ft';
+
+  @override
+  String get tgtUnitFeetInches => 'ft, in';
+
+  @override
+  String get tgtWeight => 'Current weight';
+
+  @override
+  String get tgtLatestWeighIn => 'Your latest weigh-in';
+
+  @override
+  String get tgtUseOtherWeight => 'Use a different weight';
+
+  @override
+  String get tgtUseLatestWeight => 'Use my latest weigh-in';
+
+  @override
+  String get tgtWeightOnlyHere =>
+      'Used only for this estimate. It isn\'t added to Body progress.';
+
+  @override
+  String get tgtSex => 'Sex for the formula';
+
+  @override
+  String get tgtFemale => 'Female';
+
+  @override
+  String get tgtMale => 'Male';
+
+  @override
+  String get tgtSexWhy =>
+      'The formula was built from measurements of women and men, and on average body size and makeup change how much energy a body uses. Choose the one that fits your body best for this estimate. It isn\'t saved.';
+
+  @override
+  String get tgtSexSkip => 'Prefer not to answer? Set targets manually';
+
+  @override
+  String get tgtActivity => 'How active is a usual day?';
+
+  @override
+  String get tgtActivityHelp =>
+      'One answer covers daily life and workouts together, so exercise is never counted twice.';
+
+  @override
+  String get tgtActInactive => 'Mostly seated';
+
+  @override
+  String get tgtActInactiveLine =>
+      'Seated most of the day, little walking, few or no workouts.';
+
+  @override
+  String get tgtActLow => 'Lightly active';
+
+  @override
+  String get tgtActLowLine =>
+      'Mostly seated outside workouts, plus about an hour of walking or exercise on most days.';
+
+  @override
+  String get tgtActActive => 'Active';
+
+  @override
+  String get tgtActActiveLine =>
+      'On your feet much of the day, or 1½ to 2 hours of walking, cycling or sports on most days.';
+
+  @override
+  String get tgtActVery => 'Very active';
+
+  @override
+  String get tgtActVeryLine =>
+      'A physical job, or about 2 hours of hard exercise such as running or sports on most days.';
+
+  @override
+  String get tgtScope =>
+      'For adults 19 and over. Not for pregnancy or breastfeeding, which need a different estimate.';
+
+  @override
+  String get tgtNeeded => 'Needed for this estimate';
+
+  @override
+  String get tgtNotANumber => 'Enter a number';
+
+  @override
+  String get tgtOutOfRange =>
+      'Outside what this estimate supports. Check it, or set targets manually.';
+
+  @override
+  String get tgtChooseOne => 'Choose one to continue';
+
+  @override
+  String get tgtUnder19 =>
+      'This estimate is for adults 19 and over: younger people\'s needs include growth, which the formula doesn\'t cover. You can set targets manually, ideally with a doctor or dietitian.';
+
+  @override
+  String get tgtUnderweight =>
+      'Your weight is below the usual healthy range for your height, so GoHard won\'t estimate a weight-loss target. Choose another goal, set targets manually, or talk to a doctor or dietitian.';
+
+  @override
+  String get tgtResultTitle => 'Your starting targets';
+
+  @override
+  String get tgtCoachSay =>
+      'I used your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.';
+
+  @override
+  String get tgtPlainSay =>
+      'This uses your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.';
+
+  @override
+  String tgtCurrentToSuggested(String current, String suggested) {
+    return 'Current $current → suggested $suggested';
+  }
+
+  @override
+  String tgtSuggested(String value) {
+    return 'Suggested $value';
+  }
+
+  @override
+  String get tgtWhyMaintain =>
+      'Calories match your estimated maintenance: what a day like yours uses, on average.';
+
+  @override
+  String tgtWhyLose(String maintenance) {
+    return 'About 500 kcal a day below your estimated maintenance of $maintenance, with more protein. How quickly weight changes differs from person to person.';
+  }
+
+  @override
+  String tgtWhyLoseFloor(String maintenance, String floor) {
+    return 'Less than 500 kcal below your estimated maintenance of $maintenance, because GoHard doesn\'t suggest starting under $floor a day. A doctor or dietitian can help you plan more.';
+  }
+
+  @override
+  String tgtWhyLoseNoRoom(String floor) {
+    return 'The same as your estimated maintenance: it\'s already near $floor, the lowest starting point GoHard suggests. A doctor or dietitian can help you plan weight loss.';
+  }
+
+  @override
+  String tgtWhyGain(String maintenance) {
+    return 'About 360 kcal a day above your estimated maintenance of $maintenance, with more protein. Muscle grows with strength training; extra calories on their own mostly add weight.';
+  }
+
+  @override
+  String get tgtWhyRecomp =>
+      'Calories stay at your estimated maintenance, the same as Maintain weight; what changes is more protein. Body composition changes with regular strength training and time, not from these numbers alone.';
+
+  @override
+  String get tgtProteinCapped =>
+      'Protein is kept to 35% of calories, the top of the usual range for adults.';
+
+  @override
+  String get tgtMacros => 'See macro breakdown';
+
+  @override
+  String tgtAbout(String value) {
+    return 'about $value';
+  }
+
+  @override
+  String get tgtMacroNote =>
+      'Estimates only. GoHard doesn\'t save carb or fat goals, so these aren\'t tracked. Fat is set at 30% of calories and carbs make up the rest.';
+
+  @override
+  String get tgtHow =>
+      'Estimated with the U.S. National Academies\' 2023 energy equations for adults. It\'s a starting point, not a measurement: watch how your weight changes over a few weeks and adjust.';
+
+  @override
+  String get tgtUse => 'Use these targets';
+
+  @override
+  String get tgtSaved => 'Targets saved';
+
+  @override
+  String get tgtBack => 'Back';
+
+  @override
+  String get tgtManual => 'Set targets manually';
 }

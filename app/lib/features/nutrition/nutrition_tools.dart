@@ -14,13 +14,15 @@ import '../../data/models.dart';
 import '../../data/sync.dart' show LocalSaveFailure, SyncEngine;
 import '../me/account_repository.dart';
 import 'nutrition_surface.dart' show formatKcal;
+import 'target_helper.dart';
 import 'water.dart';
 
 // ---------------------------------------------------------------------------- daily goals
 
 /// The one goals form, used by Me › Nutrition goals and by the sheet Eat opens. All of them read and write the
 /// profile's goals through [ProfileRepository.setGoals], with the same validation; fields start from the saved goals
-/// or empty. No calorie or protein goal is ever suggested. For water, while no water goal is saved, a general starting
+/// or empty. This form never fills in a calorie or protein number by itself; a starting estimate is only ever made on
+/// request, by Help me set my targets in Eat's sheet (target_helper.dart). For water, while no water goal is saved, a general starting
 /// point (2,000 mL) is offered: "Use it" only fills the field, nothing is saved until Save goals, and leaving the
 /// field blank keeps no goal. The water goal is shown (and sent) only while water tracking is on, so a form without it
 /// never clears it.
@@ -30,6 +32,14 @@ class GoalsEditor extends ConsumerStatefulWidget {
   final VoidCallback onSaved;
   @override
   ConsumerState<GoalsEditor> createState() => _GoalsEditorState();
+
+  /// Blank is "no goal". Anything else has to be a whole number ("2,200", "2 200" and "٢٢٠٠" are 2200).
+  static int? whole(String raw, String error) {
+    if (raw.trim().isEmpty) return null;
+    final v = parsePositiveInt(raw, grouping: true);
+    if (v == null) throw AuthFailure(error);
+    return v;
+  }
 }
 
 class _GoalsEditorState extends ConsumerState<GoalsEditor> {
@@ -59,14 +69,6 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
     super.dispose();
   }
 
-  /// Blank is "no goal". Anything else has to be a whole number ("2,200", "2 200" and "٢٢٠٠" are 2200).
-  static int? _whole(String raw, String error) {
-    if (raw.trim().isEmpty) return null;
-    final v = parsePositiveInt(raw, grouping: true);
-    if (v == null) throw AuthFailure(error);
-    return v;
-  }
-
   int? _waterMl() {
     if (_water.text.trim().isEmpty) return null;
     final v = _unit.parseAmount(_water.text);
@@ -81,7 +83,7 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
       // The newest profile on this phone, so a goal change never carries an older name or unit with it.
       final current = ref.read(profileProvider).value ?? widget.profile;
       await ref.read(profileRepositoryProvider).setGoals(current,
-          calorieGoal: _whole(_calories.text, context.l10n.eatGoalCaloriesWhole), proteinGoal: _whole(_protein.text, context.l10n.eatGoalProteinWhole),
+          calorieGoal: GoalsEditor.whole(_calories.text, context.l10n.eatGoalCaloriesWhole), proteinGoal: GoalsEditor.whole(_protein.text, context.l10n.eatGoalProteinWhole),
           withWater: withWater, waterGoalMl: withWater ? _waterMl() : null);
       if (mounted) widget.onSaved();
     } on AuthFailure catch (e) {
@@ -148,11 +150,19 @@ class _GoalsEditorState extends ConsumerState<GoalsEditor> {
 }
 
 /// Eat's way to the goals: a compact sheet over the page. They repeat every day. (Today shows progress only.)
+/// Direct editing stays first-class; Help me set my targets is the secondary way in, and its "Set targets manually"
+/// comes back to this sheet.
 Future<void> showGoalsSheet(BuildContext context, WidgetRef ref) async {
   final profile = ref.read(profileProvider).value;
   if (profile == null) return;
   await showGoSheet<void>(appContext(context), title: context.l10n.eatGoalsSheetTitle, builder: (sheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text(sheet.l10n.eatGoalsSheetIntro, style: sheet.sansStyle(15, color: sheet.c.secondary)),
+        const SizedBox(height: 12),
+        SecondaryButton(sheet.l10n.tgtHelpAction, key: const Key('goals-help'), icon: Icons.calculate_outlined, onPressed: () async {
+          Navigator.pop(sheet);
+          final manual = await push<bool>(context, const TargetHelperScreen());
+          if (manual == true && context.mounted) await showGoalsSheet(context, ref);
+        }),
         const SizedBox(height: 16),
         GoalsEditor(profile: profile, onSaved: () => Navigator.pop(sheet)),
       ]));

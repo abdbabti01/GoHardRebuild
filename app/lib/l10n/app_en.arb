@@ -1172,7 +1172,7 @@
   "@eatGoalsSave": {
     "description": "Goals form button."
   },
-  "eatGoalsNoSuggestion": "GoHard does not suggest a calorie or protein goal. If you are unsure what suits you, a dietitian or doctor can help.",
+  "eatGoalsNoSuggestion": "These are your numbers to choose. In Eat, Help me set my targets gives a starting estimate, and a doctor or dietitian can help too.",
   "@eatGoalsNoSuggestion": {
     "description": "Note under the goals form."
   },
@@ -18022,5 +18022,321 @@
   "accountErrorCodeIncompleteShort": "Enter the code from the email: 4 digits, or 8 if your email shows 8.",
   "@accountErrorCodeIncompleteShort": {
     "description": "A verification code that is neither 4 nor 8 digits."
+  },
+  "tgtHelpAction": "Help me set my targets",
+  "@tgtHelpAction": {
+    "description": "Secondary action in Eat's goals sheet: opens the three-step target estimate."
+  },
+  "tgtStep": "Step {step} of 3",
+  "@tgtStep": {
+    "description": "Progress under the target estimate's title.",
+    "placeholders": {
+      "step": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "tgtGoalTitle": "What's your goal?",
+  "@tgtGoalTitle": {
+    "description": "Target estimate, step 1 title."
+  },
+  "tgtGoalMaintain": "Maintain weight",
+  "@tgtGoalMaintain": {
+    "description": "Goal choice."
+  },
+  "tgtGoalMaintainLine": "Keep my weight roughly steady.",
+  "@tgtGoalMaintainLine": {
+    "description": "Plain-language line under Maintain weight."
+  },
+  "tgtGoalLose": "Lose weight",
+  "@tgtGoalLose": {
+    "description": "Goal choice."
+  },
+  "tgtGoalLoseLine": "Aim to gradually lower my weight.",
+  "@tgtGoalLoseLine": {
+    "description": "Plain-language line under Lose weight."
+  },
+  "tgtGoalGain": "Gain muscle",
+  "@tgtGoalGain": {
+    "description": "Goal choice."
+  },
+  "tgtGoalGainLine": "Support strength training and muscle growth; my weight may go up.",
+  "@tgtGoalGainLine": {
+    "description": "Plain-language line under Gain muscle."
+  },
+  "tgtGoalRecomp": "Lose fat and build muscle",
+  "@tgtGoalRecomp": {
+    "description": "Goal choice (body recomposition)."
+  },
+  "tgtGoalRecompLine": "Focus on body composition; my weight may change slowly.",
+  "@tgtGoalRecompLine": {
+    "description": "Plain-language line under Lose fat and build muscle."
+  },
+  "tgtAboutTitle": "Tell us about yourself",
+  "@tgtAboutTitle": {
+    "description": "Target estimate, step 2 title."
+  },
+  "tgtAboutIntro": "The estimate needs only these. Nothing here is saved to your account.",
+  "@tgtAboutIntro": {
+    "description": "Intro of step 2."
+  },
+  "tgtAge": "Age",
+  "@tgtAge": {
+    "description": "Age field label."
+  },
+  "tgtYears": "years",
+  "@tgtYears": {
+    "description": "Suffix of the age field."
+  },
+  "tgtHeight": "Height",
+  "@tgtHeight": {
+    "description": "Height field label."
+  },
+  "tgtFeet": "ft",
+  "@tgtFeet": {
+    "description": "Unit suffix: feet."
+  },
+  "tgtUnitFeetInches": "ft, in",
+  "@tgtUnitFeetInches": {
+    "description": "Height unit choice: feet and inches."
+  },
+  "tgtWeight": "Current weight",
+  "@tgtWeight": {
+    "description": "Weight field label."
+  },
+  "tgtLatestWeighIn": "Your latest weigh-in",
+  "@tgtLatestWeighIn": {
+    "description": "Over the latest weight from Body progress."
+  },
+  "tgtUseOtherWeight": "Use a different weight",
+  "@tgtUseOtherWeight": {
+    "description": "Button: type another weight for this estimate only."
+  },
+  "tgtUseLatestWeight": "Use my latest weigh-in",
+  "@tgtUseLatestWeight": {
+    "description": "Button: go back to the latest weigh-in."
+  },
+  "tgtWeightOnlyHere": "Used only for this estimate. It isn't added to Body progress.",
+  "@tgtWeightOnlyHere": {
+    "description": "Under a typed weight: it is not saved as a check-in."
+  },
+  "tgtSex": "Sex for the formula",
+  "@tgtSex": {
+    "description": "Label of the sex choice the energy formula needs."
+  },
+  "tgtFemale": "Female",
+  "@tgtFemale": {
+    "description": "Sex choice for the formula."
+  },
+  "tgtMale": "Male",
+  "@tgtMale": {
+    "description": "Sex choice for the formula."
+  },
+  "tgtSexWhy": "The formula was built from measurements of women and men, and on average body size and makeup change how much energy a body uses. Choose the one that fits your body best for this estimate. It isn't saved.",
+  "@tgtSexWhy": {
+    "description": "Why the formula asks for sex."
+  },
+  "tgtSexSkip": "Prefer not to answer? Set targets manually",
+  "@tgtSexSkip": {
+    "description": "Link under the sex choice: leave the estimate for manual goals."
+  },
+  "tgtActivity": "How active is a usual day?",
+  "@tgtActivity": {
+    "description": "Activity question."
+  },
+  "tgtActivityHelp": "One answer covers daily life and workouts together, so exercise is never counted twice.",
+  "@tgtActivityHelp": {
+    "description": "Under the activity question: workouts are included, not asked separately."
+  },
+  "tgtActInactive": "Mostly seated",
+  "@tgtActInactive": {
+    "description": "Activity choice (NASEM inactive)."
+  },
+  "tgtActInactiveLine": "Seated most of the day, little walking, few or no workouts.",
+  "@tgtActInactiveLine": {
+    "description": "Example under Mostly seated."
+  },
+  "tgtActLow": "Lightly active",
+  "@tgtActLow": {
+    "description": "Activity choice (NASEM low active)."
+  },
+  "tgtActLowLine": "Mostly seated outside workouts, plus about an hour of walking or exercise on most days.",
+  "@tgtActLowLine": {
+    "description": "Example under Lightly active."
+  },
+  "tgtActActive": "Active",
+  "@tgtActActive": {
+    "description": "Activity choice (NASEM active)."
+  },
+  "tgtActActiveLine": "On your feet much of the day, or 1½ to 2 hours of walking, cycling or sports on most days.",
+  "@tgtActActiveLine": {
+    "description": "Example under Active."
+  },
+  "tgtActVery": "Very active",
+  "@tgtActVery": {
+    "description": "Activity choice (NASEM very active)."
+  },
+  "tgtActVeryLine": "A physical job, or about 2 hours of hard exercise such as running or sports on most days.",
+  "@tgtActVeryLine": {
+    "description": "Example under Very active."
+  },
+  "tgtScope": "For adults 19 and over. Not for pregnancy or breastfeeding, which need a different estimate.",
+  "@tgtScope": {
+    "description": "Who the estimate is for."
+  },
+  "tgtNeeded": "Needed for this estimate",
+  "@tgtNeeded": {
+    "description": "Field error: left blank."
+  },
+  "tgtNotANumber": "Enter a number",
+  "@tgtNotANumber": {
+    "description": "Field error: not a number."
+  },
+  "tgtOutOfRange": "Outside what this estimate supports. Check it, or set targets manually.",
+  "@tgtOutOfRange": {
+    "description": "Field error: outside the method's supported inputs."
+  },
+  "tgtChooseOne": "Choose one to continue",
+  "@tgtChooseOne": {
+    "description": "A choice left unanswered."
+  },
+  "tgtUnder19": "This estimate is for adults 19 and over: younger people's needs include growth, which the formula doesn't cover. You can set targets manually, ideally with a doctor or dietitian.",
+  "@tgtUnder19": {
+    "description": "Age under 19: the method does not apply."
+  },
+  "tgtUnderweight": "Your weight is below the usual healthy range for your height, so GoHard won't estimate a weight-loss target. Choose another goal, set targets manually, or talk to a doctor or dietitian.",
+  "@tgtUnderweight": {
+    "description": "Lose weight chosen with a BMI under 18.5: no estimate."
+  },
+  "tgtResultTitle": "Your starting targets",
+  "@tgtResultTitle": {
+    "description": "Target estimate, step 3 title."
+  },
+  "tgtCoachSay": "I used your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.",
+  "@tgtCoachSay": {
+    "description": "Leon/Leona explaining the result (first person). Fixed text; the numbers come from the calculator."
+  },
+  "tgtPlainSay": "This uses your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.",
+  "@tgtPlainSay": {
+    "description": "The same explanation when the coach is turned off."
+  },
+  "tgtCurrentToSuggested": "Current {current} → suggested {suggested}",
+  "@tgtCurrentToSuggested": {
+    "description": "Existing goal and the suggestion. The arrow points from current to suggested in reading order.",
+    "placeholders": {
+      "current": {
+        "type": "String",
+        "example": "2,000 kcal"
+      },
+      "suggested": {
+        "type": "String",
+        "example": "2,280 kcal"
+      }
+    }
+  },
+  "tgtSuggested": "Suggested {value}",
+  "@tgtSuggested": {
+    "description": "The suggestion when no goal is saved.",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "2,280 kcal"
+      }
+    }
+  },
+  "tgtWhyMaintain": "Calories match your estimated maintenance: what a day like yours uses, on average.",
+  "@tgtWhyMaintain": {
+    "description": "Why the Maintain weight suggestion is what it is."
+  },
+  "tgtWhyLose": "About 500 kcal a day below your estimated maintenance of {maintenance}, with more protein. How quickly weight changes differs from person to person.",
+  "@tgtWhyLose": {
+    "description": "Lose weight: 500 kcal below maintenance. No rate is promised.",
+    "placeholders": {
+      "maintenance": {
+        "type": "String",
+        "example": "3,130 kcal"
+      }
+    }
+  },
+  "tgtWhyLoseFloor": "Less than 500 kcal below your estimated maintenance of {maintenance}, because GoHard doesn't suggest starting under {floor} a day. A doctor or dietitian can help you plan more.",
+  "@tgtWhyLoseFloor": {
+    "description": "Lose weight held at the guideline floor.",
+    "placeholders": {
+      "maintenance": {
+        "type": "String",
+        "example": "1,480 kcal"
+      },
+      "floor": {
+        "type": "String",
+        "example": "1,200 kcal"
+      }
+    }
+  },
+  "tgtWhyLoseNoRoom": "The same as your estimated maintenance: it's already near {floor}, the lowest starting point GoHard suggests. A doctor or dietitian can help you plan weight loss.",
+  "@tgtWhyLoseNoRoom": {
+    "description": "Lose weight equals maintenance because maintenance is already at the floor.",
+    "placeholders": {
+      "floor": {
+        "type": "String",
+        "example": "1,200 kcal"
+      }
+    }
+  },
+  "tgtWhyGain": "About 360 kcal a day above your estimated maintenance of {maintenance}, with more protein. Muscle grows with strength training; extra calories on their own mostly add weight.",
+  "@tgtWhyGain": {
+    "description": "Gain muscle: small surplus; calories alone do not build muscle.",
+    "placeholders": {
+      "maintenance": {
+        "type": "String",
+        "example": "3,130 kcal"
+      }
+    }
+  },
+  "tgtWhyRecomp": "Calories stay at your estimated maintenance, the same as Maintain weight; what changes is more protein. Body composition changes with regular strength training and time, not from these numbers alone.",
+  "@tgtWhyRecomp": {
+    "description": "Lose fat and build muscle: same calories as Maintain; explains why."
+  },
+  "tgtProteinCapped": "Protein is kept to 35% of calories, the top of the usual range for adults.",
+  "@tgtProteinCapped": {
+    "description": "Protein held at 35 % of calories."
+  },
+  "tgtMacros": "See macro breakdown",
+  "@tgtMacros": {
+    "description": "Expandable section with carbs and fat."
+  },
+  "tgtAbout": "about {value}",
+  "@tgtAbout": {
+    "description": "An estimated amount.",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "435 g"
+      }
+    }
+  },
+  "tgtMacroNote": "Estimates only. GoHard doesn't save carb or fat goals, so these aren't tracked. Fat is set at 30% of calories and carbs make up the rest.",
+  "@tgtMacroNote": {
+    "description": "Carbs and fat are not goals and are not saved."
+  },
+  "tgtHow": "Estimated with the U.S. National Academies' 2023 energy equations for adults. It's a starting point, not a measurement: watch how your weight changes over a few weeks and adjust.",
+  "@tgtHow": {
+    "description": "Method and its limits, under the result."
+  },
+  "tgtUse": "Use these targets",
+  "@tgtUse": {
+    "description": "Saves calories and protein as the daily goals."
+  },
+  "tgtSaved": "Targets saved",
+  "@tgtSaved": {
+    "description": "Confirmation after Use these targets."
+  },
+  "tgtBack": "Back",
+  "@tgtBack": {
+    "description": "Back one step."
+  },
+  "tgtManual": "Set targets manually",
+  "@tgtManual": {
+    "description": "Leave the estimate and edit goals directly."
   }
 }

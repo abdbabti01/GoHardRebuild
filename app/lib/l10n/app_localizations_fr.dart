@@ -845,7 +845,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get eatGoalsNoSuggestion =>
-      'GoHard ne suggère aucun objectif de calories ou de protéines. Si tu ne sais pas ce qui te convient, un ou une diététiste ou un médecin peut t\'aider.';
+      'Ces nombres sont les tiens. Dans Nutrition, « Aide-moi à fixer mes cibles » donne une estimation de départ, et un médecin ou un ou une diététiste peut aussi t\'aider.';
 
   @override
   String get eatGoalsSheetTitle => 'Objectifs quotidiens';
@@ -12980,6 +12980,240 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get accountErrorCodeIncompleteShort =>
       'Entre le code du courriel : 4 chiffres, ou 8 si ton courriel en affiche 8.';
+
+  @override
+  String get tgtHelpAction => 'Aide-moi à fixer mes cibles';
+
+  @override
+  String tgtStep(int step) {
+    return 'Étape $step sur 3';
+  }
+
+  @override
+  String get tgtGoalTitle => 'Quel est ton objectif?';
+
+  @override
+  String get tgtGoalMaintain => 'Maintenir mon poids';
+
+  @override
+  String get tgtGoalMaintainLine => 'Garder mon poids à peu près stable.';
+
+  @override
+  String get tgtGoalLose => 'Perdre du poids';
+
+  @override
+  String get tgtGoalLoseLine => 'Viser à baisser mon poids graduellement.';
+
+  @override
+  String get tgtGoalGain => 'Gagner du muscle';
+
+  @override
+  String get tgtGoalGainLine =>
+      'Soutenir l\'entraînement en force et la croissance musculaire; mon poids pourrait augmenter.';
+
+  @override
+  String get tgtGoalRecomp => 'Perdre du gras et gagner du muscle';
+
+  @override
+  String get tgtGoalRecompLine =>
+      'Miser sur la composition corporelle; mon poids pourrait changer lentement.';
+
+  @override
+  String get tgtAboutTitle => 'Parle-nous de toi';
+
+  @override
+  String get tgtAboutIntro =>
+      'L\'estimation n\'a besoin que de ceci. Rien ici n\'est enregistré dans ton compte.';
+
+  @override
+  String get tgtAge => 'Âge';
+
+  @override
+  String get tgtYears => 'ans';
+
+  @override
+  String get tgtHeight => 'Taille';
+
+  @override
+  String get tgtFeet => 'pi';
+
+  @override
+  String get tgtUnitFeetInches => 'pi, po';
+
+  @override
+  String get tgtWeight => 'Poids actuel';
+
+  @override
+  String get tgtLatestWeighIn => 'Ta dernière pesée';
+
+  @override
+  String get tgtUseOtherWeight => 'Utiliser un autre poids';
+
+  @override
+  String get tgtUseLatestWeight => 'Utiliser ma dernière pesée';
+
+  @override
+  String get tgtWeightOnlyHere =>
+      'Utilisé seulement pour cette estimation. Il n\'est pas ajouté au Suivi corporel.';
+
+  @override
+  String get tgtSex => 'Sexe pour la formule';
+
+  @override
+  String get tgtFemale => 'Femme';
+
+  @override
+  String get tgtMale => 'Homme';
+
+  @override
+  String get tgtSexWhy =>
+      'La formule a été établie à partir de mesures de femmes et d\'hommes, et en moyenne, la taille et la composition du corps changent la quantité d\'énergie qu\'il utilise. Choisis ce qui correspond le mieux à ton corps pour cette estimation. Ce n\'est pas enregistré.';
+
+  @override
+  String get tgtSexSkip =>
+      'Tu préfères ne pas répondre? Fixe tes cibles manuellement';
+
+  @override
+  String get tgtActivity =>
+      'À quel point une journée habituelle est-elle active?';
+
+  @override
+  String get tgtActivityHelp =>
+      'Une seule réponse couvre la vie quotidienne et les entraînements, pour que l\'exercice ne soit jamais compté deux fois.';
+
+  @override
+  String get tgtActInactive => 'Surtout assis';
+
+  @override
+  String get tgtActInactiveLine =>
+      'Assis la majeure partie de la journée, peu de marche, peu ou pas d\'entraînements.';
+
+  @override
+  String get tgtActLow => 'Légèrement actif';
+
+  @override
+  String get tgtActLowLine =>
+      'Surtout assis en dehors des entraînements, plus environ une heure de marche ou d\'exercice la plupart des jours.';
+
+  @override
+  String get tgtActActive => 'Actif';
+
+  @override
+  String get tgtActActiveLine =>
+      'Debout une bonne partie de la journée, ou 1 h 30 à 2 h de marche, de vélo ou de sport la plupart des jours.';
+
+  @override
+  String get tgtActVery => 'Très actif';
+
+  @override
+  String get tgtActVeryLine =>
+      'Un travail physique, ou environ 2 h d\'exercice intense, comme la course ou le sport, la plupart des jours.';
+
+  @override
+  String get tgtScope =>
+      'Pour les adultes de 19 ans et plus. Pas pour la grossesse ou l\'allaitement, qui demandent une autre estimation.';
+
+  @override
+  String get tgtNeeded => 'Nécessaire pour cette estimation';
+
+  @override
+  String get tgtNotANumber => 'Entre un nombre';
+
+  @override
+  String get tgtOutOfRange =>
+      'Hors de ce que cette estimation prend en charge. Vérifie la valeur ou fixe tes cibles manuellement.';
+
+  @override
+  String get tgtChooseOne => 'Choisis une option pour continuer';
+
+  @override
+  String get tgtUnder19 =>
+      'Cette estimation est pour les adultes de 19 ans et plus : les besoins des plus jeunes incluent la croissance, que la formule ne couvre pas. Tu peux fixer tes cibles manuellement, idéalement avec un médecin ou un ou une diététiste.';
+
+  @override
+  String get tgtUnderweight =>
+      'Ton poids est sous la plage santé habituelle pour ta taille, alors GoHard n\'estimera pas de cible de perte de poids. Choisis un autre objectif, fixe tes cibles manuellement ou parles-en à un médecin ou à un ou une diététiste.';
+
+  @override
+  String get tgtResultTitle => 'Tes cibles de départ';
+
+  @override
+  String get tgtCoachSay =>
+      'J\'ai utilisé ton poids, ton activité habituelle et ton objectif pour estimer un point de départ quotidien. Tu peux ajuster ces nombres avant d\'enregistrer.';
+
+  @override
+  String get tgtPlainSay =>
+      'Cette estimation utilise ton poids, ton activité habituelle et ton objectif pour fixer un point de départ quotidien. Tu peux ajuster ces nombres avant d\'enregistrer.';
+
+  @override
+  String tgtCurrentToSuggested(String current, String suggested) {
+    return 'Actuel : $current → suggéré : $suggested';
+  }
+
+  @override
+  String tgtSuggested(String value) {
+    return 'Suggéré : $value';
+  }
+
+  @override
+  String get tgtWhyMaintain =>
+      'Les calories correspondent à ton maintien estimé : ce qu\'une journée comme la tienne utilise, en moyenne.';
+
+  @override
+  String tgtWhyLose(String maintenance) {
+    return 'Environ 500 kcal par jour sous ton maintien estimé de $maintenance, avec plus de protéines. La vitesse à laquelle le poids change varie d\'une personne à l\'autre.';
+  }
+
+  @override
+  String tgtWhyLoseFloor(String maintenance, String floor) {
+    return 'Moins de 500 kcal sous ton maintien estimé de $maintenance, parce que GoHard ne suggère pas de commencer sous $floor par jour. Un médecin ou un ou une diététiste peut t\'aider à aller plus loin.';
+  }
+
+  @override
+  String tgtWhyLoseNoRoom(String floor) {
+    return 'Identique à ton maintien estimé : il est déjà près de $floor, le point de départ le plus bas que GoHard suggère. Un médecin ou un ou une diététiste peut t\'aider à planifier une perte de poids.';
+  }
+
+  @override
+  String tgtWhyGain(String maintenance) {
+    return 'Environ 360 kcal par jour au-dessus de ton maintien estimé de $maintenance, avec plus de protéines. Le muscle se développe avec l\'entraînement en force; les calories en plus, à elles seules, ajoutent surtout du poids.';
+  }
+
+  @override
+  String get tgtWhyRecomp =>
+      'Les calories restent à ton maintien estimé, comme pour Maintenir mon poids; ce qui change, c\'est plus de protéines. La composition corporelle change avec un entraînement en force régulier et du temps, pas avec ces nombres seuls.';
+
+  @override
+  String get tgtProteinCapped =>
+      'Les protéines sont limitées à 35 % des calories, le haut de la plage habituelle pour les adultes.';
+
+  @override
+  String get tgtMacros => 'Voir la répartition des macros';
+
+  @override
+  String tgtAbout(String value) {
+    return 'environ $value';
+  }
+
+  @override
+  String get tgtMacroNote =>
+      'Estimations seulement. GoHard n\'enregistre pas d\'objectifs de glucides ou de lipides, alors ils ne sont pas suivis. Les lipides sont fixés à 30 % des calories et les glucides complètent le reste.';
+
+  @override
+  String get tgtHow =>
+      'Estimé avec les équations énergétiques 2023 des National Academies des États-Unis pour les adultes. C\'est un point de départ, pas une mesure : observe l\'évolution de ton poids sur quelques semaines et ajuste.';
+
+  @override
+  String get tgtUse => 'Utiliser ces cibles';
+
+  @override
+  String get tgtSaved => 'Cibles enregistrées';
+
+  @override
+  String get tgtBack => 'Retour';
+
+  @override
+  String get tgtManual => 'Fixer mes cibles manuellement';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

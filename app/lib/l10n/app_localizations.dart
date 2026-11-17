@@ -1370,7 +1370,7 @@ abstract class AppLocalizations {
   /// Note under the goals form.
   ///
   /// In en, this message translates to:
-  /// **'GoHard does not suggest a calorie or protein goal. If you are unsure what suits you, a dietitian or doctor can help.'**
+  /// **'These are your numbers to choose. In Eat, Help me set my targets gives a starting estimate, and a doctor or dietitian can help too.'**
   String get eatGoalsNoSuggestion;
 
   /// Title of the goals sheet opened from Eat.
@@ -18983,6 +18983,396 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the code from the email: 4 digits, or 8 if your email shows 8.'**
   String get accountErrorCodeIncompleteShort;
+
+  /// Secondary action in Eat's goals sheet: opens the three-step target estimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me set my targets'**
+  String get tgtHelpAction;
+
+  /// Progress under the target estimate's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of 3'**
+  String tgtStep(int step);
+
+  /// Target estimate, step 1 title.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your goal?'**
+  String get tgtGoalTitle;
+
+  /// Goal choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain weight'**
+  String get tgtGoalMaintain;
+
+  /// Plain-language line under Maintain weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my weight roughly steady.'**
+  String get tgtGoalMaintainLine;
+
+  /// Goal choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Lose weight'**
+  String get tgtGoalLose;
+
+  /// Plain-language line under Lose weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Aim to gradually lower my weight.'**
+  String get tgtGoalLoseLine;
+
+  /// Goal choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Gain muscle'**
+  String get tgtGoalGain;
+
+  /// Plain-language line under Gain muscle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support strength training and muscle growth; my weight may go up.'**
+  String get tgtGoalGainLine;
+
+  /// Goal choice (body recomposition).
+  ///
+  /// In en, this message translates to:
+  /// **'Lose fat and build muscle'**
+  String get tgtGoalRecomp;
+
+  /// Plain-language line under Lose fat and build muscle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus on body composition; my weight may change slowly.'**
+  String get tgtGoalRecompLine;
+
+  /// Target estimate, step 2 title.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us about yourself'**
+  String get tgtAboutTitle;
+
+  /// Intro of step 2.
+  ///
+  /// In en, this message translates to:
+  /// **'The estimate needs only these. Nothing here is saved to your account.'**
+  String get tgtAboutIntro;
+
+  /// Age field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Age'**
+  String get tgtAge;
+
+  /// Suffix of the age field.
+  ///
+  /// In en, this message translates to:
+  /// **'years'**
+  String get tgtYears;
+
+  /// Height field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get tgtHeight;
+
+  /// Unit suffix: feet.
+  ///
+  /// In en, this message translates to:
+  /// **'ft'**
+  String get tgtFeet;
+
+  /// Height unit choice: feet and inches.
+  ///
+  /// In en, this message translates to:
+  /// **'ft, in'**
+  String get tgtUnitFeetInches;
+
+  /// Weight field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Current weight'**
+  String get tgtWeight;
+
+  /// Over the latest weight from Body progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Your latest weigh-in'**
+  String get tgtLatestWeighIn;
+
+  /// Button: type another weight for this estimate only.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different weight'**
+  String get tgtUseOtherWeight;
+
+  /// Button: go back to the latest weigh-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my latest weigh-in'**
+  String get tgtUseLatestWeight;
+
+  /// Under a typed weight: it is not saved as a check-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Used only for this estimate. It isn\'t added to Body progress.'**
+  String get tgtWeightOnlyHere;
+
+  /// Label of the sex choice the energy formula needs.
+  ///
+  /// In en, this message translates to:
+  /// **'Sex for the formula'**
+  String get tgtSex;
+
+  /// Sex choice for the formula.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get tgtFemale;
+
+  /// Sex choice for the formula.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get tgtMale;
+
+  /// Why the formula asks for sex.
+  ///
+  /// In en, this message translates to:
+  /// **'The formula was built from measurements of women and men, and on average body size and makeup change how much energy a body uses. Choose the one that fits your body best for this estimate. It isn\'t saved.'**
+  String get tgtSexWhy;
+
+  /// Link under the sex choice: leave the estimate for manual goals.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer not to answer? Set targets manually'**
+  String get tgtSexSkip;
+
+  /// Activity question.
+  ///
+  /// In en, this message translates to:
+  /// **'How active is a usual day?'**
+  String get tgtActivity;
+
+  /// Under the activity question: workouts are included, not asked separately.
+  ///
+  /// In en, this message translates to:
+  /// **'One answer covers daily life and workouts together, so exercise is never counted twice.'**
+  String get tgtActivityHelp;
+
+  /// Activity choice (NASEM inactive).
+  ///
+  /// In en, this message translates to:
+  /// **'Mostly seated'**
+  String get tgtActInactive;
+
+  /// Example under Mostly seated.
+  ///
+  /// In en, this message translates to:
+  /// **'Seated most of the day, little walking, few or no workouts.'**
+  String get tgtActInactiveLine;
+
+  /// Activity choice (NASEM low active).
+  ///
+  /// In en, this message translates to:
+  /// **'Lightly active'**
+  String get tgtActLow;
+
+  /// Example under Lightly active.
+  ///
+  /// In en, this message translates to:
+  /// **'Mostly seated outside workouts, plus about an hour of walking or exercise on most days.'**
+  String get tgtActLowLine;
+
+  /// Activity choice (NASEM active).
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tgtActActive;
+
+  /// Example under Active.
+  ///
+  /// In en, this message translates to:
+  /// **'On your feet much of the day, or 1½ to 2 hours of walking, cycling or sports on most days.'**
+  String get tgtActActiveLine;
+
+  /// Activity choice (NASEM very active).
+  ///
+  /// In en, this message translates to:
+  /// **'Very active'**
+  String get tgtActVery;
+
+  /// Example under Very active.
+  ///
+  /// In en, this message translates to:
+  /// **'A physical job, or about 2 hours of hard exercise such as running or sports on most days.'**
+  String get tgtActVeryLine;
+
+  /// Who the estimate is for.
+  ///
+  /// In en, this message translates to:
+  /// **'For adults 19 and over. Not for pregnancy or breastfeeding, which need a different estimate.'**
+  String get tgtScope;
+
+  /// Field error: left blank.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed for this estimate'**
+  String get tgtNeeded;
+
+  /// Field error: not a number.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number'**
+  String get tgtNotANumber;
+
+  /// Field error: outside the method's supported inputs.
+  ///
+  /// In en, this message translates to:
+  /// **'Outside what this estimate supports. Check it, or set targets manually.'**
+  String get tgtOutOfRange;
+
+  /// A choice left unanswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one to continue'**
+  String get tgtChooseOne;
+
+  /// Age under 19: the method does not apply.
+  ///
+  /// In en, this message translates to:
+  /// **'This estimate is for adults 19 and over: younger people\'s needs include growth, which the formula doesn\'t cover. You can set targets manually, ideally with a doctor or dietitian.'**
+  String get tgtUnder19;
+
+  /// Lose weight chosen with a BMI under 18.5: no estimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Your weight is below the usual healthy range for your height, so GoHard won\'t estimate a weight-loss target. Choose another goal, set targets manually, or talk to a doctor or dietitian.'**
+  String get tgtUnderweight;
+
+  /// Target estimate, step 3 title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your starting targets'**
+  String get tgtResultTitle;
+
+  /// Leon/Leona explaining the result (first person). Fixed text; the numbers come from the calculator.
+  ///
+  /// In en, this message translates to:
+  /// **'I used your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.'**
+  String get tgtCoachSay;
+
+  /// The same explanation when the coach is turned off.
+  ///
+  /// In en, this message translates to:
+  /// **'This uses your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.'**
+  String get tgtPlainSay;
+
+  /// Existing goal and the suggestion. The arrow points from current to suggested in reading order.
+  ///
+  /// In en, this message translates to:
+  /// **'Current {current} → suggested {suggested}'**
+  String tgtCurrentToSuggested(String current, String suggested);
+
+  /// The suggestion when no goal is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested {value}'**
+  String tgtSuggested(String value);
+
+  /// Why the Maintain weight suggestion is what it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories match your estimated maintenance: what a day like yours uses, on average.'**
+  String get tgtWhyMaintain;
+
+  /// Lose weight: 500 kcal below maintenance. No rate is promised.
+  ///
+  /// In en, this message translates to:
+  /// **'About 500 kcal a day below your estimated maintenance of {maintenance}, with more protein. How quickly weight changes differs from person to person.'**
+  String tgtWhyLose(String maintenance);
+
+  /// Lose weight held at the guideline floor.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than 500 kcal below your estimated maintenance of {maintenance}, because GoHard doesn\'t suggest starting under {floor} a day. A doctor or dietitian can help you plan more.'**
+  String tgtWhyLoseFloor(String maintenance, String floor);
+
+  /// Lose weight equals maintenance because maintenance is already at the floor.
+  ///
+  /// In en, this message translates to:
+  /// **'The same as your estimated maintenance: it\'s already near {floor}, the lowest starting point GoHard suggests. A doctor or dietitian can help you plan weight loss.'**
+  String tgtWhyLoseNoRoom(String floor);
+
+  /// Gain muscle: small surplus; calories alone do not build muscle.
+  ///
+  /// In en, this message translates to:
+  /// **'About 360 kcal a day above your estimated maintenance of {maintenance}, with more protein. Muscle grows with strength training; extra calories on their own mostly add weight.'**
+  String tgtWhyGain(String maintenance);
+
+  /// Lose fat and build muscle: same calories as Maintain; explains why.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories stay at your estimated maintenance, the same as Maintain weight; what changes is more protein. Body composition changes with regular strength training and time, not from these numbers alone.'**
+  String get tgtWhyRecomp;
+
+  /// Protein held at 35 % of calories.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein is kept to 35% of calories, the top of the usual range for adults.'**
+  String get tgtProteinCapped;
+
+  /// Expandable section with carbs and fat.
+  ///
+  /// In en, this message translates to:
+  /// **'See macro breakdown'**
+  String get tgtMacros;
+
+  /// An estimated amount.
+  ///
+  /// In en, this message translates to:
+  /// **'about {value}'**
+  String tgtAbout(String value);
+
+  /// Carbs and fat are not goals and are not saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimates only. GoHard doesn\'t save carb or fat goals, so these aren\'t tracked. Fat is set at 30% of calories and carbs make up the rest.'**
+  String get tgtMacroNote;
+
+  /// Method and its limits, under the result.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated with the U.S. National Academies\' 2023 energy equations for adults. It\'s a starting point, not a measurement: watch how your weight changes over a few weeks and adjust.'**
+  String get tgtHow;
+
+  /// Saves calories and protein as the daily goals.
+  ///
+  /// In en, this message translates to:
+  /// **'Use these targets'**
+  String get tgtUse;
+
+  /// Confirmation after Use these targets.
+  ///
+  /// In en, this message translates to:
+  /// **'Targets saved'**
+  String get tgtSaved;
+
+  /// Back one step.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get tgtBack;
+
+  /// Leave the estimate and edit goals directly.
+  ///
+  /// In en, this message translates to:
+  /// **'Set targets manually'**
+  String get tgtManual;
 }
 
 class _AppLocalizationsDelegate
