@@ -164,7 +164,7 @@ try {
         $shots = Join-Path $AppDir "build\journey-shots\$journey-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         New-Item -ItemType Directory -Force $shots | Out-Null
         $env:GOHARD_SHOT_DIR = $shots
-        if ($journey -in 'journey_workout_panel_test', 'journey_progress_test', 'journey_body_test', 'journey_trends_test', 'journey_progression_test', 'journey_language_test') {
+        if ($journey -in 'journey_workout_panel_test', 'journey_progress_test', 'journey_body_test', 'journey_trends_test', 'journey_progression_test', 'journey_language_test', 'journey_copy_panel_test') {
             # The journey prints GOHARD_REC:start:<name> / GOHARD_REC:stop; this records the screen in between.
             # journey_progress_test also prints GOHARD_NET:off / on, which switches Wi-Fi and mobile data to match.
             & $Adb -s $device logcat -c

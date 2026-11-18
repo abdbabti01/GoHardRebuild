@@ -2729,3 +2729,24 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - 17 Nov: pushed a0ba9ac: CI 205 passed; unsigned IPA run 72 (a0ba9ac) passed (tag `ipa-target-estimator-a0ba9ac`).
 - 18 Nov: merged on the owner's instruction (`main` fast-forwarded from 41fc375). **Formula review by a registered
   dietitian is still pending and required before public release.** iPhone checklist not yet confirmed by the owner.
+
+### 18 Nov 2026 — Repeat and copy meals; the workout exercise panel (`feature/meal-copy-workout-panel`, from main 009bae6)
+
+- Design note first: docs/MEAL_COPY_WORKOUT_PANEL.md. Eat: "Same as yesterday?" in an empty meal (the day before the
+  day shown, that one meal), Other days (last 14 days, each day's meal on its own), Copy meal beside Save as meal; one
+  review (`MealCopyScreen`) with Copy to always shown, same-meal warning, "added, nothing replaced" note, per-food
+  amount changes (amount form; recipe portions from the frozen batch), typed foods kept / removed / replaced only by an
+  explicitly chosen food, and Log this time through the existing atomic `food.batch` (one operation per review).
+  Unchanged copies keep the entry's own snapshot and provenance (`FoodDraft.kept`). The usual meal is not offered
+  beside Same as yesterday for the same meal. View after logging shows the destination day from its top.
+- Train: the selected exercise reorganised (plan line with rest, the frozen target in the header; Last session with
+  Today's aim inside the same panel; Set N of M / Extra set N with the previous set and Use last values; Record set
+  with the rest row under it; Next target moved below the recorded sets). Rules, runtime, drafts and selection
+  unchanged. With large text the weight and reps fields stack.
+- No API, migration, capability, contract or sync change. l10n en/fr/ar: +32 messages, 10 reworded, 2 removed.
+- Verified: `meal_copy_test` (7), `meal_copy_ui_test` (3), `progression_ui_test` (+1, fit measured with real
+  fonts: 647 px header-to-Record-set without an aim, 834 px with one); 23 affected test files passed one by one;
+  `flutter analyze` clean; `check-l10n` OK (3,227 messages). Renders before/after: docs/evidence/meal-copy-workout-panel.
+- **Not run:** emulator journey `journey_copy_panel_test` (written): `setup.ps1` refuses the local development
+  database (UnknownHistory), so the local API answers 503; dropping that database was not done. **Not verified:**
+  iPhone, VoiceOver. Not merged, not deployed.

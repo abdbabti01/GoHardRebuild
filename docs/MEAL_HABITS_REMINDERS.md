@@ -48,6 +48,10 @@ choose something else. Logged at breakfast on 4 recent days." with three choices
 With the coach hidden on Train and Eat, the same three choices appear in a compact pale panel under the day's summary.
 Log food, Saved meals and every meal's Add food are unchanged.
 
+**One entry point per meal (18 Nov 2026, docs/MEAL_COPY_WORKOUT_PANEL.md).** When that meal was logged yesterday, its
+group offers "Same as yesterday?" (with Other days for any of the last 14 days), and the usual meal is not offered
+beside it for that meal. Help with today's own usual-meal answer is unchanged.
+
 ### Choosing
 
 Off until chosen. Me › Personal › **Meal suggestions** explains the feature and has the one switch; the coach asks once on

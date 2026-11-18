@@ -234,8 +234,8 @@ class _ComponentRow extends StatelessWidget {
 
 /// Calories, protein, carbs and fat for a whole meal, a batch or a portion: a total, a sum labelled "known", or a dash.
 /// A note says so when some food has no value: a partial sum is never shown as a total.
-class _Nutrition extends ConsumerWidget {
-  const _Nutrition(this.title, this.totals, {super.key, this.note = true});
+class MealNutrition extends ConsumerWidget {
+  const MealNutrition(this.title, this.totals, {super.key, this.note = true});
 
   /// Whether the missing-values note is said here (once per page).
   final bool note;
@@ -475,10 +475,10 @@ class _MealEditorScreenState extends ConsumerState<MealEditorScreen> {
               ),
               if (_parts.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                _Nutrition(_recipe ? l.mealsBatchHeading : l.mealsTotalHeading, body.totals, key: const Key('meal-totals')),
+                MealNutrition(_recipe ? l.mealsBatchHeading : l.mealsTotalHeading, body.totals, key: const Key('meal-totals')),
                 if (_recipe && servings != null) ...[
                   const SizedBox(height: 10),
-                  _Nutrition(l.mealsPerServingHeading, {for (final e in body.totals.entries) e.key: e.value.times(1 / servings)}, key: const Key('recipe-per-serving'), note: false),
+                  MealNutrition(l.mealsPerServingHeading, {for (final e in body.totals.entries) e.key: e.value.times(1 / servings)}, key: const Key('recipe-per-serving'), note: false),
                 ],
               ],
             ],
@@ -760,7 +760,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           ),
           if (!weighed) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.mealsNoWeight, style: context.caption)),
           const SizedBox(height: 14),
-          _Nutrition(amount == null ? l.mealsPortionHeading : l.mealsThisPortion(_portionText(l, amount)), totals, key: const Key('meal-review-totals')),
+          MealNutrition(amount == null ? l.mealsPortionHeading : l.mealsThisPortion(_portionText(l, amount)), totals, key: const Key('meal-review-totals')),
           const SizedBox(height: 22),
           Semantics(header: true, child: Text(l.mealsThisTimeIngredients, style: context.titleStyle(18))),
           Padding(padding: const EdgeInsets.only(top: 4, bottom: 8), child: Text(_batchChanged ? l.mealsThisTimeChanged : l.mealsThisTimeNote, style: context.caption)),
@@ -792,7 +792,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
         ),
         if (!_recipe) ...[
           const SizedBox(height: 10),
-          _Nutrition(l.mealsThisTimeTotal, totals, key: const Key('meal-review-totals')),
+          MealNutrition(l.mealsThisTimeTotal, totals, key: const Key('meal-review-totals')),
           // What each action changes, said once: logging never touches the saved meal, updating never touches history.
           if (saved != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.info_outline, l.mealsReviewActionsNote, key: const Key('meal-review-note'))),
         ],

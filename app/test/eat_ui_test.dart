@@ -74,7 +74,9 @@ void main() {
     for (final meal in ['Dinner', 'Snack']) {
       expect(find.text(meal), findsOneWidget);
     }
-    expect(find.text('Yesterday\'s soup'), findsNothing, reason: 'another day\'s food is not in today\'s journal');
+    expect(find.byKey(const Key('food-row-y1')), findsNothing, reason: 'another day\'s food is not in today\'s journal');
+    // Only offered, in today's empty dinner: the same meal yesterday (docs/MEAL_COPY_WORKOUT_PANEL.md), logged by nothing here.
+    expect(find.descendant(of: find.byKey(const Key('eat-repeat-dinner')), matching: find.text('Yesterday\'s soup')), findsOneWidget);
     expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget, reason: 'one general Log food action');
     expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
     // The GH mark and the summary panel's decorative bowl (the coach is painted, not an image): no scene (only Today has one)

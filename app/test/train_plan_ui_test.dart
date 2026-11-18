@@ -420,10 +420,10 @@ void main() {
     // The plan's target and last time apart, never merged: a labelled tile, then the dated Set / Last time / Today table.
     expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '60 kg');
     expect(find.text('Target in this workout'), findsOneWidget);
-    expect(find.text('Last time · Fri, Oct 9'), findsOneWidget);
+    expect(find.text('Last session · Fri, Oct 9'), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('compare-0-last')), matching: find.text('57.5 kg × 8')), findsOneWidget);
-    expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Next · not recorded yet')), findsOneWidget);
-    expect(find.text('3 sets · 8–12 reps'), findsOneWidget, reason: 'the planned prescription under the exercise name');
+    expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Entering now')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('workout-prescription'))).data, startsWith('3 sets · 8–12 reps'), reason: 'the planned prescription under the exercise name');
     expect(find.text('Pause at the bottom'), findsOneWidget);
     final load = tester.widget<TextField>(find.descendant(of: find.byKey(const Key('set-load')), matching: find.byType(TextField)));
     expect(load.controller!.text, isNot('60'), reason: 'a suggestion only ever comes from what was recorded, never from the target');

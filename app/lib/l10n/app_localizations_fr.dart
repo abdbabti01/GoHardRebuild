@@ -8606,11 +8606,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get workoutRestSkip => 'Passer le repos';
 
   @override
-  String workoutNextSetOverline(int number) {
-    return 'Série $number · pas encore enregistrée';
-  }
-
-  @override
   String get workoutTargetReachedLast =>
       'Nombre de séries cible enregistré. C\'est le dernier exercice : ajoute une autre série, ou termine la séance quand tu veux.';
 
@@ -8687,7 +8682,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun historique : cet exercice n\'est lié à aucun exercice enregistré, donc rien n\'est associé par son nom.';
 
   @override
-  String get workoutHistoryNone => 'Aucune séance précédente enregistrée.';
+  String get workoutHistoryNone =>
+      'Première séance enregistrée : rien à comparer pour l’instant.';
 
   @override
   String workoutCompareLastLabeled(String value) {
@@ -8696,7 +8692,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String workoutCompareTodayLabeled(String value) {
-    return 'Aujourd\'hui : $value';
+    return 'Enregistré aujourd’hui : $value';
   }
 
   @override
@@ -8705,7 +8701,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get workoutCompareNext => 'Suivante · pas encore enregistrée';
+  String get workoutCompareNext => 'En saisie';
 
   @override
   String get workoutCompareNotYet => 'Pas encore enregistrée';
@@ -8719,7 +8715,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get workoutCompareSet => 'Série';
 
   @override
-  String get workoutCompareToday => 'Aujourd\'hui';
+  String get workoutCompareToday => 'Enregistré aujourd’hui';
 
   @override
   String get workoutLastTime => 'Dernière séance';
@@ -12854,7 +12850,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Tu as déjà un programme inachevé. Enregistre-le ou abandonne-le d’abord.';
 
   @override
-  String get workoutTodayOverline => 'Suggéré aujourd’hui · facultatif';
+  String get workoutTodayOverline => 'Objectif du jour · facultatif';
 
   @override
   String get workoutTodayTitle => 'Suggéré aujourd’hui';
@@ -13214,6 +13210,139 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tgtManual => 'Fixer mes cibles manuellement';
+
+  @override
+  String get copyTitle => 'Vérifier le repas copié';
+
+  @override
+  String copyFrom(String meal, String date) {
+    return 'De : $meal · $date';
+  }
+
+  @override
+  String get copyTo => 'Copier vers';
+
+  @override
+  String get copySame =>
+      'Même jour et même repas que l’original : consigner ajoute ces aliments une deuxième fois. C’est correct si tu l’as mangé deux fois.';
+
+  @override
+  String copyAdds(int count, String meal, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count aliments',
+      one: '$count aliment',
+    );
+    return '$meal du $date contient déjà $_temp0. Ceux-ci s’ajoutent; rien n’est remplacé.';
+  }
+
+  @override
+  String get copyFoodsHint =>
+      'Touche un aliment pour changer sa quantité cette fois-ci. Le repas d’origine reste tel quel.';
+
+  @override
+  String get copyFixedTag => 'saisi à la main';
+
+  @override
+  String get copyFixedTitle => 'Cette quantité ne peut pas être modifiée';
+
+  @override
+  String copyFixedBody(String name) {
+    return '$name a été saisi à la main, sans fiche d’aliment : GoHard ne peut pas ajuster sa quantité. Garde-le tel quel, retire-le ou choisis plutôt un aliment correspondant.';
+  }
+
+  @override
+  String get copyChooseFood => 'Choisir un aliment';
+
+  @override
+  String get copyKeepAsLogged => 'Garder tel quel';
+
+  @override
+  String copyPortionTitle(String name) {
+    return 'Quelle quantité de $name?';
+  }
+
+  @override
+  String get copyPortionNote =>
+      'D’après la recette telle qu’elle était quand tu l’as consignée.';
+
+  @override
+  String copySourcesTitle(String meal) {
+    return 'Copier $meal depuis…';
+  }
+
+  @override
+  String get copySourcesNone =>
+      'Rien de consigné à ce repas ces 14 derniers jours.';
+
+  @override
+  String copyMore(int count) {
+    return '+$count de plus';
+  }
+
+  @override
+  String copyLogged(String meal, String date) {
+    return 'Copié dans $meal · $date';
+  }
+
+  @override
+  String get copyView => 'Voir';
+
+  @override
+  String get copyMeal => 'Copier le repas';
+
+  @override
+  String copyMealSaid(String meal) {
+    return 'Copier $meal vers un autre jour ou repas';
+  }
+
+  @override
+  String get repeatYesterday => 'Comme hier?';
+
+  @override
+  String repeatOn(String date) {
+    return 'Comme le $date?';
+  }
+
+  @override
+  String get repeatReview => 'Vérifier et consigner';
+
+  @override
+  String get repeatOther => 'Autres jours';
+
+  @override
+  String repeatSaid(String meal, String date, String foods) {
+    return '$meal comme le $date : $foods';
+  }
+
+  @override
+  String workoutSetOfPlanned(int number, int total) {
+    return 'Série $number sur $total';
+  }
+
+  @override
+  String workoutExtraSet(int number) {
+    return 'Série supplémentaire $number';
+  }
+
+  @override
+  String workoutLastSetRef(int number, String set) {
+    return 'Dernière séance, série $number : $set';
+  }
+
+  @override
+  String workoutPlanRest(String duration) {
+    return '$duration de repos';
+  }
+
+  @override
+  String workoutTodayAimFor(String name) {
+    return 'Objectif du jour pour $name';
+  }
+
+  @override
+  String get workoutTodayWhyShort => 'Pourquoi?';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

@@ -21,6 +21,8 @@ import '../shell/home_shell.dart' show shellProvider;
 import 'food_form.dart';
 import 'food_repository.dart' show SavedFood, mealLabel;
 import 'log_food_screen.dart';
+import 'meal_copy.dart';
+import 'meal_copy_screen.dart';
 import 'meal_habits_ui.dart';
 import 'eat_briefing.dart';
 import 'intake_history.dart' show goalDaysProvider;
@@ -74,9 +76,20 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     return (ref.read(foodJournalProvider).value ?? const []).any((r) => !r.value.isDeleted && r.value.dayKey.compareTo(today) < 0);
   }
 
+  /// Eat's own list, learnt from its scroll notifications. (Its ListView stays primary, so tapping the iPhone status bar
+  /// still scrolls it to the top; nothing has scrolled yet while this is null.)
+  ScrollPosition? _position;
+
+  /// A day chosen elsewhere (History, a copy's View): shown from its top, with its date.
+  void _show(String chosen) {
+    setState(() => _picked = chosen == ref.read(todayKeyProvider) ? null : chosen);
+    final p = _position;
+    if (p != null && p.hasPixels) p.jumpTo(0);
+  }
+
   Future<void> _openHistory(String day, String today) async {
     final chosen = await push<String>(context, NutritionHistoryScreen(selected: day));
-    if (chosen != null && mounted) setState(() => _picked = chosen == today ? null : chosen);
+    if (chosen != null && mounted) _show(chosen);
   }
 
   /// The meal a saved-food shortcut starts on, from the time of day; it can be changed in Add food before choosing.
@@ -107,7 +120,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     if (owner == null || day != today) return null;
     final meal = _mealNow(DateTime.now()), l = context.l10n;
     // Every goal reached: no meal is put forward unasked (the briefing says where the day stands and still offers help).
-    final usual = allReached ? null : ref.watch(usualMealProvider(meal));
+    final usual = allReached || _repeatable(meal, today) ? null : ref.watch(usualMealProvider(meal));
     if (usual != null) return usualMealSay(context, ref, usual, today);
     if (_news) return null; // the day's food changed while away: the briefing says how it stands now
     final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
@@ -238,7 +251,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       final saved = [for (final r in ref.watch(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value];
       return (say: _habitSay(day, today, allReached: brief.allReached) ?? _hintSay(day, saved, logged: entries.isNotEmpty) ?? _briefSay(l, brief, day, today), panel: const []);
     }
-    final usual = day == today && !brief.allReached ? ref.watch(usualMealProvider(_mealNow(DateTime.now()))) : null;
+    final mealNow = _mealNow(DateTime.now());
+    final usual = day == today && !brief.allReached && !_repeatable(mealNow, today) ? ref.watch(usualMealProvider(mealNow)) : null;
     return (
       say: null,
       panel: [
@@ -248,6 +262,25 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                 ideas: day == today ? () => openDayCoach(context, day: day, start: (const DayIntent('eat'), _ideasLabel(l, brief))) : null),
       ],
     );
+  }
+
+  /// The meal's own group offers Same as yesterday (the day before [day] has that meal), so the usual meal is not
+  /// offered beside it: one entry point per meal, with Other days for another source.
+  bool _repeatable(String meal, String day) => ref.watch(foodProvider(dayBefore(day))).value?.any((r) => !r.value.isDeleted && r.value.meal == meal) ?? false;
+
+  /// The review of a copied meal; after it logs, where it went and View to show that day. Nothing is logged here.
+  Future<void> _copy({required List<FoodEntry> source, required String sourceDay, required String sourceMeal, required String day, required String meal}) async {
+    final done = await push<({String day, String meal})>(context, MealCopyScreen(source: source, sourceDay: sourceDay, sourceMeal: sourceMeal, day: day, meal: meal));
+    if (done == null || !mounted) return;
+    final l = context.l10n;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        persist: false, content: Text(l.copyLogged(mealLabel(l, done.meal), longDate(done.day))),
+        action: SnackBarAction(label: l.copyView, onPressed: () {
+          if (mounted) _show(done.day);
+        }),
+      ));
   }
 
   static String _ideasLabel(AppLocalizations l, Briefing b) => b.allReached ? l.ebFindSomething : l.ebIdeas;
@@ -329,6 +362,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     final rows = ref.watch(foodProvider(day));
     final live = [for (final r in rows.value ?? const <Stored<FoodEntry>>[]) if (!r.value.isDeleted) r];
     final entries = [for (final r in live) r.value];
+    // The calendar day before the day shown (not the phone's yesterday): the source of Same as yesterday.
+    final yesterday = [for (final r in ref.watch(foodProvider(dayBefore(day))).value ?? const <Stored<FoodEntry>>[]) r.value];
     final profile = ref.watch(profileProvider).value;
     final display = ref.watch(nutritionDisplayProvider);
     final c = context.c;
@@ -353,7 +388,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     return RefreshIndicator(
       edgeOffset: MediaQuery.paddingOf(context).top,
       onRefresh: () => refreshFromAccount(ref),
-      child: ListView(
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n.depth == 0 && n.context != null) _position = Scrollable.maybeOf(n.context!)?.position;
+          return false;
+        },
+        child: ListView(
         // On the calm wash the shell lays behind Eat, with room for the floating bar at the end.
         padding: EdgeInsets.only(bottom: 28 + MediaQuery.paddingOf(context).bottom),
         children: [
@@ -435,6 +475,10 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                   () {
                     final mine = [for (final r in live) if (r.value.meal == meal) r];
                     final label = meal.toLowerCase();
+                    // Only an empty meal offers the day before's same meal: that one meal of that one day, as logged.
+                    final before = dayBefore(day);
+                    final repeat = mine.isEmpty ? mealOn(yesterday, before, meal) : const <FoodEntry>[];
+                    final from = day == today ? l.repeatYesterday : l.repeatOn(longDate(before));
                     return GroupCard(children: [
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(indent, 14, 16, mine.isEmpty ? 2 : 10),
@@ -449,17 +493,37 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         ]),
                       ),
                       for (final r in mine) _EntryRow(r, indent: indent, detail: _detail(l, r), onTap: () => openFoodForm(context, dayKey: day, entry: r.value)),
+                      if (repeat.isNotEmpty)
+                        _RepeatLine(
+                          key: Key('eat-repeat-$label'), label: label, indent: indent, title: from, foods: foodNames(l, repeat),
+                          said: l.repeatSaid(mealLabel(l, meal), day == today ? l.repeatYesterday : longDate(before), foodNames(l, repeat, shown: repeat.length)),
+                          onReview: () => _copy(source: repeat, sourceDay: before, sourceMeal: meal, day: day, meal: meal),
+                          onOther: () => showMealSources(context, day: day, meal: meal,
+                              onPick: (d, entries) => _copy(source: entries, sourceDay: d, sourceMeal: meal, day: day, meal: meal),
+                              onSaved: () => openMealsLibrary(context, dayKey: day, meal: meal), onAdd: () => openFoodForm(context, dayKey: day, meal: meal)),
+                        ),
                       _MealFooter(
                         indent: indent,
                         add: _AddFood(key: Key('eat-add-$label'), meal: meal, indent: indent, onTap: () => openFoodForm(context, dayKey: day, meal: meal)),
-                        // Quiet, beside Add food: this meal's foods copied into a new saved meal. Nothing is logged again.
-                        save: mine.isEmpty
-                            ? null
-                            : TextButton(
-                                key: Key('eat-save-meal-$label'),
-                                onPressed: () => saveAsMeal(context, dayKey: day, meal: meal, entries: [for (final r in mine) r.value]),
-                                child: Text(l.mealsSaveAsMeal, semanticsLabel: l.mealsSaveAsMealSaid(mealLabel(l, meal))),
-                              ),
+                        // Quiet, beside Add food: this meal copied to another day or meal (reviewed first), and its foods
+                        // copied into a new saved meal. Neither logs anything by itself.
+                        quiet: mine.isEmpty
+                            ? const []
+                            : [
+                                (l.copyMeal, TextButton(
+                                  key: Key('eat-copy-meal-$label'),
+                                  onPressed: () {
+                                    final to = copyDestination(sourceDay: day, sourceMeal: meal, today: today, mealNow: _mealNow(DateTime.now()));
+                                    _copy(source: [for (final r in mine) r.value], sourceDay: day, sourceMeal: meal, day: to.day, meal: to.meal);
+                                  },
+                                  child: Text(l.copyMeal, semanticsLabel: l.copyMealSaid(mealLabel(l, meal))),
+                                )),
+                                (l.mealsSaveAsMeal, TextButton(
+                                  key: Key('eat-save-meal-$label'),
+                                  onPressed: () => saveAsMeal(context, dayKey: day, meal: meal, entries: [for (final r in mine) r.value]),
+                                  child: Text(l.mealsSaveAsMeal, semanticsLabel: l.mealsSaveAsMealSaid(mealLabel(l, meal))),
+                                )),
+                              ],
                       ),
                     ]);
                   }(),
@@ -476,6 +540,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
             ]),
           ),
         ],
+        ),
       ),
     );
   }
@@ -499,34 +564,70 @@ class _CoachProblem extends StatelessWidget {
       );
 }
 
-/// A meal's footer: Add food across the width, Save as meal (when the meal has foods) quiet at its end. When both labels
-/// do not fit on one line (long words, large text), Save as meal goes under Add food, its label in line with Add food's,
-/// so nothing is squeezed or cut and both keep their 48 px targets.
+/// A meal's footer: Add food across the width, the quiet actions (Copy meal, Save as meal, when the meal has foods) at
+/// its end. When they do not all fit on one line (long words, large text), the quiet actions go under Add food, the
+/// first label in line with Add food's and wrapping between buttons, so nothing is squeezed or cut and every one keeps
+/// its 48 px target.
 class _MealFooter extends StatelessWidget {
-  const _MealFooter({required this.indent, required this.add, this.save});
+  const _MealFooter({required this.indent, required this.add, this.quiet = const []});
   final double indent;
   final Widget add;
-  final TextButton? save;
+
+  /// Each quiet action with its label (to measure it).
+  final List<(String, TextButton)> quiet;
 
   @override
   Widget build(BuildContext context) {
-    if (save == null) return add;
+    if (quiet.isEmpty) return add;
     final l = context.l10n;
     return LayoutBuilder(builder: (context, box) {
       double width(String s, TextStyle? style) =>
           (TextPainter(text: TextSpan(text: s, style: style), textDirection: Directionality.of(context), textScaler: MediaQuery.textScalerOf(context), maxLines: 1)..layout()).width;
-      // _AddFood's padding, icon and gap; the button's own padding (theme: 12 each side) and the 6 at the end.
+      // _AddFood's padding, icon and gap; each button's own padding (theme: 12 each side) and the 6 at the end.
       final addWidth = indent - 2 + 18 + 6 + width(l.eatAddFood, context.sansStyle(15, weight: FontWeight.w500)) + 12;
-      final saveWidth = 24 + width(l.mealsSaveAsMeal, TextButtonTheme.of(context).style?.textStyle?.resolve(const {})) + 6;
-      if (addWidth + saveWidth <= box.maxWidth) {
-        return Row(children: [Expanded(child: add), Padding(padding: const EdgeInsetsDirectional.only(end: 6), child: save)]);
+      final style = TextButtonTheme.of(context).style?.textStyle?.resolve(const {});
+      final quietWidth = quiet.fold(6.0, (w, q) => w + 24 + width(q.$1, style));
+      final buttons = [for (final q in quiet) q.$2];
+      if (addWidth + quietWidth <= box.maxWidth) {
+        return Row(children: [Expanded(child: add), Padding(padding: const EdgeInsetsDirectional.only(end: 6), child: Row(mainAxisSize: MainAxisSize.min, children: buttons))]);
       }
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         add,
-        // Under Add food, its label starting where Add food's does (after the + icon), the button's 12 px padding inside.
-        Align(alignment: AlignmentDirectional.centerStart, child: Padding(padding: EdgeInsetsDirectional.only(start: indent + 10, end: 6, bottom: 4), child: save)),
+        // Under Add food, the first label starting where Add food's does (after the + icon), the button's 12 px padding inside.
+        Padding(padding: EdgeInsetsDirectional.only(start: indent + 10, end: 6, bottom: 4), child: Wrap(children: buttons)),
       ]);
     });
+  }
+}
+
+/// Same as yesterday? inside an empty meal: the day before's same meal in one line (its foods in logged order),
+/// Review & log (the review; it logs nothing) and Other days. Quiet, in the meal's own group: no card of its own.
+class _RepeatLine extends StatelessWidget {
+  const _RepeatLine({super.key, required this.label, required this.indent, required this.title, required this.foods, required this.said, required this.onReview, required this.onOther});
+  final String label, title, foods, said;
+  final double indent;
+  final VoidCallback onReview, onOther;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(indent, 6, 12, 0),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Semantics(
+          label: said, excludeSemantics: true,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: context.sansStyle(15, weight: FontWeight.w600)),
+            Text(foods, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.caption),
+          ]),
+        ),
+        Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
+          TextButton.icon(key: Key('eat-repeat-review-$label'), onPressed: onReview, icon: const Icon(Icons.replay, size: 18), label: Text(l.repeatReview),
+              style: TextButton.styleFrom(padding: const EdgeInsetsDirectional.only(start: 0, end: 12))),
+          TextButton(key: Key('eat-repeat-other-$label'), onPressed: onOther, child: Text(l.repeatOther)),
+        ]),
+      ]),
+    );
   }
 }
 

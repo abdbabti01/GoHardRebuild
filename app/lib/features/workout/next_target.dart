@@ -348,7 +348,16 @@ class SuggestedToday extends ConsumerWidget {
     final text = todayText(t, unit, l);
     final slotKey = (planId: todayKey.planId, workoutId: todayKey.definitionId, occurrenceKey: exercise.occurrenceKey ?? '');
     final slot = ref.watch(targetSlotProvider(slotKey));
-    final why = QuietLink(l.workoutTodayWhy, key: const Key('today-why'), said: l.workoutTodayWhySemantic, onPressed: () => showTodayWhy(appContext(context), t));
+    // What each action here changes, said in Why? (the increment editor speaks for itself).
+    final scope = switch ((t.kind, slot != null)) {
+      (TodayKind.weight, true) => l.workoutTodayScope,
+      (TodayKind.weight, false) => l.workoutTodayScopeNoPlan,
+      (TodayKind.reps, true) => l.workoutTodayScopeAim,
+      (TodayKind.reps, false) => l.workoutTodayScopeAimNoPlan,
+      (_, true) => l.workoutTodayScopeEdit,
+      _ => null,
+    };
+    final why = QuietLink(l.workoutTodayWhyShort, key: const Key('today-why'), said: l.workoutTodayWhySemantic, onPressed: () => showTodayWhy(appContext(context), t, scope: scope));
     // Once answered, one line stays: the weight put in the entry, or the aim kept for this exercise.
     final answered = switch ((answer, t.kind)) {
       ('used', TodayKind.weight) => (const Key('today-used'), l.workoutTodayUsedLine(text)),
@@ -371,12 +380,14 @@ class SuggestedToday extends ConsumerWidget {
         ]),
       );
     }
+    // A section of the last-session panel it sits in (no card of its own), set off by a rule and its heading.
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Panel(
+      child: DecoratedBox(
         key: const Key('suggested-today'),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Overline(l.workoutTodayOverline),
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: c.divider))),
+        child: Padding(padding: const EdgeInsets.only(top: 10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Semantics(header: true, label: l.workoutTodayAimFor(shownName(ref, context, exercise.catalogKey, exercise.name)), child: ExcludeSemantics(child: Overline(l.workoutTodayOverline))),
           const SizedBox(height: 4),
           Text(text, key: const Key('today-text'), style: context.sansStyle(15.5, weight: FontWeight.w600)),
           const SizedBox(height: 6),
@@ -390,19 +401,9 @@ class SuggestedToday extends ConsumerWidget {
             if (slot != null)
               TextButton(key: const Key('today-edit'), onPressed: () => showTargetReview(appContext(context), slotKey),
                   child: Text(l.workoutTodayEdit, semanticsLabel: l.workoutTodayEditSemantic)),
+            why,
           ]),
-          why,
-          // What each action here changes; the increment editor speaks for itself.
-          if (switch ((t.kind, slot != null)) {
-            (TodayKind.weight, true) => l.workoutTodayScope,
-            (TodayKind.weight, false) => l.workoutTodayScopeNoPlan,
-            (TodayKind.reps, true) => l.workoutTodayScopeAim,
-            (TodayKind.reps, false) => l.workoutTodayScopeAimNoPlan,
-            (_, true) => l.workoutTodayScopeEdit,
-            _ => null,
-          } case final scope?)
-            Text(scope, style: context.caption),
-        ]),
+        ])),
       ),
     );
   }
@@ -410,7 +411,7 @@ class SuggestedToday extends ConsumerWidget {
 
 /// Why this suggestion: the rule in words, the sessions it used and what GoHard cannot know. The selected Leon/Leona
 /// says it through the help sheet's speaker (plain text with the coach off); nothing floats over the recorder.
-Future<void> showTodayWhy(BuildContext context, TodaySuggestion t) {
+Future<void> showTodayWhy(BuildContext context, TodaySuggestion t, {String? scope}) {
   final l = context.l10n;
   return showGoSheet<void>(context, title: l.workoutTodayWhyTitle, builder: (sheet) {
     final unit = ProviderScope.containerOf(sheet, listen: false).read(loadUnitProvider);
@@ -429,6 +430,7 @@ Future<void> showTodayWhy(BuildContext context, TodaySuggestion t) {
           child: Text(l.workoutSessionLine(longDate(s.workout.dayKey), s.sets.isEmpty ? l.workoutNotRecordedLower : [for (final x in s.sets) setText(x, unit, l)].join(l.workoutListSeparator)),
               style: sheet.numStyle(14, color: sheet.c.secondary, weight: FontWeight.w400)),
         ),
+      if (scope != null) ...[const SizedBox(height: 12), Text(scope, key: const Key('today-why-scope'), style: sheet.body)],
       const SizedBox(height: 12),
       Text(l.workoutTodayWhyLimits, style: sheet.caption),
     ]);

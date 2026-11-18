@@ -54,7 +54,7 @@ void main() {
       await j.waitFor(find.byKey(const Key('workout-preview')), what: 'the preview');
       expect(find.byKey(const Key('complete-set')), findsNothing, reason: 'no recorder: nothing was started');
       final first = tester.widget<Text>(find.descendant(of: find.byKey(const Key('preview-exercise-0')), matching: find.byType(Text)).at(1)).data!;
-      expect(find.text('No previous session recorded.'), findsOneWidget);
+      expect(find.text('First session on record: nothing to compare yet.'), findsOneWidget);
       await allWorkouts();
       expect(byKeyPrefix('train-open-'), findsNothing, reason: 'All workouts after Details: still no workout');
 

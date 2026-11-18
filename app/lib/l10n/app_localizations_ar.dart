@@ -8778,7 +8778,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String workoutMovementPositionExtra(int index, int total) {
-    return 'التمرين $index من $total · إضافي';
+    return 'التمرين $index من $total · مُضاف';
   }
 
   @override
@@ -8819,11 +8819,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get workoutRestSkip => 'تخطي الراحة';
-
-  @override
-  String workoutNextSetOverline(int number) {
-    return 'المجموعة $number · لم تُسجَّل بعد';
-  }
 
   @override
   String get workoutTargetReachedLast =>
@@ -8906,7 +8901,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا يوجد سجل: هذا التمرين غير مرتبط بتمرين محفوظ، لذا لا تتم المطابقة بالاسم.';
 
   @override
-  String get workoutHistoryNone => 'لا توجد حصة سابقة مسجّلة.';
+  String get workoutHistoryNone => 'أول حصة مسجّلة: لا شيء للمقارنة بعد.';
 
   @override
   String workoutCompareLastLabeled(String value) {
@@ -8915,7 +8910,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String workoutCompareTodayLabeled(String value) {
-    return 'اليوم: $value';
+    return 'سُجّل اليوم: $value';
   }
 
   @override
@@ -8924,7 +8919,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get workoutCompareNext => 'التالية · لم تُسجَّل بعد';
+  String get workoutCompareNext => 'قيد الإدخال';
 
   @override
   String get workoutCompareNotYet => 'لم تُسجَّل بعد';
@@ -8938,7 +8933,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get workoutCompareSet => 'المجموعة';
 
   @override
-  String get workoutCompareToday => 'اليوم';
+  String get workoutCompareToday => 'سُجّل اليوم';
 
   @override
   String get workoutLastTime => 'الحصة السابقة';
@@ -13157,7 +13152,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'لديك بالفعل خطة غير مكتملة. احفظها أو تخلّص منها أولًا.';
 
   @override
-  String get workoutTodayOverline => 'مقترح اليوم · اختياري';
+  String get workoutTodayOverline => 'هدف اليوم · اختياري';
 
   @override
   String get workoutTodayTitle => 'مقترح اليوم';
@@ -13512,4 +13507,140 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tgtManual => 'تحديد الأهداف يدويًا';
+
+  @override
+  String get copyTitle => 'مراجعة الوجبة المنسوخة';
+
+  @override
+  String copyFrom(String meal, String date) {
+    return 'من $meal · $date';
+  }
+
+  @override
+  String get copyTo => 'نسخ إلى';
+
+  @override
+  String get copySame =>
+      'اليوم والوجبة نفسهما كالأصل: التسجيل يضيف هذه الأطعمة مرة أخرى. لا بأس إن كنت تناولتها مرتين.';
+
+  @override
+  String copyAdds(int count, String meal, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count طعام',
+      many: '$count طعامًا',
+      few: '$count أطعمة',
+      two: 'طعامين',
+      one: 'طعام واحد',
+      zero: 'لا أطعمة',
+    );
+    return 'تحتوي $meal في $date بالفعل على $_temp0. ستُضاف هذه الأطعمة دون استبدال أي شيء.';
+  }
+
+  @override
+  String get copyFoodsHint =>
+      'المس طعامًا لتغيير كميته هذه المرة. تبقى الوجبة الأصلية كما هي.';
+
+  @override
+  String get copyFixedTag => 'مُدخل يدويًا';
+
+  @override
+  String get copyFixedTitle => 'لا يمكن تغيير هذه الكمية';
+
+  @override
+  String copyFixedBody(String name) {
+    return 'أُدخل $name يدويًا دون سجل طعام، لذلك لا يستطيع GoHard تعديل كميته. أبقِه كما سُجّل، أو احذفه، أو اختر طعامًا مطابقًا بدلًا منه.';
+  }
+
+  @override
+  String get copyChooseFood => 'اختيار طعام بدلًا منه';
+
+  @override
+  String get copyKeepAsLogged => 'إبقاؤه كما سُجّل';
+
+  @override
+  String copyPortionTitle(String name) {
+    return 'ما كمية $name؟';
+  }
+
+  @override
+  String get copyPortionNote => 'من الوصفة كما كانت عند تسجيلها.';
+
+  @override
+  String copySourcesTitle(String meal) {
+    return 'نسخ $meal من…';
+  }
+
+  @override
+  String get copySourcesNone =>
+      'لم يُسجَّل شيء في هذه الوجبة خلال آخر 14 يومًا.';
+
+  @override
+  String copyMore(int count) {
+    return '+$count أخرى';
+  }
+
+  @override
+  String copyLogged(String meal, String date) {
+    return 'نُسخ إلى $meal · $date';
+  }
+
+  @override
+  String get copyView => 'عرض';
+
+  @override
+  String get copyMeal => 'نسخ الوجبة';
+
+  @override
+  String copyMealSaid(String meal) {
+    return 'نسخ $meal إلى يوم أو وجبة أخرى';
+  }
+
+  @override
+  String get repeatYesterday => 'مثل الأمس؟';
+
+  @override
+  String repeatOn(String date) {
+    return 'مثل $date؟';
+  }
+
+  @override
+  String get repeatReview => 'مراجعة وتسجيل';
+
+  @override
+  String get repeatOther => 'أيام أخرى';
+
+  @override
+  String repeatSaid(String meal, String date, String foods) {
+    return '$meal كما في $date: $foods';
+  }
+
+  @override
+  String workoutSetOfPlanned(int number, int total) {
+    return 'المجموعة $number من $total';
+  }
+
+  @override
+  String workoutExtraSet(int number) {
+    return 'مجموعة إضافية $number';
+  }
+
+  @override
+  String workoutLastSetRef(int number, String set) {
+    return 'الحصة السابقة، المجموعة $number: $set';
+  }
+
+  @override
+  String workoutPlanRest(String duration) {
+    return 'راحة $duration';
+  }
+
+  @override
+  String workoutTodayAimFor(String name) {
+    return 'هدف اليوم لـ $name';
+  }
+
+  @override
+  String get workoutTodayWhyShort => 'لماذا؟';
 }

@@ -12647,13 +12647,13 @@ abstract class AppLocalizations {
   /// Overline above the current exercise.
   ///
   /// In en, this message translates to:
-  /// **'Movement {index} of {total}'**
+  /// **'Exercise {index} of {total}'**
   String workoutMovementPosition(int index, int total);
 
   /// Overline above an exercise added beyond the plan.
   ///
   /// In en, this message translates to:
-  /// **'Movement {index} of {total} · extra'**
+  /// **'Exercise {index} of {total} · added'**
   String workoutMovementPositionExtra(int index, int total);
 
   /// Note under a swapped exercise.
@@ -12721,12 +12721,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip rest'**
   String get workoutRestSkip;
-
-  /// Overline above the entry fields for the next set.
-  ///
-  /// In en, this message translates to:
-  /// **'Set {number} · not recorded yet'**
-  String workoutNextSetOverline(int number);
 
   /// Status when the last exercise reached its planned set count.
   ///
@@ -12839,19 +12833,19 @@ abstract class AppLocalizations {
   /// Last time panel with no history.
   ///
   /// In en, this message translates to:
-  /// **'No previous session recorded.'**
+  /// **'First session on record: nothing to compare yet.'**
   String get workoutHistoryNone;
 
   /// Large-text comparison row: last session value.
   ///
   /// In en, this message translates to:
-  /// **'Last time: {value}'**
+  /// **'Last session: {value}'**
   String workoutCompareLastLabeled(String value);
 
   /// Large-text comparison row: today value.
   ///
   /// In en, this message translates to:
-  /// **'Today: {value}'**
+  /// **'Recorded today: {value}'**
   String workoutCompareTodayLabeled(String value);
 
   /// Screen-reader label of a set recorded today.
@@ -12863,7 +12857,7 @@ abstract class AppLocalizations {
   /// Comparison table: the next set to record.
   ///
   /// In en, this message translates to:
-  /// **'Next · not recorded yet'**
+  /// **'Entering now'**
   String get workoutCompareNext;
 
   /// Comparison table: a planned set not yet recorded.
@@ -12887,19 +12881,19 @@ abstract class AppLocalizations {
   /// Comparison table column: sets recorded today.
   ///
   /// In en, this message translates to:
-  /// **'Today'**
+  /// **'Recorded today'**
   String get workoutCompareToday;
 
   /// Panel title and column: the most recent earlier session of this exercise.
   ///
   /// In en, this message translates to:
-  /// **'Last time'**
+  /// **'Last session'**
   String get workoutLastTime;
 
   /// Last time panel title with its date.
   ///
   /// In en, this message translates to:
-  /// **'Last time · {date}'**
+  /// **'Last session · {date}'**
   String workoutLastTimeOn(String date);
 
   /// Link opening every earlier session of the exercise.
@@ -18795,7 +18789,7 @@ abstract class AppLocalizations {
   /// Overline of the optional suggestion in the recorder.
   ///
   /// In en, this message translates to:
-  /// **'Suggested today · optional'**
+  /// **'Today’s aim · optional'**
   String get workoutTodayOverline;
 
   /// Title of the Suggested today explanation.
@@ -19373,6 +19367,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set targets manually'**
   String get tgtManual;
+
+  /// Title of the review of a meal copied from the journal.
+  ///
+  /// In en, this message translates to:
+  /// **'Review copied meal'**
+  String get copyTitle;
+
+  /// Subtitle: the meal and day the copy comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'From {meal} · {date}'**
+  String copyFrom(String meal, String date);
+
+  /// Heading above the destination meal and date of a copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy to'**
+  String get copyTo;
+
+  /// Warning when a copy goes to the very meal and day it came from.
+  ///
+  /// In en, this message translates to:
+  /// **'Same day and meal as the original: logging adds these foods to it again. That is fine if you ate it twice.'**
+  String get copySame;
+
+  /// Note when the destination meal already has food: copying adds, never replaces.
+  ///
+  /// In en, this message translates to:
+  /// **'{meal} on {date} already has {count, plural, =1{1 food} other{{count} foods}}. These are added; nothing is replaced.'**
+  String copyAdds(int count, String meal, String date);
+
+  /// Hint under the foods of a copied meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a food to change its amount for this time. The meal you copied from stays as it is.'**
+  String get copyFoodsHint;
+
+  /// Tag on a copied food that was typed by hand and cannot be scaled.
+  ///
+  /// In en, this message translates to:
+  /// **'typed by hand'**
+  String get copyFixedTag;
+
+  /// Dialog title for a copied food without a food record.
+  ///
+  /// In en, this message translates to:
+  /// **'This amount can’t be changed'**
+  String get copyFixedTitle;
+
+  /// Dialog body: why a typed food cannot be scaled, and what can be done.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was typed by hand, without a food record, so GoHard can’t scale its amount. Keep it as logged, remove it, or choose a matching food instead.'**
+  String copyFixedBody(String name);
+
+  /// Action: replace a typed food with a food chosen in Add food.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a food instead'**
+  String get copyChooseFood;
+
+  /// Action: keep a typed food unchanged in the copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep as logged'**
+  String get copyKeepAsLogged;
+
+  /// Dialog title: a recipe portion amount in a copied meal.
+  ///
+  /// In en, this message translates to:
+  /// **'How much {name}?'**
+  String copyPortionTitle(String name);
+
+  /// Note: a copied recipe portion scales from its frozen batch.
+  ///
+  /// In en, this message translates to:
+  /// **'From the recipe as it was when you logged it.'**
+  String get copyPortionNote;
+
+  /// Sheet title: choose an earlier day to copy a meal from.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy {meal} from…'**
+  String copySourcesTitle(String meal);
+
+  /// Sheet: no earlier day has this meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing logged at this meal in the last 14 days.'**
+  String get copySourcesNone;
+
+  /// After the first food names of a meal preview.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more'**
+  String copyMore(int count);
+
+  /// Snackbar after a copied meal was logged.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to {meal} · {date}'**
+  String copyLogged(String meal, String date);
+
+  /// Snackbar action: show the day the meal was copied to.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get copyView;
+
+  /// Quiet action under a meal: copy it to another day or meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy meal'**
+  String get copyMeal;
+
+  /// Screen reader label of Copy meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy {meal} to another day or meal'**
+  String copyMealSaid(String meal);
+
+  /// Shortcut in an empty meal: the same meal of the day before.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as yesterday?'**
+  String get repeatYesterday;
+
+  /// Shortcut in an empty meal of an earlier day: the same meal of the day before it.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as {date}?'**
+  String repeatOn(String date);
+
+  /// Opens the review of the repeated meal (logs nothing by itself).
+  ///
+  /// In en, this message translates to:
+  /// **'Review & log'**
+  String get repeatReview;
+
+  /// Choose another earlier day to copy this meal from.
+  ///
+  /// In en, this message translates to:
+  /// **'Other days'**
+  String get repeatOther;
+
+  /// Screen reader text of the repeat shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Same {meal} as {date}: {foods}'**
+  String repeatSaid(String meal, String date, String foods);
+
+  /// Heading of the set being entered, within the planned sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Set {number} of {total}'**
+  String workoutSetOfPlanned(int number, int total);
+
+  /// Heading of a set entered beyond the planned sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra set {number}'**
+  String workoutExtraSet(int number);
+
+  /// Under the entry heading: the same set in the last session.
+  ///
+  /// In en, this message translates to:
+  /// **'Last session, set {number}: {set}'**
+  String workoutLastSetRef(int number, String set);
+
+  /// Part of the exercise plan line: planned rest.
+  ///
+  /// In en, this message translates to:
+  /// **'{duration} rest'**
+  String workoutPlanRest(String duration);
+
+  /// Screen reader heading of the optional aim.
+  ///
+  /// In en, this message translates to:
+  /// **'Today’s aim for {name}'**
+  String workoutTodayAimFor(String name);
+
+  /// Short link to why today’s aim is suggested, its evidence and what each action changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Why?'**
+  String get workoutTodayWhyShort;
 }
 
 class _AppLocalizationsDelegate

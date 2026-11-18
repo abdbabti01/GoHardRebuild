@@ -87,7 +87,8 @@ Four things stay apart in the selected exercise:
 
 1. **Plan** — the prescription frozen into this workout (`3 × 8–12`, target weight if any).
 2. **Last session** — the existing Last time table (actual sets).
-3. **Suggested today** — optional, Plus, new; a small panel below Last time.
+3. **Suggested today** — optional, Plus, new; a small panel below Last time. (Since 18 Nov 2026 "Today's aim", a
+   section inside the last-session panel, with what each action changes said in Why?: docs/MEAL_COPY_WORKOUT_PANEL.md.)
 4. **Today** — the sets recorded in this workout (the existing Today column and list).
 
 ### Rules (`ProgressionRules.today`, pure, local, no AI)

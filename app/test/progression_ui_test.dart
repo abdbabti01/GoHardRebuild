@@ -363,4 +363,54 @@ void main() {
     expect(Directionality.of(tester.element(find.byKey(const Key('suggested-today')))), TextDirection.rtl);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('one exercise panel: the plan line, last session with today’s aim inside it, then the set being entered, Record set and rest; extra sets inherit nothing', (tester) async {
+    await tester.runAsync(loadAppFonts); // measured with the app's real fonts, as on a phone (last test in this file)
+    final (container, _, run, settle) = await setUpApp(tester);
+    await startToday(tester, container, settle);
+    final l = container.read(appL10nProvider);
+
+    // The plan line: sets, reps and rest of the frozen prescription; the frozen target beside it.
+    expect(tester.widget<Text>(find.byKey(const Key('workout-prescription'))).data, '3 sets · 6–8 reps · ${l.workoutPlanRest(l.durationSeconds(90))}');
+    expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '190 lb');
+    // One panel: last session set by set, and the optional aim inside it (no card of its own).
+    expect(find.descendant(of: find.byKey(const Key('last-time')), matching: find.byKey(const Key('suggested-today'))), findsOneWidget);
+    expect(find.text('Last session · ${'Sun, Oct 11'}'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Entering now')), findsOneWidget, reason: 'an entry, never shown as recorded');
+    expect(tester.widget<Text>(find.byKey(const Key('entry-heading'))).data, 'Set 1 of 3');
+    expect(tester.widget<Text>(find.byKey(const Key('entry-last-ref'))).data, 'Last session, set 1: 190 lb × 8');
+
+    // On a typical phone at normal text size the exercise, last session, aim, fields and Record set fit one screen.
+    double span() => tester.getBottomLeft(find.byKey(const Key('complete-set'))).dy - tester.getTopLeft(find.byKey(const Key('workout-exercise-panel'))).dy;
+    // With the aim and its four actions: within one 844 px screen (a short scroll with the status and tab bars).
+    expect(span(), lessThanOrEqualTo(844));
+    // ignore: avoid_print
+    print('panel span at 390 px, real fonts, with the aim: ${span()}');
+    // The order: last session above the entry, the entry above Record set.
+    expect(tester.getTopLeft(find.byKey(const Key('last-time'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('entry-heading'))).dy));
+    expect(tester.getTopLeft(find.byKey(const Key('set-load'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('complete-set'))).dy));
+    // Without an aim on screen (declined here; most sessions and Free): all of it within the ~700 px a 390 × 844 phone
+    // shows between its status bar and the tab bar.
+    await tester.ensureVisible(find.byKey(const Key('today-keep')));
+    await tester.tap(find.byKey(const Key('today-keep')));
+    await settle();
+    expect(span(), lessThanOrEqualTo(700));
+    // ignore: avoid_print
+    print('panel span at 390 px, real fonts, no aim: ${span()}');
+
+    // Recording: rest appears right under Record set; past the plan the heading says so and inherits nothing.
+    for (var i = 0; i < 3; i++) {
+      await tester.ensureVisible(find.byKey(const Key('complete-set')));
+      await tester.tap(find.byKey(const Key('complete-set')));
+      await settle();
+    }
+    expect(tester.getTopLeft(find.byKey(const Key('rest-row'))).dy, greaterThanOrEqualTo(tester.getBottomLeft(find.byKey(const Key('complete-set'))).dy));
+    expect(find.byKey(const Key('rest-clock')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('entry-heading'))).data, 'Extra set 4');
+    expect(find.byKey(const Key('entry-last-ref')), findsNothing, reason: 'last session had three sets: an extra set copies none of them');
+    expect(find.byKey(const Key('use-last-values')), findsNothing);
+    expect(find.descendant(of: find.byKey(const Key('compare-3-last')), matching: find.text('—')), findsOneWidget);
+    expect(await run(container.read(workoutRepositoryProvider).sets(container.read(workoutListProvider).firstWhere((w) => w.isOpen).id)), hasLength(3));
+    await tester.pumpWidget(const SizedBox());
+  });
 }
