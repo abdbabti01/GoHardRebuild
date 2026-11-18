@@ -2717,3 +2717,15 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `/capabilities` declares `account.email-change`. Routes answer 401 unauthenticated (unknown route 404). IPA 70 reused.
   No hosted account created, no email sent. `feature/eat-reusable-amounts` not merged.
 - **Unverified until the owner confirms:** real emails (code and notice), iPhone flow, other-device sign-out and offline resume.
+### 17–18 Nov 2026 — Help me set my targets (`feature/target-estimator`, from main 41fc375)
+
+- Eat › Edit goals gains a secondary Help me set my targets: three steps (goal; age, height, weight from the latest
+  weigh-in or typed for this estimate only, the formula's sex input, one activity question covering workouts; starting
+  targets with Current → Suggested, editable, carbs/fat as estimates only). NASEM 2023 adult EER, documented goal
+  adjustments, refusals with manual entry. Saves calories and protein through `ProfileRepository.setGoals` only. No API,
+  model or sync change; nothing sent to the AI. Method and sources: docs/NUTRITION_TARGETS.md.
+- Tests: target_estimate (6) and target_helper_ui (10, incl. en/fr-CA/ar at 200 % text); full app suite 938 passed;
+  `flutter analyze` clean; `check-l10n` OK (3,197 messages). Renders at 200 % text in three languages reviewed.
+- 17 Nov: pushed a0ba9ac: CI 205 passed; unsigned IPA run 72 (a0ba9ac) passed (tag `ipa-target-estimator-a0ba9ac`).
+- 18 Nov: merged on the owner's instruction (`main` fast-forwarded from 41fc375). **Formula review by a registered
+  dietitian is still pending and required before public release.** iPhone checklist not yet confirmed by the owner.
