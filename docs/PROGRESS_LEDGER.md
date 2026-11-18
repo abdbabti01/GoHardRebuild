@@ -2750,3 +2750,4 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - **Not run:** emulator journey `journey_copy_panel_test` (written): `setup.ps1` refuses the local development
   database (UnknownHistory), so the local API answers 503; dropping that database was not done. **Not verified:**
   iPhone, VoiceOver. Not merged, not deployed.
+- Code 977f52e: CI 210 (44417493561) passed; unsigned IPA run 73 (44417542118, tag `ipa-meal-copy-workout-panel-977f52e`) passed.
