@@ -145,6 +145,21 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Help me set my targets — merged 18 Nov 2026 (formula review pending)
+
+- **What:** Eat › Edit goals › Help me set my targets: goal, a few details (latest weigh-in reused, metric or imperial),
+  and editable starting calories and protein, saved through the goals form's own path; carbs and fat as estimates only
+  (docs/NUTRITION_TARGETS.md). Offline and deterministic; nothing is sent to the AI.
+- **Formula review: PENDING.** The calculation must be reviewed by a registered dietitian (or equivalent) before a
+  public release; open questions in docs/NUTRITION_TARGETS.md.
+- **App only.** No API code, migration, capability, contract or sync change. Railway redeploys `main` automatically;
+  the server code it runs is unchanged.
+- **Build:** code a0ba9ac (branch `feature/target-estimator`), CI 205 passed; unsigned IPA run 72 from a0ba9ac.
+- **Merged:** owner instructed 18 Nov 2026; `main` fast-forwarded from 41fc375 (feature a0ba9ac plus these notes only).
+- **Unverified until the owner confirms on iPhone:** goals, weigh-in, units, refusals, Cancel, coach off, French and
+  Arabic at large text, offline.
+- **Rollback:** revert the feature commit a0ba9ac (app only); calorie and protein goals already saved stay as set.
+
 ### Change email — deployed 14 Nov 2026 (`main` e072c6d)
 
 - **What:** Me › Account › Change email: new address + current password, a code to the new address (resend, cancel);
