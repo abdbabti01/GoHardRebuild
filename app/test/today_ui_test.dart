@@ -127,7 +127,7 @@ void main() {
     // Run / Walk and Steps side by side, the same height: the taller one's content sets it (here the open run).
     expect(height(tester, 'run'), tester.getSize(find.byKey(const Key('today-steps'))).height, reason: 'the two tiles match');
     expect(r, inInclusiveRange(230, 400), reason: 'run, open with a distance and a time, in the half-width tile (test font)');
-    expect(n, inInclusiveRange(240, 340), reason: 'nutrition, two goal rings and the missing-values line; goals and Customize tracking are in Eat');
+    expect(n, inInclusiveRange(280, 340), reason: 'nutrition, two goal rings side by side and the missing-values line; goals and Customize tracking are in Eat');
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
     debugPrint('header region $header');

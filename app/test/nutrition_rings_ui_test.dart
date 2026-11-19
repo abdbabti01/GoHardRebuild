@@ -205,9 +205,43 @@ void main() {
     });
   }
 
+  group('layout follows the width and the text size, never the device', () {
+    // Side by side: protein's ring starts after calories' ring ends, on the same line. Stacked: protein starts below
+    // everything calories says.
+    bool sideBySide(WidgetTester tester, String p) {
+      final cal = find.byKey(Key('$p-goal-calories')), pro = find.byKey(Key('$p-goal-protein'));
+      final across = tester.getTopLeft(pro).dx > tester.getTopRight(cal).dx && tester.getTopLeft(pro).dy < tester.getBottomLeft(cal).dy;
+      final below = tester.getTopLeft(pro).dy > tester.getBottomLeft(find.byKey(Key('$p-goal-calories-status'))).dy;
+      expect(across != below, isTrue, reason: 'one layout or the other');
+      return across;
+    }
+
+    Future<void> today(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('nav-today')));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => Scrollable.ensureVisible(tester.element(find.byKey(const Key('today-goal-calories'))), alignment: 0.3));
+      await tester.pumpAndSettle();
+    }
+
+    for (final (width, text, expected) in [(390.0, 1.0, true), (360.0, 1.0, true), (430.0, 1.0, true), (320.0, 1.0, false), (390.0, 2.0, false)]) {
+      testWidgets('${width.round()} px, $text× text: ${expected ? 'side by side' : 'stacked'} on Eat and Today', (tester) async {
+        await _openEat(tester, food: [_food('a', day, kcal: 2461, protein: 175, carbs: 260, fat: 95)], kcal: 2300, protein: 160, size: Size(width, 2600), text: text);
+        expect(tester.takeException(), isNull);
+        expect(sideBySide(tester, 'eat'), expected, reason: 'Eat');
+        // Log food stays right under the summary, ahead of the composition.
+        expect(tester.getTopLeft(find.byKey(const Key('eat-saved-meals'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('eat-macros'))).dy));
+        await today(tester);
+        expect(tester.takeException(), isNull);
+        expect(sideBySide(tester, 'today'), expected, reason: 'Today');
+      });
+    }
+  });
+
   testWidgets('Arabic: the ring is on the reading side, its figures after it', (tester) async {
     await _openEat(tester, food: [_food('a', day, kcal: 1650, protein: 120, carbs: 180, fat: 50)], kcal: 2300, protein: 160, lang: 'ar');
     expect(tester.getCenter(find.byKey(const Key('eat-goal-calories'))).dx, greaterThan(tester.getCenter(find.byKey(const Key('eat-goal-calories-status'))).dx));
+    // Side by side at this width: calories first in reading order, so on the right.
+    expect(tester.getTopRight(find.byKey(const Key('eat-goal-protein'))).dx, lessThan(tester.getTopLeft(find.byKey(const Key('eat-goal-calories'))).dx));
     expect(tester.getCenter(find.byKey(const Key('eat-macro-donut'))).dx, greaterThan(tester.getCenter(find.byKey(const Key('eat-macro-carbs'))).dx));
   });
 

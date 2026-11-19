@@ -166,6 +166,18 @@ void main() {
     }
   }
 
+  // Every language at a typical width with normal text: the longest wording side by side.
+  for (final state in ['above', 'incomplete']) {
+    testWidgets('390 px, normal text: $state', (tester) async {
+      await _app(tester, state);
+      await _to(tester, ['today-module-nutrition'], alignment: 0.3);
+      await _shot(tester, 'today-$state-390');
+      await _eat(tester);
+      await _toFinder(tester, [find.byType(NutritionSurface)]);
+      await _shot(tester, 'eat-$state-390');
+    });
+  }
+
   // French and Arabic (and English) at 320 px with twice the text.
   for (final state in ['below', 'incomplete']) {
     testWidgets('320 px, twice the text: $state', (tester) async {

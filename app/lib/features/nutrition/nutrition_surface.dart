@@ -144,8 +144,12 @@ class NutritionSurface extends StatelessWidget {
 
 /// Calories and protein, each as a ring against its goal, from the shared assessment and the coverage Eat reads:
 /// Today's compact glance, and Eat's summary when [prominent] (a larger calorie ring, the amounts in the serif, the
-/// exact amount left on its own line). Side by side when there is room for both, otherwise one above the other.
-/// Shown only when something was logged; nothing logged is said in words, never as a zero.
+/// exact amount left on its own line). Shown only when something was logged; nothing logged is said in words.
+///
+/// The layout follows the room it is given and the text size, never the device: side by side, each ring above its
+/// figures, when two columns of at least [minColumn] text-scaled pixels fit (at normal text: 360–430 px phones beside
+/// the photograph); otherwise one above the other, each ring beside (or, with little room, above) its figures. Text is
+/// never shrunk to make either fit; it wraps.
 class NutritionSummary extends StatelessWidget {
   const NutritionSummary({super.key, required this.coverage, this.calorieGoal, this.proteinGoal, this.keyPrefix = 'today', this.prominent = false, this.pastDay = false});
   final Map<Nutrient, NutrientTotal> coverage;
@@ -154,6 +158,9 @@ class NutritionSummary extends StatelessWidget {
   /// Today's (`today-goal-calories`) and Eat's (`eat-goal-calories`) rings stay apart while both tabs are built.
   final String keyPrefix;
   final bool prominent, pastDay;
+
+  /// The narrowest a side-by-side column may be at normal text, before the text scale.
+  static const minColumn = 92.0;
 
   /// "2,200 kcal · 140 g protein" for the goals that were set; null when none was.
   static String? goalsText(int? calorieGoal, int? proteinGoal) {
@@ -165,13 +172,23 @@ class NutritionSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = DayAssessment.ofTotals(coverage, calorieGoal: calorieGoal, proteinGoal: proteinGoal);
-    final calories = GoalRing(a.calories, keyPrefix: keyPrefix, size: prominent ? 84 : 56, prominent: prominent, pastDay: pastDay);
-    final protein = GoalRing(a.protein, keyPrefix: keyPrefix, size: prominent ? 64 : 56, prominent: prominent, pastDay: pastDay);
-    return LayoutBuilder(
-      builder: (context, box) => box.maxWidth >= MediaQuery.textScalerOf(context).scale(prominent ? 420 : 360)
-          ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: calories), const SizedBox(width: 16), Expanded(child: protein)])
-          : Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [calories, SizedBox(height: prominent ? 14 : 10), protein]),
-    );
+    const gap = 14.0;
+    return LayoutBuilder(builder: (context, box) {
+      if (box.maxWidth >= 2 * MediaQuery.textScalerOf(context).scale(minColumn) + gap) {
+        // Side by side: the calorie ring larger on Eat; both rings end on one line so the figures start level.
+        final (cal, pro) = prominent ? (72.0, 56.0) : (48.0, 48.0);
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: GoalRing(a.calories, keyPrefix: keyPrefix, size: cal, column: cal, prominent: prominent, pastDay: pastDay)),
+          const SizedBox(width: gap),
+          Expanded(child: GoalRing(a.protein, keyPrefix: keyPrefix, size: pro, column: cal, prominent: prominent, pastDay: pastDay)),
+        ]);
+      }
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        GoalRing(a.calories, keyPrefix: keyPrefix, size: prominent ? 84 : 56, prominent: prominent, pastDay: pastDay),
+        SizedBox(height: prominent ? 14 : 10),
+        GoalRing(a.protein, keyPrefix: keyPrefix, size: prominent ? 64 : 56, prominent: prominent, pastDay: pastDay),
+      ]);
+    });
   }
 }
 
@@ -184,12 +201,17 @@ class NutritionSummary extends StatelessWidget {
 ///   "No goal recorded for this day"); never a percentage.
 /// * Unknown values: a dash for the amount, "No value entered yet"; a partial sum keeps "Known intake" in its state.
 /// * Read out once, as one description; the drawing and the separate figures are not announced again.
-/// * With large text or little room the ring goes above its figures; text is never shrunk to fit.
+/// * In a [column] (side by side with the other goal) the ring sits above its figures, at the bottom of a box
+///   [column] high, so rings of two sizes keep their figures level. Otherwise, with large text or little room, the
+///   ring goes above its figures. Text is never shrunk to fit.
 class GoalRing extends StatelessWidget {
-  const GoalRing(this.a, {super.key, required this.keyPrefix, this.size = 56, this.prominent = false, this.pastDay = false});
+  const GoalRing(this.a, {super.key, required this.keyPrefix, this.size = 56, this.column, this.prominent = false, this.pastDay = false});
   final NutrientAssessment a;
   final String keyPrefix;
   final double size;
+
+  /// Set when side by side: the height of the box the ring sits at the bottom of, above the figures.
+  final double? column;
   final bool prominent, pastDay;
 
   @override
@@ -255,7 +277,13 @@ class GoalRing extends StatelessWidget {
         if (left != null) kcal ? l.nrSaidLeftKcal(_amount(n, left)) : l.nrSaidLeftGrams(_amount(n, left)),
       ].join(l.eatListSeparator),
       child: ExcludeSemantics(
-        child: LayoutBuilder(builder: (context, box) {
+        child: column != null
+            ? Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                SizedBox(height: column, child: Align(alignment: AlignmentDirectional.bottomStart, child: ring(size))),
+                const SizedBox(height: 8),
+                figures,
+              ])
+            : LayoutBuilder(builder: (context, box) {
           // Beside its figures when they keep at least ~100 text-scaled pixels (the ring gives up some size first);
           // otherwise above them.
           final room = box.maxWidth - 12 - MediaQuery.textScalerOf(context).scale(100);

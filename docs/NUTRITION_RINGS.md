@@ -13,9 +13,17 @@ gives it the same coverage and goals on both screens, so Today and Eat can never
 
 | | Today (compact) | Eat (prominent) |
 |---|---|---|
-| Ring | 56 px, both | calories 84 px, protein 64 px |
-| Figures beside it | name · "1,650 / 2,300 kcal · 72 %" · state in words | name · amount in the serif and unit · "of 2,300 kcal · 72 %" · state in words · "650 kcal left" (exact only) |
-| Arrangement | one above the other beside the photo; side by side when the panel is wide enough (≥ 360 text-scaled px) | the same, ≥ 420 px |
+| Figures | name · "1,650 / 2,300 kcal · 72 %" · state in words | name · amount in the serif and unit · "of 2,300 kcal · 72 %" · state in words · "650 kcal left" (exact only) |
+| Side by side (ring above its figures) | 48 px, both | calories 72 px, protein 56 px, both ending on one line so the figures start level |
+| Stacked (ring beside its figures, or above them when little room) | 56 px, both | calories 84 px, protein 64 px |
+
+**Layout rule (since the 19 Nov follow-up):** `NutritionSummary` measures the width it is given (beside the photograph,
+or the whole panel with large text) and the text scale; never the device. Side by side when two columns of at least 92
+text-scaled px fit with a 14 px gap: at normal text that is every phone from 360 to 430 px wide (the words' share
+beside the photograph is about 200–245 px), and at 1.5× text a 390 px phone without the photograph. Stacked at 320 px,
+and at 2× text on any phone. Words wrap (French "161 kcal au-dessus de la cible" takes three lines); nothing is shrunk.
+Today's nutrition panel is 293 px at 390 × 844 with both goals and a missing value (270 px stacked; the target range
+is 280–340 px). Log food stays directly under the summary on Eat, ahead of the composition.
 
 - **Colours and words are the assessment's**: `goalFill` / `goalText` / `goalStatus`, no thresholds of their own. Below,
   approaching, reached and above for calories; protein above its goal stays green "Goal reached · N g above target".
@@ -85,6 +93,8 @@ reading side and figures follow it.
   donut without a split; earlier days with a recorded goal, without one and with a changed goal (never today's);
   one semantics description per ring and per donut, none for the figures alone; fr-CA and ar at 320 px with 2× text;
   Arabic ring placement; Log food, Saved meals & recipes and Edit goals still open.
+- `nutrition_rings_ui_test` layout (6 more): side by side on Eat and Today at 360, 390 and 430 px; stacked at 320 px
+  and at 390 px with 2× text; Log food (with Saved meals) before the composition; in Arabic calories on the right.
 - `macro_composition_test` (4): energy not grams, sums to 100, missing/partial give no split, zero, recorded calories
   explained not changed.
 - `theme_test`: neutral arc 3:1 on its track and macro colours 3:1 on every panel and page, all six themes plus
@@ -94,4 +104,5 @@ reading side and figures follow it.
 - Renders with real fonts (`nutrition_rings_render_test`, gated; the same file renders `main` as **before**):
   `docs/evidence/nutrition-rings/{before,after}/{en,fr,ar}`: Today and Eat in light and dark for below, approaching,
   reached, above, no goals and incomplete; Eat's macro composition; the estimated target split; Eat in all six themes;
-  320 px with 2× text in English, French and Arabic. Test renders, not device captures.
+  320 px with 2× text in English, French and Arabic; 390 px at normal text in English, French and Arabic (above target
+  and incomplete). Test renders, not device captures. The **after** renders show the side-by-side layout.

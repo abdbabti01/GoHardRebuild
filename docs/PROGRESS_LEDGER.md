@@ -2866,3 +2866,17 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   VoiceOver, TalkBack on a device. Not merged, not deployed.
 - Code f7f9778: CI 228 (44586424600) passed; unsigned IPA run 79 (44589612496, tag `ipa-nutrition-rings-f7f9778`)
   passed (artifact GoHard-Dev-unsigned-ipa). Railway variables unchanged; no hosted account created.
+
+### 19 Nov 2026 — rings side by side when there is room (same branch)
+
+- Owner request: calories and protein side by side on a typical phone at normal text, stacking only when readability
+  needs it. `NutritionSummary` now measures its own width and the text scale: two columns of ≥ 92 text-scaled px (14 px
+  gap) → side by side, each ring above its figures (labels outside the circle; Eat's calorie ring 72 px, protein 56
+  px, figures level; Today 48 px); otherwise the previous stacked layout. Side by side at 360–430 px with normal text
+  (and 390 px at 1.5×); stacked at 320 px and at 2×. Words wrap, nothing shrinks. Calculation, completeness,
+  semantics, keys and colours unchanged.
+- Today's panel: 293 px at 390 × 844 (stacked was 270; the original 280–340 px range restored in `today_ui_test`).
+  Eat: Log food stays directly under the summary.
+- Verified: `nutrition_rings_ui_test` (25: +5 width/text cases on Eat and Today, + Arabic side-by-side order), full
+  app suite 987 passed (`-j 2`), `flutter analyze` clean. Renders regenerated (after/en, fr, ar; new 390 px
+  normal-text renders in all three languages) and reviewed. Emulator, iPhone, VoiceOver/TalkBack still not run.
