@@ -2880,3 +2880,5 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Verified: `nutrition_rings_ui_test` (25: +5 width/text cases on Eat and Today, + Arabic side-by-side order), full
   app suite 987 passed (`-j 2`), `flutter analyze` clean. Renders regenerated (after/en, fr, ar; new 390 px
   normal-text renders in all three languages) and reviewed. Emulator, iPhone, VoiceOver/TalkBack still not run.
+- Code 428b40d: CI 231 (44603006735) passed; unsigned IPA run 80 (44605226349, tag `ipa-nutrition-rings-side-428b40d`)
+  passed and supersedes IPA 79. Not merged, not deployed.
