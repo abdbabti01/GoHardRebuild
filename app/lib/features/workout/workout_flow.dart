@@ -10,6 +10,9 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/sync.dart';
+import '../coach/exercise_demo.dart' show DemoThumb, demoActionFor, demoActionLabel, demoIcon;
+import '../coach/exercise_media.dart' show ExerciseMedia, exerciseMediaProvider;
+import '../coach/guide_sheets.dart' show showExerciseDetails;
 import '../plans/plan_l10n.dart' show exerciseMatches;
 import '../plans/plan_projection.dart';
 import '../plans/plan_repository.dart';
@@ -193,12 +196,38 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
         ),
       ]);
 
+  /// Opens the exercise sheet over the picker to look, not to choose: the search, filters, scroll position and the
+  /// list stay as they were, and closing it chooses nothing.
+  /// A clip says Watch demo, pictures only say View guide, and a movement with neither keeps the plain (i): never a
+  /// play button that leads to "no video".
+  Widget _preview(CatalogExercise e, String name, ExerciseMedia? m) {
+    final l = context.l10n;
+    void open() => showExerciseDetails(context, exercise: (catalogKey: e.key, name: e.name, isTimed: e.isTimed));
+    if (m == null) return IconButton(key: Key('exercise-about-${e.key}'), tooltip: demoActionFor(l, m, name), icon: Icon(demoIcon(m), size: 20), onPressed: open);
+    // With large text the words would squeeze the exercise's name: the same action as an icon with its full label.
+    if (MediaQuery.textScalerOf(context).scale(14) > 18) {
+      return IconButton(key: Key('exercise-demo-${e.key}'), tooltip: demoActionFor(l, m, name), icon: Icon(demoIcon(m)), onPressed: open);
+    }
+    // The icon over a short label, so the exercise's name keeps most of the row.
+    return TextButton(
+      key: Key('exercise-demo-${e.key}'), onPressed: open,
+      style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4), minimumSize: const Size(64, 48)),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(demoIcon(m), size: 22),
+        const SizedBox(height: 2),
+        Text(demoActionLabel(l, m), semanticsLabel: demoActionFor(l, m, name), textAlign: TextAlign.center, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(exerciseChoicesProvider);
     final names = ref.watch(exerciseNamesProvider), locale = Localizations.localeOf(context), l = context.l10n;
     String category(String v) => names.category(v, locale);
     String kit(String v) => names.equipment(v, locale);
+    // Bundled and read once; nothing is fetched to show the list.
+    final demos = ref.watch(exerciseMediaProvider).value;
     final catalogEmpty = !all.any((e) => !e.isCustom);
     final muscles = {for (final e in all) e.category}.toList()..sort();
     final equipment = {for (final e in all) if (e.equipment.isNotEmpty) e.equipment}.toList()..sort();
@@ -224,6 +253,11 @@ class _ExercisePickerState extends ConsumerState<ExercisePicker> {
         ListRow(
           key: Key('exercise-${e.key}'), title: names.name(e.key, e.name, locale),
           subtitle: [category(e.category), if (e.equipment.isNotEmpty) kit(e.equipment), if (e.isTimed) l.workoutPickerTimedTag, if (e.isCustom) l.workoutPickerYourExercise].join(' · '),
+          leading: switch (demos?.forKey(e.key)) {
+            final m? => DemoThumb(m),
+            null => null,
+          },
+          trailing: e.isCustom ? null : _preview(e, names.name(e.key, e.name, locale), demos?.forKey(e.key)),
           onTap: () => Navigator.pop(context, e),
         ),
       ListRow(

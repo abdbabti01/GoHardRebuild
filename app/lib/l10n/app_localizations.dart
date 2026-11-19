@@ -19799,6 +19799,354 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No energy from protein, carbs or fat was recorded, so there is no split.'**
   String get nrMacroZero;
+
+  /// Button opening an exercise demonstration video.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch demo'**
+  String get demoWatch;
+
+  /// Button opening an exercise guide with pictures (no video).
+  ///
+  /// In en, this message translates to:
+  /// **'View guide'**
+  String get demoViewGuide;
+
+  /// Heading of the written exercise instructions; also the button when there is no demonstration.
+  ///
+  /// In en, this message translates to:
+  /// **'How to do it'**
+  String get demoHowTo;
+
+  /// Screen-reader label of the Watch demo button.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch a demonstration of {name}'**
+  String demoWatchFor(String name);
+
+  /// Screen-reader label of the View guide button.
+  ///
+  /// In en, this message translates to:
+  /// **'View the picture guide for {name}'**
+  String demoGuideFor(String name);
+
+  /// Line under the exercise name saying exactly which variant the media shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown: {variant}'**
+  String demoShows(String variant);
+
+  /// Heading of the setup steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup'**
+  String get demoSetup;
+
+  /// Heading of the movement steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Movement'**
+  String get demoMovement;
+
+  /// Heading of the common mistakes.
+  ///
+  /// In en, this message translates to:
+  /// **'Common mistakes'**
+  String get demoMistakes;
+
+  /// Caption under sourced instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Written from {sources}, checked {date}. Not reviewed by a qualified coach.'**
+  String demoWrittenFrom(String sources, String date);
+
+  /// Caption under general cues that were not checked against a source.
+  ///
+  /// In en, this message translates to:
+  /// **'General cues, not yet checked against a technique source.'**
+  String get demoGeneralCues;
+
+  /// Heading of the sources of the written instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Technique text sources'**
+  String get demoTechniqueSources;
+
+  /// Publisher and the date a technique source was checked.
+  ///
+  /// In en, this message translates to:
+  /// **'{publisher} · checked {date}'**
+  String demoChecked(String publisher, String date);
+
+  /// Heading of the video credit.
+  ///
+  /// In en, this message translates to:
+  /// **'Demonstration video credit'**
+  String get demoCreditVideo;
+
+  /// Heading of the picture credit.
+  ///
+  /// In en, this message translates to:
+  /// **'Picture credit'**
+  String get demoCreditPictures;
+
+  /// Required attribution of a video. Keep the creator name as given.
+  ///
+  /// In en, this message translates to:
+  /// **'Video by {creator}, via {site}, {licence}'**
+  String demoAttributionVideo(String creator, String site, String licence);
+
+  /// Required attribution of pictures. Keep the creator name as given.
+  ///
+  /// In en, this message translates to:
+  /// **'Illustrations by {creator}, via {site}, {licence}'**
+  String demoAttributionPictures(String creator, String site, String licence);
+
+  /// What was changed from the original media.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes: {changes}'**
+  String demoChanges(String changes);
+
+  /// Change note for a video.
+  ///
+  /// In en, this message translates to:
+  /// **'Played and saved exactly as published, with no conversion or cropping. Poster: one frame of the clip, scaled to 640 px wide.'**
+  String get demoChangesVideo;
+
+  /// Change note for pictures.
+  ///
+  /// In en, this message translates to:
+  /// **'The source\'s two 400 px pictures placed side by side on white (640 × 320).'**
+  String get demoChangesPictures;
+
+  /// Licence name; the licence link follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Licence: {licence}'**
+  String demoLicence(String licence);
+
+  /// Label before the source page link.
+  ///
+  /// In en, this message translates to:
+  /// **'Source page:'**
+  String get demoSource;
+
+  /// Says that the media licence is not a technique review.
+  ///
+  /// In en, this message translates to:
+  /// **'The licence covers reuse of this media only. It does not mean the technique was reviewed by a professional.'**
+  String get demoMediaNotReview;
+
+  /// A size in megabytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} MB'**
+  String demoMegabytes(String value);
+
+  /// When an exercise has no video or pictures.
+  ///
+  /// In en, this message translates to:
+  /// **'No demonstration for this exercise yet.'**
+  String get demoNoneTitle;
+
+  /// Under demoNoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The written guide below still applies.'**
+  String get demoNoneBody;
+
+  /// Screen-reader label of the pictures.
+  ///
+  /// In en, this message translates to:
+  /// **'Pictures: {variant}'**
+  String demoPicturesOf(String variant);
+
+  /// Screen-reader label of two pictures showing two positions.
+  ///
+  /// In en, this message translates to:
+  /// **'Pictures: {variant}. Left: {first}. Right: {second}.'**
+  String demoPicturesPositions(String variant, String first, String second);
+
+  /// Label under the picture of the starting position.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get demoPositionStart;
+
+  /// Label under the picture of the end position.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get demoPositionEnd;
+
+  /// Label under the picture of the lowest position (lunge).
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom'**
+  String get demoPositionBottom;
+
+  /// Caption under exercise pictures.
+  ///
+  /// In en, this message translates to:
+  /// **'Pictures only. No video for this exercise yet.'**
+  String get demoPicturesOnly;
+
+  /// Play button of the demonstration.
+  ///
+  /// In en, this message translates to:
+  /// **'Play demonstration'**
+  String get demoPlay;
+
+  /// Pause button of the demonstration.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause demonstration'**
+  String get demoPause;
+
+  /// Replay button.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay from the start'**
+  String get demoReplay;
+
+  /// Full-screen button.
+  ///
+  /// In en, this message translates to:
+  /// **'Full screen'**
+  String get demoFullscreen;
+
+  /// Button leaving full screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit full screen'**
+  String get demoExitFullscreen;
+
+  /// Close button of the full-screen page.
+  ///
+  /// In en, this message translates to:
+  /// **'Close full screen'**
+  String get demoCloseFullscreen;
+
+  /// Normal playback speed.
+  ///
+  /// In en, this message translates to:
+  /// **'1×'**
+  String get demoSpeedNormal;
+
+  /// Half playback speed.
+  ///
+  /// In en, this message translates to:
+  /// **'0.5×'**
+  String get demoSpeedHalf;
+
+  /// Download line before a download.
+  ///
+  /// In en, this message translates to:
+  /// **'Streams when you press Play · {size}'**
+  String demoStreams(String size);
+
+  /// Button saving the clip on this phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get demoDownload;
+
+  /// Download in progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading · {size}'**
+  String demoDownloading(String size);
+
+  /// The clip is saved on this phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded on this phone · {size}'**
+  String demoDownloaded(String size);
+
+  /// Button deleting the saved clip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove download'**
+  String get demoRemoveDownload;
+
+  /// Button retrying a download.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get demoTryAgain;
+
+  /// Download failed: no connection.
+  ///
+  /// In en, this message translates to:
+  /// **'The demonstration could not be reached. Check your connection and try again.'**
+  String get demoFailNetwork;
+
+  /// Download failed: no longer at the source.
+  ///
+  /// In en, this message translates to:
+  /// **'The demonstration is no longer at its source. Try again later.'**
+  String get demoFailNotFound;
+
+  /// Download failed: the file did not match.
+  ///
+  /// In en, this message translates to:
+  /// **'What arrived was not the reviewed demonstration, so it was not kept. Try again.'**
+  String get demoFailInvalid;
+
+  /// Download failed: no space.
+  ///
+  /// In en, this message translates to:
+  /// **'There is not enough free space on this phone to save it.'**
+  String get demoFailStorage;
+
+  /// Screen-reader label of the still before playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Still from the demonstration'**
+  String get demoPosterSemantic;
+
+  /// Screen-reader label of the playing video.
+  ///
+  /// In en, this message translates to:
+  /// **'Demonstration video, muted'**
+  String get demoVideoSemantic;
+
+  /// While the clip loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading demonstration…'**
+  String get demoLoading;
+
+  /// The clip could not be played.
+  ///
+  /// In en, this message translates to:
+  /// **'Demonstration unavailable'**
+  String get demoUnavailable;
+
+  /// The saved clip could not be played.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved copy could not be played. Remove the download and try again.'**
+  String get demoSavedFailed;
+
+  /// The streamed clip could not be played.
+  ///
+  /// In en, this message translates to:
+  /// **'It could not be loaded. Check your connection and try again. The written guide below is unaffected.'**
+  String get demoStreamFailed;
+
+  /// Retry playing the clip.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get demoRetry;
+
+  /// Caption while the clip plays.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted. It repeats until you pause it.'**
+  String get demoMuted;
 }
 
 class _AppLocalizationsDelegate

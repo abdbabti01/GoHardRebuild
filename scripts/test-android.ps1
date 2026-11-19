@@ -187,6 +187,31 @@ try {
                 }
             }
         }
+        if ($journey -eq 'journey_demo_test') {
+            # The demonstration journey's markers: host captures (adb screencap, so the native video surface is in them),
+            # Home and back, and the network off and on. It plays a real licensed wger clip, so the network starts on.
+            & $Adb -s $device shell svc wifi enable
+            & $Adb -s $device shell svc data enable
+            & $Adb -s $device logcat -c
+            $feeder = Start-Job -ArgumentList $Adb, $device, $shots, $appId -ScriptBlock {
+                param($adb, $device, $out, $appId)
+                & $adb -s $device logcat -s flutter:I | ForEach-Object {
+                    if ($_ -match 'GOHARD_SHOT:([\w-]+)') {
+                        & $adb -s $device shell screencap -p "/sdcard/$($Matches[1]).png"
+                        & $adb -s $device pull "/sdcard/$($Matches[1]).png" (Join-Path $out "$($Matches[1]).png") | Out-Null
+                        & $adb -s $device shell rm "/sdcard/$($Matches[1]).png" | Out-Null
+                    } elseif ($_ -match 'GOHARD_BG:home') {
+                        & $adb -s $device shell input keyevent KEYCODE_HOME
+                        Start-Sleep -Seconds 5
+                        & $adb -s $device shell am start -n "$appId/com.gohard.gohard_rebuild.MainActivity" | Out-Null
+                    } elseif ($_ -match 'GOHARD_NET:(off|on)') {
+                        $state = if ($Matches[1] -eq 'off') { 'disable' } else { 'enable' }
+                        & $adb -s $device shell svc wifi $state
+                        & $adb -s $device shell svc data $state
+                    }
+                }
+            }
+        }
         try {
             Step "Native journey '$journey' on $device against $ApiBase"
             # The cold-start journey runs twice on one install. The Flutter tool uninstalls the app when a run ends,
@@ -254,7 +279,7 @@ try {
                 Stop-Job $feeder; Remove-Job $feeder
                 if ($journey -eq 'journey_runwalk_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
-                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_progress_test', 'journey_meals_test', 'journey_eatout_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
+                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_progress_test', 'journey_meals_test', 'journey_eatout_test', 'journey_demo_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

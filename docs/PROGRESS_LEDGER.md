@@ -2882,3 +2882,31 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   normal-text renders in all three languages) and reviewed. Emulator, iPhone, VoiceOver/TalkBack still not run.
 - Code 428b40d: CI 231 (44603006735) passed; unsigned IPA run 80 (44605226349, tag `ipa-nutrition-rings-side-428b40d`)
   passed and supersedes IPA 79. Not merged, not deployed.
+
+### 19 Nov 2026 — exercise demonstrations from wger in the current app (`feature/wger-demonstrations`, from `main` 27877fe)
+
+- Recovered: `feature/exercise-demonstrations` (4bd3f6a, never merged) cherry-picked without its ledger commit or its
+  October evidence; `feature/owner-exercise-videos` (uploads, conversion, R2) and `fix/workout-exercise-switch` left
+  alone. Conflicts resolved onto main's localized sheets, localized exercise names and the Train › Workouts recorder.
+- Re-audit (live wger API, 19 Nov): catalogue unchanged (50); every mapped clip re-downloaded and byte-identical (same
+  SHA-256), every image still Everkinetic CC BY-SA 3.0, not AI; 12 new wger images and the unmapped H.264 clips checked:
+  none is an exact catalogue variant; free-exercise-db photos flagged (unclear ownership). Posters looked at again: the
+  shoulder-press variant no longer claims a back support. Coverage stays 5 video / 7 pictures / 38 written only; 15
+  movements remain blocked by HEVC format or hosting. Clips measured as H.264 High 3.0/4.0 + AAC, index first.
+- UI: picker Watch demo / View guide / (i) (icon-only at large text), never selects; plan editor keeps the unsaved form;
+  recorder thumbnail beside the selected movement's name (About link kept); one sheet ordered name and variant, media,
+  Setup/Movement/Common mistakes, guide, sources and media credit (with "a licence is not a technique review"); Start /
+  End (Bottom) labels on pictures; the October coach bubble in the sheet removed. Fixes found on the way: the picker and
+  thumbnail had dropped their tap action for screen readers (excludeSemantics); Play/Pause could act on a stale state
+  after a background pause.
+- Languages: 58 `demo…` strings in en/fr/ar; French and Arabic variant and sourced technique text in the manifest
+  (not reviewed by a fluent speaker).
+- Verified: `exercise_demo_test` (21) and `plan_builder_ui_test`, full app suite 1,010 passed (`-j 2`),
+  `flutter analyze` clean, `check-l10n` (3,326 messages). Renders in docs/evidence/exercise-demos reviewed.
+- **Emulator journey not run.** `journey_demo_test` was rewritten for the current UI (picker, recorder thumbnail, real
+  clip 22 decoding with position and size checked, 0.5×, full screen, background pause, download, offline replay,
+  Remove, unavailable + Retry, workout state unchanged). Two attempts against a throwaway API on a temporary database
+  (`gohard_demo_tmp` in the rebuild container, dropped afterwards; the development database untouched): Gradle could
+  not start beside the emulator (0.4 GB commit memory left), and after building the APK alone with a 2 GB heap, the
+  emulator stayed offline for 11 minutes. Docker Desktop's VM (7.7 GB, holding the development databases) was not
+  stopped. Stopped there rather than retry further.

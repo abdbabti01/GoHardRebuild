@@ -18689,5 +18689,359 @@
   "nrMacroZero": "No energy from protein, carbs or fat was recorded, so there is no split.",
   "@nrMacroZero": {
     "description": "Eat macro donut when every value is known and all are zero."
+  },
+  "demoWatch": "Watch demo",
+  "@demoWatch": {
+    "description": "Button opening an exercise demonstration video."
+  },
+  "demoViewGuide": "View guide",
+  "@demoViewGuide": {
+    "description": "Button opening an exercise guide with pictures (no video)."
+  },
+  "demoHowTo": "How to do it",
+  "@demoHowTo": {
+    "description": "Heading of the written exercise instructions; also the button when there is no demonstration."
+  },
+  "demoWatchFor": "Watch a demonstration of {name}",
+  "@demoWatchFor": {
+    "description": "Screen-reader label of the Watch demo button.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Bench press"
+      }
+    }
+  },
+  "demoGuideFor": "View the picture guide for {name}",
+  "@demoGuideFor": {
+    "description": "Screen-reader label of the View guide button.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Lateral raise"
+      }
+    }
+  },
+  "demoShows": "Shown: {variant}",
+  "@demoShows": {
+    "description": "Line under the exercise name saying exactly which variant the media shows.",
+    "placeholders": {
+      "variant": {
+        "type": "String",
+        "example": "Barbell bench press on a flat bench"
+      }
+    }
+  },
+  "demoSetup": "Setup",
+  "@demoSetup": {
+    "description": "Heading of the setup steps."
+  },
+  "demoMovement": "Movement",
+  "@demoMovement": {
+    "description": "Heading of the movement steps."
+  },
+  "demoMistakes": "Common mistakes",
+  "@demoMistakes": {
+    "description": "Heading of the common mistakes."
+  },
+  "demoWrittenFrom": "Written from {sources}, checked {date}. Not reviewed by a qualified coach.",
+  "@demoWrittenFrom": {
+    "description": "Caption under sourced instructions.",
+    "placeholders": {
+      "sources": {
+        "type": "String",
+        "example": "American Council on Exercise: Chest Press"
+      },
+      "date": {
+        "type": "String",
+        "example": "2026-10-18"
+      }
+    }
+  },
+  "demoGeneralCues": "General cues, not yet checked against a technique source.",
+  "@demoGeneralCues": {
+    "description": "Caption under general cues that were not checked against a source."
+  },
+  "demoTechniqueSources": "Technique text sources",
+  "@demoTechniqueSources": {
+    "description": "Heading of the sources of the written instructions."
+  },
+  "demoChecked": "{publisher} · checked {date}",
+  "@demoChecked": {
+    "description": "Publisher and the date a technique source was checked.",
+    "placeholders": {
+      "publisher": {
+        "type": "String",
+        "example": "American Council on Exercise"
+      },
+      "date": {
+        "type": "String",
+        "example": "2026-10-18"
+      }
+    }
+  },
+  "demoCreditVideo": "Demonstration video credit",
+  "@demoCreditVideo": {
+    "description": "Heading of the video credit."
+  },
+  "demoCreditPictures": "Picture credit",
+  "@demoCreditPictures": {
+    "description": "Heading of the picture credit."
+  },
+  "demoAttributionVideo": "Video by {creator}, via {site}, {licence}",
+  "@demoAttributionVideo": {
+    "description": "Required attribution of a video. Keep the creator name as given.",
+    "placeholders": {
+      "creator": {
+        "type": "String",
+        "example": "Goulart"
+      },
+      "site": {
+        "type": "String",
+        "example": "wger.de"
+      },
+      "licence": {
+        "type": "String",
+        "example": "CC BY-SA 4.0"
+      }
+    }
+  },
+  "demoAttributionPictures": "Illustrations by {creator}, via {site}, {licence}",
+  "@demoAttributionPictures": {
+    "description": "Required attribution of pictures. Keep the creator name as given.",
+    "placeholders": {
+      "creator": {
+        "type": "String",
+        "example": "Everkinetic"
+      },
+      "site": {
+        "type": "String",
+        "example": "wger.de"
+      },
+      "licence": {
+        "type": "String",
+        "example": "CC BY-SA 3.0"
+      }
+    }
+  },
+  "demoChanges": "Changes: {changes}",
+  "@demoChanges": {
+    "description": "What was changed from the original media.",
+    "placeholders": {
+      "changes": {
+        "type": "String",
+        "example": "Played exactly as published."
+      }
+    }
+  },
+  "demoChangesVideo": "Played and saved exactly as published, with no conversion or cropping. Poster: one frame of the clip, scaled to 640 px wide.",
+  "@demoChangesVideo": {
+    "description": "Change note for a video."
+  },
+  "demoChangesPictures": "The source's two 400 px pictures placed side by side on white (640 × 320).",
+  "@demoChangesPictures": {
+    "description": "Change note for pictures."
+  },
+  "demoLicence": "Licence: {licence}",
+  "@demoLicence": {
+    "description": "Licence name; the licence link follows.",
+    "placeholders": {
+      "licence": {
+        "type": "String",
+        "example": "CC BY-SA 4.0"
+      }
+    }
+  },
+  "demoSource": "Source page:",
+  "@demoSource": {
+    "description": "Label before the source page link."
+  },
+  "demoMediaNotReview": "The licence covers reuse of this media only. It does not mean the technique was reviewed by a professional.",
+  "@demoMediaNotReview": {
+    "description": "Says that the media licence is not a technique review."
+  },
+  "demoMegabytes": "{value} MB",
+  "@demoMegabytes": {
+    "description": "A size in megabytes.",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "1.4"
+      }
+    }
+  },
+  "demoNoneTitle": "No demonstration for this exercise yet.",
+  "@demoNoneTitle": {
+    "description": "When an exercise has no video or pictures."
+  },
+  "demoNoneBody": "The written guide below still applies.",
+  "@demoNoneBody": {
+    "description": "Under demoNoneTitle."
+  },
+  "demoPicturesOf": "Pictures: {variant}",
+  "@demoPicturesOf": {
+    "description": "Screen-reader label of the pictures.",
+    "placeholders": {
+      "variant": {
+        "type": "String",
+        "example": "Standing barbell curl"
+      }
+    }
+  },
+  "demoPicturesPositions": "Pictures: {variant}. Left: {first}. Right: {second}.",
+  "@demoPicturesPositions": {
+    "description": "Screen-reader label of two pictures showing two positions.",
+    "placeholders": {
+      "variant": {
+        "type": "String",
+        "example": "Standing barbell curl"
+      },
+      "first": {
+        "type": "String",
+        "example": "Start"
+      },
+      "second": {
+        "type": "String",
+        "example": "End"
+      }
+    }
+  },
+  "demoPositionStart": "Start",
+  "@demoPositionStart": {
+    "description": "Label under the picture of the starting position."
+  },
+  "demoPositionEnd": "End",
+  "@demoPositionEnd": {
+    "description": "Label under the picture of the end position."
+  },
+  "demoPositionBottom": "Bottom",
+  "@demoPositionBottom": {
+    "description": "Label under the picture of the lowest position (lunge)."
+  },
+  "demoPicturesOnly": "Pictures only. No video for this exercise yet.",
+  "@demoPicturesOnly": {
+    "description": "Caption under exercise pictures."
+  },
+  "demoPlay": "Play demonstration",
+  "@demoPlay": {
+    "description": "Play button of the demonstration."
+  },
+  "demoPause": "Pause demonstration",
+  "@demoPause": {
+    "description": "Pause button of the demonstration."
+  },
+  "demoReplay": "Replay from the start",
+  "@demoReplay": {
+    "description": "Replay button."
+  },
+  "demoFullscreen": "Full screen",
+  "@demoFullscreen": {
+    "description": "Full-screen button."
+  },
+  "demoExitFullscreen": "Exit full screen",
+  "@demoExitFullscreen": {
+    "description": "Button leaving full screen."
+  },
+  "demoCloseFullscreen": "Close full screen",
+  "@demoCloseFullscreen": {
+    "description": "Close button of the full-screen page."
+  },
+  "demoSpeedNormal": "1×",
+  "@demoSpeedNormal": {
+    "description": "Normal playback speed."
+  },
+  "demoSpeedHalf": "0.5×",
+  "@demoSpeedHalf": {
+    "description": "Half playback speed."
+  },
+  "demoStreams": "Streams when you press Play · {size}",
+  "@demoStreams": {
+    "description": "Download line before a download.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "1.4 MB"
+      }
+    }
+  },
+  "demoDownload": "Download",
+  "@demoDownload": {
+    "description": "Button saving the clip on this phone."
+  },
+  "demoDownloading": "Downloading · {size}",
+  "@demoDownloading": {
+    "description": "Download in progress.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "1.4 MB"
+      }
+    }
+  },
+  "demoDownloaded": "Downloaded on this phone · {size}",
+  "@demoDownloaded": {
+    "description": "The clip is saved on this phone.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "1.4 MB"
+      }
+    }
+  },
+  "demoRemoveDownload": "Remove download",
+  "@demoRemoveDownload": {
+    "description": "Button deleting the saved clip."
+  },
+  "demoTryAgain": "Try again",
+  "@demoTryAgain": {
+    "description": "Button retrying a download."
+  },
+  "demoFailNetwork": "The demonstration could not be reached. Check your connection and try again.",
+  "@demoFailNetwork": {
+    "description": "Download failed: no connection."
+  },
+  "demoFailNotFound": "The demonstration is no longer at its source. Try again later.",
+  "@demoFailNotFound": {
+    "description": "Download failed: no longer at the source."
+  },
+  "demoFailInvalid": "What arrived was not the reviewed demonstration, so it was not kept. Try again.",
+  "@demoFailInvalid": {
+    "description": "Download failed: the file did not match."
+  },
+  "demoFailStorage": "There is not enough free space on this phone to save it.",
+  "@demoFailStorage": {
+    "description": "Download failed: no space."
+  },
+  "demoPosterSemantic": "Still from the demonstration",
+  "@demoPosterSemantic": {
+    "description": "Screen-reader label of the still before playing."
+  },
+  "demoVideoSemantic": "Demonstration video, muted",
+  "@demoVideoSemantic": {
+    "description": "Screen-reader label of the playing video."
+  },
+  "demoLoading": "Loading demonstration…",
+  "@demoLoading": {
+    "description": "While the clip loads."
+  },
+  "demoUnavailable": "Demonstration unavailable",
+  "@demoUnavailable": {
+    "description": "The clip could not be played."
+  },
+  "demoSavedFailed": "The saved copy could not be played. Remove the download and try again.",
+  "@demoSavedFailed": {
+    "description": "The saved clip could not be played."
+  },
+  "demoStreamFailed": "It could not be loaded. Check your connection and try again. The written guide below is unaffected.",
+  "@demoStreamFailed": {
+    "description": "The streamed clip could not be played."
+  },
+  "demoRetry": "Retry",
+  "@demoRetry": {
+    "description": "Retry playing the clip."
+  },
+  "demoMuted": "Muted. It repeats until you pause it.",
+  "@demoMuted": {
+    "description": "Caption while the clip plays."
   }
 }

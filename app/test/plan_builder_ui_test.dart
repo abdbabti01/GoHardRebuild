@@ -15,6 +15,7 @@ import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/data/sync.dart';
 import 'package:drift/drift.dart' show Value, BooleanExpressionOperators;
+import 'package:gohard_rebuild/features/coach/exercise_media.dart';
 import 'package:gohard_rebuild/features/coach/guide.dart';
 import 'package:gohard_rebuild/features/plus/entitlement.dart';
 import 'package:gohard_rebuild/features/plans/builder/plan_builder_screen.dart';
@@ -32,6 +33,7 @@ const _owner = 'one';
 const _oldId = '0b9f3c6e-1d2a-4c5b-9e8f-7a6b5c4d3e2f';
 final _templates = PlanTemplates.parse(File('assets/data/plan-templates.json').readAsStringSync());
 final _guide = CoachGuideContent.parse(File('assets/data/coach-guide.json').readAsStringSync());
+final _demos = ExerciseMediaCatalog.parse(File('assets/data/exercise-media.json').readAsStringSync());
 final _catalog = [for (final c in jsonDecode(File('../api/src/GoHard.Api/Data/exercise-catalog.json').readAsStringSync()) as List) CatalogExercise(c as Json)]
   ..sort((a, b) => a.name.compareTo(b.name));
 
@@ -67,6 +69,7 @@ class _Install {
       planTemplatesProvider.overrideWith((ref) async => _templates),
       coachGuideProvider.overrideWith((ref) async => _guide),
       plusProvider.overrideWithValue(plus),
+      exerciseMediaProvider.overrideWith((ref) async => _demos),
     ];
   }
 
@@ -721,6 +724,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.byKey(const Key('rx-sets'))).controller!.text, '5', reason: 'opening help and the guide kept what was typed');
     expect(await tester.runAsync(install.commands), isEmpty, reason: 'help sends nothing and changes nothing');
+  });
+
+  testWidgets('Watch demonstration from the prescription editor opens over the form: typed sets, rest, target and notes stay, nothing is saved', (tester) async {
+    final c = await _launch(tester, install);
+    await _tap(tester, 'plan-path-guided');
+    await _tap(tester, 'days-4');
+    await _tap(tester, 'builder-next');
+    await _tap(tester, 'guide-use-upper-lower');
+    await _tap(tester, 'builder-next');
+    expect(find.byTooltip('Watch a demonstration of Bench press'), findsOneWidget, reason: 'a clip: the row offers it');
+    expect(find.byTooltip('About Overhead press'), findsOneWidget, reason: 'no media: the written guide, no play button');
+    final before = jsonEncode((await _draft(tester, c))!.j);
+    await _tap(tester, 'exercise-0-0');
+    final typed = {'rx-sets': '5', 'rx-rest': '75', 'rx-load': '62.5', 'rx-notes': 'Pause on the chest'};
+    for (final e in typed.entries) {
+      await tester.enterText(find.byKey(Key(e.key)), e.value);
+    }
+    await tester.pump();
+    expect(find.text('Watch demo'), findsOneWidget);
+    await _tap(tester, 'rx-demo');
+    expect(find.byKey(const Key('exercise-info-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('demo-play')), findsOneWidget, reason: 'the poster and Play, nothing loaded');
+    expect(find.byKey(const Key('exercise-info-replace')), findsOneWidget, reason: 'Replace stays its own deliberate tap');
+    Navigator.of(tester.element(find.byKey(const Key('exercise-info-sheet')))).pop();
+    await tester.pumpAndSettle();
+    for (final e in typed.entries) {
+      expect(tester.widget<TextField>(find.byKey(Key(e.key))).controller!.text, e.value, reason: e.key);
+    }
+    expect(jsonEncode((await _draft(tester, c))!.j), before, reason: 'the draft is not saved by opening help');
+    expect(await tester.runAsync(install.commands), isEmpty);
   });
 
   testWidgets('Guide me: changing the answers after customising shows what would change and replaces nothing until applied', (tester) async {

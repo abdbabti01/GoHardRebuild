@@ -13785,4 +13785,215 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get nrMacroZero =>
       'لم تُسجَّل طاقة من البروتين أو الكربوهيدرات أو الدهون، لذا لا يوجد توزيع.';
+
+  @override
+  String get demoWatch => 'شاهد العرض';
+
+  @override
+  String get demoViewGuide => 'اعرض الدليل';
+
+  @override
+  String get demoHowTo => 'طريقة الأداء';
+
+  @override
+  String demoWatchFor(String name) {
+    return 'شاهد عرضًا لتمرين $name';
+  }
+
+  @override
+  String demoGuideFor(String name) {
+    return 'اعرض الدليل المصوّر لتمرين $name';
+  }
+
+  @override
+  String demoShows(String variant) {
+    return 'المعروض: $variant';
+  }
+
+  @override
+  String get demoSetup => 'التحضير';
+
+  @override
+  String get demoMovement => 'الحركة';
+
+  @override
+  String get demoMistakes => 'أخطاء شائعة';
+
+  @override
+  String demoWrittenFrom(String sources, String date) {
+    return 'كُتب استنادًا إلى $sources، وتم التحقق في $date. لم يراجعه مدرب مؤهل.';
+  }
+
+  @override
+  String get demoGeneralCues => 'إرشادات عامة، لم يُتحقق منها بعد من مصدر فني.';
+
+  @override
+  String get demoTechniqueSources => 'مصادر نص الأداء';
+
+  @override
+  String demoChecked(String publisher, String date) {
+    return '$publisher · تم التحقق في $date';
+  }
+
+  @override
+  String get demoCreditVideo => 'حقوق فيديو العرض';
+
+  @override
+  String get demoCreditPictures => 'حقوق الصور';
+
+  @override
+  String demoAttributionVideo(String creator, String site, String licence) {
+    return 'فيديو من $creator، عبر $site، $licence';
+  }
+
+  @override
+  String demoAttributionPictures(String creator, String site, String licence) {
+    return 'رسوم من $creator، عبر $site، $licence';
+  }
+
+  @override
+  String demoChanges(String changes) {
+    return 'التعديلات: $changes';
+  }
+
+  @override
+  String get demoChangesVideo =>
+      'يُشغَّل ويُحفظ كما نُشر تمامًا، دون تحويل أو قص. الصورة المصغّرة: لقطة واحدة من المقطع بعرض 640 بكسل.';
+
+  @override
+  String get demoChangesPictures =>
+      'صورتا المصدر بحجم 400 بكسل موضوعتان جنبًا إلى جنب على خلفية بيضاء (640 × 320).';
+
+  @override
+  String demoLicence(String licence) {
+    return 'الترخيص: $licence';
+  }
+
+  @override
+  String get demoSource => 'صفحة المصدر:';
+
+  @override
+  String get demoMediaNotReview =>
+      'يغطي الترخيص إعادة استخدام هذه الوسائط فقط، ولا يعني أن مختصًا راجع طريقة الأداء.';
+
+  @override
+  String demoMegabytes(String value) {
+    return '$value ميغابايت';
+  }
+
+  @override
+  String get demoNoneTitle => 'لا يوجد عرض لهذا التمرين بعد.';
+
+  @override
+  String get demoNoneBody => 'الدليل المكتوب أدناه لا يزال صالحًا.';
+
+  @override
+  String demoPicturesOf(String variant) {
+    return 'صور: $variant';
+  }
+
+  @override
+  String demoPicturesPositions(String variant, String first, String second) {
+    return 'صور: $variant. اليسار: $first. اليمين: $second.';
+  }
+
+  @override
+  String get demoPositionStart => 'البداية';
+
+  @override
+  String get demoPositionEnd => 'النهاية';
+
+  @override
+  String get demoPositionBottom => 'الوضع السفلي';
+
+  @override
+  String get demoPicturesOnly => 'صور فقط. لا يوجد فيديو لهذا التمرين بعد.';
+
+  @override
+  String get demoPlay => 'تشغيل العرض';
+
+  @override
+  String get demoPause => 'إيقاف العرض مؤقتًا';
+
+  @override
+  String get demoReplay => 'إعادة من البداية';
+
+  @override
+  String get demoFullscreen => 'ملء الشاشة';
+
+  @override
+  String get demoExitFullscreen => 'الخروج من ملء الشاشة';
+
+  @override
+  String get demoCloseFullscreen => 'إغلاق ملء الشاشة';
+
+  @override
+  String get demoSpeedNormal => '1×';
+
+  @override
+  String get demoSpeedHalf => '0.5×';
+
+  @override
+  String demoStreams(String size) {
+    return 'يُبث عند الضغط على تشغيل · $size';
+  }
+
+  @override
+  String get demoDownload => 'تنزيل';
+
+  @override
+  String demoDownloading(String size) {
+    return 'جارٍ التنزيل · $size';
+  }
+
+  @override
+  String demoDownloaded(String size) {
+    return 'تم التنزيل على هذا الهاتف · $size';
+  }
+
+  @override
+  String get demoRemoveDownload => 'حذف التنزيل';
+
+  @override
+  String get demoTryAgain => 'حاول مجددًا';
+
+  @override
+  String get demoFailNetwork =>
+      'تعذّر الوصول إلى العرض. تحقق من اتصالك وحاول مجددًا.';
+
+  @override
+  String get demoFailNotFound => 'لم يعد العرض متاحًا في مصدره. حاول لاحقًا.';
+
+  @override
+  String get demoFailInvalid =>
+      'ما وصل لم يكن العرض الذي تمت مراجعته، لذلك لم يُحفظ. حاول مجددًا.';
+
+  @override
+  String get demoFailStorage => 'لا توجد مساحة كافية على هذا الهاتف لحفظه.';
+
+  @override
+  String get demoPosterSemantic => 'لقطة من العرض';
+
+  @override
+  String get demoVideoSemantic => 'فيديو العرض، بدون صوت';
+
+  @override
+  String get demoLoading => 'جارٍ تحميل العرض…';
+
+  @override
+  String get demoUnavailable => 'العرض غير متاح';
+
+  @override
+  String get demoSavedFailed =>
+      'تعذّر تشغيل النسخة المحفوظة. احذف التنزيل وحاول مجددًا.';
+
+  @override
+  String get demoStreamFailed =>
+      'تعذّر تحميله. تحقق من اتصالك وحاول مجددًا. الدليل المكتوب أدناه متاح كما هو.';
+
+  @override
+  String get demoRetry => 'إعادة المحاولة';
+
+  @override
+  String get demoMuted => 'بدون صوت. يتكرر حتى توقفه مؤقتًا.';
 }

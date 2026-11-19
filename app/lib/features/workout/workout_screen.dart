@@ -16,7 +16,9 @@ import '../coach/coach_avatar.dart' show CoachHelpButton;
 import '../coach/coach_bubble.dart';
 import '../coach/coach_contract.dart';
 import '../coach/coach_prefs.dart' show workoutSavedProvider;
-import '../coach/guide_sheets.dart' show showExerciseInfo;
+import '../coach/exercise_demo.dart' show DemoThumb, demoActionFor;
+import '../coach/exercise_media.dart' show exerciseMediaProvider;
+import '../coach/guide_sheets.dart' show showExerciseDetails, showExerciseInfo;
 import '../plans/plan_progress.dart';
 import '../shell/home_shell.dart';
 import 'next_target.dart';
@@ -564,7 +566,17 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           content: (context) => [
             Overline(selected.isPrescribed ? l.workoutMovementPosition(exercises.indexOf(selected) + 1, exercises.length) : l.workoutMovementPositionExtra(exercises.indexOf(selected) + 1, exercises.length)),
             const SizedBox(height: 4),
-            Semantics(header: true, child: Text(nameOf(selected), style: context.pageTitleStyle(26))),
+            // The movement actually selected (after a replacement, the new one, by its own catalogue key) with a small
+            // demonstration thumbnail beside its name. Opening it records, selects, pauses and resets nothing.
+            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Expanded(child: Semantics(header: true, child: Text(nameOf(selected), style: context.pageTitleStyle(26)))),
+              if (ref.watch(exerciseMediaProvider).value?.forKey(selected.catalogKey) case final m?) ...[
+                const SizedBox(width: 6),
+                DemoThumb(m, key: const Key('workout-demo-thumb'), semanticLabel: demoActionFor(l, m, nameOf(selected)),
+                    onTap: () => showExerciseDetails(appContext(context),
+                        exercise: (catalogKey: selected.catalogKey, name: selected.name, isTimed: selected.isTimed), prescription: Prescription(selected.j), workoutName: workout.title)),
+              ],
+            ]),
             const SizedBox(height: 2),
             // One plan line: the prescription frozen into this workout and its rest.
             Text(

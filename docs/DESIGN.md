@@ -496,7 +496,33 @@ tab bar's top (738 px), 51 → 713 px (`progression_ui_test`). Renders, before/a
   tied to their answers) with Use this starting plan, Compare splits and Why this suggestion?, and at most two
   alternatives. Quick-guide sheets are labelled "Quick guide · built in" and never look like a chat answer.
 - **Exercise info** is an "About <name>" icon button on each exercise row, opening a sheet (muscles, equipment, role,
-  cues, benefits, limitations, alternatives, the prescription in `3 × 8–12` notation).
+  cues, benefits, limitations, alternatives, the prescription in `3 × 8–12` notation). Since 18 Oct 2026 it is the one
+  exercise sheet with the demonstration (`docs/EXERCISE_DEMOS.md`), reached from the picker, the builder and the workout.
+
+### Exercise demonstrations (18 October 2026, from `GoHard_Exercise_Demonstrations`; brought into the current app 19 November 2026)
+
+- The sheet's order: the name, "Shown: …" (the exact variant, secondary ink), the media, How to do it, then the
+  existing guide, sources and the media credit. No coach bubble in the sheet (Leon/Leona stays on Ask about this
+  exercise, 24 px).
+- The media area: a bounded box (16:9 of the clip's own shape, at most ~40 % of the
+  screen, never cropped: `BoxFit.contain` on black for clips, on white for illustrations) in the theme's field radius
+  with the divider edge. Its one control before Play is a round 64 px Play on a dark scrim.
+- Controls under it are the app's own: Material rounded icons (play, pause, replay, fullscreen) at 48 px targets and the
+  `Segmented` control for 0.5× / 1×; captions in Inter. No emoji, no icon pack, no gestures needed.
+- "How to do it" is a 19 px title (`titleStyle`, Inter) with Setup / Movement / Common mistakes as the usual section
+  labels and bullets. Credits and sources are captions at the end, the media credit apart from the text's sources.
+- Picker rows with media get a 56 × 40 static thumbnail (the poster, decoded at its size; a small play mark on a dark
+  circle for a clip) and a compact action, the icon over a 12.5 px label: **Watch demo** (play icon) or **View guide**
+  (pictures icon); other built-in rows keep the (i). With text larger than about 1.3× the action is the icon alone,
+  with its full label as tooltip and spoken label, so the exercise's name keeps the row.
+- In the recorder the same thumbnail is a 48 × 48 target beside the selected movement's serif name in the exercise
+  panel; the panel's About link stays. Nothing sits between the name and Last session, the aim, the fields or Record
+  set.
+- Pictures: one 2:1 image on white with Start / End (or Bottom) in 13.5 px semibold under each half, laid out left to
+  right in every language because the two drawings are one image.
+- Full screen is a black page with the same controls on a surface panel; it leaves orientation and system bars alone.
+- Light/Dark/accents need no new tokens: everything uses `c.sunken`, `c.divider`, `c.text`, `c.secondary` and the
+  existing buttons; the panel action takes the panel's dark ink (`PanelTheme`).
 - **Leon and Leona**: the compact avatar sits in a 48 px `CoachHelpButton` beside the builder's progress bar (Structure:
   "Ask GoHard about this split", with the one-time "Need help choosing a split?" hint; Workouts: "…about this workout").
   The full figure appears only in Ask GoHard's empty state, at 120 px, when the text is not enlarged and the screen is

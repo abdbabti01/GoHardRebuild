@@ -13274,4 +13274,219 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nrMacroZero =>
       'No energy from protein, carbs or fat was recorded, so there is no split.';
+
+  @override
+  String get demoWatch => 'Watch demo';
+
+  @override
+  String get demoViewGuide => 'View guide';
+
+  @override
+  String get demoHowTo => 'How to do it';
+
+  @override
+  String demoWatchFor(String name) {
+    return 'Watch a demonstration of $name';
+  }
+
+  @override
+  String demoGuideFor(String name) {
+    return 'View the picture guide for $name';
+  }
+
+  @override
+  String demoShows(String variant) {
+    return 'Shown: $variant';
+  }
+
+  @override
+  String get demoSetup => 'Setup';
+
+  @override
+  String get demoMovement => 'Movement';
+
+  @override
+  String get demoMistakes => 'Common mistakes';
+
+  @override
+  String demoWrittenFrom(String sources, String date) {
+    return 'Written from $sources, checked $date. Not reviewed by a qualified coach.';
+  }
+
+  @override
+  String get demoGeneralCues =>
+      'General cues, not yet checked against a technique source.';
+
+  @override
+  String get demoTechniqueSources => 'Technique text sources';
+
+  @override
+  String demoChecked(String publisher, String date) {
+    return '$publisher · checked $date';
+  }
+
+  @override
+  String get demoCreditVideo => 'Demonstration video credit';
+
+  @override
+  String get demoCreditPictures => 'Picture credit';
+
+  @override
+  String demoAttributionVideo(String creator, String site, String licence) {
+    return 'Video by $creator, via $site, $licence';
+  }
+
+  @override
+  String demoAttributionPictures(String creator, String site, String licence) {
+    return 'Illustrations by $creator, via $site, $licence';
+  }
+
+  @override
+  String demoChanges(String changes) {
+    return 'Changes: $changes';
+  }
+
+  @override
+  String get demoChangesVideo =>
+      'Played and saved exactly as published, with no conversion or cropping. Poster: one frame of the clip, scaled to 640 px wide.';
+
+  @override
+  String get demoChangesPictures =>
+      'The source\'s two 400 px pictures placed side by side on white (640 × 320).';
+
+  @override
+  String demoLicence(String licence) {
+    return 'Licence: $licence';
+  }
+
+  @override
+  String get demoSource => 'Source page:';
+
+  @override
+  String get demoMediaNotReview =>
+      'The licence covers reuse of this media only. It does not mean the technique was reviewed by a professional.';
+
+  @override
+  String demoMegabytes(String value) {
+    return '$value MB';
+  }
+
+  @override
+  String get demoNoneTitle => 'No demonstration for this exercise yet.';
+
+  @override
+  String get demoNoneBody => 'The written guide below still applies.';
+
+  @override
+  String demoPicturesOf(String variant) {
+    return 'Pictures: $variant';
+  }
+
+  @override
+  String demoPicturesPositions(String variant, String first, String second) {
+    return 'Pictures: $variant. Left: $first. Right: $second.';
+  }
+
+  @override
+  String get demoPositionStart => 'Start';
+
+  @override
+  String get demoPositionEnd => 'End';
+
+  @override
+  String get demoPositionBottom => 'Bottom';
+
+  @override
+  String get demoPicturesOnly =>
+      'Pictures only. No video for this exercise yet.';
+
+  @override
+  String get demoPlay => 'Play demonstration';
+
+  @override
+  String get demoPause => 'Pause demonstration';
+
+  @override
+  String get demoReplay => 'Replay from the start';
+
+  @override
+  String get demoFullscreen => 'Full screen';
+
+  @override
+  String get demoExitFullscreen => 'Exit full screen';
+
+  @override
+  String get demoCloseFullscreen => 'Close full screen';
+
+  @override
+  String get demoSpeedNormal => '1×';
+
+  @override
+  String get demoSpeedHalf => '0.5×';
+
+  @override
+  String demoStreams(String size) {
+    return 'Streams when you press Play · $size';
+  }
+
+  @override
+  String get demoDownload => 'Download';
+
+  @override
+  String demoDownloading(String size) {
+    return 'Downloading · $size';
+  }
+
+  @override
+  String demoDownloaded(String size) {
+    return 'Downloaded on this phone · $size';
+  }
+
+  @override
+  String get demoRemoveDownload => 'Remove download';
+
+  @override
+  String get demoTryAgain => 'Try again';
+
+  @override
+  String get demoFailNetwork =>
+      'The demonstration could not be reached. Check your connection and try again.';
+
+  @override
+  String get demoFailNotFound =>
+      'The demonstration is no longer at its source. Try again later.';
+
+  @override
+  String get demoFailInvalid =>
+      'What arrived was not the reviewed demonstration, so it was not kept. Try again.';
+
+  @override
+  String get demoFailStorage =>
+      'There is not enough free space on this phone to save it.';
+
+  @override
+  String get demoPosterSemantic => 'Still from the demonstration';
+
+  @override
+  String get demoVideoSemantic => 'Demonstration video, muted';
+
+  @override
+  String get demoLoading => 'Loading demonstration…';
+
+  @override
+  String get demoUnavailable => 'Demonstration unavailable';
+
+  @override
+  String get demoSavedFailed =>
+      'The saved copy could not be played. Remove the download and try again.';
+
+  @override
+  String get demoStreamFailed =>
+      'It could not be loaded. Check your connection and try again. The written guide below is unaffected.';
+
+  @override
+  String get demoRetry => 'Retry';
+
+  @override
+  String get demoMuted => 'Muted. It repeats until you pause it.';
 }
