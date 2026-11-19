@@ -10,17 +10,24 @@ import '../../core/widgets.dart';
 import '../../data/sync.dart' show LocalSaveFailure;
 import '../body/body_metrics.dart';
 import '../body/body_prefs.dart';
+import '../body/body_screens.dart' show BodyProgressScreen;
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 import '../me/account_repository.dart';
+import 'nutrition_history.dart' show NutritionHistoryScreen;
 import 'nutrition_surface.dart' show formatKcal;
 import 'nutrition_tools.dart' show GoalsEditor;
 import 'target_estimate.dart';
 
+/// The answers an estimate was made from, shown under Details used. Kept apart from the fields so the details always
+/// describe the numbers on screen, even while a field is being retyped.
+typedef _Used = ({int age, double cm, double kg, LatestValue? latest, EnergySex sex, ActivityLevel activity, BodyUnits units});
+
 /// Help me set my targets (docs/NUTRITION_TARGETS.md), opened from Eat's goals sheet: the goal, a few details, and
-/// starting calories and protein the person can edit before Use these targets. Back and Cancel change nothing. Only
-/// calories and protein are saved, through [ProfileRepository.setGoals] like the goals form; the answers on step 2 stay
-/// on this page and are never stored or sent. A typed weight is not a weigh-in. Pops `true` for "Set targets manually".
+/// starting calories and protein the person can edit before Use these targets. Back, Change and Cancel change nothing.
+/// Only calories and protein are saved, through [ProfileRepository.setGoals] like the goals form; the answers on step 2
+/// stay on this page and are never stored or sent. A typed weight is not a weigh-in. Pops `true` for "Set targets
+/// manually".
 class TargetHelperScreen extends ConsumerStatefulWidget {
   const TargetHelperScreen({super.key});
   @override
@@ -30,6 +37,7 @@ class TargetHelperScreen extends ConsumerStatefulWidget {
 class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
   int _step = 0;
   TargetGoal? _goal;
+  RecompPriority? _priority;
 
   // Step 2. Units start from Body progress's and can be changed here without changing them there.
   late LoadUnit _mass = ref.read(bodyUnitsProvider).mass;
@@ -43,6 +51,7 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
 
   // Step 3.
   TargetEstimate? _estimate;
+  _Used? _used;
   final _calories = TextEditingController(), _protein = TextEditingController();
   String? _saveError;
   bool _busy = false;
@@ -64,6 +73,9 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
   void _manual() => Navigator.pop(context, true);
 
   String _num(double v) => formatNumber(double.parse(v.toStringAsFixed(1)));
+
+  /// A field the person changed from the suggestion it was given.
+  static bool _edited(TextEditingController c, int suggested) => parsePositiveInt(c.text, grouping: true) != suggested;
 
   // ---------------------------------------------------------------------------- reading step 2
 
@@ -120,13 +132,14 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
     } else if (age == null) {
       errors['age'] = l.tgtNotANumber;
     }
-    final h = _height(l), w = _weightKg(l, _latest());
+    final latest = _latest();
+    final h = _height(l), w = _weightKg(l, latest);
     if (h.error != null) errors['height'] = h.error!;
     if (w.error != null) errors['weight'] = w.error!;
     _tried = true;
     _problem = null;
     if (errors.isEmpty && _sex != null && _activity != null) {
-      final r = estimateTargets(goal: _goal!, sex: _sex!, activity: _activity!, age: age!, heightCm: h.cm!, weightKg: w.kg!);
+      final r = estimateTargets(goal: _goal!, priority: _priority, sex: _sex!, activity: _activity!, age: age!, heightCm: h.cm!, weightKg: w.kg!);
       switch (r.problem) {
         case EstimateProblem.ageRange:
           errors['age'] = l.tgtOutOfRange;
@@ -137,10 +150,13 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
         case EstimateProblem.under19 || EstimateProblem.underweightForLoss:
           _problem = r.problem;
         case null:
-          // Computed once, here: a later weigh-in never changes what is on step 3.
-          _estimate = r.estimate;
-          _calories.text = '${r.estimate!.calories}';
-          _protein.text = '${r.estimate!.protein}';
+          // Computed once, here: a later weigh-in never changes what is on step 3. A number the person edited stays
+          // as they typed it (and is shown as theirs); an untouched one follows the new suggestion.
+          final e = r.estimate!, before = _estimate;
+          if (before == null || !_edited(_calories, before.calories)) _calories.text = '${e.calories}';
+          if (before == null || !_edited(_protein, before.protein)) _protein.text = '${e.protein}';
+          _estimate = e;
+          _used = (age: age, cm: h.cm!, kg: w.kg!, latest: latest != null && !_otherWeight ? latest : null, sex: _sex!, activity: _activity!, units: BodyUnits(_mass, _length));
           _saveError = null;
           _step = 2;
       }
@@ -183,12 +199,16 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final back = SecondaryButton(l.tgtBack, key: const Key('tgt-back'), onPressed: () => setState(() => _step--));
+    final ready = _goal != null && (_goal != TargetGoal.recomp || _priority != null);
     final (title, children, primary) = switch (_step) {
-      0 => (l.tgtGoalTitle, _goalStep(), PrimaryButton(l.actionContinue, key: const Key('tgt-continue'), onPressed: _goal == null ? null : () => setState(() => _step = 1))),
+      0 => (l.tgtGoalTitle, _goalStep(), PrimaryButton(l.actionContinue, key: const Key('tgt-continue'), onPressed: ready ? () => setState(() => _step = 1) : null)),
       1 => (l.tgtAboutTitle, _aboutStep(), PrimaryButton(l.actionContinue, key: const Key('tgt-continue'), onPressed: _estimateNow)),
       _ => (l.tgtResultTitle, _resultStep(), PrimaryButton(l.tgtUse, key: const Key('tgt-use'), busy: _busy, onPressed: _save)),
     };
     return AppPage(
+      // One page per step: each opens at its top, with its title clear of the app bar, rather than keeping the
+      // previous step's scroll position.
+      key: ValueKey(_step),
       title: title,
       subtitle: l.tgtStep(_step + 1),
       actions: [TextButton(key: const Key('tgt-cancel'), onPressed: () => Navigator.pop(context), child: Text(l.actionCancel))],
@@ -204,23 +224,49 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
       alignment: AlignmentDirectional.centerStart,
       child: QuietLink(text ?? context.l10n.tgtManual, key: Key(text == null ? 'tgt-manual-$_step' : 'tgt-sex-skip'), onPressed: _manual));
 
-  Widget _label(String text) => Padding(padding: const EdgeInsets.only(top: 18, bottom: 8), child: Text(text, style: context.sansStyle(16, weight: FontWeight.w600)));
+  Widget _label(String text) =>
+      Padding(padding: const EdgeInsets.only(top: 18, bottom: 8), child: Semantics(header: true, child: Text(text, style: context.sansStyle(16, weight: FontWeight.w600))));
 
   Widget _choose() => Padding(padding: const EdgeInsets.only(bottom: 8), child: StatusLine(Icons.error_outline, context.l10n.tgtChooseOne, tone: Tone.error));
+
+  String _goalName(AppLocalizations l, TargetGoal g) => switch (g) {
+        TargetGoal.maintain => l.tgtGoalMaintain,
+        TargetGoal.lose => l.tgtGoalLose,
+        TargetGoal.gain => l.tgtGoalGain,
+        TargetGoal.recomp => l.tgtGoalRecomp,
+      };
+
+  String _priorityName(AppLocalizations l, RecompPriority p) => p == RecompPriority.steady ? l.tgtPrioritySteady : l.tgtPriorityFatLoss;
+
+  String _activityName(AppLocalizations l, ActivityLevel a) => switch (a) {
+        ActivityLevel.inactive => l.tgtActInactive,
+        ActivityLevel.lowActive => l.tgtActLow,
+        ActivityLevel.active => l.tgtActActive,
+        ActivityLevel.veryActive => l.tgtActVery,
+      };
 
   List<Widget> _goalStep() {
     final l = context.l10n;
     return [
-      for (final (g, title, line) in [
-        (TargetGoal.maintain, l.tgtGoalMaintain, l.tgtGoalMaintainLine),
-        (TargetGoal.lose, l.tgtGoalLose, l.tgtGoalLoseLine),
-        (TargetGoal.gain, l.tgtGoalGain, l.tgtGoalGainLine),
-        (TargetGoal.recomp, l.tgtGoalRecomp, l.tgtGoalRecompLine),
+      for (final (g, line) in [
+        (TargetGoal.maintain, l.tgtGoalMaintainLine),
+        (TargetGoal.lose, l.tgtGoalLoseLine),
+        (TargetGoal.gain, l.tgtGoalGainLine),
+        (TargetGoal.recomp, l.tgtGoalRecompLine),
       ])
-        ChoiceTile<TargetGoal?>(key: Key('tgt-goal-${g.name}'), value: g, groupValue: _goal, title: title, subtitle: line, onChanged: (v) => setState(() {
+        ChoiceTile<TargetGoal?>(key: Key('tgt-goal-${g.name}'), value: g, groupValue: _goal, title: _goalName(l, g), subtitle: line, onChanged: (v) => setState(() {
               _goal = v;
               _problem = null;
             })),
+      // Recomposition has a real trade-off, so the person chooses it; nothing is picked for them.
+      if (_goal == TargetGoal.recomp) ...[
+        _label(l.tgtPriorityTitle),
+        for (final (p, line) in [(RecompPriority.steady, l.tgtPrioritySteadyLine), (RecompPriority.fatLoss, l.tgtPriorityFatLossLine)])
+          ChoiceTile<RecompPriority?>(key: Key('tgt-priority-${p.name}'), value: p, groupValue: _priority, title: _priorityName(l, p), subtitle: line, onChanged: (v) => setState(() {
+                _priority = v;
+                _problem = null;
+              })),
+      ],
       const SizedBox(height: 8),
       _manualLink(),
     ];
@@ -278,16 +324,17 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
       Text(l.tgtSexWhy, style: context.caption),
       _manualLink(l.tgtSexSkip),
 
+      // One question for the whole usual week (work, getting around and workouts), so exercise is never added twice.
       _label(l.tgtActivity),
-      Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.tgtActivityHelp, style: context.caption)),
+      Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.tgtActivityHelp, key: const Key('tgt-activity-help'), style: context.caption)),
       if (_tried && _activity == null) _choose(),
-      for (final (a, title, line) in [
-        (ActivityLevel.inactive, l.tgtActInactive, l.tgtActInactiveLine),
-        (ActivityLevel.lowActive, l.tgtActLow, l.tgtActLowLine),
-        (ActivityLevel.active, l.tgtActActive, l.tgtActActiveLine),
-        (ActivityLevel.veryActive, l.tgtActVery, l.tgtActVeryLine),
+      for (final (a, line) in [
+        (ActivityLevel.inactive, l.tgtActInactiveLine),
+        (ActivityLevel.lowActive, l.tgtActLowLine),
+        (ActivityLevel.active, l.tgtActActiveLine),
+        (ActivityLevel.veryActive, l.tgtActVeryLine),
       ])
-        ChoiceTile<ActivityLevel?>(key: Key('tgt-activity-${a.name}'), value: a, groupValue: _activity, title: title, subtitle: line, onChanged: (v) => setState(() => _activity = v)),
+        ChoiceTile<ActivityLevel?>(key: Key('tgt-activity-${a.name}'), value: a, groupValue: _activity, title: _activityName(l, a), subtitle: line, onChanged: (v) => setState(() => _activity = v)),
 
       const SizedBox(height: 8),
       Text(l.tgtScope, style: context.caption),
@@ -306,74 +353,180 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
     ];
   }
 
+  /// A label and its value on one line, wrapping under each other when there is no room; read as one item.
+  Widget _row(String key, String label, String value, {bool strong = false, String? note}) => MergeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Wrap(alignment: WrapAlignment.spaceBetween, spacing: 12, children: [
+              Text(label, style: context.sansStyle(15, weight: strong ? FontWeight.w600 : FontWeight.w400)),
+              Text(value, key: Key(key), style: context.numStyle(15).copyWith(fontWeight: strong ? FontWeight.w700 : null)),
+            ]),
+            if (note != null) Text(note, key: Key('$key-note'), style: context.caption),
+          ]),
+        ),
+      );
+
+  Widget _section(String key, String title, List<Widget> children) => Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: Key(key),
+          tilePadding: EdgeInsets.zero, childrenPadding: const EdgeInsets.only(bottom: 8), expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+          title: Text(title, style: context.sansStyle(16, weight: FontWeight.w600)),
+          children: children,
+        ),
+      );
+
   List<Widget> _resultStep() {
     final l = context.l10n;
-    final e = _estimate!;
+    final e = _estimate!, u = _used!, goal = _goal!;
     final profile = ref.watch(profileProvider).value;
     final coach = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
     String kcal(int v) => l.eatKcalValue(formatKcal(v));
     String grams(int v) => withUnit(formatGrouped(v), l.eatUnitGram);
-    final maintenance = kcal(e.maintenance);
-    final floor = kcal(lossFloorKcal[_sex]!);
-    final why = switch (_goal!) {
-      TargetGoal.maintain => l.tgtWhyMaintain,
-      TargetGoal.gain => l.tgtWhyGain(maintenance),
-      TargetGoal.recomp => l.tgtWhyRecomp,
-      TargetGoal.lose when e.notes.contains(EstimateNote.lossNoRoom) => l.tgtWhyLoseNoRoom(floor),
-      TargetGoal.lose when e.notes.contains(EstimateNote.lossAtFloor) => l.tgtWhyLoseFloor(maintenance, floor),
-      TargetGoal.lose => l.tgtWhyLose(maintenance),
+    final floor = kcal(lossFloorKcal[u.sex]!);
+    final approach = switch (goal) {
+      TargetGoal.maintain => l.tgtApproachMaintain,
+      TargetGoal.gain => l.tgtApproachGain,
+      TargetGoal.lose => l.tgtApproachLose,
+      TargetGoal.recomp => _priority == RecompPriority.steady ? l.tgtApproachRecompSteady : l.tgtApproachRecompFatLoss,
     };
+    final adjustment = switch (e.adjustment) { 0 => l.tgtAdjustNone, < 0 => l.tgtAdjustLess(kcal(-e.adjustment)), _ => l.tgtAdjustMore(kcal(e.adjustment)) };
+    final calorieNote = e.notes.contains(EstimateNote.lossNoRoom)
+        ? l.tgtNoteNoRoom(floor)
+        : e.notes.contains(EstimateNote.lossAtFloor)
+            ? l.tgtNoteFloor(floor)
+            : null;
 
-    Widget target(String key, String label, TextEditingController c, String suffix, String? current, String suggested) => Padding(
-          padding: const EdgeInsets.only(top: 16),
+    Widget target(String key, String label, TextEditingController c, String suffix, int suggested, int? saved, String Function(int) show) => Padding(
+          padding: const EdgeInsets.only(top: 14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(current == null ? l.tgtSuggested(suggested) : l.tgtCurrentToSuggested(current, suggested), key: Key('$key-compare'), style: context.sansStyle(15, color: context.c.secondary)),
-            const SizedBox(height: 6),
             TextField(key: Key(key), controller: c, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: label, suffixText: suffix)),
+            // Whose number this is: the suggestion, or the person's own edit (with the way back to the suggestion).
+            ListenableBuilder(
+              listenable: c,
+              builder: (context, _) {
+                final edited = _edited(c, suggested);
+                final status = [edited ? l.tgtEdited(show(suggested)) : l.tgtSuggestedEstimate, if (saved != null) l.tgtCurrently(show(saved))].join(' · ');
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
+                    Text(status, key: Key('$key-status'), style: context.caption),
+                    if (edited) TextButton(key: Key('$key-reset'), onPressed: () => c.text = '$suggested', child: Text(l.tgtUseSuggestion)),
+                  ]),
+                );
+              },
+            ),
           ]),
         );
 
+    final height = u.units.length == LengthUnit.cm
+        ? withUnit(formatGrouped(u.cm), l.bodyUnitCm)
+        : () {
+            final inches = double.parse((u.cm / cmPerInch).toStringAsFixed(1));
+            return '${withUnit(formatGrouped(inches ~/ 12), l.tgtFeet)} ${withUnit(formatGrouped(inches - 12 * (inches ~/ 12)), l.bodyUnitIn)}';
+          }();
+    final latest = u.latest;
+    final weightSource = latest == null ? l.tgtWeightEntered : latest.averaged ? l.bodyAverageOfEntries(latest.count, dayMonth(latest.dayKey)) : l.tgtWeightLatest(dayMonth(latest.dayKey));
+
+    // In running text a number keeps its unit on the same line.
+    String keep(String v) => v.replaceAll(' ', '\u00A0');
+    final (sayM, sayC, sayP) = (keep(kcal(e.maintenance)), keep(kcal(e.calories)), keep(grams(e.protein)));
+
     return [
-      // The guide explains how the numbers were made; the numbers come from the calculator, never from the guide.
-      if (coach) CoachSpeaker(key: const Key('tgt-coach'), say: CoachSay(l.tgtCoachSay)) else Text(l.tgtPlainSay, key: const Key('tgt-plain'), style: context.sansStyle(16)),
-      target('tgt-calories', l.eatGoalCaloriesLabel, _calories, l.eatUnitKcal, profile?.calorieGoal == null ? null : kcal(profile!.calorieGoal!), kcal(e.calories)),
-      target('tgt-protein', l.eatGoalProteinLabel, _protein, l.eatUnitGram, profile?.proteinGoal == null ? null : grams(profile!.proteinGoal!), grams(e.protein)),
+      // The guide explains this calculation; its numbers come from the calculator, never from the guide.
+      if (coach)
+        CoachSpeaker(key: const Key('tgt-coach'), say: CoachSay(l.tgtCoachSay(sayM, sayC, sayP)))
+      else
+        Text(l.tgtPlainSay(sayM, sayC, sayP), key: const Key('tgt-plain'), style: context.sansStyle(16)),
       const SizedBox(height: 14),
-      Text(why, key: const Key('tgt-why'), style: context.sansStyle(15)),
-      if (e.notes.contains(EstimateNote.proteinAtCap)) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.tgtProteinCapped, style: context.caption)),
-      const SizedBox(height: 8),
-      Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          key: const Key('tgt-macros'),
-          tilePadding: EdgeInsets.zero, childrenPadding: const EdgeInsets.only(bottom: 8), expandedCrossAxisAlignment: CrossAxisAlignment.start,
-          title: Text(l.tgtMacros, style: context.sansStyle(16, weight: FontWeight.w600)),
-          children: [
-            // Follows the fields: an edited calorie or protein number gives its own carbs and fat.
-            ListenableBuilder(
-              listenable: Listenable.merge([_calories, _protein]),
-              builder: (context, _) {
-                final cal = parsePositiveInt(_calories.text, grouping: true), pro = parsePositiveInt(_protein.text, grouping: true);
-                final m = cal == null || pro == null ? null : macrosFor(cal, pro);
-                String show(int? v) => v == null ? '—' : l.tgtAbout(grams(v));
-                return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  for (final (key, name, v) in [('tgt-carbs', l.eatCarbs, m?.$1), ('tgt-fat', l.eatFat, m?.$2)])
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Wrap(alignment: WrapAlignment.spaceBetween, spacing: 12, children: [
-                        Text(name, style: context.sansStyle(15, weight: FontWeight.w600)),
-                        Text(show(v), key: Key(key), style: context.numStyle(15)),
-                      ]),
-                    ),
-                ]);
-              },
-            ),
-            const SizedBox(height: 6),
-            Text(l.tgtMacroNote, key: const Key('tgt-macro-note'), style: context.caption),
-          ],
+
+      // 1–2. The goal, with the way to change it, and the approach in one sentence.
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+          child: MergeSemantics(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Overline(l.tgtYourGoal),
+              Text(_goalName(l, goal), key: const Key('tgt-goal-name'), style: context.sansStyle(18, weight: FontWeight.w600)),
+              if (goal == TargetGoal.recomp) Text(_priorityName(l, _priority!), key: const Key('tgt-goal-priority'), style: context.sansStyle(15, color: context.c.secondary)),
+            ]),
+          ),
         ),
+        TextButton(key: const Key('tgt-change-goal'), onPressed: () => setState(() => _step = 0), child: Text(l.tgtChange, semanticsLabel: l.tgtChangeGoalSaid)),
+      ]),
+      const SizedBox(height: 6),
+      Text(approach, key: const Key('tgt-approach'), style: context.sansStyle(15)),
+
+      // 3. What is saved, editable.
+      target('tgt-calories', l.eatGoalCaloriesLabel, _calories, l.eatUnitKcal, e.calories, profile?.calorieGoal, kcal),
+      target('tgt-protein', l.eatGoalProteinLabel, _protein, l.eatUnitGram, e.protein, profile?.proteinGoal, grams),
+      Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.tgtSavesOnly, key: const Key('tgt-saves'), style: context.caption)),
+      const SizedBox(height: 14),
+
+      // 4. Maintenance → adjustment → target, exactly as calculated.
+      Panel(
+        key: const Key('tgt-math'),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _row('tgt-maintenance', l.tgtMaintenanceRow, kcal(e.maintenance)),
+          _row('tgt-adjustment', l.tgtAdjustmentRow, adjustment, note: calorieNote),
+          _row('tgt-target', l.tgtTargetRow, kcal(e.calories), strong: true),
+          const Divider(height: 16),
+          _row('tgt-protein-math', l.tgtProteinRow(formatGrouped(e.proteinPerKg), u.units.value(BodyField.weight, u.kg)), grams(e.protein),
+              strong: true, note: e.notes.contains(EstimateNote.proteinAtCap) ? l.tgtProteinCapped : null),
+          const SizedBox(height: 4),
+          Text(l.tgtRounding, key: const Key('tgt-rounding'), style: context.caption),
+        ]),
       ),
-      Text(l.tgtHow, style: context.caption),
+      const SizedBox(height: 6),
+
+      // 5. Details used.
+      _section('tgt-details', l.tgtDetailsTitle, [
+        _row('tgt-used-age', l.tgtAge, withUnit(formatGrouped(u.age), l.tgtYears)),
+        _row('tgt-used-height', l.tgtHeight, height),
+        _row('tgt-used-weight', l.tgtWeight, u.units.value(BodyField.weight, u.kg), note: weightSource),
+        _row('tgt-used-sex', l.tgtSexUsed, u.sex == EnergySex.female ? l.tgtFemale : l.tgtMale),
+        _row('tgt-used-activity', l.tgtActivityUsed, _activityName(l, u.activity)),
+        Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(key: const Key('tgt-change-details'), onPressed: () => setState(() => _step = 1), child: Text(l.tgtChangeDetails))),
+      ]),
+
+      // Carbs and fat, display only, following the edited fields.
+      _section('tgt-macros', l.tgtMacros, [
+        ListenableBuilder(
+          listenable: Listenable.merge([_calories, _protein]),
+          builder: (context, _) {
+            final cal = parsePositiveInt(_calories.text, grouping: true), pro = parsePositiveInt(_protein.text, grouping: true);
+            final m = cal == null || pro == null ? null : macrosFor(cal, pro);
+            String show(int? v) => v == null ? '—' : l.tgtAbout(grams(v));
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              _row('tgt-carbs', l.eatCarbs, show(m?.carbs)),
+              _row('tgt-fat', l.eatFat, show(m?.fat)),
+              if (m != null && m.over) Text(l.tgtMacroOver, key: const Key('tgt-macro-over'), style: context.caption),
+            ]);
+          },
+        ),
+        const SizedBox(height: 6),
+        Text(l.tgtMacroNote, key: const Key('tgt-macro-note'), style: context.caption),
+      ]),
+
+      // 6. Method, sources and limits.
+      _section('tgt-how', l.tgtHowTitle, [
+        for (final (i, t) in [l.tgtHowMethod, l.tgtHowGoal, l.tgtHowLimits].indexed)
+          Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(t, key: Key('tgt-how-$i'), style: context.sansStyle(15))),
+      ]),
+
+      // Checking the start: where to look, what logs can and can't show. Nothing here changes a target.
+      _section('tgt-check', l.tgtCheckTitle, [
+        for (final (i, t) in [l.tgtCheckTrend, l.tgtCheckLogs, l.tgtCheckScale, l.tgtCheckManual].indexed)
+          Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('•  $t', key: Key('tgt-check-$i'), style: context.sansStyle(15))),
+        Wrap(spacing: 8, children: [
+          QuietLink(l.bodyTitle, key: const Key('tgt-open-body'), onPressed: () => push<void>(context, const BodyProgressScreen())),
+          QuietLink(l.eatHistoryTrends, key: const Key('tgt-open-history'), onPressed: () => push<String>(context, NutritionHistoryScreen(selected: ref.read(todayKeyProvider)))),
+        ]),
+      ]),
+
       if (_saveError != null) Padding(padding: const EdgeInsets.only(top: 12), child: StatusLine(Icons.error_outline, _saveError!, tone: Tone.error)),
       const SizedBox(height: 8),
       _manualLink(),

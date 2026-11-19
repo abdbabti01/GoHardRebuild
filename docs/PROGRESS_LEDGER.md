@@ -2779,3 +2779,36 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   Reproduced and verified in a throwaway Linux container (Flutter 3.47.6, TZ=UTC, 04:52 UTC): the Eat suites 37 passed;
   locally the same files passed. IPA 74 (c2bed53) built but is superseded by the build of the fixed commit.
 - Final code db21126: CI 215 (44461725390) and 216 (44461741181) passed (app + api); replacement unsigned IPA run 75 (44461741183, tag `ipa-meal-copy-compact-db21126`) passed. Not merged, not deployed.
+
+### 19 Nov 2026 — Help me set my targets: method review and result screen (`feature/target-estimate-review`, from main 67ca479)
+
+- Audit against primary sources (docs/NUTRITION_TARGETS.md › Method): NASEM 2023 adult TEE coefficients and PAL
+  bands match Health Canada's published table; NASEM Table 7-1 examples, SEPV (342 / 241 kcal) and "do not predict
+  energy requirements for those seeking to lose or gain weight" read from the report; Mifflin–St Jeor (RMR, needs a
+  multiplier) compared and not chosen. **Incorrect:** the activity examples let a desk worker who trains about four
+  hours a week pick Lightly active or Active (210–420 kcal more maintenance than NASEM's definitions imply); step 3
+  opened at step 2's scroll offset (title under the app bar, −833 px at 390 × 844). **Unclear:** recomposition always
+  at maintenance; adjustment not shown as maintenance → adjustment → target; floor wording; edits silently replaced on
+  recalculation; details used not visible.
+- Changed: whole-week activity question (examples from Table 7-1; "3 or 4 one-hour workouts" under Mostly seated,
+  documented as GoHard's reading); recomposition asks What comes first? (steady = maintenance; fat loss first = the
+  −500 kcal deficit and floor, trade-off stated); maintenance rounded first, adjustments whole (−500 / +360 / 0) so the
+  ledger adds up; protein cap never passed after rounding; macro breakdown flags protein + fat over calories. Result
+  screen: goal + Change, approach sentence, editable fields marked suggested / edited (Use suggestion), ledger, Details
+  used (Change details), macro breakdown, How this was estimated, Checking your starting point (links to Body progress,
+  History & trends). Edited targets are kept on recalculation. Each step is its own page. Same formulas, deficit,
+  surplus, protein g/kg, floors and cap; for the reference people every category/goal value is unchanged (32 cells).
+- No API, model, migration, capability, contract or sync change; no network call; l10n en/fr/ar +44, 9 reworded, 9
+  removed (3,269 messages).
+- Verified locally: `target_estimate_test` (9; expected values worked by hand from the published coefficients and
+  cross-checked with a separate Node script sharing no app code), `target_helper_ui_test` (12; includes the title
+  position at 390 × 844, which fails without the per-step page: −833 px), full app suite 958 passed (`flutter test
+  -j 2`), API suite 268 passed (`test.ps1`), `flutter analyze` clean, `check-l10n` OK. Renders with real fonts:
+  docs/evidence/nutrition-targets/{en,fr,ar} (English light and dark; each
+  language also at 320 px 2×) reviewed.
+- **Not run:** `journey_targets_test` (written). Three attempts on Pixel_API_34 against this branch's API on a
+  throwaway tmpfs PostgreSQL (127.0.0.1:5437; `gohard-rebuild-postgres` untouched) failed in the APK build with
+  "Out of memory" (Dart kernel compile / Gradle daemon; the machine had ~1.4 GB of commit left, held mostly by
+  long-running processes outside this work), including with a 1.5 GB Gradle heap and a 1.5 GB emulator. Two earlier
+  `flutter test` runs crashed the Dart VM for the same reason before the `-j 2` run passed. Temporary API, container,
+  password file, Gradle daemon and emulator removed. **Not verified:** iPhone, VoiceOver, dietitian review.

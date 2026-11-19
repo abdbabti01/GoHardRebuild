@@ -549,6 +549,20 @@ this period and Calendar. No goal lines or colours that judge intake. Deviations
 back arrow on Eat; the root bar is not shown on this pushed page; the summary has no food photograph. Renders in
 `docs/evidence/nutrition-trends`.
 
+**Help me set my targets (17 Nov 2026; result reworked 19 Nov; method in `docs/NUTRITION_TARGETS.md`).** Three pushed
+`AppPage` steps from Eat › Edit goals, each its own page so it opens at its top with the serif title clear of the app
+bar. Steps 1–2 are `ChoiceTile` lists and fields; nothing is preselected, and Lose fat and build muscle reveals a
+second choice (What comes first?) under the goals. The result reads top to bottom: Leon/Leona (or plain text) with
+this calculation's numbers; an overline "Your goal", the goal at 18 px semi-bold (the recomposition priority under it)
+and a text **Change**; the approach in one 15 px sentence; the two editable fields, each with a caption line
+(*Suggested estimate* / *Your edited target · suggested X* with **Use suggestion**, and *Current goal X*); a caption
+saying only these two are saved; a `Panel` ledger of label/value rows (maintenance, adjustment, suggested calories in
+bold; a divider; protein per kg × weight) whose rows wrap label over value at large text and are read as one item
+each; then four collapsed `ExpansionTile` sections (Details used, See macro breakdown, How this was estimated,
+Checking your starting point, the last with quiet links to Body progress and History & trends). **Use these targets**
+is the pinned filled button, Back the outlined one. At 320 px and 2× text the page scrolls; nothing is squeezed.
+Renders in `docs/evidence/nutrition-targets/{en,fr,ar}`.
+
 ## Me
 
 Redesigned on 13 October 2026 from `me-reference.png`. Me is identity, personal information, preferences and the

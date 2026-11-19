@@ -19044,6 +19044,36 @@ abstract class AppLocalizations {
   /// **'Focus on body composition; my weight may change slowly.'**
   String get tgtGoalRecompLine;
 
+  /// Lose fat and build muscle: which comes first (no default).
+  ///
+  /// In en, this message translates to:
+  /// **'What comes first?'**
+  String get tgtPriorityTitle;
+
+  /// Recomposition priority: stay at maintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my weight about steady'**
+  String get tgtPrioritySteady;
+
+  /// Under Keep my weight about steady.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories at your estimated maintenance. Fat loss, if any, is gradual.'**
+  String get tgtPrioritySteadyLine;
+
+  /// Recomposition priority: a deficit.
+  ///
+  /// In en, this message translates to:
+  /// **'Put fat loss first'**
+  String get tgtPriorityFatLoss;
+
+  /// Under Put fat loss first: the trade-off.
+  ///
+  /// In en, this message translates to:
+  /// **'A moderate calorie deficit. Building muscle is less likely while eating less.'**
+  String get tgtPriorityFatLossLine;
+
   /// Target estimate, step 2 title.
   ///
   /// In en, this message translates to:
@@ -19146,16 +19176,16 @@ abstract class AppLocalizations {
   /// **'Prefer not to answer? Set targets manually'**
   String get tgtSexSkip;
 
-  /// Activity question.
+  /// Activity question: the whole usual week.
   ///
   /// In en, this message translates to:
-  /// **'How active is a usual day?'**
+  /// **'How active is your usual week?'**
   String get tgtActivity;
 
-  /// Under the activity question: workouts are included, not asked separately.
+  /// Under the activity question: one answer for work, getting around and workouts; no exercise calories added.
   ///
   /// In en, this message translates to:
-  /// **'One answer covers daily life and workouts together, so exercise is never counted twice.'**
+  /// **'Think of an average day across your usual week: work, getting around and workouts together. Workouts are already counted here, so don\'t add exercise calories on top.'**
   String get tgtActivityHelp;
 
   /// Activity choice (NASEM inactive).
@@ -19164,10 +19194,10 @@ abstract class AppLocalizations {
   /// **'Mostly seated'**
   String get tgtActInactive;
 
-  /// Example under Mostly seated.
+  /// Example under Mostly seated (NASEM inactive, Table 7-1).
   ///
   /// In en, this message translates to:
-  /// **'Seated most of the day, little walking, few or no workouts.'**
+  /// **'A desk or seated day with everyday walking and chores. This includes a few workouts a week, such as 3 or 4 one-hour sessions.'**
   String get tgtActInactiveLine;
 
   /// Activity choice (NASEM low active).
@@ -19176,10 +19206,10 @@ abstract class AppLocalizations {
   /// **'Lightly active'**
   String get tgtActLow;
 
-  /// Example under Lightly active.
+  /// Example under Lightly active (NASEM low active, Table 7-1).
   ///
   /// In en, this message translates to:
-  /// **'Mostly seated outside workouts, plus about an hour of walking or exercise on most days.'**
+  /// **'Like the above, plus about an extra hour of brisk walking or similar activity most days, at work or outside it.'**
   String get tgtActLowLine;
 
   /// Activity choice (NASEM active).
@@ -19188,10 +19218,10 @@ abstract class AppLocalizations {
   /// **'Active'**
   String get tgtActActive;
 
-  /// Example under Active.
+  /// Example under Active (NASEM active, Table 7-1).
   ///
   /// In en, this message translates to:
-  /// **'On your feet much of the day, or 1½ to 2 hours of walking, cycling or sports on most days.'**
+  /// **'About 2 extra hours of activity most days, such as walking plus cycling or a sport, or work that keeps you moving that much.'**
   String get tgtActActiveLine;
 
   /// Activity choice (NASEM very active).
@@ -19200,10 +19230,10 @@ abstract class AppLocalizations {
   /// **'Very active'**
   String get tgtActVery;
 
-  /// Example under Very active.
+  /// Example under Very active (NASEM very active, Table 7-1).
   ///
   /// In en, this message translates to:
-  /// **'A physical job, or about 2 hours of hard exercise such as running or sports on most days.'**
+  /// **'About 2 extra hours most days that include hard effort, such as running or a demanding sport, or heavy physical work.'**
   String get tgtActVeryLine;
 
   /// Who the estimate is for.
@@ -19254,65 +19284,197 @@ abstract class AppLocalizations {
   /// **'Your starting targets'**
   String get tgtResultTitle;
 
-  /// Leon/Leona explaining the result (first person). Fixed text; the numbers come from the calculator.
+  /// Leon/Leona on the result (first person), with the calculator's numbers.
   ///
   /// In en, this message translates to:
-  /// **'I used your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.'**
-  String get tgtCoachSay;
+  /// **'A day like yours uses about {maintenance}. I\'d start at {calories} with {protein} of protein, then watch your weight trend for a few weeks before changing anything.'**
+  String tgtCoachSay(String maintenance, String calories, String protein);
 
   /// The same explanation when the coach is turned off.
   ///
   /// In en, this message translates to:
-  /// **'This uses your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.'**
-  String get tgtPlainSay;
+  /// **'A day like yours uses about {maintenance}. Start at {calories} with {protein} of protein, then watch your weight trend for a few weeks before changing anything.'**
+  String tgtPlainSay(String maintenance, String calories, String protein);
 
-  /// Existing goal and the suggestion. The arrow points from current to suggested in reading order.
+  /// Over the chosen goal on the result.
   ///
   /// In en, this message translates to:
-  /// **'Current {current} → suggested {suggested}'**
-  String tgtCurrentToSuggested(String current, String suggested);
+  /// **'Your goal'**
+  String get tgtYourGoal;
 
-  /// The suggestion when no goal is saved.
+  /// Short button beside the goal: go back and change it.
   ///
   /// In en, this message translates to:
-  /// **'Suggested {value}'**
-  String tgtSuggested(String value);
+  /// **'Change'**
+  String get tgtChange;
 
-  /// Why the Maintain weight suggestion is what it is.
+  /// What a screen reader says for Change beside the goal.
   ///
   /// In en, this message translates to:
-  /// **'Calories match your estimated maintenance: what a day like yours uses, on average.'**
-  String get tgtWhyMaintain;
+  /// **'Change goal'**
+  String get tgtChangeGoalSaid;
 
-  /// Lose weight: 500 kcal below maintenance. No rate is promised.
+  /// Maintain weight: the approach in one sentence.
   ///
   /// In en, this message translates to:
-  /// **'About 500 kcal a day below your estimated maintenance of {maintenance}, with more protein. How quickly weight changes differs from person to person.'**
-  String tgtWhyLose(String maintenance);
+  /// **'Eat about what a day like yours uses, to keep your weight roughly steady.'**
+  String get tgtApproachMaintain;
 
-  /// Lose weight held at the guideline floor.
+  /// Lose weight: the approach in one sentence. No rate is promised.
   ///
   /// In en, this message translates to:
-  /// **'Less than 500 kcal below your estimated maintenance of {maintenance}, because GoHard doesn\'t suggest starting under {floor} a day. A doctor or dietitian can help you plan more.'**
-  String tgtWhyLoseFloor(String maintenance, String floor);
+  /// **'Eat a moderate amount below your estimated maintenance, with more protein.'**
+  String get tgtApproachLose;
 
-  /// Lose weight equals maintenance because maintenance is already at the floor.
+  /// Gain muscle: the approach; calories alone do not build muscle.
   ///
   /// In en, this message translates to:
-  /// **'The same as your estimated maintenance: it\'s already near {floor}, the lowest starting point GoHard suggests. A doctor or dietitian can help you plan weight loss.'**
-  String tgtWhyLoseNoRoom(String floor);
+  /// **'Eat a little above your estimated maintenance and train for strength; extra calories alone mostly add weight.'**
+  String get tgtApproachGain;
 
-  /// Gain muscle: small surplus; calories alone do not build muscle.
+  /// Lose fat and build muscle, weight about steady: the approach.
   ///
   /// In en, this message translates to:
-  /// **'About 360 kcal a day above your estimated maintenance of {maintenance}, with more protein. Muscle grows with strength training; extra calories on their own mostly add weight.'**
-  String tgtWhyGain(String maintenance);
+  /// **'Stay at your estimated maintenance with high protein and regular strength training.'**
+  String get tgtApproachRecompSteady;
 
-  /// Lose fat and build muscle: same calories as Maintain; explains why.
+  /// Lose fat and build muscle, fat loss first: the approach.
   ///
   /// In en, this message translates to:
-  /// **'Calories stay at your estimated maintenance, the same as Maintain weight; what changes is more protein. Body composition changes with regular strength training and time, not from these numbers alone.'**
-  String get tgtWhyRecomp;
+  /// **'Eat a moderate amount below maintenance with high protein and regular strength training.'**
+  String get tgtApproachRecompFatLoss;
+
+  /// Under an edited target: it is the person's own number; the suggestion was another.
+  ///
+  /// In en, this message translates to:
+  /// **'Your edited target · suggested {value}'**
+  String tgtEdited(String value);
+
+  /// Under an unedited target: it is the suggested estimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested estimate'**
+  String get tgtSuggestedEstimate;
+
+  /// The goal saved now, beside the suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Current goal {value}'**
+  String tgtCurrently(String value);
+
+  /// Puts the suggestion back in an edited field.
+  ///
+  /// In en, this message translates to:
+  /// **'Use suggestion'**
+  String get tgtUseSuggestion;
+
+  /// What Use these targets saves.
+  ///
+  /// In en, this message translates to:
+  /// **'Only these two numbers are saved, as your daily goals. Your water goal and past days don\'t change.'**
+  String get tgtSavesOnly;
+
+  /// Row: estimated maintenance calories.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated maintenance'**
+  String get tgtMaintenanceRow;
+
+  /// Row: the goal's calorie adjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal adjustment'**
+  String get tgtAdjustmentRow;
+
+  /// Row: maintenance plus adjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested calories'**
+  String get tgtTargetRow;
+
+  /// Adjustment of zero.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get tgtAdjustNone;
+
+  /// A deficit, e.g. "500 kcal less".
+  ///
+  /// In en, this message translates to:
+  /// **'{value} less'**
+  String tgtAdjustLess(String value);
+
+  /// A surplus, e.g. "360 kcal more".
+  ///
+  /// In en, this message translates to:
+  /// **'{value} more'**
+  String tgtAdjustMore(String value);
+
+  /// Under the adjustment when the starting floor made the deficit smaller. Not a suitability claim.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than the usual 500 kcal: GoHard\'s suggestions don\'t start below {floor} a day.'**
+  String tgtNoteFloor(String floor);
+
+  /// Under the adjustment when maintenance is already at or below the floor.
+  ///
+  /// In en, this message translates to:
+  /// **'No cut: your estimated maintenance is already at or below {floor}, where GoHard\'s suggestions stop. A doctor or dietitian can help you plan weight loss.'**
+  String tgtNoteNoRoom(String floor);
+
+  /// Row: protein per kg times the weight used.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein: {perKg} g per kg × {weight}'**
+  String tgtProteinRow(String perKg, String weight);
+
+  /// How the suggestions are rounded.
+  ///
+  /// In en, this message translates to:
+  /// **'Rounded to the nearest 10 kcal and 5 g.'**
+  String get tgtRounding;
+
+  /// Expandable: the answers the estimate used.
+  ///
+  /// In en, this message translates to:
+  /// **'Details used'**
+  String get tgtDetailsTitle;
+
+  /// Details row: the sex input of the equation.
+  ///
+  /// In en, this message translates to:
+  /// **'Sex used by the equation'**
+  String get tgtSexUsed;
+
+  /// Details row: the activity answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get tgtActivityUsed;
+
+  /// Goes back to the details step with the answers kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Change details'**
+  String get tgtChangeDetails;
+
+  /// Details: a weight typed for this estimate only.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered for this estimate only; not added to Body progress'**
+  String get tgtWeightEntered;
+
+  /// Details: the weight is the latest weigh-in, with its date.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest weigh-in, recorded {date}'**
+  String tgtWeightLatest(String date);
+
+  /// Edited protein and the fat share already pass the calories.
+  ///
+  /// In en, this message translates to:
+  /// **'Your protein and the fat share already add up to more than your calories, so there\'s no room for carbs.'**
+  String get tgtMacroOver;
 
   /// Protein held at 35 % of calories.
   ///
@@ -19332,17 +19494,65 @@ abstract class AppLocalizations {
   /// **'about {value}'**
   String tgtAbout(String value);
 
-  /// Carbs and fat are not goals and are not saved.
+  /// Carbs and fat are not goals and are not saved; how they are split and rounded.
   ///
   /// In en, this message translates to:
-  /// **'Estimates only. GoHard doesn\'t save carb or fat goals, so these aren\'t tracked. Fat is set at 30% of calories and carbs make up the rest.'**
+  /// **'Not saved: GoHard has no carb or fat goals. Fat is 30% of calories and carbs are the rest, rounded to 5 g.'**
   String get tgtMacroNote;
 
-  /// Method and its limits, under the result.
+  /// Expandable: method, sources and limits.
   ///
   /// In en, this message translates to:
-  /// **'Estimated with the U.S. National Academies\' 2023 energy equations for adults. It\'s a starting point, not a measurement: watch how your weight changes over a few weeks and adjust.'**
-  String get tgtHow;
+  /// **'How this was estimated'**
+  String get tgtHowTitle;
+
+  /// The energy method and its source.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance comes from the U.S. National Academies\' 2023 equations for adults, also used by Health Canada. They estimate a whole day\'s energy use, workouts included, from age, height, weight, sex and activity, and were built from measurements of people of many body sizes.'**
+  String get tgtHowMethod;
+
+  /// The goal adjustments: GoHard's starting rules and their sources.
+  ///
+  /// In en, this message translates to:
+  /// **'The goal changes are GoHard\'s starting rules, based on published guidance: 500 kcal below maintenance to lose weight (AHA/ACC/TOS 2013 obesity guideline), about 360 kcal above it to gain muscle (Slater et al., 2019), and 1.4 to 2.0 g of protein per kg of body weight (ISSN 2017; Morton et al., 2018).'**
+  String get tgtHowGoal;
+
+  /// Limits of the estimate (said once, here).
+  ///
+  /// In en, this message translates to:
+  /// **'People with the same answers can need noticeably different amounts, so this is an estimate, not an exact requirement. Protein per kg was studied mostly in leaner, exercising adults, so at higher body weights it may be more than you need. Not for under-19s, pregnancy, breastfeeding or medical diets; a doctor or dietitian can tailor targets.'**
+  String get tgtHowLimits;
+
+  /// Expandable: how to judge the starting estimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your starting point'**
+  String get tgtCheckTitle;
+
+  /// Look at the weight trend over weeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it a few weeks, then look at your weight trend in Body progress rather than any single weigh-in.'**
+  String get tgtCheckTrend;
+
+  /// Missing food entries are neither zero nor a full day.
+  ///
+  /// In en, this message translates to:
+  /// **'A day with missing food entries isn\'t a zero, or a full day either, so incomplete logs can\'t tell you what you really need.'**
+  String get tgtCheckLogs;
+
+  /// Scale weight alone does not show fat or muscle change.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale weight alone can\'t show whether you lost fat or gained muscle.'**
+  String get tgtCheckScale;
+
+  /// Targets never change by themselves.
+  ///
+  /// In en, this message translates to:
+  /// **'GoHard never changes your targets by itself. Edit them whenever you decide to.'**
+  String get tgtCheckManual;
 
   /// Saves calories and protein as the daily goals.
   ///

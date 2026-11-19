@@ -13314,6 +13314,23 @@ class AppLocalizationsAr extends AppLocalizations {
       'التركيز على تكوين الجسم؛ قد يتغير وزني ببطء.';
 
   @override
+  String get tgtPriorityTitle => 'ما الأولوية؟';
+
+  @override
+  String get tgtPrioritySteady => 'الحفاظ على وزني ثابتًا تقريبًا';
+
+  @override
+  String get tgtPrioritySteadyLine =>
+      'سعرات عند احتياجك التقديري للحفاظ على الوزن. فقدان الدهون، إن حدث، يكون تدريجيًا.';
+
+  @override
+  String get tgtPriorityFatLoss => 'فقدان الدهون أولًا';
+
+  @override
+  String get tgtPriorityFatLossLine =>
+      'عجز معتدل في السعرات. بناء العضلات أقل احتمالًا عند تناول طعام أقل.';
+
+  @override
   String get tgtAboutTitle => 'أخبرنا عن نفسك';
 
   @override
@@ -13368,39 +13385,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tgtSexSkip => 'تفضّل عدم الإجابة؟ حدّد أهدافك يدويًا';
 
   @override
-  String get tgtActivity => 'ما مدى نشاطك في يوم معتاد؟';
+  String get tgtActivity => 'ما مدى نشاط أسبوعك المعتاد؟';
 
   @override
   String get tgtActivityHelp =>
-      'إجابة واحدة تشمل الحياة اليومية والتمارين معًا، فلا تُحسب التمارين مرتين أبدًا.';
+      'فكّر في يوم متوسط من أسبوعك المعتاد: العمل والتنقل والتمارين معًا. التمارين محسوبة هنا، فلا تُضِف سعرات التمرين فوقها.';
 
   @override
   String get tgtActInactive => 'جالس في الغالب';
 
   @override
   String get tgtActInactiveLine =>
-      'جالس معظم اليوم، قليل المشي، وتمارين قليلة أو لا تمارين.';
+      'يوم مكتبي أو جلوس مع المشي والأعمال اليومية المعتادة. يشمل ذلك بضعة تمارين أسبوعيًا، مثل 3 أو 4 حصص مدة كل منها ساعة.';
 
   @override
   String get tgtActLow => 'نشاط خفيف';
 
   @override
   String get tgtActLowLine =>
-      'جالس في الغالب خارج التمارين، مع نحو ساعة من المشي أو التمرين في معظم الأيام.';
+      'مثل ما سبق، مع نحو ساعة إضافية من المشي السريع أو نشاط مشابه في معظم الأيام، في العمل أو خارجه.';
 
   @override
   String get tgtActActive => 'نشيط';
 
   @override
   String get tgtActActiveLine =>
-      'واقف معظم اليوم، أو ساعة ونصف إلى ساعتين من المشي أو ركوب الدراجة أو الرياضة في معظم الأيام.';
+      'نحو ساعتين إضافيتين من النشاط في معظم الأيام، مثل المشي مع ركوب الدراجة أو رياضة، أو عمل يُبقيك متحركًا بالقدر نفسه.';
 
   @override
   String get tgtActVery => 'نشيط جدًا';
 
   @override
   String get tgtActVeryLine =>
-      'عمل بدني، أو نحو ساعتين من التمارين الشاقة مثل الجري أو الرياضة في معظم الأيام.';
+      'نحو ساعتين إضافيتين في معظم الأيام تشملان جهدًا شاقًا، مثل الجري أو رياضة مُجهِدة، أو عملًا بدنيًا شاقًا.';
 
   @override
   String get tgtScope =>
@@ -13431,50 +13448,128 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tgtResultTitle => 'أهدافك المبدئية';
 
   @override
-  String get tgtCoachSay =>
-      'استخدمتُ وزنك ونشاطك المعتاد وهدفك لتقدير نقطة بداية يومية. يمكنك تعديل هذه الأرقام قبل الحفظ.';
-
-  @override
-  String get tgtPlainSay =>
-      'يستخدم هذا التقدير وزنك ونشاطك المعتاد وهدفك لتحديد نقطة بداية يومية. يمكنك تعديل هذه الأرقام قبل الحفظ.';
-
-  @override
-  String tgtCurrentToSuggested(String current, String suggested) {
-    return 'الحالي $current ← المقترح $suggested';
+  String tgtCoachSay(String maintenance, String calories, String protein) {
+    return 'يستهلك يوم مثل يومك نحو $maintenance. أقترح البدء عند $calories مع $protein من البروتين، ثم راقب اتجاه وزنك بضعة أسابيع قبل تغيير أي شيء.';
   }
 
   @override
-  String tgtSuggested(String value) {
-    return 'المقترح $value';
+  String tgtPlainSay(String maintenance, String calories, String protein) {
+    return 'يستهلك يوم مثل يومك نحو $maintenance. ابدأ عند $calories مع $protein من البروتين، ثم راقب اتجاه وزنك بضعة أسابيع قبل تغيير أي شيء.';
   }
 
   @override
-  String get tgtWhyMaintain =>
-      'السعرات تساوي احتياجك التقديري للحفاظ على الوزن: ما يستهلكه يوم مثل يومك في المتوسط.';
+  String get tgtYourGoal => 'هدفك';
 
   @override
-  String tgtWhyLose(String maintenance) {
-    return 'نحو 500 سعرة يوميًا أقل من احتياجك التقديري للحفاظ على الوزن البالغ $maintenance، مع بروتين أكثر. تختلف سرعة تغيّر الوزن من شخص لآخر.';
+  String get tgtChange => 'تغيير';
+
+  @override
+  String get tgtChangeGoalSaid => 'تغيير الهدف';
+
+  @override
+  String get tgtApproachMaintain =>
+      'تناول تقريبًا ما يستهلكه يوم مثل يومك، لتحافظ على وزنك ثابتًا تقريبًا.';
+
+  @override
+  String get tgtApproachLose =>
+      'تناول قدرًا معتدلًا أقل من احتياجك التقديري للحفاظ على الوزن، مع بروتين أكثر.';
+
+  @override
+  String get tgtApproachGain =>
+      'تناول أكثر بقليل من احتياجك التقديري للحفاظ على الوزن وتدرّب على القوة؛ فالسعرات الإضافية وحدها تزيد الوزن غالبًا.';
+
+  @override
+  String get tgtApproachRecompSteady =>
+      'ابقَ عند احتياجك التقديري للحفاظ على الوزن مع بروتين مرتفع وتمارين قوة منتظمة.';
+
+  @override
+  String get tgtApproachRecompFatLoss =>
+      'تناول قدرًا معتدلًا أقل من احتياج الحفاظ على الوزن مع بروتين مرتفع وتمارين قوة منتظمة.';
+
+  @override
+  String tgtEdited(String value) {
+    return 'هدفك المعدَّل · المقترح $value';
   }
 
   @override
-  String tgtWhyLoseFloor(String maintenance, String floor) {
-    return 'أقل من 500 سعرة دون احتياجك التقديري البالغ $maintenance، لأن GoHard لا يقترح البدء بأقل من $floor يوميًا. يمكن لطبيب أو أخصائي تغذية مساعدتك في التخطيط لأكثر من ذلك.';
+  String get tgtSuggestedEstimate => 'تقدير مقترح';
+
+  @override
+  String tgtCurrently(String value) {
+    return 'الهدف الحالي $value';
   }
 
   @override
-  String tgtWhyLoseNoRoom(String floor) {
-    return 'مساوٍ لاحتياجك التقديري للحفاظ على الوزن: فهو قريب أصلًا من $floor، وهي أدنى نقطة بداية يقترحها GoHard. يمكن لطبيب أو أخصائي تغذية مساعدتك في التخطيط لخسارة الوزن.';
+  String get tgtUseSuggestion => 'استخدام المقترح';
+
+  @override
+  String get tgtSavesOnly =>
+      'يُحفظ هذان الرقمان فقط، كهدفيك اليوميين. لا يتغير هدف الماء ولا الأيام السابقة.';
+
+  @override
+  String get tgtMaintenanceRow => 'الاحتياج التقديري للحفاظ على الوزن';
+
+  @override
+  String get tgtAdjustmentRow => 'تعديل الهدف';
+
+  @override
+  String get tgtTargetRow => 'السعرات المقترحة';
+
+  @override
+  String get tgtAdjustNone => 'لا تعديل';
+
+  @override
+  String tgtAdjustLess(String value) {
+    return 'أقل بمقدار $value';
   }
 
   @override
-  String tgtWhyGain(String maintenance) {
-    return 'نحو 360 سعرة يوميًا فوق احتياجك التقديري البالغ $maintenance، مع بروتين أكثر. تنمو العضلات مع تمارين القوة؛ أما السعرات الإضافية وحدها فتزيد الوزن غالبًا.';
+  String tgtAdjustMore(String value) {
+    return 'أكثر بمقدار $value';
   }
 
   @override
-  String get tgtWhyRecomp =>
-      'تبقى السعرات عند احتياجك التقديري للحفاظ على الوزن، مثل هدف الحفاظ على الوزن؛ والفرق هو بروتين أكثر. يتغير تكوين الجسم مع تمارين القوة المنتظمة والوقت، لا بهذه الأرقام وحدها.';
+  String tgtNoteFloor(String floor) {
+    return 'أقل من 500 سعرة المعتادة: لا تبدأ اقتراحات GoHard بأقل من $floor يوميًا.';
+  }
+
+  @override
+  String tgtNoteNoRoom(String floor) {
+    return 'لا خفض: احتياجك التقديري للحفاظ على الوزن عند $floor أو أقل، وهو الحد الذي تتوقف عنده اقتراحات GoHard. يمكن لطبيب أو اختصاصي تغذية مساعدتك في التخطيط لإنقاص الوزن.';
+  }
+
+  @override
+  String tgtProteinRow(String perKg, String weight) {
+    return 'البروتين: $perKg غ لكل كغ × $weight';
+  }
+
+  @override
+  String get tgtRounding => 'مقرّبة إلى أقرب 10 سعرات و5 غ.';
+
+  @override
+  String get tgtDetailsTitle => 'التفاصيل المستخدمة';
+
+  @override
+  String get tgtSexUsed => 'الجنس المستخدم في المعادلة';
+
+  @override
+  String get tgtActivityUsed => 'النشاط';
+
+  @override
+  String get tgtChangeDetails => 'تغيير التفاصيل';
+
+  @override
+  String get tgtWeightEntered =>
+      'أُدخل لهذا التقدير فقط؛ ولا يُضاف إلى تقدّم الجسم';
+
+  @override
+  String tgtWeightLatest(String date) {
+    return 'آخر وزن، سُجّل في $date';
+  }
+
+  @override
+  String get tgtMacroOver =>
+      'البروتين وحصة الدهون يتجاوزان سعراتك بالفعل، فلا يبقى مجال للكربوهيدرات.';
 
   @override
   String get tgtProteinCapped =>
@@ -13490,11 +13585,41 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tgtMacroNote =>
-      'تقديرات فقط. لا يحفظ GoHard أهدافًا للكربوهيدرات أو الدهون، لذا لا تُتابَع. تُحدَّد الدهون عند 30% من السعرات وتكمل الكربوهيدرات الباقي.';
+      'لا تُحفظ: لا توجد في GoHard أهداف للكربوهيدرات أو الدهون. الدهون 30% من السعرات والكربوهيدرات الباقي، مقرّبة إلى 5 غ.';
 
   @override
-  String get tgtHow =>
-      'قُدّر باستخدام معادلات الطاقة لعام 2023 الصادرة عن الأكاديميات الوطنية الأمريكية للبالغين. إنه نقطة بداية لا قياس: راقب تغيّر وزنك على مدى بضعة أسابيع وعدّل الأرقام.';
+  String get tgtHowTitle => 'كيف قُدّر هذا';
+
+  @override
+  String get tgtHowMethod =>
+      'يأتي احتياج الحفاظ على الوزن من معادلات الأكاديميات الوطنية الأمريكية لعام 2023 للبالغين، التي تستخدمها وزارة الصحة الكندية أيضًا. تقدّر الطاقة المستهلكة في يوم كامل، بما فيه التمارين، من العمر والطول والوزن والجنس والنشاط، وبُنيت على قياسات أشخاص بأحجام أجسام متنوعة.';
+
+  @override
+  String get tgtHowGoal =>
+      'تعديلات الهدف قواعد بداية وضعها GoHard استنادًا إلى إرشادات منشورة: 500 سعرة أقل من احتياج الحفاظ لإنقاص الوزن (إرشادات AHA/ACC/TOS للسمنة 2013)، ونحو 360 سعرة أكثر لبناء العضلات (Slater وآخرون، 2019)، ومن 1.4 إلى 2.0 غ بروتين لكل كغ من وزن الجسم (ISSN 2017؛ Morton وآخرون، 2018).';
+
+  @override
+  String get tgtHowLimits =>
+      'قد يحتاج أشخاص بالإجابات نفسها إلى كميات مختلفة بوضوح، لذا فهذا تقدير لا احتياج دقيق. دُرس البروتين لكل كغ غالبًا لدى بالغين أنحف يمارسون الرياضة، لذا قد يكون أكثر من حاجتك عند الأوزان الأعلى. ليس لمن هم دون 19 عامًا أو للحمل أو الرضاعة أو الأنظمة الغذائية الطبية؛ يمكن لطبيب أو اختصاصي تغذية تكييف أهدافك.';
+
+  @override
+  String get tgtCheckTitle => 'التحقق من نقطة البداية';
+
+  @override
+  String get tgtCheckTrend =>
+      'امنح الأمر بضعة أسابيع، ثم انظر إلى اتجاه وزنك في تقدّم الجسم بدل وزنة واحدة.';
+
+  @override
+  String get tgtCheckLogs =>
+      'اليوم الذي تنقصه بعض الأطعمة ليس يومًا بلا طعام، وليس يومًا كاملًا أيضًا، لذا لا تكشف السجلات الناقصة احتياجك الحقيقي.';
+
+  @override
+  String get tgtCheckScale =>
+      'وزن الميزان وحده لا يبيّن إن كنت فقدت دهونًا أو اكتسبت عضلات.';
+
+  @override
+  String get tgtCheckManual =>
+      'لا يغيّر GoHard أهدافك من تلقاء نفسه أبدًا. عدّلها متى قررت ذلك.';
 
   @override
   String get tgtUse => 'استخدام هذه الأهداف';
