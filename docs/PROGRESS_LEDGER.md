@@ -2910,3 +2910,5 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   not start beside the emulator (0.4 GB commit memory left), and after building the APK alone with a 2 GB heap, the
   emulator stayed offline for 11 minutes. Docker Desktop's VM (7.7 GB, holding the development databases) was not
   stopped. Stopped there rather than retry further.
+- Code 197da49: CI 236 (44632860709) passed; unsigned IPA run 81 (44634797983, tag `ipa-wger-demos-197da49`) passed.
+  Not merged, not deployed; no Railway variable, secret or hosted account touched.
