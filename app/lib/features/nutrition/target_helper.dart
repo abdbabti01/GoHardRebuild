@@ -14,6 +14,8 @@ import '../body/body_screens.dart' show BodyProgressScreen;
 import '../coach/coach_bubble.dart';
 import '../coach/coach_prefs.dart';
 import '../me/account_repository.dart';
+import 'macro_composition.dart';
+import 'nutrient_coverage.dart' show Nutrient;
 import 'nutrition_history.dart' show NutritionHistoryScreen;
 import 'nutrition_surface.dart' show formatKcal;
 import 'nutrition_tools.dart' show GoalsEditor;
@@ -492,18 +494,20 @@ class _TargetHelperScreenState extends ConsumerState<TargetHelperScreen> {
             child: TextButton(key: const Key('tgt-change-details'), onPressed: () => setState(() => _step = 1), child: Text(l.tgtChangeDetails))),
       ]),
 
-      // Carbs and fat, display only, following the edited fields.
+      // The estimated split, display only, following the edited fields: a hypothetical day at these targets, never
+      // anything logged (Eat's recorded composition is a separate chart). Protein is the field as typed; carbs and fat
+      // are rounded estimates.
       _section('tgt-macros', l.tgtMacros, [
         ListenableBuilder(
           listenable: Listenable.merge([_calories, _protein]),
           builder: (context, _) {
             final cal = parsePositiveInt(_calories.text, grouping: true), pro = parsePositiveInt(_protein.text, grouping: true);
             final m = cal == null || pro == null ? null : macrosFor(cal, pro);
-            String show(int? v) => v == null ? '—' : l.tgtAbout(grams(v));
+            final split = MacroComposition({Nutrient.protein: pro?.toDouble(), Nutrient.carbs: m?.carbs.toDouble(), Nutrient.fat: m?.fat.toDouble()});
             return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              _row('tgt-carbs', l.eatCarbs, show(m?.carbs)),
-              _row('tgt-fat', l.eatFat, show(m?.fat)),
-              if (m != null && m.over) Text(l.tgtMacroOver, key: const Key('tgt-macro-over'), style: context.caption),
+              MacroDonut(split, title: l.nrMacroTargetTitle, keyPrefix: 'tgt', amount: (n, g) => n == Nutrient.protein ? grams(g.round()) : l.tgtAbout(grams(g.round())),
+                  notes: [if (split.percents != null) l.nrMacroBasis(formatKcal(split.kcal))]),
+              if (m != null && m.over) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.tgtMacroOver, key: const Key('tgt-macro-over'), style: context.caption)),
             ]);
           },
         ),

@@ -155,7 +155,7 @@ void main() {
   testWidgets('320 px with twice the text, in Arabic and French: Eat’s shortcut and the review fit and keep their actions', (tester) async {
     for (final lang in ['ar', 'fr-CA']) {
       await tester.pumpWidget(const SizedBox()); // a fresh app: no route left from the language before
-      await _eat(tester, size: const Size(320, 7000), text: 2, lang: lang); // tall, so the whole lazy list is built
+      await _eat(tester, size: const Size(320, 9000), text: 2, lang: lang); // tall, so the whole lazy list is built
       expect(tester.takeException(), isNull, reason: lang);
       final review = find.byKey(const Key('eat-repeat-review-breakfast'));
       expect(review.hitTestable(), findsOneWidget);

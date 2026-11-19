@@ -1045,54 +1045,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get eatUnitGramProtein => 'غ بروتين';
-
-  @override
-  String eatGoalProgressCalories(String eaten, String goal) {
-    return '$eaten من $goal سعرة';
-  }
-
-  @override
-  String eatGoalProgressProtein(String eaten, String goal) {
-    return 'البروتين $eaten من $goal غ';
-  }
-
-  @override
-  String eatGoalNoCalorieValue(String goal) {
-    return 'لم تُدخَل قيمة للسعرات بعد · الهدف $goal سعرة';
-  }
-
-  @override
-  String eatGoalNoProteinValue(String goal) {
-    return 'لم تُدخَل قيمة للبروتين بعد · الهدف $goal غ';
-  }
-
-  @override
-  String eatGoalKnownSoFar(String progress) {
-    return '$progress · المعروف حتى الآن';
-  }
-
-  @override
-  String eatGoalOverKcal(String progress, String diff) {
-    return '$progress · $diff سعرة فوق الهدف';
-  }
-
-  @override
-  String eatGoalLeftKcal(String progress, String diff) {
-    return '$progress · يتبقى $diff سعرة';
-  }
-
-  @override
-  String eatGoalOverGrams(String progress, String diff) {
-    return '$progress · $diff غ فوق الهدف';
-  }
-
-  @override
-  String eatGoalLeftGrams(String progress, String diff) {
-    return '$progress · يتبقى $diff غ';
-  }
-
-  @override
   String get eatNoFoodLoggedYet => 'لم يُسجَّل أي طعام بعد';
 
   @override
@@ -1137,9 +1089,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get eatKnown => 'معروف';
 
   @override
-  String get eatKnownSoFar => 'المعروف حتى الآن';
-
-  @override
   String eatSaidKcal(String nutrient, String value) {
     return '$nutrient $value سعرة حرارية';
   }
@@ -1176,12 +1125,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get eatListSeparator => '، ';
-
-  @override
-  String get eatCaloriesGoalBar => 'هدف السعرات';
-
-  @override
-  String get eatProteinGoalBar => 'هدف البروتين';
 
   @override
   String get eatOpensJournalHint => 'يفتح سجل الطعام';
@@ -13792,4 +13735,54 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get workoutTodayEditNote =>
       'تغيير خطتك بدءًا من حصتك القادمة. تحتفظ هذه الحصة بأهدافها.';
+
+  @override
+  String nrOfGoal(String goal) {
+    return 'من $goal';
+  }
+
+  @override
+  String nrLeft(String amount) {
+    return 'يتبقى $amount';
+  }
+
+  @override
+  String get nrNoValue => 'لم تُدخَل قيمة بعد';
+
+  @override
+  String get nrNoGoalThatDay => 'لا هدف مسجّل لهذا اليوم';
+
+  @override
+  String nrSaidLeftKcal(String value) {
+    return 'يتبقى $value سعرة حرارية';
+  }
+
+  @override
+  String nrSaidLeftGrams(String value) {
+    return 'يتبقى $value غرام';
+  }
+
+  @override
+  String get nrMacroRecordedTitle => 'توزيع العناصر الكبرى المسجّلة';
+
+  @override
+  String get nrMacroTargetTitle => 'التوزيع المستهدف التقديري';
+
+  @override
+  String nrMacroBasis(String kcal) {
+    return 'نسب من $kcal سعرة مصدرها البروتين والكربوهيدرات والدهون (4 و4 و9 سعرات لكل غرام).';
+  }
+
+  @override
+  String nrMacroDiffers(String kcal) {
+    return 'تبقى سعراتك المسجّلة $kcal سعرة. تقرّب ملصقات الأغذية قيمها، وتُحسب الألياف والكحول بطريقة مختلفة، لذا قد يختلف المجموعان.';
+  }
+
+  @override
+  String get nrMacroPartial =>
+      'بعض الأطعمة ليس لها قيمة للبروتين أو الكربوهيدرات أو الدهون، لذا لا يظهر توزيع. الكميات هي المعروفة فقط.';
+
+  @override
+  String get nrMacroZero =>
+      'لم تُسجَّل طاقة من البروتين أو الكربوهيدرات أو الدهون، لذا لا يوجد توزيع.';
 }

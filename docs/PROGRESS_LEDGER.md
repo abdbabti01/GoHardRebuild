@@ -2834,3 +2834,51 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Code 9c684ae: CI 223 (44561986434) passed on attempt 2 (attempt 1: all 958 app tests passed, then the debug APK
   build failed downloading the Android NDK, "Premature EOF"); replacement unsigned IPA run 78 (44566347737, tag
   `ipa-target-estimate-wording-9c684ae`) passed and supersedes IPA 77. Not merged, not deployed.
+
+### 19 Nov 2026 — Nutrition rings and macro composition (`feature/nutrition-rings`, from main 71d4f98)
+
+- Today's and Eat's calorie and protein bars replaced by goal rings (one `GoalRing` given the shared
+  `NutrientAssessment`; it calculates nothing): name, amount and unit, goal and percentage, the state in the
+  assessment's words and colour, and on Eat the exact amount left. Above the goal the arc is one full circle and the
+  real percentage and excess are in words ("107 % · 161 kcal over target"); no goal is a neutral disc with "No goal";
+  a partial sum keeps "Known intake" with a neutral arc; nothing logged stays words. Eat's duplicate "left/over" lines
+  under the photo were removed. Details: docs/NUTRITION_RINGS.md.
+- **Behaviour change (earlier days):** Eat's panel now compares an earlier day with the goal recorded for that day
+  (same rule its briefing already used); before, an earlier day showed no goal at all. Without a record (or with
+  goals changed that day): "No goal recorded for this day", never today's goal.
+- Macro composition (`macro_composition.dart`): Eat's Carbs / Fat row becomes **Recorded macro composition** (when
+  both are shown) and Help me set my targets › See macro breakdown becomes the **Estimated target split**. Shares by
+  energy (4 / 4 / 9 kcal per gram, the estimator's convention), whole percentages adding to 100; recorded calories
+  stay authoritative and a difference of ≥ 10 kcal and ≥ 5 % is explained; partial values give known grams and no
+  split; a genuine zero gives a neutral state. Fixed blue / orange / teal, validated for colour-vision separation and
+  3:1 on every panel and page.
+- Contrast fix found by the new theme check: the neutral ("Known intake") fill was the outline grey, 2.6:1 on its
+  track (as on the old bars); it is now the panel's secondary ink (≥ 3:1). Carbs orange deepened to hold 3:1 on the
+  pink panel.
+- No API, model, migration, capability, sync, AI, allowance or dependency change. l10n en/fr/ar +12, −13 (3,268).
+- Verified locally: `nutrition_rings_ui_test` (19), `macro_composition_test` (4), `theme_test` (35), the eight
+  updated suites; full app suite passed (`flutter test -j 2`, 982 before the last 3 updated files, then those 20
+  passed); `flutter analyze` clean; `check-l10n` OK. Renders with real fonts, before (main, temporary worktree) and
+  after at matching sizes and states: docs/evidence/nutrition-rings/{before,after}/{en,fr,ar}, reviewed (fixed during
+  review: a percentage wrapping away from its "·", a protein icon reading as a blob or a water drop, the 2× Eat shots).
+- **Not run:** the emulator check (about 2.4 GB of physical and 5.3 GB of commit memory free; earlier APK builds failed
+  "Out of memory" at this level). `journey_food_test` updated to the ring wording, not run. **Not verified:** iPhone,
+  VoiceOver, TalkBack on a device. Not merged, not deployed.
+- Code f7f9778: CI 228 (44586424600) passed; unsigned IPA run 79 (44589612496, tag `ipa-nutrition-rings-f7f9778`)
+  passed (artifact GoHard-Dev-unsigned-ipa). Railway variables unchanged; no hosted account created.
+
+### 19 Nov 2026 — rings side by side when there is room (same branch)
+
+- Owner request: calories and protein side by side on a typical phone at normal text, stacking only when readability
+  needs it. `NutritionSummary` now measures its own width and the text scale: two columns of ≥ 92 text-scaled px (14 px
+  gap) → side by side, each ring above its figures (labels outside the circle; Eat's calorie ring 72 px, protein 56
+  px, figures level; Today 48 px); otherwise the previous stacked layout. Side by side at 360–430 px with normal text
+  (and 390 px at 1.5×); stacked at 320 px and at 2×. Words wrap, nothing shrinks. Calculation, completeness,
+  semantics, keys and colours unchanged.
+- Today's panel: 293 px at 390 × 844 (stacked was 270; the original 280–340 px range restored in `today_ui_test`).
+  Eat: Log food stays directly under the summary.
+- Verified: `nutrition_rings_ui_test` (25: +5 width/text cases on Eat and Today, + Arabic side-by-side order), full
+  app suite 987 passed (`-j 2`), `flutter analyze` clean. Renders regenerated (after/en, fr, ar; new 390 px
+  normal-text renders in all three languages) and reviewed. Emulator, iPhone, VoiceOver/TalkBack still not run.
+- Code 428b40d: CI 231 (44603006735) passed; unsigned IPA run 80 (44605226349, tag `ipa-nutrition-rings-side-428b40d`)
+  passed and supersedes IPA 79. Not merged, not deployed.

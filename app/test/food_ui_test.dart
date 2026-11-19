@@ -764,38 +764,38 @@ void main() {
 
     testWidgets('a rail appears only for a goal that was set', (tester) async {
       await surface(tester, [entry('a', calories: 1400, protein: 62)]);
-      expect(find.byType(ProgressRail), findsNothing);
+      expect(find.byType(ProgressRing), findsNothing);
       await surface(tester, [entry('a', calories: 1400, protein: 62)], proteinGoal: 140);
       expect(find.byKey(const Key('eat-goal-calories')), findsNothing);
       expect(find.byKey(const Key('eat-goal-protein')), findsOneWidget);
-      expect(find.text('Protein 62 of 140 g · 78 g left'), findsOneWidget);
+      expect(find.text('78 g left'), findsOneWidget);
     });
 
     testWidgets('complete totals say what is left; a partial sum is called known and states no remainder', (tester) async {
       await surface(tester, [entry('a', calories: 900, protein: 40), entry('b', calories: 500, protein: 22)], calorieGoal: 2200, proteinGoal: 140);
-      expect(find.text('1,400 of 2,200 kcal · 800 kcal left'), findsOneWidget);
+      expect(find.text('800 kcal left'), findsOneWidget);
 
       await surface(tester, [entry('a', calories: 900, protein: 40), entry('b', protein: 22)], calorieGoal: 2200, proteinGoal: 140);
-      expect(find.text('900 of 2,200 kcal · known so far'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('eat-goal-calories-status'))).data, 'Known intake');
       expect(find.textContaining('kcal left'), findsNothing, reason: 'a remainder from a partial sum would be invented');
-      expect(find.text('Protein 62 of 140 g · 78 g left'), findsOneWidget, reason: 'protein is complete, so its remainder is real');
+      expect(find.text('78 g left'), findsOneWidget, reason: 'protein is complete, so its remainder is real');
 
       await surface(tester, [entry('a')], calorieGoal: 2200);
-      expect(find.text('No calorie value entered yet · goal 2,200 kcal'), findsOneWidget);
+      expect(find.text('No value entered yet'), findsOneWidget);
       expect(find.text('—'), findsWidgets, reason: 'an unknown total is a dash, as on Today; the words say no value was entered');
       await surface(tester, const [], calorieGoal: 2200, proteinGoal: 140);
       expect(find.text('Your daily goal: 2,200 kcal · 140 g protein'), findsOneWidget);
-      expect(find.byType(ProgressRail), findsNothing, reason: 'nothing logged is not zero eaten');
+      expect(find.byType(ProgressRing), findsNothing, reason: 'nothing logged is not zero eaten');
     });
 
     testWidgets('over the goal the rail stays full while the words give the real total', (tester) async {
       final handle = tester.ensureSemantics();
       await surface(tester, [entry('a', calories: 2500, protein: 150)], calorieGoal: 2200, proteinGoal: 140);
-      expect(find.text('2,500 of 2,200 kcal · 300 kcal over'), findsOneWidget);
-      expect(find.text('114%'), findsOneWidget, reason: 'the share beside the bar is the real one');
-      double bar(String key) => tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(LinearProgressIndicator))).value!;
-      expect(bar('eat-goal-calories'), 1.0, reason: 'the bar stops at full');
-      expect(bar('eat-goal-protein'), 1.0);
+      expect(tester.widget<Text>(find.byKey(const Key('eat-goal-calories-status'))).data, '300 kcal over target');
+      expect(find.text('114%'), findsOneWidget, reason: 'the share beside the ring is the real one');
+      double ring(String key) => tester.widget<ProgressRing>(find.byKey(Key(key))).value;
+      expect(ring('eat-goal-calories'), 1.0, reason: 'the ring stops at full');
+      expect(ring('eat-goal-protein'), 1.0);
       handle.dispose();
     });
 
@@ -805,12 +805,12 @@ void main() {
       await pumpApp(tester, await _overrides(tester, fakes, food: food, calorieGoal: 2200, proteinGoal: 140), size: const Size(390, 2000));
       // Today shows the same numbers in its shorter form.
       await _tap(tester, 'nav-today');
-      for (final text in ['1,030', '/ 2,200 kcal', '72', '/ 140 g protein']) {
+      for (final text in ['1,030', '/ 2,200 kcal', '72', '/ 140 g']) {
         expect(find.text(text).hitTestable(), findsOneWidget, reason: text);
       }
       await _tap(tester, 'nav-eat');
-      expect(find.text('1,030 of 2,200 kcal · 1,170 kcal left').hitTestable(), findsOneWidget);
-      expect(find.text('Protein 72 of 140 g · 68 g left').hitTestable(), findsOneWidget);
+      expect(find.text('1,170 kcal left').hitTestable(), findsOneWidget);
+      expect(find.text('68 g left').hitTestable(), findsOneWidget);
     });
 
     testWidgets('goals start empty, are checked, and blank means none', (tester) async {

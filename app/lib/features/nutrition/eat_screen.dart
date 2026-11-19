@@ -291,16 +291,22 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   /// The heads-up on screen now, kept so its words do not change under the reader while the same state lasts.
   String? _headsUpShown;
 
+  /// The goals a day is compared with. Today: the goals as they are. An earlier day: only the goals recorded for it
+  /// (none when it has no record or they changed that day), never today's in their place.
+  (int?, int?) _goals(String day, String today, Profile? profile) {
+    if (day == today) return (profile?.calorieGoal, profile?.proteinGoal);
+    final past = ref.watch(goalDaysProvider).value?[day];
+    return past == null || past.changed ? (null, null) : (past.calorieGoal, past.proteinGoal);
+  }
+
   /// The day's briefing (features/nutrition/eat_briefing.dart): worked out here from the day's records, goals and time.
   /// No AI and no network. A heads-up is said once a day; its key is remembered as soon as it is shown.
   Briefing _briefing(String day, String today, List<FoodEntry> entries, Profile? profile) {
     final now = DateTime.now(), minute = now.hour * 60 + now.minute;
     final weekday = now.weekday;
-    // Today: the goals as they are. An earlier day: only the goals recorded for it, never today's in their place.
-    final past = day == today ? null : ref.watch(goalDaysProvider).value?[day];
-    final kept = past == null || past.changed ? null : past;
+    final (kcalGoal, proteinGoal) = _goals(day, today, profile);
     final b = eatBriefing(
-      day: day, today: today, entries: entries, kcalGoal: day == today ? profile?.calorieGoal : kept?.calorieGoal, proteinGoal: day == today ? profile?.proteinGoal : kept?.proteinGoal, nowMinute: minute,
+      day: day, today: today, entries: entries, kcalGoal: kcalGoal, proteinGoal: proteinGoal, nowMinute: minute,
       nextMeal: nextMealAt(minute, reminders: [
         for (final r in ref.watch(remindersProvider).value ?? const <Reminder>[])
           if (r.enabled && r.meal != null && r.weekdays.contains(weekday)) (meal: r.meal!, minute: r.minute),
@@ -368,6 +374,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     // The calendar day before the day shown (not the phone's yesterday): the source of Same as yesterday.
     final yesterday = [for (final r in ref.watch(foodProvider(dayBefore(day))).value ?? const <Stored<FoodEntry>>[]) r.value];
     final profile = ref.watch(profileProvider).value;
+    final goals = _goals(day, today, profile);
     final display = ref.watch(nutritionDisplayProvider);
     final c = context.c;
     final l = context.l10n;
@@ -435,8 +442,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
               else ...[
                 // The day's summary as a photo panel, with the one general Log food in it.
                 NutritionSurface(
-                  entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: day == today ? profile?.calorieGoal : null, proteinGoal: day == today ? profile?.proteinGoal : null, pending: live.any((r) => r.isPending),
-                  showCarbs: display.carbs, showFat: display.fat,
+                  entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: goals.$1, proteinGoal: goals.$2, pending: live.any((r) => r.isPending),
+                  showCarbs: display.carbs, showFat: display.fat, pastDay: day != today,
                   footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
                   // Log food, and beside it the way to several foods at once: the same day, the meal of the time of day.
                   action: Wrap(spacing: 4, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [

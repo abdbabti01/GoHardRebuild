@@ -89,7 +89,7 @@ void main() {
     expect(find.text('510'), findsOneWidget);
     expect(find.text('25'), findsOneWidget, reason: 'protein, as on Today: the figure and "g protein"');
     expect(find.text('—'), findsOneWidget, reason: 'carbs are unknown for every food');
-    expect(find.text('0 g'), findsOneWidget, reason: 'an entered zero is a known zero');
+    expect(find.text('0 g · known'), findsOneWidget, reason: 'an entered zero is a known zero; the toast has no fat value, so it is a known sum');
 
     final big = [FoodEntry(foodEntry('c', _day, 'Dinner', 'Feast', '1', calories: 12400.5))];
     await pumpApp(tester, const [], home: Scaffold(body: SingleChildScrollView(child: NutritionSurface(entries: big, coverage: NutrientCoverage.calculate(big)))));

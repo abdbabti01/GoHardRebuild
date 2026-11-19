@@ -138,12 +138,13 @@ calorie and protein progress." Built on `main` 19e2cf2 (Eat companion merged).
 ### One assessment (`features/nutrition/nutrition_assessment.dart`, pure)
 
 `DayAssessment.of(entries, calorieGoal, proteinGoal)` reads a day's calories and protein against the goals that applied.
-Eat's briefing, What could I eat? (and its ranking), the bars on Today and Eat, Eat's "left/over" lines, the coach's goal
+Eat's briefing, What could I eat? (and its ranking), the goal rings on Today and Eat (bars until 19 Nov 2026,
+docs/NUTRITION_RINGS.md), Eat's "left" line, the coach's goal
 lines and the weekly report all read it; none of them compares a total with a goal on its own.
 
 Per nutrient (`NutrientAssessment`), judged separately:
 
-| State | When | Calories bar | Protein bar |
+| State | When | Calories ring | Protein ring |
 |---|---|---|---|
 | `noGoal` | no goal set | neutral, no percentage | neutral, no percentage |
 | `incomplete` | some values unknown and the known part below the goal | neutral, "Known intake" | neutral, "Known intake" |
@@ -160,7 +161,7 @@ Per nutrient (`NutrientAssessment`), judged separately:
   kcal over. The 80 % line is judged on the exact value (`known × 5 ≥ goal × 4`). The percentage shown is the exact share
   rounded down below the goal (79.99 % → 79 %), exactly 100 % when reached and rounded up above it (100.03 % → 101 %), so
   a percentage never contradicts its label.
-- The bar fills to the goal at most; the real total, percentage and overage are in words ("2,450 / 2,300 kcal · 107 %",
+- The ring (was the bar) fills to the goal at most; the real total, percentage and overage are in words ("2,450 / 2,300 kcal · 107 %",
   "150 kcal over target"). A green low calorie total means room against the chosen goal, not adequate intake.
 - Situations for the coach (`DaySituation`): no goals · remaining · calories reached, protein left · protein reached,
   calories left · every goal reached (also when only one goal is set) · uncertain (a goal not reached and its values

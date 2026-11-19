@@ -9,6 +9,9 @@ import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/nutrition/food_form.dart';
 import 'package:gohard_rebuild/features/nutrition/food_repository.dart';
+import 'package:gohard_rebuild/features/nutrition/macro_composition.dart' show macroColor, macroOrder;
+import 'package:gohard_rebuild/features/nutrition/nutrition_assessment.dart' show GoalTone;
+import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart' show goalFill;
 import 'package:gohard_rebuild/features/plans/plan_progress.dart';
 import 'package:gohard_rebuild/features/shell/home_shell.dart';
 
@@ -85,6 +88,14 @@ void main() {
                 atLeast(3, fill, g.sunken, 'goal $name fill on its track${g == panel ? ' (panel)' : ''}');
                 atLeast(4.5, text, g.page, 'goal $name words${g == panel ? ' on a panel' : ' on the page'}');
               }
+            }
+            // The neutral arc of a ring with unknown values ("Known intake") on its track, on the panels.
+            atLeast(3, goalFill(panel, GoalTone.neutral), panel.sunken, 'neutral goal arc on its track (panel)');
+            // Macro composition colours (one set in every theme): 3:1 on the pale panels (Eat) and on this page (the
+            // target estimator's split).
+            for (final n in macroOrder) {
+              atLeast(3, macroColor(n), panel.page, '${n.name} segment on a panel');
+              atLeast(3, macroColor(n), c.page, '${n.name} segment on the page');
             }
             // In Dark the deep button carries a thin accent edge so its shape reads on the charcoal page.
             if (brightness == Brightness.dark) atLeast(3, Color.alphaBlend(c.accent.withValues(alpha: 0.55), c.page), c.page, 'the deep button\'s edge on the page');

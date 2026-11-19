@@ -1469,124 +1469,6 @@
       }
     }
   },
-  "eatUnitGramProtein": "g protein",
-  "@eatUnitGramProtein": {
-    "description": "Unit after the day's protein figure (grams of protein)."
-  },
-  "eatGoalProgressCalories": "{eaten} of {goal} kcal",
-  "@eatGoalProgressCalories": {
-    "description": "Calories eaten against the goal. Both numbers pre-formatted.",
-    "placeholders": {
-      "eaten": {
-        "type": "String",
-        "example": "1,480"
-      },
-      "goal": {
-        "type": "String",
-        "example": "2,200"
-      }
-    }
-  },
-  "eatGoalProgressProtein": "Protein {eaten} of {goal} g",
-  "@eatGoalProgressProtein": {
-    "description": "Protein eaten against the goal (grams).",
-    "placeholders": {
-      "eaten": {
-        "type": "String",
-        "example": "64.5"
-      },
-      "goal": {
-        "type": "String",
-        "example": "140"
-      }
-    }
-  },
-  "eatGoalNoCalorieValue": "No calorie value entered yet · goal {goal} kcal",
-  "@eatGoalNoCalorieValue": {
-    "description": "Food is logged but none has calories (unknown, not zero).",
-    "placeholders": {
-      "goal": {
-        "type": "String",
-        "example": "2,200"
-      }
-    }
-  },
-  "eatGoalNoProteinValue": "No protein value entered yet · goal {goal} g",
-  "@eatGoalNoProteinValue": {
-    "description": "Food is logged but none has protein (unknown, not zero).",
-    "placeholders": {
-      "goal": {
-        "type": "String",
-        "example": "140"
-      }
-    }
-  },
-  "eatGoalKnownSoFar": "{progress} · known so far",
-  "@eatGoalKnownSoFar": {
-    "description": "Progress line when some foods have no value: a partial sum. progress is eatGoalProgress….",
-    "placeholders": {
-      "progress": {
-        "type": "String",
-        "example": "1,480 of 2,200 kcal"
-      }
-    }
-  },
-  "eatGoalOverKcal": "{progress} · {diff} kcal over",
-  "@eatGoalOverKcal": {
-    "description": "Calories above the goal.",
-    "placeholders": {
-      "progress": {
-        "type": "String",
-        "example": "2,400 of 2,200 kcal"
-      },
-      "diff": {
-        "type": "String",
-        "example": "200"
-      }
-    }
-  },
-  "eatGoalLeftKcal": "{progress} · {diff} kcal left",
-  "@eatGoalLeftKcal": {
-    "description": "Calories remaining to the goal.",
-    "placeholders": {
-      "progress": {
-        "type": "String",
-        "example": "1,480 of 2,200 kcal"
-      },
-      "diff": {
-        "type": "String",
-        "example": "720"
-      }
-    }
-  },
-  "eatGoalOverGrams": "{progress} · {diff} g over",
-  "@eatGoalOverGrams": {
-    "description": "Protein above the goal.",
-    "placeholders": {
-      "progress": {
-        "type": "String",
-        "example": "Protein 150 of 140 g"
-      },
-      "diff": {
-        "type": "String",
-        "example": "10"
-      }
-    }
-  },
-  "eatGoalLeftGrams": "{progress} · {diff} g left",
-  "@eatGoalLeftGrams": {
-    "description": "Protein remaining to the goal.",
-    "placeholders": {
-      "progress": {
-        "type": "String",
-        "example": "Protein 64 of 140 g"
-      },
-      "diff": {
-        "type": "String",
-        "example": "76"
-      }
-    }
-  },
   "eatNoFoodLoggedYet": "No food logged yet",
   "@eatNoFoodLoggedYet": {
     "description": "Eat summary heading on a day with no entries."
@@ -1657,10 +1539,6 @@
   "@eatKnown": {
     "description": "Tag after a partial sum ('1,480 kcal · known')."
   },
-  "eatKnownSoFar": "known so far",
-  "@eatKnownSoFar": {
-    "description": "Under a partial calorie sum with no goal."
-  },
   "eatSaidKcal": "{nutrient} {value} kilocalories",
   "@eatSaidKcal": {
     "description": "Screen-reader: calories value. The French word or symbol may match English.",
@@ -1724,14 +1602,6 @@
   "eatListSeparator": ", ",
   "@eatListSeparator": {
     "description": "Separator between parts of a screen-reader label (comma and space)."
-  },
-  "eatCaloriesGoalBar": "Calories goal",
-  "@eatCaloriesGoalBar": {
-    "description": "Screen-reader label of the calorie goal bar."
-  },
-  "eatProteinGoalBar": "Protein goal",
-  "@eatProteinGoalBar": {
-    "description": "Screen-reader label of the protein goal bar."
   },
   "eatOpensJournalHint": "Opens the food journal",
   "@eatOpensJournalHint": {
@@ -18741,5 +18611,83 @@
   "workoutTodayEditNote": "Change your plan from your next session. This workout keeps its targets.",
   "@workoutTodayEditNote": {
     "description": "Under Edit future targets in the aim’s choices."
+  },
+  "nrOfGoal": "of {goal}",
+  "@nrOfGoal": {
+    "description": "Under a goal ring's amount: the goal with its unit (\"of 2,300 kcal\"). goal = number and unit.",
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "nrLeft": "{amount} left",
+  "@nrLeft": {
+    "description": "Eat goal ring: the exact amount left, only when every value is known. amount = number and unit (\"650 kcal\").",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "nrNoValue": "No value entered yet",
+  "@nrNoValue": {
+    "description": "Goal ring state when food is logged but none of it has a value for this nutrient (never shown as zero)."
+  },
+  "nrNoGoalThatDay": "No goal recorded for this day",
+  "@nrNoGoalThatDay": {
+    "description": "Goal ring on an earlier day with no recorded goal: today's goal is never used in its place."
+  },
+  "nrSaidLeftKcal": "{value} kilocalories remaining",
+  "@nrSaidLeftKcal": {
+    "description": "Screen reader: the exact calories left, part of the calorie ring's one description.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "nrSaidLeftGrams": "{value} grams remaining",
+  "@nrSaidLeftGrams": {
+    "description": "Screen reader: the exact protein left, part of the protein ring's one description.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "nrMacroRecordedTitle": "Recorded macro composition",
+  "@nrMacroRecordedTitle": {
+    "description": "Eat: title of the donut showing what the logged protein, carbs and fat make up (not a target)."
+  },
+  "nrMacroTargetTitle": "Estimated target split",
+  "@nrMacroTargetTitle": {
+    "description": "Help me set my targets: title of the donut showing a hypothetical day at the estimated targets (not anything logged)."
+  },
+  "nrMacroBasis": "Percentages of the {kcal} kcal from protein, carbs and fat (4, 4 and 9 kcal per gram).",
+  "@nrMacroBasis": {
+    "description": "Under a macro donut: what its percentages are of. kcal = the energy worked out from the grams.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "nrMacroDiffers": "Your recorded calories stay {kcal} kcal. Food labels round their values, and fibre and alcohol are counted differently, so the two totals can differ.",
+  "@nrMacroDiffers": {
+    "description": "Under Eat's macro donut when the energy from the grams differs from the recorded calories, which stay as logged. kcal = recorded calories.",
+    "placeholders": {
+      "kcal": {
+        "type": "String"
+      }
+    }
+  },
+  "nrMacroPartial": "Some foods have no protein, carb or fat value, so no split is shown. The amounts are what is known.",
+  "@nrMacroPartial": {
+    "description": "Eat macro donut when some value is missing: no percentages from a partial sum."
+  },
+  "nrMacroZero": "No energy from protein, carbs or fat was recorded, so there is no split.",
+  "@nrMacroZero": {
+    "description": "Eat macro donut when every value is known and all are zero."
   }
 }

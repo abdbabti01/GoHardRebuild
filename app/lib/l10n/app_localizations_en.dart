@@ -1026,54 +1026,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eatUnitGramProtein => 'g protein';
-
-  @override
-  String eatGoalProgressCalories(String eaten, String goal) {
-    return '$eaten of $goal kcal';
-  }
-
-  @override
-  String eatGoalProgressProtein(String eaten, String goal) {
-    return 'Protein $eaten of $goal g';
-  }
-
-  @override
-  String eatGoalNoCalorieValue(String goal) {
-    return 'No calorie value entered yet · goal $goal kcal';
-  }
-
-  @override
-  String eatGoalNoProteinValue(String goal) {
-    return 'No protein value entered yet · goal $goal g';
-  }
-
-  @override
-  String eatGoalKnownSoFar(String progress) {
-    return '$progress · known so far';
-  }
-
-  @override
-  String eatGoalOverKcal(String progress, String diff) {
-    return '$progress · $diff kcal over';
-  }
-
-  @override
-  String eatGoalLeftKcal(String progress, String diff) {
-    return '$progress · $diff kcal left';
-  }
-
-  @override
-  String eatGoalOverGrams(String progress, String diff) {
-    return '$progress · $diff g over';
-  }
-
-  @override
-  String eatGoalLeftGrams(String progress, String diff) {
-    return '$progress · $diff g left';
-  }
-
-  @override
   String get eatNoFoodLoggedYet => 'No food logged yet';
 
   @override
@@ -1118,9 +1070,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eatKnown => 'known';
 
   @override
-  String get eatKnownSoFar => 'known so far';
-
-  @override
   String eatSaidKcal(String nutrient, String value) {
     return '$nutrient $value kilocalories';
   }
@@ -1147,12 +1096,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eatListSeparator => ', ';
-
-  @override
-  String get eatCaloriesGoalBar => 'Calories goal';
-
-  @override
-  String get eatProteinGoalBar => 'Protein goal';
 
   @override
   String get eatOpensJournalHint => 'Opens the food journal';
@@ -13281,4 +13224,54 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workoutTodayEditNote =>
       'Change your plan from your next session. This workout keeps its targets.';
+
+  @override
+  String nrOfGoal(String goal) {
+    return 'of $goal';
+  }
+
+  @override
+  String nrLeft(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String get nrNoValue => 'No value entered yet';
+
+  @override
+  String get nrNoGoalThatDay => 'No goal recorded for this day';
+
+  @override
+  String nrSaidLeftKcal(String value) {
+    return '$value kilocalories remaining';
+  }
+
+  @override
+  String nrSaidLeftGrams(String value) {
+    return '$value grams remaining';
+  }
+
+  @override
+  String get nrMacroRecordedTitle => 'Recorded macro composition';
+
+  @override
+  String get nrMacroTargetTitle => 'Estimated target split';
+
+  @override
+  String nrMacroBasis(String kcal) {
+    return 'Percentages of the $kcal kcal from protein, carbs and fat (4, 4 and 9 kcal per gram).';
+  }
+
+  @override
+  String nrMacroDiffers(String kcal) {
+    return 'Your recorded calories stay $kcal kcal. Food labels round their values, and fibre and alcohol are counted differently, so the two totals can differ.';
+  }
+
+  @override
+  String get nrMacroPartial =>
+      'Some foods have no protein, carb or fat value, so no split is shown. The amounts are what is known.';
+
+  @override
+  String get nrMacroZero =>
+      'No energy from protein, carbs or fat was recorded, so there is no split.';
 }
