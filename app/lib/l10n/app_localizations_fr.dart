@@ -13012,7 +13012,24 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tgtGoalRecompLine =>
-      'Miser sur la composition corporelle; mon poids pourrait changer lentement.';
+      'Miser sur la composition corporelle; mon poids peut changer lentement.';
+
+  @override
+  String get tgtPriorityTitle => 'Qu\'est-ce qui passe en premier?';
+
+  @override
+  String get tgtPrioritySteady => 'Garder mon poids à peu près stable';
+
+  @override
+  String get tgtPrioritySteadyLine =>
+      'Calories à ton maintien estimé. La perte de gras, s\'il y en a, est graduelle.';
+
+  @override
+  String get tgtPriorityFatLoss => 'Prioriser la perte de gras';
+
+  @override
+  String get tgtPriorityFatLossLine =>
+      'Un déficit calorique modéré. Gagner du muscle est moins probable quand on mange moins.';
 
   @override
   String get tgtAboutTitle => 'Parle-nous de toi';
@@ -13071,39 +13088,39 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tgtActivity =>
-      'À quel point une journée habituelle est-elle active?';
+      'À quel point ta semaine habituelle est-elle active?';
 
   @override
   String get tgtActivityHelp =>
-      'Une seule réponse couvre la vie quotidienne et les entraînements, pour que l\'exercice ne soit jamais compté deux fois.';
+      'Pense à toute ta semaine habituelle, en moyenne par jour : travail, déplacements et entraînements ensemble. La fréquence de tes entraînements n\'en est qu\'une partie. Les entraînements sont déjà comptés ici, alors n\'ajoute pas de calories d\'exercice en plus.';
 
   @override
   String get tgtActInactive => 'Surtout assis';
 
   @override
   String get tgtActInactiveLine =>
-      'Assis la majeure partie de la journée, peu de marche, peu ou pas d\'entraînements.';
+      'En dehors de l\'entraînement, ta journée est surtout assise : travail de bureau, marche et tâches de tous les jours. Si c\'est ta semaine, quelques séances d\'une heure (3 ou 4) y ont encore leur place.';
 
   @override
   String get tgtActLow => 'Légèrement actif';
 
   @override
   String get tgtActLowLine =>
-      'Surtout assis en dehors des entraînements, plus environ une heure de marche ou d\'exercice la plupart des jours.';
+      'Comme ci-dessus, plus environ une heure de marche rapide ou d\'activité semblable la plupart des jours, au travail ou en dehors.';
 
   @override
   String get tgtActActive => 'Actif';
 
   @override
   String get tgtActActiveLine =>
-      'Debout une bonne partie de la journée, ou 1 h 30 à 2 h de marche, de vélo ou de sport la plupart des jours.';
+      'Environ 2 heures d\'activité en plus la plupart des jours, comme de la marche plus du vélo ou un sport, ou un travail qui te fait bouger autant.';
 
   @override
   String get tgtActVery => 'Très actif';
 
   @override
   String get tgtActVeryLine =>
-      'Un travail physique, ou environ 2 h d\'exercice intense, comme la course ou le sport, la plupart des jours.';
+      'Environ 2 heures en plus la plupart des jours, avec des efforts intenses comme la course ou un sport exigeant, ou un travail physique lourd.';
 
   @override
   String get tgtScope =>
@@ -13134,50 +13151,128 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tgtResultTitle => 'Tes cibles de départ';
 
   @override
-  String get tgtCoachSay =>
-      'J\'ai utilisé ton poids, ton activité habituelle et ton objectif pour estimer un point de départ quotidien. Tu peux ajuster ces nombres avant d\'enregistrer.';
-
-  @override
-  String get tgtPlainSay =>
-      'Cette estimation utilise ton poids, ton activité habituelle et ton objectif pour fixer un point de départ quotidien. Tu peux ajuster ces nombres avant d\'enregistrer.';
-
-  @override
-  String tgtCurrentToSuggested(String current, String suggested) {
-    return 'Actuel : $current → suggéré : $suggested';
+  String tgtCoachSay(String maintenance, String calories, String protein) {
+    return 'Une journée comme la tienne utilise environ $maintenance. Je commencerais à $calories avec $protein de protéines, puis je regarderais la tendance de ton poids quelques semaines avant de changer quoi que ce soit.';
   }
 
   @override
-  String tgtSuggested(String value) {
-    return 'Suggéré : $value';
+  String tgtPlainSay(String maintenance, String calories, String protein) {
+    return 'Une journée comme la tienne utilise environ $maintenance. Commence à $calories avec $protein de protéines, puis regarde la tendance de ton poids quelques semaines avant de changer quoi que ce soit.';
   }
 
   @override
-  String get tgtWhyMaintain =>
-      'Les calories correspondent à ton maintien estimé : ce qu\'une journée comme la tienne utilise, en moyenne.';
+  String get tgtYourGoal => 'Ton objectif';
 
   @override
-  String tgtWhyLose(String maintenance) {
-    return 'Environ 500 kcal par jour sous ton maintien estimé de $maintenance, avec plus de protéines. La vitesse à laquelle le poids change varie d\'une personne à l\'autre.';
+  String get tgtChange => 'Modifier';
+
+  @override
+  String get tgtChangeGoalSaid => 'Modifier l\'objectif';
+
+  @override
+  String get tgtApproachMaintain =>
+      'Manger à peu près ce qu\'une journée comme la tienne utilise, pour garder ton poids assez stable.';
+
+  @override
+  String get tgtApproachLose =>
+      'Manger un peu moins que ton maintien estimé, avec plus de protéines.';
+
+  @override
+  String get tgtApproachGain =>
+      'Manger un peu plus que ton maintien estimé et faire de la musculation; des calories en plus, seules, ajoutent surtout du poids.';
+
+  @override
+  String get tgtApproachRecompSteady =>
+      'Rester à ton maintien estimé avec beaucoup de protéines et de la musculation régulière.';
+
+  @override
+  String get tgtApproachRecompFatLoss =>
+      'Manger un peu moins que ton maintien, avec beaucoup de protéines et de la musculation régulière.';
+
+  @override
+  String tgtEdited(String value) {
+    return 'Ta cible modifiée · suggestion $value';
   }
 
   @override
-  String tgtWhyLoseFloor(String maintenance, String floor) {
-    return 'Moins de 500 kcal sous ton maintien estimé de $maintenance, parce que GoHard ne suggère pas de commencer sous $floor par jour. Un médecin ou un ou une diététiste peut t\'aider à aller plus loin.';
+  String get tgtSuggestedEstimate => 'Estimation suggérée';
+
+  @override
+  String tgtCurrently(String value) {
+    return 'Objectif actuel $value';
   }
 
   @override
-  String tgtWhyLoseNoRoom(String floor) {
-    return 'Identique à ton maintien estimé : il est déjà près de $floor, le point de départ le plus bas que GoHard suggère. Un médecin ou un ou une diététiste peut t\'aider à planifier une perte de poids.';
+  String get tgtUseSuggestion => 'Utiliser la suggestion';
+
+  @override
+  String get tgtSavesOnly =>
+      'Seuls ces deux nombres sont enregistrés, comme objectifs quotidiens. Ton objectif d\'eau et les jours passés ne changent pas.';
+
+  @override
+  String get tgtMaintenanceRow => 'Maintien estimé';
+
+  @override
+  String get tgtAdjustmentRow => 'Ajustement selon l\'objectif';
+
+  @override
+  String get tgtTargetRow => 'Calories suggérées';
+
+  @override
+  String get tgtAdjustNone => 'Aucun';
+
+  @override
+  String tgtAdjustLess(String value) {
+    return '$value de moins';
   }
 
   @override
-  String tgtWhyGain(String maintenance) {
-    return 'Environ 360 kcal par jour au-dessus de ton maintien estimé de $maintenance, avec plus de protéines. Le muscle se développe avec l\'entraînement en force; les calories en plus, à elles seules, ajoutent surtout du poids.';
+  String tgtAdjustMore(String value) {
+    return '$value de plus';
   }
 
   @override
-  String get tgtWhyRecomp =>
-      'Les calories restent à ton maintien estimé, comme pour Maintenir mon poids; ce qui change, c\'est plus de protéines. La composition corporelle change avec un entraînement en force régulier et du temps, pas avec ces nombres seuls.';
+  String tgtNoteFloor(String floor) {
+    return 'Moins que les 500 kcal habituelles : les suggestions de GoHard ne commencent pas sous $floor par jour.';
+  }
+
+  @override
+  String tgtNoteNoRoom(String floor) {
+    return 'Aucune réduction : ton maintien estimé est déjà à $floor ou moins, là où s\'arrêtent les suggestions de GoHard. Un médecin ou un diététiste peut t\'aider à planifier une perte de poids.';
+  }
+
+  @override
+  String tgtProteinRow(String perKg, String weight) {
+    return 'Protéines : $perKg g par kg × $weight';
+  }
+
+  @override
+  String get tgtRounding => 'Arrondi aux 10 kcal et aux 5 g près.';
+
+  @override
+  String get tgtDetailsTitle => 'Détails utilisés';
+
+  @override
+  String get tgtSexUsed => 'Sexe utilisé par l\'équation';
+
+  @override
+  String get tgtActivityUsed => 'Activité';
+
+  @override
+  String get tgtChangeDetails => 'Modifier les détails';
+
+  @override
+  String get tgtWeightEntered =>
+      'Saisi pour cette estimation seulement; pas ajouté au Suivi corporel';
+
+  @override
+  String tgtWeightLatest(String date) {
+    return 'Dernière pesée, enregistrée le $date';
+  }
+
+  @override
+  String get tgtMacroOver =>
+      'Tes protéines et la part de lipides dépassent déjà tes calories, alors il ne reste pas de place pour les glucides.';
 
   @override
   String get tgtProteinCapped =>
@@ -13193,11 +13288,41 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tgtMacroNote =>
-      'Estimations seulement. GoHard n\'enregistre pas d\'objectifs de glucides ou de lipides, alors ils ne sont pas suivis. Les lipides sont fixés à 30 % des calories et les glucides complètent le reste.';
+      'Non enregistrés : GoHard n\'a pas d\'objectifs de glucides ou de lipides. Les lipides font 30 % des calories et les glucides le reste, arrondis à 5 g.';
 
   @override
-  String get tgtHow =>
-      'Estimé avec les équations énergétiques 2023 des National Academies des États-Unis pour les adultes. C\'est un point de départ, pas une mesure : observe l\'évolution de ton poids sur quelques semaines et ajuste.';
+  String get tgtHowTitle => 'Comment c\'est estimé';
+
+  @override
+  String get tgtHowMethod =>
+      'Le maintien vient des équations 2023 des National Academies des États-Unis pour les adultes, aussi utilisées par Santé Canada. Elles estiment l\'énergie utilisée sur toute une journée, entraînements compris, à partir de l\'âge, de la taille, du poids, du sexe et de l\'activité, et ont été établies avec des mesures de personnes de toutes corpulences.';
+
+  @override
+  String get tgtHowGoal =>
+      'Les ajustements selon l\'objectif sont des règles de départ de GoHard, fondées sur des recommandations publiées : 500 kcal sous le maintien pour perdre du poids (ligne directrice AHA/ACC/TOS 2013 sur l\'obésité), environ 360 kcal au-dessus pour gagner du muscle (Slater et coll., 2019), et de 1,4 à 2,0 g de protéines par kg de poids corporel (ISSN 2017; Morton et coll., 2018).';
+
+  @override
+  String get tgtHowLimits =>
+      'Des personnes avec les mêmes réponses peuvent avoir des besoins assez différents : c\'est une estimation, pas un besoin exact. Les protéines par kg ont surtout été étudiées chez des adultes plus minces qui s\'entraînent; à un poids plus élevé, ce nombre peut dépasser tes besoins. Pas pour les moins de 19 ans, la grossesse, l\'allaitement ou les régimes médicaux; un médecin ou un diététiste peut adapter tes cibles.';
+
+  @override
+  String get tgtCheckTitle => 'Vérifier ton point de départ';
+
+  @override
+  String get tgtCheckTrend =>
+      'Donne-toi quelques semaines, puis regarde la tendance de ton poids dans le Suivi corporel plutôt qu\'une seule pesée.';
+
+  @override
+  String get tgtCheckLogs =>
+      'Une journée avec des aliments manquants n\'est pas une journée à zéro, ni une journée complète : des journaux incomplets ne peuvent pas montrer tes vrais besoins.';
+
+  @override
+  String get tgtCheckScale =>
+      'Le poids sur la balance, à lui seul, ne montre pas si tu as perdu du gras ou gagné du muscle.';
+
+  @override
+  String get tgtCheckManual =>
+      'GoHard ne change jamais tes cibles par lui-même. Modifie-les quand tu le décides.';
 
   @override
   String get tgtUse => 'Utiliser ces cibles';

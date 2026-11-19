@@ -18064,6 +18064,26 @@
   "@tgtGoalRecompLine": {
     "description": "Plain-language line under Lose fat and build muscle."
   },
+  "tgtPriorityTitle": "What comes first?",
+  "@tgtPriorityTitle": {
+    "description": "Lose fat and build muscle: which comes first (no default)."
+  },
+  "tgtPrioritySteady": "Keep my weight about steady",
+  "@tgtPrioritySteady": {
+    "description": "Recomposition priority: stay at maintenance."
+  },
+  "tgtPrioritySteadyLine": "Calories at your estimated maintenance. Fat loss, if any, is gradual.",
+  "@tgtPrioritySteadyLine": {
+    "description": "Under Keep my weight about steady."
+  },
+  "tgtPriorityFatLoss": "Put fat loss first",
+  "@tgtPriorityFatLoss": {
+    "description": "Recomposition priority: a deficit."
+  },
+  "tgtPriorityFatLossLine": "A moderate calorie deficit. Building muscle is less likely while eating less.",
+  "@tgtPriorityFatLossLine": {
+    "description": "Under Put fat loss first: the trade-off."
+  },
   "tgtAboutTitle": "Tell us about yourself",
   "@tgtAboutTitle": {
     "description": "Target estimate, step 2 title."
@@ -18132,45 +18152,45 @@
   "@tgtSexSkip": {
     "description": "Link under the sex choice: leave the estimate for manual goals."
   },
-  "tgtActivity": "How active is a usual day?",
+  "tgtActivity": "How active is your usual week?",
   "@tgtActivity": {
-    "description": "Activity question."
+    "description": "Activity question: the whole usual week."
   },
-  "tgtActivityHelp": "One answer covers daily life and workouts together, so exercise is never counted twice.",
+  "tgtActivityHelp": "Think of your whole usual week, averaged per day: work, getting around and training together. How often you train is only part of it. Workouts are already counted here, so don't add exercise calories on top.",
   "@tgtActivityHelp": {
-    "description": "Under the activity question: workouts are included, not asked separately."
+    "description": "Under the activity question: the whole usual week counts (work, getting around, training); workout frequency alone does not decide it; no exercise calories added."
   },
   "tgtActInactive": "Mostly seated",
   "@tgtActInactive": {
     "description": "Activity choice (NASEM inactive)."
   },
-  "tgtActInactiveLine": "Seated most of the day, little walking, few or no workouts.",
+  "tgtActInactiveLine": "Outside training, your day is mostly seated: desk work, everyday walking and chores. If that's your week, a few one-hour workouts (3 or 4) still fit here.",
   "@tgtActInactiveLine": {
-    "description": "Example under Mostly seated."
+    "description": "Example under Mostly seated (NASEM inactive, Table 7-1): describes daily life outside training; a few workouts can still fit."
   },
   "tgtActLow": "Lightly active",
   "@tgtActLow": {
     "description": "Activity choice (NASEM low active)."
   },
-  "tgtActLowLine": "Mostly seated outside workouts, plus about an hour of walking or exercise on most days.",
+  "tgtActLowLine": "Like the above, plus about an extra hour of brisk walking or similar activity most days, at work or outside it.",
   "@tgtActLowLine": {
-    "description": "Example under Lightly active."
+    "description": "Example under Lightly active (NASEM low active, Table 7-1)."
   },
   "tgtActActive": "Active",
   "@tgtActActive": {
     "description": "Activity choice (NASEM active)."
   },
-  "tgtActActiveLine": "On your feet much of the day, or 1½ to 2 hours of walking, cycling or sports on most days.",
+  "tgtActActiveLine": "About 2 extra hours of activity most days, such as walking plus cycling or a sport, or work that keeps you moving that much.",
   "@tgtActActiveLine": {
-    "description": "Example under Active."
+    "description": "Example under Active (NASEM active, Table 7-1)."
   },
   "tgtActVery": "Very active",
   "@tgtActVery": {
     "description": "Activity choice (NASEM very active)."
   },
-  "tgtActVeryLine": "A physical job, or about 2 hours of hard exercise such as running or sports on most days.",
+  "tgtActVeryLine": "About 2 extra hours most days that include hard effort, such as running or a demanding sport, or heavy physical work.",
   "@tgtActVeryLine": {
-    "description": "Example under Very active."
+    "description": "Example under Very active (NASEM very active, Table 7-1)."
   },
   "tgtScope": "For adults 19 and over. Not for pregnancy or breastfeeding, which need a different estimate.",
   "@tgtScope": {
@@ -18204,89 +18224,198 @@
   "@tgtResultTitle": {
     "description": "Target estimate, step 3 title."
   },
-  "tgtCoachSay": "I used your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.",
+  "tgtCoachSay": "A day like yours uses about {maintenance}. I'd start at {calories} with {protein} of protein, then watch your weight trend for a few weeks before changing anything.",
   "@tgtCoachSay": {
-    "description": "Leon/Leona explaining the result (first person). Fixed text; the numbers come from the calculator."
-  },
-  "tgtPlainSay": "This uses your weight, usual activity and goal to estimate a daily starting point. You can adjust these numbers before saving.",
-  "@tgtPlainSay": {
-    "description": "The same explanation when the coach is turned off."
-  },
-  "tgtCurrentToSuggested": "Current {current} → suggested {suggested}",
-  "@tgtCurrentToSuggested": {
-    "description": "Existing goal and the suggestion. The arrow points from current to suggested in reading order.",
+    "description": "Leon/Leona on the result (first person), with the calculator's numbers.",
     "placeholders": {
-      "current": {
-        "type": "String",
-        "example": "2,000 kcal"
+      "maintenance": {
+        "type": "String"
       },
-      "suggested": {
-        "type": "String",
-        "example": "2,280 kcal"
+      "calories": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
       }
     }
   },
-  "tgtSuggested": "Suggested {value}",
-  "@tgtSuggested": {
-    "description": "The suggestion when no goal is saved.",
+  "tgtPlainSay": "A day like yours uses about {maintenance}. Start at {calories} with {protein} of protein, then watch your weight trend for a few weeks before changing anything.",
+  "@tgtPlainSay": {
+    "description": "The same explanation when the coach is turned off.",
+    "placeholders": {
+      "maintenance": {
+        "type": "String"
+      },
+      "calories": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
+      }
+    }
+  },
+  "tgtYourGoal": "Your goal",
+  "@tgtYourGoal": {
+    "description": "Over the chosen goal on the result."
+  },
+  "tgtChange": "Change",
+  "@tgtChange": {
+    "description": "Short button beside the goal: go back and change it."
+  },
+  "tgtChangeGoalSaid": "Change goal",
+  "@tgtChangeGoalSaid": {
+    "description": "What a screen reader says for Change beside the goal."
+  },
+  "tgtApproachMaintain": "Eat about what a day like yours uses, to keep your weight roughly steady.",
+  "@tgtApproachMaintain": {
+    "description": "Maintain weight: the approach in one sentence."
+  },
+  "tgtApproachLose": "Eat a moderate amount below your estimated maintenance, with more protein.",
+  "@tgtApproachLose": {
+    "description": "Lose weight: the approach in one sentence. No rate is promised."
+  },
+  "tgtApproachGain": "Eat a little above your estimated maintenance and train for strength; extra calories alone mostly add weight.",
+  "@tgtApproachGain": {
+    "description": "Gain muscle: the approach; calories alone do not build muscle."
+  },
+  "tgtApproachRecompSteady": "Stay at your estimated maintenance with high protein and regular strength training.",
+  "@tgtApproachRecompSteady": {
+    "description": "Lose fat and build muscle, weight about steady: the approach."
+  },
+  "tgtApproachRecompFatLoss": "Eat a moderate amount below maintenance with high protein and regular strength training.",
+  "@tgtApproachRecompFatLoss": {
+    "description": "Lose fat and build muscle, fat loss first: the approach."
+  },
+  "tgtEdited": "Your edited target · suggested {value}",
+  "@tgtEdited": {
+    "description": "Under an edited target: it is the person's own number; the suggestion was another.",
     "placeholders": {
       "value": {
-        "type": "String",
-        "example": "2,280 kcal"
+        "type": "String"
       }
     }
   },
-  "tgtWhyMaintain": "Calories match your estimated maintenance: what a day like yours uses, on average.",
-  "@tgtWhyMaintain": {
-    "description": "Why the Maintain weight suggestion is what it is."
+  "tgtSuggestedEstimate": "Suggested estimate",
+  "@tgtSuggestedEstimate": {
+    "description": "Under an unedited target: it is the suggested estimate."
   },
-  "tgtWhyLose": "About 500 kcal a day below your estimated maintenance of {maintenance}, with more protein. How quickly weight changes differs from person to person.",
-  "@tgtWhyLose": {
-    "description": "Lose weight: 500 kcal below maintenance. No rate is promised.",
+  "tgtCurrently": "Current goal {value}",
+  "@tgtCurrently": {
+    "description": "The goal saved now, beside the suggestion.",
     "placeholders": {
-      "maintenance": {
-        "type": "String",
-        "example": "3,130 kcal"
+      "value": {
+        "type": "String"
       }
     }
   },
-  "tgtWhyLoseFloor": "Less than 500 kcal below your estimated maintenance of {maintenance}, because GoHard doesn't suggest starting under {floor} a day. A doctor or dietitian can help you plan more.",
-  "@tgtWhyLoseFloor": {
-    "description": "Lose weight held at the guideline floor.",
+  "tgtUseSuggestion": "Use suggestion",
+  "@tgtUseSuggestion": {
+    "description": "Puts the suggestion back in an edited field."
+  },
+  "tgtSavesOnly": "Only these two numbers are saved, as your daily goals. Your water goal and past days don't change.",
+  "@tgtSavesOnly": {
+    "description": "What Use these targets saves."
+  },
+  "tgtMaintenanceRow": "Estimated maintenance",
+  "@tgtMaintenanceRow": {
+    "description": "Row: estimated maintenance calories."
+  },
+  "tgtAdjustmentRow": "Goal adjustment",
+  "@tgtAdjustmentRow": {
+    "description": "Row: the goal's calorie adjustment."
+  },
+  "tgtTargetRow": "Suggested calories",
+  "@tgtTargetRow": {
+    "description": "Row: maintenance plus adjustment."
+  },
+  "tgtAdjustNone": "None",
+  "@tgtAdjustNone": {
+    "description": "Adjustment of zero."
+  },
+  "tgtAdjustLess": "{value} less",
+  "@tgtAdjustLess": {
+    "description": "A deficit, e.g. \"500 kcal less\".",
     "placeholders": {
-      "maintenance": {
-        "type": "String",
-        "example": "1,480 kcal"
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "tgtAdjustMore": "{value} more",
+  "@tgtAdjustMore": {
+    "description": "A surplus, e.g. \"360 kcal more\".",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "tgtNoteFloor": "Less than the usual 500 kcal: GoHard's suggestions don't start below {floor} a day.",
+  "@tgtNoteFloor": {
+    "description": "Under the adjustment when the starting floor made the deficit smaller. Not a suitability claim.",
+    "placeholders": {
+      "floor": {
+        "type": "String"
+      }
+    }
+  },
+  "tgtNoteNoRoom": "No cut: your estimated maintenance is already at or below {floor}, where GoHard's suggestions stop. A doctor or dietitian can help you plan weight loss.",
+  "@tgtNoteNoRoom": {
+    "description": "Under the adjustment when maintenance is already at or below the floor.",
+    "placeholders": {
+      "floor": {
+        "type": "String"
+      }
+    }
+  },
+  "tgtProteinRow": "Protein: {perKg} g per kg × {weight}",
+  "@tgtProteinRow": {
+    "description": "Row: protein per kg times the weight used.",
+    "placeholders": {
+      "perKg": {
+        "type": "String"
       },
-      "floor": {
-        "type": "String",
-        "example": "1,200 kcal"
+      "weight": {
+        "type": "String"
       }
     }
   },
-  "tgtWhyLoseNoRoom": "The same as your estimated maintenance: it's already near {floor}, the lowest starting point GoHard suggests. A doctor or dietitian can help you plan weight loss.",
-  "@tgtWhyLoseNoRoom": {
-    "description": "Lose weight equals maintenance because maintenance is already at the floor.",
+  "tgtRounding": "Rounded to the nearest 10 kcal and 5 g.",
+  "@tgtRounding": {
+    "description": "How the suggestions are rounded."
+  },
+  "tgtDetailsTitle": "Details used",
+  "@tgtDetailsTitle": {
+    "description": "Expandable: the answers the estimate used."
+  },
+  "tgtSexUsed": "Sex used by the equation",
+  "@tgtSexUsed": {
+    "description": "Details row: the sex input of the equation."
+  },
+  "tgtActivityUsed": "Activity",
+  "@tgtActivityUsed": {
+    "description": "Details row: the activity answer."
+  },
+  "tgtChangeDetails": "Change details",
+  "@tgtChangeDetails": {
+    "description": "Goes back to the details step with the answers kept."
+  },
+  "tgtWeightEntered": "Entered for this estimate only; not added to Body progress",
+  "@tgtWeightEntered": {
+    "description": "Details: a weight typed for this estimate only."
+  },
+  "tgtWeightLatest": "Latest weigh-in, recorded {date}",
+  "@tgtWeightLatest": {
+    "description": "Details: the weight is the latest weigh-in, with its date.",
     "placeholders": {
-      "floor": {
-        "type": "String",
-        "example": "1,200 kcal"
+      "date": {
+        "type": "String"
       }
     }
   },
-  "tgtWhyGain": "About 360 kcal a day above your estimated maintenance of {maintenance}, with more protein. Muscle grows with strength training; extra calories on their own mostly add weight.",
-  "@tgtWhyGain": {
-    "description": "Gain muscle: small surplus; calories alone do not build muscle.",
-    "placeholders": {
-      "maintenance": {
-        "type": "String",
-        "example": "3,130 kcal"
-      }
-    }
-  },
-  "tgtWhyRecomp": "Calories stay at your estimated maintenance, the same as Maintain weight; what changes is more protein. Body composition changes with regular strength training and time, not from these numbers alone.",
-  "@tgtWhyRecomp": {
-    "description": "Lose fat and build muscle: same calories as Maintain; explains why."
+  "tgtMacroOver": "Your protein and the fat share already add up to more than your calories, so there's no room for carbs.",
+  "@tgtMacroOver": {
+    "description": "Edited protein and the fat share already pass the calories."
   },
   "tgtProteinCapped": "Protein is kept to 35% of calories, the top of the usual range for adults.",
   "@tgtProteinCapped": {
@@ -18306,13 +18435,45 @@
       }
     }
   },
-  "tgtMacroNote": "Estimates only. GoHard doesn't save carb or fat goals, so these aren't tracked. Fat is set at 30% of calories and carbs make up the rest.",
+  "tgtMacroNote": "Not saved: GoHard has no carb or fat goals. Fat is 30% of calories and carbs are the rest, rounded to 5 g.",
   "@tgtMacroNote": {
-    "description": "Carbs and fat are not goals and are not saved."
+    "description": "Carbs and fat are not goals and are not saved; how they are split and rounded."
   },
-  "tgtHow": "Estimated with the U.S. National Academies' 2023 energy equations for adults. It's a starting point, not a measurement: watch how your weight changes over a few weeks and adjust.",
-  "@tgtHow": {
-    "description": "Method and its limits, under the result."
+  "tgtHowTitle": "How this was estimated",
+  "@tgtHowTitle": {
+    "description": "Expandable: method, sources and limits."
+  },
+  "tgtHowMethod": "Maintenance comes from the U.S. National Academies' 2023 equations for adults, also used by Health Canada. They estimate a whole day's energy use, workouts included, from age, height, weight, sex and activity, and were built from measurements of people of many body sizes.",
+  "@tgtHowMethod": {
+    "description": "The energy method and its source."
+  },
+  "tgtHowGoal": "The goal changes are GoHard's starting rules, based on published guidance: 500 kcal below maintenance to lose weight (AHA/ACC/TOS 2013 obesity guideline), about 360 kcal above it to gain muscle (Slater et al., 2019), and 1.4 to 2.0 g of protein per kg of body weight (ISSN 2017; Morton et al., 2018).",
+  "@tgtHowGoal": {
+    "description": "The goal adjustments: GoHard's starting rules and their sources."
+  },
+  "tgtHowLimits": "People with the same answers can need noticeably different amounts, so this is an estimate, not an exact requirement. Protein per kg was studied mostly in leaner, exercising adults, so at higher body weights it may be more than you need. Not for under-19s, pregnancy, breastfeeding or medical diets; a doctor or dietitian can tailor targets.",
+  "@tgtHowLimits": {
+    "description": "Limits of the estimate (said once, here)."
+  },
+  "tgtCheckTitle": "Checking your starting point",
+  "@tgtCheckTitle": {
+    "description": "Expandable: how to judge the starting estimate."
+  },
+  "tgtCheckTrend": "Give it a few weeks, then look at your weight trend in Body progress rather than any single weigh-in.",
+  "@tgtCheckTrend": {
+    "description": "Look at the weight trend over weeks."
+  },
+  "tgtCheckLogs": "A day with missing food entries isn't a zero, or a full day either, so incomplete logs can't tell you what you really need.",
+  "@tgtCheckLogs": {
+    "description": "Missing food entries are neither zero nor a full day."
+  },
+  "tgtCheckScale": "Scale weight alone can't show whether you lost fat or gained muscle.",
+  "@tgtCheckScale": {
+    "description": "Scale weight alone does not show fat or muscle change."
+  },
+  "tgtCheckManual": "GoHard never changes your targets by itself. Edit them whenever you decide to.",
+  "@tgtCheckManual": {
+    "description": "Targets never change by themselves."
   },
   "tgtUse": "Use these targets",
   "@tgtUse": {

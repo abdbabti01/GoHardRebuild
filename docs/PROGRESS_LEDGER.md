@@ -2779,3 +2779,58 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   Reproduced and verified in a throwaway Linux container (Flutter 3.47.6, TZ=UTC, 04:52 UTC): the Eat suites 37 passed;
   locally the same files passed. IPA 74 (c2bed53) built but is superseded by the build of the fixed commit.
 - Final code db21126: CI 215 (44461725390) and 216 (44461741181) passed (app + api); replacement unsigned IPA run 75 (44461741183, tag `ipa-meal-copy-compact-db21126`) passed. Not merged, not deployed.
+
+### 19 Nov 2026 — Help me set my targets: method review and result screen (`feature/target-estimate-review`, from main 67ca479)
+
+- Audit against primary sources (docs/NUTRITION_TARGETS.md › Method): NASEM 2023 adult TEE coefficients and PAL
+  bands match Health Canada's published table; NASEM Table 7-1 examples, SEPV (342 / 241 kcal) and "do not predict
+  energy requirements for those seeking to lose or gain weight" read from the report; Mifflin–St Jeor (RMR, needs a
+  multiplier) compared and not chosen. **Incorrect:** step 3 opened at step 2's scroll offset (title under the app
+  bar, −833 px at 390 × 844). **Misleading:** the activity examples invited choosing by workout count, so someone who
+  trains about four hours a week but is otherwise seated could pick Lightly active or Active; for the reference man
+  that category change alone moves estimated maintenance by 210–420 kcal (a gap between categories, not a measured
+  overestimate; his actual needs are uncertain; corrected wording below, 19 Nov follow-up). **Unclear:** recomposition always
+  at maintenance; adjustment not shown as maintenance → adjustment → target; floor wording; edits silently replaced on
+  recalculation; details used not visible.
+- Changed: whole-week activity question (examples from Table 7-1; Mostly seated describes daily life outside
+  training, and "3 or 4 one-hour workouts" still fit it when the rest of the week is seated, documented as GoHard's
+  reading); recomposition asks What comes first? (steady = maintenance; fat loss first = the
+  −500 kcal deficit and floor, trade-off stated); maintenance rounded first, adjustments whole (−500 / +360 / 0) so the
+  ledger adds up; protein cap never passed after rounding; macro breakdown flags protein + fat over calories. Result
+  screen: goal + Change, approach sentence, editable fields marked suggested / edited (Use suggestion), ledger, Details
+  used (Change details), macro breakdown, How this was estimated, Checking your starting point (links to Body progress,
+  History & trends). Edited targets are kept on recalculation. Each step is its own page. Same formulas, deficit,
+  surplus, protein g/kg, floors and cap; for the reference people every category/goal value is unchanged (32 cells).
+- No API, model, migration, capability, contract or sync change; no network call; l10n en/fr/ar +44, 9 reworded, 9
+  removed (3,269 messages).
+- Verified locally: `target_estimate_test` (9; expected values worked by hand from the published coefficients and
+  cross-checked with a separate Node script sharing no app code), `target_helper_ui_test` (12; includes the title
+  position at 390 × 844, which fails without the per-step page: −833 px), full app suite 958 passed (`flutter test
+  -j 2`), API suite 268 passed (`test.ps1`), `flutter analyze` clean, `check-l10n` OK. Renders with real fonts:
+  docs/evidence/nutrition-targets/{en,fr,ar} (English light and dark; each
+  language also at 320 px 2×) reviewed.
+- **Not run:** `journey_targets_test` (written). Three attempts on Pixel_API_34 against this branch's API on a
+  throwaway tmpfs PostgreSQL (127.0.0.1:5437; `gohard-rebuild-postgres` untouched) failed in the APK build with
+  "Out of memory" (Dart kernel compile / Gradle daemon; the machine had ~1.4 GB of commit left, held mostly by
+  long-running processes outside this work), including with a 1.5 GB Gradle heap and a 1.5 GB emulator. Two earlier
+  `flutter test` runs crashed the Dart VM for the same reason before the `-j 2` run passed. Temporary API, container,
+  password file, Gradle daemon and emulator removed. **Not verified:** iPhone, VoiceOver, dietitian review.
+- Code 612d650: CI 220 (44547660945) passed; unsigned IPA run 77 (44558794004, tag `ipa-target-estimate-review-612d650`) passed. Not merged, not deployed.
+
+### 19 Nov 2026 — activity wording follow-up (same branch)
+
+- Owner correction: the earlier wording here and in docs/NUTRITION_TARGETS.md said the old activity choices made the
+  reference man's maintenance "210–420 kcal higher than the method implies". That overstated it. Corrected to: picking
+  Lightly active or Active instead of Mostly seated changes his estimate by 210 or 420 kcal (the gap between the
+  categories' equations); his actual needs remain uncertain (SEPV ~342 kcal/day for men) and the weight trend is the
+  check. No equation, adjustment, rounding or rule changed.
+- On screen (en/fr/ar): the activity help says the whole usual week counts and "How often you train is only part of
+  it"; Mostly seated now reads "Outside training, your day is mostly seated: desk work, everyday walking and chores.
+  If that's your week, a few one-hour workouts (3 or 4) still fit here." Dietitian-review items unchanged (item 4
+  reworded to the same reading).
+- Verified: `target_estimate_test` + `target_helper_ui_test` 21 passed, full app suite 958 passed (`-j 2`), `flutter
+  analyze` clean, `check-l10n` OK;
+  activity renders regenerated (en light/dark, fr, ar, 320 px 2×) and reviewed.
+- Code 9c684ae: CI 223 (44561986434) passed on attempt 2 (attempt 1: all 958 app tests passed, then the debug APK
+  build failed downloading the Android NDK, "Premature EOF"); replacement unsigned IPA run 78 (44566347737, tag
+  `ipa-target-estimate-wording-9c684ae`) passed and supersedes IPA 77. Not merged, not deployed.
