@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' show Tristate;
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
@@ -51,7 +52,7 @@ Json _plan() {
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
-  Future<(ProviderContainer, AppDb, Future<T> Function<T>(Future<T>), Future<void> Function())> setUpApp(WidgetTester tester, {Size size = const Size(390, 2600), double textScale = 1, Entitlement? plus, AppearanceStore? appearance}) async {
+  Future<(ProviderContainer, AppDb, Future<T> Function<T>(Future<T>), Future<void> Function())> setUpApp(WidgetTester tester, {Size size = const Size(390, 2600), double textScale = 1, Entitlement? plus, AppearanceStore? appearance, EdgeInsets insets = EdgeInsets.zero}) async {
     final db = AppDb(NativeDatabase.memory());
     addTearDown(db.close);
     final clock = FakeClock(DateTime.utc(2026, 10, 10, 7));
@@ -68,7 +69,7 @@ void main() {
           return engine;
         }),
       ],
-      size: size, textScale: textScale, settle: false,
+      size: size, textScale: textScale, settle: false, insets: insets,
     );
     Future<T> run<T>(Future<T> work) async {
       T? out;
@@ -228,7 +229,7 @@ void main() {
     expect(find.byKey(const Key('last-time')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('today-text'))).data, 'Try 195 lb today, for your planned 6–8 reps.');
     expect(find.text('Review'), findsOneWidget, reason: 'the next-target line no longer repeats the suggestion');
-    expect(find.text('Edit future targets'), findsOneWidget, reason: 'it changes the plan, not today');
+    expect(find.byKey(const Key('today-more')), findsOneWidget, reason: 'Why, Keep my targets and Edit future targets (it changes the plan, not today) one tap away');
     expect(find.descendant(of: find.byKey(const Key('today-use')), matching: find.text('Use 195 lb')), findsOneWidget);
     final before = await runtime();
 
@@ -256,6 +257,7 @@ void main() {
     expect(find.textContaining('aim for one more rep across your sets: 19 in total (18 last session)'), findsOneWidget);
     expect(find.byKey(const Key('today-use')), findsNothing, reason: 'a rep suggestion is never turned into a set entry');
     final ohpEntry = (field('set-load').text, field('set-reps').text);
+    await tap('today-more');
     await tap('today-why');
     expect(find.byKey(const Key('today-why-sheet')), findsOneWidget);
     expect(find.textContaining('18 reps in total'), findsOneWidget);
@@ -290,7 +292,9 @@ void main() {
     final (container, db, run, settle) = await setUpApp(tester);
     final id = await startToday(tester, container, settle);
     final before = (await run(db.select(db.commands).get())).length;
-    await tester.ensureVisible(find.byKey(const Key('today-keep')));
+    await tester.ensureVisible(find.byKey(const Key('today-more')));
+    await tester.tap(find.byKey(const Key('today-more')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('today-keep')));
     await settle();
     expect(find.byKey(const Key('suggested-today')), findsNothing);
@@ -361,6 +365,117 @@ void main() {
     await settle();
     expect(tester.takeException(), isNull);
     expect(Directionality.of(tester.element(find.byKey(const Key('suggested-today')))), TextDirection.rtl);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+
+  /// [key] brought to a third of the way down the screen (clear of the status bar and the tab bar), laid out, then tapped by the caller.
+  Future<void> reveal(WidgetTester tester, Future<void> Function() settle, String key) async {
+    await Scrollable.ensureVisible(tester.element(find.byKey(Key(key))), alignment: 0.3);
+    await settle();
+  }
+
+  testWidgets('compact by default on a 390 × 844 phone: the current set’s last performance, a short aim with one action, the fields and Record set all between the status bar and the tab bar', (tester) async {
+    await tester.runAsync(loadAppFonts); // measured with the app's real fonts, as on a phone (these last tests only)
+    final (container, _, run, settle) = await setUpApp(tester, size: const Size(390, 844), insets: phoneInsets);
+    await startToday(tester, container, settle);
+    final l = container.read(appL10nProvider);
+    final id = container.read(workoutListProvider).firstWhere((w) => w.isOpen).id;
+
+    // The plan line, the frozen target, last session's title, and today's aim inside the same panel.
+    expect(tester.widget<Text>(find.byKey(const Key('workout-prescription'))).data, '3 sets · 6–8 reps · ${l.workoutPlanRest(l.durationSeconds(90))}');
+    expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '190 lb');
+    expect(find.text('Last session · Sun, Oct 11'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('last-time')), matching: find.byKey(const Key('suggested-today'))), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('entry-heading'))).data, 'Set 1 of 3');
+    expect(tester.widget<Text>(find.byKey(const Key('entry-last-ref'))).data, 'Last session, set 1: 190 lb × 8');
+    // Compact: the full table is behind Compare all sets; one aim action in view, the rest behind More choices.
+    expect(find.byKey(const Key('compare-table')), findsNothing);
+    expect(find.byKey(const Key('compare-toggle')), findsOneWidget);
+    expect(find.byKey(const Key('today-use')), findsOneWidget);
+    for (final k in ['today-keep', 'today-edit', 'today-why']) {
+      expect(find.byKey(Key(k)), findsNothing, reason: '$k is in the More choices sheet');
+    }
+
+    // The usable screen, measured: under the status bar (top inset) and above the floating tab bar (its own top).
+    final top = phoneInsets.top, bottom = tester.getTopLeft(find.byType(GoNavigationBar)).dy;
+    // Scrolled as a person would: the exercise header's top just under the status bar.
+    final panel = find.byKey(const Key('workout-exercise-panel'));
+    final position = Scrollable.of(tester.element(panel)).position;
+    position.jumpTo((position.pixels + tester.getTopLeft(panel).dy - top - 4).clamp(position.minScrollExtent, position.maxScrollExtent));
+    await settle();
+    // ignore: avoid_print
+    print('usable ${bottom - top} px (top $top, tab bar $bottom); header ${tester.getTopLeft(panel).dy} → Record set ${tester.getBottomLeft(find.byKey(const Key('complete-set'))).dy}');
+    for (final k in ['workout-exercise-panel', 'last-time-title', 'today-text', 'today-use', 'today-more', 'entry-heading', 'entry-last-ref', 'set-load', 'set-reps', 'complete-set']) {
+      final f = find.byKey(Key(k));
+      expect(tester.getTopLeft(f).dy, greaterThanOrEqualTo(top), reason: '$k below the status bar');
+      expect(tester.getBottomLeft(f).dy, lessThanOrEqualTo(bottom), reason: '$k above the tab bar');
+    }
+    // Nothing shrank to fit: a 48 px target for each aim action and the toggle, the 88 px fields.
+    for (final k in ['today-use', 'today-more', 'compare-toggle']) {
+      expect(tester.getSize(find.byKey(Key(k))).height, greaterThanOrEqualTo(48), reason: k);
+    }
+    expect(tester.getSize(find.byKey(const Key('set-load'))).height, greaterThanOrEqualTo(88));
+
+    // Compare all sets: one tap opens the full table (the row being entered marked as such) and All sessions; one closes it.
+    await tester.tap(find.byKey(const Key('compare-toggle')));
+    await settle();
+    expect(find.byKey(const Key('compare-table')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Entering now')), findsOneWidget, reason: 'an entry, never shown as recorded');
+    expect(find.descendant(of: find.byKey(const Key('compare-2-last')), matching: find.text('190 lb × 8')), findsOneWidget);
+    expect(find.byKey(const Key('all-sessions')), findsOneWidget);
+    expect(tester.getSemantics(find.byKey(const Key('compare-toggle'))).flagsCollection.isExpanded, Tristate.isTrue, reason: 'read out as expanded');
+    await reveal(tester, settle, 'compare-toggle');
+    await tester.tap(find.byKey(const Key('compare-toggle')));
+    await settle();
+    expect(find.byKey(const Key('compare-table')), findsNothing);
+
+    // More choices: each other action named and explained; opening it changes nothing; Keep my targets hides the aim.
+    await reveal(tester, settle, 'today-more');
+    await tester.tap(find.byKey(const Key('today-more')));
+    await settle();
+    expect(find.byKey(const Key('today-choices')), findsOneWidget);
+    for (final (k, title, note) in [('today-why', l.workoutTodayWhy, l.workoutTodayWhyNote), ('today-keep', l.workoutTodayKeep, l.workoutTodayKeepNote), ('today-edit', l.workoutTodayEdit, l.workoutTodayEditNote)]) {
+      expect(find.descendant(of: find.byKey(Key(k)), matching: find.text(title)), findsOneWidget, reason: k);
+      expect(find.descendant(of: find.byKey(Key(k)), matching: find.text(note)), findsOneWidget, reason: k);
+    }
+    await tester.tap(find.byKey(const Key('today-keep')));
+    await settle();
+    expect(find.byKey(const Key('today-choices')), findsNothing);
+    expect(find.byKey(const Key('suggested-today')), findsNothing);
+    expect(await run(container.read(workoutRepositoryProvider).sets(id)), isEmpty, reason: 'nothing recorded by any of it');
+
+    // Recording: rest right under Record set; past the plan the heading says so and an extra set inherits nothing.
+    for (var i = 0; i < 3; i++) {
+      await tester.ensureVisible(find.byKey(const Key('complete-set')));
+      await tester.tap(find.byKey(const Key('complete-set')));
+      await settle();
+    }
+    expect(tester.getTopLeft(find.byKey(const Key('rest-row'))).dy, greaterThanOrEqualTo(tester.getBottomLeft(find.byKey(const Key('complete-set'))).dy));
+    expect(tester.widget<Text>(find.byKey(const Key('entry-heading'))).data, 'Extra set 4');
+    expect(find.byKey(const Key('entry-last-ref')), findsNothing, reason: 'last session had three sets: an extra set copies none of them');
+    await reveal(tester, settle, 'compare-toggle');
+    await tester.tap(find.byKey(const Key('compare-toggle')));
+    await settle();
+    expect(find.descendant(of: find.byKey(const Key('compare-3-last')), matching: find.text('—')), findsOneWidget);
+    expect(await run(container.read(workoutRepositoryProvider).sets(id)), hasLength(3));
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('320 px with twice the text: the compact panel, the opened comparison and More choices scroll and never clip', (tester) async {
+    final (container, _, _, settle) = await setUpApp(tester, size: const Size(320, 700), textScale: 2, insets: phoneInsets);
+    await startToday(tester, container, settle);
+    expect(tester.takeException(), isNull);
+    await reveal(tester, settle, 'compare-toggle');
+    await tester.tap(find.byKey(const Key('compare-toggle')));
+    await settle();
+    expect(find.byKey(const Key('compare-table')), findsOneWidget);
+    expect(tester.takeException(), isNull, reason: 'the opened comparison, stacked per set');
+    await reveal(tester, settle, 'today-more');
+    await tester.tap(find.byKey(const Key('today-more')));
+    await settle();
+    expect(find.byKey(const Key('today-choices')), findsOneWidget);
+    expect(tester.takeException(), isNull, reason: 'the More choices sheet');
     await tester.pumpWidget(const SizedBox());
   });
 }

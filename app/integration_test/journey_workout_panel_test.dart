@@ -54,7 +54,7 @@ void main() {
       await j.waitFor(find.byKey(const Key('workout-preview')), what: 'the preview');
       expect(find.byKey(const Key('complete-set')), findsNothing, reason: 'no recorder: nothing was started');
       final first = tester.widget<Text>(find.descendant(of: find.byKey(const Key('preview-exercise-0')), matching: find.byType(Text)).at(1)).data!;
-      expect(find.text('No previous session recorded.'), findsOneWidget);
+      expect(find.text('First session on record: nothing to compare yet.'), findsOneWidget);
       await allWorkouts();
       expect(byKeyPrefix('train-open-'), findsNothing, reason: 'All workouts after Details: still no workout');
 
@@ -98,9 +98,10 @@ void main() {
       expect(field('set-reps').text, '10');
       expect(find.byKey(const Key('set-row-0')), findsNothing, reason: 'filling is not recording');
       await j.type('set-reps', '11');
-      // The table and the typed, unsaved entry under it, with the keyboard closed.
+      // The table (opened with Compare all sets) and the typed, unsaved entry under it, with the keyboard closed.
       FocusManager.instance.primaryFocus?.unfocus();
       await j.settle(3);
+      await j.tapKey('compare-toggle');
       await Scrollable.ensureVisible(tester.element(find.byKey(const Key('last-time'))), alignment: 0.12);
       await j.settle(3);
       expect(field('set-reps').text, '11');

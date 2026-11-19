@@ -11647,7 +11647,7 @@
   "@workoutNoMovementsBody": {
     "description": "Empty workout body."
   },
-  "workoutMovementPosition": "Movement {index} of {total}",
+  "workoutMovementPosition": "Exercise {index} of {total}",
   "@workoutMovementPosition": {
     "description": "Overline above the current exercise.",
     "placeholders": {
@@ -11659,7 +11659,7 @@
       }
     }
   },
-  "workoutMovementPositionExtra": "Movement {index} of {total} · extra",
+  "workoutMovementPositionExtra": "Exercise {index} of {total} · added",
   "@workoutMovementPositionExtra": {
     "description": "Overline above an exercise added beyond the plan.",
     "placeholders": {
@@ -11732,15 +11732,6 @@
   "workoutRestSkip": "Skip rest",
   "@workoutRestSkip": {
     "description": "Ends the rest timer now."
-  },
-  "workoutNextSetOverline": "Set {number} · not recorded yet",
-  "@workoutNextSetOverline": {
-    "description": "Overline above the entry fields for the next set.",
-    "placeholders": {
-      "number": {
-        "type": "int"
-      }
-    }
   },
   "workoutTargetReachedLast": "Target set count recorded. This is the last movement: add another set, or finish the workout when you are ready.",
   "@workoutTargetReachedLast": {
@@ -11848,11 +11839,11 @@
   "@workoutHistoryNoIdentity": {
     "description": "Last time panel for a free-text exercise."
   },
-  "workoutHistoryNone": "No previous session recorded.",
+  "workoutHistoryNone": "First session on record: nothing to compare yet.",
   "@workoutHistoryNone": {
     "description": "Last time panel with no history."
   },
-  "workoutCompareLastLabeled": "Last time: {value}",
+  "workoutCompareLastLabeled": "Last session: {value}",
   "@workoutCompareLastLabeled": {
     "description": "Large-text comparison row: last session value.",
     "placeholders": {
@@ -11862,7 +11853,7 @@
       }
     }
   },
-  "workoutCompareTodayLabeled": "Today: {value}",
+  "workoutCompareTodayLabeled": "Recorded today: {value}",
   "@workoutCompareTodayLabeled": {
     "description": "Large-text comparison row: today value.",
     "placeholders": {
@@ -11882,7 +11873,7 @@
       }
     }
   },
-  "workoutCompareNext": "Next · not recorded yet",
+  "workoutCompareNext": "Entering now",
   "@workoutCompareNext": {
     "description": "Comparison table: the next set to record."
   },
@@ -11903,15 +11894,15 @@
   "@workoutCompareSet": {
     "description": "Comparison table column: set number."
   },
-  "workoutCompareToday": "Today",
+  "workoutCompareToday": "Recorded today",
   "@workoutCompareToday": {
     "description": "Comparison table column: sets recorded today."
   },
-  "workoutLastTime": "Last time",
+  "workoutLastTime": "Last session",
   "@workoutLastTime": {
     "description": "Panel title and column: the most recent earlier session of this exercise."
   },
-  "workoutLastTimeOn": "Last time · {date}",
+  "workoutLastTimeOn": "Last session · {date}",
   "@workoutLastTimeOn": {
     "description": "Last time panel title with its date.",
     "placeholders": {
@@ -17821,7 +17812,7 @@
   "@syncUnfinishedExists": {
     "description": "Keep as unfinished plan when another unfinished plan exists."
   },
-  "workoutTodayOverline": "Suggested today · optional",
+  "workoutTodayOverline": "Today’s aim · optional",
   "@workoutTodayOverline": {
     "description": "Overline of the optional suggestion in the recorder."
   },
@@ -18338,5 +18329,256 @@
   "tgtManual": "Set targets manually",
   "@tgtManual": {
     "description": "Leave the estimate and edit goals directly."
+  },
+  "copyTitle": "Review copied meal",
+  "@copyTitle": {
+    "description": "Title of the review of a meal copied from the journal."
+  },
+  "copyFrom": "From {meal} · {date}",
+  "@copyFrom": {
+    "description": "Subtitle: the meal and day the copy comes from.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "copyTo": "Copy to",
+  "@copyTo": {
+    "description": "Heading above the destination meal and date of a copy."
+  },
+  "copySame": "Same day and meal as the original: logging adds these foods to it again. That is fine if you ate it twice.",
+  "@copySame": {
+    "description": "Warning when a copy goes to the very meal and day it came from."
+  },
+  "copyAdds": "{meal} on {date} already has {count, plural, =1{1 food} other{{count} foods}}. These are added; nothing is replaced.",
+  "@copyAdds": {
+    "description": "Note when the destination meal already has food: copying adds, never replaces.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "copyFoodsHint": "Tap a food to change its amount for this time. The meal you copied from stays as it is.",
+  "@copyFoodsHint": {
+    "description": "Hint under the foods of a copied meal."
+  },
+  "copyFixedTag": "typed by hand",
+  "@copyFixedTag": {
+    "description": "Tag on a copied food that was typed by hand and cannot be scaled."
+  },
+  "copyFixedTitle": "This amount can’t be changed",
+  "@copyFixedTitle": {
+    "description": "Dialog title for a copied food without a food record."
+  },
+  "copyFixedBody": "{name} was typed by hand, without a food record, so GoHard can’t scale its amount. Keep it as logged, remove it, or choose a matching food instead.",
+  "@copyFixedBody": {
+    "description": "Dialog body: why a typed food cannot be scaled, and what can be done.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "copyChooseFood": "Choose a food instead",
+  "@copyChooseFood": {
+    "description": "Action: replace a typed food with a food chosen in Add food."
+  },
+  "copyKeepAsLogged": "Keep as logged",
+  "@copyKeepAsLogged": {
+    "description": "Action: keep a typed food unchanged in the copy."
+  },
+  "copyPortionTitle": "How much {name}?",
+  "@copyPortionTitle": {
+    "description": "Dialog title: a recipe portion amount in a copied meal.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "copyPortionNote": "From the recipe as it was when you logged it.",
+  "@copyPortionNote": {
+    "description": "Note: a copied recipe portion scales from its frozen batch."
+  },
+  "copySourcesTitle": "Copy {meal} from…",
+  "@copySourcesTitle": {
+    "description": "Sheet title: choose an earlier day to copy a meal from.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "copySourcesNone": "Nothing logged at this meal in the last 14 days.",
+  "@copySourcesNone": {
+    "description": "Sheet: no earlier day has this meal."
+  },
+  "copyMore": "+{count} more",
+  "@copyMore": {
+    "description": "After the first food names of a meal preview.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyLogged": "Copied to {meal} · {date}",
+  "@copyLogged": {
+    "description": "Snackbar after a copied meal was logged.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "copyView": "View",
+  "@copyView": {
+    "description": "Snackbar action: show the day the meal was copied to."
+  },
+  "copyMeal": "Copy meal",
+  "@copyMeal": {
+    "description": "Quiet action under a meal: copy it to another day or meal."
+  },
+  "copyMealSaid": "Copy {meal} to another day or meal",
+  "@copyMealSaid": {
+    "description": "Screen reader label of Copy meal.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "repeatYesterday": "Same as yesterday?",
+  "@repeatYesterday": {
+    "description": "Shortcut in an empty meal: the same meal of the day before."
+  },
+  "repeatOn": "Same as {date}?",
+  "@repeatOn": {
+    "description": "Shortcut in an empty meal of an earlier day: the same meal of the day before it.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "repeatReview": "Review & log",
+  "@repeatReview": {
+    "description": "Opens the review of the repeated meal (logs nothing by itself)."
+  },
+  "repeatOther": "Other days",
+  "@repeatOther": {
+    "description": "Choose another earlier day to copy this meal from."
+  },
+  "repeatSaid": "Same {meal} as {date}: {foods}",
+  "@repeatSaid": {
+    "description": "Screen reader text of the repeat shortcut.",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "foods": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutSetOfPlanned": "Set {number} of {total}",
+  "@workoutSetOfPlanned": {
+    "description": "Heading of the set being entered, within the planned sets.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "workoutExtraSet": "Extra set {number}",
+  "@workoutExtraSet": {
+    "description": "Heading of a set entered beyond the planned sets.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "workoutLastSetRef": "Last session, set {number}: {set}",
+  "@workoutLastSetRef": {
+    "description": "Under the entry heading: the same set in the last session.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "set": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutPlanRest": "{duration} rest",
+  "@workoutPlanRest": {
+    "description": "Part of the exercise plan line: planned rest.",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayAimFor": "Today’s aim for {name}",
+  "@workoutTodayAimFor": {
+    "description": "Screen reader heading of the optional aim.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutTodayWhyShort": "Why?",
+  "@workoutTodayWhyShort": {
+    "description": "Short link to why today’s aim is suggested, its evidence and what each action changes."
+  },
+  "workoutCompareAll": "Compare all sets",
+  "@workoutCompareAll": {
+    "description": "Opens the set-by-set table of last session against today."
+  },
+  "workoutCompareHide": "Hide comparison",
+  "@workoutCompareHide": {
+    "description": "Closes the set-by-set table of last session against today."
+  },
+  "workoutTodayMore": "More choices",
+  "@workoutTodayMore": {
+    "description": "Opens the other choices for today’s aim."
+  },
+  "workoutTodayMoreSemantic": "More choices for today’s aim: why it is suggested, keep my targets, edit future targets",
+  "@workoutTodayMoreSemantic": {
+    "description": "Screen reader label of More choices."
+  },
+  "workoutTodayWhyNote": "The rule, and the sessions it used.",
+  "@workoutTodayWhyNote": {
+    "description": "Under Why this suggestion? in the aim’s choices."
+  },
+  "workoutTodayKeepNote": "Hide this aim for this exercise in this workout. Nothing else changes.",
+  "@workoutTodayKeepNote": {
+    "description": "Under Keep my targets in the aim’s choices."
+  },
+  "workoutTodayEditNote": "Change your plan from your next session. This workout keeps its targets.",
+  "@workoutTodayEditNote": {
+    "description": "Under Edit future targets in the aim’s choices."
   }
 }

@@ -462,7 +462,25 @@ today** is a plain `Panel` below Last time (overline "Suggested today · optiona
 aim (reps) / Keep my targets / Edit future targets, the quiet Why link, a caption saying what each changes); once
 answered it shrinks to one semi-bold secondary line, icon beside the wrapped words (renders: docs/evidence/plan-library,
 light and dark, `plan_overload_render_test`, gated); Free sees one secondary line with Learn more. No serif, no photo, nothing between the fields and
-Record set.
+Record set. *(Superseded in layout on 18 Nov 2026, below: the aim now sits inside the last-session panel.)*
+
+### The exercise panel around one task (18 Nov 2026; behaviour in `docs/MEAL_COPY_WORKOUT_PANEL.md` › 2)
+
+Top to bottom, one of each: the photo header (Exercise 2 of 6, the serif name, one plan line "3 sets · 6–8 reps ·
+90 s rest", "Target in this workout 190 lb" when the plan froze one, About); **Last session · date** as one `Panel`,
+compact by default (19 Nov): the title with a 48 px **Compare all sets** text button (expand icon) that opens Set |
+Last session | Recorded today (the row being entered marked with a pencil and "Entering now", never the recorded
+check; extra rows show "—"; stacked per set at large text) and All sessions; **Today's aim · optional** as a ruled
+section inside it (one bold sentence; one primary text button — Use 195 lb or Keep this aim — and **More choices**
+(more icon) opening a sheet of three labelled rows, Why this suggestion?, Keep my targets, Edit future targets, each
+with what it changes); then **Set 2 of 3** / **Extra set 4** in
+18 px bold with "Last session, set 2: 190 lb × 8" and Use last values beside it, the two 88 px fields (one above the
+other at large text, so 102.5 is never cut), **Record set**, and the rest as one compact row under it (28 px clock,
++30 s, Skip). Then Next exercise, Recorded sets, the quiet Next target line (future plan target), All movements,
+Finish. Removed: the separate target tile and the separate Suggested today card. Measured with the real fonts on a
+390 × 844 surface with phone insets: header to Record set, with an aim, lies between the status bar (47 px) and the
+tab bar's top (738 px), 51 → 713 px (`progression_ui_test`). Renders, before/after at 390 × 844 in light and dark, and 320 px at 2×:
+`docs/evidence/meal-copy-workout-panel` (`meal_copy_workout_render_test`, gated).
 
 ### Today's training states, guide and coach (15 Oct 2026; `docs/TRAINING_PLANS.md` › Today, `docs/COACH.md`)
 
@@ -510,6 +528,15 @@ for that meal, and one row per logged food with its own name, saved portion word
   as "Add food to lunch". Opens Log food for that meal and the day shown; nothing is logged until saved.
 The coach speaks under the title (docs/COACH.md › Train and Eat); with Show coach on Train and Eat off, the small
 avatar beside the date arrows opens the journal help instead.
+
+**Repeat and copy (18 Nov 2026; `docs/MEAL_COPY_WORKOUT_PANEL.md` › 1).** An empty meal whose same meal was logged the
+day before the day shown carries one quiet line inside its group, between the heading and Add food: "Same as
+yesterday?" (or "Same as Monday, November 16?") at 15 px semi-bold, its foods as a caption ("2 eggs · Egg whites ·
+Baguette", two lines at most), and two text buttons, Review & log (replay icon) and Other days. A meal with food has
+Copy meal and Save as meal as quiet buttons after Add food (under it, wrapping, when they do not fit). The review is a
+pushed `AppPage`: "Review copied meal", "From Breakfast · date", **Copy to** (meal menu and date line), a warning or a
+note when relevant, the foods as a `GroupCard` (typed foods say "typed by hand"), Add food, the totals panel, and
+**Log this time** as the one filled button.
 
 **History & trends (20 Oct 2026, from `GoHard_Nutrition_Trends_Claude_Handoff`; rules in docs/FOOD_DATA.md).** A pushed
 page from Eat's **History & trends** link: the serif title with Leon/Leona ("Tap a day to see what you logged."; under

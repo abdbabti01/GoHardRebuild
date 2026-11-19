@@ -2729,3 +2729,53 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - 17 Nov: pushed a0ba9ac: CI 205 passed; unsigned IPA run 72 (a0ba9ac) passed (tag `ipa-target-estimator-a0ba9ac`).
 - 18 Nov: merged on the owner's instruction (`main` fast-forwarded from 41fc375). **Formula review by a registered
   dietitian is still pending and required before public release.** iPhone checklist not yet confirmed by the owner.
+
+### 18 Nov 2026 — Repeat and copy meals; the workout exercise panel (`feature/meal-copy-workout-panel`, from main 009bae6)
+
+- Design note first: docs/MEAL_COPY_WORKOUT_PANEL.md. Eat: "Same as yesterday?" in an empty meal (the day before the
+  day shown, that one meal), Other days (last 14 days, each day's meal on its own), Copy meal beside Save as meal; one
+  review (`MealCopyScreen`) with Copy to always shown, same-meal warning, "added, nothing replaced" note, per-food
+  amount changes (amount form; recipe portions from the frozen batch), typed foods kept / removed / replaced only by an
+  explicitly chosen food, and Log this time through the existing atomic `food.batch` (one operation per review).
+  Unchanged copies keep the entry's own snapshot and provenance (`FoodDraft.kept`). The usual meal is not offered
+  beside Same as yesterday for the same meal. View after logging shows the destination day from its top.
+- Train: the selected exercise reorganised (plan line with rest, the frozen target in the header; Last session with
+  Today's aim inside the same panel; Set N of M / Extra set N with the previous set and Use last values; Record set
+  with the rest row under it; Next target moved below the recorded sets). Rules, runtime, drafts and selection
+  unchanged. With large text the weight and reps fields stack.
+- No API, migration, capability, contract or sync change. l10n en/fr/ar: +32 messages, 10 reworded, 2 removed.
+- Verified: `meal_copy_test` (7), `meal_copy_ui_test` (3), `progression_ui_test` (+1, fit measured with real
+  fonts: 647 px header-to-Record-set without an aim, 834 px with one); 23 affected test files passed one by one;
+  `flutter analyze` clean; `check-l10n` OK (3,227 messages). Renders before/after: docs/evidence/meal-copy-workout-panel.
+- **Not run:** emulator journey `journey_copy_panel_test` (written): `setup.ps1` refuses the local development
+  database (UnknownHistory), so the local API answers 503; dropping that database was not done. **Not verified:**
+  iPhone, VoiceOver. Not merged, not deployed.
+- Code 977f52e: CI 210 (44417493561) passed; unsigned IPA run 73 (44417542118, tag `ipa-meal-copy-workout-panel-977f52e`) passed.
+
+### 19 Nov 2026 — compact exercise panel; native journey on a disposable database (same branch)
+
+- Owner request before merge. The selected exercise is compact by default: Last session's title with **Compare all
+  sets** (the full set-by-set table and All sessions, one tap to open or close, read out as expanded/collapsed); Today's
+  aim shows its sentence and one primary action (Use [weight] / Keep this aim / Choose your weight increment) beside
+  **More choices**, a sheet with Why this suggestion?, Keep my targets and Edit future targets, each with what it changes.
+  Rules, runtime, drafts, selection, Use last values and its confirmation unchanged. l10n +7 (3,234 messages).
+- Fit measured (`progression_ui_test`, real fonts, 390 × 844 with notched-phone insets, keyboard closed): usable
+  47 → 738 px (status-bar inset → the floating tab bar's top as laid out); header 51 → Record set 713 px with an aim;
+  every listed element inside, actions ≥ 48 px, fields 88 px. At 320 px and 2× text: scrolls, no overflow, comparison
+  open and sheet up.
+- Native `journey_copy_panel_test` **passed** on the Pixel_API_34 emulator (Android 14) against a throwaway PostgreSQL
+  container (127.0.0.1:5437, tmpfs) migrated with `migrate seed-catalog` through `GOHARD_ConnectionStrings__Default`;
+  the API from this branch with Capture mail. `gohard-rebuild-postgres` (UnknownHistory) was not connected to,
+  dropped or changed. Temporary API, container and password file removed afterwards; emulator shut down. Captures and
+  recording: docs/evidence/meal-copy-workout-panel/emulator.
+- Fixed on the way (API, Development/Testing route only): `/dev/mail/latest` read only 8-digit codes, so every journey
+  that registers an account had timed out since 4-digit verification codes (5 Nov). `MailTemplates.CodeIn` reads the
+  code from its own line; `AccountEmailTests` + `VerificationPolicyTests`: 27 passed. No production behaviour change.
+- CI on this branch, honestly: #212 (d706fda, docs only) failed in the API tests while #210/#211 on identical code passed
+  (intermittent; logs not readable without signing in). #213/#214 (c2bed53) failed 2 app tests: `eat_existing_account_test`
+  "a failing coach message" (coach on and off). Cause: the one-entry-point rule skipped evaluating the usual meal when
+  yesterday had that meal, so at a breakfast-time hour (CI runs on UTC) the injected failure was never surfaced. Fixed:
+  the usual meal is always worked out (a failure is reported at any hour) and only hidden beside Same as yesterday.
+  Reproduced and verified in a throwaway Linux container (Flutter 3.47.6, TZ=UTC, 04:52 UTC): the Eat suites 37 passed;
+  locally the same files passed. IPA 74 (c2bed53) built but is superseded by the build of the fixed commit.
+- Final code db21126: CI 215 (44461725390) and 216 (44461741181) passed (app + api); replacement unsigned IPA run 75 (44461741183, tag `ipa-meal-copy-compact-db21126`) passed. Not merged, not deployed.

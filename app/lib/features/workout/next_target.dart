@@ -348,7 +348,16 @@ class SuggestedToday extends ConsumerWidget {
     final text = todayText(t, unit, l);
     final slotKey = (planId: todayKey.planId, workoutId: todayKey.definitionId, occurrenceKey: exercise.occurrenceKey ?? '');
     final slot = ref.watch(targetSlotProvider(slotKey));
-    final why = QuietLink(l.workoutTodayWhy, key: const Key('today-why'), said: l.workoutTodayWhySemantic, onPressed: () => showTodayWhy(appContext(context), t));
+    // What each action here changes, said in Why? (the increment editor speaks for itself).
+    final scope = switch ((t.kind, slot != null)) {
+      (TodayKind.weight, true) => l.workoutTodayScope,
+      (TodayKind.weight, false) => l.workoutTodayScopeNoPlan,
+      (TodayKind.reps, true) => l.workoutTodayScopeAim,
+      (TodayKind.reps, false) => l.workoutTodayScopeAimNoPlan,
+      (_, true) => l.workoutTodayScopeEdit,
+      _ => null,
+    };
+    final why = QuietLink(l.workoutTodayWhyShort, key: const Key('today-why'), said: l.workoutTodayWhySemantic, onPressed: () => showTodayWhy(appContext(context), t, scope: scope));
     // Once answered, one line stays: the weight put in the entry, or the aim kept for this exercise.
     final answered = switch ((answer, t.kind)) {
       ('used', TodayKind.weight) => (const Key('today-used'), l.workoutTodayUsedLine(text)),
@@ -371,46 +380,64 @@ class SuggestedToday extends ConsumerWidget {
         ]),
       );
     }
+    // A section of the last-session panel it sits in (no card of its own), set off by a rule and its heading.
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Panel(
+      child: DecoratedBox(
         key: const Key('suggested-today'),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Overline(l.workoutTodayOverline),
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: c.divider))),
+        child: Padding(padding: const EdgeInsets.only(top: 10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Semantics(header: true, label: l.workoutTodayAimFor(shownName(ref, context, exercise.catalogKey, exercise.name)), child: ExcludeSemantics(child: Overline(l.workoutTodayOverline))),
           const SizedBox(height: 4),
           Text(text, key: const Key('today-text'), style: context.sansStyle(15.5, weight: FontWeight.w600)),
           const SizedBox(height: 6),
+          // One primary action in view; Why, Keep my targets and Edit future targets in a labelled sheet.
           Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
             switch (t.kind) {
               TodayKind.chooseIncrement => TextButton(key: const Key('today-increment'), onPressed: () => showIncrementSheet(appContext(context), Prescription(exercise.j)), child: Text(l.workoutChooseIncrement)),
               TodayKind.reps => TextButton(key: const Key('today-aim'), onPressed: onAim, child: Text(l.workoutTodayKeepAim)),
               _ => TextButton(key: const Key('today-use'), onPressed: () => onUse(t), child: Text(l.workoutTodayUseLoad(formatLoad(t.loadKg, unit)))),
             },
-            TextButton(key: const Key('today-keep'), onPressed: onKeep, child: Text(l.workoutTodayKeep)),
-            if (slot != null)
-              TextButton(key: const Key('today-edit'), onPressed: () => showTargetReview(appContext(context), slotKey),
-                  child: Text(l.workoutTodayEdit, semanticsLabel: l.workoutTodayEditSemantic)),
+            TextButton.icon(
+              key: const Key('today-more'), icon: const Icon(Icons.more_horiz, size: 20),
+              label: Text(l.workoutTodayMore, semanticsLabel: l.workoutTodayMoreSemantic),
+              onPressed: () => _showTodayChoices(appContext(context), t, text: text, scope: scope, onKeep: onKeep, onEdit: slot == null ? null : () => showTargetReview(appContext(context), slotKey)),
+            ),
           ]),
-          why,
-          // What each action here changes; the increment editor speaks for itself.
-          if (switch ((t.kind, slot != null)) {
-            (TodayKind.weight, true) => l.workoutTodayScope,
-            (TodayKind.weight, false) => l.workoutTodayScopeNoPlan,
-            (TodayKind.reps, true) => l.workoutTodayScopeAim,
-            (TodayKind.reps, false) => l.workoutTodayScopeAimNoPlan,
-            (_, true) => l.workoutTodayScopeEdit,
-            _ => null,
-          } case final scope?)
-            Text(scope, style: context.caption),
-        ]),
+        ])),
       ),
     );
   }
 }
 
+/// The aim's other choices, each named and explained: Why this suggestion?, Keep my targets (hides the aim for this
+/// exercise in this workout) and Edit future targets (the plan, from the next session). Each closes the sheet first;
+/// opening it changes nothing.
+Future<void> _showTodayChoices(BuildContext context, TodaySuggestion t, {required String text, String? scope, required VoidCallback onKeep, VoidCallback? onEdit}) {
+  final l = context.l10n;
+  return showGoSheet<void>(context, title: l.workoutTodayOverline, builder: (sheet) {
+    void then(VoidCallback f) {
+      Navigator.of(sheet).pop();
+      f();
+    }
+
+    return Column(key: const Key('today-choices'), crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+      Text(text, style: sheet.sansStyle(15.5, weight: FontWeight.w600)),
+      const SizedBox(height: 12),
+      GroupCard(children: [
+        GroupRow(key: const Key('today-why'), icon: Icons.help_outline, title: l.workoutTodayWhy, subtitle: l.workoutTodayWhyNote,
+            onTap: () => then(() => showTodayWhy(context, t, scope: scope))),
+        GroupRow(key: const Key('today-keep'), icon: Icons.do_not_disturb_on_outlined, title: l.workoutTodayKeep, subtitle: l.workoutTodayKeepNote, onTap: () => then(onKeep)),
+        if (onEdit != null) GroupRow(key: const Key('today-edit'), icon: Icons.edit_calendar_outlined, title: l.workoutTodayEdit, subtitle: l.workoutTodayEditNote, onTap: () => then(onEdit)),
+      ]),
+      if (scope != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(scope, style: sheet.caption)),
+    ]);
+  });
+}
+
 /// Why this suggestion: the rule in words, the sessions it used and what GoHard cannot know. The selected Leon/Leona
 /// says it through the help sheet's speaker (plain text with the coach off); nothing floats over the recorder.
-Future<void> showTodayWhy(BuildContext context, TodaySuggestion t) {
+Future<void> showTodayWhy(BuildContext context, TodaySuggestion t, {String? scope}) {
   final l = context.l10n;
   return showGoSheet<void>(context, title: l.workoutTodayWhyTitle, builder: (sheet) {
     final unit = ProviderScope.containerOf(sheet, listen: false).read(loadUnitProvider);
@@ -429,6 +456,7 @@ Future<void> showTodayWhy(BuildContext context, TodaySuggestion t) {
           child: Text(l.workoutSessionLine(longDate(s.workout.dayKey), s.sets.isEmpty ? l.workoutNotRecordedLower : [for (final x in s.sets) setText(x, unit, l)].join(l.workoutListSeparator)),
               style: sheet.numStyle(14, color: sheet.c.secondary, weight: FontWeight.w400)),
         ),
+      if (scope != null) ...[const SizedBox(height: 12), Text(scope, key: const Key('today-why-scope'), style: sheet.body)],
       const SizedBox(height: 12),
       Text(l.workoutTodayWhyLimits, style: sheet.caption),
     ]);

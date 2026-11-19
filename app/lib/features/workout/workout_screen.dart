@@ -87,6 +87,10 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
   bool _busy = false, _loaded = false;
   final _panelKey = GlobalKey();
 
+  /// Compare all sets open: the full last-session-against-today table. Closed by default so the current set's previous
+  /// performance, the aim, the fields and Record set fit one screen; it stays as chosen while switching exercises.
+  bool _compare = false;
+
   /// The fields hold something the user typed (or a draft they typed earlier), not a suggestion: Use last values
   /// asks before replacing it.
   bool _typed = false;
@@ -562,7 +566,21 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
             const SizedBox(height: 4),
             Semantics(header: true, child: Text(nameOf(selected), style: context.pageTitleStyle(26))),
             const SizedBox(height: 2),
-            Text(targetText(sets: selected.targetSets, repsMin: selected.targetRepsMin, repsMax: selected.targetRepsMax, seconds: selected.targetDurationSeconds, l: l), key: const Key('workout-prescription'), style: context.numStyle(16, color: context.c.secondary, weight: FontWeight.w500)),
+            // One plan line: the prescription frozen into this workout and its rest.
+            Text(
+              [
+                targetText(sets: selected.targetSets, repsMin: selected.targetRepsMin, repsMax: selected.targetRepsMax, seconds: selected.targetDurationSeconds, l: l),
+                if ((selected.restSeconds ?? 0) > 0) l.workoutPlanRest(l.durationSeconds(selected.restSeconds!)),
+              ].where((s) => s.isNotEmpty).join(' · '),
+              key: const Key('workout-prescription'), style: context.numStyle(16, color: context.c.secondary, weight: FontWeight.w500),
+            ),
+            // The plan's target is the user's aim: never put in the fields or counted as a set, and apart from last time.
+            // It is the one frozen into this workout at Start; a next target changes the plan, never this workout.
+            if (selected.targetLoadKg != null)
+              Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text(l.workoutTargetInWorkout, style: context.sansStyle(14, color: context.c.secondary)),
+                Text(formatLoad(selected.targetLoadKg, unit), key: const Key('workout-target-load'), style: context.numStyle(15.5, weight: FontWeight.w600)),
+              ]),
             if (selected.substitutedForKey != null)
               Padding(padding: const EdgeInsets.only(top: 4), child: Text(l.workoutSubstitutedNote(nameOf(selected)), style: context.caption)),
           ],
@@ -571,69 +589,61 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
                 onPressed: () => showExerciseInfo(appContext(context), exercise: Prescription(selected.j), workoutName: workout.title)),
           ],
         )),
-        // The plan's target is the user's aim: never put in the fields or counted as a set, and apart from last time.
-        // It is the one frozen into this workout at Start; a next target changes the plan, never this workout.
-        if (selected.targetLoadKg != null) ...[
-          const SizedBox(height: 10),
-          _Tile(icon: Icons.flag_outlined, label: l.workoutTargetInWorkout, value: formatLoad(selected.targetLoadKg, unit), valueKey: const Key('workout-target-load')),
-        ],
-        if (definitionOf(ref, workout) case final def? when selected.isPrescribed && selected.occurrenceKey != null)
-          NextTargetLine(slotKey: (planId: workout.planId!, workoutId: def, occurrenceKey: selected.occurrenceKey!), quiet: true),
         if ((selected.notes ?? '').trim().isNotEmpty)
           Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.sticky_note_2_outlined, selected.notes!.trim())),
-        const SizedBox(height: 16),
-        // Last time beside today, set by set.
+        const SizedBox(height: 12),
+        // Last session beside today, set by set, and today's optional aim in the same panel: right above the entry.
         LastTime(
           history: history, status: historyStatus(ref, selected.catalogKey), unit: unit,
           today: [for (final r in mine) r.value], nextIndex: parked ? null : mine.length, rows: selected.targetSets,
           onAll: () => showExerciseHistory(context, name: nameOf(selected), history: history, unit: unit),
-        ),
-        // Optional and apart from the facts above; only for an exercise as the plan workout prescribed it.
-        if (definitionOf(ref, workout) case final def? when !parked && selected.isPrescribed && selected.occurrenceKey != null && selected.substitutedForKey == null)
-          SuggestedToday(
-            todayKey: (planId: workout.planId!, definitionId: def, workoutId: workout.id, exerciseId: selected.id), exercise: selected,
-            answer: runtime.suggestionFor(selected.id), hasHistory: history.isNotEmpty,
-            onUse: (t) => _useSuggestion(selected, t, unit), onAim: () => _answerSuggestion(selected, 'aim'), onKeep: () => _answerSuggestion(selected, 'kept'),
-          ),
-        const SizedBox(height: 16),
-        if (!parked) ...[
-          if (rest != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Panel(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Overline(rest == 0 ? l.workoutRestEnded : runtime.restExerciseId != selected.id ? l.workoutRestFromPrevious : l.workoutRestOverline),
-                  Semantics(
-                    label: rest == 0 ? l.workoutRestEnded : l.workoutRestSemantic(durationText(rest)),
-                    child: ExcludeSemantics(child: Text(clockText(rest), key: const Key('rest-clock'), style: context.sansStyle(context.display(70), weight: FontWeight.w300).copyWith(height: 1.05, fontFeatures: const [FontFeature.tabularFigures()]))),
-                  ),
-                  Wrap(spacing: 8, children: [
-                    if (rest > 0) TextButton(onPressed: () => _save(runtime.restExtended(_now, 30)), child: Text(l.workoutRestAdd30)),
-                    TextButton(key: const Key('rest-skip'), onPressed: () => _save(runtime.withoutRest()), child: Text(rest == 0 ? l.workoutRestDismiss : l.workoutRestSkip)),
-                  ]),
-                ]),
+          expanded: _compare, onToggle: () => setState(() => _compare = !_compare),
+          // Optional and apart from the facts above; only for an exercise as the plan workout prescribed it.
+          footer: switch (definitionOf(ref, workout)) {
+            final def? when !parked && selected.isPrescribed && selected.occurrenceKey != null && selected.substitutedForKey == null => SuggestedToday(
+                todayKey: (planId: workout.planId!, definitionId: def, workoutId: workout.id, exerciseId: selected.id), exercise: selected,
+                answer: runtime.suggestionFor(selected.id), hasHistory: history.isNotEmpty,
+                onUse: (t) => _useSuggestion(selected, t, unit), onAim: () => _answerSuggestion(selected, 'aim'), onKeep: () => _answerSuggestion(selected, 'kept'),
               ),
+            _ => null,
+          },
+        ),
+        const SizedBox(height: 18),
+        if (!parked) ...[
+          // The set being entered: what will be recorded, not yet a set; the same set last session beside it.
+          Semantics(
+            header: true,
+            child: Text(
+              switch (selected.targetSets) {
+                final planned? when mine.length < planned => l.workoutSetOfPlanned(mine.length + 1, planned),
+                _? => l.workoutExtraSet(mine.length + 1),
+                null => l.workoutCompareSetNumber(mine.length + 1),
+              },
+              key: const Key('entry-heading'), style: context.sansStyle(18, weight: FontWeight.w700),
             ),
-          // The next set's entry: what will be recorded, not yet a set.
-          Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
-            Overline(l.workoutNextSetOverline(mine.length + 1)),
-            if (lastForNext != null)
-              TextButton.icon(key: const Key('use-last-values'), onPressed: () => _useLast(lastForNext, unit), icon: const Icon(Icons.history, size: 18),
-                  label: Text(l.workoutUseLastValues, semanticsLabel: l.workoutUseLastValuesSemantic(setText(lastForNext, unit, l)))),
-          ]),
+          ),
+          if (lastForNext != null)
+            Builder(builder: (context) {
+              final ref = Text(l.workoutLastSetRef(mine.length + 1, setText(lastForNext, unit, l)), key: const Key('entry-last-ref'), style: context.numStyle(14, color: context.c.secondary, weight: FontWeight.w400));
+              final use = TextButton.icon(key: const Key('use-last-values'), onPressed: () => _useLast(lastForNext, unit), icon: const Icon(Icons.history, size: 18),
+                  label: Text(l.workoutUseLastValues, semanticsLabel: l.workoutUseLastValuesSemantic(setText(lastForNext, unit, l))));
+              // Side by side at ordinary sizes; with large text the button goes under the words instead of squeezing them.
+              return MediaQuery.textScalerOf(context).scale(10) <= 13
+                  ? Row(children: [Expanded(child: ref), use])
+                  : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ref, use]);
+            }),
           const SizedBox(height: 8),
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-              child: _BigField(key: const Key('set-load'), controller: _load, label: l.workoutLoadLabel, suffix: entryUnit.label, hint: l.workoutSetBodyweight, decimal: true, onChanged: _onTyped),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: selected.isTimed
-                  ? _BigField(key: const Key('set-duration'), controller: _duration, label: l.workoutTimeLabel, suffix: l.workoutSecondsUnit, hint: selected.targetDurationSeconds?.toString() ?? '', onChanged: _onTyped)
-                  : _BigField(key: const Key('set-reps'), controller: _reps, label: l.workoutRepsLabel, suffix: '',
-                      hint: selected.targetRepsMin == null ? '' : selected.targetRepsMin == selected.targetRepsMax ? '${selected.targetRepsMin}' : ltr('${selected.targetRepsMin}–${selected.targetRepsMax}'), onChanged: _onTyped),
-            ),
-          ]),
+          Builder(builder: (context) {
+            final load = _BigField(key: const Key('set-load'), controller: _load, label: l.workoutLoadLabel, suffix: entryUnit.label, hint: l.workoutSetBodyweight, decimal: true, onChanged: _onTyped);
+            final other = selected.isTimed
+                ? _BigField(key: const Key('set-duration'), controller: _duration, label: l.workoutTimeLabel, suffix: l.workoutSecondsUnit, hint: selected.targetDurationSeconds?.toString() ?? '', onChanged: _onTyped)
+                : _BigField(key: const Key('set-reps'), controller: _reps, label: l.workoutRepsLabel, suffix: '',
+                    hint: selected.targetRepsMin == null ? '' : selected.targetRepsMin == selected.targetRepsMax ? '${selected.targetRepsMin}' : ltr('${selected.targetRepsMin}–${selected.targetRepsMax}'), onChanged: _onTyped);
+            // Side by side; with large text one above the other, so a weight such as 102.5 is never cut off.
+            return MediaQuery.textScalerOf(context).scale(10) <= 15
+                ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: load), const SizedBox(width: 10), Expanded(child: other)])
+                : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [load, const SizedBox(height: 10), other]);
+          }),
           const SizedBox(height: 12),
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, tone: Tone.error)),
           if (targetReached)
@@ -641,6 +651,28 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
                 nextExercise == null ? l.workoutTargetReachedLast : l.workoutTargetReached)),
           // Reaching the target never changes exercise. The same action stays available for extra sets.
           PrimaryButton(targetReached ? l.workoutRecordAnotherSet : l.workoutRecordSet, key: const Key('complete-set'), icon: Icons.check_rounded, busy: _busy, onPressed: () => _complete(workout, selected)),
+          // Rest, right under Record set while it runs: one compact row, recomputed from its saved deadline.
+          if (rest != null)
+            Container(
+              key: const Key('rest-row'),
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsetsDirectional.fromSTEB(14, 6, 4, 6),
+              decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(Radii.tile), border: Border.all(color: context.c.divider)),
+              child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
+                Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 10, children: [
+                  Text(rest == 0 ? l.workoutRestEnded : runtime.restExerciseId != selected.id ? l.workoutRestFromPrevious : l.workoutRestOverline,
+                      style: context.sansStyle(14, color: context.c.secondary, weight: FontWeight.w600)),
+                  Semantics(
+                    label: rest == 0 ? l.workoutRestEnded : l.workoutRestSemantic(durationText(rest)),
+                    child: ExcludeSemantics(child: Text(clockText(rest), key: const Key('rest-clock'), style: context.sansStyle(28, weight: FontWeight.w500).copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
+                  ),
+                ]),
+                Wrap(children: [
+                  if (rest > 0) TextButton(onPressed: () => _save(runtime.restExtended(_now, 30)), child: Text(l.workoutRestAdd30)),
+                  TextButton(key: const Key('rest-skip'), onPressed: () => _save(runtime.withoutRest()), child: Text(rest == 0 ? l.workoutRestDismiss : l.workoutRestSkip)),
+                ]),
+              ]),
+            ),
           if (nextExercise != null) ...[
             const SizedBox(height: 8),
             SecondaryButton(l.workoutNextExercise(nameOf(nextExercise)), key: const Key('next-exercise'), onPressed: () => _select(nextExercise.id)),
@@ -662,6 +694,9 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
                 onTap: parked ? null : () => _editSet(r.value, selected),
               ),
           ]),
+        // The plan's future target (from the next session), apart from this workout's frozen one and today's aim.
+        if (definitionOf(ref, workout) case final def? when selected.isPrescribed && selected.occurrenceKey != null)
+          NextTargetLine(slotKey: (planId: workout.planId!, workoutId: def, occurrenceKey: selected.occurrenceKey!), quiet: true),
       ],
       const SizedBox(height: 26),
       Overline(l.workoutAllMovementsOverline),
@@ -705,8 +740,17 @@ HistoryStatus historyStatus(WidgetRef ref, String? catalogKey) {
 /// set is shown, and a side with nothing for a row says so instead of implying a comparison. [nextIndex] is null when
 /// nothing can be recorded here (the preview, or a workout saved for later); before Start there is no Today column.
 class LastTime extends StatelessWidget {
-  const LastTime({super.key, required this.history, required this.status, required this.unit, this.today = const [], this.nextIndex, this.rows, this.compare = true, required this.onAll});
+  const LastTime({super.key, required this.history, required this.status, required this.unit, this.today = const [], this.nextIndex, this.rows, this.compare = true, required this.onAll, this.footer,
+      this.expanded = true, this.onToggle});
   final List<PreviousPerformance> history;
+
+  /// In the recorder the set-by-set table sits behind Compare all sets ([onToggle]); [expanded] is whether it is open.
+  /// Without [onToggle] (the preview) the table is always shown.
+  final bool expanded;
+  final VoidCallback? onToggle;
+
+  /// Today's optional aim, in this same panel under the sets it is based on (docs/MEAL_COPY_WORKOUT_PANEL.md › 2).
+  final Widget? footer;
   final HistoryStatus status;
   final LoadUnit unit;
   final List<WorkoutSet> today;
@@ -753,25 +797,46 @@ class LastTime extends StatelessWidget {
       String t(String v) => labeled ? l.workoutCompareTodayLabeled(v) : v;
       return s != null
         ? Semantics(label: l.workoutCompareRecordedSemantic(setText(s, unit, l)), child: ExcludeSemantics(child: cell(t(setText(s, unit, l)), key: Key('compare-$i-today'), weight: FontWeight.w700, icon: Icons.check_circle, below: l.workoutSetRecorded)))
-        : cell(t(i == nextIndex ? l.workoutCompareNext : l.workoutCompareNotYet), key: Key('compare-$i-today'), color: c.secondary, weight: i == nextIndex ? FontWeight.w600 : FontWeight.w400);
+        // The row being entered: marked as an entry (a pencil, never the recorded check), and not a set yet.
+        : cell(t(i == nextIndex ? l.workoutCompareNext : l.workoutCompareNotYet), key: Key('compare-$i-today'), color: c.secondary, weight: i == nextIndex ? FontWeight.w600 : FontWeight.w400,
+            icon: i == nextIndex ? Icons.edit_outlined : null);
     }
 
     Widget head(String text) => Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(text, style: context.sansStyle(13, color: c.secondary, weight: FontWeight.w600)));
+    // Something to compare: the table can be folded away behind Compare all sets.
+    final collapsible = onToggle != null && last != null;
+    final shown = !collapsible || expanded;
+    final roomy = MediaQuery.textScalerOf(context).scale(10) <= 13;
+    final all = history.isEmpty ? null : QuietLink(l.workoutAllSessions, key: const Key('all-sessions'), said: l.workoutAllSessionsSemantic, onPressed: onAll);
     return Panel(
       key: const Key('last-time'),
       padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 8, 12).resolve(Directionality.of(context)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+        // One row: the dated title, and Compare all sets (recorder) or All sessions (preview) at its end; with large
+        // text the action goes under the title instead.
+        Builder(builder: (context) {
+          final title = Semantics(
+            header: true,
             child: Text(last == null ? l.workoutLastTime : l.workoutLastTimeOn(shortDate(last.dayKey)), key: const Key('last-time-title'), style: context.sansStyle(16, weight: FontWeight.w600)),
-          ),
-          if (history.isNotEmpty) QuietLink(l.workoutAllSessions, key: const Key('all-sessions'), said: l.workoutAllSessionsSemantic, onPressed: onAll),
-        ]),
+          );
+          final Widget? action = collapsible
+              ? Semantics(
+                  key: const Key('compare-toggle'), expanded: expanded,
+                  child: TextButton.icon(
+                    onPressed: onToggle, icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 20),
+                    label: Text(expanded ? l.workoutCompareHide : l.workoutCompareAll),
+                  ),
+                )
+              : all;
+          if (action == null) return Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: title);
+          return roomy ? Row(children: [Expanded(child: title), action]) : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, action]);
+        }),
         if (last != null && last.workout.outcome != WorkoutResultRules.full) Text('${last.workout.title} · ${outcomeLabel(l, last.workout.outcome)}', style: context.caption),
         if (empty != null) Padding(padding: const EdgeInsets.only(top: 2, bottom: 4), child: Text(empty, key: const Key('last-time-empty'), style: context.caption)),
         // With large text each set is a short block (Set, then Last time and Today under it) instead of squeezed columns.
-        if (count > 0 && MediaQuery.textScalerOf(context).scale(10) > 13)
+        if (!shown)
+          const SizedBox.shrink()
+        else if (count > 0 && !roomy)
           Column(key: const Key('compare-table'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             for (var i = 0; i < count; i++)
               DecoratedBox(
@@ -803,6 +868,9 @@ class LastTime extends StatelessWidget {
                 ),
             ],
           ),
+        // Every earlier session, with the full comparison (in the preview it sits in the title row).
+        if (collapsible && expanded && all != null) Align(alignment: AlignmentDirectional.centerStart, child: all),
+        ?footer,
       ]),
     );
   }
@@ -824,34 +892,6 @@ Future<void> showExerciseHistory(BuildContext context, {required String name, re
         ],
       ]),
     );
-
-/// A small labelled tile: what it is ("Target") and the value.
-class _Tile extends StatelessWidget {
-  const _Tile({required this.icon, required this.label, required this.value, this.valueKey});
-  final IconData icon;
-  final String label, value;
-  final Key? valueKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(Radii.tile), border: Border.all(color: c.divider)),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        ExcludeSemantics(child: Padding(padding: const EdgeInsets.only(top: 1), child: Icon(icon, size: 20, color: c.secondary))),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: context.sansStyle(13.5, color: c.secondary, weight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text(value, key: valueKey, style: context.numStyle(16.5, weight: FontWeight.w600)),
-          ]),
-        ),
-      ]),
-    );
-  }
-}
 
 /// Large logging field: 37 px value, at least 88 px tall, numeric keyboard.
 class _BigField extends StatelessWidget {

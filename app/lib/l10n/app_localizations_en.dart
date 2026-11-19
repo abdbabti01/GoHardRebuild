@@ -8409,12 +8409,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String workoutMovementPosition(int index, int total) {
-    return 'Movement $index of $total';
+    return 'Exercise $index of $total';
   }
 
   @override
   String workoutMovementPositionExtra(int index, int total) {
-    return 'Movement $index of $total · extra';
+    return 'Exercise $index of $total · added';
   }
 
   @override
@@ -8455,11 +8455,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutRestSkip => 'Skip rest';
-
-  @override
-  String workoutNextSetOverline(int number) {
-    return 'Set $number · not recorded yet';
-  }
 
   @override
   String get workoutTargetReachedLast =>
@@ -8537,16 +8532,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'No history: this movement is not linked to a saved exercise, so nothing is matched by name.';
 
   @override
-  String get workoutHistoryNone => 'No previous session recorded.';
+  String get workoutHistoryNone =>
+      'First session on record: nothing to compare yet.';
 
   @override
   String workoutCompareLastLabeled(String value) {
-    return 'Last time: $value';
+    return 'Last session: $value';
   }
 
   @override
   String workoutCompareTodayLabeled(String value) {
-    return 'Today: $value';
+    return 'Recorded today: $value';
   }
 
   @override
@@ -8555,7 +8551,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get workoutCompareNext => 'Next · not recorded yet';
+  String get workoutCompareNext => 'Entering now';
 
   @override
   String get workoutCompareNotYet => 'Not recorded yet';
@@ -8569,14 +8565,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutCompareSet => 'Set';
 
   @override
-  String get workoutCompareToday => 'Today';
+  String get workoutCompareToday => 'Recorded today';
 
   @override
-  String get workoutLastTime => 'Last time';
+  String get workoutLastTime => 'Last session';
 
   @override
   String workoutLastTimeOn(String date) {
-    return 'Last time · $date';
+    return 'Last session · $date';
   }
 
   @override
@@ -12647,7 +12643,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'You already have an unfinished plan. Save or discard it first.';
 
   @override
-  String get workoutTodayOverline => 'Suggested today · optional';
+  String get workoutTodayOverline => 'Today’s aim · optional';
 
   @override
   String get workoutTodayTitle => 'Suggested today';
@@ -13004,4 +13000,160 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tgtManual => 'Set targets manually';
+
+  @override
+  String get copyTitle => 'Review copied meal';
+
+  @override
+  String copyFrom(String meal, String date) {
+    return 'From $meal · $date';
+  }
+
+  @override
+  String get copyTo => 'Copy to';
+
+  @override
+  String get copySame =>
+      'Same day and meal as the original: logging adds these foods to it again. That is fine if you ate it twice.';
+
+  @override
+  String copyAdds(int count, String meal, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count foods',
+      one: '1 food',
+    );
+    return '$meal on $date already has $_temp0. These are added; nothing is replaced.';
+  }
+
+  @override
+  String get copyFoodsHint =>
+      'Tap a food to change its amount for this time. The meal you copied from stays as it is.';
+
+  @override
+  String get copyFixedTag => 'typed by hand';
+
+  @override
+  String get copyFixedTitle => 'This amount can’t be changed';
+
+  @override
+  String copyFixedBody(String name) {
+    return '$name was typed by hand, without a food record, so GoHard can’t scale its amount. Keep it as logged, remove it, or choose a matching food instead.';
+  }
+
+  @override
+  String get copyChooseFood => 'Choose a food instead';
+
+  @override
+  String get copyKeepAsLogged => 'Keep as logged';
+
+  @override
+  String copyPortionTitle(String name) {
+    return 'How much $name?';
+  }
+
+  @override
+  String get copyPortionNote => 'From the recipe as it was when you logged it.';
+
+  @override
+  String copySourcesTitle(String meal) {
+    return 'Copy $meal from…';
+  }
+
+  @override
+  String get copySourcesNone =>
+      'Nothing logged at this meal in the last 14 days.';
+
+  @override
+  String copyMore(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String copyLogged(String meal, String date) {
+    return 'Copied to $meal · $date';
+  }
+
+  @override
+  String get copyView => 'View';
+
+  @override
+  String get copyMeal => 'Copy meal';
+
+  @override
+  String copyMealSaid(String meal) {
+    return 'Copy $meal to another day or meal';
+  }
+
+  @override
+  String get repeatYesterday => 'Same as yesterday?';
+
+  @override
+  String repeatOn(String date) {
+    return 'Same as $date?';
+  }
+
+  @override
+  String get repeatReview => 'Review & log';
+
+  @override
+  String get repeatOther => 'Other days';
+
+  @override
+  String repeatSaid(String meal, String date, String foods) {
+    return 'Same $meal as $date: $foods';
+  }
+
+  @override
+  String workoutSetOfPlanned(int number, int total) {
+    return 'Set $number of $total';
+  }
+
+  @override
+  String workoutExtraSet(int number) {
+    return 'Extra set $number';
+  }
+
+  @override
+  String workoutLastSetRef(int number, String set) {
+    return 'Last session, set $number: $set';
+  }
+
+  @override
+  String workoutPlanRest(String duration) {
+    return '$duration rest';
+  }
+
+  @override
+  String workoutTodayAimFor(String name) {
+    return 'Today’s aim for $name';
+  }
+
+  @override
+  String get workoutTodayWhyShort => 'Why?';
+
+  @override
+  String get workoutCompareAll => 'Compare all sets';
+
+  @override
+  String get workoutCompareHide => 'Hide comparison';
+
+  @override
+  String get workoutTodayMore => 'More choices';
+
+  @override
+  String get workoutTodayMoreSemantic =>
+      'More choices for today’s aim: why it is suggested, keep my targets, edit future targets';
+
+  @override
+  String get workoutTodayWhyNote => 'The rule, and the sessions it used.';
+
+  @override
+  String get workoutTodayKeepNote =>
+      'Hide this aim for this exercise in this workout. Nothing else changes.';
+
+  @override
+  String get workoutTodayEditNote =>
+      'Change your plan from your next session. This workout keeps its targets.';
 }

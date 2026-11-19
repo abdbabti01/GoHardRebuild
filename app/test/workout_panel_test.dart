@@ -106,13 +106,13 @@ void main() {
     await show(LastTime(history: const [], status: HistoryStatus.noIdentity, unit: LoadUnit.kg, onAll: () {}));
     expect(empty(), contains('nothing is matched by name'));
     await show(LastTime(history: const [], status: HistoryStatus.ready, unit: LoadUnit.kg, nextIndex: 0, rows: 3, onAll: () {}));
-    expect(empty(), 'No previous session recorded.');
+    expect(empty(), 'First session on record: nothing to compare yet.');
     expect(find.text('—'), findsNWidgets(3), reason: 'no previous set is implied for any row');
     expect(find.byKey(const Key('all-sessions')), findsNothing);
 
     final past = PreviousPerformance(_w('a', '2026-10-09T07:00:00Z', [('a1', 'plank')]), [_s('t1', 'a1', '2026-10-09T07:05:00Z', seconds: 45), _s('t2', 'a1', '2026-10-09T07:07:00Z', reps: 12)]);
     await show(LastTime(history: [past], status: HistoryStatus.ready, unit: LoadUnit.kg, nextIndex: 0, rows: 1, onAll: () {}));
-    expect(find.text('Last time · Fri, Oct 9'), findsOneWidget);
+    expect(find.text('Last session · Fri, Oct 9'), findsOneWidget);
     expect(find.text('45 s'), findsOneWidget, reason: 'a timed set, with no invented weight');
     expect(find.text('Bodyweight × 12'), findsOneWidget);
     expect(find.text('Not recorded yet'), findsOneWidget, reason: 'the extra previous set stays visible, with no fabricated comparison');
@@ -195,7 +195,7 @@ void main() {
     expect(await workouts(), isEmpty);
     expect(await commands(), before);
     final lb57 = formatLoad(57.5, LoadUnit.lb), lb60 = formatLoad(60, LoadUnit.lb);
-    expect(find.text('Last time · Fri, Oct 9'), findsOneWidget, reason: 'the first exercise is open, with its last session');
+    expect(find.text('Last session · Fri, Oct 9'), findsOneWidget, reason: 'the first exercise is open, with its last session');
     expect(find.text('$lb57 × 8'), findsOneWidget, reason: 'shown in the preferred unit');
     expect(find.text('$lb60 × 8'), findsOneWidget, reason: 'every previous set, in order');
 
@@ -231,6 +231,9 @@ void main() {
     final recorded = await run(repo.sets(id));
     expect(recorded, hasLength(1));
     expect(recorded.single.loadKg, closeTo(57.5, 0.3));
+    // The set-by-set comparison and All sessions sit behind Compare all sets.
+    expect(find.byKey(const Key('compare-table')), findsNothing);
+    await tap('compare-toggle');
     expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Recorded')), findsOneWidget);
     expect(find.byKey(const Key('rest-clock')), findsOneWidget);
     final restLeft = (await run(repo.runtime(id)))!.restDeadlineUtc;

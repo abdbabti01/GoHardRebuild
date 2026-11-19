@@ -108,6 +108,21 @@ Future<void> loadArabicFonts() async {
   await (FontLoader('Noto Naskh Arabic')..addFont(f('NotoNaskhArabic-SemiBold'))).load();
 }
 
+/// The app's real fonts (Inter, the serif, Arabic, Material icons), so a test can measure layout as on a phone instead
+/// of with the test font's square glyphs. Global for the rest of the test file once loaded.
+Future<void> loadAppFonts() async {
+  Future<ByteData> f(String path) => File(path).readAsBytes().then((b) => ByteData.view(b.buffer));
+  final inter = FontLoader('Inter');
+  for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+    inter.addFont(f('assets/fonts/Inter-$w.ttf'));
+  }
+  await inter.load();
+  await (FontLoader(serif)..addFont(f('assets/fonts/DMSerifDisplay-Regular.ttf'))).load();
+  await loadArabicFonts();
+  final icons = '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf';
+  if (File(icons).existsSync()) await (FontLoader('MaterialIcons')..addFont(f(icons))).load();
+}
+
 Future<ProviderContainer> pumpApp(WidgetTester tester, List<Override> overrides,
     {Widget home = const HomeShell(), Size size = const Size(390, 844), double textScale = 1, bool settle = true, EdgeInsets insets = EdgeInsets.zero}) async {
   tester.view.physicalSize = size;

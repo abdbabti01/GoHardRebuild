@@ -39,9 +39,22 @@ class _Scheduler implements ReminderScheduler {
 }
 
 void main() {
+  testWidgets('one entry point per meal: with the same meal logged yesterday, the meal offers Same as yesterday and the usual meal is not also put forward', (tester) async {
+    await pumpApp(tester, [...(await tester.runAsync(() => overridesFor(day: day, food: habitJournal, habitPrefs: {'suggest': true})))!, ...FoodFakes().overrides,
+        reminderSchedulerProvider.overrideWithValue(_Scheduler(true))], size: const Size(390, 2400));
+    await tester.tap(find.byKey(const Key('nav-eat')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('habit-review')), findsNothing);
+    for (final m in meals) {
+      expect(find.byKey(Key('eat-repeat-${m.toLowerCase()}')), findsOneWidget, reason: m);
+    }
+  });
+
   testWidgets('Eat offers the usual meal with its three choices; reviewing it logs nothing; off or another day, nothing is suggested', (tester) async {
     final fakes = FoodFakes();
-    await pumpApp(tester, [...(await tester.runAsync(() => overridesFor(day: day, food: habitJournal, habitPrefs: {'suggest': true})))!, ...fakes.overrides,
+    // Not logged yesterday (that meal would offer Same as yesterday instead), still on three recent days.
+    final journal = [for (final e in habitJournal) if (e['dayKey'] != addDays(day, -1)) e];
+    await pumpApp(tester, [...(await tester.runAsync(() => overridesFor(day: day, food: journal, habitPrefs: {'suggest': true})))!, ...fakes.overrides,
         reminderSchedulerProvider.overrideWithValue(_Scheduler(true))], size: const Size(390, 1400));
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();

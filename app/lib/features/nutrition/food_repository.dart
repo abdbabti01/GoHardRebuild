@@ -33,7 +33,18 @@ String mealLabel(AppLocalizations l, String meal) => switch (meal) {
 /// while it is open never moves the entry to another day.
 class FoodDraft {
   FoodDraft({this.id, required this.dayKey, this.meal = 'Breakfast', this.name = '', this.amount = '', this.calories, this.protein, this.carbs, this.fat,
-      this.item, this.quantity, this.unitId, this.recipe});
+      this.item, this.quantity, this.unitId, this.recipe, this.kept});
+
+  /// A logged entry copied as it is, for [dayKey] and [meal] (docs/MEAL_COPY_WORKOUT_PANEL.md): its name, amount words,
+  /// exact values, snapshot and provenance. A new entry (no ID); the original is not touched.
+  factory FoodDraft.copy(FoodEntry e, {required String dayKey, required String meal}) {
+    final d = FoodDraft.edit(e);
+    // A food without a usable quantity cannot be scaled: it is copied as it is (its snapshot kept), like a typed entry.
+    final scalable = d.item != null && (d.quantity ?? 0) > 0;
+    return FoodDraft(dayKey: dayKey, meal: meal, name: d.name, amount: d.amount, calories: d.calories, protein: d.protein, carbs: d.carbs, fat: d.fat,
+        item: scalable ? d.item : null, quantity: scalable ? d.quantity : null, unitId: scalable ? d.unitId : null, recipe: d.recipe,
+        kept: {'source': e.source, 'provenance': e.j['provenance']});
+  }
   factory FoodDraft.edit(FoodEntry e) {
     final source = e.source;
     return FoodDraft(id: e.id, dayKey: e.dayKey, meal: e.meal, name: e.name, amount: e.amountDescription,
@@ -67,6 +78,10 @@ class FoodDraft {
   /// Its values are worked out from that frozen batch, never from the recipe as it is now.
   Json? recipe;
 
+  /// For an unchanged copy: the entry's own `source` and `provenance`, written back exactly instead of being worked out
+  /// again (an older snapshot's unit or a corrected value must never shift). A changed copy is an ordinary new draft.
+  final Json? kept;
+
   Map<String, double?> get macros => {'calories': calories, 'protein': protein, 'carbs': carbs, 'fat': fat};
 }
 
@@ -96,6 +111,7 @@ class FoodRepository {
   /// What is recorded with an entry taken from a food: the food as it was, the amount, and per nutrient whether
   /// the value is the source's (`imported`) or the user's own (`entered`). Empty for an entry typed by hand.
   static Json sourceFields(FoodDraft d) {
+    if (d.kept case final k?) return {if (k['source'] != null) ...{'source': k['source'], if (k['provenance'] != null) 'provenance': k['provenance']}};
     // A recipe portion's values are all its own batch's: known ones are taken from it, the rest are unknown.
     if (d.recipe != null) return {'source': d.recipe, 'provenance': {for (final e in d.macros.entries) e.key: e.value == null ? 'unknown' : 'imported'}};
     final item = d.item;
