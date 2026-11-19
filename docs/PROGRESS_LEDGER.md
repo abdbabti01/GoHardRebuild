@@ -2778,3 +2778,4 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   the usual meal is always worked out (a failure is reported at any hour) and only hidden beside Same as yesterday.
   Reproduced and verified in a throwaway Linux container (Flutter 3.47.6, TZ=UTC, 04:52 UTC): the Eat suites 37 passed;
   locally the same files passed. IPA 74 (c2bed53) built but is superseded by the build of the fixed commit.
+- Final code db21126: CI 215 (44461725390) and 216 (44461741181) passed (app + api); replacement unsigned IPA run 75 (44461741183, tag `ipa-meal-copy-compact-db21126`) passed. Not merged, not deployed.
