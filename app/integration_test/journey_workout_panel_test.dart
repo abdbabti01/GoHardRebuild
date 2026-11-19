@@ -98,9 +98,10 @@ void main() {
       expect(field('set-reps').text, '10');
       expect(find.byKey(const Key('set-row-0')), findsNothing, reason: 'filling is not recording');
       await j.type('set-reps', '11');
-      // The table and the typed, unsaved entry under it, with the keyboard closed.
+      // The table (opened with Compare all sets) and the typed, unsaved entry under it, with the keyboard closed.
       FocusManager.instance.primaryFocus?.unfocus();
       await j.settle(3);
+      await j.tapKey('compare-toggle');
       await Scrollable.ensureVisible(tester.element(find.byKey(const Key('last-time'))), alignment: 0.12);
       await j.settle(3);
       expect(field('set-reps').text, '11');

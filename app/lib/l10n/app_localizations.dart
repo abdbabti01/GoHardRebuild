@@ -19553,6 +19553,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Why?'**
   String get workoutTodayWhyShort;
+
+  /// Opens the set-by-set table of last session against today.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare all sets'**
+  String get workoutCompareAll;
+
+  /// Closes the set-by-set table of last session against today.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide comparison'**
+  String get workoutCompareHide;
+
+  /// Opens the other choices for today’s aim.
+  ///
+  /// In en, this message translates to:
+  /// **'More choices'**
+  String get workoutTodayMore;
+
+  /// Screen reader label of More choices.
+  ///
+  /// In en, this message translates to:
+  /// **'More choices for today’s aim: why it is suggested, keep my targets, edit future targets'**
+  String get workoutTodayMoreSemantic;
+
+  /// Under Why this suggestion? in the aim’s choices.
+  ///
+  /// In en, this message translates to:
+  /// **'The rule, and the sessions it used.'**
+  String get workoutTodayWhyNote;
+
+  /// Under Keep my targets in the aim’s choices.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide this aim for this exercise in this workout. Nothing else changes.'**
+  String get workoutTodayKeepNote;
+
+  /// Under Edit future targets in the aim’s choices.
+  ///
+  /// In en, this message translates to:
+  /// **'Change your plan from your next session. This workout keeps its targets.'**
+  String get workoutTodayEditNote;
 }
 
 class _AppLocalizationsDelegate

@@ -18552,5 +18552,33 @@
   "workoutTodayWhyShort": "Why?",
   "@workoutTodayWhyShort": {
     "description": "Short link to why today’s aim is suggested, its evidence and what each action changes."
+  },
+  "workoutCompareAll": "Compare all sets",
+  "@workoutCompareAll": {
+    "description": "Opens the set-by-set table of last session against today."
+  },
+  "workoutCompareHide": "Hide comparison",
+  "@workoutCompareHide": {
+    "description": "Closes the set-by-set table of last session against today."
+  },
+  "workoutTodayMore": "More choices",
+  "@workoutTodayMore": {
+    "description": "Opens the other choices for today’s aim."
+  },
+  "workoutTodayMoreSemantic": "More choices for today’s aim: why it is suggested, keep my targets, edit future targets",
+  "@workoutTodayMoreSemantic": {
+    "description": "Screen reader label of More choices."
+  },
+  "workoutTodayWhyNote": "The rule, and the sessions it used.",
+  "@workoutTodayWhyNote": {
+    "description": "Under Why this suggestion? in the aim’s choices."
+  },
+  "workoutTodayKeepNote": "Hide this aim for this exercise in this workout. Nothing else changes.",
+  "@workoutTodayKeepNote": {
+    "description": "Under Keep my targets in the aim’s choices."
+  },
+  "workoutTodayEditNote": "Change your plan from your next session. This workout keeps its targets.",
+  "@workoutTodayEditNote": {
+    "description": "Under Edit future targets in the aim’s choices."
   }
 }

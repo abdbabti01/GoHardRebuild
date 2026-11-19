@@ -54,11 +54,15 @@ rules. Only the arrangement of the selected exercise changes, top to bottom:
 
 1. **Header** (photo panel, unchanged style): "Exercise 2 of 6", the name, one plan line "3 sets · 8–12 reps ·
    90 s rest" with the target frozen into this workout ("· target 45 lb"), About.
-2. **Last session · date** — one panel with Set | Last session | Recorded today (set by set, every previous set
-   with its own load; extra rows show "—" for last session, never a copy of another set), the row being entered
-   marked "Entering". Stacked per set at large text. All sessions. **Today's aim** sits inside the same panel when
-   the existing rules (Plus) give one: Use 47.5 lb / Keep this aim / Keep my targets / Edit future targets / Why?.
-   No comparable session: "First session on record: nothing to compare yet." in the same place.
+2. **Last session · date** — one panel, **compact by default** (revised 19 Nov 2026): the dated title with **Compare
+   all sets** at its end (a 48 px button, read out as expanded or collapsed). Opened, it shows Set | Last session |
+   Recorded today (set by set, every previous set with its own load; extra rows show "—" for last session, never a
+   copy of another set; the row being entered marked "Entering now" with a pencil; stacked per set at large text) and
+   All sessions; one tap closes it. It stays as chosen while switching exercises (this workout panel only).
+   **Today's aim** sits inside the same panel when the existing rules (Plus) give one: the sentence and **one**
+   primary action — Use 47.5 lb, Keep this aim, or Choose your weight increment — beside **More choices**, a sheet
+   with Why this suggestion?, Keep my targets and Edit future targets, each with a line saying what it changes.
+   Opening the sheet changes nothing. No comparable session: "First session on record: nothing to compare yet."
 3. **Set 2 of 3** (or "Extra set 4"): the matching last-session set beside it with Use last values, weight and reps
    (or time), **Record set**, and the rest timer as one compact row directly under it while it runs; Next exercise.
 4. **Recorded sets** (edit through the existing dialog), then **Next target** (future plan target, quiet), All
@@ -68,12 +72,16 @@ Removed duplication: the separate "Target in this workout" tile (now in the plan
 today card (now inside the history panel). Free: history, manual targets and recording unchanged; the quiet Plus line
 stays inside the panel; nothing opens by itself.
 
-What each aim action changes (fills this set's weight only; Edit future targets changes the plan from the next
-session) is said in **Why?**, so the panel stays short. With large text the weight and reps fields stack.
+The current set's previous performance is always beside the fields ("Last session, set 2: 190 lb × 8", with Use
+last values). What each aim action changes is said in More choices and in Why. With large text the weight and reps
+fields stack, and the page scrolls; nothing is clipped.
 
-Fit, measured with the app's real fonts at 390 px (`progression_ui_test`): header to Record set is 647 px without an
-aim (fits between a 390 × 844 phone's status bar and tab bar) and 834 px with an aim and its four actions (one short
-scroll). Not built: a live preview of typed values in the comparison (the entering row is labelled instead).
+**Fit, measured** (`progression_ui_test`, the app's real fonts, a 390 × 844 surface with a notched phone's insets,
+keyboard closed): the usable height is from the status-bar inset (47 px) to the top of the floating tab bar as laid
+out (738 px), 691 px. Scrolled so the exercise header sits under the status bar, the header, last session's title,
+the aim sentence, Use 195 lb, More choices, the set heading, the previous-set line, both fields and Record set all lie
+inside it (header 51 px → Record set bottom 713 px), with no text or target made smaller (every action ≥ 48 px, the
+fields 88 px). Not built: a live preview of typed values in the comparison (the entering row is labelled instead).
 
 ## Verification (18 Nov 2026)
 
@@ -84,7 +92,26 @@ scroll). Not built: a live preview of typed values in the comparison (the enteri
   — Eat and the recorder at 390 × 844 in light and dark from `main` 009bae6 and from this branch with the same file
   (`meal_copy_workout_render_test`); after only: the copy review light/dark and at 320 px with 2× text, the recorder at
   320 px with 2× text.
-* **Not run:** the emulator journey `integration_test/journey_copy_panel_test.dart` (written and analyzed): the local
-  development database's migration history is unknown to the rebuild, so `setup.ps1` refuses to migrate it and the API
-  answers 503. Repairing it would mean dropping that local database, which was not done.
+* ~~Not run~~ (18 Nov) → **ran and passed 19 Nov 2026**, see below.
 * **Not verified on a device:** everything above on an iPhone, VoiceOver.
+
+## Verification (19 Nov 2026: compact panel, emulator journey)
+
+* Compact panel: `progression_ui_test` (+2: the measured fit described above, Compare all sets opening and closing
+  with its expanded state read out, More choices with each action's title and line, nothing recorded; 320 px at 2×
+  text with the comparison open and the sheet up, no overflow), existing suites updated to open Compare all sets first.
+* **Emulator journey passed** (`journey_copy_panel_test`, Pixel_API_34 emulator, Android 14, 3 min 37 s): yesterday's
+  breakfast logged from the common foods; Same as yesterday? → one amount changed → back (account still 2 entries) →
+  Review & log → Log this time (account 4 entries, still 4 after waiting); a template plan, an earlier manual session,
+  Start: the compact panel, Compare all sets showing 42.5 kg × 8 on set 2, Use last values asking before replacing,
+  Record set with rest, Next exercise and back with the typed 50 kg kept. A new account is Free: no aim, as checked.
+  Captures and the recording: `docs/evidence/meal-copy-workout-panel/emulator/` (real app on an emulator, not an iPhone).
+* **Isolation:** a throwaway `postgres:17.6` container (`gohard-journey-tmp`, 127.0.0.1:5437, tmpfs, no volume) and the
+  API run from this branch with `GOHARD_ConnectionStrings__Default` pointing at it (the supported override; the local
+  file has the lowest precedence), `migrate seed-catalog` on the empty database (Ready, 17 migrations), Capture mail.
+  `gohard-rebuild-postgres` and its database were never connected to. Afterwards the API was stopped and the container
+  removed; nothing else was created.
+* **Found on the way and fixed:** the local mail-capture route (`/dev/mail/latest`, Development/Testing only) still
+  read only 8-digit codes, so since the 4-digit verification change every native journey that registers an account
+  waited forever. It now reads the code from its own line (4 or 8 digits; `MailTemplates.CodeIn`); `AccountEmailTests`
+  checks both lengths, an Arabic message and that no other number is taken.

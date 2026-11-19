@@ -408,6 +408,13 @@ public sealed class AccountEmailTests(PostgresFixture pg)
         var neu = await Register(4);
         var four = await e.CodeFor(neu.Email, reset: false);
         Assert.Matches("^[0-9]{4}$", four);
+        // The local capture route the native journeys read gives the code whatever its length, and never another number.
+        async Task<string?> Captured(string email) =>
+            (await e.Anonymous.GetFromJsonAsync<JsonElement>($"/dev/mail/latest?to={Uri.EscapeDataString(email)}")).GetProperty("code").GetString();
+        Assert.Equal(four, await Captured(neu.Email));
+        Assert.Equal(eight, await Captured(old.Email));
+        Assert.Equal("0042", MailTemplates.CodeIn(MailTemplates.Render("email-verification", "ar", "0042", 15).Text));
+        Assert.Equal("", MailTemplates.CodeIn("GoHard\n\nSent in 2026, code 12345678 inline.\n\n"));
         Assert.Equal(HttpStatusCode.OK, (await Confirm(neu.Token, four)).StatusCode);
         Assert.False((await Resend(neu.Token, 4)).IsSuccessStatusCode, "already verified");
 

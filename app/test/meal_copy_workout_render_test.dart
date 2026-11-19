@@ -148,6 +148,14 @@ void main() {
       await _toTop(tester, 'workout-exercise-panel');
       await _shot(tester, 'recorder-$m');
       expect(tester.takeException(), isNull);
+      if (find.byKey(const Key('compare-toggle')).evaluate().isEmpty) return; // before: no compact panel
+      await _tap(tester, 'compare-toggle');
+      await _toTop(tester, 'last-time');
+      await _shot(tester, 'recorder-compare-open-$m');
+      await _tap(tester, 'compare-toggle');
+      await _tap(tester, 'today-more');
+      await _shot(tester, 'recorder-more-choices-$m');
+      expect(tester.takeException(), isNull);
     });
   }
 
@@ -177,6 +185,10 @@ void main() {
     await _tap(tester, 'nav-train');
     await _toTop(tester, 'last-time');
     await _shot(tester, 'recorder-320-2x-history');
+    await _tap(tester, 'compare-toggle');
+    await _toTop(tester, 'last-time');
+    await _shot(tester, 'recorder-320-2x-compare-open');
+    await _tap(tester, 'compare-toggle');
     await _toTop(tester, 'set-load');
     await _shot(tester, 'recorder-320-2x-entry');
     expect(tester.takeException(), isNull);

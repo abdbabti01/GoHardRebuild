@@ -467,17 +467,19 @@ Record set. *(Superseded in layout on 18 Nov 2026, below: the aim now sits insid
 ### The exercise panel around one task (18 Nov 2026; behaviour in `docs/MEAL_COPY_WORKOUT_PANEL.md` › 2)
 
 Top to bottom, one of each: the photo header (Exercise 2 of 6, the serif name, one plan line "3 sets · 6–8 reps ·
-90 s rest", "Target in this workout 190 lb" when the plan froze one, About); **Last session · date** as one `Panel`
-(the title and All sessions on one row; Set | Last session | Recorded today; the row being entered marked with a
-pencil and "Entering now", never the recorded check; extra rows show "—"; stacked per set at large text) with
-**Today's aim · optional** as a ruled section inside it (one bold sentence; Use 195 lb or Keep this aim, Keep my
-targets, Edit future targets, Why? — what each changes moved into Why); then **Set 2 of 3** / **Extra set 4** in
+90 s rest", "Target in this workout 190 lb" when the plan froze one, About); **Last session · date** as one `Panel`,
+compact by default (19 Nov): the title with a 48 px **Compare all sets** text button (expand icon) that opens Set |
+Last session | Recorded today (the row being entered marked with a pencil and "Entering now", never the recorded
+check; extra rows show "—"; stacked per set at large text) and All sessions; **Today's aim · optional** as a ruled
+section inside it (one bold sentence; one primary text button — Use 195 lb or Keep this aim — and **More choices**
+(more icon) opening a sheet of three labelled rows, Why this suggestion?, Keep my targets, Edit future targets, each
+with what it changes); then **Set 2 of 3** / **Extra set 4** in
 18 px bold with "Last session, set 2: 190 lb × 8" and Use last values beside it, the two 88 px fields (one above the
 other at large text, so 102.5 is never cut), **Record set**, and the rest as one compact row under it (28 px clock,
 +30 s, Skip). Then Next exercise, Recorded sets, the quiet Next target line (future plan target), All movements,
-Finish. Removed: the separate target tile and the separate Suggested today card. Measured with the real fonts at
-390 px: header to Record set 647 px without an aim, 834 px with the aim and its four actions
-(`progression_ui_test`). Renders, before/after at 390 × 844 in light and dark, and 320 px at 2×:
+Finish. Removed: the separate target tile and the separate Suggested today card. Measured with the real fonts on a
+390 × 844 surface with phone insets: header to Record set, with an aim, lies between the status bar (47 px) and the
+tab bar's top (738 px), 51 → 713 px (`progression_ui_test`). Renders, before/after at 390 × 844 in light and dark, and 320 px at 2×:
 `docs/evidence/meal-copy-workout-panel` (`meal_copy_workout_render_test`, gated).
 
 ### Today's training states, guide and coach (15 Oct 2026; `docs/TRAINING_PLANS.md` › Today, `docs/COACH.md`)

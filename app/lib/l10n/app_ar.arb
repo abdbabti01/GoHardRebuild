@@ -3226,5 +3226,12 @@
   "workoutLastSetRef": "الحصة السابقة، المجموعة {number}: {set}",
   "workoutPlanRest": "راحة {duration}",
   "workoutTodayAimFor": "هدف اليوم لـ {name}",
-  "workoutTodayWhyShort": "لماذا؟"
+  "workoutTodayWhyShort": "لماذا؟",
+  "workoutCompareAll": "مقارنة كل المجموعات",
+  "workoutCompareHide": "إخفاء المقارنة",
+  "workoutTodayMore": "خيارات أخرى",
+  "workoutTodayMoreSemantic": "خيارات أخرى لهدف اليوم: لماذا اقتُرح، الإبقاء على أهدافي، تعديل الأهداف القادمة",
+  "workoutTodayWhyNote": "القاعدة والحصص التي استُخدمت.",
+  "workoutTodayKeepNote": "إخفاء هذا الهدف لهذا التمرين في هذه الحصة. لا يتغيّر شيء آخر.",
+  "workoutTodayEditNote": "تغيير خطتك بدءًا من حصتك القادمة. تحتفظ هذه الحصة بأهدافها."
 }

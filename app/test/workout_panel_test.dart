@@ -231,6 +231,9 @@ void main() {
     final recorded = await run(repo.sets(id));
     expect(recorded, hasLength(1));
     expect(recorded.single.loadKg, closeTo(57.5, 0.3));
+    // The set-by-set comparison and All sessions sit behind Compare all sets.
+    expect(find.byKey(const Key('compare-table')), findsNothing);
+    await tap('compare-toggle');
     expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Recorded')), findsOneWidget);
     expect(find.byKey(const Key('rest-clock')), findsOneWidget);
     final restLeft = (await run(repo.runtime(id)))!.restDeadlineUtc;

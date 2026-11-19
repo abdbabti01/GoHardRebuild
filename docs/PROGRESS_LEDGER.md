@@ -2751,3 +2751,23 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   database (UnknownHistory), so the local API answers 503; dropping that database was not done. **Not verified:**
   iPhone, VoiceOver. Not merged, not deployed.
 - Code 977f52e: CI 210 (44417493561) passed; unsigned IPA run 73 (44417542118, tag `ipa-meal-copy-workout-panel-977f52e`) passed.
+
+### 19 Nov 2026 — compact exercise panel; native journey on a disposable database (same branch)
+
+- Owner request before merge. The selected exercise is compact by default: Last session's title with **Compare all
+  sets** (the full set-by-set table and All sessions, one tap to open or close, read out as expanded/collapsed); Today's
+  aim shows its sentence and one primary action (Use [weight] / Keep this aim / Choose your weight increment) beside
+  **More choices**, a sheet with Why this suggestion?, Keep my targets and Edit future targets, each with what it changes.
+  Rules, runtime, drafts, selection, Use last values and its confirmation unchanged. l10n +7 (3,234 messages).
+- Fit measured (`progression_ui_test`, real fonts, 390 × 844 with notched-phone insets, keyboard closed): usable
+  47 → 738 px (status-bar inset → the floating tab bar's top as laid out); header 51 → Record set 713 px with an aim;
+  every listed element inside, actions ≥ 48 px, fields 88 px. At 320 px and 2× text: scrolls, no overflow, comparison
+  open and sheet up.
+- Native `journey_copy_panel_test` **passed** on the Pixel_API_34 emulator (Android 14) against a throwaway PostgreSQL
+  container (127.0.0.1:5437, tmpfs) migrated with `migrate seed-catalog` through `GOHARD_ConnectionStrings__Default`;
+  the API from this branch with Capture mail. `gohard-rebuild-postgres` (UnknownHistory) was not connected to,
+  dropped or changed. Temporary API, container and password file removed afterwards; emulator shut down. Captures and
+  recording: docs/evidence/meal-copy-workout-panel/emulator.
+- Fixed on the way (API, Development/Testing route only): `/dev/mail/latest` read only 8-digit codes, so every journey
+  that registers an account had timed out since 4-digit verification codes (5 Nov). `MailTemplates.CodeIn` reads the
+  code from its own line; `AccountEmailTests` + `VerificationPolicyTests`: 27 passed. No production behaviour change.

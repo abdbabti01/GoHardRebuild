@@ -421,6 +421,12 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const Key('workout-target-load'))).data, '60 kg');
     expect(find.text('Target in this workout'), findsOneWidget);
     expect(find.text('Last session · Fri, Oct 9'), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('entry-last-ref'))).data, 'Last session, set 1: 57.5 kg × 8', reason: 'the current set’s last performance, by the fields');
+    // The whole session, set by set, behind Compare all sets.
+    await tester.ensureVisible(find.byKey(const Key('compare-toggle')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('compare-toggle')));
+    await tester.pump();
     expect(find.descendant(of: find.byKey(const Key('compare-0-last')), matching: find.text('57.5 kg × 8')), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('compare-0-today')), matching: find.text('Entering now')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('workout-prescription'))).data, startsWith('3 sets · 8–12 reps'), reason: 'the planned prescription under the exercise name');

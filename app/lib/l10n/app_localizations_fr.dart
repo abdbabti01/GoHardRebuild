@@ -13343,6 +13343,30 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get workoutTodayWhyShort => 'Pourquoi?';
+
+  @override
+  String get workoutCompareAll => 'Comparer toutes les séries';
+
+  @override
+  String get workoutCompareHide => 'Masquer la comparaison';
+
+  @override
+  String get workoutTodayMore => 'Autres choix';
+
+  @override
+  String get workoutTodayMoreSemantic =>
+      'Autres choix pour l’objectif du jour : pourquoi il est suggéré, garder mes cibles, modifier les cibles futures';
+
+  @override
+  String get workoutTodayWhyNote => 'La règle et les séances utilisées.';
+
+  @override
+  String get workoutTodayKeepNote =>
+      'Masquer cet objectif pour cet exercice pendant cette séance. Rien d’autre ne change.';
+
+  @override
+  String get workoutTodayEditNote =>
+      'Modifier ton plan à partir de ta prochaine séance. Cette séance garde ses cibles.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/core/widgets.dart';
+import 'package:gohard_rebuild/features/nutrition/eat_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/meal_copy_screen.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -34,9 +35,12 @@ void main() {
       await j.tap(find.descendant(of: find.byType(ListView), matching: find.text(name)));
       await j.waitFor(find.byKey(const Key('food-save')), what: 'the amount form');
       await j.tapKey('food-save');
-      await j.waitFor(find.byKey(const Key('eat-back-to-today')), what: 'back on yesterday');
+      await j.waitFor(find.descendant(of: find.byType(EatScreen), matching: find.text(name)), what: '$name in yesterday’s breakfast');
     }
     await j.waitUntil(() async => (await entries()).length == 2, what: 'yesterday on the account');
+    // Back to today sits under the date at the top of Eat's (lazily built) list: back to the top first, as a person would.
+    tester.state<ScrollableState>(find.ancestor(of: find.byKey(const Key('eat-add-breakfast')), matching: find.byType(Scrollable)).first).position.jumpTo(0);
+    await j.settle(4);
     await j.tapKey('eat-back-to-today');
 
     // --- Same as yesterday? Review, change one amount, go back: nothing logged.
@@ -100,13 +104,18 @@ void main() {
     await j.tapKey('preview-start');
     await j.waitFor(find.byKey(const Key('entry-heading')), what: 'the recorder');
     expect(tester.widget<Text>(find.byKey(const Key('entry-last-ref'))).data, 'Last session, set 1: 40 kg × 10');
-    expect(find.descendant(of: find.byKey(const Key('compare-1-last')), matching: find.text('42.5 kg × 8')), findsOneWidget, reason: 'each set with its own load');
     expect(find.byKey(const Key('suggested-today')), findsNothing, reason: 'Free: no personal aim');
+    expect(find.byKey(const Key('compare-table')), findsNothing, reason: 'compact by default');
     FocusManager.instance.primaryFocus?.unfocus();
     await j.settle(2);
     await Scrollable.ensureVisible(tester.element(find.byKey(const Key('workout-exercise-panel'))), alignment: 0.05);
     await j.settle(3);
-    await j.shot('cp-05-exercise-panel');
+    await j.shot('cp-05-exercise-panel-compact');
+    // Compare all sets: every set with its own load.
+    await j.tapKey('compare-toggle');
+    expect(find.descendant(of: find.byKey(const Key('compare-1-last')), matching: find.text('42.5 kg × 8')), findsOneWidget, reason: 'each set with its own load');
+    await j.shot('cp-06-compare-all-sets');
+    await j.tapKey('compare-toggle');
 
     // Use last values asks before replacing what was typed, and records nothing.
     await j.type('set-load', '45');
@@ -123,7 +132,7 @@ void main() {
     await j.settle(2);
     await Scrollable.ensureVisible(tester.element(find.byKey(const Key('entry-heading'))), alignment: 0.3);
     await j.settle(3);
-    await j.shot('cp-06-recorded-rest');
+    await j.shot('cp-07-recorded-rest');
 
     // Next exercise and back: the typed draft, the set and the rest stay.
     await j.type('set-load', '50');

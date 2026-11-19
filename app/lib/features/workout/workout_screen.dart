@@ -87,6 +87,10 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
   bool _busy = false, _loaded = false;
   final _panelKey = GlobalKey();
 
+  /// Compare all sets open: the full last-session-against-today table. Closed by default so the current set's previous
+  /// performance, the aim, the fields and Record set fit one screen; it stays as chosen while switching exercises.
+  bool _compare = false;
+
   /// The fields hold something the user typed (or a draft they typed earlier), not a suggestion: Use last values
   /// asks before replacing it.
   bool _typed = false;
@@ -593,6 +597,7 @@ class _WorkoutRecorderState extends ConsumerState<WorkoutRecorder> with WidgetsB
           history: history, status: historyStatus(ref, selected.catalogKey), unit: unit,
           today: [for (final r in mine) r.value], nextIndex: parked ? null : mine.length, rows: selected.targetSets,
           onAll: () => showExerciseHistory(context, name: nameOf(selected), history: history, unit: unit),
+          expanded: _compare, onToggle: () => setState(() => _compare = !_compare),
           // Optional and apart from the facts above; only for an exercise as the plan workout prescribed it.
           footer: switch (definitionOf(ref, workout)) {
             final def? when !parked && selected.isPrescribed && selected.occurrenceKey != null && selected.substitutedForKey == null => SuggestedToday(
@@ -735,8 +740,14 @@ HistoryStatus historyStatus(WidgetRef ref, String? catalogKey) {
 /// set is shown, and a side with nothing for a row says so instead of implying a comparison. [nextIndex] is null when
 /// nothing can be recorded here (the preview, or a workout saved for later); before Start there is no Today column.
 class LastTime extends StatelessWidget {
-  const LastTime({super.key, required this.history, required this.status, required this.unit, this.today = const [], this.nextIndex, this.rows, this.compare = true, required this.onAll, this.footer});
+  const LastTime({super.key, required this.history, required this.status, required this.unit, this.today = const [], this.nextIndex, this.rows, this.compare = true, required this.onAll, this.footer,
+      this.expanded = true, this.onToggle});
   final List<PreviousPerformance> history;
+
+  /// In the recorder the set-by-set table sits behind Compare all sets ([onToggle]); [expanded] is whether it is open.
+  /// Without [onToggle] (the preview) the table is always shown.
+  final bool expanded;
+  final VoidCallback? onToggle;
 
   /// Today's optional aim, in this same panel under the sets it is based on (docs/MEAL_COPY_WORKOUT_PANEL.md › 2).
   final Widget? footer;
@@ -792,26 +803,40 @@ class LastTime extends StatelessWidget {
     }
 
     Widget head(String text) => Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(text, style: context.sansStyle(13, color: c.secondary, weight: FontWeight.w600)));
+    // Something to compare: the table can be folded away behind Compare all sets.
+    final collapsible = onToggle != null && last != null;
+    final shown = !collapsible || expanded;
+    final roomy = MediaQuery.textScalerOf(context).scale(10) <= 13;
+    final all = history.isEmpty ? null : QuietLink(l.workoutAllSessions, key: const Key('all-sessions'), said: l.workoutAllSessionsSemantic, onPressed: onAll);
     return Panel(
       key: const Key('last-time'),
       padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 8, 12).resolve(Directionality.of(context)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        // One row: the dated title, and All sessions at its end; with large text the link goes under the title instead.
+        // One row: the dated title, and Compare all sets (recorder) or All sessions (preview) at its end; with large
+        // text the action goes under the title instead.
         Builder(builder: (context) {
           final title = Semantics(
             header: true,
             child: Text(last == null ? l.workoutLastTime : l.workoutLastTimeOn(shortDate(last.dayKey)), key: const Key('last-time-title'), style: context.sansStyle(16, weight: FontWeight.w600)),
           );
-          final all = history.isEmpty ? null : QuietLink(l.workoutAllSessions, key: const Key('all-sessions'), said: l.workoutAllSessionsSemantic, onPressed: onAll);
-          if (all == null) return Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: title);
-          return MediaQuery.textScalerOf(context).scale(10) <= 13
-              ? Row(children: [Expanded(child: title), all])
-              : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, all]);
+          final Widget? action = collapsible
+              ? Semantics(
+                  key: const Key('compare-toggle'), expanded: expanded,
+                  child: TextButton.icon(
+                    onPressed: onToggle, icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 20),
+                    label: Text(expanded ? l.workoutCompareHide : l.workoutCompareAll),
+                  ),
+                )
+              : all;
+          if (action == null) return Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: title);
+          return roomy ? Row(children: [Expanded(child: title), action]) : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, action]);
         }),
         if (last != null && last.workout.outcome != WorkoutResultRules.full) Text('${last.workout.title} · ${outcomeLabel(l, last.workout.outcome)}', style: context.caption),
         if (empty != null) Padding(padding: const EdgeInsets.only(top: 2, bottom: 4), child: Text(empty, key: const Key('last-time-empty'), style: context.caption)),
         // With large text each set is a short block (Set, then Last time and Today under it) instead of squeezed columns.
-        if (count > 0 && MediaQuery.textScalerOf(context).scale(10) > 13)
+        if (!shown)
+          const SizedBox.shrink()
+        else if (count > 0 && !roomy)
           Column(key: const Key('compare-table'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             for (var i = 0; i < count; i++)
               DecoratedBox(
@@ -843,6 +868,8 @@ class LastTime extends StatelessWidget {
                 ),
             ],
           ),
+        // Every earlier session, with the full comparison (in the preview it sits in the title row).
+        if (collapsible && expanded && all != null) Align(alignment: AlignmentDirectional.centerStart, child: all),
         ?footer,
       ]),
     );

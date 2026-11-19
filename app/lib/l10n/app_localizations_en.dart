@@ -13132,4 +13132,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutTodayWhyShort => 'Why?';
+
+  @override
+  String get workoutCompareAll => 'Compare all sets';
+
+  @override
+  String get workoutCompareHide => 'Hide comparison';
+
+  @override
+  String get workoutTodayMore => 'More choices';
+
+  @override
+  String get workoutTodayMoreSemantic =>
+      'More choices for today’s aim: why it is suggested, keep my targets, edit future targets';
+
+  @override
+  String get workoutTodayWhyNote => 'The rule, and the sessions it used.';
+
+  @override
+  String get workoutTodayKeepNote =>
+      'Hide this aim for this exercise in this workout. Nothing else changes.';
+
+  @override
+  String get workoutTodayEditNote =>
+      'Change your plan from your next session. This workout keeps its targets.';
 }

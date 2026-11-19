@@ -287,6 +287,11 @@ public static class MailTemplates
         ["ar"] = "هذه رسالة تلقائية من GoHard.",
     };
 
+    /// <summary>The code in a message's text as <see cref="Render"/> writes it: alone on its line (4 or 8 digits, isolated
+    /// in Arabic), so no other number in the text is taken for it. Empty when there is none.</summary>
+    public static string CodeIn(string text) =>
+        System.Text.RegularExpressions.Regex.Match(text, "^⁦?(\\d{4}|\\d{8})⁩?$", System.Text.RegularExpressions.RegexOptions.Multiline).Groups[1].Value;
+
     public static (string Subject, string Text, string Html) Render(string kind, string language, string? code, int minutes, string supportAddress = "")
     {
         var lang = All.ContainsKey((kind, language)) ? language : "en";

@@ -198,6 +198,8 @@ Future<void> _open(WidgetTester tester, String screen) async {
       await tester.pump();
     case 'workout-history':
       await tap('today-resume');
+      await tester.ensureVisible(find.byKey(const Key('compare-toggle')));
+      await tap('compare-toggle'); // All sessions sits with the full comparison
       await tester.ensureVisible(find.byKey(const Key('all-sessions')));
       await tap('all-sessions');
     case 'workout-result':

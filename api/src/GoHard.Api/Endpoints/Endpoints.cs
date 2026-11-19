@@ -156,7 +156,7 @@ public static class GoHardEndpoints
         // Local mail capture (Development/Testing only; refused at startup anywhere else): the newest message to an address.
         if (app.Services.GetRequiredService<EmailOptions>().Provider == EmailOptions.Capture)
             app.MapGet("/dev/mail/latest", (string to, CaptureMailbox box) => box.Latest(to) is { } m
-                ? Results.Ok(new { m.Subject, m.Text, code = System.Text.RegularExpressions.Regex.Match(m.Text, @"\b\d{8}\b").Value })
+                ? Results.Ok(new { m.Subject, m.Text, code = MailTemplates.CodeIn(m.Text) }) // 4-digit verification or 8-digit codes
                 : Results.NotFound());
 
         // The identity routes an account waiting for verification keeps (docs/AUTHENTICATION_EMAIL.md › Required verification).
