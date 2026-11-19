@@ -2831,3 +2831,6 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Verified: `target_estimate_test` + `target_helper_ui_test` 21 passed, full app suite 958 passed (`-j 2`), `flutter
   analyze` clean, `check-l10n` OK;
   activity renders regenerated (en light/dark, fr, ar, 320 px 2×) and reviewed.
+- Code 9c684ae: CI 223 (44561986434) passed on attempt 2 (attempt 1: all 958 app tests passed, then the debug APK
+  build failed downloading the Android NDK, "Premature EOF"); replacement unsigned IPA run 78 (44566347737, tag
+  `ipa-target-estimate-wording-9c684ae`) passed and supersedes IPA 77. Not merged, not deployed.
