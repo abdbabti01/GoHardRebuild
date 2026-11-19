@@ -2785,13 +2785,16 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Audit against primary sources (docs/NUTRITION_TARGETS.md › Method): NASEM 2023 adult TEE coefficients and PAL
   bands match Health Canada's published table; NASEM Table 7-1 examples, SEPV (342 / 241 kcal) and "do not predict
   energy requirements for those seeking to lose or gain weight" read from the report; Mifflin–St Jeor (RMR, needs a
-  multiplier) compared and not chosen. **Incorrect:** the activity examples let a desk worker who trains about four
-  hours a week pick Lightly active or Active (210–420 kcal more maintenance than NASEM's definitions imply); step 3
-  opened at step 2's scroll offset (title under the app bar, −833 px at 390 × 844). **Unclear:** recomposition always
+  multiplier) compared and not chosen. **Incorrect:** step 3 opened at step 2's scroll offset (title under the app
+  bar, −833 px at 390 × 844). **Misleading:** the activity examples invited choosing by workout count, so someone who
+  trains about four hours a week but is otherwise seated could pick Lightly active or Active; for the reference man
+  that category change alone moves estimated maintenance by 210–420 kcal (a gap between categories, not a measured
+  overestimate; his actual needs are uncertain; corrected wording below, 19 Nov follow-up). **Unclear:** recomposition always
   at maintenance; adjustment not shown as maintenance → adjustment → target; floor wording; edits silently replaced on
   recalculation; details used not visible.
-- Changed: whole-week activity question (examples from Table 7-1; "3 or 4 one-hour workouts" under Mostly seated,
-  documented as GoHard's reading); recomposition asks What comes first? (steady = maintenance; fat loss first = the
+- Changed: whole-week activity question (examples from Table 7-1; Mostly seated describes daily life outside
+  training, and "3 or 4 one-hour workouts" still fit it when the rest of the week is seated, documented as GoHard's
+  reading); recomposition asks What comes first? (steady = maintenance; fat loss first = the
   −500 kcal deficit and floor, trade-off stated); maintenance rounded first, adjustments whole (−500 / +360 / 0) so the
   ledger adds up; protein cap never passed after rounding; macro breakdown flags protein + fat over calories. Result
   screen: goal + Change, approach sentence, editable fields marked suggested / edited (Use suggestion), ledger, Details
@@ -2813,3 +2816,18 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `flutter test` runs crashed the Dart VM for the same reason before the `-j 2` run passed. Temporary API, container,
   password file, Gradle daemon and emulator removed. **Not verified:** iPhone, VoiceOver, dietitian review.
 - Code 612d650: CI 220 (44547660945) passed; unsigned IPA run 77 (44558794004, tag `ipa-target-estimate-review-612d650`) passed. Not merged, not deployed.
+
+### 19 Nov 2026 — activity wording follow-up (same branch)
+
+- Owner correction: the earlier wording here and in docs/NUTRITION_TARGETS.md said the old activity choices made the
+  reference man's maintenance "210–420 kcal higher than the method implies". That overstated it. Corrected to: picking
+  Lightly active or Active instead of Mostly seated changes his estimate by 210 or 420 kcal (the gap between the
+  categories' equations); his actual needs remain uncertain (SEPV ~342 kcal/day for men) and the weight trend is the
+  check. No equation, adjustment, rounding or rule changed.
+- On screen (en/fr/ar): the activity help says the whole usual week counts and "How often you train is only part of
+  it"; Mostly seated now reads "Outside training, your day is mostly seated: desk work, everyday walking and chores.
+  If that's your week, a few one-hour workouts (3 or 4) still fit here." Dietitian-review items unchanged (item 4
+  reworded to the same reading).
+- Verified: `target_estimate_test` + `target_helper_ui_test` 21 passed, full app suite 958 passed (`-j 2`), `flutter
+  analyze` clean, `check-l10n` OK;
+  activity renders regenerated (en light/dark, fr, ar, 320 px 2×) and reviewed.

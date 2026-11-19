@@ -12882,14 +12882,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tgtActivityHelp =>
-      'Think of an average day across your usual week: work, getting around and workouts together. Workouts are already counted here, so don\'t add exercise calories on top.';
+      'Think of your whole usual week, averaged per day: work, getting around and training together. How often you train is only part of it. Workouts are already counted here, so don\'t add exercise calories on top.';
 
   @override
   String get tgtActInactive => 'Mostly seated';
 
   @override
   String get tgtActInactiveLine =>
-      'A desk or seated day with everyday walking and chores. This includes a few workouts a week, such as 3 or 4 one-hour sessions.';
+      'Outside training, your day is mostly seated: desk work, everyday walking and chores. If that\'s your week, a few one-hour workouts (3 or 4) still fit here.';
 
   @override
   String get tgtActLow => 'Lightly active';

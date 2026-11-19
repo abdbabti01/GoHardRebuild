@@ -19182,10 +19182,10 @@ abstract class AppLocalizations {
   /// **'How active is your usual week?'**
   String get tgtActivity;
 
-  /// Under the activity question: one answer for work, getting around and workouts; no exercise calories added.
+  /// Under the activity question: the whole usual week counts (work, getting around, training); workout frequency alone does not decide it; no exercise calories added.
   ///
   /// In en, this message translates to:
-  /// **'Think of an average day across your usual week: work, getting around and workouts together. Workouts are already counted here, so don\'t add exercise calories on top.'**
+  /// **'Think of your whole usual week, averaged per day: work, getting around and training together. How often you train is only part of it. Workouts are already counted here, so don\'t add exercise calories on top.'**
   String get tgtActivityHelp;
 
   /// Activity choice (NASEM inactive).
@@ -19194,10 +19194,10 @@ abstract class AppLocalizations {
   /// **'Mostly seated'**
   String get tgtActInactive;
 
-  /// Example under Mostly seated (NASEM inactive, Table 7-1).
+  /// Example under Mostly seated (NASEM inactive, Table 7-1): describes daily life outside training; a few workouts can still fit.
   ///
   /// In en, this message translates to:
-  /// **'A desk or seated day with everyday walking and chores. This includes a few workouts a week, such as 3 or 4 one-hour sessions.'**
+  /// **'Outside training, your day is mostly seated: desk work, everyday walking and chores. If that\'s your week, a few one-hour workouts (3 or 4) still fit here.'**
   String get tgtActInactiveLine;
 
   /// Activity choice (NASEM low active).

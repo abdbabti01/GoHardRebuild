@@ -123,8 +123,10 @@ void main() {
 
     // One question for the whole usual week; workouts are already in it; nothing selected.
     expect(find.text('How active is your usual week?'), findsOneWidget);
-    expect(_text(tester, 'tgt-activity-help'), contains("don't add exercise calories"));
-    expect(find.textContaining('3 or 4 one-hour sessions'), findsOneWidget, reason: 'a desk job with a few workouts is described under Mostly seated');
+    expect(_text(tester, 'tgt-activity-help'), allOf(contains("don't add exercise calories"), contains('How often you train is only part of it')));
+    // Mostly seated describes daily life outside training; a few workouts fit there only when the rest of the week is seated.
+    expect(find.textContaining("Outside training, your day is mostly seated"), findsOneWidget);
+    expect(find.textContaining("If that's your week, a few one-hour workouts (3 or 4) still fit here."), findsOneWidget);
     for (final t in tester.widgetList<ChoiceTile<ActivityLevel?>>(find.byType(ChoiceTile<ActivityLevel?>))) {
       expect(t.groupValue, isNull);
     }

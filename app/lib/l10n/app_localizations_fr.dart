@@ -13092,14 +13092,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tgtActivityHelp =>
-      'Pense à une journée moyenne de ta semaine habituelle : travail, déplacements et entraînements ensemble. Les entraînements sont déjà comptés ici, alors n\'ajoute pas de calories d\'exercice en plus.';
+      'Pense à toute ta semaine habituelle, en moyenne par jour : travail, déplacements et entraînements ensemble. La fréquence de tes entraînements n\'en est qu\'une partie. Les entraînements sont déjà comptés ici, alors n\'ajoute pas de calories d\'exercice en plus.';
 
   @override
   String get tgtActInactive => 'Surtout assis';
 
   @override
   String get tgtActInactiveLine =>
-      'Une journée au bureau ou assise, avec la marche et les tâches de tous les jours. Ça inclut quelques entraînements par semaine, comme 3 ou 4 séances d\'une heure.';
+      'En dehors de l\'entraînement, ta journée est surtout assise : travail de bureau, marche et tâches de tous les jours. Si c\'est ta semaine, quelques séances d\'une heure (3 ou 4) y ont encore leur place.';
 
   @override
   String get tgtActLow => 'Légèrement actif';

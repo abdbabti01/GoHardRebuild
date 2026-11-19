@@ -104,26 +104,34 @@ multiplier is validated against these questions.
 
 ### Activity: the whole usual week
 
-One question, **How active is your usual week?**, with *"Think of an average day across your usual week: work,
-getting around and workouts together. Workouts are already counted here, so don't add exercise calories on top."*
+One question, **How active is your usual week?**, with *"Think of your whole usual week, averaged per day: work,
+getting around and training together. How often you train is only part of it. Workouts are already counted here, so
+don't add exercise calories on top."* The answer describes the whole week; workout frequency alone does not decide it.
 Each answer is one NASEM category; its example paraphrases NASEM Table 7-1, whose examples are "most appropriate for
 individuals in occupations that require little physical exertion or movement, such as office work" and add activity
 to activities of daily living (ADL: about 30 min walking and 90 min light-to-moderate household tasks):
 
 | Answer (example on screen) | NASEM category | Table 7-1 basis |
 |---|---|---|
-| Mostly seated (desk or seated day with everyday walking and chores; includes a few workouts a week, such as 3 or 4 one-hour sessions) | Inactive | ADL only |
+| Mostly seated (outside training, the day is mostly seated: desk work, everyday walking and chores; if that's the week, a few one-hour workouts, 3 or 4, still fit here) | Inactive | ADL only |
 | Lightly active (plus about an extra hour of brisk walking or similar most days, at work or outside it) | Low active | ADL + 60–80 min walking at 3–4 mph |
 | Active (about 2 extra hours most days, e.g. walking plus cycling or a sport, or work that moves you that much) | Active | ADL + 30–50 min walking, 45 min moderate cycling, 40 min doubles tennis |
 | Very active (about 2 extra hours most days including hard effort, e.g. running, or heavy physical work) | Very active | ADL + 45 min cycling, ~25 min jogging, 60 min doubles tennis |
 
-**GoHard's reading, not a validated mapping:** "3 or 4 one-hour workouts a week" under *Mostly seated*. Four hours a
-week averages about 34 min a day; at roughly 3.5–6 METs (typical resistance-training intensities) that adds about
-0.07–0.12 to a desk day's PAL of about 1.4, which stays under the 1.53 boundary. NASEM itself warns that the categories
-do not correspond to physical-activity guidelines. Before this change the old wording ("an hour of walking or exercise
-on most days" for Lightly active; "1½ to 2 hours … on most days" for Active) let a desk worker who trains four times a
-week read themselves as Lightly active or Active; that is what made the reference man's maintenance 210–420 kcal
-higher than the method implies (see *Before and after*).
+*Mostly seated* describes daily life outside training. **GoHard's reading, not a validated mapping:** when the rest of
+the week is mostly seated, "3 or 4 one-hour workouts a week" still fits *Mostly seated*. Four hours a week averages
+about 34 min a day; at roughly 3.5–6 METs (typical resistance-training intensities) that adds about 0.07–0.12 to a
+desk day's PAL of about 1.4, which stays under the 1.53 boundary. The same four workouts beside a job on one's feet,
+long daily walks or cycling to work can belong in a higher category: the rest of the week decides, not workout
+frequency alone. NASEM itself warns that the categories do not correspond to physical-activity guidelines.
+
+The old wording ("an hour of walking or exercise on most days" for Lightly active; "1½ to 2 hours … on most days" for
+Active) made it easy for someone who trains four times a week to choose by workout count rather than by the whole
+week. Choosing a different category changes the estimate by the gap between the equations: for the reference man,
+Lightly active or Active gives 210 or 420 kcal more estimated maintenance than Mostly seated (see *Before and after*).
+That is the difference between categories, not a measured overestimate: his actual needs are unknown, any category's
+estimate carries individual error (NASEM's standard error of the predicted value is about 342 kcal/day for men), and
+his weight trend over several weeks is the check.
 
 ### Goals: maintenance → adjustment → target
 
@@ -179,15 +187,16 @@ change is promised.
   prescriptions (AHA/ACC/TOS 2013); the 1,500–2,000 kJ starting surplus (Slater 2019); protein 1.4–2.0 g/kg (ISSN 2017)
   and the ~1.6 g/kg plateau (Morton 2018); the AMDR shares (IOM 2005); the effect of a deficit on lean-mass gains
   (Murphy & Koehler 2022).
-- **GoHard's choices:** NASEM rather than Mifflin × multiplier; the activity examples and the "3 or 4 workouts → Mostly
-  seated" reading; one −500 kcal deficit for everyone; the floor as a starting rule; +360 kcal; 1.4 / 1.6 / 1.6 / 2.0
+- **GoHard's choices:** NASEM rather than Mifflin × multiplier; the activity examples and the reading that 3 or 4
+  workouts still fit Mostly seated when the rest of the week is seated; one −500 kcal deficit for everyone; the floor as a starting rule; +360 kcal; 1.4 / 1.6 / 1.6 / 2.0
   g/kg by goal on actual weight; the 35 % cap; fat at 30 %; the recomposition priority reusing the loss deficit; the
   input bounds and the BMI < 18.5 refusal for deficits; rounding.
 
 ## Before and after (reference examples)
 
-Assumptions: the formula's sex input as stated; height and weight typed as given; "desk job, trains four times a week
-for about an hour" for the man. Calories / protein.
+Assumptions: the formula's sex input as stated; height and weight typed as given; for the man, "desk job, trains four
+times a week for about an hour, otherwise mostly seated". Calories / protein. Every row is an estimate for that
+category, not a measured requirement.
 
 | Person | Activity | Maintain | Lose | Gain | Recomp, steady | Recomp, fat loss first |
 |---|---|---|---|---|---|---|
@@ -202,10 +211,12 @@ for about an hour" for the man. Calories / protein.
 
 Before (main a0ba9ac): within a category every value above was the same (checked for all 32 cells; the rounding change
 moves other inputs by at most 10 kcal); recomposition had only "maintenance" (now *keep weight about steady*). What
-changes for the man is the category the question leads to: under the old wording a desk worker training four times a
-week could pick Lightly active or Active (Lose weight 2,470 or 2,680 kcal); the new wording places him in Mostly
-seated (2,260 kcal), the category NASEM's definitions imply. For the woman nothing changes unless her week was
-described the same way.
+changes is which category the question leads someone to. Under the old wording the man could have chosen Lightly
+active or Active by workout count (Lose weight 2,470 or 2,680 kcal); the new wording asks about his whole week, and if
+his days outside training are mostly seated, its description matches Mostly seated (2,260 kcal). The 210–420 kcal gap
+is what changing category does to the estimate; which number is closer to his real needs is not known from these
+answers, and his weight trend is the check. If his week also included an active job or long daily walks, a higher
+category would be the right answer. For the woman nothing changes unless her week is described differently.
 
 ## Checking your starting point
 
@@ -222,6 +233,7 @@ dashboard or notification.
 2. The 1.4 g/kg Maintain value for people who do not exercise (RDA 0.8; within the AMDR).
 3. One −500 kcal deficit for everyone vs a sex-specific or proportional deficit (NASEM's 1.96 × SEPV illustration:
    472 / 670 kcal); whether the 1,200 / 1,500 kcal starting floor is right for small, older or inactive people.
-4. The activity examples and the "3 or 4 one-hour workouts → Mostly seated" reading against Table 7-1.
+4. The activity examples against Table 7-1, including the reading that 3 or 4 one-hour workouts still fit Mostly
+   seated when the rest of the week is mostly seated.
 5. Recomposition "fat loss first" reusing the 500 kcal deficit given Murphy & Koehler's finding.
 6. Upper age bound (100) and whether to state anything for older adults beyond the equations' own age term.
