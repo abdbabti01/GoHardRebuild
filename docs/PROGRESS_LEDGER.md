@@ -2812,3 +2812,4 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   long-running processes outside this work), including with a 1.5 GB Gradle heap and a 1.5 GB emulator. Two earlier
   `flutter test` runs crashed the Dart VM for the same reason before the `-j 2` run passed. Temporary API, container,
   password file, Gradle daemon and emulator removed. **Not verified:** iPhone, VoiceOver, dietitian review.
+- Code 612d650: CI 220 (44547660945) passed; unsigned IPA run 77 (44558794004, tag `ipa-target-estimate-review-612d650`) passed. Not merged, not deployed.
