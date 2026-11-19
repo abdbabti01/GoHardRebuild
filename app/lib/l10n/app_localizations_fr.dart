@@ -1039,54 +1039,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get eatUnitGramProtein => 'g de protéines';
-
-  @override
-  String eatGoalProgressCalories(String eaten, String goal) {
-    return '$eaten sur $goal kcal';
-  }
-
-  @override
-  String eatGoalProgressProtein(String eaten, String goal) {
-    return 'Protéines : $eaten sur $goal g';
-  }
-
-  @override
-  String eatGoalNoCalorieValue(String goal) {
-    return 'Aucune valeur de calories entrée pour l\'instant · objectif $goal kcal';
-  }
-
-  @override
-  String eatGoalNoProteinValue(String goal) {
-    return 'Aucune valeur de protéines entrée pour l\'instant · objectif $goal g';
-  }
-
-  @override
-  String eatGoalKnownSoFar(String progress) {
-    return '$progress · connu jusqu\'ici';
-  }
-
-  @override
-  String eatGoalOverKcal(String progress, String diff) {
-    return '$progress · $diff kcal de plus';
-  }
-
-  @override
-  String eatGoalLeftKcal(String progress, String diff) {
-    return '$progress · $diff kcal restantes';
-  }
-
-  @override
-  String eatGoalOverGrams(String progress, String diff) {
-    return '$progress · $diff g de plus';
-  }
-
-  @override
-  String eatGoalLeftGrams(String progress, String diff) {
-    return '$progress · $diff g restants';
-  }
-
-  @override
   String get eatNoFoodLoggedYet => 'Aucun aliment consigné pour l\'instant';
 
   @override
@@ -1133,9 +1085,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get eatKnown => 'connu';
 
   @override
-  String get eatKnownSoFar => 'connu jusqu\'ici';
-
-  @override
   String eatSaidKcal(String nutrient, String value) {
     return '$nutrient $value kilocalories';
   }
@@ -1169,12 +1118,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get eatListSeparator => ', ';
-
-  @override
-  String get eatCaloriesGoalBar => 'Objectif de calories';
-
-  @override
-  String get eatProteinGoalBar => 'Objectif de protéines';
 
   @override
   String get eatOpensJournalHint => 'Ouvre le journal alimentaire';
@@ -13492,6 +13435,56 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get workoutTodayEditNote =>
       'Modifier ton plan à partir de ta prochaine séance. Cette séance garde ses cibles.';
+
+  @override
+  String nrOfGoal(String goal) {
+    return 'sur $goal';
+  }
+
+  @override
+  String nrLeft(String amount) {
+    return 'Il reste $amount';
+  }
+
+  @override
+  String get nrNoValue => 'Aucune valeur entrée pour l\'instant';
+
+  @override
+  String get nrNoGoalThatDay => 'Aucun objectif enregistré pour ce jour';
+
+  @override
+  String nrSaidLeftKcal(String value) {
+    return 'il reste $value kilocalories';
+  }
+
+  @override
+  String nrSaidLeftGrams(String value) {
+    return 'il reste $value grammes';
+  }
+
+  @override
+  String get nrMacroRecordedTitle => 'Répartition des macros enregistrées';
+
+  @override
+  String get nrMacroTargetTitle => 'Répartition cible estimée';
+
+  @override
+  String nrMacroBasis(String kcal) {
+    return 'Pourcentages des $kcal kcal venant des protéines, des glucides et des lipides (4, 4 et 9 kcal par gramme).';
+  }
+
+  @override
+  String nrMacroDiffers(String kcal) {
+    return 'Tes calories enregistrées restent à $kcal kcal. Les étiquettes arrondissent leurs valeurs, et les fibres et l\'alcool sont comptés autrement : les deux totaux peuvent donc différer.';
+  }
+
+  @override
+  String get nrMacroPartial =>
+      'Certains aliments n\'ont pas de valeur de protéines, de glucides ou de lipides : aucune répartition n\'est montrée. Les quantités sont celles qui sont connues.';
+
+  @override
+  String get nrMacroZero =>
+      'Aucune énergie venant des protéines, des glucides ou des lipides n\'a été enregistrée : il n\'y a pas de répartition.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

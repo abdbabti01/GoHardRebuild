@@ -249,7 +249,9 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
   Add food and Other amount keep that day. Read from the same local records as Eat (`foodJournalProvider`,
   `waterEntriesProvider`); no copy, no new model.
 - **Goals on earlier days**: goals of past days were never stored, so an earlier day is not set against today's goals
-  (no goal bars or percentages on it, food or water); only today is.
+  (no goal bars or percentages on it, food or water); only today is. Since 30 Oct 2026 the phone records each day's
+  goals (docs/EAT_COMPANION.md › Goal history) and since 19 Nov 2026 Eat's rings compare an earlier day with that
+  recorded goal only; a day without one says "No goal recorded for this day".
 - Goals and **Customize tracking** are in Eat only (a labelled action); Today shows the water line and its actions.
 
 ### History & trends (20 Oct 2026, GoHard_Nutrition_Trends_Claude_Handoff)

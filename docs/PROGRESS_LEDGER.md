@@ -2834,3 +2834,33 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Code 9c684ae: CI 223 (44561986434) passed on attempt 2 (attempt 1: all 958 app tests passed, then the debug APK
   build failed downloading the Android NDK, "Premature EOF"); replacement unsigned IPA run 78 (44566347737, tag
   `ipa-target-estimate-wording-9c684ae`) passed and supersedes IPA 77. Not merged, not deployed.
+
+### 19 Nov 2026 — Nutrition rings and macro composition (`feature/nutrition-rings`, from main 71d4f98)
+
+- Today's and Eat's calorie and protein bars replaced by goal rings (one `GoalRing` given the shared
+  `NutrientAssessment`; it calculates nothing): name, amount and unit, goal and percentage, the state in the
+  assessment's words and colour, and on Eat the exact amount left. Above the goal the arc is one full circle and the
+  real percentage and excess are in words ("107 % · 161 kcal over target"); no goal is a neutral disc with "No goal";
+  a partial sum keeps "Known intake" with a neutral arc; nothing logged stays words. Eat's duplicate "left/over" lines
+  under the photo were removed. Details: docs/NUTRITION_RINGS.md.
+- **Behaviour change (earlier days):** Eat's panel now compares an earlier day with the goal recorded for that day
+  (same rule its briefing already used); before, an earlier day showed no goal at all. Without a record (or with
+  goals changed that day): "No goal recorded for this day", never today's goal.
+- Macro composition (`macro_composition.dart`): Eat's Carbs / Fat row becomes **Recorded macro composition** (when
+  both are shown) and Help me set my targets › See macro breakdown becomes the **Estimated target split**. Shares by
+  energy (4 / 4 / 9 kcal per gram, the estimator's convention), whole percentages adding to 100; recorded calories
+  stay authoritative and a difference of ≥ 10 kcal and ≥ 5 % is explained; partial values give known grams and no
+  split; a genuine zero gives a neutral state. Fixed blue / orange / teal, validated for colour-vision separation and
+  3:1 on every panel and page.
+- Contrast fix found by the new theme check: the neutral ("Known intake") fill was the outline grey, 2.6:1 on its
+  track (as on the old bars); it is now the panel's secondary ink (≥ 3:1). Carbs orange deepened to hold 3:1 on the
+  pink panel.
+- No API, model, migration, capability, sync, AI, allowance or dependency change. l10n en/fr/ar +12, −13 (3,268).
+- Verified locally: `nutrition_rings_ui_test` (19), `macro_composition_test` (4), `theme_test` (35), the eight
+  updated suites; full app suite passed (`flutter test -j 2`, 982 before the last 3 updated files, then those 20
+  passed); `flutter analyze` clean; `check-l10n` OK. Renders with real fonts, before (main, temporary worktree) and
+  after at matching sizes and states: docs/evidence/nutrition-rings/{before,after}/{en,fr,ar}, reviewed (fixed during
+  review: a percentage wrapping away from its "·", a protein icon reading as a blob or a water drop, the 2× Eat shots).
+- **Not run:** the emulator check (about 2.4 GB of physical and 5.3 GB of commit memory free; earlier APK builds failed
+  "Out of memory" at this level). `journey_food_test` updated to the ring wording, not run. **Not verified:** iPhone,
+  VoiceOver, TalkBack on a device. Not merged, not deployed.

@@ -70,14 +70,14 @@ void main() {
     await j.shot('93-food-preview-two-cups');
     expect(((await j.snapshot(await j.apiToken()))['foodEntries'] as List), isEmpty, reason: 'searching and previewing log nothing');
     await j.tapKey('food-save');
-    await j.waitFor(find.textContaining('408 of 2,200 kcal'), what: 'calorie progress on Eat');
-    expect(find.textContaining('Protein 8.4 of 140 g'), findsOneWidget);
+    await j.waitFor(find.text('1,792 kcal left'), what: 'calorie progress on Eat (2,200 − 407.6 kcal)');
+    expect(find.text('131.6 g left'), findsOneWidget);
     await j.shot('94-eat-goal-progress');
     await j.tapKey('nav-today');
     await j.waitFor(find.text('/ 2,200 kcal'), what: 'the same progress on Today, in its short form');
     expect(find.text('408'), findsOneWidget); // 407.6 kcal, shown whole
     expect(find.text('8.4'), findsOneWidget);
-    expect(find.text('/ 140 g protein'), findsOneWidget);
+    expect(find.text('/ 140 g'), findsOneWidget);
     await j.shot('95-today-goal-progress');
 
     // --- The same food again from Recent, for another meal, and marked as a favourite on the way.
@@ -138,7 +138,9 @@ void main() {
     await j.tapKey('food-save');
     await j.waitFor(find.text('Corner shop flapjack'), what: 'the manual entry in the journal');
     expect(find.text('Known totals'), findsOneWidget, reason: 'one food has no values, so the sum is a known sum');
-    expect(find.textContaining('896 of 2,200 kcal · known so far'), findsOneWidget, reason: 'and no remainder is claimed');
+    expect(find.text('896'), findsOneWidget);
+    expect(find.text('Known intake'), findsWidgets, reason: 'and no remainder is claimed');
+    expect(find.textContaining('kcal left'), findsNothing);
 
     // --- A common food: found by typing, previewed and cancelled without logging, then logged exactly once.
     await j.tapKey('log-food');
@@ -157,7 +159,7 @@ void main() {
     await j.tapKey('common-eggs');
     await j.waitFor(find.byKey(const Key('food-source')));
     await j.tapKey('food-save');
-    await j.waitFor(find.textContaining('968 of 2,200 kcal · known so far'), what: 'one egg added to the total, once');
+    await j.waitFor(find.text('968'), what: 'one egg added to the total, once');
 
     // --- What the account holds: five entries, four with their source, one favourite, the goals.
     late Map<String, dynamic> account;
@@ -177,7 +179,8 @@ void main() {
     await app.main();
     await j.waitFor(find.byKey(const Key('nav-eat')), what: 'the app after a restart');
     await j.tapKey('nav-eat');
-    await j.waitFor(find.textContaining('968 of 2,200 kcal · known so far'), what: 'the same totals after a restart');
+    await j.waitFor(find.text('968'), what: 'the same totals after a restart');
+    expect(find.text('Known intake'), findsWidgets);
     await j.shot('100-eat-after-restart');
     // The common foods are part of the app, so they are found again straight after a restart.
     await j.tapKey('log-food');

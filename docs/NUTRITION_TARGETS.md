@@ -169,6 +169,9 @@ mostly in leaner, exercising adults); *How this was estimated* says so for every
 rounded to 5 g, so protein + fat + carbs land within 10 kcal of the calories. They follow the edited fields. If an
 edited protein plus the fat share already passes the calories, carbs show 0 and a line says there is no room.
 With high protein, carbs can fall below the 45 % AMDR floor; GoHard does not claim the AMDR for carbs.
+Since 19 Nov 2026 the breakdown is drawn as the **Estimated target split** donut (protein as typed, carbs and fat
+"about"; shares by energy at 4 / 4 / 9 kcal per gram), titled so it is never read as logged intake
+(docs/NUTRITION_RINGS.md › Macro composition).
 
 **Rounding.** Calories to 10 kcal, protein to 5 g ("Rounded to the nearest 10 kcal and 5 g.").
 

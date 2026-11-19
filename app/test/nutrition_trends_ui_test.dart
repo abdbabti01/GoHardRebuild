@@ -87,8 +87,7 @@ void main() {
     expect(find.byKey(const Key('eat-back-to-today')), findsOneWidget);
     expect(find.text('Homemade sauce'), findsOneWidget, reason: 'the real journal of that day');
 
-    await tester.tap(find.byKey(const Key('eat-history')));
-    await tester.pumpAndSettle();
+    await _tap(tester, 'eat-history');
     expect(_text(tester, 'trends-period-label'), 'Oct 12 – 18, 2026', reason: 'back to the same week');
     expect(_text(tester, 'trends-selected-date'), 'Thursday, October 15');
     expect(tester.widget<ChoiceChip>(find.byKey(const Key('trends-metric-protein'))).selected, isTrue);

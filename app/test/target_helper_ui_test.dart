@@ -175,7 +175,7 @@ void main() {
     expect(_text(tester, 'tgt-used-weight-note'), 'Entered for this estimate only; not added to Body progress');
     expect((_text(tester, 'tgt-used-sex'), _text(tester, 'tgt-used-activity')), ('Male', 'Mostly seated'));
     await _tap(tester, 'tgt-macros');
-    expect((_text(tester, 'tgt-carbs'), _text(tester, 'tgt-fat')), ('about 250 g', 'about 75 g'));
+    expect((_text(tester, 'tgt-macro-carbs'), _text(tester, 'tgt-macro-fat')), ('about 250 g', 'about 75 g'));
     await _tap(tester, 'tgt-how');
     expect(_text(tester, 'tgt-how-2'), contains('an estimate, not an exact requirement'));
 
@@ -310,7 +310,7 @@ void main() {
     await _type(tester, 'tgt-calories', '1000');
     await _type(tester, 'tgt-protein', '300');
     await _tap(tester, 'tgt-macros');
-    expect(_text(tester, 'tgt-carbs'), 'about 0 g');
+    expect(_text(tester, 'tgt-macro-carbs'), 'about 0 g');
     expect(find.byKey(const Key('tgt-macro-over')), findsOneWidget);
   });
 

@@ -324,10 +324,10 @@ uses the same dumbbells. No asset was added.
 - **Customize tracking.** A short sheet of switches: Water, Carbs, Fat. Calories and protein always stay. Hiding is
   presentation only; it is kept per account on this phone, like the coach preferences. Water is offered only where
   the server declares `water.entries`.
-- **Eat's summary** is now the same compact composition as Today's Nutrition panel (calories in the serif and
-  protein, each with its goal bar, the deep Log food beside the full-height bowl), with Eat's own extra lines under
-  it: what is left or over, carbs and fat (when shown), the missing-values note, water, then the goals line. The
-  separate calorie ring is gone: one bar per goal, as on Today.
+- **Eat's summary** is now the same compact composition as Today's Nutrition panel (calories and protein, the deep
+  Log food beside the full-height bowl), with Eat's own extra lines under it: carbs and fat (when shown), the
+  missing-values note, water, then the goals line. Since 19 Nov 2026 calories and protein are goal rings on both
+  screens and carbs and fat a composition donut (below and docs/NUTRITION_RINGS.md).
 - **Meal icons**: one outlined Material family on the same tile: Breakfast `wb_twilight` (sunrise), Lunch
   `light_mode` (sun), Dinner `dark_mode` (moon), Snack `cookie` (Material Icons has no apple fruit; `Icons.apple` is
   the brand logo).
@@ -513,10 +513,12 @@ tab bar's top (738 px), 51 → 713 px (`progression_ui_test`). Renders, before/a
 
 ## Eat
 
-The calm wash behind the date, the serif "Eat" and previous / next day; no scene, no weather. One card: the calorie
-total, one ring with the real goal when set (full when over, the centre giving the true percentage), what is left or
-over only for a complete total with a goal, Protein with its bar when that goal is set, Carbs and Fat as known
-totals. One "Log food". "Today's meals" in the serif: one grouped card, each meal with its icon, subtotal and a plus
+The calm wash behind the date, the serif "Eat" and previous / next day; no scene, no weather. One card: calories and
+protein as goal rings beside the bowl (19 Nov 2026, docs/NUTRITION_RINGS.md): a larger calorie ring, the amount in the
+serif, "of 2,300 kcal · 72 %", the state in the assessment's words and colour, and what is left only for a complete
+total with a goal; full when over with the real percentage and excess in words; a neutral disc without a goal. Then
+one "Log food", and under the photograph the **Recorded macro composition** (protein, carbs, fat by energy, a legend
+with grams and percentages; no split from partial values) when carbs and fat are both shown. "Today's meals" in the serif: one grouped card, each meal with its icon, subtotal and a plus
 for that meal, and one row per logged food with its own name, saved portion wording and known values.
 
 **Meal hierarchy (17 Oct 2026).** Each meal group reads parent → foods → action:
@@ -606,7 +608,7 @@ clothing separates from dark surfaces; invisible on light ones; fur, faces and c
 | "‹ Back" text link on the portion form | the platform back arrow | the shared app bar keeps one back control everywhere |
 | "View schedule" link on Train | none | the schedule is already on the page |
 | Green check marks for done weeks | teal checks with the word "Done" | completion must not be confused with the Green accent |
-| Calorie and protein bars in different colours | both in the chosen accent | one accent per look |
+| Calorie and protein bars in different colours | rings in the shared assessment's green / gold / red, neutral without a goal or with unknown values; macro segments in fixed blue / orange / teal | progress colours say the state against a chosen goal (always also in words); composition colours only identify a macro (docs/NUTRITION_RINGS.md) |
 | One line per meal ("Eggs and toast") | one row per logged food | entries are never merged into an invented meal name |
 
 ## Screen inventory against the approved boards (17 Oct 2026)

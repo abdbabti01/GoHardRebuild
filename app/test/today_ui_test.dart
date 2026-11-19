@@ -127,7 +127,7 @@ void main() {
     // Run / Walk and Steps side by side, the same height: the taller one's content sets it (here the open run).
     expect(height(tester, 'run'), tester.getSize(find.byKey(const Key('today-steps'))).height, reason: 'the two tiles match');
     expect(r, inInclusiveRange(230, 400), reason: 'run, open with a distance and a time, in the half-width tile (test font)');
-    expect(n, inInclusiveRange(280, 340), reason: 'nutrition, two goals and the missing-values line; goals and Customize tracking are in Eat');
+    expect(n, inInclusiveRange(240, 340), reason: 'nutrition, two goal rings and the missing-values line; goals and Customize tracking are in Eat');
     expect(w, lessThan(1.7 * r), reason: 'the workout does not dominate: comparable weight');
     final header = tester.getSize(find.byKey(const Key('today-header'))).height;
     debugPrint('header region $header');
@@ -477,15 +477,16 @@ void main() {
       return Scaffold(body: Column(children: [NutritionSummary(coverage: coverage, calorieGoal: calorieGoal, proteinGoal: proteinGoal), NutritionMissingNote(coverage: coverage, onDetails: () {})]));
     }
 
-    double rail(WidgetTester tester, String nutrient) =>
-        tester.widget<LinearProgressIndicator>(find.descendant(of: find.byKey(Key('today-goal-$nutrient')), matching: find.byType(LinearProgressIndicator))).value!;
+    double rail(WidgetTester tester, String nutrient) => tester.widget<ProgressRing>(find.byKey(Key('today-goal-$nutrient'))).value;
 
     testWidgets('unknown is a dash and never zero; a partial sum is called known', (tester) async {
       await pumpApp(tester, const [], home: summary([FoodEntry(foodEntry('a', day, 'Lunch', 'Rice', '1 bowl', calories: 400)), FoodEntry(foodEntry('b', day, 'Lunch', 'Toast', '2 slices'))], calorieGoal: 2200, proteinGoal: 140));
       expect(find.text('400'), findsOneWidget);
-      expect(find.text('/ 2,200 kcal · known'), findsOneWidget);
+      expect(find.text('/ 2,200 kcal'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('today-goal-calories-status'))).data, 'Known intake');
       expect(find.text('—'), findsOneWidget, reason: 'protein is unknown, not zero');
-      expect(find.text('/ 140 g protein'), findsOneWidget);
+      expect(find.text('/ 140 g'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('today-goal-protein-status'))).data, 'No value entered yet');
       expect(rail(tester, 'protein'), 0);
       expect(find.textContaining('left'), findsNothing, reason: 'what is left is Eat\'s to say, and only from complete totals');
       expect(find.text('Some nutrition values are missing'), findsOneWidget);
@@ -499,11 +500,12 @@ void main() {
     testWidgets('a bar only for a goal that was set; over the goal it stays full and the number is the real one', (tester) async {
       final entries = [FoodEntry(foodEntry('a', day, 'Lunch', 'Feast', '1', calories: 2500, protein: 70, carbs: 200, fat: 90))];
       await pumpApp(tester, const [], home: summary(entries));
-      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.byType(ProgressRing), findsNothing);
       expect(find.text('2,500'), findsOneWidget);
       expect(find.text('kcal'), findsOneWidget);
       expect(find.text('70'), findsOneWidget);
-      expect(find.text('g protein'), findsOneWidget);
+      expect(find.text('g'), findsOneWidget);
+      expect(find.text('No goal'), findsNWidgets(2), reason: 'a neutral disc and the amount; no percentage is invented');
       expect(find.byKey(const Key('today-nutrition-missing')), findsNothing, reason: 'every value is known');
 
       await pumpApp(tester, const [], home: summary(entries, proteinGoal: 140));
@@ -521,7 +523,7 @@ void main() {
       expect(find.text('No food logged today'), findsOneWidget);
       expect(find.text('Your daily goal: 2,200 kcal'), findsOneWidget, reason: 'a goal that was set is named; none is invented');
       final module = find.byKey(const Key('today-module-nutrition'));
-      expect(find.descendant(of: module, matching: find.byType(LinearProgressIndicator)), findsNothing, reason: 'nothing logged is not zero eaten');
+      expect(find.descendant(of: module, matching: find.byType(ProgressRing)), findsNothing, reason: 'nothing logged is not zero eaten');
       expect(find.descendant(of: module, matching: find.text('0')), findsNothing);
       await tester.ensureVisible(find.byKey(const Key('log-food')));
       await tester.pumpAndSettle();
@@ -531,7 +533,7 @@ void main() {
       expect(find.text('510'), findsOneWidget);
       expect(find.text('/ 2,200 kcal'), findsOneWidget, reason: 'calories are complete');
       expect(find.text('25'), findsOneWidget);
-      expect(find.text('g protein · known'), findsOneWidget, reason: 'one food has no protein value');
+      expect(find.descendant(of: module, matching: find.text('No goal · Known intake')), findsOneWidget, reason: 'one food has no protein value');
       expect(find.byKey(const Key('today-goal-calories')), findsOneWidget);
       expect(find.byKey(const Key('today-goal-protein')), findsNothing, reason: 'no protein goal was set, so no bar');
       await tester.ensureVisible(find.byKey(const Key('log-food')));

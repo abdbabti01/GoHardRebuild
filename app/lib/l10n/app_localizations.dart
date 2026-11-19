@@ -1679,66 +1679,6 @@ abstract class AppLocalizations {
   /// **'Use {amount}'**
   String waterSuggestionUse(String amount);
 
-  /// Unit after the day's protein figure (grams of protein).
-  ///
-  /// In en, this message translates to:
-  /// **'g protein'**
-  String get eatUnitGramProtein;
-
-  /// Calories eaten against the goal. Both numbers pre-formatted.
-  ///
-  /// In en, this message translates to:
-  /// **'{eaten} of {goal} kcal'**
-  String eatGoalProgressCalories(String eaten, String goal);
-
-  /// Protein eaten against the goal (grams).
-  ///
-  /// In en, this message translates to:
-  /// **'Protein {eaten} of {goal} g'**
-  String eatGoalProgressProtein(String eaten, String goal);
-
-  /// Food is logged but none has calories (unknown, not zero).
-  ///
-  /// In en, this message translates to:
-  /// **'No calorie value entered yet · goal {goal} kcal'**
-  String eatGoalNoCalorieValue(String goal);
-
-  /// Food is logged but none has protein (unknown, not zero).
-  ///
-  /// In en, this message translates to:
-  /// **'No protein value entered yet · goal {goal} g'**
-  String eatGoalNoProteinValue(String goal);
-
-  /// Progress line when some foods have no value: a partial sum. progress is eatGoalProgress….
-  ///
-  /// In en, this message translates to:
-  /// **'{progress} · known so far'**
-  String eatGoalKnownSoFar(String progress);
-
-  /// Calories above the goal.
-  ///
-  /// In en, this message translates to:
-  /// **'{progress} · {diff} kcal over'**
-  String eatGoalOverKcal(String progress, String diff);
-
-  /// Calories remaining to the goal.
-  ///
-  /// In en, this message translates to:
-  /// **'{progress} · {diff} kcal left'**
-  String eatGoalLeftKcal(String progress, String diff);
-
-  /// Protein above the goal.
-  ///
-  /// In en, this message translates to:
-  /// **'{progress} · {diff} g over'**
-  String eatGoalOverGrams(String progress, String diff);
-
-  /// Protein remaining to the goal.
-  ///
-  /// In en, this message translates to:
-  /// **'{progress} · {diff} g left'**
-  String eatGoalLeftGrams(String progress, String diff);
-
   /// Eat summary heading on a day with no entries.
   ///
   /// In en, this message translates to:
@@ -1811,12 +1751,6 @@ abstract class AppLocalizations {
   /// **'known'**
   String get eatKnown;
 
-  /// Under a partial calorie sum with no goal.
-  ///
-  /// In en, this message translates to:
-  /// **'known so far'**
-  String get eatKnownSoFar;
-
   /// Screen-reader: calories value. The French word or symbol may match English.
   ///
   /// In en, this message translates to:
@@ -1852,18 +1786,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **', '**
   String get eatListSeparator;
-
-  /// Screen-reader label of the calorie goal bar.
-  ///
-  /// In en, this message translates to:
-  /// **'Calories goal'**
-  String get eatCaloriesGoalBar;
-
-  /// Screen-reader label of the protein goal bar.
-  ///
-  /// In en, this message translates to:
-  /// **'Protein goal'**
-  String get eatProteinGoalBar;
 
   /// Screen-reader hint on Today's missing-values note.
   ///
@@ -19805,6 +19727,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change your plan from your next session. This workout keeps its targets.'**
   String get workoutTodayEditNote;
+
+  /// Under a goal ring's amount: the goal with its unit ("of 2,300 kcal"). goal = number and unit.
+  ///
+  /// In en, this message translates to:
+  /// **'of {goal}'**
+  String nrOfGoal(String goal);
+
+  /// Eat goal ring: the exact amount left, only when every value is known. amount = number and unit ("650 kcal").
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} left'**
+  String nrLeft(String amount);
+
+  /// Goal ring state when food is logged but none of it has a value for this nutrient (never shown as zero).
+  ///
+  /// In en, this message translates to:
+  /// **'No value entered yet'**
+  String get nrNoValue;
+
+  /// Goal ring on an earlier day with no recorded goal: today's goal is never used in its place.
+  ///
+  /// In en, this message translates to:
+  /// **'No goal recorded for this day'**
+  String get nrNoGoalThatDay;
+
+  /// Screen reader: the exact calories left, part of the calorie ring's one description.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} kilocalories remaining'**
+  String nrSaidLeftKcal(String value);
+
+  /// Screen reader: the exact protein left, part of the protein ring's one description.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} grams remaining'**
+  String nrSaidLeftGrams(String value);
+
+  /// Eat: title of the donut showing what the logged protein, carbs and fat make up (not a target).
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded macro composition'**
+  String get nrMacroRecordedTitle;
+
+  /// Help me set my targets: title of the donut showing a hypothetical day at the estimated targets (not anything logged).
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated target split'**
+  String get nrMacroTargetTitle;
+
+  /// Under a macro donut: what its percentages are of. kcal = the energy worked out from the grams.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentages of the {kcal} kcal from protein, carbs and fat (4, 4 and 9 kcal per gram).'**
+  String nrMacroBasis(String kcal);
+
+  /// Under Eat's macro donut when the energy from the grams differs from the recorded calories, which stay as logged. kcal = recorded calories.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recorded calories stay {kcal} kcal. Food labels round their values, and fibre and alcohol are counted differently, so the two totals can differ.'**
+  String nrMacroDiffers(String kcal);
+
+  /// Eat macro donut when some value is missing: no percentages from a partial sum.
+  ///
+  /// In en, this message translates to:
+  /// **'Some foods have no protein, carb or fat value, so no split is shown. The amounts are what is known.'**
+  String get nrMacroPartial;
+
+  /// Eat macro donut when every value is known and all are zero.
+  ///
+  /// In en, this message translates to:
+  /// **'No energy from protein, carbs or fat was recorded, so there is no split.'**
+  String get nrMacroZero;
 }
 
 class _AppLocalizationsDelegate
