@@ -120,7 +120,9 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     if (owner == null || day != today) return null;
     final meal = _mealNow(DateTime.now()), l = context.l10n;
     // Every goal reached: no meal is put forward unasked (the briefing says where the day stands and still offers help).
-    final usual = allReached || _repeatable(meal, today) ? null : ref.watch(usualMealProvider(meal));
+    // Worked out at every hour (a failure is reported, not skipped), then not offered beside Same as yesterday.
+    final candidate = allReached ? null : ref.watch(usualMealProvider(meal));
+    final usual = _repeatable(meal, today) ? null : candidate;
     if (usual != null) return usualMealSay(context, ref, usual, today);
     if (_news) return null; // the day's food changed while away: the briefing says how it stands now
     final inView = ref.watch(shellProvider.select((s) => s.tab == 2)) && (ModalRoute.isCurrentOf(context) ?? true) && View.of(context).viewInsets.bottom == 0;
@@ -252,7 +254,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       return (say: _habitSay(day, today, allReached: brief.allReached) ?? _hintSay(day, saved, logged: entries.isNotEmpty) ?? _briefSay(l, brief, day, today), panel: const []);
     }
     final mealNow = _mealNow(DateTime.now());
-    final usual = day == today && !brief.allReached && !_repeatable(mealNow, today) ? ref.watch(usualMealProvider(mealNow)) : null;
+    final candidate = day == today && !brief.allReached ? ref.watch(usualMealProvider(mealNow)) : null;
+    final usual = _repeatable(mealNow, today) ? null : candidate;
     return (
       say: null,
       panel: [

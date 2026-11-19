@@ -2771,3 +2771,10 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Fixed on the way (API, Development/Testing route only): `/dev/mail/latest` read only 8-digit codes, so every journey
   that registers an account had timed out since 4-digit verification codes (5 Nov). `MailTemplates.CodeIn` reads the
   code from its own line; `AccountEmailTests` + `VerificationPolicyTests`: 27 passed. No production behaviour change.
+- CI on this branch, honestly: #212 (d706fda, docs only) failed in the API tests while #210/#211 on identical code passed
+  (intermittent; logs not readable without signing in). #213/#214 (c2bed53) failed 2 app tests: `eat_existing_account_test`
+  "a failing coach message" (coach on and off). Cause: the one-entry-point rule skipped evaluating the usual meal when
+  yesterday had that meal, so at a breakfast-time hour (CI runs on UTC) the injected failure was never surfaced. Fixed:
+  the usual meal is always worked out (a failure is reported at any hour) and only hidden beside Same as yesterday.
+  Reproduced and verified in a throwaway Linux container (Flutter 3.47.6, TZ=UTC, 04:52 UTC): the Eat suites 37 passed;
+  locally the same files passed. IPA 74 (c2bed53) built but is superseded by the build of the fixed commit.
