@@ -2864,3 +2864,5 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - **Not run:** the emulator check (about 2.4 GB of physical and 5.3 GB of commit memory free; earlier APK builds failed
   "Out of memory" at this level). `journey_food_test` updated to the ring wording, not run. **Not verified:** iPhone,
   VoiceOver, TalkBack on a device. Not merged, not deployed.
+- Code f7f9778: CI 228 (44586424600) passed; unsigned IPA run 79 (44589612496, tag `ipa-nutrition-rings-f7f9778`)
+  passed (artifact GoHard-Dev-unsigned-ipa). Railway variables unchanged; no hosted account created.
