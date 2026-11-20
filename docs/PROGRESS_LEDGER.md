@@ -2946,3 +2946,19 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Owner's answer (same day): Leon was created in the owner's own ChatGPT account from text prompts only, with no
   reference images uploaded. Recorded in LEON_SQUAT_PILOT.md § 2 and the artist brief; the exact prompts are not kept
   here. Still no rights conclusion drawn.
+
+### 19 Nov 2026 — Leon squat prototype in Blender (`feature/leon-blender-prototype`, from `feature/leon-squat-pilot` f32001a)
+
+- Tools: Blender 4.5.16 LTS and ffmpeg 9.0.2 downloaded from their official sources (checksums matched) as portable
+  copies in `C:\dev\tools`. Blender first failed with MemoryError (commit 63.5 of 63.8 GB); with the owner's approval
+  the 42 idle Vite dev/preview servers were stopped (about 16 GB). Docker and the databases were not touched.
+- Built procedurally (`design/leon-3d/build_leon.py`): metaball body, head, muzzle and mane base; tube mane locks,
+  mouth and tail; clothing drawn from per-vertex hem fields; rig with IK legs on fixed foot targets, FK arms, tail
+  bone; 12.2 s squat loop (three repetitions) keyed per frame from the pilot timing; studio, four cameras.
+  Iterated five times against the reference renders (exposure, head size, eyes, muzzle, mane, ears, shorts, floor).
+- Checks (`checks.json`, geometry only): feet within 0.1 mm, no backward knees or elbows, centre of mass over the
+  feet, no part overlaps, tail clear of the floor, smooth pelvis motion, identical loop frames.
+- Exports in `docs/evidence/leon-3d/`: main three-quarter clip (H.264 High 4.0, yuv420p, 720², 30 fps, 12.2 s, no
+  audio, 1.11 MB), labelled side review clip, poster, labelled stills. Editable `leon_squat_prototype.blend` (3.1 MB).
+- Labelled "Leon squat prototype — technique review pending". Not integrated in the app (prototype delivered for
+  appearance review first); no IPA, merge or deployment.

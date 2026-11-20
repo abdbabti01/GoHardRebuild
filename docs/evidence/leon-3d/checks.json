@@ -1,0 +1,25 @@
+{
+ "label": "Leon squat prototype -- technique review pending",
+ "note": "Geometry checks only; not a technique review.",
+ "foot_max_shift_mm_all_frames": 0.099,
+ "pelvis_max_speed_m_s": 0.496,
+ "pelvis_max_accel_m_s2": 1.83,
+ "foot_max_shift_mm": 0.091,
+ "foot_max_turn_deg": 0,
+ "com_margin_min": [
+  0.063,
+  0.196
+ ],
+ "tail_lowest_z_m": 0.425,
+ "loop_max_vertex_gap_m": 0.0,
+ "feet_fixed": true,
+ "sole_lowest_z_m": [
+  -9e-05,
+  0.0
+ ],
+ "knees_behind_line": [],
+ "elbows_odd": [],
+ "com_outside_feet": [],
+ "overlaps": {},
+ "pelvis_drop_m": 0.356
+}
