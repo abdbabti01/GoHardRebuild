@@ -1,204 +1,245 @@
 # Leon bodyweight squat pilot
 
-Status (19 Nov 2026): **production package only; no animation exists.** Leon is available only as flat rendered
-images. There is no 3D model, rig or animation source, and no modelling, rigging or video tool on the development machine.
-Nothing was added to the app: the brief says not to show a placeholder. The wger demonstrations (`feature/wger-demonstrations`) are untouched
-and remain the working fallback.
+Status (19 Nov 2026): **ready to request quotes; nothing commissioned, bought or animated.**
+- Leon exists only as 2D images generated with ChatGPT. There is no 3D model, rig or animation.
+- No image-generation or 3D tool was available here, so no new character views were made. Section 3 says exactly what the artist must supply.
+- The app is unchanged. The wger demonstrations (`feature/wger-demonstrations`) remain the working fallback, and wger sourcing is paused.
 
-- Branch: `feature/leon-squat-pilot`, from `feature/wger-demonstrations` d591add (app code 197da49, IPA 81). It
-  depends on that unmerged branch only because the future preview will reuse its player, `DemoStore` and the shared
-  sheet. This branch changes docs only.
-- Package: this file; [avatar-pilot/ARTIST_BRIEF.md](avatar-pilot/ARTIST_BRIEF.md) (send-ready);
-  [avatar-pilot/storyboard.svg](avatar-pilot/storyboard.svg) and its generator
-  [avatar-pilot/squat-blocking.mjs](avatar-pilot/squat-blocking.mjs).
-- wger sourcing is paused; nothing in `exercise-media.json` changed.
+- Branch: `feature/leon-squat-pilot`, from `feature/wger-demonstrations` d591add (app code 197da49, IPA 81).
+  - It depends on that unmerged branch only because the eventual preview will reuse its player, `DemoStore` and the shared sheet.
+  - This branch changes docs only.
+- Package:
+  - this file;
+  - [avatar-pilot/ARTIST_BRIEF.md](avatar-pilot/ARTIST_BRIEF.md), the detailed brief for the artist;
+  - [avatar-pilot/storyboard.png](avatar-pilot/storyboard.png), with its source [storyboard.svg](avatar-pilot/storyboard.svg) and the generator
+    [squat-blocking.mjs](avatar-pilot/squat-blocking.mjs).
+  - Section 8 has the message to send and the list of attachments.
 
 ## 1. Inventory (checked 19 Nov 2026)
 
 | Asset | What exists | Where |
 |---|---|---|
-| Full-body Leon | One pose (front three-quarter, thumbs up, left hand in pocket), 1024 × 1536 RGBA PNG, with a glow baked into the background | `design/coach/assets/leon-full.png` (= `app/assets/coach/leon-full.png`) |
-| Head and shoulders | 1254 × 1254 RGBA avatar; bust crop | `design/coach/assets/leon-avatar.png`, `app/assets/coach/leon-bust.png` |
-| Concept board | The approved concept, 1254 × 1254 RGB, with UI mock-up text and a "G/H" garment mark that is **not** a logo | `GoHard_Coach_Handoff/references/leon-approved-concept.png` (untracked folder) |
-| Leona | The same three kinds of file | same folders, `leona-*` |
-| Turnaround (side, back), expression sheet, layered or source files | **None** | — |
-| 3D mesh, materials/textures, fur or mane groom | **None** | — |
-| Skeleton/rig, facial rig | **None** | — |
-| Animation | **None.** `coach_avatar.dart` states that nothing in the app talks, blinks or walks. The coach evidence recordings are screen captures of the app. | — |
-| Provenance | `design/coach/ASSETS.md`: "generated for this handoff from the approved concept boards … static raster artwork, not a Rive/Lottie file, 3D model, sprite sheet or animation rig." The generator, its terms, the prompts and the date are not recorded. | — |
+| Full-body Leon | One pose: front three-quarter, thumbs up, left hand in pocket, joggers. 1024 × 1536 RGBA, with a glow baked into the background. | `design/coach/assets/leon-full.png` (original, with Content Credentials) |
+| Face | Head-and-shoulders avatar, 1254 × 1254 RGBA | `design/coach/assets/leon-avatar.png` (original) |
+| Concept board | The approved concept, 1254 × 1254 RGB. It includes mock-up text, an app banner and a "G/H" garment mark, which is **not** a logo. | `GoHard_Coach_Handoff/references/leon-approved-concept.png` (untracked folder) |
+| App copies | Resized runtime versions, plus a bust crop. Resizing removed the Content Credentials. | `app/assets/coach/leon-*.png` |
+| Turnaround, expression sheet, layered files | **None** | — |
+| 3D mesh, textures, fur or mane groom, rig | **None** | — |
+| Animation | **None.** `coach_avatar.dart` states nothing in the app talks, blinks or walks. | — |
 
-Searched: every branch (including `agent/art`, `agent/motion`, `feature/coach-companion`), the untracked handoff folders, and
-Downloads, Documents, Desktop, Pictures and `C:\dev`. I looked for `.blend .fbx .glb .gltf .vrm .riv .usdz .ma .mb .c4d .psd .kra`.
-The only hits were Python's own icon sources and an unrelated older app's splash `.riv`.
+Searched: every branch, the untracked handoff folders, and Downloads, Documents, Desktop, Pictures and `C:\dev`. I looked for
+`.blend .fbx .glb .gltf .vrm .riv .usdz .ma .mb .c4d .psd .kra`. **Tools here:** Node 22, Python 3.13 (no imaging libraries)
+and Edge. No image-generation tool, no 3D package, no ffmpeg.
 
-**Tools on this machine:** Node 22, Python 3.13 (no imaging libraries), Edge (headless SVG rendering), Flutter with
-`video_player`. **Not installed:** Blender or any 3D package, ffmpeg/ffprobe, ImageMagick. Blender and ffmpeg are free, but
-a free tool does not supply the missing part, which is character modelling and grooming. A model built from scripted primitives would not look like
-Leon, and a moving portrait does not contain a body or a skeleton. So this round follows the "missing assets" path: a production
-package, plus a storyboard drawn from a blocking mannequin that is plainly labelled as not Leon.
+## 2. Origin of the artwork
 
-**Rights to check before commissioning**
+**Known**, from the C2PA Content Credentials embedded in each original PNG. I read these fields from the files; I did not verify
+the signatures cryptographically.
 
-- The Leon artwork is generated imagery with no recorded source. Record which tool made it and confirm its terms allow commercial use and derivative work. Copyright
-  protection for purely generated images is limited in many places, so the commissioned model is the asset to own. The contract
-  should assign copyright (or an exclusive, perpetual, worldwide licence) in the model, rig, textures, groom, scene files
-  and renders, including the source files.
-- No third-party asset was used in this package. The mannequin and storyboard are generated by code in this repository.
-- The artist may use a base mesh, auto-rig, texture, HDRI or motion library only if its licence allows commercial use in an app,
-  modification and distribution as rendered video. Each one must be listed with its URL and licence. No generative video or
-  AI motion. No motion-capture clip from another person's library without a licence that allows it.
+| File | Created (UTC) | Recorded software | Source type |
+|---|---|---|---|
+| `leon-approved-concept.png` | 2026-10-15 12:45:05 | ChatGPT, `gpt-image`; claim generator "OpenAI Media Service API" | `trainedAlgorithmicMedia` (IPTC: AI-generated) |
+| `leona-approved-concept.png` | 2026-10-15 12:49:45 | same | same |
+| `leon-full.png` | 2026-10-15 12:55:28 | same | same |
+| `leona-full.png` | 2026-10-15 12:56:08 | same | same |
+| `leona-avatar.png` | 2026-10-15 12:57:34 | same | same |
+| `leon-avatar.png` | 2026-10-15 12:58:40 | same | same |
 
-## 2. Technique references (for the brief and the reviewer)
+- The signing certificate names OpenAI OpCo, LLC ("OpenAI Media Service"), issued by Trufo's C2PA signing CA, and the
+  timestamps come from OpenAI's timestamp authority.
+- No manifest lists an "ingredient" (input image).
+- The repository's own records agree: `design/coach/ASSETS.md` and `manifest.json` say "generated … from the approved concept
+  boards", and the app's avatars were added on 15 Oct 2026 (a7a116b).
+- To re-check: open the original PNG in a Content Credentials viewer, such as the C2PA project's `c2patool` or the public
+  verify site. The site uploads the file, so that is your choice.
 
-- **ACE Exercise Library, "Bodyweight Squat"** (beginner, no equipment), read 19 Nov 2026:
-  <https://www.acefitness.org/resources/everyone/exercise-library/135/bodyweight-squat/>.
-  - Setup: feet slightly wider than hip-width, toes turned slightly out, shoulders down and back, core braced, chest up.
-  - Descent: shift the hips back, then down, so hips and knees hinge together. Lower until the thighs are parallel or almost parallel, or stop earlier
-    if the heels lift or the torso rounds. The feet don't move, and the knees stay over the second toe.
-  - Return: keep back, chest and head up, push through the feet, and let hips and torso rise together.
-- **Matthew Cain, ACE, "How to Squat Properly: Body Type Breakdown & Anatomy Considerations"** (14 Aug 2019):
-  <https://www.acefitness.org/resources/pros/expert-articles/7356/how-to-squat-properly-body-type-breakdown-anatomy-considerations/>.
-  Hip anatomy differs, so stance width and toe position should be whatever is most comfortable. There is no single correct
-  form for everyone.
+**Unknown:**
+- which ChatGPT account and plan was used, and so which terms applied;
+- the prompts;
+- whether any image was uploaded as a reference. The missing ingredient does not prove none was;
+- whether the concept was based on any existing character.
 
-So the pilot shows **one** reasonable bodyweight squat, not a universal standard. The storyboard's angles, depth and stance
-width are placeholders. The qualified reviewer sets them, and the sheet's written text must not quote angles or say "correct form".
-The app's existing three cues for `bodyweight-squat` (coach guide) agree with ACE, but they still list no sources. Adding ACE to
-them belongs to the review step, not to this branch.
+**Not concluded:** the word "generated" says nothing about commercial rights. Rights depend on the terms of the account used
+and on what went into the prompts. Copyright in purely AI-generated images may be limited, so the human-made 3D model and its
+source files are the assets to secure by contract. The artist brief states this uncertainty openly.
 
-An NSCA article on adapting the squat to body proportions was found, but its PDF could not be read here, so it is not cited.
+## 3. Character design for approval
 
-## 3. Character design (proposed, for the owner's review)
+**Direction from the owner (19 Nov 2026):**
+- fitted athletic shorts above the knee;
+- shoulders, elbows, hips and ankles easy to see;
+- mane and tail kept clear of the movement;
+- a simple background with clear contrast.
 
-What stays the same as `leon-full.png`:
-- The face: amber-brown eyes, heavy dark brows, dark-brown nose, cream muzzle and chin.
-- The large dark-brown mane, the tan fur and rounded ears, and the tail with its dark tuft.
-- A calm, confident expression with the mouth closed during the movement.
-- An athletic build that isn't exaggerated.
+**Keep from the artwork:**
+- amber-brown eyes, heavy dark brows, a dark-brown nose, a cream muzzle and chin;
+- the large dark-brown mane, tan fur, rounded ears, and a tail with a dark tuft;
+- a calm, confident expression and an athletic build that isn't exaggerated.
 
-**Proposed changes for demonstrating exercises** (new interpretations, not approved brand artwork):
+**Exercise version** (a proposal until you approve the artist's design sheet):
+- **Clothing:**
+  - A plain charcoal fitted T-shirt with sleeves ending above the elbow, no logo and no "G/H" mark.
+  - Charcoal fitted athletic shorts ending above the knee.
+  - White trainers with flat soles and a visible heel and ankle.
+- **Mane:** shaped to sit behind the shoulder line, so it never hides a shoulder, the neck–chest line or an elbow in the clip's
+  three-quarter view. No simulation beyond a slight settle.
+- **Tail:** hangs behind, on the side away from the camera. It never crosses a leg or touches the floor; minimal sway.
+- **Proportions:** the stylised head stays, while limb lengths and joint positions are human-plausible (knee hinge, hip
+  crease and ankle where a person's would be). Hands as in the artwork.
+- **Expression:** neutral and attentive while exercising. No talking or celebrating.
+- **Contrast:** a plain, cool, light-grey background, so the warm tan fur and charcoal clothing both separate from it.
+  Check: every major joint and the full silhouette still read when a frame is converted to greyscale.
 
-1. **Clothing.** The artwork's loose joggers hide the knees. Proposal: the same charcoal fitted T-shirt, with no mark, and charcoal
-   training shorts ending above the knee (or fitted charcoal tights), so hips, knees and ankles are visible. Keep the white
-   trainers with flat soles. The heel line must be visible.
-2. **Mane.** Shape it to sit behind the shoulder line, so neither shoulder joint nor the neck–chest line is hidden from three-quarter front. No mane
-   simulation; at most a slight settle.
-3. **Tail.** It hangs behind on the side away from the camera, never crossing a leg or touching the floor, with minimal sway.
-4. **Proportions.** Keep the stylised head. Limb lengths and joint positions should be human-plausible, so the knee hinge,
-   hip crease and ankle sit where a person's would. Hands as in the artwork (five fingers).
-5. **Expression.** A neutral, attentive face looking forward. An occasional subtle blink is optional. No talking, winking or celebrating.
+**Concept views:** none were made here, because no image-generation tool is available. Stretching or repainting the
+existing portrait would not be faithful. In milestone 1 the artist must supply:
+1. Front, side and back views of Leon in the exercise clothing:
+   - the same scale, aligned on height lines (top of head, ears, shoulder, elbow, wrist, hip, knee, ankle, sole);
+   - in a neutral A-pose, plus one natural standing pose.
+2. A three-quarter view matching the clip's camera.
+3. A face sheet: front and side, in the reference expression.
+4. Colour swatches for fur, mane, nose, eyes, inner ear, shirt, shorts and shoes.
+5. A written note of anything they reinterpreted from the 2D artwork.
 
-**For Leona later.** Use the same skeleton, bone names and proportion targets, with her own mesh and groom. The squat animation should then retarget with
-corrections only. Leona is not part of this pilot.
+These are design references for your approval, not a modelling blueprint. Modelling starts only after you approve them.
+
+**For Leona later:** the same skeleton and bone names, with her own mesh and groom. Not part of this pilot.
 
 ## 4. Rig requirements
 
-- A humanoid skeleton with conventional names: pelvis, three spine bones, neck, head, jaw, eyelids, ears, clavicles, arms with
-  twist bones, hands with fingers, thighs and shins with twist bones, feet, toes, and a tail chain of 6–8 bones.
-- IK legs with heel/ball/toe pivots and foot locking. Knee pole targets so each knee can be steered over its foot's second toe. IK/FK arms.
-- Clean deformation at deep knee flexion (≥ 125°), deep hip flexion with the trunk leaning (≥ 110°) and the arms raised forward.
-  Corrective shapes at knees, hip crease, glutes, shoulders and elbows. Nothing pinches or collapses.
-- No intersections between mane and shoulders, arms and thighs, belly and thighs at the bottom, tail and legs or floor, or between layers of clothing.
-- Deliver as Blender `.blend` (free, so GoHard can open it) plus FBX or glTF of the mesh, skeleton and action.
+- **Skeleton:** a humanoid skeleton with conventional names. Pelvis; three or more spine bones; neck; head; jaw; eyelids; ears; clavicles.
+  Arms with twist bones; hands with fingers; thighs and shins with twist bones; feet; toes; a 6–8-bone tail chain.
+- **Controls:**
+  - IK/FK legs with heel, ball and toe pivots and foot locking;
+  - IK/FK arms that can **lock the hands** to the floor or a bar;
+  - knee and elbow pole targets.
+- **Range:** must suit future upper- and lower-body exercises, not just the squat:
+  - deep knee and hip flexion with the trunk leaning forward (squat, lunge, deadlift);
+  - arms overhead with the shoulder blades moving (press, pull-up);
+  - floor contact with hands and feet (push-up, plank);
+  - grip sockets in both hands that can switch, so dumbbells, a barbell or a cable handle can be attached later.
+- **Deformation:** correctives at knees, hip crease, glutes, shoulders, armpits and elbows. No intersections between the mane, arms, thighs, belly,
+  clothing layers or tail.
+- **Delivery:** Blender `.blend` preferred (free to open). Otherwise the artist's native files plus FBX or glTF of the mesh, skeleton and
+  animation.
 
 ## 5. Squat storyboard and camera
 
-![Storyboard](avatar-pilot/storyboard.svg)
+![Storyboard](avatar-pilot/storyboard.png)
 
-The board above is drawn from the blocking mannequin in `squat-blocking.mjs`, a figure of capsules and dots that is
-**not Leon**. Its feet are fixed points, and each knee is solved towards its own foot. A script check confirms that the feet never move,
-segment lengths stay constant and the rough centre of mass stays over the feet. It is a timing and framing reference for
-the animator, not an instruction or an approved pose.
+The board is drawn from a stick mannequin (`squat-blocking.mjs`) and is **not Leon**.
+- Its script checks that the feet stay fixed, limb lengths stay constant and the centre of mass stays over the feet. **These are drawing checks, not evidence
+  of correct technique.** Depth, stance, arm position and tempo are placeholders for the technique reviewer.
+- **Sequence:** stand still 0.8 s, then 3 reps of 1.8 s down, 0.3 s at the bottom, 1.4 s up and 0.3 s standing, a **12.2 s** loop.
+  The last frame equals the first. The tempo is a production choice for "controlled".
+- **In each rep** (ACE):
+  - the hips start back before the knees travel far;
+  - hips and knees bend together;
+  - heels stay down and the knees track over the second toe;
+  - hips and torso rise together.
+- **Arms:** ACE's setup has the hands by the sides. The board raises them forward, which keeps the hips visible. The reviewer decides.
+- **Camera:**
+  - locked, three-quarter front at about 35° off the front, with Leon facing screen right;
+  - 50 mm-equivalent lens at hip-to-chest height, tilted down 5–10°;
+  - the whole body (ears, mane, hands, tail tuft and shoes) in frame with at least 5% margin in every pose;
+  - no camera moves.
+- **Side view:** the board's side row helps the reviewer. The clip is three-quarter only, unless the reviewer asks for a separate side clip.
 
-- **Sequence:** start standing still (0.8 s), then 3 reps: 1.8 s down, 0.3 s at the bottom, 1.4 s up, 0.3 s standing.
-  The loop is **12.2 s**. The last frame equals the first, so it loops without a jump. The tempo is a production choice for
-  "controlled", not a prescription; the reviewer may change it.
-- **Order within a rep (ACE):** the hips start back before the knees travel far. Hips and torso rise together on the way up. Heels stay down, and
-  the knees track over the second toe throughout.
-- **Arms:** the board raises them forward as a counterbalance. ACE's setup has the hands by the sides. This is **an open choice for the
-  reviewer**; arms at the sides partly hide the hip in three-quarter view.
-- **Camera:** locked, three-quarter front, about 35° off the front. Leon faces towards screen right, the reading direction in en/fr.
-  The same clip is used in Arabic; whether to mirror it is a later decision. Use a 50 mm-equivalent lens to limit distortion,
-  placed at about hip-to-chest height and tilted down 5–10°. The whole body (ears, mane, hands, tail tuft and shoes) stays in
-  frame with at least 5% margin in every pose. No reframing, cuts, zoom or camera shake.
-- **Side view:** the board includes one so the reviewer can judge trunk angle and depth. The clip itself is three-quarter
-  only. Add a separate side-view clip (not a split screen) only if the reviewer says the three-quarter view hides something.
+**Technique references**
+- ACE Exercise Library, "Bodyweight Squat" (read 19 Nov 2026):
+  <https://www.acefitness.org/resources/everyone/exercise-library/135/bodyweight-squat/>
+- Matthew Cain, ACE, "How to Squat Properly: Body Type Breakdown & Anatomy Considerations" (14 Aug 2019):
+  <https://www.acefitness.org/resources/pros/expert-articles/7356/how-to-squat-properly-body-type-breakdown-anatomy-considerations/>.
+  Stance width and toe position vary with hip anatomy, so the pilot shows one reasonable squat, not a universal standard.
 
-## 6. Materials, lighting and background
+## 6. Look, lighting and export
 
-- Match the look of the artwork's render: stylised 3D, soft fur, slightly warm. Shade the fur so it does not flicker or crawl in
-  compressed video. Fine noisy strands waste bits and look like compression artefacts.
-- A soft key light from front-left above, a fill, and a gentle warm rim to separate mane and clothes from the background. Do **not**
-  copy the PNG's glow halo; it is not part of the character.
-- Background and floor: one plain light neutral (around `#E9EBE8`), with a soft contact shadow under each shoe so contact is visible. A light background keeps
-  the charcoal clothes readable. No props, text, logo, watermark or burned-in labels; the "not yet reviewed" label lives in the app UI.
-- Little or no motion blur, so 0.5× playback stays sharp.
-
-## 7. Export requirements
-
-- **Delivery clip:** H.264 MP4, High profile, level ≤ 4.0, 8-bit `yuv420p`, **720 × 720 at a constant 30 fps**, 12.2 s, **no audio
-  track**, `moov` at the front (faststart), metadata stripped, target **≤ 2.5 MB**.
-  - Why square: the standing pose and the bottom with arms forward both fit without reframing.
-  - The sheet sizes the player from the clip's own aspect ratio (`DemoVideo.aspectRatio`), so a square clip sits at the sheet's width (about 360 pt on a phone)
-    without taking over the sheet. Full screen in portrait fills the width.
-  - The wger clips that play on device are H.264 High at levels 3.0–4.0.
-- **Masters:** a lossless PNG sequence (or ProRes 422 HQ) at 1440 × 1440, 30 fps, so the clip can be re-encoded or recropped later.
-- **Poster:** frame 1 (the standing start pose, identical to the loop start) as JPEG, 720 × 720, quality about 82.
-  - The picker's 56 × 40 thumbnail uses `BoxFit.cover` and would cut the head and feet. Integration will either add a thumbnail crop or accept that;
-    decide when the clip exists.
-- **Suggested encode** (free ffmpeg; check the result with `ffprobe`):
+- **Look:** match the stylised 3D render of the artwork. Fur shading must not flicker or crawl in compressed video. A soft key from front-left above, a fill
+  and a gentle rim. Do not copy the PNG's glow halo.
+- **Background:** plain cool light grey with soft contact shadows. No props, text, logos, watermarks or burned-in labels.
+  Little or no motion blur.
+- **Delivery clip:**
+  - H.264 MP4, High profile, level ≤ 4.0, 8-bit `yuv420p`;
+  - **720 × 720, constant 30 fps**, about 12.2 s;
+  - **no audio track**, faststart, metadata stripped;
+  - a clean loop: the first and last frames are identical.
+- **Size:** the target is **about 2.5 MB**, to be verified, not forced. If fur, edges or smooth motion visibly suffer at that size,
+  the artist reports the size needed instead of degrading the clip. GoHard then decides.
+- **Poster:** frame 1 as a 720 × 720 JPEG. Masters: a 1440 × 1440 PNG sequence at 30 fps.
+- **Suggested encode:**
 
   ```sh
   ffmpeg -framerate 30 -i master/leon_squat_%04d.png \
     -vf "scale=720:720:flags=lanczos,format=yuv420p" \
     -c:v libx264 -profile:v high -level:v 4.0 -preset slow -crf 21 -g 60 \
     -an -map_metadata -1 -movflags +faststart leon_bodyweight-squat_3q_720.mp4
-  ffmpeg -i master/leon_squat_0001.png -vf scale=720:720 -q:v 4 leon_bodyweight-squat_3q_720.jpg
   ```
 
-- **Names and structure** (so Leona and other exercises can follow):
-  `characters/leon/leon.blend` (mesh, materials, groom, rig), `exercises/bodyweight-squat/bodyweight-squat.blend` (links the
-  character; holds the action, camera and lights), `exercises/bodyweight-squat/master/leon/`, and exports named
-  `<character>_<catalogue-key>_<view>_<size>.mp4`.
-  - Keep the large source files somewhere GoHard controls, not in this repository. This repository keeps only the small export and its SHA-256.
-  - No paid storage was created for this.
+- **Integration note:** the picker's 56 × 40 thumbnail crops a square poster. Decide on a crop when the clip exists.
+- **Storage:** large source files stay where GoHard keeps them, not in this repository. Only the export and its SHA-256 come here.
 
-## 8. Acceptance criteria (four separate sign-offs)
+## 7. Four separate approvals
 
-1. **Owner, likeness and design:** compare with `leon-full.png` at thumbnail size and full screen. Clothing proposal approved.
-   Leona compatibility understood.
-2. **Animation quality** (animator's self-check, then the owner):
-   - Shoes stay locked: no slide of more than 1 px at 720, no floating, contact shadows present.
-   - No intersections, and no joint pops or jitter in the curves.
-   - Knees track consistently, with left and right symmetric.
-   - Fur and mane stable, the camera locked, the whole body framed in every frame.
-   - First and last frames identical. Three complete reps.
-3. **Technique (a qualified reviewer**, for example a certified strength coach or physiotherapist):
-   - Checks stance, toe angle, depth, trunk angle, heel contact, knee path, head and neck, arm position and tempo, plus the written Setup/Movement
-     text shown beside the clip.
-   - Record their name, credential and date in this file. Until then every surface says **"Leon squat pilot — not yet reviewed"**
-     and the clip is never shown to users.
-4. **Technical (developer):**
-   - `ffprobe` shows h264/High/≤ 4.0, yuv420p, 720 × 720, 30 fps, about 12.2 s, no audio stream, size ≤ 2.5 MB.
-   - In the existing player on the Android emulator and on an iPhone it plays only after a tap, muted, with Pause, Replay, 0.5× and full screen, and it pauses when the sheet closes or the app
-     goes to the background, while music keeps playing.
-   - A file extension is not proof of compatibility.
+1. **Leon's appearance (owner).**
+   - The milestone 1 design sheet, then the textured model, compared with the artwork at thumbnail size and at full screen.
+2. **Animation quality (owner, after the artist's self-check).**
+   - Locked shoes (no slide of more than 1 px at 720) and no floating.
+   - No intersections, joint pops or jitter.
+   - Consistent knee tracking and left/right symmetry.
+   - Stable fur and mane, a locked camera, the whole body framed, and three complete reps with a clean loop.
+3. **Exercise technique (a qualified professional,** for example a certified strength coach or physiotherapist).
+   - Judged on the artist's plain movement preview before final lighting and rendering, then on the final clip.
+   - Covers stance, toe angle, depth, trunk angle, heel contact, knee path, head and neck, arm position and tempo, plus the written Setup/Movement text.
+   - Record the reviewer's name, credential and date here.
+   - Until then, every surface says "Leon squat pilot — not yet reviewed" and users never see it.
+4. **Technical playback in GoHard (developer).**
+   - `ffprobe` confirms the spec above.
+   - In the existing player on Android and on an iPhone: plays only after a tap, muted, with Pause, Replay, 0.5× and full screen.
+   - Pauses on close and in the background, and other audio keeps playing.
+   - A developer-only preview keyed only to `bodyweight-squat`, never in the public media list, and leaving workout state untouched.
 
-## 9. Development preview, once a clip exists (not built now)
+## 8. Sending the brief
 
-- A preview that only developers can see, behind a `--dart-define` flag, never in the public `exercise-media.json`.
-  - It is keyed to the exact catalogue key `bodyweight-squat`, never `back-squat`, `goblet-squat` or another squat.
-  - It opens the shared sheet from `feature/wger-demonstrations` with the label "Leon squat pilot — not yet reviewed".
-- The player needs a local-asset source (today it streams from a URL or plays a downloaded file). The clip must stay out of release builds: use a
-  development flavour's assets, or load it from the developer's device during testing.
-- Tests to add then:
-  - The preview never replaces or merges into public media.
-  - Opening and closing it leaves sets, selection, typed values, notes, clocks, plan drafts and workouts unchanged; reuse the wger tests.
-  - Plus the l10n and accessibility checks.
-- Build one unsigned IPA from that tested commit.
+**Attach:**
+1. `docs/avatar-pilot/ARTIST_BRIEF.md`, the detailed brief. Send as is, or paste into a document.
+2. `design/coach/assets/leon-full.png`, the full body. The original keeps its Content Credentials.
+3. `design/coach/assets/leon-avatar.png`, the face.
+4. `GoHard_Coach_Handoff/references/leon-approved-concept.png`, the second face and body reference. Its text, banner and "G/H" mark are not part of the design.
+5. `docs/avatar-pilot/storyboard.png`, for squat timing and camera. It shows a stick mannequin, not the look.
 
-## 10. Smallest next action
+**Message to copy:**
 
-Send [avatar-pilot/ARTIST_BRIEF.md](avatar-pilot/ARTIST_BRIEF.md) with `leon-full.png`, `leon-avatar.png` and
-`storyboard.svg` to a 3D character artist or studio and ask for a quote. That is the owner's decision; nothing was purchased
-or commissioned. In parallel, decide the clothing proposal (section 3) and name a qualified technique reviewer.
+> Hello,
+>
+> I'm looking for a 3D character artist/animator to build GoHard's guide character, Leon (an athletic, friendly lion), as
+> a reusable rigged 3D model, and to animate one exercise for a fitness app. The pilot exercise is a bodyweight squat. Leon
+> currently exists only as 2D reference images, which I've attached with a detailed brief.
+>
+> Could you quote these milestones separately?
+> 1. Front, side and back character design for my approval.
+> 2. A reusable full-body Leon model with textures and an animation-ready rig, suitable for future upper- and lower-body exercises.
+> 3. One bodyweight squat animation of about three controlled repetitions, including a plain, untextured movement preview for a
+>    technique review before final lighting and rendering.
+> 4. Final video export and delivery of all editable source files.
+>
+> Please also include:
+> - a separate estimate for each additional exercise using the same model;
+> - your revision policy and delivery schedule;
+> - examples of similar character animation;
+> - the software you would use;
+> - which rights you offer.
+>
+> I need commercial use in the GoHard app and its promotion, and the freedom for another artist to create future animations
+> with the model. Please disclose any third-party assets you would use and their licence terms.
+>
+> The reference images were generated with ChatGPT; the brief explains what I know about their origin.
+>
+> This is a request for a quote, not a commission yet.
+>
+> Thank you,
+
+## 9. Smallest next action
+
+Send the message and attachments to the artists you choose, then compare quotes. This repository makes no contact,
+purchase or commission. In parallel, name a qualified technique reviewer, and fill in the unknowns in section 2 (which
+account made the images, and whether any reference image went in). The animation will reach the app through the existing
+player only when a real, approved clip exists.

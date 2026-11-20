@@ -2926,3 +2926,20 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   lengths and balance over the feet.
 - wger sourcing paused; `feature/wger-demonstrations` unchanged and remains the fallback. Nothing purchased,
   commissioned, merged or deployed; no IPA (nothing playable).
+
+### 19 Nov 2026 — Leon pilot: quote-ready brief and artwork origin (same branch)
+
+- Origin: every original Leon/Leona PNG carries C2PA Content Credentials naming ChatGPT (`gpt-image`, claim generator
+  "OpenAI Media Service API", certificate OpenAI OpCo, LLC), source type `trainedAlgorithmicMedia`, created 15 Oct 2026
+  12:45–12:58 UTC, no ingredients listed (fields read, signatures not verified). Unknown: the account, the prompts and
+  whether any reference image went in; no rights conclusion drawn. The app copies are resized and carry no credentials.
+- No image-generation tool here, so no front/side/back views were made; LEON_SQUAT_PILOT.md now lists exactly what the
+  artist supplies in milestone 1. Owner's direction recorded (shorts above the knee, visible joints, mane and tail
+  clear, plain contrasting background).
+- ARTIST_BRIEF.md rewritten for quotes: four separately priced milestones, a plain movement preview for technique
+  review before final rendering, editable sources with software versions, rights allowing other artists to animate
+  later, third-party disclosure, rig range for future upper- and lower-body exercises, per-exercise estimates, revision
+  policy, schedule, examples. Message to copy and attachment list in LEON_SQUAT_PILOT.md § 8. `storyboard.png` added
+  for email; its footer says the script checks test the drawing, not technique. Export spec unchanged; the 2.5 MB size
+  is a target to verify, not to force.
+- Docs only; no contact, purchase, commission, app change, merge, deploy or IPA.
