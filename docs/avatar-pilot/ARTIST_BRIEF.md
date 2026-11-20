@@ -19,7 +19,7 @@ bodyweight squat**. Leona, his lioness counterpart, may follow later on the same
 | `storyboard.png` | Squat timing and camera, drawn with a stick mannequin. It is not the look, and its angles are placeholders. |
 
 **Where these images came from.** The embedded Content Credentials show they were generated with ChatGPT (OpenAI `gpt-image`) on 15 October 2026.
-- We have not yet confirmed which account made them, the prompts used, or whether any reference image went into them.
+- GoHard's owner created them in their own ChatGPT account from text prompts only. No reference images were uploaded.
 - Please treat them as visual references only.
 - The 3D design should be your own original work: do not base it on other existing characters.
 

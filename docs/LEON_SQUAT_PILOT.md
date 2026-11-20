@@ -53,11 +53,11 @@ the signatures cryptographically.
 - To re-check: open the original PNG in a Content Credentials viewer, such as the C2PA project's `c2patool` or the public
   verify site. The site uploads the file, so that is your choice.
 
-**Unknown:**
-- which ChatGPT account and plan was used, and so which terms applied;
-- the prompts;
-- whether any image was uploaded as a reference. The missing ingredient does not prove none was;
-- whether the concept was based on any existing character.
+**Owner's statement (19 Nov 2026):** Leon was created in the owner's own ChatGPT account from text prompts only, and no reference
+images were uploaded. This is consistent with the credentials, which list no ingredients.
+
+**Still unknown:** the exact prompts, which are not kept in this repository, and so the account plan and terms that applied
+on 15 Oct 2026.
 
 **Not concluded:** the word "generated" says nothing about commercial rights. Rights depend on the terms of the account used
 and on what went into the prompts. Copyright in purely AI-generated images may be limited, so the human-made 3D model and its
@@ -240,6 +240,5 @@ The board is drawn from a stick mannequin (`squat-blocking.mjs`) and is **not Le
 ## 9. Smallest next action
 
 Send the message and attachments to the artists you choose, then compare quotes. This repository makes no contact,
-purchase or commission. In parallel, name a qualified technique reviewer, and fill in the unknowns in section 2 (which
-account made the images, and whether any reference image went in). The animation will reach the app through the existing
-player only when a real, approved clip exists.
+purchase or commission. In parallel, name a qualified technique reviewer. The animation will reach the app through the
+existing player only when a real, approved clip exists.

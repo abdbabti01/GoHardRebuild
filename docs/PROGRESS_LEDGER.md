@@ -2943,3 +2943,6 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   for email; its footer says the script checks test the drawing, not technique. Export spec unchanged; the 2.5 MB size
   is a target to verify, not to force.
 - Docs only; no contact, purchase, commission, app change, merge, deploy or IPA.
+- Owner's answer (same day): Leon was created in the owner's own ChatGPT account from text prompts only, with no
+  reference images uploaded. Recorded in LEON_SQUAT_PILOT.md § 2 and the artist brief; the exact prompts are not kept
+  here. Still no rights conclusion drawn.
