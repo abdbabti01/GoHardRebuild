@@ -109,6 +109,58 @@ def faceless_head(ob):
     junction = (P[:, 2] < ZCUT + 1e-4) | (P[:, 2] > 1.53)          # soften the jaw-to-neck corner only
     set_verts(me, smooth_field(P, E, len(P), 90, 0.5, pin=junction))
 
+def mannequin_face(ob, taubin=int(opt('--taubin', 12)), depth=float(opt('--depth', 0.004))):
+    """Keep the base mesh's own head (jaw, chin, cheekbones, nose, sockets, closed mouth) and simplify it like a
+    mannequin: Taubin smoothing removes skin-level detail without shrinking, then no hollow may sink deeper than
+    `depth` below a smoothed surface, so eye sockets, nostrils and ears turn shallow and the mouth reads as a line."""
+    me = ob.data
+    # eye pockets (modelled around separate eyeballs): remove the hollow, close the lid opening with a smooth eye
+    # surface on the bundle's eyeball sphere, slightly recessed, so the eyes read as plain mannequin eyes
+    with bpy.data.libraries.load(opt('--base'), link=False) as (src, dst):
+        dst.objects = ['GEO-body_male_realistic.eye.L', 'GEO-body_male_realistic.eye.R']
+    mid_x = sum(e.location.x for e in dst.objects) / 2          # the bundle offsets the body; it is symmetric
+    eyes = [np.array((e.location.x - mid_x, e.location.y, e.location.z)) for e in dst.objects]
+    for e in dst.objects: bpy.data.objects.remove(e)
+    bm = bmesh.new(); bm.from_mesh(me); bm.normal_update()
+    for c in eyes:
+        cv = V(c)
+        hollow = [v for v in bm.verts if (v.co - cv).length < 0.017 and v.normal.dot(v.co - cv) < 0]
+        bmesh.ops.delete(bm, geom=hollow, context='VERTS')
+        rim = [e for e in bm.edges if e.is_boundary and (e.verts[0].co - cv).length < 0.03]
+        faces = bmesh.ops.holes_fill(bm, edges=rim, sides=0)['faces']
+        faces = bmesh.ops.triangulate(bm, faces=faces)['faces']
+        res = bmesh.ops.subdivide_edges(bm, edges=list({e for f in faces for e in f.edges if not e.is_boundary}),
+                                        cuts=2, use_grid_fill=True)
+        inner = {v for f in faces if f.is_valid for v in f.verts} | {v for g in res['geom_inner'] if isinstance(g, bmesh.types.BMVert) for v in [g]}
+        rimv = {v for e in rim if e.is_valid for v in e.verts}
+        for v in inner - rimv: v.co = cv + (v.co - cv).normalized() * 0.0112
+        new = [f for f in bm.faces if any(v in inner for v in f.verts) and all((v.co - cv).length < 0.02 for v in f.verts)]
+        for f in new:
+            f.smooth = True; f.normal_update()
+            if f.normal.dot(f.calc_center_median() - cv) < 0: f.normal_flip()
+        print('eye', c.round(4), 'hollow verts removed', len(hollow), 'rim edges', len(rim))
+    bm.to_mesh(me); bm.free(); me.update()
+    P = verts_np(me); E = edges_np(me); n = len(P)
+    head = smoothstep(1.44, 1.48, P[:, 2]); pin = head == 0
+    for _ in range(taubin):
+        P = smooth_field(P, E, n, 1, 0.5, pin=pin); P = smooth_field(P, E, n, 1, -0.53, pin=pin)
+    # relax the closed eyes into clean, slightly recessed eye surfaces with soft lid edges
+    near = np.zeros(n, bool)
+    for c in eyes: near |= np.linalg.norm(P - c, axis=1) < 0.019
+    P = smooth_field(P, E, n, 45, 0.5, pin=~near)
+    for c in eyes:
+        dv = P - c; dist = np.linalg.norm(dv, axis=1); m = dist < 0.0122
+        P[m] = c + dv[m] / dist[m, None] * 0.0112
+    P = smooth_field(P, E, n, 4, 0.5, pin=~near)
+    # flatter lips: a subtle closed mouth line rather than full lips
+    lips = np.exp(-(P[:, 0] / 0.028) ** 2 - ((P[:, 2] - 1.505) / 0.016) ** 2) * (P[:, 1] < -0.13)
+    P = smooth_field(P, E, n, 8, 0.5, pin=lips < 0.3)
+    set_verts(me, P); N = normals_np(me)
+    S = smooth_field(P, E, n, 60, 0.5, pin=pin)
+    d = np.einsum('ij,ij->i', P - S, N)
+    P = P + N * (np.maximum(-depth - d, 0) * head)[:, None]
+    set_verts(me, smooth_field(P, E, n, 2, 0.5, pin=pin))
+
 # ------------------------------------------------------------------ hand analysis for finger joints
 def graph(P, E, mask):
     idx = np.nonzero(mask)[0]; loc = -np.ones(len(P), int); loc[idx] = np.arange(len(idx))
@@ -381,7 +433,7 @@ def main():
     sculpt(body)
     me = body.data; P = verts_np(me); E = edges_np(me)
     J, Wr, dorsal = hand_joints(P, E)
-    faceless_head(body)
+    mannequin_face(body) if opt('--head', 'face') == 'face' else faceless_head(body)
     me = body.data; P = verts_np(me); E = edges_np(me); N = normals_np(me)
     cav = np.einsum('ij,ij->i', P - smooth_field(P, E, len(P), 30), N)
     me.attributes.new('cavity', 'FLOAT', 'POINT').data.foreach_set('value', np.clip(cav / 0.004, -1, 1))
@@ -435,10 +487,11 @@ def main():
         bpy.ops.wm.save_as_mainfile(filepath=opt('--save'), compress=True)
     res = int(opt('--res', 1080)); sc.render.resolution_x = res; sc.render.resolution_y = int(res * 1.25)
     for view in [v for v in opt('--views', 'front,side,3q').split(',') if v]:
-        az = dict(front=0, side=-90, q=-35, back=180, face=-25)['q' if view == '3q' else view]
-        t, dist, cd.lens = (V((0, -0.04, 1.50)), 1.5, 85) if view == 'face' else (V((0, -0.02, 0.88)), 3.9, 55)
+        az = dict(front=0, side=-90, q=-35, back=180, face=-30, facefront=0)['q' if view == '3q' else view]
+        close = view.startswith('face')
+        t, dist, cd.lens = (V((0, -0.06, 1.565)), 0.95, 85) if close else (V((0, -0.02, 0.88)), 3.9, 55)
         a = math.radians(az)
-        cam.location = t + V((math.sin(a) * dist, -math.cos(a) * dist, 0.10 if view != 'face' else 0.02))
+        cam.location = t + V((math.sin(a) * dist, -math.cos(a) * dist, 0.03 if close else 0.10))
         cam.rotation_euler = (t - cam.location).to_track_quat('-Z', 'Y').to_euler()
         sc.render.filepath = os.path.join(OUT, f'mannequin_{view}.png'); bpy.ops.render.render(write_still=True)
         print('RENDERED', sc.render.filepath)
