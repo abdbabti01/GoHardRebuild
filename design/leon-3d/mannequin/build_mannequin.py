@@ -304,8 +304,19 @@ def skin(rig, low, body):
     print('deform groups:', len(low.vertex_groups))
 
 # ------------------------------------------------------------------ clothing
-def skinned(ob, rig, smooth=True):
+def corrective(ob):
+    """Corrective Smooth after the armature: smooths bending artifacts (balloon seat, pinched creases); none at rest."""
+    cs = ob.modifiers.new('Corrective smooth', 'CORRECTIVE_SMOOTH'); cs.iterations = 8; cs.factor = 0.5
+    cs.smooth_type = 'LENGTH_WEIGHTED'; cs.rest_source = 'ORCO'
+    return cs
+
+def skinned(ob, rig, smooth=True, proxy=None, thick=0.0):
     ob.parent = rig; ob.modifiers.new('Armature', 'ARMATURE').object = rig
+    if proxy: corrective(ob)
+    if proxy:   # in bent poses keep the garment outside the (hidden, complete) body; no effect at rest
+        sw = ob.modifiers.new('Stay outside', 'SHRINKWRAP'); sw.target = proxy
+        sw.wrap_method = 'NEAREST_SURFACEPOINT'; sw.wrap_mode = 'OUTSIDE'; sw.offset = 0.003   # only push points that went inside the body
+    if thick: sol = ob.modifiers.new('Thickness', 'SOLIDIFY'); sol.thickness = thick; sol.offset = -1
     if smooth: m = ob.modifiers.new('Smooth', 'SUBSURF'); m.levels = 0; m.render_levels = 1
     return ob
 
@@ -457,8 +468,9 @@ def main():
     stripe = smooth_field(((np.abs(ang) < 0.07) & (S[:, 2] < 0.76)).astype(float)[:, None], SE, len(S), 3)[:, 0]
     for nm, val in (('stripe', stripe), ('band', (S[:, 2] > 0.955).astype(float))):
         sm.attributes.new(nm, 'FLOAT', 'POINT').data.foreach_set('value', val)
-    sol = shorts.modifiers.new('Thickness', 'SOLIDIFY'); sol.thickness = 0.003; sol.offset = -1
-    skinned(shorts, rig)
+    collider = body.copy(); collider.data = body.data.copy(); collider.name = 'Body collision (hidden)'
+    C.objects.link(collider); collider.hide_render = True; collider.data.materials.clear(); corrective(collider)
+    skinned(shorts, rig, proxy=collider, thick=0.003)
     # shoes: smooth envelope around the foot, separate soles
     polys = [p.vertices[:] for p in me.polygons if all(P[i, 2] < 0.16 for i in p.vertices)]
     shoes = shell(body, C, 'Shoes', lambda P: P[:, 2] < 0.115, lambda P: 0.008 + 0.006 * smoothstep(-0.03, -0.10, P[:, 1]),
@@ -472,12 +484,12 @@ def main():
     for nm, val in dict(trim=H[:, 2] < 0.014,
                         lace=(H[:, 1] < 0.02) & (H[:, 1] > -0.07) & (H[:, 2] > 0.05) & (np.abs(H[:, 0] - cx) < 0.02)).items():
         hm.attributes.new(nm, 'FLOAT', 'POINT').data.foreach_set('value', val.astype(float))
-    skinned(shoes, rig)
+    skinned(shoes, rig)   # feet never bend inside the shoe; a collider would imprint the toes
     for so in v2.build_soles(shoes, C, mat_sole()):
         so.vertex_groups[0].name = 'DEF-foot.' + so.name[-1]; skinned(so, rig, smooth=False)
     torso = ~((np.abs(P[:, 0]) > 0.28) & (P[:, 2] < 1.0))
-    delete_verts(body, (P[:, 2] < 0.085) | ((P[:, 2] > 0.64) & (P[:, 2] < 0.95) & (np.abs(P[:, 0]) < 0.25) & torso))
-    body.data.materials.clear(); body.data.materials.append(mat_skin())
+    delete_verts(body, (P[:, 2] < 0.105) | ((P[:, 2] > 0.64) & (P[:, 2] < 0.95) & (np.abs(P[:, 0]) < 0.25) & torso))
+    body.data.materials.clear(); body.data.materials.append(mat_skin()); corrective(body)
     rig.location.z = 0.018
     stand(rig)
     cam, cd = studio(sc, C)
