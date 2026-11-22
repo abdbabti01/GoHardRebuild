@@ -215,9 +215,13 @@ and its work is kept on `feature/exercise-mannequin`.
   distributing or displaying the content without written permission, and the licence (§8) is granted "with eligible
   purchases". So the sample is treated as **internal testing only**. Building an IPA or any shared build with it needs
   **written permission from Exercise Animatic** to put the free sample in an app build given to testers, or a purchase
-  (the product page lists an N-ECL licence for mobile apps).
-- **Switch**: `--dart-define=GOHARD_DEMO_PREVIEW=true`. It is off by default: CI, `ios-unsigned-ipa.yml` and every normal
-  build never set it. With the switch on, the manifest's `previews` entries replace the media for their **exact** keys.
+  (the product page lists an N-ECL licence for mobile apps). On 21 Nov 2026 the owner authorised one unsigned IPA
+  with the sample for their own private iPhone test only (no public-distribution rights).
+- **Switch**: `--dart-define=GOHARD_DEMO_PREVIEW=true`. It is off by default: CI, tag builds and every normal build never
+  set it. `ios-unsigned-ipa.yml` has a manual `demo_preview` input (default off) for an owner-approved private build:
+  a separate job reads the files from a named draft release, the build checks the clip against the manifest's SHA-256,
+  and the IPA artifact is kept 1 day. Used once: run 82 (21 Nov 2026, e1a5dc6). Afterwards the draft release and both
+  artifacts were deleted from GitHub; the IPA is kept only locally (`C:\dev\third-party\exercise-animatic\ipa-82`). With the switch on, the manifest's `previews` entries replace the media for their **exact** keys.
   The only entry is `bodyweight-squat`, so back, goblet and Bulgarian split squats and every other key are unchanged.
 - **Local slot**: `app/assets/demos/preview/` (git-ignored except its `.gitignore`) holds `bodyweight-squat.mp4` and
   `bodyweight-squat.jpg` (the first frame scaled to 640 px wide). Builds made on a machine with those files bundle them,
