@@ -13992,6 +13992,14 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذّر تحميله. تحقق من اتصالك وحاول مجددًا. الدليل المكتوب أدناه متاح كما هو.';
 
   @override
+  String get demoPreviewNote =>
+      'معاينة داخلية: عيّنة مجانية من Exercise Animatic للاختبار فقط. ترخيص توزيعها غير مؤكَّد، ولم يراجع مختص الأسلوب.';
+
+  @override
+  String get demoPreviewMissing =>
+      'مقطع المعاينة هذا غير موجود في هذا الإصدار. الدليل المكتوب أدناه متاح كما هو.';
+
+  @override
   String get demoRetry => 'إعادة المحاولة';
 
   @override

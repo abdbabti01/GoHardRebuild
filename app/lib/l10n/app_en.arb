@@ -19036,6 +19036,14 @@
   "@demoStreamFailed": {
     "description": "The streamed clip could not be played."
   },
+  "demoPreviewNote": "Internal preview: a free sample from Exercise Animatic, for testing only. Its licence for distribution is not confirmed, and the technique has not been reviewed by a professional.",
+  "@demoPreviewNote": {
+    "description": "Shown in internal preview builds above a sample clip whose licence is not confirmed."
+  },
+  "demoPreviewMissing": "This preview clip is not in this build. The written guide below is unaffected.",
+  "@demoPreviewMissing": {
+    "description": "An internal preview build was made without the local sample file."
+  },
   "demoRetry": "Retry",
   "@demoRetry": {
     "description": "Retry playing the clip."

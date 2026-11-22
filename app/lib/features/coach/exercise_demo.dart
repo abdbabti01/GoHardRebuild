@@ -21,6 +21,7 @@ typedef DemoPlayerFactory = VideoPlayerController Function(DemoVideo video, File
 
 final demoPlayerFactoryProvider = Provider<DemoPlayerFactory>((_) => (video, saved) {
       final options = VideoPlayerOptions(mixWithOthers: true);
+      if (video.isBundled) return VideoPlayerController.asset(video.url.path, videoPlayerOptions: options);
       return saved != null ? VideoPlayerController.file(saved, videoPlayerOptions: options) : VideoPlayerController.networkUrl(video.url, videoPlayerOptions: options);
     });
 
@@ -379,7 +380,8 @@ class _DemoPlayerState extends ConsumerState<_DemoPlayer> {
     final c = _c;
     final m = widget.media;
     final l = context.l10n;
-    final poster = Image.asset(m.poster, fit: BoxFit.contain, semanticLabel: l.demoPosterSemantic);
+    // A preview build without the local files has no poster either: an empty frame, then the "not in this build" state.
+    final poster = Image.asset(m.poster, fit: BoxFit.contain, semanticLabel: l.demoPosterSemantic, errorBuilder: (_, _, _) => const SizedBox.expand());
     final Widget area = switch (_phase) {
       _Phase.ready when c != null && c.value.isInitialized =>
         Semantics(label: l.demoVideoSemantic, child: AspectRatio(aspectRatio: c.value.aspectRatio, child: VideoPlayer(c))),
@@ -411,13 +413,13 @@ class _DemoPlayerState extends ConsumerState<_DemoPlayer> {
       if (_phase == _Phase.failed) ...[
         const SizedBox(height: 8),
         Text(
-          _fromFile ? l.demoSavedFailed : l.demoStreamFailed,
+          _video.isBundled ? l.demoPreviewMissing : _fromFile ? l.demoSavedFailed : l.demoStreamFailed,
           style: context.caption,
         ),
         Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(key: const Key('demo-retry'), onPressed: _play, icon: const Icon(Icons.refresh_rounded, size: 18), label: Text(l.demoRetry))),
       ],
       if (_phase == _Phase.ready) Text(l.demoMuted, style: context.caption),
-      _downloadLine(context),
+      if (!_video.isBundled) _downloadLine(context),
     ]);
   }
 }

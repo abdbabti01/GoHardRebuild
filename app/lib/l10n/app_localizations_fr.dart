@@ -13696,6 +13696,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Elle n\'a pas pu être chargée. Vérifiez votre connexion et réessayez. Le guide écrit ci-dessous reste disponible.';
 
   @override
+  String get demoPreviewNote =>
+      'Aperçu interne : un échantillon gratuit d’Exercise Animatic, réservé aux tests. Sa licence de diffusion n’est pas confirmée et la technique n’a pas été vérifiée par un professionnel.';
+
+  @override
+  String get demoPreviewMissing =>
+      'Cet extrait d’aperçu n’est pas inclus dans cette version. Le guide écrit ci-dessous reste disponible.';
+
+  @override
   String get demoRetry => 'Réessayer';
 
   @override

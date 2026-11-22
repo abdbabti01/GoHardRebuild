@@ -520,5 +520,45 @@
         }
       }
     }
-  }
+  },
+  "previews": [
+    {
+      "catalogKey": "bodyweight-squat",
+      "kind": "video",
+      "status": "internal-preview",
+      "poster": "assets/demos/preview/bodyweight-squat.jpg",
+      "variant": "Bodyweight squat, arms reaching forward at shoulder height, down to about thighs parallel: an anatomical figure with the thigh muscles highlighted, one repetition, three-quarter view.",
+      "rationale": "Owner-chosen visual-direction test (21 Nov 2026). Exact catalogue variant: bodyweight, no load.",
+      "provider": {
+        "name": "Exercise Animatic",
+        "sample": "02 Bodyweight Squat",
+        "page": "https://www.exerciseanimatic.com/free-fitness-exercise-videos",
+        "retrieved": "2026-11-21"
+      },
+      "credit": {
+        "creator": "Exercise Animatic (N.C.A. Health & Wellness LTD)",
+        "licence": "free sample, licence for distribution not confirmed (internal preview only)",
+        "licenceUrl": "https://www.exerciseanimatic.com/tos",
+        "attribution": "Video by Exercise Animatic, free sample, licence for distribution not confirmed (internal preview only)"
+      },
+      "changes": "Clip played unchanged from the local slot (no conversion or cropping). Poster: its first frame, scaled to 640 px wide.",
+      "video": {
+        "asset": "assets/demos/preview/bodyweight-squat.mp4",
+        "bytes": 2540138,
+        "sha256": "e3d50302b31b16c04dd7e039df4def95c1b56067c95ceb0a22a790d65f18ba2d",
+        "durationSeconds": 5.7,
+        "width": 1920,
+        "height": 1080,
+        "codec": "H.264 Main, 30 fps, no audio"
+      },
+      "translations": {
+        "fr": {
+          "variant": "Squat au poids du corps, bras tendus vers l'avant à hauteur d'épaules, jusqu'aux cuisses à peu près parallèles : figure anatomique, muscles des cuisses mis en évidence, une répétition, vue de trois quarts."
+        },
+        "ar": {
+          "variant": "القرفصاء بوزن الجسم، الذراعان ممدودتان إلى الأمام بمستوى الكتفين، حتى تصبح الفخذان موازيتين تقريبًا للأرض: مجسّم تشريحي تبرز فيه عضلات الفخذ، تكرار واحد، منظر ثلاثة أرباع."
+        }
+      }
+    }
+  ]
 }

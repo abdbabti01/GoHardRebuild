@@ -20136,6 +20136,18 @@ abstract class AppLocalizations {
   /// **'It could not be loaded. Check your connection and try again. The written guide below is unaffected.'**
   String get demoStreamFailed;
 
+  /// Shown in internal preview builds above a sample clip whose licence is not confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal preview: a free sample from Exercise Animatic, for testing only. Its licence for distribution is not confirmed, and the technique has not been reviewed by a professional.'**
+  String get demoPreviewNote;
+
+  /// An internal preview build was made without the local sample file.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview clip is not in this build. The written guide below is unaffected.'**
+  String get demoPreviewMissing;
+
   /// Retry playing the clip.
   ///
   /// In en, this message translates to:

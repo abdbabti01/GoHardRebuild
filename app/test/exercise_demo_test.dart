@@ -802,6 +802,180 @@ void main() {
       expect(tester.takeException(), isNull, reason: 'picker');
     });
   });
+
+  /// Internal preview (docs/EXERCISE_DEMOS.md › Internal preview): the Exercise Animatic sample in the local slot.
+  group('internal preview', () {
+    final preview = ExerciseMediaCatalog.parse(_manifestText, preview: true);
+
+    test('off unless the build asks; on, it maps only the exact bodyweight-squat key, played from the local slot, and every other key is as it was', () {
+      expect(demoPreview, isFalse, reason: 'normal builds and tests never define GOHARD_DEMO_PREVIEW');
+      expect(_manifest.forKey('bodyweight-squat'), isNull, reason: 'without the switch: still the written guide');
+      expect(preview.rejected, isEmpty);
+      final m = preview.forKey('bodyweight-squat')!;
+      expect((m.isPreview, m.isVideo, m.video!.isBundled, m.video!.url.path, m.poster),
+          (true, true, true, 'assets/demos/preview/bodyweight-squat.mp4', 'assets/demos/preview/bodyweight-squat.jpg'));
+      expect(m.credit.creator, contains('Exercise Animatic'));
+      expect(m.credit.licence, contains('not confirmed'));
+      for (final other in ['back-squat', 'goblet-squat', 'bulgarian-split-squat', 'leg-press', 'custom:bodyweight-squat', 'Bodyweight squat']) {
+        expect(preview.forKey(other), isNull, reason: other);
+      }
+      expect(preview.media.keys.toSet(), {..._manifest.media.keys, 'bodyweight-squat'});
+      for (final k in _manifest.media.keys) {
+        expect(preview.media[k]!.poster, _manifest.media[k]!.poster, reason: k);
+        expect(preview.media[k]!.isPreview, isFalse, reason: k);
+      }
+    });
+
+    test('a preview entry outside the slot, on the web or not marked internal-preview is left out', () {
+      final doc = jsonDecode(_manifestText) as Json;
+      final entry = (doc['previews'] as List).single as Json;
+      Json bad(Json Function(Json v) change) => change(jsonDecode(jsonEncode(entry)) as Json);
+      final m = ExerciseMediaCatalog.parse(
+          jsonEncode({
+            ...doc,
+            'previews': [
+              bad((v) => v..['video']['asset'] = 'assets/demos/bodyweight-squat.mp4'),
+              bad((v) => v..['poster'] = 'assets/demos/bodyweight-squat.jpg'),
+              bad((v) => v..['status'] = 'approved'),
+              bad((v) => v..['video'] = {...(v['video'] as Json)..remove('asset'), 'url': 'https://wger.de/x.mp4'}),
+            ],
+          }),
+          preview: true);
+      expect(m.forKey('bodyweight-squat'), isNull);
+      expect(m.rejected, hasLength(4));
+    });
+
+    testWidgets('the sheet: poster and tap-to-play (no autoplay), the existing controls, no download offer, labelled as an internal preview; a build without the file says so', (
+      tester,
+    ) async {
+      final log = <String>[];
+      final asked = <DemoVideo>[];
+      var missing = false;
+      await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: '2026-10-18')))!,
+        ..._demoOverrides(tmp, (v, saved) {
+          asked.add(v);
+          return FakePlayer(log, fail: missing);
+        }, media: preview),
+      ], home: _Host((c) => showExerciseDetails(c, exercise: (catalogKey: 'bodyweight-squat', name: 'Bodyweight squat', isTimed: false))));
+      await tester.tap(find.byKey(const Key('open')));
+      await _settle(tester);
+      expect(find.byKey(const Key('demo-play')), findsOneWidget);
+      expect(asked, isEmpty, reason: 'nothing plays until Play');
+      expect(find.byKey(const Key('demo-preview-note')), findsOneWidget);
+      expect(find.textContaining('Internal preview'), findsOneWidget);
+      expect(find.byKey(const Key('demo-download')), findsNothing, reason: 'a bundled preview is never downloaded or saved');
+      expect(find.byKey(const Key('demo-saved-state')), findsNothing);
+      expect(find.textContaining('Video by Exercise Animatic'), findsOneWidget, reason: 'credit kept');
+
+      await tester.tap(find.byKey(const Key('demo-play')));
+      await _settle(tester);
+      expect(asked.single.isBundled, isTrue);
+      expect(log, ['init', 'volume 0.0', 'loop true', 'speed 1.0', 'play']);
+      await tester.ensureVisible(find.byKey(const Key('demo-speed-0.5')));
+      await tester.tap(find.byKey(const Key('demo-speed-0.5')));
+      await _settle(tester);
+      expect(log.last, 'speed 0.5');
+      expect(find.byKey(const Key('demo-fullscreen')), findsOneWidget);
+      expect(find.byKey(const Key('demo-download')), findsNothing);
+
+      Navigator.of(tester.element(find.byKey(const Key('exercise-info-sheet')))).pop();
+      await _settle(tester);
+      missing = true;
+      await tester.tap(find.byKey(const Key('open')));
+      await _settle(tester);
+      await tester.tap(find.byKey(const Key('demo-play')));
+      await _settle(tester);
+      expect(find.byKey(const Key('demo-unavailable')), findsOneWidget);
+      expect(find.text('This preview clip is not in this build. The written guide below is unaffected.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the picker: Watch demo only on Bodyweight squat; back, goblet and split squats keep their written guide', (tester) async {
+      await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: '2026-10-18')))!,
+        ..._demoOverrides(tmp, (v, saved) => FakePlayer([]), media: preview),
+        exerciseChoicesProvider.overrideWithValue(_catalog),
+      ], home: const ExercisePicker());
+      await tester.enterText(find.byKey(const Key('exercise-search')), 'squat');
+      await _settle(tester);
+      expect(find.byKey(const Key('exercise-demo-bodyweight-squat')), findsOneWidget);
+      for (final k in ['back-squat', 'goblet-squat', 'bulgarian-split-squat']) {
+        expect(find.byKey(Key('exercise-demo-$k')), findsNothing, reason: k);
+        expect(find.byKey(Key('exercise-about-$k')), findsOneWidget, reason: k);
+      }
+      await tester.tap(find.byKey(const Key('exercise-demo-bodyweight-squat')));
+      await _settle(tester);
+      expect(find.byKey(const Key('demo-preview-note')), findsOneWidget);
+    });
+
+    testWidgets('recording: the preview opens from the selected squat and closing it keeps the selection, typed reps, recorded set, workout clock and rest timer', (
+      tester,
+    ) async {
+      final now = DateTime.utc(2026, 10, 12, 15, 0, 30);
+      final open = {
+        'id': 'w-open', 'kind': 'manual', 'title': 'Legs', 'dayKey': '2026-10-12', 'startedAtUtc': '2026-10-12T15:00:00Z',
+        'finishedAtUtc': null, 'isDeleted': false,
+        'exercises': [
+          {'id': 'x1', 'ordinal': 1, 'name': 'Bodyweight squat', 'catalogKey': 'bodyweight-squat', 'isPrescribed': true, 'isTimed': false,
+            'targetSets': 3, 'targetRepsMin': 10, 'targetRepsMax': 15, 'restSeconds': 90, 'isDeleted': false},
+          {'id': 'x2', 'ordinal': 2, 'name': 'Goblet squat', 'catalogKey': 'goblet-squat', 'isPrescribed': true, 'isTimed': false,
+            'targetSets': 3, 'targetRepsMin': 8, 'targetRepsMax': 12, 'restSeconds': 90, 'isDeleted': false},
+        ],
+      };
+      final done = {'id': 's1', 'exerciseId': 'x1', 'workoutId': 'w-open', 'reps': 12, 'loadKg': null, 'durationSeconds': null,
+        'performedAtUtc': '2026-10-12T15:00:00Z', 'revision': 1, 'isDeleted': false};
+      final overrides = (await tester.runAsync(() => overridesFor(day: '2026-10-12', workouts: [open], sets: [done])))!;
+      final db = AppDb(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = _RestingRepo(SyncEngine(db, Api(FakeServer(), SessionManager(MemorySecretStore())), SessionManager(MemorySecretStore())), now);
+      final asked = <DemoVideo>[];
+      await pumpApp(
+        tester,
+        [
+          ...overrides,
+          ..._demoOverrides(tmp, (v, saved) {
+            asked.add(v);
+            return FakePlayer([]);
+          }, media: preview),
+          workoutRepositoryProvider.overrideWithValue(repo),
+          clockProvider.overrideWithValue(FakeClock(now)),
+        ],
+        home: Scaffold(body: SingleChildScrollView(padding: const EdgeInsets.all(16), child: WorkoutRecorder(workoutId: 'w-open', onLeave: () {}))),
+        settle: false,
+        size: const Size(390, 2400),
+      );
+      await tester.pump();
+      await tester.pump();
+      String? text(Key k) => tester.widget<Text>(find.byKey(k)).data;
+      final repsField = find.descendant(of: find.byKey(const Key('set-reps')), matching: find.byType(TextField));
+      await tester.enterText(repsField, '11');
+      await tester.pump();
+      final heading = text(const Key('entry-heading')), rest = text(const Key('rest-clock'));
+      final clocks = find.textContaining(RegExp(r'^\d+:\d\d')).evaluate().map((e) => (e.widget as Text).data).toList();
+      final saves = repo.saved.length;
+
+      await tester.ensureVisible(find.byKey(const Key('workout-demo-thumb')));
+      await tester.tap(find.byKey(const Key('workout-demo-thumb')));
+      await _settle(tester);
+      expect(find.byKey(const Key('demo-preview-note')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('demo-play')));
+      await _settle(tester);
+      expect(asked.single.url.path, 'assets/demos/preview/bodyweight-squat.mp4');
+      Navigator.of(tester.element(find.byKey(const Key('exercise-info-sheet')))).pop();
+      await _settle(tester);
+
+      expect(tester.widget<TextField>(repsField).controller!.text, '11', reason: 'typed reps kept');
+      expect(text(const Key('entry-heading')), heading, reason: 'the recorded set still counts');
+      expect(text(const Key('rest-clock')), rest);
+      expect(find.textContaining(RegExp(r'^\d+:\d\d')).evaluate().map((e) => (e.widget as Text).data).toList(), clocks,
+          reason: 'workout clock and rest timer unchanged');
+      expect({for (final r in repo.saved.skip(saves)) (r.restRemainingSeconds(now), r.isPaused, r.selectedExerciseId)}, anyOf(isEmpty, {(60, false, null)}),
+          reason: 'selection, rest and pause unchanged');
+      expect(repo.recorded, 0);
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
 }
 
 /// A repository with a workout 30 s into a 90 s rest. Saves are recorded; nothing is recorded as a set here.

@@ -37,6 +37,8 @@ try {
         $gpsFeed = $null
         # journey_move_test: SIMULATED steps (the emulator has no step counter), labelled on screen.
         [string[]]$simSteps = if ($journey -in 'journey_move_test', 'journey_ux_test', 'journey_today_water_test') { '--dart-define=GOHARD_SIM_STEPS=true' } else { @() }
+        # journey_preview_test: the internal demonstration preview (docs/EXERCISE_DEMOS.md), with whatever is in the local slot.
+        if ($journey -eq 'journey_preview_test') { $simSteps += '--dart-define=GOHARD_DEMO_PREVIEW=true' }
         if ($journey -in 'journey_move_test', 'journey_ux_test') {
             if ($device -notmatch '^emulator-') { Fail 'journey_move_test simulates GPS positions and so needs an emulator.' }
             # SIMULATED GPS: a run north at about 3.5 m/s, one position a second, through Android's test location provider.
@@ -187,7 +189,7 @@ try {
                 }
             }
         }
-        if ($journey -eq 'journey_demo_test') {
+        if ($journey -in 'journey_demo_test', 'journey_preview_test') {
             # The demonstration journey's markers: host captures (adb screencap, so the native video surface is in them),
             # Home and back, and the network off and on. It plays a real licensed wger clip, so the network starts on.
             & $Adb -s $device shell svc wifi enable
@@ -248,6 +250,11 @@ try {
             # back; a file another program holds for a moment is retried, and one that stays locked fails the run
             # by name rather than leaving an older picture in its place.
             $captured = @(Get-ChildItem $shots -Filter *.png)
+            if ($journey -eq 'journey_preview_test') {
+                # They show a third-party sample whose licence is not confirmed: they stay in app\build, never in docs\evidence.
+                Write-Host "    $($captured.Count) captures kept out of git in $shots" -ForegroundColor DarkGray
+                continue
+            }
             if ($captured.Count -eq 0) { Fail "The native journey '$journey' passed but saved no screenshots." }
             foreach ($shot in $captured) {
                 $target = Join-Path $Root "docs\evidence\screenshots\$($shot.Name)"
@@ -279,7 +286,7 @@ try {
                 Stop-Job $feeder; Remove-Job $feeder
                 if ($journey -eq 'journey_runwalk_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
                 if ($journey -eq 'journey_device_test') { & $Adb -s $device shell cmd location providers remove-test-provider gps 2>$null | Out-Null }   # give the emulator its own position back
-                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_progress_test', 'journey_meals_test', 'journey_eatout_test', 'journey_demo_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
+                if ($journey -in 'journey_offline_test', 'journey_plan_test', 'journey_water_test', 'journey_progress_test', 'journey_meals_test', 'journey_eatout_test', 'journey_demo_test', 'journey_preview_test') { & $Adb -s $device shell svc wifi enable; & $Adb -s $device shell svc data enable }
             }
         }
     }

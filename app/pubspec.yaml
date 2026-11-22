@@ -53,6 +53,7 @@ flutter:
     - assets/coach/
     - assets/icons/
     - assets/demos/
+    - assets/demos/preview/
   fonts:
     - family: Inter
       fonts:

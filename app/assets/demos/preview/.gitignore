@@ -1,0 +1,4 @@
+# Internal-preview slot (docs/EXERCISE_DEMOS.md > Internal preview): third-party samples whose licence
+# does not allow distribution. Never commit them; only GOHARD_DEMO_PREVIEW builds made on this machine bundle them.
+*
+!.gitignore

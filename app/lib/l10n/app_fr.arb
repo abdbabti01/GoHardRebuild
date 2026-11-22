@@ -3324,6 +3324,8 @@
   "demoUnavailable": "Démonstration indisponible",
   "demoSavedFailed": "La copie enregistrée n'a pas pu être lue. Supprimez le téléchargement et réessayez.",
   "demoStreamFailed": "Elle n'a pas pu être chargée. Vérifiez votre connexion et réessayez. Le guide écrit ci-dessous reste disponible.",
+  "demoPreviewNote": "Aperçu interne : un échantillon gratuit d’Exercise Animatic, réservé aux tests. Sa licence de diffusion n’est pas confirmée et la technique n’a pas été vérifiée par un professionnel.",
+  "demoPreviewMissing": "Cet extrait d’aperçu n’est pas inclus dans cette version. Le guide écrit ci-dessous reste disponible.",
   "demoRetry": "Réessayer",
   "demoMuted": "Sans son. Elle se répète jusqu'à ce que vous la mettiez en pause."
 }

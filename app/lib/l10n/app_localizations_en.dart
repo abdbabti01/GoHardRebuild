@@ -13485,6 +13485,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'It could not be loaded. Check your connection and try again. The written guide below is unaffected.';
 
   @override
+  String get demoPreviewNote =>
+      'Internal preview: a free sample from Exercise Animatic, for testing only. Its licence for distribution is not confirmed, and the technique has not been reviewed by a professional.';
+
+  @override
+  String get demoPreviewMissing =>
+      'This preview clip is not in this build. The written guide below is unaffected.';
+
+  @override
   String get demoRetry => 'Retry';
 
   @override

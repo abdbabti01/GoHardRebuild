@@ -21,6 +21,12 @@ import '../../data/models.dart';
 const maxClipBytes = 20 * 1024 * 1024;
 const demoCacheBytes = 100 * 1024 * 1024;
 
+/// Internal preview builds only (`--dart-define=GOHARD_DEMO_PREVIEW=true`; off in every normal release): the manifest's
+/// `previews` entries replace the media for their exact keys. Their clips are bundled from the git-ignored local slot
+/// [previewSlot] (docs/EXERCISE_DEMOS.md › Internal preview), never streamed or saved.
+const demoPreview = bool.fromEnvironment('GOHARD_DEMO_PREVIEW');
+const previewSlot = 'assets/demos/preview/';
+
 @immutable
 class DemoCredit {
   const DemoCredit({required this.creator, required this.licence, required this.licenceUrl, required this.attribution});
@@ -37,6 +43,9 @@ class DemoVideo {
   final int width, height;
   double get aspectRatio => width / height;
 
+  /// A clip inside the app bundle (an internal preview): played from there, never streamed or saved.
+  bool get isBundled => url.scheme == 'asset';
+
   /// The saved copy's file name: its content hash, so two keys never share a file by accident and a stale copy is never trusted.
   String get fileName => '$sha256${p.extension(url.path).toLowerCase()}';
 }
@@ -45,7 +54,7 @@ class DemoVideo {
 @immutable
 class ExerciseMedia {
   const ExerciseMedia({required this.catalogKey, required this.poster, required this.variant, required this.credit, required this.changes,
-      required this.sourcePage, required this.providerName, this.video, this.positions});
+      required this.sourcePage, required this.providerName, this.video, this.positions, this.isPreview = false});
   /// [variant] is in the app's language when the manifest has it (English otherwise); [changes] is the English record.
   final String catalogKey, poster, variant, changes, sourcePage, providerName;
   final DemoCredit credit;
@@ -55,6 +64,9 @@ class ExerciseMedia {
   /// establish those positions. Null: no position labels.
   final (String, String)? positions;
   bool get isVideo => video != null;
+
+  /// From the manifest's `previews`: an internal preview whose licence for distribution is not confirmed.
+  final bool isPreview;
 
   /// The site the media came from, as credited ("wger.de").
   String get providerHost => Uri.parse(sourcePage).host;
@@ -81,7 +93,8 @@ class ExerciseMediaCatalog {
 
   /// [lang] picks the manifest's French or Arabic variant and technique text (`translations`); anything not
   /// translated stays in English rather than being left out.
-  factory ExerciseMediaCatalog.parse(String text, {String lang = 'en'}) {
+  /// With [preview], each `previews` entry replaces the media for its exact key (see [demoPreview]).
+  factory ExerciseMediaCatalog.parse(String text, {String lang = 'en', bool preview = false}) {
     final j = jsonDecode(text) as Json;
     Json? tr(Json e) => switch (e['translations']) { final Json t => t[lang] is Json ? t[lang] as Json : null, _ => null };
     final hosts = {for (final h in j['allowedHosts'] as List? ?? const []) h as String};
@@ -95,6 +108,15 @@ class ExerciseMediaCatalog {
         media[m.catalogKey] = m;
       } on Object catch (error) {
         rejected.add('$key: ${error is FormatException ? error.message : error}');
+      }
+    }
+    for (final raw in preview ? j['previews'] as List? ?? const [] : const []) {
+      final e = raw is Json ? raw : const <String, dynamic>{};
+      try {
+        final m = _entry(e, hosts, tr(e), preview: true);
+        media[m.catalogKey] = m;
+      } on Object catch (error) {
+        rejected.add('preview ${e['catalogKey']}: ${error is FormatException ? error.message : error}');
       }
     }
     final sources = {
@@ -118,7 +140,7 @@ class ExerciseMediaCatalog {
     return ExerciseMediaCatalog._(j['version'] as int, media, technique, j['techniqueReviewNote'] as String? ?? '', rejected);
   }
 
-  static ExerciseMedia _entry(Json e, Set<String> hosts, Json? tr) {
+  static ExerciseMedia _entry(Json e, Set<String> hosts, Json? tr, {bool preview = false}) {
     String need(Json j, String k) {
       final v = j[k];
       if (v is! String || v.trim().isEmpty) throw FormatException('missing $k');
@@ -127,9 +149,9 @@ class ExerciseMediaCatalog {
 
     final key = need(e, 'catalogKey');
     if (key.startsWith('custom:')) throw const FormatException('custom exercises never get public media');
-    if (e['status'] != 'approved') throw const FormatException('not approved');
+    if (e['status'] != (preview ? 'internal-preview' : 'approved')) throw const FormatException('not approved');
     final poster = need(e, 'poster');
-    if (!poster.startsWith('assets/demos/')) throw const FormatException('poster must be bundled');
+    if (!poster.startsWith(preview ? previewSlot : 'assets/demos/')) throw const FormatException('poster must be bundled');
     final credit = e['credit'] is Json ? e['credit'] as Json : throw const FormatException('missing credit');
     final licenceUrl = Uri.tryParse(need(credit, 'licenceUrl'));
     if (licenceUrl == null || licenceUrl.scheme != 'https') throw const FormatException('licence link must be HTTPS');
@@ -138,8 +160,11 @@ class ExerciseMediaCatalog {
     switch (e['kind']) {
       case 'video':
         final v = e['video'] is Json ? e['video'] as Json : throw const FormatException('missing video');
-        final url = Uri.tryParse(need(v, 'url'));
-        if (url == null || url.scheme != 'https' || !hosts.contains(url.host)) throw const FormatException('clip must be HTTPS on a reviewed host');
+        // A preview clip is a file in the local slot, bundled by the preview build; every other clip is HTTPS on a reviewed host.
+        final url = preview ? Uri(scheme: 'asset', path: need(v, 'asset')) : Uri.tryParse(need(v, 'url'));
+        if (url == null || (preview ? !url.path.startsWith(previewSlot) : url.scheme != 'https' || !hosts.contains(url.host))) {
+          throw FormatException(preview ? 'preview clip must be in $previewSlot' : 'clip must be HTTPS on a reviewed host');
+        }
         final bytes = v['bytes'];
         if (bytes is! int || bytes <= 0 || bytes > maxClipBytes) throw const FormatException('clip size missing or over 20 MiB');
         final sha = need(v, 'sha256');
@@ -157,7 +182,7 @@ class ExerciseMediaCatalog {
     }
     return ExerciseMedia(
       catalogKey: key, poster: poster, variant: switch (tr?['variant']) { final String v when v.trim().isNotEmpty => v, _ => need(e, 'variant') },
-      changes: need(e, 'changes'), video: video,
+      changes: need(e, 'changes'), video: video, isPreview: preview,
       positions: switch (e['positions']) { [final String a, final String b] when video == null => (a, b), _ => null },
       sourcePage: need(provider, 'page'), providerName: need(provider, 'name'),
       credit: DemoCredit(creator: need(credit, 'creator'), licence: need(credit, 'licence'), licenceUrl: licenceUrl.toString(), attribution: need(credit, 'attribution')),
@@ -177,7 +202,7 @@ class ExerciseMediaCatalog {
 
 final exerciseMediaProvider = FutureProvider<ExerciseMediaCatalog>((ref) async {
   final lang = ref.watch(appLocaleProvider).languageCode;
-  return ExerciseMediaCatalog.parse(await rootBundle.loadString('assets/data/exercise-media.json'), lang: lang);
+  return ExerciseMediaCatalog.parse(await rootBundle.loadString('assets/data/exercise-media.json'), lang: lang, preview: demoPreview);
 });
 
 // ------------------------------------------------------------------ downloads on this phone

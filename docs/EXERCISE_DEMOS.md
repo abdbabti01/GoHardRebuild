@@ -200,6 +200,51 @@ not been reviewed by a fluent speaker.
   none, and 320 px at 2× text. Test renders: a clip shows its poster.
 - Device: `integration_test/journey_demo_test.dart` (see the ledger for the run and its result).
 
+## Internal preview (Exercise Animatic sample, 21 Nov 2026)
+
+The owner liked Exercise Animatic's bodyweight-squat sample and asked to test that visual direction inside the app
+(branch `feature/animatic-squat-preview`, from `feature/wger-demonstrations`). Custom mannequin production is paused,
+and its work is kept on `feature/exercise-mannequin`.
+
+- **Source**: free sample 02, "Bodyweight Squat", from https://www.exerciseanimatic.com/free-fitness-exercise-videos
+  (a Google Drive download, `Bodyweight Squat.mp4`, 2,540,138 bytes, SHA-256 `e3d50302…a2d`, H.264 Main 1920 × 1080,
+  30 fps, 5.7 s, no audio). It shows one repetition of an anatomical figure with the thigh muscles highlighted, in a
+  three-quarter view. There is no watermark or credit text in the clip. The original is kept outside the repo at
+  `C:\dev\third-party\exercise-animatic\sample-02`.
+- **Terms**: the sample page states no licence for the free samples. The Terms of Service (§7) forbid reproducing,
+  distributing or displaying the content without written permission, and the licence (§8) is granted "with eligible
+  purchases". So the sample is treated as **internal testing only**. Building an IPA or any shared build with it needs
+  **written permission from Exercise Animatic** to put the free sample in an app build given to testers, or a purchase
+  (the product page lists an N-ECL licence for mobile apps).
+- **Switch**: `--dart-define=GOHARD_DEMO_PREVIEW=true`. It is off by default: CI, `ios-unsigned-ipa.yml` and every normal
+  build never set it. With the switch on, the manifest's `previews` entries replace the media for their **exact** keys.
+  The only entry is `bodyweight-squat`, so back, goblet and Bulgarian split squats and every other key are unchanged.
+- **Local slot**: `app/assets/demos/preview/` (git-ignored except its `.gitignore`) holds `bodyweight-squat.mp4` and
+  `bodyweight-squat.jpg` (the first frame scaled to 640 px wide). Builds made on a machine with those files bundle them,
+  so remove them before making any build that will be shared. CI's checkout has an empty slot.
+- **App**: the same picker action, recorder thumbnail, sheet and player. Tap-to-play with the poster, Play/Pause,
+  Replay, 0.5×/1×, full screen and background pause all work as for the other clips. The clip plays from the app bundle
+  and has no Download line. The sheet adds "Internal preview: … licence for distribution is not confirmed, and the
+  technique has not been reviewed by a professional" (en, fr, ar). The credit section names Exercise Animatic, links the
+  Terms of Service and says the licence is not confirmed. A preview build without the file says "This preview clip is
+  not in this build" with Retry and keeps the written guide.
+- **Offline**: not exercised as a separate check. The clip is in the build and is never stored by the app's download
+  store, and the terms do not confirm that storing it is allowed.
+- **Tests**: `test/exercise_demo_test.dart` › internal preview (5); the full suite passed (1,015). Device:
+  `integration_test/journey_preview_test.dart` (`scripts\test-android.ps1 -Only journey_preview_test`). Its captures
+  stay in `app\build\journey-shots` and never go to `docs\evidence`. Run it a second time with the slot emptied to check
+  the missing-file path.
+- **Device run, 21 Nov 2026 (Android emulator Pixel_7, not an iPhone)**: with the sample in the build it passed. Watch
+  demo appeared only on Bodyweight squat. Nothing played before Play. The clip decoded at 1920 × 1080, muted, and its
+  position advanced; it was shown 371 × 209 in the sheet (16:9, not stretched or cropped). 0.5× and full screen (same
+  shape) worked. It paused on Home, stayed paused on return and resumed on Play. Afterwards the typed reps (10), the
+  recorded set, the selected movement and the Pause label were unchanged, and the workout clock kept running (52 s with
+  the demonstration open, 52 s more on the clock). An added movement with no target has no rest timer, so the device
+  run did not show one; the widget test covers keeping the rest timer. With the slot emptied it also passed:
+  "Demonstration unavailable", the preview's reason, Retry and the written guide, with the workout unchanged. The
+  figure fills about a third of the frame's width, so it looks small in the sheet.
+- **Coverage if bought**: [EXERCISE_ANIMATIC_COVERAGE.md](EXERCISE_ANIMATIC_COVERAGE.md).
+
 ## Not verified
 
 Real iPhone decoding of the QuickTime clips and the full-screen page, music continuing on a real phone, VoiceOver and

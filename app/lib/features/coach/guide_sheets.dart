@@ -237,6 +237,7 @@ class _ExerciseInfo extends ConsumerWidget {
       ] else ...[
         // 1. The exact variant the media shows, under the name in the title.
         if (media != null) Text(l.demoShows(media.variant), key: const Key('exercise-variant'), style: context.sansStyle(14.5, color: context.c.secondary)),
+        if (media?.isPreview ?? false) ...[const SizedBox(height: 6), StatusLine(Icons.science_outlined, l.demoPreviewNote, key: const Key('demo-preview-note'))],
         // 2. The video, the pictures, or plainly none.
         if (demo != null) ...[const SizedBox(height: 10), demo],
         // 3–4. Setup, Movement and Common mistakes (or the general cues).

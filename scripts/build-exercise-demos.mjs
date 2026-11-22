@@ -158,6 +158,8 @@ const manifest = {
   techniqueReviewNote: 'Written by the developer from the exercise-specific source named with it, checked on the date shown. Not reviewed by a qualified coach.',
   techniqueSources: spec.techniqueSources,
   technique: Object.entries(spec.technique).map(([catalogKey, t]) => ({ catalogKey, ...t })),
+  // Internal preview builds only (GOHARD_DEMO_PREVIEW); files in the git-ignored app/assets/demos/preview/ slot.
+  previews: spec.previews ?? [],
 };
 writeFileSync(join(root, 'app', 'assets', 'data', 'exercise-media.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
