@@ -7,11 +7,45 @@
 name: ios-unsigned-ipa
 on:
   workflow_dispatch:
+    inputs:
+      demo_preview:
+        description: 'Owner-approved private test only: bundle the internal demonstration preview (docs/EXERCISE_DEMOS.md) from the draft release below'
+        type: boolean
+        default: false
+      preview_release:
+        description: 'Name of the draft release holding bodyweight-squat.mp4 and bodyweight-squat.jpg'
+        type: string
+        default: 'internal-preview-assets'
   push:
     tags: ['ipa-*']
 
 jobs:
+  # Only for a dispatched build with demo_preview on (never a tag build). Listing draft releases needs contents: write,
+  # so this job is kept apart from the build and runs no third-party action; the files reach the build as a 1-day artifact.
+  preview-files:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.demo_preview }}
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - name: Fetch the preview files from the draft release
+        env: { GH_TOKEN: '${{ github.token }}', NAME: '${{ inputs.preview_release }}' }
+        run: |
+          mkdir -p slot
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          rel=$(curl -sSf -H "Authorization: Bearer $GH_TOKEN" "$api/releases?per_page=100" | jq -c --arg n "$NAME" '[.[] | select(.draft and .name == $n)][0]')
+          [ "$rel" != "null" ] || { echo "::error::No draft release named $NAME"; exit 1; }
+          for f in bodyweight-squat.mp4 bodyweight-squat.jpg; do
+            id=$(echo "$rel" | jq -r --arg f "$f" '.assets[] | select(.name == $f) | .id')
+            [ -n "$id" ] || { echo "::error::$f is missing from $NAME"; exit 1; }
+            curl -sSfL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/octet-stream' "$api/releases/assets/$id" -o "slot/$f"
+          done
+          ls -la slot
+      - uses: actions/upload-artifact@v4
+        with: { name: preview-slot, path: slot/, retention-days: 1, if-no-files-found: error }
+
   build:
+    needs: preview-files
+    if: ${{ !failure() && !cancelled() }}   # runs when preview-files is skipped (every normal build)
     runs-on: macos-latest
     timeout-minutes: 45
     env:
@@ -19,6 +53,25 @@ jobs:
       API_BASE: ${{ vars.GOHARD_TESTING_API_BASE || 'https://gohardrebuild-production.up.railway.app' }}
     steps:
       - uses: actions/checkout@v4
+
+      # Internal preview only: the files go into the git-ignored local slot, are checked against the manifest's SHA-256,
+      # and the preview is switched on for this build alone.
+      - name: Internal preview files
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.demo_preview }}
+        uses: actions/download-artifact@v4
+        with: { name: preview-slot, path: app/assets/demos/preview }
+      - name: Check the internal preview files
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.demo_preview }}
+        run: |
+          want=$(jq -r '.previews[] | select(.catalogKey == "bodyweight-squat") | .video.sha256' app/assets/data/exercise-media.json)
+          echo "$want  app/assets/demos/preview/bodyweight-squat.mp4" | shasum -a 256 -c
+          test -s app/assets/demos/preview/bodyweight-squat.jpg
+          echo "PREVIEW_DEFINE=--dart-define=GOHARD_DEMO_PREVIEW=true" >> "$GITHUB_ENV"
+          echo "IPA_NAME=GoHard-Dev-unsigned-internal-preview-${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "::notice::Internal preview build: contains a third-party sample; private test only"
+      - name: IPA name
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.demo_preview) }}
+        run: echo "IPA_NAME=GoHard-Dev-unsigned-${{ github.run_number }}" >> "$GITHUB_ENV"
 
       - name: Verify the testing API before building
         run: |
@@ -53,19 +106,19 @@ jobs:
 
       - name: Build (no code signing)
         working-directory: app
-        run: flutter build ios --release --no-codesign --dart-define=GOHARD_API_BASE="${API_BASE%/}" --build-number="${{ github.run_number }}" --dart-define=GOHARD_COMMIT="${GITHUB_SHA::7}" --dart-define=GOHARD_BUILD="${{ github.run_number }}"
+        run: flutter build ios --release --no-codesign --dart-define=GOHARD_API_BASE="${API_BASE%/}" --build-number="${{ github.run_number }}" --dart-define=GOHARD_COMMIT="${GITHUB_SHA::7}" --dart-define=GOHARD_BUILD="${{ github.run_number }}" $PREVIEW_DEFINE
 
       - name: Package the IPA
         working-directory: app
         run: |
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R build/ios/iphoneos/Runner.app "$RUNNER_TEMP/ipa/Payload/"
-          cd "$RUNNER_TEMP/ipa" && zip -qry "$RUNNER_TEMP/GoHard-Dev-unsigned-${{ github.run_number }}.ipa" Payload
+          cd "$RUNNER_TEMP/ipa" && zip -qry "$RUNNER_TEMP/$IPA_NAME.ipa" Payload
           ls -la "$RUNNER_TEMP"/*.ipa
 
       - uses: actions/upload-artifact@v4
         with:
-          name: GoHard-Dev-unsigned-ipa
-          path: ${{ runner.temp }}/GoHard-Dev-unsigned-${{ github.run_number }}.ipa
+          name: ${{ (github.event_name == 'workflow_dispatch' && inputs.demo_preview) && 'GoHard-Dev-unsigned-ipa-internal-preview' || 'GoHard-Dev-unsigned-ipa' }}
+          path: ${{ runner.temp }}/${{ env.IPA_NAME }}.ipa
           if-no-files-found: error
-          retention-days: 14
+          retention-days: ${{ (github.event_name == 'workflow_dispatch' && inputs.demo_preview) && 1 || 14 }}
