@@ -2933,3 +2933,5 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   (heading 684–708 visible, Add food 784–832 under the bar), details and settings opened, the server still holding one
   entry. Captures in docs/evidence/eat-compact-device/ (the green box is the emulator's TalkBack focus). Not run: iPhone,
   VoiceOver, live Groq.
+- Code ab3be2e: CI 255 (45328581173) passed; unsigned IPA run 84 (45330290097, tag `ipa-eat-compact-top-ab3be2e`) passed
+  (artifact GoHard-Dev-unsigned-ipa) and replaces IPA 83 (43dcda5). Not merged, not deployed.
