@@ -2981,3 +2981,44 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `ipa-food-search-describe-meal-53f74d7`) passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media: built from
   this branch, which has none). Not merged, not deployed (needs the API deploy for `coach.meal-log`; an older server keeps search
   and manual logging, and Describe your meal says it is unavailable).
+
+### 25 Nov 2026 — Leon/Leona's invitation in Add food; the three remaining checks (same branch, one release)
+
+- Owner request: finish the feature as one release: verify brand discovery, relevant clarification and more than 12 foods;
+  make Describe your meal an invitation from the coach in Add food; then one IPA, merge and testing deploy.
+  docs/FOOD_DATA.md › Search relevance, Describe your meal (Where, What is asked, More than twelve foods, AI usage).
+- Already correct (kept, now tested): an exact bundled match never hides branded products — Search more foods stays under
+  the results (now "Search more foods and brands"), one tap asks once, products after the plain foods with Brand/Generic,
+  no AI; an explicit brand is asked by itself and ranks first.
+- Fixed: "Weighed raw or cooked?" was asked for any weighed food whose record says raw (apple, banana, almonds,
+  broccoli…) and for toasted bread; now only for foods whose weight cooking changes, never for
+  `CommonFoodCatalog.eatenAsIs` (vegetables, fruit, dairy, fats & oils, snacks, drinks, bananas, eggs, egg whites, tofu),
+  toasted is not a cooking state, and a preparation in the food's own words ("cooked rice", "riz cuit") counts as said.
+- Fixed: more than 12 foods. The model was told "at most 12" (so it could stop silently); now it lists every food and the
+  API names the next 12 (`intent.extra`); each must be added with Add food or left out before the meal is complete; past 24
+  or with a name that does not check out none is named, and the meal stays incomplete until "Leave out the rest". The reply
+  asks for the rest in a new message. Nothing is invented.
+- New: the invitation at the top of Add food (selected guide, the existing speech bubble, compact action, cost note) is the
+  only Describe my meal entry (the two earlier rows removed); plain panel with the coach off or at very large text under
+  360 px (short promise there); honest at the limit (reset date, Finish my meal only with a draft open), on a server without
+  `coach.meal-log`, and when the allowance is unknown. Title, day/meal and invitation scroll with the page; the field pins at
+  the top; typing brings it to the top with results under it. Usage line at the limit: "No AI requests left this month ·
+  they come back on …". Hint: "For example: I ate 120 g of chicken and 100 g of potatoes."
+- Tests (this machine): API full suite 270/270 (`MealLogTests` extended: extra named, past 24 and unreadable not named,
+  "never stop early" in the instructions). App full suite 1055/1055; `meal_log_test` 13 (relevant questions, overflow
+  completeness), `meal_log_ui_test` 33 (brand discovery with an exact match; overflow named and resolved; overflow unnamed;
+  Leon and Leona invitations; coach off; one entry; date/meal incl. an earlier day; example never sent; limit with and
+  without a draft; unknown allowance, older server, server not reached; en/fr-CA/ar, light/dark, 390 px and 320 px at 2×;
+  focus never scrolls the pinned field; screen-reader order), `food_ui_test` updated. `flutter analyze` clean,
+  `check-l10n.mjs` OK (3343 messages). Renders docs/evidence/add-food-invitation/ (en Leon light, en Leona dark, fr Leona,
+  en and ar at 320 px 2×, coach off).
+- Local end to end (branch API, disposable DB `gohard_invite` since dropped, coach = `scripts/coach-stub.mjs` STUB, USDA =
+  saved real responses replayed): a sentence charged 1, the same request ID 0, a follow-up 1, an invalid draft 0, 14 foods
+  → 12 + `extra` [food13, food14] charged 1, a search 0.
+- Native (emulator Pixel_9, not a phone; Pixel_7's storage was full): `journey_describe_meal_test` passed against that
+  backend: the invitation, chicken breast and the corrected misspelling, Describe my meal, raw/cooked and which chicken,
+  Review › Log meal, Chicken breast and Potato logged once, allowance 0 → 1. Captures docs/evidence/describe-meal-device/
+  (dm-00 the invitation). STUB coach: the app/API path only, never how a live model reads words.
+- Code 8c85823: CI 264 (45482393611) passed (api, app). Replacement unsigned IPA run 86 (45485192244, tag `ipa-describe-invite-8c85823`)
+  passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media or preview options); supersedes IPA 85. Tag CI 265 passed.
+  Live Groq reading of meal sentences not verified here (no key, stub only): left for the owner's iPhone test.
