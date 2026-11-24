@@ -3022,3 +3022,6 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Code 8c85823: CI 264 (45482393611) passed (api, app). Replacement unsigned IPA run 86 (45485192244, tag `ipa-describe-invite-8c85823`)
   passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media or preview options); supersedes IPA 85. Tag CI 265 passed.
   Live Groq reading of meal sentences not verified here (no key, stub only): left for the owner's iPhone test.
+- 25 Nov 2026: merged and deployed as authorized. `main` fast-forwarded 2211ad0 → 1ebe45b; CI 267 (45487837784) passed on `main`;
+  Railway devoted-caring redeployed, hosted Ready (17 migrations), contract 2, `coach.meal-log` advertised. Deployed commit
+  1ebe45b; IPA 86 source commit 8c85823 (same app code). Release notes in docs/RELEASE_AND_ROLLBACK.md.

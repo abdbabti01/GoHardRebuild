@@ -145,6 +145,33 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Food search relevance, Describe your meal and the Add food invitation — deployed to testing 25 Nov 2026 (`main` 1ebe45b)
+
+- **What:** Food search ranks plain everyday foods before products (raw and cooked chicken breast first), respects
+  preparation, cut and brand, says Brand/Generic, collapses repeats, corrects misspellings and puts French/Arabic staples
+  in English for USDA; an exact match still offers **Search more foods and brands**. **Describe your meal**: Leon or
+  Leona invites it at the top of Add food (the only entry; plain panel with the coach off); one AI request reads the
+  sentence as words, the phone matches real food records and asks only what matters (raw or cooked only where cooking
+  changes the weight, which food, how much), the existing meal review's **Log meal** logs it once. Typed follow-ups change
+  the open draft. Foods past twelve are named and must be added with Add food or left out (docs/FOOD_DATA.md › Search
+  relevance, Describe your meal). Catalog v2 (77 foods). New strings in en/fr/ar.
+- **API:** `POST /coach/daily` kinds `ate`/`edit`, capability `coach.meal-log`, response fields `foods`, `edits`,
+  `extra`; USDA page sizes 25/15. No migration, no new configuration, contract 2. Charging: one request per usable
+  reading; questions, matching, search, review and logging never charged; unusable readings and retries not charged.
+- **Build:** code 8c85823 (CI 264); replacement unsigned IPA run 86 from 8c85823 (tag `ipa-describe-invite-8c85823`,
+  artifact GoHard-Dev-unsigned-ipa), supersedes IPA 85. 1ebe45b adds only the ledger, so IPA 86 has the deployed app
+  code. No exercise-preview code, media or build options.
+- **Merged and deployed:** authorized by the owner's request of 25 Nov 2026. `main` fast-forwarded 2211ad0 → 1ebe45b (main
+  had no newer commits). CI 267 passed on `main`. Railway devoted-caring redeployed; hosted `/health/ready` Ready with
+  17 migrations (unchanged), `/api/v1/capabilities` contract 2 and advertises `coach.meal-log`; `/coach/daily` without a
+  token 401. diplomatic-intuition not touched. No variable, secret or hosted account changed or created.
+- **Verified:** API 270/270, app 1055/1055, analyze, l10n; local end to end and emulator journey
+  `journey_describe_meal_test` with the coach **stub**. **Not verified:** live Groq reading of meal sentences (no
+  authenticated live test was possible without creating an account: left for the owner's iPhone test), live USDA brand
+  coverage beyond spot checks, iPhone, VoiceOver.
+- **Rollback:** revert 8c85823 and 53f74d7 (and their ledger commits); the API change is additive (an older app ignores
+  `coach.meal-log`), no data or schema is affected.
+
 ### Eat: meals first and a compact top — deployed 24 Nov 2026 (`main` c524e4f)
 
 - **What:** Eat's order is now summary › the day's meals › reminders › Eating out › History & trends (docs/FOOD_DATA.md
