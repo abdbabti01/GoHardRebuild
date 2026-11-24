@@ -2342,7 +2342,7 @@ abstract class AppLocalizations {
   /// Link asking the wider database.
   ///
   /// In en, this message translates to:
-  /// **'Search more foods'**
+  /// **'Search more foods and brands'**
   String get foodSearchMore;
 
   /// Under Search more foods. USDA FoodData Central is a proper name.
@@ -19926,22 +19926,10 @@ abstract class AppLocalizations {
   /// **'The food database is in English: searched for “{words}”.'**
   String foodSearchAskedAs(String words);
 
-  /// Add food: opens the coach to read a sentence about what was eaten.
+  /// Coach input hint when opened from Add food’s invitation. Never sent by itself.
   ///
   /// In en, this message translates to:
-  /// **'Describe your meal'**
-  String get foodDescribeTitle;
-
-  /// Add food: under Describe your meal.
-  ///
-  /// In en, this message translates to:
-  /// **'Say what you ate, like “120 g of chicken and 100 g of potatoes”. You review it before anything is logged.'**
-  String get foodDescribeSubtitle;
-
-  /// Coach input hint when opened from Describe your meal.
-  ///
-  /// In en, this message translates to:
-  /// **'For example: 2 eggs and a slice of toast'**
+  /// **'For example: I ate 120 g of chicken and 100 g of potatoes.'**
   String get dcDescribeHint;
 
   /// Coach intro when opened from Describe your meal.
@@ -20070,10 +20058,10 @@ abstract class AppLocalizations {
   /// **'Replaced by a newer meal below.'**
   String get dcMealReplaced;
 
-  /// Described meal: the sentence named more foods than one meal holds.
+  /// Described meal: more foods were named than one meal holds; the others are named on the card.
   ///
   /// In en, this message translates to:
-  /// **'I read the first {count} foods. Add the rest with Add food.'**
+  /// **'I can read up to {count} foods at a time. The others are listed below: add each one with Add food, or leave it out.'**
   String dcMealTooMany(int count);
 
   /// Described meal: a food the server dropped.
@@ -20147,6 +20135,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Describing a meal isn’t available on this server yet. Add food and logging still work.'**
   String get dcMealLogUnavailable;
+
+  /// Described meal: more foods were named than one meal holds and the rest could not be named.
+  ///
+  /// In en, this message translates to:
+  /// **'You named more than {count} foods and I couldn’t tell which ones are left, so they aren’t here. Review and log this meal, then describe the rest in a new message.'**
+  String dcMealTooManyUnnamed(int count);
+
+  /// Described meal: what a partial total is without, when foods past the limit could not be named.
+  ///
+  /// In en, this message translates to:
+  /// **'the rest of what you named'**
+  String get dcMealTheRest;
+
+  /// Described meal card: foods past the limit that could not be named.
+  ///
+  /// In en, this message translates to:
+  /// **'More than {count} foods were named: the rest isn’t in this meal. Describe it in a new message after logging, or add it with Add food.'**
+  String dcMealRestUnnamed(int count);
+
+  /// Described meal card: explicitly leave out unnamed foods past the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave out the rest'**
+  String get dcMealLeaveRest;
+
+  /// Described meal card: a food named past the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{food}: past the first {count} foods. Add it on its own, or leave it out.'**
+  String dcMealExtra(String food, int count);
+
+  /// Described meal card: log a food past the limit on its own with Add food.
+  ///
+  /// In en, this message translates to:
+  /// **'Add with Add food'**
+  String get dcMealExtraAdd;
+
+  /// Described meal card: leave a food past the limit out.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave out'**
+  String get dcMealExtraLeave;
+
+  /// Screen reader label of Leave out.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave out {food}'**
+  String dcMealExtraLeaveFood(String food);
+
+  /// Described meal card: a food past the limit was logged with Add food.
+  ///
+  /// In en, this message translates to:
+  /// **'{food}: added on its own'**
+  String dcMealExtraAdded(String food);
+
+  /// Described meal card: a food past the limit was left out.
+  ///
+  /// In en, this message translates to:
+  /// **'{food}: left out'**
+  String dcMealExtraLeft(String food);
+
+  /// Add food: the coach’s invitation to describe a meal, its first line.
+  ///
+  /// In en, this message translates to:
+  /// **'What did you eat?'**
+  String get foodInviteTitle;
+
+  /// Add food: the invitation. Must promise a review before anything is logged.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell me the foods and amounts. I’ll work out the nutrition for you to review before anything is logged.'**
+  String get foodInviteBody;
+
+  /// Add food: the invitation’s action; opens the coach conversation for this day and meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe my meal'**
+  String get foodInviteAction;
+
+  /// Add food: under the invitation’s action.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses 1 AI request when you send.'**
+  String get foodInviteUsage;
+
+  /// Add food: the invitation when the monthly AI allowance is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve used this month’s AI requests; they come back on {date}. You can still search for foods below.'**
+  String foodInviteLimit(String date);
+
+  /// Add food at the AI limit: opens the meal already being prepared (no AI request needed).
+  ///
+  /// In en, this message translates to:
+  /// **'Finish my meal'**
+  String get foodInviteFinish;
+
+  /// Add food: the invitation on a server without coach.meal-log.
+  ///
+  /// In en, this message translates to:
+  /// **'Describing a meal to me isn’t available on this server yet. You can still search for foods below.'**
+  String get foodInviteUnavailable;
+
+  /// Under the coach input when the monthly allowance is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'No AI requests left this month · they come back on {date}'**
+  String dcUsesNoneLeft(String date);
+
+  /// Add food invitation at very large text on a narrow phone: the promise of a review, in place of the longer sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'You review it before anything is logged.'**
+  String get foodInviteBodyShort;
 }
 
 class _AppLocalizationsDelegate

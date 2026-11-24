@@ -156,7 +156,9 @@ nothing anywhere (USDA answers 0 hits). Checked against USDA's live answers on 2
   words dropped; the screen says which words were sent. Results sharing no word at all with the search are not shown.
 - **When the wider search runs by itself.** After the 0.6 s pause, unless something on the phone is named *exactly*
   (an everyday food or the person's own): "chicken thigh" or a brand is worth asking for even when the phone has other
-  chicken; "eggs" is not. Search more foods stays for every other case. An answer to an earlier question is still dropped
+  chicken; "eggs" is not. **Search more foods and brands** stays under the results for every other case, so an exact
+  everyday match ("chicken breast") never hides branded products: one tap asks once, and the products follow the plain
+  foods, each marked Brand or Generic (25 Nov 2026). An answer to an earlier question is still dropped
   when it arrives, failures still never remove the foods found on the phone, and it is still never per keystroke.
 - **Your foods** stay first only when one of them is at least as good a match as the best everyday food, and at most 8
   are listed before the others.
@@ -174,9 +176,23 @@ no automatic wider search for an exact everyday food, a corrected search, a bran
 
 ### Describe your meal (24 Nov 2026, `feature/food-search-describe-meal`)
 
-**Where.** Add food › **Describe your meal** (at the top of the empty search and in its bottom card) opens the existing
-coach conversation (Help with today) for that day and the meal chosen in Add food, with the field ready for a sentence.
-The same words typed in Eat's coach conversation are read the same way. No new card on Eat, no other chatbot.
+**Where** (revised 25 Nov 2026). At the top of Add food, above search, the selected guide (Leon or Leona) invites it in
+the usual speech bubble, its portrait joined to the bubble: "What did you eat?" · "Tell me the foods and amounts. I'll
+work out the nutrition for you to review before anything is logged." · **Describe my meal** · "Uses 1 AI request when you
+send." It is the only way in on the page (the earlier link row and bottom-card row are gone). The guide's portrait is the
+page's search help (a sheet), so one face is on the page. With Me › Appearance › Show coach on Train and Eat off, or at
+very large text on a phone narrower than 360 px, the same invitation is a plain full-width panel (no portrait; search help
+beside the title); at that size the longer sentence is said as "You review it before anything is logged." so search is about
+one screen down rather than two (no text or target is made smaller). It scrolls with the page: the title, the day and meal and the invitation scroll away, and the search
+field stays at the top once reached; typing a search scrolls the field to the top so results come straight under it
+(scrolling back shows the invitation again, nothing is removed). Not shown while picking one food for a meal.
+What it offers follows what can really happen: at the month's limit it says so with the reset date and offers no new
+request (**Finish my meal** only when a meal is already being prepared); on a server without `coach.meal-log` it says
+describing a meal isn't available yet; search, barcode and the lists stay below in every case. Opening Add food, showing
+the invitation or opening the conversation never calls the AI or uses the allowance. **Describe my meal** opens the
+existing coach conversation for that day (an earlier day too) and the meal chosen in Add food, the field focused with
+the example "I ate 120 g of chicken and 100 g of potatoes." as its hint (never sent by itself). The same words typed in
+Eat's coach conversation are read the same way. No new card on Eat, no other chatbot.
 
 **Flow.** "I ate 120 g of chicken and 100 g of potatoes" → **one** request (`POST /coach/daily`, kind `ate`) reads the
 foods as words → the phone matches each to a real record with the same matcher as meal ideas and search
@@ -187,8 +203,12 @@ the existing atomic `food.batch` (one operation ID: a double tap or a retry logs
 is sent once). Leaving the review or the conversation logs nothing; every change in the review is kept on the draft.
 
 **What is asked, never guessed** (each answered on the phone, no AI):
-- *Weighed raw or cooked?* when the amount is a weight or volume, no preparation was said and the records say raw or
-  cooked. The weight said stays (it is what was weighed); a count ("2 eggs") is not asked.
+- *Weighed raw or cooked?* only where it matters: the amount is a weight or volume, no preparation was said (as a
+  preparation or in the food's own words: "cooked rice", "riz cuit"), and a record says raw or cooked for a food whose
+  weight cooking changes (meat, fish, grains, pasta, potatoes, legumes, oats). Never for foods eaten as they come: the
+  bundled categories Vegetables, Fruits, Dairy, Fats & Oils, Snacks and Beverages, and bananas, eggs, egg whites and tofu
+  (`CommonFoodCatalog.eatenAsIs`); toasted is not a cooking state, so bread is never asked; yogurt says neither. Answered
+  once, never asked again. The weight said stays (it is what was weighed); a count ("2 eggs") is not asked.
 - *Which chicken?* when several records are equally good (raw breast and raw thigh for "chicken"): up to 3 buttons and
   **Search for another**. "Chicken" is never taken as breast; oil, butter or sauce is never added.
 - *How much potatoes?* when no amount was said or it fits none of the record's own units: the usual amount form. Kilograms,
@@ -215,12 +235,22 @@ the one chosen in Add food, else the time of day's. Both are changed in the revi
 
 **AI usage** (docs/PLUS_PREVIEW.md): under the field, before sending, "Uses 1 AI request · 14 remaining this month" from the
 server's own count ("… can't be checked right now" while it is unknown; no count on a server without allowances). One
-description is one charged request whatever the number of foods (up to 12; more are said, never dropped silently);
+description is one charged request whatever the number of foods (see *More than twelve foods*);
 a typed follow-up that changes something is one more; answering questions, matching, food searches, amounts, review and
 logging are never charged. A reading with no usable food or change is `unsupported` and not charged. At the limit the
-existing limit text and reset date show; the words and the draft stay, and the draft can still be reviewed and logged
+existing limit text and reset date show, and the line under the field reads "No AI requests left this month · they
+come back on …"; the words and the draft stay, and the draft can still be reviewed and logged
 (Log meal is never behind the allowance). Offline: "Understanding a new sentence needs a connection" with the words kept
 for an explicit Try again (same request ID); nothing is sent later by itself.
+
+**More than twelve foods** (25 Nov 2026). The model is told to list every food, never to stop early. The server reads the
+first 12 into the draft and returns the next 12 by name (`intent.extra`, checked like any name); each is shown on the card
+("pickles: past the first 12 foods…") with **Add with Add food** (the usual Add food, not selection, for the draft's day
+and meal: logged on its own) or **Leave out**. The meal is not complete, has no Review and its sum says "So far, without
+pickles", until each is added or left out. When the rest cannot all be named (more than 24, or a name that does not
+check out) none is named: the reply says so and asks for the rest in a new message after logging, the card says the rest
+is not in this meal, and only **Leave out the rest** makes it complete. Nothing is invented. An older app ignores `extra`
+and still says some foods were left out.
 
 **Compatibility.** Capability `coach.meal-log` (declared with `coach.daily`'s rule). Only to a server that declares it does
 the phone send `features: ["log"]` and a draft; an older server gets neither, and Describe your meal says "isn't available

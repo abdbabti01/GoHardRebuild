@@ -2,11 +2,22 @@
 // over a real local database for the conversation, the bundled foods for matching, and the server's reading of the words
 // SCRIPTED (no AI, no network): these tests prove what the app does with an answer, never that a live model reads well.
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import 'package:flutter/services.dart' show ByteData, FontLoader;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gohard_rebuild/app/providers.dart';
+import 'package:gohard_rebuild/core/appearance.dart';
+import 'package:gohard_rebuild/core/theme.dart' show Accent, serif;
+import 'package:gohard_rebuild/features/coach/coach_avatar.dart' show CoachGuide;
+import 'package:gohard_rebuild/features/coach/coach_bubble.dart' show CoachBubble;
+import 'package:gohard_rebuild/features/coach/coach_companion.dart' show CoachCompanion;
+import 'package:gohard_rebuild/features/coach/coach_prefs.dart' show coachPrefsProvider;
+import 'package:gohard_rebuild/features/coach/coach_rig.dart' show rigImageProvider;
 import 'package:gohard_rebuild/core/compatibility.dart';
 import 'package:gohard_rebuild/core/device_prefs.dart';
 import 'package:gohard_rebuild/core/language.dart';
@@ -339,5 +350,293 @@ void main() {
       expect(discovery.searches, ['pilon chicken'], reason: 'known words translated, small words dropped, unknown words kept');
       expect(find.text('The food database is in English: searched for “pilon chicken”.'), findsOneWidget);
     });
+
+    testWidgets('an exact everyday match still offers more foods and brands: one tap asks once, products after the plain foods, no AI', (tester) async {
+      final discovery = ScriptedDiscovery(results: [
+        FoodItem({'source': 'usda', 'sourceId': '900101', 'name': 'CHICKEN BREAST', 'brand': 'TYSON', 'basis': '100g', 'nutrients': {'calories': 110, 'protein': 23}, 'servings': []}),
+        FoodItem({'source': 'usda', 'sourceId': '171077', 'name': 'Chicken, broilers or fryers, breast, meat only, cooked, roasted', 'basis': '100g', 'nutrients': {'calories': 165}, 'servings': []}),
+      ]);
+      final f = _Fixture(discovery: discovery);
+      await pumpApp(tester, await f.overrides(tester), home: const LogFoodScreen(dayKey: day, meal: 'Lunch'), size: const Size(390, 844));
+      await tester.enterText(find.byKey(const Key('food-search')), 'chicken breast');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(discovery.searches, isEmpty, reason: 'the exact everyday food is on the phone');
+      final more = find.byKey(const Key('food-search-online'));
+      await tester.scrollUntilVisible(more, 200, scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: more, matching: find.text('Search more foods and brands')).hitTestable(), findsOneWidget, reason: 'still one tap away');
+      await tester.tap(more);
+      await _settle(tester);
+      expect(discovery.searches, ['chicken breast'], reason: 'asked once, on the tap');
+      expect(find.text('Brand: Tyson'), findsOneWidget, reason: 'branded products are listed, and said to be');
+      expect(find.text('Generic'), findsOneWidget);
+      expect(tester.getTopLeft(find.byKey(const Key('common-chicken-breast-raw'))).dy, lessThan(tester.getTopLeft(find.text('Brand: Tyson')).dy),
+          reason: 'no brand named: the plain foods come first, products after');
+      expect(f.ai.requests, isEmpty, reason: 'search never asks the AI');
+    });
+  });
+
+  group('more than twelve foods', () {
+    final twelve = [for (final n in ['apple', 'banana', 'orange', 'grapes', 'mango', 'pineapple', 'blueberries', 'strawberries', 'cucumber', 'carrots', 'tomato', 'spinach']) said(n, 100, 'g')];
+
+    testWidgets('the foods past twelve are named on the meal; it is complete only once each is added with Add food or left out', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 4000));
+      f.ai.reply = (r) async => DayIntent.fromJson({'kind': 'ate', 'day': 'shown', 'foods': twelve, 'extra': ['pickles', 'olives'], 'dropped': ['foods']}, ai: true)!;
+      await _say(tester, 'I ate fourteen things');
+      expect(find.text('I can read up to 12 foods at a time. The others are listed below: add each one with Add food, or leave it out.'), findsOneWidget);
+      expect(find.text('pickles: past the first 12 foods. Add it on its own, or leave it out.'), findsOneWidget);
+      expect(find.text('olives: past the first 12 foods. Add it on its own, or leave it out.'), findsOneWidget);
+      expect(_keyed('day-meal-review-'), findsNothing, reason: 'not complete while a food named is neither added nor left out');
+      expect(find.textContaining('So far, without pickles and olives'), findsOneWidget);
+
+      await _tap(tester, _keyed('day-meal-extra-leave-').first);
+      expect(find.text('pickles: left out'), findsOneWidget);
+      expect(_keyed('day-meal-review-'), findsNothing);
+
+      await _tap(tester, _keyed('day-meal-extra-add-').first);
+      final add = tester.widget<LogFoodScreen>(find.byType(LogFoodScreen));
+      expect((add.query, add.dayKey, add.meal, add.pick), ('olives', day, 'Lunch', false), reason: 'the usual Add food, for the meal’s day and meal');
+      Navigator.of(tester.element(find.byType(LogFoodScreen))).pop(true); // logged there, on its own
+      await _settle(tester);
+      expect(find.text('olives: added on its own'), findsOneWidget);
+      expect(_keyed('day-meal-review-'), findsOneWidget, reason: 'every food dealt with: ready to review');
+      expect(find.textContaining('Total:'), findsOneWidget);
+      expect(f.ai.requests.length, 1, reason: 'one request for the whole description');
+    });
+
+    testWidgets('when the rest could not be named, nothing is invented: the meal says so and asks for the rest separately', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 4000));
+      f.ai.reply = (r) async => DayIntent.fromJson({'kind': 'ate', 'day': 'shown', 'foods': twelve, 'extra': const [], 'dropped': ['foods']}, ai: true)!;
+      await _say(tester, 'I ate thirty things');
+      expect(find.textContaining('describe the rest in a new message'), findsOneWidget);
+      expect(_keyed('day-meal-rest-'), findsWidgets);
+      expect(_keyed('day-meal-review-'), findsNothing);
+      expect(_keyed('day-meal-extra-'), findsNothing, reason: 'no food is made up');
+      await _tap(tester, _keyed('day-meal-rest-leave-').first);
+      expect(_keyed('day-meal-review-'), findsOneWidget, reason: 'the rest explicitly left out');
+    });
+  });
+
+  group('the invitation in Add food', () {
+    Finder invite = find.byKey(const Key('food-invite'));
+
+    for (final guide in CoachGuide.values) {
+      testWidgets('${guide.name} invites from the top, above search: one Describe my meal; opening Add food sends nothing', (tester) async {
+        final f = _Fixture();
+        final c = await pumpApp(tester, await f.overrides(tester), home: const LogFoodScreen(dayKey: day, meal: 'Lunch'));
+        c.read(coachPrefsProvider.notifier).setGuide(guide);
+        await tester.pumpAndSettle();
+        expect(tester.widget<CoachCompanion>(find.descendant(of: invite, matching: find.byType(CoachCompanion))).guide, guide, reason: 'the selected guide speaks');
+        expect(find.descendant(of: invite, matching: find.byType(CoachBubble)), findsOneWidget, reason: 'the existing speech bubble');
+        for (final t in ['What did you eat?', 'Uses 1 AI request when you send.']) {
+          expect(find.descendant(of: invite, matching: find.text(t)), findsOneWidget);
+        }
+        expect(find.descendant(of: invite, matching: find.textContaining('for you to review before anything is logged', findRichText: true)), findsOneWidget);
+        expect(find.byKey(const Key('food-describe')), findsOneWidget);
+        expect(find.text('Describe my meal'), findsOneWidget, reason: 'exactly one way in');
+        expect(find.byKey(const Key('food-describe-row')), findsNothing);
+        expect(tester.getBottomLeft(invite).dy, lessThanOrEqualTo(tester.getTopLeft(find.byKey(const Key('food-search'))).dy), reason: 'above search');
+        expect(find.byKey(const Key('coach-help-food.search')), findsNothing, reason: 'one face: the portrait is the page’s help');
+        expect(tester.getSize(find.byKey(const Key('food-describe'))).height, greaterThanOrEqualTo(48));
+        expect(f.ai.requests, isEmpty);
+
+        await tester.tap(find.bySemanticsLabel('Help with finding a food'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('coach-help-sheet')), findsOneWidget, reason: 'the guide’s portrait opens search help');
+        expect(f.ai.requests, isEmpty);
+      });
+    }
+
+    testWidgets('with the coach off: the same invitation as plain content, no portrait; search help beside the title', (tester) async {
+      final f = _Fixture();
+      final c = await pumpApp(tester, await f.overrides(tester), home: const LogFoodScreen(dayKey: day, meal: 'Lunch'));
+      c.read(coachPrefsProvider.notifier).setOnTabs(false);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: invite, matching: find.byType(CoachCompanion)), findsNothing);
+      expect(find.descendant(of: invite, matching: find.text('What did you eat?')), findsOneWidget);
+      expect(find.descendant(of: invite, matching: find.text('Uses 1 AI request when you send.')), findsOneWidget);
+      expect(find.byKey(const Key('food-describe')), findsOneWidget);
+      expect(find.byKey(const Key('coach-help-food.search')), findsOneWidget);
+      expect(tester.getSize(find.byKey(const Key('food-describe'))).height, greaterThanOrEqualTo(48));
+    });
+
+    testWidgets('Describe my meal opens the conversation for the day and meal chosen, an earlier day too; the example is shown, never sent', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const LogFoodScreen(dayKey: '2026-10-20', meal: 'Lunch'), size: const Size(390, 1400));
+      await _tap(tester, find.byKey(const Key('food-meal-select')));
+      await tester.tap(find.byKey(const Key('food-meal-option-Dinner')).last);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.byKey(const Key('food-describe')));
+      final convo = tester.widget<DayCoachScreen>(find.byType(DayCoachScreen));
+      expect((convo.day, convo.meal, convo.describe), ('2026-10-20', 'Dinner', true));
+      expect(find.text('For example: I ate 120 g of chicken and 100 g of potatoes.'), findsOneWidget);
+      expect(tester.widget<TextField>(find.byKey(const Key('day-input'))).controller!.text, '', reason: 'the example is a hint, not words to send');
+      expect(find.text('Uses 1 AI request · 14 remaining this month'), findsOneWidget, reason: 'the server’s count, beside the field');
+      expect(f.ai.requests, isEmpty, reason: 'opening Add food, the invitation and the conversation asks nothing');
+
+      f.ai.reply = (r) async => ate([said('egg', 2, 'piece', 'egg')]);
+      await _say(tester, 'two eggs');
+      final mealFor = (tester.widget<Text>(_keyed('day-meal-for-').first)).data!;
+      expect((mealFor.contains('Dinner'), mealFor.contains('October 20')), (true, true), reason: 'the meal is for the day and meal chosen: $mealFor');
+    });
+
+    testWidgets('at the monthly limit: the invitation says so and when it resets, offers no new request, and search still works', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester, plus: free(0)), home: const LogFoodScreen(dayKey: day, meal: 'Lunch'), size: const Size(390, 1400));
+      expect(find.descendant(of: invite, matching: find.textContaining('come back on', findRichText: true)), findsOneWidget);
+      expect(find.byKey(const Key('food-describe')), findsNothing, reason: 'nothing to send until it resets');
+      expect(find.text('Uses 1 AI request when you send.'), findsNothing);
+      await tester.enterText(find.byKey(const Key('food-search')), 'eggs');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('common-eggs')).hitTestable(), findsOneWidget, reason: 'manual search stays');
+    });
+
+    testWidgets('at the limit with a meal already prepared: Finish my meal opens it, and it can still be logged', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester, plus: free(0)), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 1600));
+      expect(find.textContaining('No AI requests left this month · they come back on'), findsOneWidget);
+      f.ai.reply = (r) async => ate([said('egg', 2, 'piece', 'egg')]); // read before the limit was reached
+      await _say(tester, 'two eggs');
+      Navigator.of(tester.element(find.byType(DayCoachScreen))).push(MaterialPageRoute<bool>(builder: (_) => const LogFoodScreen(dayKey: day, meal: 'Lunch')));
+      await _settle(tester);
+      expect(find.text('Finish my meal'), findsOneWidget);
+      await _tap(tester, find.byKey(const Key('food-describe')));
+      await _tap(tester, _keyed('day-meal-review-').last);
+      await _tap(tester, find.byKey(const Key('meal-log')));
+      expect(f.fakes.journal.meals.single.single.quantity, 2, reason: 'Log meal is never behind the allowance');
+      expect(f.ai.requests.length, 1);
+    });
+
+    for (final (name, plus, unknown, caps, offered) in [
+      ('unknown (no count yet)', null, true, const {'coach.daily', 'coach.meal-log', 'food.search'}, true),
+      ('an older server without meal reading', free(14), false, const {'coach.daily', 'food.search'}, false),
+      ('a server not reached yet (offline at start)', free(14), false, null, true),
+    ]) {
+      testWidgets('the invitation is honest when the allowance or server is $name', (tester) async {
+        final f = _Fixture();
+        await pumpApp(tester, await f.overrides(tester, plus: plus, plusUnknown: unknown, caps: caps), home: const LogFoodScreen(dayKey: day, meal: 'Lunch'), size: const Size(390, 1400));
+        expect(find.byKey(const Key('food-describe')), offered ? findsOneWidget : findsNothing);
+        expect(find.textContaining('isn’t available on this server yet', findRichText: true), offered ? findsNothing : findsOneWidget);
+        expect(find.byKey(const Key('food-search')).hitTestable(), findsOneWidget);
+        expect(f.ai.requests, isEmpty);
+      });
+    }
+
+    for (final (lang, size, text, mode) in [
+      ('en', const Size(390, 844), 1.0, ThemeMode.light), ('en', const Size(390, 844), 1.0, ThemeMode.dark), ('en', const Size(320, 640), 2.0, ThemeMode.light),
+      ('fr-CA', const Size(390, 844), 1.0, ThemeMode.dark), ('fr-CA', const Size(320, 640), 2.0, ThemeMode.light),
+      ('ar', const Size(390, 844), 1.0, ThemeMode.light), ('ar', const Size(320, 640), 2.0, ThemeMode.dark),
+    ]) {
+      testWidgets('$lang ${mode.name} ${size.width.toInt()} px at $text× text: the invitation fits, and typing brings the results under the field', (tester) async {
+        final f = _Fixture();
+        final store = AppearanceStore(MemorySecretStore())..mode = mode;
+        final c = await pumpApp(tester, [...await f.overrides(tester), appearanceStoreProvider.overrideWithValue(store)], home: const LogFoodScreen(dayKey: day, meal: 'Lunch'), size: size, textScale: text);
+        c.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(lang));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(Directionality.of(tester.element(invite)), lang == 'ar' ? TextDirection.rtl : TextDirection.ltr);
+        final title = {'en': 'What did you eat?', 'fr-CA': 'Qu’as-tu mangé?', 'ar': 'ماذا أكلت؟'}[lang]!;
+        expect(find.descendant(of: invite, matching: find.text(title)), findsOneWidget);
+        expect(tester.getSize(find.byKey(const Key('food-describe'))).height, greaterThanOrEqualTo(48), reason: 'targets keep their size');
+        // Typing: the field comes to the top with results under it, the invitation scrolled away (not removed). At very
+        // large text the field may be a short scroll below the invitation: the page scrolls, nothing shrinks.
+        await tester.scrollUntilVisible(find.byKey(const Key('food-search')), 150, scrollable: find.byType(Scrollable).first);
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byKey(const Key('food-search')), 'eggs');
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byKey(const Key('food-search')).hitTestable(), findsOneWidget);
+        expect(tester.getTopLeft(find.byKey(const Key('food-search'))).dy, lessThan(20), reason: 'the field at the top');
+        await tester.drag(find.byType(CustomScrollView), const Offset(0, 3000));
+        await tester.pumpAndSettle();
+        expect(tester.getTopLeft(invite).dy, inInclusiveRange(0, size.height - 48), reason: 'scrolling back shows the invitation again');
+      });
+    }
+
+    testWidgets('the field pinned at the top stays put when focused or the keyboard reveals it; the results stay under it', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const LogFoodScreen(dayKey: day, meal: 'Lunch'));
+      await tester.enterText(find.byKey(const Key('food-search')), 'chicken breast');
+      await tester.pumpAndSettle();
+      final page = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      final at = page.pixels;
+      tester.renderObject(find.byType(EditableText)).showOnScreen(); // what focus, the caret and the keyboard ask for
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      expect(page.pixels, at, reason: 'already in view at the top: focus and the keyboard scroll nothing');
+      expect(find.byKey(const Key('food-scan')).hitTestable(), findsOneWidget);
+      tester.view.resetViewInsets();
+    });
+
+    testWidgets('a screen reader hears the guide, then the invitation, its action and its cost, then search', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const LogFoodScreen(dayKey: day, meal: 'Lunch'));
+      final labels = [for (final n in tester.semantics.simulatedAccessibilityTraversal()) n.label];
+      int at(String s) => labels.indexWhere((l) => l.contains(s));
+      // The bubble's words (title, promise, cost) are read together, then its button, then search.
+      final order = [at('Help with finding a food'), at('What did you eat?'), at('before anything is logged'), at('Uses 1 AI request when you send.'), at('Describe my meal'), at('Scan barcode')];
+      expect(order.every((i) => i >= 0), isTrue, reason: '$labels');
+      expect(order, [...order]..sort(), reason: 'read in this order: $labels');
+      semantics.dispose();
+    });
+  });
+
+  group('renders', () {
+    if (!_render) {
+      test('Add food invitation renders are skipped without GOHARD_RENDER', () {});
+      return;
+    }
+    setUpAll(() async {
+      final inter = FontLoader('Inter');
+      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+        inter.addFont(File('assets/fonts/Inter-$w.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)));
+      }
+      await inter.load();
+      await (FontLoader(serif)..addFont(File('assets/fonts/DMSerifDisplay-Regular.ttf').readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+      await loadArabicFonts();
+      final icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+      if (icons.existsSync()) await (FontLoader('MaterialIcons')..addFont(icons.readAsBytes().then((b) => ByteData.view(b.buffer)))).load();
+    });
+
+    for (final (name, lang, size, text, mode, guide, tabs) in [
+      ('en-leon-light-390', 'en', const Size(390, 844), 1.0, ThemeMode.light, CoachGuide.leon, true),
+      ('en-leona-dark-390', 'en', const Size(390, 844), 1.0, ThemeMode.dark, CoachGuide.leona, true),
+      ('en-leon-320-2x', 'en', const Size(320, 640), 2.0, ThemeMode.light, CoachGuide.leon, true),
+      ('fr-leona-light-390', 'fr-CA', const Size(390, 844), 1.0, ThemeMode.light, CoachGuide.leona, true),
+      ('ar-leon-dark-320-2x', 'ar', const Size(320, 640), 2.0, ThemeMode.dark, CoachGuide.leon, true),
+      ('en-coach-off-light-390', 'en', const Size(390, 844), 1.0, ThemeMode.light, CoachGuide.leon, false),
+    ]) {
+      testWidgets('Add food invitation: $name', (tester) async {
+        final store = AppearanceStore(MemorySecretStore())
+          ..accent = Accent.blue
+          ..mode = mode;
+        final f = _Fixture();
+        final c = await pumpApp(tester, [...await f.overrides(tester), appearanceStoreProvider.overrideWithValue(store)], home: const LogFoodScreen(dayKey: day, meal: 'Lunch'),
+            size: size, textScale: text, insets: phoneInsets, settle: false);
+        c.read(devicePrefsProvider.notifier).setMotion(MotionPref.reduced);
+        c.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(lang));
+        c.read(coachPrefsProvider.notifier).setGuide(guide);
+        if (!tabs) c.read(coachPrefsProvider.notifier).setOnTabs(false);
+        c.read(rigImageProvider(guide));
+        for (var i = 0; i < 10; i++) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+          await tester.pump();
+        }
+        await tester.pumpAndSettle();
+        final image = (await tester.runAsync(() => tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot'))).toImage(pixelRatio: 2)))!;
+        await tester.runAsync(() async {
+          final file = File('../docs/evidence/add-food-invitation/$name.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
+        });
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }
+
+const _render = bool.fromEnvironment('GOHARD_RENDER');

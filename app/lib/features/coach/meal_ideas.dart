@@ -30,10 +30,14 @@ typedef FoodCandidate = ({FoodItem item, SearchFields fields, String name, Strin
 /// phone. [search] is the account's food search (null offline or on an older server); it is asked at most
 /// [maxSearches] times per request, and only for foods nothing on the phone matched.
 class IdeaSources {
-  const IdeaSources({this.common = const [], this.mine = const [], this.seen = const [], this.search, this.maxSearches = 3});
+  const IdeaSources({this.common = const [], this.mine = const [], this.seen = const [], this.search, this.maxSearches = 3, this.asIs = const {}});
   final List<FoodCandidate> common, mine, seen;
   final Future<List<FoodItem>> Function(String query)? search;
   final int maxSearches;
+
+  /// The keys of everyday foods eaten as they come ([CommonFoodCatalog.eatenAsIs]: fruit, vegetables, dairy, bananas, eggs…): for these,
+  /// "Weighed raw or cooked?" changes nothing that matters and is not asked.
+  final Set<String> asIs;
 }
 
 FoodCandidate candidateOf(FoodItem item, {String? name}) =>
@@ -275,17 +279,21 @@ String saidAmount(SaidFood f) => f.quantity == null ? '' : '${formatNumber2(f.qu
 /// * `amount`: a record (`food`) and no amount that fits its units ("How much?"); `asked` when it differs from what was said;
 /// * `missing`: no record found: Find food, everything else kept.
 Future<Json> resolveSaid(String ref, SaidFood f, FoodMatcher matcher) async {
-  final m = await matcher.match(f.name, preparation: f.preparation, brand: f.brand);
+  // A preparation in the food's own words counts as said ("cooked rice", "riz cuit"), even when not given separately.
+  final named = foodState(SearchFields(f.name)) != null;
+  final prep = f.preparation ?? (named ? null : foodState(SearchFields(f.label)));
+  final m = await matcher.match(f.name, preparation: prep, brand: f.brand);
   Json item(String status, [Json more = const {}]) => {'ref': ref, 'said': saidJson(f), 'status': status, ...more};
   final options = m.sure.length == 1 ? m.sure : [...m.sure, ...m.maybe];
   if (options.isEmpty) return item('missing');
-  // Weighed with no preparation said, and the records say raw or cooked: asked, never assumed.
-  if (f.preparation == null && _weighed(f) && options.any((c) => foodState(c.fields) != null)) return item('state');
+  // Weighed with no preparation said, and a record that says raw or cooked for a food whose weight cooking changes:
+  // asked, never assumed. Not for an apple, a yogurt or bread, and never again once said.
+  if (prep == null && !named && _weighed(f) && options.any((c) => !matcher.sources.asIs.contains(c.item.key) && foodState(c.fields) != null)) return item('state');
   if (options.length == 1 && m.sure.length == 1) {
     final placed = _placeSaid(_food(options.single), f);
     return placed['confirm'] == null ? item('ready', {'part': placed}) : item('amount', {'food': placed['food']});
   }
-  return item('record', {'options': [for (final c in options.take(maxChoices)) {..._food(c), if (!m.sure.contains(c)) 'differs': f.preparation}]});
+  return item('record', {'options': [for (final c in options.take(maxChoices)) {..._food(c), if (!m.sure.contains(c)) 'differs': prep}]});
 }
 
 /// Every food of a described meal matched (at most [maxMealFoods]), each with a reference `d1`, `d2`… that a follow-up names.

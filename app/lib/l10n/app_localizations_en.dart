@@ -1448,7 +1448,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get foodSearchMore => 'Search more foods';
+  String get foodSearchMore => 'Search more foods and brands';
 
   @override
   String foodSearchMoreSubtitle(String query) {
@@ -13356,14 +13356,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get foodDescribeTitle => 'Describe your meal';
-
-  @override
-  String get foodDescribeSubtitle =>
-      'Say what you ate, like “120 g of chicken and 100 g of potatoes”. You review it before anything is logged.';
-
-  @override
-  String get dcDescribeHint => 'For example: 2 eggs and a slice of toast';
+  String get dcDescribeHint =>
+      'For example: I ate 120 g of chicken and 100 g of potatoes.';
 
   @override
   String get dcDescribeIntro =>
@@ -13453,7 +13447,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dcMealTooMany(int count) {
-    return 'I read the first $count foods. Add the rest with Add food.';
+    return 'I can read up to $count foods at a time. The others are listed below: add each one with Add food, or leave it out.';
   }
 
   @override
@@ -13507,4 +13501,79 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dcMealLogUnavailable =>
       'Describing a meal isn’t available on this server yet. Add food and logging still work.';
+
+  @override
+  String dcMealTooManyUnnamed(int count) {
+    return 'You named more than $count foods and I couldn’t tell which ones are left, so they aren’t here. Review and log this meal, then describe the rest in a new message.';
+  }
+
+  @override
+  String get dcMealTheRest => 'the rest of what you named';
+
+  @override
+  String dcMealRestUnnamed(int count) {
+    return 'More than $count foods were named: the rest isn’t in this meal. Describe it in a new message after logging, or add it with Add food.';
+  }
+
+  @override
+  String get dcMealLeaveRest => 'Leave out the rest';
+
+  @override
+  String dcMealExtra(String food, int count) {
+    return '$food: past the first $count foods. Add it on its own, or leave it out.';
+  }
+
+  @override
+  String get dcMealExtraAdd => 'Add with Add food';
+
+  @override
+  String get dcMealExtraLeave => 'Leave out';
+
+  @override
+  String dcMealExtraLeaveFood(String food) {
+    return 'Leave out $food';
+  }
+
+  @override
+  String dcMealExtraAdded(String food) {
+    return '$food: added on its own';
+  }
+
+  @override
+  String dcMealExtraLeft(String food) {
+    return '$food: left out';
+  }
+
+  @override
+  String get foodInviteTitle => 'What did you eat?';
+
+  @override
+  String get foodInviteBody =>
+      'Tell me the foods and amounts. I’ll work out the nutrition for you to review before anything is logged.';
+
+  @override
+  String get foodInviteAction => 'Describe my meal';
+
+  @override
+  String get foodInviteUsage => 'Uses 1 AI request when you send.';
+
+  @override
+  String foodInviteLimit(String date) {
+    return 'You’ve used this month’s AI requests; they come back on $date. You can still search for foods below.';
+  }
+
+  @override
+  String get foodInviteFinish => 'Finish my meal';
+
+  @override
+  String get foodInviteUnavailable =>
+      'Describing a meal to me isn’t available on this server yet. You can still search for foods below.';
+
+  @override
+  String dcUsesNoneLeft(String date) {
+    return 'No AI requests left this month · they come back on $date';
+  }
+
+  @override
+  String get foodInviteBodyShort => 'You review it before anything is logged.';
 }

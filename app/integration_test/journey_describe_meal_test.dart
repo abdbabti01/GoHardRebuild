@@ -22,6 +22,10 @@ void main() {
     await j.tapKey('nav-eat');
     await j.settle(6);
     await j.tap(find.descendant(of: eat, matching: find.byKey(const Key('log-food'))));
+    // The guide's invitation, above search: nothing is asked of the AI by opening Add food.
+    await j.waitFor(find.byKey(const Key('food-invite')), what: 'the invitation');
+    await j.settle(2);
+    await j.shot('dm-00-invitation');
 
     // Search: the everyday raw and cooked breasts, from the phone.
     await j.type('food-search', 'chicken breast');
@@ -32,6 +36,9 @@ void main() {
     await j.waitFor(find.text('Showing results for “chicken breast”.'), what: 'the corrected search');
     await j.shot('dm-02-search-misspelt');
     await j.tapKey('food-search-clear');
+    // Back up to the invitation (it scrolled away with the title while searching).
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 1500));
+    await j.settle(2);
 
     // Describe your meal: one sentence, one request.
     final token = await j.apiToken();
@@ -41,7 +48,7 @@ void main() {
     await j.waitFor(find.byKey(const Key('day-intro')), what: 'the coach, ready for a sentence');
     expect(find.textContaining('Uses 1 AI request'), findsOneWidget);
     await j.shot('dm-03-describe-open');
-    await j.type('day-input', 'I ate 120 g of chicken and 100 g of potatoes');
+    await j.type('day-input', 'I had 120 g of chicken and 100 g of potatoes');
     await j.tapKey('day-send');
     await j.waitFor(find.text('chicken · 120 g: weighed raw or cooked?'), what: 'the raw-or-cooked question', seconds: 40);
     await j.shot('dm-04-questions');

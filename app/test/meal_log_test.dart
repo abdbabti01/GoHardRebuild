@@ -20,6 +20,7 @@ void main() {
       (name: name, label: name, preparation: prep, brand: brand, quantity: q, unit: unit, noun: noun);
   IdeaSources sources({List<FoodItem> seen = const [], List<FoodItem> Function(String q)? search, List<String>? searched}) => IdeaSources(
       common: common, seen: [for (final i in seen) candidateOf(i)], maxSearches: 6,
+      asIs: {for (final c in catalog.foods) if (CommonFoodCatalog.eatenAsIs(c)) c.item.key},
       search: search == null ? null : (q) async {
         searched?.add(q);
         return search(q);
@@ -86,6 +87,54 @@ void main() {
       expect((branded['status'], part(branded).item.brand), ('ready', 'Chobani'));
       final plain = (await resolveMeal([said('greek yogurt', 170, 'g')], sources(seen: [chobani]))).single;
       expect(part(plain).item.brand, isNull);
+    });
+
+    test('raw or cooked is asked only where cooking changes the weight: never for fruit, nuts, yogurt or bread, never once said', () async {
+      final toast = FoodItem({'source': 'usda', 'sourceId': 't1', 'name': 'Bread, white, toasted', 'basis': '100g', 'nutrients': {'calories': 293}, 'servings': []});
+      final items = await resolveMeal([
+        said('apple', 150, 'g'), said('banana', 120, 'g'), said('almonds', 30, 'g'), said('greek yogurt', 170, 'g'), said('bread', 60, 'g'), said('white bread', 60, 'g'),
+        said('oats', 40, 'g'), said('potatoes', 100, 'g'), said('chicken', 120, 'g'),
+      ], sources(seen: [toast]));
+      expect([for (final i in items) i['status']], ['ready', 'ready', 'ready', 'ready', 'ready', 'ready', 'state', 'state', 'state'],
+          reason: 'apple, banana, almonds, yogurt and bread (toasted or not) are eaten as they come; oats, potatoes and chicken are weighed dry/raw or cooked');
+      expect(part(items[5]).item.sourceId, 't1', reason: 'toasted bread is bread, not a cooked food to ask about');
+      // Said in the words ("riz cuit", "cooked rice") or as a preparation: never asked again.
+      final rice = (await resolveMeal([(name: 'rice', label: 'riz cuit', preparation: null, brand: null, quantity: 150, unit: 'g', noun: null)], sources())).single;
+      expect(rice['status'], isNot('state'));
+      final cooked = (await resolveMeal([said('cooked rice', 150, 'g')], sources())).single;
+      expect(cooked['status'], isNot('state'));
+      final answered = await answerState(items[7], 'cooked', sources());
+      expect(answered['status'], 'ready', reason: 'answered once: not asked again');
+      // The safeguards stay: chicken is never taken as breast, and nothing is added.
+      final raw = await answerState(items[8], 'raw', sources());
+      expect((raw['status'], (raw['options'] as List).length), ('record', 2));
+      expect(items.length, 9);
+    });
+  });
+
+  group('more than twelve foods', () {
+    test('past twelve, each food is named and the meal is not complete until it is added on its own or left out', () async {
+      final eggs = (await resolveMeal([said('egg', 2, 'piece', 'egg')], sources())).single;
+      final draft = <String, dynamic>{'dayKey': '2026-10-27', 'meal': 'Lunch', 'items': [eggs], 'extra': [{'label': 'pickles', 'state': 'open'}, {'label': 'olives', 'state': 'open'}]};
+      var card = mealCard(draft, l);
+      expect(card['complete'], isFalse);
+      expect(card['without'], ['pickles', 'olives']);
+      card = mealCard({...draft, 'extra': [{'label': 'pickles', 'state': 'left'}, {'label': 'olives', 'state': 'open'}]}, l);
+      expect(card['complete'], isFalse);
+      expect(card['without'], ['olives']);
+      card = mealCard({...draft, 'extra': [{'label': 'pickles', 'state': 'left'}, {'label': 'olives', 'state': 'added'}]}, l);
+      expect(card['complete'], isTrue);
+      // The server could not name them: the meal is "without the rest" until the person leaves the rest out.
+      card = mealCard({...draft, 'extra': const [], 'overflow': true}, l);
+      expect(card['complete'], isFalse);
+      expect(card['without'], ['the rest of what you named']);
+      expect(mealCard({...draft, 'extra': const [], 'overflow': false}, l)['complete'], isTrue);
+    });
+
+    test('a server answer carries the foods named past twelve with the twelve', () {
+      final i = DayIntent.fromJson({'kind': 'ate', 'foods': [{'name': 'egg'}], 'extra': ['pickles'], 'dropped': ['foods']}, ai: true)!;
+      expect((i.proposed as Map)['extra'], ['pickles']);
+      expect(i.dropped, ['foods']);
     });
   });
 

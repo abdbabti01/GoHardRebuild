@@ -78,7 +78,7 @@ final Map<String, String> _stateOf = {
     'grilled': 'grilled', 'grillé': 'grilled', 'grillée': 'grilled', 'مشوي': 'grilled', 'broiled': 'broiled',
     'steamed': 'steamed', 'poached': 'poached', 'poché': 'poached', 'stewed': 'stewed', 'braised': 'stewed', 'braisé': 'stewed',
     'fried': 'fried', 'frit': 'fried', 'frite': 'fried', 'مقلي': 'fried', 'sauteed': 'sauteed', 'sauté': 'sauteed', 'sautée': 'sauteed',
-    'microwaved': 'microwaved', 'toasted': 'toasted',
+    'microwaved': 'microwaved',
   }.entries)
     for (final w in searchWords(e.key)) w: e.value,
 };
@@ -463,6 +463,12 @@ class CommonFoodCatalog {
       foods: [for (final f in (j['foods'] as List).cast<Json>()) CommonFood(f, words[f['id']] as Json?)]);
   }
   static final empty = CommonFoodCatalog(version: 0, provenance: const {}, categories: const [], foods: const []);
+
+  /// Foods eaten as they come, or whose weight cooking barely changes: how they were weighed (raw or cooked) changes
+  /// nothing that matters. Whole categories, and a few foods filed elsewhere (a banana is a carbohydrate here).
+  static const _asIsCategories = {'Vegetables', 'Fruits', 'Dairy', 'Fats & Oils', 'Snacks', 'Beverages'};
+  static const _asIsFoods = {'banana', 'eggs', 'egg-whites', 'tofu'};
+  static bool eatenAsIs(CommonFood f) => _asIsCategories.contains(f.category) || _asIsFoods.contains(f.id);
 
   /// Every word the app knows a food by (each food's names, preparations and aliases in every language, and the
   /// translated staples): what a misspelt search word is corrected to.

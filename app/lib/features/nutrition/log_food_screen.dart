@@ -20,7 +20,10 @@ import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
 import 'eating_out_screen.dart' show openEatingOut;
-import '../coach/day_coach_screen.dart' show openDayCoach;
+import '../coach/coach_prefs.dart' show coachPrefsProvider;
+import '../coach/day_coach_screen.dart' show openDayCoach, dayConversationProvider;
+import '../plus/entitlement.dart' show plusProvider;
+import '../plus/plus_screen.dart' show resetDate;
 import 'saved_meals_screens.dart' show openMealsLibrary;
 
 /// The lists a food can be picked from. Search covers everyday foods and the owner's own; the others are theirs.
@@ -138,6 +141,65 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     if (logged == true && mounted) Navigator.pop(context, true);
   }
 
+  /// The coach's invitation to describe the meal, at the top of Add food (docs/FOOD_DATA.md › Describe your meal): the
+  /// selected guide beside the usual speech bubble, or the same words as a plain panel while the coach is off. Opening
+  /// Add food or showing it asks nothing of the AI; only sending a sentence in the conversation does. What it offers
+  /// follows what can really happen now: a new description, finishing the meal already prepared once this month's
+  /// requests are used, or nothing on a server that cannot read one. Null while picking one food for a meal. At very large
+  /// text on a narrow phone the words take the whole width ([speak] false), as with the coach off, and the promise is said
+  /// in its short form ([short]) so search is not pushed two screens down: nothing shrinks.
+  Widget? _invitation(AppLocalizations l, {required bool speak, bool short = false}) {
+    if (widget.pick) return null;
+    final caps = ref.watch(compatibilityProvider).capabilities;
+    final supported = caps == null || caps.contains('coach.daily') && caps.contains('coach.meal-log');
+    final e = ref.watch(plusProvider), a = e?.allowance, resets = a?.resetsAtUtc;
+    final used = supported && e != null && !e.isLegacy && a != null && resets != null && a.remaining <= 0;
+    final draft = used && ref.watch(dayConversationProvider).loaded ? ref.read(dayConversationProvider.notifier).openDraft : null;
+    final text = !supported ? l.foodInviteUnavailable : used ? l.foodInviteLimit(resetDate(resets)) : short ? l.foodInviteBodyShort : l.foodInviteBody;
+    final action = !supported || used && draft == null ? null : used ? l.foodInviteFinish : l.foodInviteAction;
+    final note = supported && !used ? l.foodInviteUsage : null;
+    if (speak) {
+      return CoachSpeech(
+        key: const Key('food-invite'),
+        say: CoachSay(text, title: l.foodInviteTitle, primary: action == null ? null : (label: action, key: const Key('food-describe'), onPressed: _describe), note: note),
+        portrait: TabCoach.slot(context, compact: true),
+        compact: true,
+        // The guide's portrait is this page's help, as on Eat: one face on the page, not two.
+        avatarLabel: l.foodHelpSearch,
+        onAvatarTap: () => showCoachHelpSheet(context, title: l.foodHelpSearch, say: CoachSay(l.foodSearchCoach)),
+      );
+    }
+    return PanelTheme(
+      child: Builder(
+        builder: (context) => PanelSurface(
+          key: const Key('food-invite'),
+          padding: EdgeInsets.fromLTRB(16, 12, 12, note == null && action == null ? 12 : 4),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l.foodInviteTitle, style: context.sansStyle(17, weight: FontWeight.w600)),
+            Text(text, style: context.body),
+            if (action != null)
+              Transform.translate(
+                offset: Offset(context.isRtl ? 8 : -8, 0),
+                child: TextButton(key: const Key('food-describe'), style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum), textStyle: context.sansStyle(15, weight: FontWeight.w700)),
+                    onPressed: _describe, child: Text(action)),
+              ),
+            if (note != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(note, style: context.caption)),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  /// Typing a search scrolls the invitation and the title away so the field sits at the top with the results under it;
+  /// scrolling back up shows them again. Nothing is hidden or removed.
+  final _head = GlobalKey();
+  void _toResults() => WidgetsBinding.instance.addPostFrameCallback((_) {
+        final head = _head.currentContext?.size?.height;
+        if (!mounted || head == null || !_scroll.hasClients || _query.text.trim().isEmpty || _scroll.offset >= head) return;
+        final to = head.clamp(0.0, _scroll.position.maxScrollExtent);
+        context.reduceMotion ? _scroll.jumpTo(to) : _scroll.animateTo(to, duration: Motion.quick, curve: Motion.curve);
+      });
+
   /// Eating out for this day and the meal chosen above. When an order was logged there, this screen is done too.
   Future<void> _openEatingOut() async {
     final logged = await openEatingOut(context, dayKey: widget.dayKey, meal: _meal);
@@ -160,6 +222,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
   /// The query, the list or the category changed. The same question keeps its answer; a new one drops whatever
   /// was shown or still on its way, and is asked after a pause only when the phone has nothing for it.
   void _changed() {
+    _toResults();
     final question = _question;
     if (question == _asked) return setState(() {});
     setState(() {
@@ -272,7 +335,6 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     if (q.isEmpty && category == null) {
       final recent = localSuggestions(saved: const [], journal: journal, seen: const []).take(5);
       return [
-        if (!widget.pick) _LinkRow(key: const Key('food-describe'), title: l.foodDescribeTitle, subtitle: l.foodDescribeSubtitle, accent: true, onTap: _describe),
         if (recent.isNotEmpty) _GroupLabel(l.foodScopeRecent),
         for (final s in recent) _row(Suggestion(s.item, s.origin, entry: s.entry, common: catalog.of(s.item)), 'recent'),
         _note(l.foodSearchGuide, const Key('food-search-guide')),
@@ -371,8 +433,16 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     final inset = context.inset;
     final l = context.l10n;
 
-    final top = Padding(
-      padding: EdgeInsets.fromLTRB(inset, 4, inset, 0),
+    final coachOn = ref.watch(coachPrefsProvider.select((p) => p.onTabs));
+    final roomy = MediaQuery.sizeOf(context).width >= 360 || MediaQuery.textScalerOf(context).scale(10) <= 15;
+    final invite = _invitation(l, speak: coachOn && roomy, short: !roomy);
+    // The guide already speaking at the top is this page's help (its portrait): no second face beside the title.
+    final speaking = invite != null && coachOn && roomy;
+
+    // The title, the day and meal, and the coach's invitation scroll with the page.
+    final head = Padding(
+      key: _head,
+      padding: EdgeInsets.fromLTRB(inset, 4, inset, 8),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
           IconButton(
@@ -381,15 +451,23 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             icon: const Icon(Icons.arrow_back_ios_new, size: 22), onPressed: () => Navigator.maybePop(context),
           ),
           Expanded(child: Heading(l.foodAddTitle, size: 40, serif: true)),
-          CoachHelpEntry(id: 'food.search', label: l.foodHelpSearch),
+          if (!speaking) CoachHelpEntry(id: 'food.search', label: l.foodHelpSearch),
         ]),
         if (!widget.pick)
           Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
             _MealSelector(meal: _meal, onChanged: (m) => setState(() => _meal = m)),
             Text('· ${longDate(widget.dayKey)}', style: context.caption),
           ]),
-        const SizedBox(height: 8),
-        TextField(
+        if (invite != null) Padding(padding: const EdgeInsets.only(top: 6), child: invite),
+      ]),
+    );
+
+    // The field stays at the top once the page is scrolled past the title: the results scroll under it.
+    final field = ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(inset, 4, inset, 4),
+        child: TextField(
           key: const Key('food-search'), controller: _query, textInputAction: TextInputAction.search, autocorrect: false,
           onChanged: (_) => _changed(),
           onSubmitted: (_) {
@@ -412,25 +490,27 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
                     }),
           ),
         ),
-        const SizedBox(height: 10),
-        // The second way in, as prominent as the field.
-        SecondaryButton(l.foodScanBarcode, key: const Key('food-scan'), icon: Icons.qr_code_scanner, onPressed: _lookingUp != null ? null : _scan),
-        const SizedBox(height: 10),
-        _Tabs<FoodScope>(
-          values: FoodScope.values, selected: _scope, keyPrefix: 'food-scope',
-          label: (s) => switch (s) { FoodScope.search => l.foodScopeSearch, FoodScope.recent => l.foodScopeRecent, FoodScope.favourites => l.foodScopeFavourites, FoodScope.mine => l.foodScopeMine },
-          onChanged: (s) {
-            _scope = s;
-            _changed();
-          },
-        ),
-      ]),
+      ),
     );
 
     final rows = <Widget>[
-      // At the top of the results, so the search field never moves: once, the first time this page is in view with no
-      // keyboard up; afterwards from the help entry beside Scan. Typing a search puts it away: the results come first.
-      if (_query.text.trim().isEmpty) CoachSpot(
+      const SizedBox(height: 6),
+      // The second way in, as prominent as the field.
+      SecondaryButton(l.foodScanBarcode, key: const Key('food-scan'), icon: Icons.qr_code_scanner, onPressed: _lookingUp != null ? null : _scan),
+      const SizedBox(height: 10),
+      _Tabs<FoodScope>(
+        values: FoodScope.values, selected: _scope, keyPrefix: 'food-scope',
+        label: (s) => switch (s) { FoodScope.search => l.foodScopeSearch, FoodScope.recent => l.foodScopeRecent, FoodScope.favourites => l.foodScopeFavourites, FoodScope.mine => l.foodScopeMine },
+        onChanged: (s) {
+          _scope = s;
+          _changed();
+        },
+      ),
+      const SizedBox(height: 4),
+      // Under the field, so the field never moves: once, the first time this page is in view with no keyboard up;
+      // afterwards from the help entry beside the title. Typing a search puts it away: the results come first. Not while
+      // the guide is already speaking at the top (its portrait opens this help instead).
+      if (_query.text.trim().isEmpty && !speaking) CoachSpot(
         id: 'food.search', introduce: true, padding: const EdgeInsets.only(top: 4, bottom: 8),
         say: CoachSay(l.foodSearchCoach),
       ),
@@ -452,12 +532,6 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             key: const Key('food-manual'), icon: Icons.edit_outlined, title: l.foodManualTitle, subtitle: '${l.foodManualSubtitle}\n${l.foodCreateExample}',
             onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
           ),
-          // Several foods at once, for this day and the meal chosen above. Not offered while picking one food for a meal.
-          if (!widget.pick)
-            GroupRow(
-              key: const Key('food-describe-row'), icon: Icons.chat_bubble_outline, title: l.foodDescribeTitle, subtitle: l.foodDescribeSubtitle,
-              onTap: _describe,
-            ),
           if (!widget.pick)
             GroupRow(
               key: const Key('food-saved-meals'), icon: Icons.menu_book_outlined, title: l.mealsLibraryTitle, subtitle: l.mealsFromAddFoodSubtitle,
@@ -482,18 +556,13 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, box) => Column(children: [
-            // The search field stays put while results scroll. On a very short window (large text, keyboard up)
-            // this block scrolls within its share instead of pushing the results off the screen.
-            ConstrainedBox(constraints: BoxConstraints(maxHeight: box.maxHeight * 0.7), child: SingleChildScrollView(child: top)),
-            Expanded(
-              child: ListView(
-                controller: _scroll, padding: EdgeInsets.fromLTRB(inset, 4, inset, 28), keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                children: rows,
-              ),
-            ),
-          ]),
+        child: CustomScrollView(
+          controller: _scroll, keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          slivers: [
+            SliverToBoxAdapter(child: head),
+            PinnedHeaderSliver(child: field),
+            SliverPadding(padding: EdgeInsets.fromLTRB(inset, 0, inset, 28), sliver: SliverList.list(children: rows)),
+          ],
         ),
       ),
     );

@@ -35,12 +35,12 @@ import 'day_coach.dart';
 import 'meal_ideas.dart';
 import '../nutrition/food_discovery.dart' show LookupFailure;
 import '../nutrition/food_item.dart' show FoodItem;
-import '../nutrition/food_search.dart' show CommonFood, foodLang;
+import '../nutrition/food_search.dart' show CommonFood, CommonFoodCatalog, foodLang;
 import '../nutrition/meal_habits_ui.dart' show usualMealProvider, reviewUsualMeal;
 import '../plus/entitlement.dart' show entitlementProvider, plusProvider;
 import '../../core/clock.dart' show addDays;
 import '../nutrition/food_item.dart' show FoodScaling;
-import '../plus/plus_screen.dart' show AiAllowanceLine;
+import '../plus/plus_screen.dart' show AiAllowanceLine, resetDate;
 
 /// Opens help with today and food about [day] over [context]'s page. Opening it sends nothing and changes nothing; the
 /// page underneath (a workout being recorded, a food form) keeps everything typed in it.
@@ -255,9 +255,14 @@ class DayConversation extends Notifier<AskState> {
       if (intent.kind == 'ideas') intent = intent.withIdeas(match == null ? const [] : await match(intent.proposed));
       if (intent.kind == 'ate' && sources != null) {
         // One meal from every food said, matched here; the day said (yesterday) or the one this conversation is about.
-        final items = await resolveMeal(saidFoodsOf(intent.proposed), await sources());
+        final proposed = intent.proposed as Map?;
+        final items = await resolveMeal(saidFoodsOf(proposed?['foods']), await sources());
+        // Foods beyond the first twelve: each named and waiting to be added with Add food or left out; when the server could
+        // not name them, the draft says some are missing until the person leaves them out (never complete before).
+        final extra = [for (final e in proposed?['extra'] as List? ?? const []) if (e is String && e.trim().isNotEmpty) {'label': e.trim(), 'state': 'open'}];
         intent = intent.withDraft(items.isEmpty ? null : {'draftId': SyncEngine.newId(), 'rev': 1, 'dayKey': intent.yesterday ? addDays(r.today, -1) : r.shown,
-          'meal': intent.meal ?? meal ?? r.mealNow, 'items': items});
+          'meal': intent.meal ?? meal ?? r.mealNow, 'items': items,
+          if (extra.isNotEmpty) 'extra': extra, if (extra.isEmpty && intent.dropped.contains('foods')) 'overflow': true});
         replace = openDraft?.id;
       } else if (intent.kind == 'edit' && sources != null) {
         final applied = await _edited(open, mealEditsOf(intent.proposed), sources);
@@ -459,6 +464,7 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
       common: [for (final c in common) (item: c.item, fields: c.fields, name: c.nameIn(lang), detail: c.qualifierIn(lang), startUnit: c.unitId)],
       mine: mine,
       seen: [for (final i in seen) candidateOf(i)],
+      asIs: {for (final c in common) if (CommonFoodCatalog.eatenAsIs(c)) c.item.key},
       // A meal of up to 12 foods may search for up to 6 of them; the rest stay "find it" (never dropped).
       maxSearches: 6,
       search: (q) async {
@@ -627,7 +633,7 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
 
   Widget _usage() {
     final l = context.l10n, e = ref.watch(plusProvider), a = e?.allowance;
-    final text = e == null ? l.dcUsesOneUnknown : e.isLegacy ? l.dcUsesOneNoCount : a == null ? l.dcUsesOneUnknown : l.dcUsesOne(a.remaining);
+    final text = e == null ? l.dcUsesOneUnknown : e.isLegacy ? l.dcUsesOneNoCount : a == null ? l.dcUsesOneUnknown : a.remaining <= 0 && a.resetsAtUtc != null ? l.dcUsesNoneLeft(resetDate(a.resetsAtUtc!)) : l.dcUsesOne(a.remaining);
     return Text(text, key: const Key('day-usage'), style: context.caption);
   }
 
@@ -871,6 +877,15 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                 tone: d['logged'] == true ? Tone.success : Tone.neutral))
           else ...[
             for (final it in items) ..._mealItem(id, it, d),
+            for (final (n, e) in (d['extra'] as List? ?? const []).indexed) ..._extraItem(id, n, Map<String, dynamic>.from(e as Map), d),
+            if (d['overflow'] == true) ...[
+              Padding(padding: const EdgeInsets.only(top: 10), child: StatusLine(Icons.info_outline, l.dcMealRestUnnamed(maxMealFoods), key: Key('day-meal-rest-$id'), tone: Tone.warning)),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(key: Key('day-meal-rest-leave-$id'), onPressed: () => _convo.changeDraft(id, (draft) => {...draft, 'overflow': false}, _records(), l),
+                    child: Text(l.dcMealLeaveRest)),
+              ),
+            ],
             if (totals != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
@@ -980,6 +995,29 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
           ]),
         ];
     }
+  }
+
+  /// A food said beyond the first twelve: named, and waiting until it is added on its own with the usual Add food (for the
+  /// draft's day and meal) or left out. Either is the person's explicit choice; until then the meal is not complete.
+  List<Widget> _extraItem(String id, int n, Json e, Json d) {
+    final l = context.l10n, label = '${e['label']}';
+    void mark(String state) => _convo.changeDraft(id, (draft) => {
+          ...draft, 'extra': [for (final (i, x) in (draft['extra'] as List).indexed) i == n ? {...(x as Map), 'state': state} : x],
+        }, _records(), l);
+    if (e['state'] != 'open') {
+      return [Padding(padding: const EdgeInsets.only(top: 6), child: Text(e['state'] == 'added' ? l.dcMealExtraAdded(label) : l.dcMealExtraLeft(label), key: Key('day-meal-extra-$id-$n'), style: context.caption))];
+    }
+    return [
+      Padding(padding: const EdgeInsets.only(top: 10), child: Text(l.dcMealExtra(label, maxMealFoods), key: Key('day-meal-extra-$id-$n'), style: context.sansStyle(15, weight: FontWeight.w600))),
+      Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        SecondaryButton(l.dcMealExtraAdd, key: Key('day-meal-extra-add-$id-$n'), icon: Icons.search, onPressed: () async {
+          final logged = await push<bool>(context, LogFoodScreen(dayKey: d['dayKey'] as String, meal: d['meal'] as String, query: label));
+          if (logged == true && mounted) mark('added');
+        }),
+        TextButton(key: Key('day-meal-extra-leave-$id-$n'), onPressed: () => mark('left'),
+            child: Semantics(label: l.dcMealExtraLeaveFood(label), excludeSemantics: true, child: Text(l.dcMealExtraLeave))),
+      ]),
+    ];
   }
 
   /// The usual amount form, in its selection mode, for an item's record: a confirmed food changes amount, a food needing one

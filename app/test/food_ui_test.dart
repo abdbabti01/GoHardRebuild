@@ -31,12 +31,12 @@ import 'ui_support.dart';
 const _day = '2026-10-09';
 
 Future<List<Override>> _overrides(WidgetTester tester, FoodFakes fakes,
-        {List<Json> food = const [], List<Json> savedFoods = const [], List<Json> seenFoods = const [], int? calorieGoal, int? proteinGoal, AppearanceStore? appearance, bool hints = false}) async =>
+        {List<Json> food = const [], List<Json> savedFoods = const [], List<Json> seenFoods = const [], int? calorieGoal, int? proteinGoal, AppearanceStore? appearance, bool hints = false, bool tabs = true}) async =>
     [
       ...(await tester.runAsync(() => overridesFor(day: _day, food: food, savedFoods: savedFoods, seenFoods: seenFoods, calorieGoal: calorieGoal, proteinGoal: proteinGoal, appearance: appearance)))!,
       ...fakes.overrides,
       // These tests are about finding food; the coach's one-time introduction here is covered in coach_avatar_test.
-      coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())..value = CoachPrefs(hintsEnabled: hints)),
+      coachPrefsStoreProvider.overrideWithValue(CoachPrefsStore(MemorySecretStore())..value = CoachPrefs(hintsEnabled: hints, onTabs: tabs)),
     ];
 
 String _field(WidgetTester tester, String key) => tester.widget<TextField>(find.byKey(Key(key))).controller!.text;
@@ -437,14 +437,14 @@ void main() {
       await _tap(tester, 'food-category-Proteins');
       await tester.enterText(find.byKey(const Key('food-search')), 'c');
       await tester.pumpAndSettle();
-      final list = tester.state<ScrollableState>(find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first);
-      await tester.drag(find.byType(ListView), const Offset(0, -180));
+      final list = tester.state<ScrollableState>(find.descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable)).first);
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -180));
       await tester.pumpAndSettle();
       final scrolled = list.position.pixels;
       expect(scrolled, greaterThan(100));
       void same(String when) {
-        // "Proteins" twice: the chip, and the heading of the list it filters (scrolled just out of view, still laid out).
-        expect((_field(tester, 'food-search'), mealShown(tester), find.text('Proteins', skipOffstage: false).evaluate().length, list.position.pixels), ('c', 'Dinner', 2, scrolled), reason: when);
+        // The meal and category are checked once scrolled back to the top (they scroll with the page, above the results).
+        expect((_field(tester, 'food-search'), list.position.pixels), ('c', scrolled), reason: when);
         expect(tester.takeException(), isNull, reason: when);
       }
 
@@ -467,6 +467,10 @@ void main() {
       await _tap(tester, 'food-cancel');
       same('back from the form');
       expect(fakes.journal.saved, isEmpty, reason: 'cancelling leaves the journal alone');
+      list.position.jumpTo(0);
+      await tester.pumpAndSettle();
+      // "Proteins" twice: the chip, and the heading of the list it filters.
+      expect((mealShown(tester), find.text('Proteins', skipOffstage: false).evaluate().length), ('Dinner', 2), reason: 'the meal and category are still chosen');
     });
 
     testWidgets('what was found for one account is gone when the account changes', (tester) async {
@@ -532,7 +536,8 @@ void main() {
     testWidgets('the coach on food: search is introduced once and steps aside while typing; portions are explained once, on a food with portions; nothing is sent', (tester) async {
       final fakes = FoodFakes();
       final net = FakeServer();
-      await pumpApp(tester, [...await _overrides(tester, fakes, hints: true), transportProvider.overrideWithValue(net)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'));
+      // With the speaking coach off: the invitation is a plain panel, and search has its own help beside the title.
+      await pumpApp(tester, [...await _overrides(tester, fakes, hints: true, tabs: false), transportProvider.overrideWithValue(net)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('coach-spot-food.search')), findsOneWidget, reason: 'the first time the page is in view');
       expect(tester.getTopLeft(find.byKey(const Key('food-search'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('coach-spot-food.search'))).dy), reason: 'under the field: the field never moves');
@@ -542,6 +547,8 @@ void main() {
       await tester.enterText(find.byKey(const Key('food-search')), '');
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('coach-spot-food.search')), findsNothing, reason: 'seen: it does not come back by itself');
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, 2000)); // back up to the title, where its help is
+      await tester.pumpAndSettle();
       await _tap(tester, 'coach-help-food.search');
       expect(find.byKey(const Key('coach-spot-food.search')), findsOneWidget, reason: 'asked for');
 

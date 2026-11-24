@@ -26,9 +26,12 @@ typedef CoachGuideAction = ({String label, Key key, VoidCallback onPressed});
 /// when [ask] is given (Ask GoHard about that context; nothing is sent until the user asks) and one [guide] action.
 @immutable
 class CoachSay {
-  const CoachSay(this.text, {this.title, this.ask, this.onAsk, this.guide, this.primary, this.also = const []});
+  const CoachSay(this.text, {this.title, this.ask, this.onAsk, this.guide, this.primary, this.also = const [], this.note});
   final String? title;
   final String text;
+
+  /// A small line after the actions: what the main action costs ("Uses 1 AI request when you send.").
+  final String? note;
   final CoachContext? ask;
 
   /// Instead of [ask]: the page's own way into Ask GoHard (a builder passes its draft and its Apply).
@@ -165,6 +168,7 @@ class CoachBubble extends StatelessWidget {
               ],
             ),
           ),
+        if (s.note case final n?) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(n, key: const Key('coach-say-note'), style: context.caption)),
       ],
     );
     final shape = RoundedRectangleBorder(

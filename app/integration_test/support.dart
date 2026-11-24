@@ -113,7 +113,8 @@ class Journey {
   Future<void> type(String key, String text) async {
     await reveal(find.byKey(Key(key)));
     await waitFor(find.byKey(Key(key)));
-    await tester.ensureVisible(find.byKey(Key(key)));
+    // Already on screen (a search field pinned at the top): revealing it again by the page's rule would scroll past it.
+    if (find.byKey(Key(key)).hitTestable().evaluate().isEmpty) await tester.ensureVisible(find.byKey(Key(key)));
     // On a real device the first enterText after a focus change can be dropped; focus first, then verify and retry.
     final field = find.descendant(of: find.byKey(Key(key)), matching: find.byType(EditableText));
     for (var attempt = 0; attempt < 4; attempt++) {

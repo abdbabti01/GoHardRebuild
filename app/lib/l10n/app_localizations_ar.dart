@@ -1483,7 +1483,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get foodSearchMore => 'البحث عن مزيد من الأطعمة';
+  String get foodSearchMore => 'البحث عن مزيد من الأطعمة والعلامات التجارية';
 
   @override
   String foodSearchMoreSubtitle(String query) {
@@ -13863,14 +13863,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get foodDescribeTitle => 'صِف وجبتك';
-
-  @override
-  String get foodDescribeSubtitle =>
-      'اكتب ما أكلته، مثل «120 غ دجاج و100 غ بطاطس». تراجعه قبل تسجيل أي شيء.';
-
-  @override
-  String get dcDescribeHint => 'مثلًا: بيضتان وشريحة توست';
+  String get dcDescribeHint => 'مثلًا: أكلت 120 غ دجاج و100 غ بطاطس.';
 
   @override
   String get dcDescribeIntro =>
@@ -13963,7 +13956,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String dcMealTooMany(int count) {
-    return 'قرأت أول $count أطعمة. أضف البقية بـ«إضافة طعام».';
+    return 'أستطيع قراءة حتى $count من الأطعمة في المرة الواحدة. البقية مذكورة أدناه: أضف كلًّا منها بـ«إضافة طعام» أو استبعده.';
   }
 
   @override
@@ -14017,4 +14010,79 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dcMealLogUnavailable =>
       'وصف الوجبة غير متاح على هذا الخادم بعد. إضافة الطعام والتسجيل ما زالا يعملان.';
+
+  @override
+  String dcMealTooManyUnnamed(int count) {
+    return 'ذكرت أكثر من $count من الأطعمة ولم أستطع تحديد الباقي، لذا ليس هنا. راجع هذه الوجبة وسجّلها، ثم صِف الباقي في رسالة جديدة.';
+  }
+
+  @override
+  String get dcMealTheRest => 'باقي ما ذكرته';
+
+  @override
+  String dcMealRestUnnamed(int count) {
+    return 'ذُكر أكثر من $count من الأطعمة: الباقي ليس في هذه الوجبة. صِفه في رسالة جديدة بعد التسجيل، أو أضفه بـ«إضافة طعام».';
+  }
+
+  @override
+  String get dcMealLeaveRest => 'استبعد الباقي';
+
+  @override
+  String dcMealExtra(String food, int count) {
+    return '$food: بعد أول $count من الأطعمة. أضفه وحده، أو استبعده.';
+  }
+
+  @override
+  String get dcMealExtraAdd => 'أضفه بـ«إضافة طعام»';
+
+  @override
+  String get dcMealExtraLeave => 'استبعد';
+
+  @override
+  String dcMealExtraLeaveFood(String food) {
+    return 'استبعد $food';
+  }
+
+  @override
+  String dcMealExtraAdded(String food) {
+    return '$food: أُضيف وحده';
+  }
+
+  @override
+  String dcMealExtraLeft(String food) {
+    return '$food: مُستبعَد';
+  }
+
+  @override
+  String get foodInviteTitle => 'ماذا أكلت؟';
+
+  @override
+  String get foodInviteBody =>
+      'أخبرني بالأطعمة والكميات. سأحسب القيم الغذائية لتراجعها قبل تسجيل أي شيء.';
+
+  @override
+  String get foodInviteAction => 'صِف وجبتي';
+
+  @override
+  String get foodInviteUsage => 'يستخدم طلب ذكاء اصطناعي واحدًا عند الإرسال.';
+
+  @override
+  String foodInviteLimit(String date) {
+    return 'استخدمت طلبات الذكاء الاصطناعي لهذا الشهر؛ تتجدد في $date. ما زال بإمكانك البحث عن الأطعمة أدناه.';
+  }
+
+  @override
+  String get foodInviteFinish => 'أكمل وجبتي';
+
+  @override
+  String get foodInviteUnavailable =>
+      'وصف الوجبة لي غير متاح على هذا الخادم بعد. ما زال بإمكانك البحث عن الأطعمة أدناه.';
+
+  @override
+  String dcUsesNoneLeft(String date) {
+    return 'لا طلبات ذكاء اصطناعي متبقية هذا الشهر · تتجدد في $date';
+  }
+
+  @override
+  String get foodInviteBodyShort => 'تراجعها قبل تسجيل أي شيء.';
 }

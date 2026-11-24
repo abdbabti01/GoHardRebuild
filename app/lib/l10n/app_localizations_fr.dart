@@ -1472,7 +1472,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get foodSearchMore => 'Chercher plus d\'aliments';
+  String get foodSearchMore => 'Chercher plus d’aliments et de marques';
 
   @override
   String foodSearchMoreSubtitle(String query) {
@@ -13572,14 +13572,8 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get foodDescribeTitle => 'Décrire ton repas';
-
-  @override
-  String get foodDescribeSubtitle =>
-      'Dis ce que tu as mangé, par exemple « 120 g de poulet et 100 g de pommes de terre ». Tu vérifies avant que rien ne soit consigné.';
-
-  @override
-  String get dcDescribeHint => 'Par exemple : 2 œufs et une rôtie';
+  String get dcDescribeHint =>
+      'Par exemple : J’ai mangé 120 g de poulet et 100 g de pommes de terre.';
 
   @override
   String get dcDescribeIntro =>
@@ -13670,7 +13664,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String dcMealTooMany(int count) {
-    return 'J’ai lu les $count premiers aliments. Ajoute les autres avec Ajouter un aliment.';
+    return 'Je peux lire jusqu’à $count aliments à la fois. Les autres sont listés plus bas : ajoute chacun avec Ajouter un aliment, ou laisse-le de côté.';
   }
 
   @override
@@ -13724,6 +13718,82 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get dcMealLogUnavailable =>
       'Décrire un repas n’est pas encore offert sur ce serveur. Ajouter un aliment et la consignation fonctionnent toujours.';
+
+  @override
+  String dcMealTooManyUnnamed(int count) {
+    return 'Tu as nommé plus de $count aliments et je n’ai pas pu savoir lesquels restent, alors ils ne sont pas ici. Vérifie et consigne ce repas, puis décris le reste dans un nouveau message.';
+  }
+
+  @override
+  String get dcMealTheRest => 'le reste de ce que tu as nommé';
+
+  @override
+  String dcMealRestUnnamed(int count) {
+    return 'Plus de $count aliments ont été nommés : le reste n’est pas dans ce repas. Décris-le dans un nouveau message après avoir consigné, ou ajoute-le avec Ajouter un aliment.';
+  }
+
+  @override
+  String get dcMealLeaveRest => 'Laisser le reste de côté';
+
+  @override
+  String dcMealExtra(String food, int count) {
+    return '$food : après les $count premiers aliments. Ajoute-le à part, ou laisse-le de côté.';
+  }
+
+  @override
+  String get dcMealExtraAdd => 'Ajouter avec Ajouter un aliment';
+
+  @override
+  String get dcMealExtraLeave => 'Laisser de côté';
+
+  @override
+  String dcMealExtraLeaveFood(String food) {
+    return 'Laisser $food de côté';
+  }
+
+  @override
+  String dcMealExtraAdded(String food) {
+    return '$food : ajouté à part';
+  }
+
+  @override
+  String dcMealExtraLeft(String food) {
+    return '$food : laissé de côté';
+  }
+
+  @override
+  String get foodInviteTitle => 'Qu’as-tu mangé?';
+
+  @override
+  String get foodInviteBody =>
+      'Dis-moi les aliments et les quantités. Je calcule les valeurs nutritives, et tu vérifies avant que rien ne soit consigné.';
+
+  @override
+  String get foodInviteAction => 'Décrire mon repas';
+
+  @override
+  String get foodInviteUsage => 'Utilise 1 requête IA à l’envoi.';
+
+  @override
+  String foodInviteLimit(String date) {
+    return 'Tu as utilisé tes requêtes IA du mois; elles reviennent le $date. Tu peux quand même chercher des aliments plus bas.';
+  }
+
+  @override
+  String get foodInviteFinish => 'Terminer mon repas';
+
+  @override
+  String get foodInviteUnavailable =>
+      'Me décrire un repas n’est pas encore offert sur ce serveur. Tu peux quand même chercher des aliments plus bas.';
+
+  @override
+  String dcUsesNoneLeft(String date) {
+    return 'Plus de requêtes IA ce mois-ci · elles reviennent le $date';
+  }
+
+  @override
+  String get foodInviteBodyShort =>
+      'Tu vérifies avant que rien ne soit consigné.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

@@ -69,12 +69,28 @@ public partial class CoachTests
         Assert.Single(fake.Calls);
         Assert.Equal(1, (await AllowanceOf(a)).GetProperty("used").GetInt32());
 
-        // A long list: the first twelve, in order, and "foods" says some were left out. Still one charge.
+        // A long list: the first twelve, in order, the rest named ("extra") and "foods" says the description was longer than
+        // one draft. Still one charge. The model is told to list every food, never to stop at twelve.
+        Assert.Contains("never stop early", system);
+        Assert.DoesNotContain("at most 12", system);
         fake.Respond = _ => Task.FromResult(Message(Ate([.. Enumerable.Range(1, 14).Select(i => MealFood($"food {i}", i, "g"))])));
         var (_, many) = await PostDaily(a, Describe("fourteen foods"));
         Assert.Equal(12, many.GetProperty("intent").GetProperty("foods").GetArrayLength());
         Assert.Contains("foods", many.GetProperty("intent").GetProperty("dropped").EnumerateArray().Select(x => x.GetString()));
+        Assert.Equal(["food 13", "food 14"], many.GetProperty("intent").GetProperty("extra").EnumerateArray().Select(x => x.GetString()));
         Assert.Equal(2, (await AllowanceOf(a)).GetProperty("used").GetInt32());
+        // More than can be named reliably (beyond 24, or a name that does not check out): none named, "foods" still says so.
+        foreach (var (what, list) in new[] {
+            ("thirty foods", (object[])[.. Enumerable.Range(1, 30).Select(i => MealFood($"food {i}", i, "g"))]),
+            ("an unreadable thirteenth", (object[])[.. Enumerable.Range(1, 12).Select(i => MealFood($"food {i}", i, "g")), MealFood("200 kcal of pasta")]) })
+        {
+            fake.Respond = _ => Task.FromResult(Message(Ate(list)));
+            var (_, more) = await PostDaily(a, Describe(what));
+            Assert.Equal(12, more.GetProperty("intent").GetProperty("foods").GetArrayLength());
+            Assert.Contains("foods", more.GetProperty("intent").GetProperty("dropped").EnumerateArray().Select(x => x.GetString()));
+            Assert.Equal(0, more.GetProperty("intent").GetProperty("extra").GetArrayLength());
+        }
+        Assert.Equal(4, (await AllowanceOf(a)).GetProperty("used").GetInt32());
 
         // Nothing usable read, or a phone that did not ask for meal logging: "unsupported", not charged.
         fake.Respond = _ => Task.FromResult(Message(Ate([MealFood("  "), MealFood("500 kcal of pasta")])));
@@ -85,12 +101,12 @@ public partial class CoachTests
         var (_, older) = await PostDaily(a, Daily("I ate 120 g of chicken", features: ["ideas"]));
         Assert.Equal(("unsupported", 0), (older.GetProperty("intent").GetProperty("kind").GetString(), older.GetProperty("intent").GetProperty("foods").GetArrayLength()));
         Assert.Contains("Meal logging: not available", UserText(fake.Calls[^1].Body));
-        Assert.Equal(2, (await AllowanceOf(a)).GetProperty("used").GetInt32());
+        Assert.Equal(4, (await AllowanceOf(a)).GetProperty("used").GetInt32());
 
         // A malformed reply is not an answer, and not charged.
         fake.Respond = _ => Task.FromResult(Message("{\"kind\":\"ate\",\"foods\":\"chicken\""));
         Assert.Equal(HttpStatusCode.ServiceUnavailable, (await PostDaily(a, Describe())).Status);
-        Assert.Equal(2, (await AllowanceOf(a)).GetProperty("used").GetInt32());
+        Assert.Equal(4, (await AllowanceOf(a)).GetProperty("used").GetInt32());
     }
 
     [Fact]

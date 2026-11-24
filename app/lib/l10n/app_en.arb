@@ -2126,7 +2126,7 @@
       }
     }
   },
-  "foodSearchMore": "Search more foods",
+  "foodSearchMore": "Search more foods and brands",
   "@foodSearchMore": {
     "description": "Link asking the wider database."
   },
@@ -18802,17 +18802,9 @@
       }
     }
   },
-  "foodDescribeTitle": "Describe your meal",
-  "@foodDescribeTitle": {
-    "description": "Add food: opens the coach to read a sentence about what was eaten."
-  },
-  "foodDescribeSubtitle": "Say what you ate, like “120 g of chicken and 100 g of potatoes”. You review it before anything is logged.",
-  "@foodDescribeSubtitle": {
-    "description": "Add food: under Describe your meal."
-  },
-  "dcDescribeHint": "For example: 2 eggs and a slice of toast",
+  "dcDescribeHint": "For example: I ate 120 g of chicken and 100 g of potatoes.",
   "@dcDescribeHint": {
-    "description": "Coach input hint when opened from Describe your meal."
+    "description": "Coach input hint when opened from Add food’s invitation. Never sent by itself."
   },
   "dcDescribeIntro": "Tell me what you ate, with amounts if you know them. I’ll find each food in the food records, ask what I can’t know, and prepare one meal for you to review. Nothing is logged until you tap Log meal.",
   "@dcDescribeIntro": {
@@ -18931,9 +18923,9 @@
   "@dcMealReplaced": {
     "description": "An older draft after a new description or an applied change."
   },
-  "dcMealTooMany": "I read the first {count} foods. Add the rest with Add food.",
+  "dcMealTooMany": "I can read up to {count} foods at a time. The others are listed below: add each one with Add food, or leave it out.",
   "@dcMealTooMany": {
-    "description": "Described meal: the sentence named more foods than one meal holds.",
+    "description": "Described meal: more foods were named than one meal holds; the others are named on the card.",
     "placeholders": {
       "count": {
         "type": "int"
@@ -19018,5 +19010,124 @@
   "dcMealLogUnavailable": "Describing a meal isn’t available on this server yet. Add food and logging still work.",
   "@dcMealLogUnavailable": {
     "description": "Coach opened from Describe your meal on a server without coach.meal-log."
+  },
+  "dcMealTooManyUnnamed": "You named more than {count} foods and I couldn’t tell which ones are left, so they aren’t here. Review and log this meal, then describe the rest in a new message.",
+  "@dcMealTooManyUnnamed": {
+    "description": "Described meal: more foods were named than one meal holds and the rest could not be named.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dcMealTheRest": "the rest of what you named",
+  "@dcMealTheRest": {
+    "description": "Described meal: what a partial total is without, when foods past the limit could not be named."
+  },
+  "dcMealRestUnnamed": "More than {count} foods were named: the rest isn’t in this meal. Describe it in a new message after logging, or add it with Add food.",
+  "@dcMealRestUnnamed": {
+    "description": "Described meal card: foods past the limit that could not be named.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dcMealLeaveRest": "Leave out the rest",
+  "@dcMealLeaveRest": {
+    "description": "Described meal card: explicitly leave out unnamed foods past the limit."
+  },
+  "dcMealExtra": "{food}: past the first {count} foods. Add it on its own, or leave it out.",
+  "@dcMealExtra": {
+    "description": "Described meal card: a food named past the limit.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dcMealExtraAdd": "Add with Add food",
+  "@dcMealExtraAdd": {
+    "description": "Described meal card: log a food past the limit on its own with Add food."
+  },
+  "dcMealExtraLeave": "Leave out",
+  "@dcMealExtraLeave": {
+    "description": "Described meal card: leave a food past the limit out."
+  },
+  "dcMealExtraLeaveFood": "Leave out {food}",
+  "@dcMealExtraLeaveFood": {
+    "description": "Screen reader label of Leave out.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealExtraAdded": "{food}: added on its own",
+  "@dcMealExtraAdded": {
+    "description": "Described meal card: a food past the limit was logged with Add food.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealExtraLeft": "{food}: left out",
+  "@dcMealExtraLeft": {
+    "description": "Described meal card: a food past the limit was left out.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "foodInviteTitle": "What did you eat?",
+  "@foodInviteTitle": {
+    "description": "Add food: the coach’s invitation to describe a meal, its first line."
+  },
+  "foodInviteBody": "Tell me the foods and amounts. I’ll work out the nutrition for you to review before anything is logged.",
+  "@foodInviteBody": {
+    "description": "Add food: the invitation. Must promise a review before anything is logged."
+  },
+  "foodInviteAction": "Describe my meal",
+  "@foodInviteAction": {
+    "description": "Add food: the invitation’s action; opens the coach conversation for this day and meal."
+  },
+  "foodInviteUsage": "Uses 1 AI request when you send.",
+  "@foodInviteUsage": {
+    "description": "Add food: under the invitation’s action."
+  },
+  "foodInviteLimit": "You’ve used this month’s AI requests; they come back on {date}. You can still search for foods below.",
+  "@foodInviteLimit": {
+    "description": "Add food: the invitation when the monthly AI allowance is used up.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "foodInviteFinish": "Finish my meal",
+  "@foodInviteFinish": {
+    "description": "Add food at the AI limit: opens the meal already being prepared (no AI request needed)."
+  },
+  "foodInviteUnavailable": "Describing a meal to me isn’t available on this server yet. You can still search for foods below.",
+  "@foodInviteUnavailable": {
+    "description": "Add food: the invitation on a server without coach.meal-log."
+  },
+  "dcUsesNoneLeft": "No AI requests left this month · they come back on {date}",
+  "@dcUsesNoneLeft": {
+    "description": "Under the coach input when the monthly allowance is used up.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "foodInviteBodyShort": "You review it before anything is logged.",
+  "@foodInviteBodyShort": {
+    "description": "Add food invitation at very large text on a narrow phone: the promise of a review, in place of the longer sentence."
   }
 }

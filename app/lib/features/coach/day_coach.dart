@@ -407,7 +407,7 @@ class DayIntent {
         ideas: [for (final i in j['ideas'] as List? ?? const []) if (i is Map && i['parts'] is List) Map<String, dynamic>.from(i)],
         preferences: [for (final p in j['preferences'] as List? ?? const []) if (p is String && preferenceIds.contains(p)) p],
         // A server answer's foods or edits (words) are read by meal_ideas.dart into a draft; a stored intent keeps the draft.
-        proposed: ai && j['kind'] == 'ideas' ? j['ideas'] : ai && j['kind'] == 'ate' ? j['foods'] : ai && j['kind'] == 'edit' ? j['edits'] : null,
+        proposed: ai && j['kind'] == 'ideas' ? j['ideas'] : ai && j['kind'] == 'ate' ? {'foods': j['foods'], 'extra': j['extra']} : ai && j['kind'] == 'edit' ? j['edits'] : null,
         proceed: !ai && j['proceed'] == true,
         draft: !ai && j['draft'] is Map ? Map<String, dynamic>.from(j['draft'] as Map) : null,
         changes: [for (final c in j['changes'] as List? ?? const []) if (c is Map) Map<String, dynamic>.from(c)],
@@ -659,7 +659,7 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
       };
       lines.add(said);
     }
-    if (intent.dropped.contains('foods')) lines.add(l.dcMealTooMany(maxMealFoods));
+    if (intent.dropped.contains('foods')) lines.add(intent.draft?['overflow'] == true ? l.dcMealTooManyUnnamed(maxMealFoods) : l.dcMealTooMany(maxMealFoods));
     if (intent.dropped.contains('food')) lines.add(l.dcMealUnreadable);
     final d = intent.draft;
     if (d == null) return;
@@ -972,7 +972,13 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
 Json mealCard(Json draft, AppLocalizations l) {
   final items = [for (final i in draft['items'] as List? ?? const []) Map<String, dynamic>.from(i as Map)];
   final parts = [for (final i in items) if (i['status'] == 'ready') MealComponent(Map<String, dynamic>.from(i['part'] as Map))];
-  final open = [for (final i in items) if (i['status'] != 'ready') itemLabel(i)];
+  // Foods beyond the first twelve still waiting to be added or left out, and "the rest" when they could not be named: the
+  // meal is not complete, and its sum says what it is without, until each is dealt with.
+  final open = [
+    for (final i in items) if (i['status'] != 'ready') itemLabel(i),
+    for (final e in draft['extra'] as List? ?? const []) if ((e as Map)['state'] == 'open') '${e['label']}',
+    if (draft['overflow'] == true) l.dcMealTheRest,
+  ];
   final totals = NutrientCoverage.ofParts(parts.map((c) => c.values));
   return {
     'kind': 'draft', 'id': 'draft', 'name': l.dcMealTitle, 'draft': draft, 'complete': open.isEmpty && parts.isNotEmpty, 'without': open,

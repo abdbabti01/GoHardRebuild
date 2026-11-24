@@ -39,10 +39,13 @@ public sealed record DailyPortion(string? Change, double? Factor, double? Servin
 /// <summary>
 /// What was asked, every value checked: a kind from the allowlist, references only to this account's saved items that
 /// were offered, the person's own numbers in range. <c>Dropped</c> names what the model said that did not check out.
+/// <c>Extra</c>: the foods of a description beyond the first <see cref="DailyCoachService.MaxMealFoods"/>, as the person
+/// named them, so none is left out unnamed (empty, with "foods" dropped, when they cannot all be named).
 /// </summary>
 public sealed record DailyIntent(string Kind, string Day, string? Nutrient, string? Source, List<DailyRef> Items, DailyPortion Portion,
     int? MaxCalories, int? MinProtein, string? Meal, string? Clarification, List<string> UnknownItems, List<string> Dropped,
-    List<DailyIdea>? Ideas = null, List<string>? Preferences = null, List<DailyMealFood>? Foods = null, List<DailyEdit>? Edits = null);
+    List<DailyIdea>? Ideas = null, List<string>? Preferences = null, List<DailyMealFood>? Foods = null, List<DailyEdit>? Edits = null,
+    List<string>? Extra = null);
 
 /// <summary>
 /// A food the person says they ate (kind "ate"), as words only: what they called it, and only what they said about it —
@@ -196,7 +199,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
         - ideas (kind "ideas" only, else []): up to 3 different ideas, each a short title in the person's language and 1 to 6 everyday whole foods or simple products. For each food: name = its plain everyday name in English as a food database lists it ("chicken breast", "greek yogurt plain", "rolled oats"), never a brand unless the person named one; label = the same food in the person's language; preparation = "cooked", "raw", "boiled", "baked" and so on, or null; quantity and unit = an ordinary amount in "g", "ml", "piece" (with noun, the singular thing counted, such as "egg" or "slice") or "serving". Never calories, protein, prices, times or health claims, in titles either.
         - preferences: the person's own preferences for this request, from: quick, sweet, noCooking, vegetarian, cheaper, moreProtein, lighter, different (different from their usual meal). A request for a restaurant or fast-food order is "restaurant", not ideas.
         - ingredient: only for that case, else null. Never a food the person did not name, and never a guess at which food they meant.
-        - foods (kind "ate" only, else []): every food or drink the person names, in their order, one entry each, at most 12. name = the food in plain English at exactly the detail the person gave ("chicken" stays "chicken", never "chicken breast"; "potatoes" stays "potatoes"); label = the food as the person said it, in their language, without the amount; preparation = only a preparation the person stated ("raw", "boiled", "grilled", "cooked"), else null; brand = only a brand the person named, else null; quantity and unit = only the amount the person stated, in "g", "kg", "oz", "lb", "ml", "l", "piece" (with noun = the thing counted in the singular, such as "egg", "slice", "cup", "tablespoon", "breast") or "serving", else both null. Never add a food, oil, butter, sauce or drink the person did not name, never choose a preparation, cut or brand for them, and never convert an amount.
+        - foods (kind "ate" only, else []): every food or drink the person names, in their order, one entry each: all of them, however many (never stop early; GoHard keeps the first 12 and names the rest to the person). name = the food in plain English at exactly the detail the person gave ("chicken" stays "chicken", never "chicken breast"; "potatoes" stays "potatoes"); label = the food as the person said it, in their language, without the amount; preparation = only a preparation the person stated ("raw", "boiled", "grilled", "cooked"), else null; brand = only a brand the person named, else null; quantity and unit = only the amount the person stated, in "g", "kg", "oz", "lb", "ml", "l", "piece" (with noun = the thing counted in the singular, such as "egg", "slice", "cup", "tablespoon", "breast") or "serving", else both null. Never add a food, oil, butter, sauce or drink the person did not name, never choose a preparation, cut or brand for them, and never convert an amount.
         - edits (kind "edit" only, else []): each change to the foods in <meal_draft>: op "amount" (ref of the draft food, food = that food with the new quantity and unit), "remove" (ref, food null) or "add" (ref null, food = the new food, with the same rules as foods). Only refs listed in <meal_draft>; a food you cannot match to one is a "clarify".
         - day: for "ate", "yesterday" when the person says they ate it yesterday.
         - Numbers you return are only the person's own words: maxCalories and minProtein (for this meal, not the day), factor (a multiplier such as 0.5 for half), servings, grams. "Smaller" or "bigger" without a number is change "smaller" or "larger". Never estimate calories, protein or any nutrition value, and never invent a target the person did not state.
@@ -364,14 +367,22 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
             // nothing that checks out it is "unsupported": an empty reading helps nobody and is not charged.
             List<DailyMealFood> foods = [];
             List<DailyEdit> edits = [];
+            List<string> extra = [];
             if (kind is "ate" or "edit" && !log || kind == "edit" && draft is not { Count: > 0 }) kind = "unsupported";
             if (kind == "ate")
             {
                 var all = A("foods").ToList();
                 foreach (var x in all.Take(MaxMealFoods))
                     if (MealFood(x, dropped) is { } food) foods.Add(food);
-                // More foods than one description holds: kept in order and said, never dropped silently.
-                if (all.Count > MaxMealFoods) dropped.Add("foods");
+                // More foods than one description holds: the first twelve read, the next twelve named for the person to add
+                // with Add food or leave out, never dropped silently. When they cannot all be named, none is: "foods" alone
+                // says some are missing, and the phone asks for the rest to be described separately.
+                if (all.Count > MaxMealFoods)
+                {
+                    dropped.Add("foods");
+                    var named = all.Skip(MaxMealFoods).Select(x => MealFood(x, []) is { } f ? f.Label : null).ToList();
+                    if (all.Count <= MaxMealFoods * 2 && named.All(n => n is not null)) extra = [.. named.OfType<string>()];
+                }
                 if (foods.Count == 0) { kind = "unsupported"; dropped.Add("meal"); }
             }
             if (kind == "edit")
@@ -396,7 +407,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
             }
             if (kind is not ("ate" or "edit") && day == "yesterday") day = "shown";
             return new(kind, day, nutrient, source, refs, portion, Whole("maxCalories", 50, 4000), Whole("minProtein", 1, 300), meal, clarification, unknown, [.. dropped.Distinct()],
-                checkedIdeas, preferences, foods, edits);
+                checkedIdeas, preferences, foods, edits, extra);
         }
         catch (Exception ex) when (ex is InvalidOperationException or FormatException) { return null; }
     }
