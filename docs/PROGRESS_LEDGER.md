@@ -2935,3 +2935,6 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   VoiceOver, live Groq.
 - Code ab3be2e: CI 255 (45328581173) passed; unsigned IPA run 84 (45330290097, tag `ipa-eat-compact-top-ab3be2e`) passed
   (artifact GoHard-Dev-unsigned-ipa) and replaces IPA 83 (43dcda5). Not merged, not deployed.
+- 24 Nov 2026: owner tested IPA 84 and approved; `main` fast-forwarded 27877fe → c524e4f (with `feature/eat-meals-first`).
+  CI 258 (45417821253) passed on `main`; Railway devoted-caring success, hosted Ready (17 migrations), contract 2.
+  IPA 84 reused (app code unchanged). Release notes in docs/RELEASE_AND_ROLLBACK.md.

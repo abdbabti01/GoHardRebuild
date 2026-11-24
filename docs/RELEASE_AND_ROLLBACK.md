@@ -145,6 +145,26 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Eat: meals first and a compact top — deployed 24 Nov 2026 (`main` c524e4f)
+
+- **What:** Eat's order is now summary › the day's meals › reminders › Eating out › History & trends (docs/FOOD_DATA.md
+  › Eat page order). Eat's top is compact (docs/FOOD_DATA.md › Compact top): a smaller coach with a short briefing
+  that leaves the figures to the rings, one action and Ask me; the summary without a photograph, the rings side by side
+  with one line each; percentages and composition in a folded **Nutrition details**; Edit goals and Customize tracking
+  in a **Nutrition settings** sheet; **Set daily goals** on the summary while none is set. Today is unchanged.
+  17 new strings in en/fr/ar.
+- **App only.** No API code, migration, capability, contract, sync, entitlement or AI-provider change. Opening Eat,
+  details or settings sends no AI request and logs nothing.
+- **Build:** code 43dcda5 (`feature/eat-meals-first`, CI 252, IPA 83) and ab3be2e (`feature/eat-compact-top`, CI 255);
+  unsigned IPA run 84 from ab3be2e (tag `ipa-eat-compact-top-ab3be2e`). c524e4f adds only the ledger, so IPA 84 has
+  the merged app code and is reused. No exercise-preview code or media.
+- **Merged:** owner tested IPA 84 and approved 24 Nov 2026. `main` fast-forwarded 27877fe → c524e4f (main had no newer
+  commits). CI 258 passed on `main`. Railway devoted-caring: success; hosted `/health/ready` Ready with 17
+  migrations (unchanged), `/api/v1/capabilities` contract 2. No hosted account created.
+- **Verified:** owner on iPhone (IPA 84); full app suite, analyze, l10n check; emulator journey
+  `journey_eat_compact_test`. **Not verified:** VoiceOver and Reduce Motion on a device.
+- **Rollback:** revert ab3be2e (compact top) and, if wanted, 43dcda5 (page order); app only, no data affected.
+
 ### Help me set my targets — merged 18 Nov 2026 (formula review pending)
 
 - **What:** Eat › Edit goals › Help me set my targets: goal, a few details (latest weigh-in reused, metric or imperial),
