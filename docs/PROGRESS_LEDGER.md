@@ -2977,5 +2977,7 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   The coach was the STUB, so this proves the app/API path only.
 - Not verified: live Groq reading of meal sentences (no key here), live USDA brand coverage beyond the queries above,
   iPhone, VoiceOver.
-- CI/IPA: RESULT_CI. Not merged, not deployed (needs the API deploy for `coach.meal-log`; an older server keeps search
+- Code 53f74d7: CI 261 (45443419898) passed (api, app); unsigned IPA run 85 (45446448079, tag
+  `ipa-food-search-describe-meal-53f74d7`) passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media: built from
+  this branch, which has none). Not merged, not deployed (needs the API deploy for `coach.meal-log`; an older server keeps search
   and manual logging, and Describe your meal says it is unavailable).
