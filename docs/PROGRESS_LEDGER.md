@@ -2903,3 +2903,5 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Pre-existing, not touched: gated `move_render_test` › water eat-earlier-day-blue-light fails at `trends-calendar`
   on main too. **Not run:** emulator journeys (`journey_eatout_entry_test`, `journey_trends_test` etc. tap these
   panels through `Journey.tap`, which scrolls), iPhone, VoiceOver/TalkBack on a device.
+- Code 43dcda5: CI 252 (45314092532) passed; unsigned IPA run 83 (45315892935, tag `ipa-eat-meals-first-43dcda5`)
+  passed (artifact GoHard-Dev-unsigned-ipa). Not merged, not deployed.
