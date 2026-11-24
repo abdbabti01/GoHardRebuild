@@ -79,10 +79,10 @@ void main() {
     expect(find.descendant(of: find.byKey(const Key('eat-repeat-dinner')), matching: find.text('Yesterday\'s soup')), findsOneWidget);
     expect(find.byKey(const Key('log-food')).hitTestable(), findsOneWidget, reason: 'one general Log food action');
     expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
-    // The GH mark and the summary panel's decorative bowl (the coach is painted, not an image): no scene (only Today has one)
-    // and no food photograph standing in for a meal or an entry.
-    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsNWidgets(2));
-    expect(find.byKey(const Key('eat-photo-nutrition')), findsOneWidget);
+    // Only the GH mark (the coach is painted, not an image): no scene (only Today has one), no decorative bowl in the
+    // summary (its figures get the width, docs/FOOD_DATA.md › Compact top) and no food photograph standing in for a meal.
+    expect(find.descendant(of: find.byType(EatScreen), matching: find.byType(Image)), findsOneWidget);
+    expect(find.byKey(const Key('eat-photo-nutrition')), findsNothing);
     expect(find.descendant(of: find.byType(GroupCard), matching: find.byType(Image)), findsNothing, reason: 'the journal has no photographs');
     expect(find.byKey(const Key('eat-coach')), findsOneWidget, reason: 'the guide speaks under the title');
     expect(find.byKey(const Key('coach-help-eat')), findsNothing, reason: 'no second, small avatar beside the speaking one');
@@ -146,7 +146,12 @@ void main() {
     expect(ring(tester, 'eat-goal-calories'), closeTo(1020 / 2200, 0.001));
     expect(find.byType(ProgressRing).hitTestable(), findsNWidgets(2), reason: 'a ring for each goal that was set (calories, protein), none for carbs or fat');
     expect(find.byType(ProgressRail).hitTestable(), findsNothing, reason: 'the rings replace the bars; no second measure');
-    expect(find.text('46%'), findsOneWidget);
+    expect(find.text('46%'), findsNothing, reason: 'the share is in Nutrition details, not beside the ring');
+    await tester.runAsync(() => Scrollable.ensureVisible(tester.element(find.byKey(const Key('eat-details'))), alignment: 0.5));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('eat-details')));
+    await tester.pumpAndSettle();
+    expect(find.text('Calories: 46% of goal'), findsOneWidget);
     expect(find.text('106 g'), findsOneWidget, reason: 'carbs: a known total, no goal invented for it');
     expect(find.text('32 g'), findsOneWidget, reason: 'fat likewise');
 

@@ -41,7 +41,7 @@ void main() {
     await j.settle(8);
 
     await eatTop();
-    await j.tap(find.descendant(of: eatCoach, matching: find.byKey(const Key('eat-brief-goals'))));
+    await j.tap(find.descendant(of: find.byType(EatScreen), matching: find.byKey(const Key('eat-set-goals'))));
     await j.type('goal-protein', '10');
     await j.tapKey('goal-save');
     await j.settle(10);

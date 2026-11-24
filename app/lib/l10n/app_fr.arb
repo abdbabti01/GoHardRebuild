@@ -3267,5 +3267,22 @@
   "nrMacroBasis": "Pourcentages des {kcal} kcal venant des protéines, des glucides et des lipides (4, 4 et 9 kcal par gramme).",
   "nrMacroDiffers": "Tes calories enregistrées restent à {kcal} kcal. Les étiquettes arrondissent leurs valeurs, et les fibres et l'alcool sont comptés autrement : les deux totaux peuvent donc différer.",
   "nrMacroPartial": "Certains aliments n'ont pas de valeur de protéines, de glucides ou de lipides : aucune répartition n'est montrée. Les quantités sont celles qui sont connues.",
-  "nrMacroZero": "Aucune énergie venant des protéines, des glucides ou des lipides n'a été enregistrée : il n'y a pas de répartition."
+  "nrMacroZero": "Aucune énergie venant des protéines, des glucides ou des lipides n'a été enregistrée : il n'y a pas de répartition.",
+  "ebShortOver": "Tu es au-dessus de ta cible de calories aujourd’hui. Ce n’est pas grave : je peux te suggérer des options plus légères.",
+  "ebShortNear": "Tu approches de ta cible de calories, et la journée n’est pas finie.",
+  "ebShortProteinReached": "Objectif de protéines atteint. Des idées pour ton prochain repas?",
+  "ebShortKcalIncomplete": "Certains aliments n’ont pas de valeur en calories : le total des calories est donc incomplet.",
+  "ebShortRoomBoth": "Il te reste de la marge en calories et en protéines aujourd’hui.",
+  "ebShortRoomKcal": "Il te reste de la marge en calories aujourd’hui.",
+  "ebShortProteinToGo": "Tes protéines sont encore sous ton objectif.",
+  "ebShortProteinNear": "Tes protéines sont presque à ton objectif.",
+  "ebShortProteinMissing": "Certaines valeurs de protéines manquent.",
+  "ebShortOverPlain": "Tu es au-dessus de ta cible de calories aujourd’hui.",
+  "ebShortPast": "Voici ce que tu as consigné le {day}.",
+  "ebShortPastOver": "Les calories étaient au-dessus de la cible fixée pour ce jour-là.",
+  "ebShortPastUnder": "Les calories étaient sous la cible fixée pour ce jour-là.",
+  "ebShortPastAt": "Les calories étaient à la cible fixée pour ce jour-là.",
+  "eatNutritionSettings": "Réglages nutrition",
+  "eatNutritionDetails": "Détails nutritionnels",
+  "eatGoalPercent": "{nutrient} : {percent} de l’objectif"
 }

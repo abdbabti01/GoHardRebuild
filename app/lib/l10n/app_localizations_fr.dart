@@ -13485,6 +13485,73 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get nrMacroZero =>
       'Aucune énergie venant des protéines, des glucides ou des lipides n\'a été enregistrée : il n\'y a pas de répartition.';
+
+  @override
+  String get ebShortOver =>
+      'Tu es au-dessus de ta cible de calories aujourd’hui. Ce n’est pas grave : je peux te suggérer des options plus légères.';
+
+  @override
+  String get ebShortNear =>
+      'Tu approches de ta cible de calories, et la journée n’est pas finie.';
+
+  @override
+  String get ebShortProteinReached =>
+      'Objectif de protéines atteint. Des idées pour ton prochain repas?';
+
+  @override
+  String get ebShortKcalIncomplete =>
+      'Certains aliments n’ont pas de valeur en calories : le total des calories est donc incomplet.';
+
+  @override
+  String get ebShortRoomBoth =>
+      'Il te reste de la marge en calories et en protéines aujourd’hui.';
+
+  @override
+  String get ebShortRoomKcal =>
+      'Il te reste de la marge en calories aujourd’hui.';
+
+  @override
+  String get ebShortProteinToGo =>
+      'Tes protéines sont encore sous ton objectif.';
+
+  @override
+  String get ebShortProteinNear => 'Tes protéines sont presque à ton objectif.';
+
+  @override
+  String get ebShortProteinMissing =>
+      'Certaines valeurs de protéines manquent.';
+
+  @override
+  String get ebShortOverPlain =>
+      'Tu es au-dessus de ta cible de calories aujourd’hui.';
+
+  @override
+  String ebShortPast(String day) {
+    return 'Voici ce que tu as consigné le $day.';
+  }
+
+  @override
+  String get ebShortPastOver =>
+      'Les calories étaient au-dessus de la cible fixée pour ce jour-là.';
+
+  @override
+  String get ebShortPastUnder =>
+      'Les calories étaient sous la cible fixée pour ce jour-là.';
+
+  @override
+  String get ebShortPastAt =>
+      'Les calories étaient à la cible fixée pour ce jour-là.';
+
+  @override
+  String get eatNutritionSettings => 'Réglages nutrition';
+
+  @override
+  String get eatNutritionDetails => 'Détails nutritionnels';
+
+  @override
+  String eatGoalPercent(String nutrient, String percent) {
+    return '$nutrient : $percent de l’objectif';
+  }
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

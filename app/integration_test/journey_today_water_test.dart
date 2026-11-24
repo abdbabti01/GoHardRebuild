@@ -40,7 +40,8 @@ void main() {
 
     // Water on, from Eat's labelled Customize tracking; Steps on from Today's tile.
     await j.tapKey('nav-eat');
-    await j.tap(inEat(const Key('eat-customize')));
+    await j.tap(inEat(const Key('eat-nutrition-settings')));
+    await j.tapKey('eat-customize');
     await j.tapKey('track-water');
     Navigator.of(tester.element(find.byKey(const Key('track-water')))).pop();
     await j.settle(4);

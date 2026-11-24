@@ -580,8 +580,9 @@ class _TrackingSheet extends ConsumerWidget {
   }
 }
 
-/// The quiet ways from a nutrition summary to its settings: the daily goals ("Set daily goals" while none is set,
-/// "Edit goals" once one is; Eat only, [goals]) and Customize tracking.
+/// The way from Eat's summary to its settings: **Nutrition settings**, a small sheet with the existing goals editor
+/// ("Set daily goals" while none is set, "Edit goals" once one is; Help me set my targets is inside it) and Customize
+/// tracking. While no goal is set, Set daily goals is also right here, not only inside the sheet.
 class NutritionTools extends ConsumerWidget {
   const NutritionTools({super.key, this.keyPrefix = 'nutrition', this.goals = true});
 
@@ -595,12 +596,39 @@ class NutritionTools extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = ref.watch(profileProvider).value;
     final hasGoal = p != null && (p.calorieGoal != null || p.proteinGoal != null || p.waterGoalMl != null);
-    // The goals link, then Customize tracking with its name (not an unexplained icon); they wrap by words.
+    final l = context.l10n;
+    // Named actions (never an unexplained icon); they wrap by words.
     return Wrap(spacing: 4, runSpacing: 0, crossAxisAlignment: WrapCrossAlignment.center, children: [
-      if (goals)
-        QuietLink(hasGoal ? context.l10n.eatEditGoals : context.l10n.eatSetGoals, key: Key('$keyPrefix-goals'), said: hasGoal ? context.l10n.eatEditGoalsSaid : context.l10n.eatSetGoals,
-            onPressed: p == null ? null : () => showGoalsSheet(context, ref)),
-      TextButton.icon(key: Key('$keyPrefix-customize'), onPressed: () => showTrackingSheet(context), icon: const Icon(Icons.tune, size: 20), label: Text(context.l10n.eatCustomizeTracking)),
+      if (goals && !hasGoal) QuietLink(l.eatSetGoals, key: Key('$keyPrefix-set-goals'), onPressed: p == null ? null : () => showGoalsSheet(context, ref)),
+      TextButton(
+        key: Key('$keyPrefix-nutrition-settings'),
+        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+        child: Text(l.eatNutritionSettings),
+        // Opens a sheet; nothing is changed until one of its flows saves.
+        onPressed: () => showGoSheet<void>(appContext(context), title: l.eatNutritionSettings, builder: (sheet) {
+          void then(void Function() open) {
+            Navigator.pop(sheet);
+            open();
+          }
+
+          return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (goals)
+              ListTile(
+                key: Key('$keyPrefix-goals'), contentPadding: EdgeInsets.zero, minTileHeight: 56,
+                leading: const Icon(Icons.flag_outlined), trailing: const Icon(Icons.chevron_right),
+                title: Text(hasGoal ? l.eatEditGoals : l.eatSetGoals, semanticsLabel: hasGoal ? l.eatEditGoalsSaid : l.eatSetGoals),
+                enabled: p != null,
+                onTap: () => then(() => showGoalsSheet(context, ref)),
+              ),
+            ListTile(
+              key: Key('$keyPrefix-customize'), contentPadding: EdgeInsets.zero, minTileHeight: 56,
+              leading: const Icon(Icons.tune), trailing: const Icon(Icons.chevron_right),
+              title: Text(l.eatCustomizeTracking),
+              onTap: () => then(() => showTrackingSheet(context)),
+            ),
+          ]);
+        }),
+      ),
     ]);
   }
 }

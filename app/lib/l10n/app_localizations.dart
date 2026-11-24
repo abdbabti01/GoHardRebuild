@@ -19799,6 +19799,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No energy from protein, carbs or fat was recorded, so there is no split.'**
   String get nrMacroZero;
+
+  /// Compact Eat briefing, heads-up: recorded calories above the target (the amount is on the ring below).
+  ///
+  /// In en, this message translates to:
+  /// **'You’re above your calorie target today. That’s okay—I can suggest lighter options.'**
+  String get ebShortOver;
+
+  /// Compact Eat briefing, heads-up: near the calorie target before 17:00.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re close to your calorie target, with time left in the day.'**
+  String get ebShortNear;
+
+  /// Compact Eat briefing, heads-up: protein goal reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein goal reached. Want ideas for your next meal?'**
+  String get ebShortProteinReached;
+
+  /// Compact Eat briefing: the calorie total is incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Some foods have no calorie value, so the calorie total is incomplete.'**
+  String get ebShortKcalIncomplete;
+
+  /// Compact Eat briefing: below both targets (the amounts left are on the rings below).
+  ///
+  /// In en, this message translates to:
+  /// **'You still have room for calories and protein today.'**
+  String get ebShortRoomBoth;
+
+  /// Compact Eat briefing: below the calorie target.
+  ///
+  /// In en, this message translates to:
+  /// **'You still have room for calories today.'**
+  String get ebShortRoomKcal;
+
+  /// Compact Eat briefing: protein below its goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein is still below your goal.'**
+  String get ebShortProteinToGo;
+
+  /// Compact Eat briefing: protein within a few grams of its goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein is nearly at your goal.'**
+  String get ebShortProteinNear;
+
+  /// Compact Eat briefing: protein total incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Some protein values are missing.'**
+  String get ebShortProteinMissing;
+
+  /// Compact Eat briefing: calories above the target, said plainly.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re above your calorie target today.'**
+  String get ebShortOverPlain;
+
+  /// Compact Eat briefing, earlier day. day = long date.
+  ///
+  /// In en, this message translates to:
+  /// **'Here’s what you recorded on {day}.'**
+  String ebShortPast(String day);
+
+  /// Compact Eat briefing, earlier day, against the goal recorded for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories were above the target set for that day.'**
+  String get ebShortPastOver;
+
+  /// Compact Eat briefing, earlier day, against the goal recorded for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories were under the target set for that day.'**
+  String get ebShortPastUnder;
+
+  /// Compact Eat briefing, earlier day, against the goal recorded for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories were at the target set for that day.'**
+  String get ebShortPastAt;
+
+  /// Eat summary: opens a sheet with Edit goals and Customize tracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition settings'**
+  String get eatNutritionSettings;
+
+  /// Eat summary: expands macro composition and explanations.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition details'**
+  String get eatNutritionDetails;
+
+  /// Eat Nutrition details: the share of a goal, e.g. "Calories: 63 % of goal".
+  ///
+  /// In en, this message translates to:
+  /// **'{nutrient}: {percent} of goal'**
+  String eatGoalPercent(String nutrient, String percent);
 }
 
 class _AppLocalizationsDelegate

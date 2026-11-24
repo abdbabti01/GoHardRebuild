@@ -2905,3 +2905,31 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   panels through `Journey.tap`, which scrolls), iPhone, VoiceOver/TalkBack on a device.
 - Code 43dcda5: CI 252 (45314092532) passed; unsigned IPA run 83 (45315892935, tag `ipa-eat-meals-first-43dcda5`)
   passed (artifact GoHard-Dev-unsigned-ipa). Not merged, not deployed.
+
+### 23 Nov 2026 — Eat: compact top (`feature/eat-compact-top`, from `feature/eat-meals-first` acf973f)
+
+- Owner request: reach the meal journal sooner at 390 × 844 by hierarchy and less duplication, not smaller text or
+  targets. Coach: `TabCoach(compact: true)` (smaller portrait, one action as an accent text button, Ask me), compact
+  briefing wording without the rings' figures (`briefingText(compact: true)`, 17 new strings en/fr/ar), no second Set
+  goals in the bubble. Summary: no photograph, rings side by side (ring beside the name, one status/remaining line),
+  percentage and composition in a folded **Nutrition details**, **Nutrition settings** sheet (Edit goals, Customize
+  tracking), Set daily goals on the summary while none is set, Saved meals beside Log food when its words fit.
+  Presentation only: no API, database, sync, entitlement, AI-provider or nutrition-maths change. docs/FOOD_DATA.md ›
+  Compact top.
+- Measured (same fixture, scroll 0, against the bar's real top): 390 × 844 English empty day: Breakfast heading and Add
+  food fully visible (864 → 609); with food logged the heading is visible, Add food is not. French and Arabic do not
+  reach it (figures in FOOD_DATA). Today's renders: identical apart from the guide portrait's time-dependent pose
+  (pixel diff; two renders of the same code differ the same way).
+- Tests: new `eat_compact_top_test` (5: details folded/open, settings opens the existing flows, no goals, earlier day,
+  Today unchanged; no AI path, nothing logged), compact briefing unit tests in `eat_companion_test` (+3), totals
+  refresh added to the back-from-logging test; expectations moved to the new layout in `nutrition_rings_ui_test`
+  (Today keeps percentage/state, Eat one line), `eat_ui_test`, `food_ui_test`, `nutrition_report_ui_test`,
+  `widget_test`, `eat_companion_ui_test`, `coach_companion_test`, `target_helper_ui_test`, `water_ui_test`; journeys go
+  through `Journey.openEatGoals/openEatTracking`. Found and fixed while testing: the French Log food row overflowed
+  (now measured), the details button's expanded state was on a separate semantics node (now merged).
+- Native (emulator, not a phone): `journey_eat_compact_test` passed on Pixel_7 (411 × 914, bar top 818) against the branch API
+  on 127.0.0.1:5136 + a disposable database (dropped after): new account, empty day with and without goals (Breakfast
+  heading 591–637 and Add food 626–696 both above the bar), goals through Set daily goals, one food logged by hand
+  (heading 684–708 visible, Add food 784–832 under the bar), details and settings opened, the server still holding one
+  entry. Captures in docs/evidence/eat-compact-device/ (the green box is the emulator's TalkBack focus). Not run: iPhone,
+  VoiceOver, live Groq.

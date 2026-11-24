@@ -120,9 +120,10 @@ void main() {
           await _to(tester, ['today-module-nutrition'], alignment: 0.3);
           await _shot(tester, 'today-$state-$m');
           await _eat(tester);
-          await _to(tester, ['eat-photo-nutrition'], alignment: 0.1);
+          await _to(tester, ['eat-nutrition-heading'], alignment: 0.1);
           await _shot(tester, 'eat-$state-$m');
           if (state == 'above' || state == 'incomplete') {
+            await _tap(tester, 'eat-details'); // the composition is in Nutrition details
             await _to(tester, ['eat-macros', 'eat-more-nutrients'], alignment: 0.35);
             await _shot(tester, 'eat-macros-$state-$m');
           }
@@ -159,7 +160,7 @@ void main() {
         testWidgets('theme ${accent.name} ${mode.name}', (tester) async {
           await _app(tester, 'above', mode: mode, accent: accent);
           await _eat(tester);
-          await _to(tester, ['eat-photo-nutrition'], alignment: 0.02);
+          await _to(tester, ['eat-nutrition-heading'], alignment: 0.02);
           await _shot(tester, 'theme-${accent.name}-${mode.name}');
         });
       }
@@ -185,9 +186,10 @@ void main() {
       await _to(tester, ['today-module-nutrition']);
       await _shot(tester, 'today-$state-320-2x');
       await _eat(tester);
-      // With large text there is no photograph: the panel's own top.
+      // The panel's own top (Eat's summary has no photograph).
       await _toFinder(tester, [find.byType(NutritionSurface)]);
       await _shot(tester, 'eat-$state-320-2x');
+      await _tap(tester, 'eat-details'); // the composition is in Nutrition details
       await _to(tester, ['eat-macros', 'eat-more-nutrients']);
       await _shot(tester, 'eat-macros-$state-320-2x');
     });

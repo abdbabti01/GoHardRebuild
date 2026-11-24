@@ -106,7 +106,7 @@ void main() {
     expect(find.byKey(const Key('eat-coach')), findsOneWidget);
 
     // Water on, carbs off: shown at once here, and kept on the account (read as another phone would).
-    await j.tapKey('eat-customize');
+    await j.openEatTracking();
     await j.waitFor(find.byKey(const Key('track-water')));
     await j.tapKey('track-water');
     await j.tapKey('track-carbs');
@@ -126,7 +126,7 @@ void main() {
     expect((profile['showWater'], profile['showCarbs'], profile['showFat']), (true, false, true), reason: 'the choice is on the account');
 
     // Goals are set in Eat: the suggested starting water goal, accepted, then saved by the person.
-    await j.tapKey('eat-goals');
+    await j.openEatGoals();
     await j.waitFor(find.byKey(const Key('water-suggestion')), what: 'the suggested starting goal');
     await shot('coach-tabs-09-goals-suggestion');
     await j.tapKey('water-suggestion-use');

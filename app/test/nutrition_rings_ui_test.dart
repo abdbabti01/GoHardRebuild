@@ -70,32 +70,53 @@ Future<void> _summary(WidgetTester tester, List<Json> food, {int? kcal, int? pro
         body: SingleChildScrollView(
             child: NutritionSummary(coverage: NutrientCoverage.calculate([for (final f in food) FoodEntry(f)]), calorieGoal: kcal, proteinGoal: protein, keyPrefix: today ? 'today' : 'eat', prominent: !today))));
 
+/// Eat's Nutrition details (docs/FOOD_DATA.md › Compact top): the composition, each goal's share and the longer notes.
+Future<void> _details(WidgetTester tester) async {
+  await tester.runAsync(() => Scrollable.ensureVisible(tester.element(find.byKey(const Key('eat-details'))), alignment: 0.5));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('eat-details')));
+  await tester.pumpAndSettle();
+}
+
 String? _text(WidgetTester tester, String key) => tester.widget<Text>(find.byKey(Key(key), skipOffstage: false)).data;
 double _ring(WidgetTester tester, String key) => tester.widget<ProgressRing>(find.byKey(Key(key))).value;
 
 void main() {
   group('states (shared assessment, no thresholds of its own)', () {
-    for (final (name, kcal, ring, percent, status) in [
-      ('recorded zero', 0, 0.0, '0%', 'Room remaining'),
-      ('below', 1100, 1100 / 2300, '47%', 'Room remaining'),
-      ('approaching', 1900, 1900 / 2300, '82%', 'Approaching target'),
-      ('reached', 2300, 1.0, '100%', 'Target reached'),
-      ('above: the arc stops at one circle, the words keep the real share and excess', 2461, 1.0, '107%', '161 kcal over target'),
+    for (final (name, kcal, ring, percent, status, left) in [
+      ('recorded zero', 0, 0.0, '0%', 'Room remaining', '2,300 kcal left'),
+      ('below', 1100, 1100 / 2300, '47%', 'Room remaining', '1,200 kcal left'),
+      ('approaching', 1900, 1900 / 2300, '82%', 'Approaching target', '400 kcal left'),
+      ('reached', 2300, 1.0, '100%', 'Target reached', null),
+      ('above: the arc stops at one circle, the words keep the real share and excess', 2461, 1.0, '107%', '161 kcal over target', null),
     ]) {
       testWidgets('calories $name', (tester) async {
+        // Today: the share and the state in words beside the ring (unchanged).
+        await _summary(tester, [_food('a', day, kcal: kcal, protein: 0)], kcal: 2300, protein: 160, today: true);
+        expect(_ring(tester, 'today-goal-calories'), closeTo(ring, 1e-9));
+        expect(_text(tester, 'today-goal-calories-percent'), percent);
+        expect(_text(tester, 'today-goal-calories-status'), status);
+        // Eat: one line, the exact remainder only below the goal, otherwise the state; the share is in Nutrition details.
         await _summary(tester, [_food('a', day, kcal: kcal, protein: 0)], kcal: 2300, protein: 160);
         expect(_ring(tester, 'eat-goal-calories'), closeTo(ring, 1e-9));
-        expect(_text(tester, 'eat-goal-calories-percent'), percent);
-        expect(_text(tester, 'eat-goal-calories-status'), status);
-        expect(find.byKey(const Key('eat-goal-calories-left')), kcal < 2300 ? findsOneWidget : findsNothing, reason: 'an exact remainder only below the goal');
+        expect(find.byKey(const Key('eat-goal-calories-percent')), findsNothing);
+        if (left != null) {
+          expect(_text(tester, 'eat-goal-calories-left'), left, reason: 'an exact remainder only below the goal');
+          expect(find.byKey(const Key('eat-goal-calories-status')), findsNothing, reason: 'one line');
+        } else {
+          expect(_text(tester, 'eat-goal-calories-status'), status);
+          expect(find.byKey(const Key('eat-goal-calories-left')), findsNothing, reason: 'no remainder at or above the goal');
+        }
         expect(find.text('0'), name == 'recorded zero' ? findsWidgets : findsOneWidget, reason: 'protein: an entered zero is a known zero');
       });
     }
 
     testWidgets('protein above its goal keeps its own meaning and colour: reached, never red', (tester) async {
+      await _summary(tester, [_food('a', day, kcal: 1000, protein: 175)], kcal: 2300, protein: 160, today: true);
+      expect((_text(tester, 'today-goal-protein-percent'), _text(tester, 'today-goal-protein-status')), ('110%', 'Goal reached · 15 g above target'));
       await _summary(tester, [_food('a', day, kcal: 1000, protein: 175)], kcal: 2300, protein: 160);
       expect(_ring(tester, 'eat-goal-protein'), 1.0);
-      expect((_text(tester, 'eat-goal-protein-percent'), _text(tester, 'eat-goal-protein-status')), ('110%', 'Goal reached · 15 g above target'));
+      expect(_text(tester, 'eat-goal-protein-status'), 'Goal reached · 15 g above target');
       // Calories below their goal are green; protein above its goal is the same green, never the calories' red.
       expect(tester.widget<ProgressRing>(find.byKey(const Key('eat-goal-protein'))).color, tester.widget<ProgressRing>(find.byKey(const Key('eat-goal-calories'))).color);
     });
@@ -134,7 +155,9 @@ void main() {
 
     await _openEat(tester, food: [_food('a', day, kcal: 0, protein: 0, carbs: 0, fat: 0)], kcal: 2300, protein: 160);
     expect(_ring(tester, 'eat-goal-calories'), 0);
-    expect(_text(tester, 'eat-goal-calories-percent'), '0%');
+    expect(find.text(l.nrMacroZero), findsNothing, reason: 'in Nutrition details, folded');
+    await _details(tester);
+    expect(_text(tester, 'eat-goal-calories-percent'), l.eatGoalPercent('Calories', '0%'));
     expect(find.text(l.nrMacroZero), findsOneWidget, reason: 'all macros zero: a neutral composition, no division by zero');
   });
 
@@ -142,6 +165,8 @@ void main() {
     await _openEat(tester, food: [_food('a', day, kcal: 2461, protein: 175, carbs: 260, fat: 95)], kcal: 2300, protein: 160);
     expect(find.text('2,461'), findsOneWidget);
     expect(_text(tester, 'eat-goal-calories-status'), '161 kcal over target', reason: 'judged on the recorded 2,461, not the macros\' 2,595');
+    await _details(tester);
+    expect(_text(tester, 'eat-goal-calories-percent'), l.eatGoalPercent('Calories', '107%'), reason: 'the real share, in the details');
     expect((_text(tester, 'eat-macro-protein-percent'), _text(tester, 'eat-macro-carbs-percent'), _text(tester, 'eat-macro-fat-percent')), ('27%', '40%', '33%'));
     expect(find.text(l.nrMacroDiffers('2,461')), findsOneWidget);
     expect(find.byType(ProgressRail).hitTestable(), findsNothing, reason: 'the bars are gone; no duplicate measure');
@@ -151,6 +176,8 @@ void main() {
     await _openEat(tester, food: [_food('a', day, kcal: 900, protein: 40, carbs: 100, fat: 20), _food('b', day, kcal: 300, protein: 20, carbs: 30)], kcal: 2300, protein: 160);
     expect(_text(tester, 'eat-goal-protein-left'), '100 g left');
     expect(_text(tester, 'eat-goal-calories-left'), '1,100 kcal left');
+    expect(find.text(l.eatKnownTotals), findsOneWidget, reason: 'the qualification stays visible while the details are folded');
+    await _details(tester);
     expect(_text(tester, 'eat-macro-fat'), '20 g · known');
     expect(find.byKey(const Key('eat-macro-fat-percent')), findsNothing);
     expect(find.text(l.nrMacroPartial), findsOneWidget);
@@ -185,6 +212,8 @@ void main() {
     await _openEat(tester, food: [_food('a', day, kcal: 1650, protein: 120, carbs: 180, fat: 50)], kcal: 2300, protein: 160);
     expect(find.bySemanticsLabel('Calories 1,650 kilocalories, goal 2,300 kilocalories, 71%, Room remaining, 650 kilocalories remaining'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp(r'^Protein 120 grams, goal 160 grams, 75%, Below target, 40 grams remaining$')), findsOneWidget);
+    await _details(tester);
+    expect(tester.getSemantics(find.byKey(const Key('eat-details'))), isSemantics(label: 'Nutrition details', isButton: true, hasTapAction: true, hasExpandedState: true, isExpanded: true));
     expect(find.bySemanticsLabel(RegExp(r'^Recorded macro composition\. Protein 120 grams, 29%\. Carbs 180 grams, 44%\. Fat 50 grams, 27%\. Percentages of the 1,650 kcal')), findsOneWidget);
     // The figures, the arcs and the legend are not read again on their own.
     for (final alone in ['1,650', 'kcal', '71%', 'Calories', 'Carbs', '650 kcal left', 'Calories goal']) {
@@ -199,9 +228,11 @@ void main() {
           size: const Size(320, 2600), text: 2, lang: lang);
       expect(tester.takeException(), isNull);
       expect(find.byKey(const Key('eat-goal-calories')), findsOneWidget);
-      expect(find.byKey(const Key('eat-macros')), findsOneWidget);
       // With little room the ring sits above its figures instead of squeezing them.
-      expect(tester.getTopLeft(find.byKey(const Key('eat-goal-calories-status'))).dy, greaterThan(tester.getBottomLeft(find.byKey(const Key('eat-goal-calories'))).dy));
+      expect(tester.getTopLeft(find.byKey(const Key('eat-goal-calories-left'))).dy, greaterThan(tester.getBottomLeft(find.byKey(const Key('eat-goal-calories'))).dy));
+      await _details(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('eat-macros')), findsOneWidget);
     });
   }
 
@@ -228,8 +259,10 @@ void main() {
         await _openEat(tester, food: [_food('a', day, kcal: 2461, protein: 175, carbs: 260, fat: 95)], kcal: 2300, protein: 160, size: Size(width, 2600), text: text);
         expect(tester.takeException(), isNull);
         expect(sideBySide(tester, 'eat'), expected, reason: 'Eat');
-        // Log food stays right under the summary, ahead of the composition.
-        expect(tester.getTopLeft(find.byKey(const Key('eat-saved-meals'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('eat-macros'))).dy));
+        // Log food stays right under the figures; the composition is in Nutrition details, below it.
+        expect(find.byKey(const Key('eat-macros')), findsNothing);
+        await _details(tester);
+        expect(tester.getTopLeft(find.byKey(const Key('log-food'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('eat-macros'))).dy));
         await today(tester);
         expect(tester.takeException(), isNull);
         expect(sideBySide(tester, 'today'), expected, reason: 'Today');
@@ -239,13 +272,14 @@ void main() {
 
   testWidgets('Arabic: the ring is on the reading side, its figures after it', (tester) async {
     await _openEat(tester, food: [_food('a', day, kcal: 1650, protein: 120, carbs: 180, fat: 50)], kcal: 2300, protein: 160, lang: 'ar');
-    expect(tester.getCenter(find.byKey(const Key('eat-goal-calories'))).dx, greaterThan(tester.getCenter(find.byKey(const Key('eat-goal-calories-status'))).dx));
+    expect(tester.getCenter(find.byKey(const Key('eat-goal-calories'))).dx, greaterThan(tester.getCenter(find.byKey(const Key('eat-goal-calories-left'))).dx));
     // Side by side at this width: calories first in reading order, so on the right.
     expect(tester.getTopRight(find.byKey(const Key('eat-goal-protein'))).dx, lessThan(tester.getTopLeft(find.byKey(const Key('eat-goal-calories'))).dx));
+    await _details(tester);
     expect(tester.getCenter(find.byKey(const Key('eat-macro-donut'))).dx, greaterThan(tester.getCenter(find.byKey(const Key('eat-macro-carbs'))).dx));
   });
 
-  testWidgets('Eat\'s actions still work beside the rings: Log food, Saved meals & recipes, Edit goals', (tester) async {
+  testWidgets('Eat\'s actions still work beside the rings: Log food, Saved meals & recipes, Nutrition settings › Edit goals', (tester) async {
     await _openEat(tester, food: [_food('a', day, kcal: 1650, protein: 120, carbs: 180, fat: 50)], kcal: 2300, protein: 160);
     Future<void> open(String key) async {
       final target = find.byKey(Key(key)).hitTestable(at: Alignment.center).evaluate().isEmpty ? find.byKey(Key(key)).last : find.byKey(Key(key)).hitTestable();
@@ -266,7 +300,9 @@ void main() {
     await open('eat-saved-meals');
     expect(find.byKey(const Key('meals-new')), findsOneWidget);
     await back();
-    await open('eat-goals');
+    await open('eat-nutrition-settings');
+    await tester.tap(find.byKey(const Key('eat-goals')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('goal-calories')), findsOneWidget);
   });
 }

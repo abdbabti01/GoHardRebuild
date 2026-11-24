@@ -276,14 +276,15 @@ visual references with illustrative data; nothing from them is hard-coded.
 **Where it is used.** Today (unchanged composition). Train: the plan (`train-pass`), Progress (`train-progress-panel`),
 open workouts on Workouts (`train-resume-<id>`), the recording screen's exercise panel (`workout-exercise-panel`) with
 separate Target and Last recorded tiles, the workout detail figures, the builder's "plan in progress" and Guide me
-suggestion. Eat: the day's summary with the bowl and Log food. Food form: the food's header, without a photograph.
+suggestion. Eat: the day's summary with its rings and Log food (no photograph since 23 Nov 2026). Food form: the food's header, without a photograph.
 Run: the elapsed time with the runner photo. Me › Nutrition goals: the optional-goals explainer. Appearance: a small
 preview (dusk scene with the chosen guide). Sign-in: the dumbbells panel. Lists, sets, settings and the journal stay
 quiet `GroupCard` rows. The serif is for page titles, panel titles and key figures, never in a control, row, field or the
 navigation (`theme_test`).
 
 **Photographs.** Only the bundled ones: `workout-hero.webp` (plan, progress, workouts, exercise, sign-in),
-`nutrition-cover.webp` (Eat, goals), `run-cover.webp` (run), `scenic-dusk.webp` and the guides' busts (Appearance).
+`nutrition-cover.webp` (Today's nutrition panel, Me's nutrition goals explainer; Eat's summary until 23 Nov 2026),
+`run-cover.webp` (run), `scenic-dusk.webp` and the guides' busts (Appearance).
 There is no photograph per food or per exercise: food rows and the food header have none, and every exercise panel
 uses the same dumbbells. No asset was added.
 
@@ -314,8 +315,9 @@ uses the same dumbbells. No asset was added.
   unit, another amount, Add, Undo in the message bar, and the day's entries, each tappable to correct and with a
   remove button. No goal shortcut in the sheet.
 - **Goals belong to Eat (17 Oct 2026, later).** Today shows the totals and progress toward saved goals and keeps Log
-  food, the water sheet and Customize tracking, but no "Set daily goals" / "Edit goals". Eat's summary keeps the goals
-  link to the shared form (calories, protein, water). With water shown and no water goal saved, the form offers
+  food, the water sheet and Customize tracking, but no "Set daily goals" / "Edit goals". Eat keeps the way to the shared
+  form (calories, protein, water): since 23 Nov 2026 **Nutrition settings › Edit goals**, and **Set daily goals** right on
+  the summary while none is set (docs/FOOD_DATA.md › Compact top). With water shown and no water goal saved, the form offers
   "Suggested starting goal: 2,000 mL daily." (in fl oz when chosen) with one line ("A general starting point; your
   needs may differ. Only water you log is counted."), "Use 2,000 mL" (fills the field; nothing is saved until Save
   goals) and an info button explaining that needs vary, other drinks and food contribute, and only logged water is
@@ -327,7 +329,10 @@ uses the same dumbbells. No asset was added.
 - **Eat's summary** is now the same compact composition as Today's Nutrition panel (calories and protein, the deep
   Log food beside the full-height bowl), with Eat's own extra lines under it: carbs and fat (when shown), the
   missing-values note, water, then the goals line. Since 19 Nov 2026 calories and protein are goal rings on both
-  screens and carbs and fat a composition donut (below and docs/NUTRITION_RINGS.md).
+  screens and carbs and fat a composition donut (below and docs/NUTRITION_RINGS.md). Since 23 Nov 2026 Eat's summary is
+  compact (docs/FOOD_DATA.md › Compact top): no bowl, the rings side by side, Log food with Saved meals & recipes beside it when the words fit,
+  then **Nutrition details** (folded: composition, each goal's share, the longer notes) and **Nutrition settings** (a
+  sheet with Edit goals and Customize tracking).
 - **Meal icons**: one outlined Material family on the same tile: Breakfast `wb_twilight` (sunrise), Lunch
   `light_mode` (sun), Dinner `dark_mode` (moon), Snack `cookie` (Material Icons has no apple fruit; `Icons.apple` is
   the brand logo).

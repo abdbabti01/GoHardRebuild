@@ -252,7 +252,7 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
   (no goal bars or percentages on it, food or water); only today is. Since 30 Oct 2026 the phone records each day's
   goals (docs/EAT_COMPANION.md › Goal history) and since 19 Nov 2026 Eat's rings compare an earlier day with that
   recorded goal only; a day without one says "No goal recorded for this day".
-- Goals and **Customize tracking** are in Eat only (a labelled action); Today shows the water line and its actions.
+- Goals and **Customize tracking** are in Eat only (since 23 Nov 2026 in **Nutrition settings**, docs/FOOD_DATA.md › Compact top); Today shows the water line and its actions.
 
 ### History & trends (20 Oct 2026, GoHard_Nutrition_Trends_Claude_Handoff)
 
@@ -299,7 +299,7 @@ no preference and queues no command.
 
 The day's meals come straight after its summary, so reviewing and logging them is the first thing below it. From the
 top: date header › the coach's message, or with the coach off its compact panel (briefing or usual meal) in the same
-place › nutrition summary (Log food, Saved meals & recipes, water, goals and tracking, unchanged) › *Today's meals* (an
+place › nutrition summary (Log food, Saved meals & recipes, water, goals and tracking; compacted since, see Compact top) › *Today's meals* (an
 earlier day: *Meals*) with Breakfast, Lunch, Dinner, Snack and each meal's own actions (Add food, Same as yesterday,
 Copy meal, Save as meal) › the logged-food note and Meal reminders › **Eating out** › **History & trends**. The same
 order holds for today and earlier days, empty and logged. It is one list in reading order, so screen readers traverse
@@ -314,6 +314,43 @@ summary it is still below the fold at 844 (on an empty earlier day its heading p
 does not promise the first meal above the fold. Renders: after in `docs/evidence/design/eat-layout/` and
 `docs/evidence/localization/{fr,ar}/design/eat-layout/`, before (main 27877fe, same test) in
 `docs/evidence/eat-layout-before/{en,fr,ar}/`; the `*-scrolled-700` pair shows the same viewport at the same offset.
+
+### Compact top (23 Nov 2026, feature/eat-compact-top)
+
+Eat's top was made shorter by hierarchy and less repetition, not by smaller text or targets, so the meal journal comes
+sooner. The page order is unchanged (Eat page order above).
+
+- **Coach** (`TabCoach(compact: true)`, Eat only): a smaller portrait beside the bubble (62 × 78 at 380 px and up, 56 ×
+  70 from 340, 50 × 62 narrower); the briefing in its compact wording (docs/EAT_COMPANION.md), the same state from the
+  same assessment without the figures the rings show; one action (What could I eat?, Find something to eat once every
+  goal is reached) as a strong accent text button, and Ask me (free text, Help with today). Without goals the bubble no
+  longer repeats Set goals: the summary's own **Set daily goals** is right under it. Coach off: the compact panel in the
+  coach's place, same wording. Opening Eat asks no AI.
+- **Summary** (`NutritionSurface`, Eat only): no photograph. NUTRITION with how complete the figures are ("Totals",
+  "Known totals", or "No food logged yet" with "Nothing is recorded for this day…" and the daily goal). Calories and
+  protein side by side when two columns of 124 text-scaled px fit (360–430 px at normal text; stacked at 320 px and with
+  large text): the ring beside the name, the amount, "of" the goal, then one line: what is left in the state's colour
+  when it is exact, otherwise the state in words (reached, over by, "Known intake", no goal). The percentage moved into
+  details. Assessment, colours, rounding, unknown-versus-zero and earlier-day goals are the shared ones, unchanged.
+- **Actions**: Log food (the page's one filled button), then **Saved meals & recipes** beside it when its words fit in
+  two lines there (measured, whole words), otherwise under it. Then water (when shown), and one row: **Nutrition details**
+  (folded each visit; an expandable button: the recorded composition or carbs and fat, each goal's share, the longer
+  notes about missing values) and **Nutrition settings** (a sheet: Edit goals / Set daily goals, the existing goals
+  editor with Help me set my targets, and Customize tracking). **Set daily goals** is also on the summary while no goal
+  is set. Opening details or settings logs nothing and asks nothing.
+- **Today is unchanged**: it keeps its compact rings (share and state beside each), its photograph and layout; its
+  renders before and after differ only in the guide portrait's time-dependent pose.
+
+At 390 × 844 with a notched phone's insets (bar top 738, Arabic 736), the render fixture of `render_test.dart` › eat
+compact (a returning account, introductions seen, scroll offset 0), the first meal's heading (Breakfast) moves from
+864 to 609 on an empty day, with its Add food (644–692) fully above the bar; with food logged it moves from 1,155–1,283
+to 680–711, the heading fully visible and Add food (801–880) still under the bar. French: empty 1,001 → 760, one food
+1,290 → 822, neither above the bar (longer words wrap the coach's actions and the settings row). Arabic: empty 809 →
+687 (heading visible, Add food not), one food 1,188 → 735 (not fully). 360 × 780: empty 908 → 645 (heading visible),
+one food 1,360 → 764. 320 px at 2× text (whole page): 2,711 → 1,627 in English, 3,228 → 1,851 French, 2,923 → 1,696
+Arabic. Nothing is promised above the fold for every language, state or text size. Renders: after in
+`docs/evidence/design/eat-compact/` and `docs/evidence/localization/{fr,ar}/design/eat-compact/`, before (acf973f,
+the same test) in `docs/evidence/eat-compact-before/{en,fr,ar}/`. On the Pixel_7 emulator (411 × 914, `journey_eat_compact_test`) the empty day showed Breakfast and its Add food above the bar; with one food logged, the heading only (`docs/evidence/eat-compact-device/`).
 
 ### What is shown follows the account (17 Oct 2026)
 

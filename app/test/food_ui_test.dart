@@ -792,7 +792,11 @@ void main() {
       final handle = tester.ensureSemantics();
       await surface(tester, [entry('a', calories: 2500, protein: 150)], calorieGoal: 2200, proteinGoal: 140);
       expect(tester.widget<Text>(find.byKey(const Key('eat-goal-calories-status'))).data, '300 kcal over target');
-      expect(find.text('114%'), findsOneWidget, reason: 'the share beside the ring is the real one');
+      await tester.runAsync(() => Scrollable.ensureVisible(tester.element(find.byKey(const Key('eat-details'))), alignment: 0.5));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('eat-details')));
+      await tester.pumpAndSettle();
+      expect(find.text('Calories: 114% of goal'), findsOneWidget, reason: 'the real share, in Nutrition details');
       double ring(String key) => tester.widget<ProgressRing>(find.byKey(Key(key))).value;
       expect(ring('eat-goal-calories'), 1.0, reason: 'the ring stops at full');
       expect(ring('eat-goal-protein'), 1.0);

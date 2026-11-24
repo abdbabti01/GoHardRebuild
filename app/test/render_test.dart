@@ -590,6 +590,84 @@ void main() {
     });
   }
 
+  // Eat's top section across its states (docs/FOOD_DATA.md › Compact top): the phone viewport from the top, with a
+  // returning account's coach (its one-time introductions behind it). Each prints, for the first meal, its heading and
+  // Add food against the real top of the floating bar ("visible" only when wholly above it and below the page top).
+  final light = [foodEntry('l1', _today, 'Breakfast', 'Greek yogurt, berries, granola', '1 bowl', calories: 380, protein: 24, carbs: 46, fat: 9)];
+  final populated = [
+    ...light,
+    foodEntry('p2', _today, 'Lunch', 'Chicken, rice, vegetables', '1 plate', calories: 650, protein: 48, carbs: 70, fat: 16),
+    foodEntry('p3', _today, 'Snack', 'Protein shake, banana', '1 shake', calories: 370, protein: 23, carbs: 42),
+  ];
+  final incomplete = [...light, foodEntry('i2', _today, 'Lunch', 'Homemade soup', '1 bowl', protein: 12)];
+  final over = [...populated, foodEntry('o4', _today, 'Dinner', 'Pasta, meatballs', '1 large plate', calories: 980, protein: 52, carbs: 110, fat: 34)];
+  final earlier = [for (final e in populated) {...e, 'id': 'e-${e['id']}', 'dayKey': '2026-10-10'}];
+  const eatHints = {'eat.first', 'eat.habits', 'eat.history', 'eat.meals', 'eat.out', 'eat.reminders', 'eat.saved.new', 'eat.saved.shortcut'};
+  for (final (name, food, goals, coach, past, size, scale, mode) in [
+    ('empty', const <Json>[], true, true, false, const Size(390, 844), 1.0, ThemeMode.light),
+    ('light', light, true, true, false, const Size(390, 844), 1.0, ThemeMode.light),
+    ('populated', populated, true, true, false, const Size(390, 844), 1.0, ThemeMode.light),
+    ('incomplete', incomplete, true, true, false, const Size(390, 844), 1.0, ThemeMode.light),
+    ('over', over, true, true, false, const Size(390, 844), 1.0, ThemeMode.light),
+    ('no-goals', populated, false, true, false, const Size(390, 844), 1.0, ThemeMode.light),
+    ('earlier-day', earlier, true, true, true, const Size(390, 844), 1.0, ThemeMode.light),
+    ('coach-off-light', light, true, false, false, const Size(390, 844), 1.0, ThemeMode.light),
+    ('empty-dark', const <Json>[], true, true, false, const Size(390, 844), 1.0, ThemeMode.dark),
+    ('light-dark', light, true, true, false, const Size(390, 844), 1.0, ThemeMode.dark),
+    ('populated-dark', populated, true, true, false, const Size(390, 844), 1.0, ThemeMode.dark),
+    ('empty-360', const <Json>[], true, true, false, const Size(360, 780), 1.0, ThemeMode.light),
+    ('light-360', light, true, true, false, const Size(360, 780), 1.0, ThemeMode.light),
+    ('populated-360', populated, true, true, false, const Size(360, 780), 1.0, ThemeMode.light),
+    ('light-320-2x', light, true, true, false, const Size(320, 640), 2.0, ThemeMode.light),
+    ('full-populated', populated, true, true, false, const Size(390, 2400), 1.0, ThemeMode.light),
+    ('full-populated-320-2x', populated, true, true, false, const Size(320, 6400), 2.0, ThemeMode.light),
+  ]) {
+    testWidgets('eat compact: $name', (tester) async {
+      final store = AppearanceStore(MemorySecretStore())
+        ..accent = mode == ThemeMode.dark ? Accent.pink : Accent.blue
+        ..mode = mode;
+      final coachStore = CoachPrefsStore(MemorySecretStore())..value = CoachPrefs(onTabs: coach, greeted: 'one|$_today', dismissed: {for (final h in eatHints) 'one|$h'});
+      final catalog = restaurantCatalogProvider.overrideWith((ref) async => RestaurantCatalog.parse(File('assets/data/restaurant-catalog.json').readAsStringSync())!);
+      await pumpApp(tester, [
+        ...(await tester.runAsync(() => overridesFor(day: _today, food: food, appearance: store, calorieGoal: goals ? 2200 : null, proteinGoal: goals ? 140 : null)))!,
+        ...FoodFakes().overrides, catalog, coachPrefsStoreProvider.overrideWithValue(coachStore),
+      ], size: size, textScale: scale, insets: phoneInsets, settle: false);
+      await _settle(tester);
+      await _open(tester, 'eat');
+      if (past) {
+        await tester.tap(find.descendant(of: find.byType(EatScreen), matching: find.byIcon(Icons.chevron_left)));
+        await _settle(tester);
+      }
+      final add = find.byKey(const Key('eat-add-breakfast'));
+      String where(Finder f) {
+        if (f.evaluate().isEmpty) return 'not built';
+        final r = tester.getRect(f), bar = tester.getTopLeft(find.byType(GoNavigationBar)).dy;
+        return '${r.top.round()}-${r.bottom.round()} ${r.top >= 0 && r.bottom <= bar ? 'visible' : 'hidden'}';
+      }
+      final group = find.ancestor(of: add, matching: find.byType(GroupCard));
+      final heading = add.evaluate().isEmpty ? add : find.descendant(of: group.first, matching: find.byType(Text)).first;
+      final bar = tester.getTopLeft(find.byType(GoNavigationBar)).dy.round();
+      // ignore: avoid_print
+      print('EAT_COMPACT $renderLanguage $name bar-top=$bar heading=${where(heading)} add=${where(add)}');
+      await _save(tester, await _capture(tester), 'eat-compact/$name');
+      // The same state with Nutrition details open and with the Nutrition settings sheet (where the page has them).
+      if (name == 'populated' || name == 'populated-dark') {
+        for (final (key, shot) in [('eat-details', 'details-open'), ('eat-nutrition-settings', 'settings-sheet')]) {
+          final control = find.descendant(of: find.byType(EatScreen), matching: find.byKey(Key(key)));
+          if (control.evaluate().isEmpty) continue;
+          await tester.runAsync(() => Scrollable.ensureVisible(tester.element(control), alignment: 0.2));
+          await _settle(tester);
+          await tester.tap(control);
+          await _settle(tester);
+          await _save(tester, await _capture(tester), 'eat-compact/$name-$shot');
+          if (key == 'eat-nutrition-settings') Navigator.of(tester.element(find.byKey(const Key('eat-customize')))).pop();
+          await _settle(tester);
+        }
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   // The original badge where the app shows its brand (docs/BRANDING.md): sign-in, registration and the update notice.
   // The header's GH mark is in every tab render above.
   for (final (mode, accent) in [(ThemeMode.light, Accent.blue), (ThemeMode.dark, Accent.pink)]) {

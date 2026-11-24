@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -273,7 +275,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       panel: [
         usual != null
             ? UsualMealPanel(usual: usual, day: today)
-            : BriefingPanel(text: briefingText(l, brief, dayLabel: longDate(day)), label: _ideasLabel(l, brief),
+            : BriefingPanel(text: briefingText(l, brief, dayLabel: longDate(day), compact: true), label: _ideasLabel(l, brief),
                 ideas: day == today ? () => openDayCoach(context, day: day, start: (const DayIntent('eat'), _ideasLabel(l, brief))) : null),
       ],
     );
@@ -337,12 +339,12 @@ class _EatScreenState extends ConsumerState<EatScreen> {
     return b;
   }
 
-  /// What the coach says: the briefing, with What could I eat? (today) and, without goals, a quiet way to set them. Once
-  /// every goal is reached the action reads "Find something to eat": still there, never pushed.
-  CoachSay _briefSay(AppLocalizations l, Briefing b, String day, String today) => CoachSay(briefingText(l, b, dayLabel: longDate(day)),
+  /// What the coach says: the briefing, with What could I eat? (today) as its one action and Ask me. Once every goal is
+  /// reached the action reads "Find something to eat": still there, never pushed. Without goals, Set daily goals is the
+  /// summary's own link right under it (docs/FOOD_DATA.md › Compact top), so the bubble does not repeat it.
+  CoachSay _briefSay(AppLocalizations l, Briefing b, String day, String today) => CoachSay(briefingText(l, b, dayLabel: longDate(day), compact: true),
       onAsk: () => openDayCoach(context, day: day),
-      primary: day == today ? (label: _ideasLabel(l, b), key: const Key('eat-brief-ideas'), onPressed: () => openDayCoach(context, day: day, start: (const DayIntent('eat'), _ideasLabel(l, b)))) : null,
-      guide: b.noGoals && day == today ? (label: l.ebSetGoals, key: const Key('eat-brief-goals'), onPressed: () => showGoalsSheet(context, ref)) : null);
+      primary: day == today ? (label: _ideasLabel(l, b), key: const Key('eat-brief-ideas'), onPressed: () => openDayCoach(context, day: day, start: (const DayIntent('eat'), _ideasLabel(l, b)))) : null);
 
   /// The portion as it was saved, then the macros that are known (a recipe portion's partial sums marked "known"), then
   /// how the record stands with the account.
@@ -438,7 +440,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                           child: TextButton.icon(key: const Key('eat-back-to-today'), onPressed: () => setState(() => _picked = null), icon: const Icon(Icons.today, size: 18), label: Text(l.eatBackToToday)),
                         ),
                       if (coachOn && coach?.say != null)
-                        TabCoach(key: const Key('eat-coach'), id: 'eat', say: coach!.say!, avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day))
+                        TabCoach(key: const Key('eat-coach'), id: 'eat', compact: true, say: coach!.say!, avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day))
                       else if (coachOn)
                         _CoachProblem(onRetry: () => setState(() {}))
                       // Without the coach, its one message is a compact panel in its place (or the notice, if it failed),
@@ -459,15 +461,32 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                 NutritionSurface(
                   entries: entries, coverage: NutrientCoverage.calculate(entries), calorieGoal: goals.$1, proteinGoal: goals.$2, pending: live.any((r) => r.isPending),
                   showCarbs: display.carbs, showFat: display.fat, pastDay: day != today,
-                  footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day), const NutritionTools(keyPrefix: 'eat')],
+                  footer: [if (display.water) WaterRow(key: const Key('eat-water'), day: day)],
+                  settings: const NutritionTools(keyPrefix: 'eat'),
                   // Log food, and beside it the way to several foods at once: the same day, the meal of the time of day.
-                  action: Wrap(spacing: 4, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                    PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day)),
-                    TextButton.icon(key: const Key('eat-saved-meals'), icon: const Icon(Icons.menu_book_outlined, size: 20), label: Text(l.mealsLibraryTitle),
-                        onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
-                  ]),
+                  action: () {
+                    final log = PrimaryButton(l.foodLogButton, key: const Key('log-food'), icon: Icons.restaurant, expand: false, onPressed: () => openFoodForm(context, dayKey: day));
+                    final saved = TextButton.icon(key: const Key('eat-saved-meals'), icon: const Icon(Icons.menu_book_outlined, size: 20), label: Text(l.mealsLibraryTitle),
+                        onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now())));
+                    // Beside Log food when its words fit there in at most two lines (whole words, the same size); otherwise
+                    // under it, as with large text or a longer language.
+                    return LayoutBuilder(builder: (context, box) {
+                      final scaler = MediaQuery.textScalerOf(context), dir = Directionality.of(context);
+                      TextPainter paint(String text, TextStyle? style, {int? lines, double width = double.infinity}) =>
+                          TextPainter(text: TextSpan(text: text, style: style), textDirection: dir, textScaler: scaler, maxLines: lines)..layout(maxWidth: width);
+                      final theme = Theme.of(context);
+                      // FilledButton.icon: 18 px padding each side, a 22 px icon and an 8 px gap; TextButton.icon: 12 px each
+                      // side, a 20 px icon and an 8 px gap.
+                      final logWidth = 18 + 22 + 8 + paint(l.foodLogButton, theme.filledButtonTheme.style?.textStyle?.resolve(const {})).width + 18;
+                      final room = box.maxWidth - logWidth - 4 - 12 - 20 - 8 - 12;
+                      final words = paint(l.mealsLibraryTitle, theme.textButtonTheme.style?.textStyle?.resolve(const {}), lines: 2, width: math.max(room, 1));
+                      final beside = room > 0 && !words.didExceedMaxLines && words.minIntrinsicWidth <= room;
+                      if (!beside) return Wrap(spacing: 4, runSpacing: 0, crossAxisAlignment: WrapCrossAlignment.center, children: [log, saved]);
+                      return Row(children: [log, const SizedBox(width: 4), Flexible(child: saved)]);
+                    });
+                  }(),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 16),
                 Heading(day == today ? l.eatTodaysMeals : l.eatMeals, key: _mealsHeading, size: 20),
                 const SizedBox(height: 12),
                 // One quiet group per meal: the meal as its heading (outlined icon, name, what its foods add up to as a

@@ -88,6 +88,9 @@ void main() {
     expect(find.text('Known totals'), findsOneWidget);
     expect(find.text('510'), findsOneWidget);
     expect(find.text('25'), findsOneWidget, reason: 'protein, as on Today: the figure and "g protein"');
+    // Carbs and fat are in Nutrition details.
+    await tester.tap(find.byKey(const Key('eat-details')));
+    await tester.pumpAndSettle();
     expect(find.text('—'), findsOneWidget, reason: 'carbs are unknown for every food');
     expect(find.text('0 g · known'), findsOneWidget, reason: 'an entered zero is a known zero; the toast has no fat value, so it is a known sum');
 

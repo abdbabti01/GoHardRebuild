@@ -13274,4 +13274,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nrMacroZero =>
       'No energy from protein, carbs or fat was recorded, so there is no split.';
+
+  @override
+  String get ebShortOver =>
+      'You’re above your calorie target today. That’s okay—I can suggest lighter options.';
+
+  @override
+  String get ebShortNear =>
+      'You’re close to your calorie target, with time left in the day.';
+
+  @override
+  String get ebShortProteinReached =>
+      'Protein goal reached. Want ideas for your next meal?';
+
+  @override
+  String get ebShortKcalIncomplete =>
+      'Some foods have no calorie value, so the calorie total is incomplete.';
+
+  @override
+  String get ebShortRoomBoth =>
+      'You still have room for calories and protein today.';
+
+  @override
+  String get ebShortRoomKcal => 'You still have room for calories today.';
+
+  @override
+  String get ebShortProteinToGo => 'Protein is still below your goal.';
+
+  @override
+  String get ebShortProteinNear => 'Protein is nearly at your goal.';
+
+  @override
+  String get ebShortProteinMissing => 'Some protein values are missing.';
+
+  @override
+  String get ebShortOverPlain => 'You’re above your calorie target today.';
+
+  @override
+  String ebShortPast(String day) {
+    return 'Here’s what you recorded on $day.';
+  }
+
+  @override
+  String get ebShortPastOver =>
+      'Calories were above the target set for that day.';
+
+  @override
+  String get ebShortPastUnder =>
+      'Calories were under the target set for that day.';
+
+  @override
+  String get ebShortPastAt => 'Calories were at the target set for that day.';
+
+  @override
+  String get eatNutritionSettings => 'Nutrition settings';
+
+  @override
+  String get eatNutritionDetails => 'Nutrition details';
+
+  @override
+  String eatGoalPercent(String nutrient, String percent) {
+    return '$nutrient: $percent of goal';
+  }
 }

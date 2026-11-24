@@ -90,6 +90,23 @@ class Journey {
   }
 
   Future<void> tapKey(String key) => tap(find.byKey(Key(key)));
+
+  /// Eat's goals (docs/FOOD_DATA.md › Compact top): Set daily goals on the summary while none is set (it waits, disabled,
+  /// until the account's profile has arrived), otherwise Nutrition settings › Edit goals.
+  Future<void> openEatGoals() async {
+    final direct = find.byKey(const Key('eat-set-goals'));
+    await waitUntil(() async => direct.evaluate().isEmpty || tester.widget<TextButton>(find.descendant(of: direct, matching: find.byType(TextButton))).onPressed != null,
+        what: 'the profile to arrive so goals can be set');
+    if (direct.evaluate().isNotEmpty) return tap(direct);
+    await tapKey('eat-nutrition-settings');
+    await tapKey('eat-goals');
+  }
+
+  /// Eat's Customize tracking, in Nutrition settings.
+  Future<void> openEatTracking() async {
+    await tapKey('eat-nutrition-settings');
+    await tapKey('eat-customize');
+  }
   Future<void> tapText(String text) => tap(find.text(text));
   Future<void> confirmWith(String label) => tap(find.widgetWithText(FilledButton, label));
 

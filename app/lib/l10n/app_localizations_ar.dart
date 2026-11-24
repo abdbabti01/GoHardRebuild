@@ -13785,4 +13785,62 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get nrMacroZero =>
       'لم تُسجَّل طاقة من البروتين أو الكربوهيدرات أو الدهون، لذا لا يوجد توزيع.';
+
+  @override
+  String get ebShortOver =>
+      'تجاوزت هدف السعرات اليوم. لا بأس، يمكنني اقتراح خيارات أخف.';
+
+  @override
+  String get ebShortNear => 'اقتربت من هدف السعرات، وما زال في اليوم وقت.';
+
+  @override
+  String get ebShortProteinReached =>
+      'تم بلوغ هدف البروتين. هل تريد أفكارًا لوجبتك التالية؟';
+
+  @override
+  String get ebShortKcalIncomplete =>
+      'بعض الأطعمة بلا قيمة للسعرات، لذا مجموع السعرات غير مكتمل.';
+
+  @override
+  String get ebShortRoomBoth => 'ما زال لديك متّسع من السعرات والبروتين اليوم.';
+
+  @override
+  String get ebShortRoomKcal => 'ما زال لديك متّسع من السعرات اليوم.';
+
+  @override
+  String get ebShortProteinToGo => 'البروتين ما زال دون هدفك.';
+
+  @override
+  String get ebShortProteinNear => 'البروتين قريب من هدفك.';
+
+  @override
+  String get ebShortProteinMissing => 'بعض قيم البروتين غير موجودة.';
+
+  @override
+  String get ebShortOverPlain => 'تجاوزت هدف السعرات اليوم.';
+
+  @override
+  String ebShortPast(String day) {
+    return 'هذا ما سجّلته في $day.';
+  }
+
+  @override
+  String get ebShortPastOver => 'كانت السعرات فوق الهدف المحدد لذلك اليوم.';
+
+  @override
+  String get ebShortPastUnder => 'كانت السعرات دون الهدف المحدد لذلك اليوم.';
+
+  @override
+  String get ebShortPastAt => 'كانت السعرات عند الهدف المحدد لذلك اليوم.';
+
+  @override
+  String get eatNutritionSettings => 'إعدادات التغذية';
+
+  @override
+  String get eatNutritionDetails => 'تفاصيل التغذية';
+
+  @override
+  String eatGoalPercent(String nutrient, String percent) {
+    return '$nutrient: $percent من الهدف';
+  }
 }

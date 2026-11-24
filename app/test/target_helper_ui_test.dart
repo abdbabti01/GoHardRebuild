@@ -97,8 +97,13 @@ void main() {
     final profiles = RecordingProfiles();
     await pumpApp(tester, [...(await tester.runAsync(() => overridesFor(day: _day)))!, profileRepositoryProvider.overrideWithValue(profiles)], size: const Size(390, 2400));
     await _tap(tester, 'nav-eat');
+    // No goal yet: Set daily goals is right on the summary, and also in Nutrition settings.
+    expect(find.descendant(of: find.byKey(const Key('eat-set-goals')), matching: find.text('Set daily goals')), findsOneWidget);
+    await _tap(tester, 'eat-nutrition-settings');
     expect(find.descendant(of: find.byKey(const Key('eat-goals')), matching: find.text('Set daily goals')), findsOneWidget);
-    await _tap(tester, 'eat-goals');
+    Navigator.of(tester.element(find.byKey(const Key('eat-goals')))).pop();
+    await tester.pumpAndSettle();
+    await _tap(tester, 'eat-set-goals');
     expect(find.byKey(const Key('goal-calories')), findsOneWidget, reason: 'manual entry is right there');
     expect(find.widgetWithText(OutlinedButton, 'Help me set my targets'), findsOneWidget, reason: 'secondary (outlined), not the main action');
     await _tap(tester, 'goals-help');

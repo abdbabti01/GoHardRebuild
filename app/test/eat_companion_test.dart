@@ -84,6 +84,50 @@ void main() {
     });
   });
 
+  // Eat's compact coach (docs/FOOD_DATA.md › Compact top): the same state, no figure the rings already show, every
+  // qualification kept, and the question left to the action's button.
+  group('compact briefing', () {
+    String short(Briefing b, [String lang = 'en']) => briefingText(lookupAppLocalizations(Locale(lang)), b, dayLabel: 'Thursday, October 29', compact: true);
+    final noFigures = RegExp('[0-9]');
+
+    test('each state in short, without amounts, goals or what is left', () {
+      final cases = <(String, Briefing, String)>[
+        ('both left', brief([e('Lunch', kcal: 650, protein: 40)], kcalGoal: 2000, proteinGoal: 120), l.ebShortRoomBoth),
+        ('calories left, protein reached', brief([e('Lunch', kcal: 650, protein: 130)], kcalGoal: 2000, proteinGoal: 120, seen: {'$today|protein'}), '${l.ebShortRoomKcal} ${l.ebProteinDone}'),
+        ('protein incomplete', brief([e('Lunch', kcal: 650, protein: 40), e('Snack', kcal: 100, protein: null)], kcalGoal: 2000, proteinGoal: 120), '${l.ebShortRoomKcal} ${l.ebShortProteinMissing}'),
+        ('calories incomplete', brief([e('Lunch', kcal: 650, protein: 40), e('Snack', kcal: null, protein: 5)], kcalGoal: 2000, proteinGoal: 120), l.ebShortKcalIncomplete),
+        ('over, heads-up', brief([e('Lunch', kcal: 2150, protein: 40)], kcalGoal: 2000), l.ebShortOver),
+        ('over, already said', brief([e('Lunch', kcal: 2150, protein: 40)], kcalGoal: 2000, seen: {'$today|over'}), '${l.ebKcalTargetReached} ${l.ebShortOverPlain}'),
+        ('near, heads-up', brief([e('Lunch', kcal: 1900, protein: 40)], kcalGoal: 2000), l.ebShortNear),
+        ('both reached', brief([e('Lunch', kcal: 2000, protein: 120)], kcalGoal: 2000, proteinGoal: 120, seen: {'$today|protein'}), l.ebAllReached),
+      ];
+      for (final (name, b, said) in cases) {
+        expect(short(b), said, reason: name);
+        expect(noFigures.hasMatch(short(b)), isFalse, reason: "$name: the figures are the rings' alone");
+        expect(short(b), isNot(endsWith('?')), reason: "$name: the question is the action's button");
+      }
+    });
+
+    test('an earlier day: looking back, against the goal recorded for it, never inventing one', () {
+      final past = '2026-10-29';
+      expect(short(brief([e('Lunch', kcal: 1800, protein: 90, day: past)], kcalGoal: 2000, day: past)), '${l.ebShortPast('Thursday, October 29')} ${l.ebShortPastUnder}');
+      expect(short(brief([e('Lunch', kcal: 2300, protein: 90, day: past)], kcalGoal: 2000, day: past)), '${l.ebShortPast('Thursday, October 29')} ${l.ebShortPastOver}');
+      expect(short(brief([e('Lunch', kcal: 1800, protein: 90, day: past)], day: past)), l.ebShortPast('Thursday, October 29'), reason: 'no goal recorded: nothing compared');
+      expect(short(brief([e('Lunch', kcal: null, protein: 90, day: past)], kcalGoal: 2000, day: past)), '${l.ebShortPast('Thursday, October 29')} ${l.ebShortKcalIncomplete}');
+      expect(short(brief(const [], day: past)), l.ebPastEmpty('Thursday, October 29'));
+    });
+
+    test('nothing logged keeps the meal; in French and Arabic too, never empty', () {
+      expect(short(brief(const [], kcalGoal: 2000)), l.ebEmpty('lunch'));
+      for (final lang in ['fr', 'ar']) {
+        for (final b in [brief([e('Lunch', kcal: 650, protein: 40)], kcalGoal: 2000, proteinGoal: 120), brief([e('Lunch', kcal: 2150, protein: 40)], kcalGoal: 2000)]) {
+          expect(short(b, lang), isNotEmpty);
+          expect(noFigures.hasMatch(short(b, lang)), isFalse, reason: lang);
+        }
+      }
+    });
+  });
+
   group('ideas', () {
     final catalog = CommonFoodCatalog.parse(File('assets/data/common-foods.json').readAsStringSync());
     final common = [for (final c in catalog.foods) (item: c.item, fields: c.fields, name: c.name, detail: c.qualifier, startUnit: c.unitId)];

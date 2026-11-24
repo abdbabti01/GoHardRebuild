@@ -53,6 +53,19 @@ Future<List<Override>> _fixture(WidgetTester tester, {List<Json> water = const [
       profileRepositoryProvider.overrideWithValue(profiles ?? RecordingProfiles()),
     ];
 
+/// Eat's goals (docs/FOOD_DATA.md › Compact top): Set daily goals right on the summary while none is set, otherwise
+/// Nutrition settings › Edit goals. Centred first, so the floating bar never takes the tap.
+Future<void> _openGoals(WidgetTester tester) async {
+  final direct = find.byKey(const Key('eat-set-goals'));
+  final viaSettings = direct.evaluate().isEmpty;
+  final first = viaSettings ? find.byKey(const Key('eat-nutrition-settings')) : direct;
+  await tester.runAsync(() => Scrollable.ensureVisible(tester.element(first), alignment: 0.5));
+  await tester.pumpAndSettle();
+  await tester.tap(first);
+  await tester.pumpAndSettle();
+  if (viaSettings) await tester.tap(find.byKey(const Key('eat-goals')));
+}
+
 void main() {
   testWidgets('one tap logs one ordinary drink on today, at once; Undo removes exactly that entry; the bar goes away by itself', (tester) async {
     final repo = _Water();
@@ -180,7 +193,10 @@ void main() {
     Future<void> setWater(bool on) async {
       await tester.tap(find.byKey(const Key('nav-eat')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('eat-customize')));
+      await tester.runAsync(() => Scrollable.ensureVisible(tester.element(find.byKey(const Key('eat-nutrition-settings'))), alignment: 0.5));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('eat-nutrition-settings')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('eat-customize')));
       await tester.pumpAndSettle();
       final toggle = find.byKey(const Key('track-water'));
@@ -248,7 +264,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('eat-goals')), findsOneWidget, reason: 'goals live in Eat');
+    expect(find.byKey(const Key('eat-nutrition-settings')), findsOneWidget, reason: 'goals live in Eat, in Nutrition settings');
   });
 
   testWidgets('Eat\'s goals: a suggested 2,000 mL starting goal only while none is saved; Use fills, nothing is saved by itself; blank keeps no goal', (tester) async {
@@ -258,7 +274,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('eat-goals')));
+    await _openGoals(tester);
     await tester.pumpAndSettle();
     expect(Theme.of(tester.element(find.byType(BottomSheet))).brightness, Brightness.dark, reason: 'the sheet keeps the app\'s Dark look');
     for (final k in ['goal-calories', 'goal-protein', 'goal-water']) {
@@ -283,7 +299,7 @@ void main() {
     expect(profiles.waterGoals.single, isNull);
 
     // Accept it, then edit it: the field holds the figure, the person decides what is saved.
-    await tester.tap(find.byKey(const Key('eat-goals')));
+    await _openGoals(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('water-suggestion-use')));
     await tester.pumpAndSettle();
@@ -304,7 +320,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('eat-goals')));
+    await _openGoals(tester);
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.byKey(const Key('goal-water'))).controller!.text, '1,500', reason: 'the saved goal, kept');
     expect(find.byKey(const Key('water-suggestion')), findsNothing);
@@ -317,7 +333,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('nav-eat')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('eat-goals')));
+    await _openGoals(tester);
     await tester.pumpAndSettle();
     expect(find.text('Suggested starting goal: 67.6 fl oz daily.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('water-suggestion-use')));

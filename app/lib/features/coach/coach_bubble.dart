@@ -48,9 +48,13 @@ class CoachSay {
 /// at large text. With [announce] it is read out once as it appears (an introduction); it never takes focus.
 /// [revealed] (0..1) fades it in as the guide settles; it is neither visible nor in the semantics tree before that.
 class CoachBubble extends StatelessWidget {
-  const CoachBubble({super.key, required this.say, this.announce = false, this.onClose, this.closeLabel, this.closeKey = const Key('coach-say-close'), this.revealed, this.onAsk});
+  const CoachBubble({super.key, required this.say, this.announce = false, this.onClose, this.closeLabel, this.closeKey = const Key('coach-say-close'), this.revealed, this.onAsk, this.compact = false});
   final CoachSay say;
   final bool announce;
+
+  /// Over a page whose own main action is a filled button (Eat's Log food): the main action is a strong text button
+  /// in the accent instead of a second filled one. Same label, key, target size and order.
+  final bool compact;
   final VoidCallback? onClose;
 
   /// Default: Close, in the app's language.
@@ -124,14 +128,18 @@ class CoachBubble extends StatelessWidget {
         ),
         if (s.primary case final p?)
           Padding(
-            padding: const EdgeInsets.only(top: 10, bottom: 8),
-            child: Wrap(spacing: 4, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              PrimaryButton(p.label, key: p.key, expand: false, onPressed: p.onPressed),
+            padding: compact ? EdgeInsets.zero : const EdgeInsets.only(top: 10, bottom: 8),
+            // Compact: the first label starts at the words' edge, like the quieter buttons below.
+            child: Transform.translate(offset: compact ? Offset(context.isRtl ? 8 : -8, 0) : Offset.zero, child: Wrap(spacing: 4, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              if (compact)
+                TextButton(key: p.key, style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum), textStyle: context.sansStyle(15, weight: FontWeight.w700)), onPressed: p.onPressed, child: Text(p.label))
+              else
+                PrimaryButton(p.label, key: p.key, expand: false, onPressed: p.onPressed),
               if (ask != null)
                 TextButton(key: const Key('coach-say-ask'), style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: ask, child: Text(l.coachAskMe)),
               for (final g in [?s.guide, ...s.also])
                 TextButton(key: g.key, style: TextButton.styleFrom(minimumSize: const Size(Targets.minimum, Targets.minimum)), onPressed: g.onPressed, child: Text(g.label)),
-            ]),
+            ])),
           )
         else if (!inline && (ask != null || s.guide != null))
           // The first button's label starts at the words' starting edge (its padding hangs into the bubble's margin).
@@ -163,7 +171,7 @@ class CoachBubble extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       side: BorderSide(color: c.divider),
     );
-    Widget content = Padding(padding: EdgeInsets.fromLTRB(14, 10, 14, inline || ask == null && s.guide == null ? 8 : 2), child: words);
+    Widget content = Padding(padding: EdgeInsets.fromLTRB(14, 10, 14, inline || ask == null && s.guide == null && (s.primary == null || !compact) ? 8 : 2), child: words);
     if (inline) {
       // One button the size of the bubble (at least 48 px high), read as its words and "Ask me".
       content = Semantics(
@@ -252,8 +260,12 @@ class CoachSpeech extends ConsumerStatefulWidget {
     this.onAvatarTap,
     this.onAsk,
     this.avatarLabel,
+    this.compact = false,
   });
   final CoachSay say;
+
+  /// See [CoachBubble.compact].
+  final bool compact;
 
   /// What the portrait opens, when it is a button (default: Ask GoHard).
   final String? avatarLabel;
@@ -341,7 +353,7 @@ class _CoachSpeechState extends ConsumerState<CoachSpeech> {
           padding: EdgeInsets.only(top: bubbleTop, left: right ? 0 : side, right: right ? side : 0),
           child: KeyedSubtree(
             key: _bubble,
-            child: CoachBubble(say: widget.say, announce: widget.announce, onClose: widget.onClose, closeLabel: widget.closeLabel, revealed: _revealed, onAsk: widget.onAsk),
+            child: CoachBubble(say: widget.say, announce: widget.announce, onClose: widget.onClose, closeLabel: widget.closeLabel, revealed: _revealed, onAsk: widget.onAsk, compact: widget.compact),
           ),
         ),
         Positioned.fill(
@@ -646,7 +658,11 @@ Future<void> showCoachHelpSheet(BuildContext context, {required String title, re
 /// a new message, a rebuild or scrolling it out of the page's lazy list and back changes nothing but the words. The portrait is the
 /// page's help entry ([onAvatarTap], named by [avatarLabel]). Opening the tab never asks the AI.
 class TabCoach extends ConsumerStatefulWidget {
-  const TabCoach({super.key, required this.id, required this.say, required this.onAvatarTap, this.avatarLabel, this.attentive = false});
+  const TabCoach({super.key, required this.id, required this.say, required this.onAvatarTap, this.avatarLabel, this.attentive = false, this.compact = false});
+
+  /// Eat's top (docs/FOOD_DATA.md › Compact top): a smaller portrait and the bubble's [CoachBubble.compact] action, so
+  /// the summary and the meals come sooner. The other tabs keep the regular coach.
+  final bool compact;
 
   /// The tab ('train', 'eat'): its entrance is played once per session.
   final String id;
@@ -658,8 +674,9 @@ class TabCoach extends ConsumerStatefulWidget {
   final String? avatarLabel;
 
   /// Smaller than Today's: a compact bust that leaves the section's content in view.
-  static Size slot(BuildContext context) {
+  static Size slot(BuildContext context, {bool compact = false}) {
     final width = MediaQuery.sizeOf(context).width;
+    if (compact) return width < 340 ? const Size(50, 62) : width < 380 ? const Size(56, 70) : const Size(62, 78);
     return width < 340 ? const Size(60, 74) : width < 380 ? const Size(70, 88) : const Size(80, 100);
   }
 
@@ -691,7 +708,8 @@ class _TabCoachState extends ConsumerState<TabCoach> {
   @override
   Widget build(BuildContext context) => CoachSpeech(
         say: widget.say,
-        portrait: TabCoach.slot(context),
+        portrait: TabCoach.slot(context, compact: widget.compact),
+        compact: widget.compact,
         frame: RigFrame.edge,
         bleed: context.inset,
         greet: _greet,

@@ -414,10 +414,12 @@ void main() {
       await tester.tap(find.byKey(const Key('nav-eat')));
       await _frames(tester, 2500);
       final eat = find.byKey(const Key('eat-coach'));
-      // The day's briefing (docs/EAT_COMPANION.md): nothing logged yet, with What could I eat? and, with no goals, Set goals.
+      // The day's briefing (docs/EAT_COMPANION.md): nothing logged yet, with What could I eat?; with no goals, Set daily
+      // goals is the summary's own link (docs/FOOD_DATA.md › Compact top), not repeated in the bubble.
       expect(find.descendant(of: eat, matching: find.textContaining('Nothing logged yet today.', findRichText: true)), findsOneWidget);
       expect(find.descendant(of: eat, matching: find.byKey(const Key('eat-brief-ideas'))), findsOneWidget);
-      expect(find.descendant(of: eat, matching: find.byKey(const Key('eat-brief-goals'))), findsOneWidget);
+      expect(find.descendant(of: eat, matching: find.byKey(const Key('eat-brief-goals'))), findsNothing);
+      expect(find.descendant(of: find.byType(EatScreen), matching: find.byKey(const Key('eat-set-goals'))), findsOneWidget);
       expect(find.byKey(const Key('coach-help-eat')), findsNothing);
       expect(find.descendant(of: eat, matching: find.byKey(const Key('coach-say-ask'))), findsOneWidget, reason: 'Ask me opens help with food (docs/COACH.md › Help with today)');
       expect(find.textContaining('water', findRichText: true), findsNothing, reason: 'water is off');
@@ -495,7 +497,7 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('eat-coach')), findsNothing);
       expect(find.byKey(const Key('log-food')), findsOneWidget);
-      expect(find.byKey(const Key('eat-goals')), findsOneWidget);
+      expect(find.byKey(const Key('eat-nutrition-settings')), findsOneWidget, reason: 'goals stay reachable from Eat');
       expect(find.byKey(const Key('coach-help-eat')), findsOneWidget);
       expect(c.read(coachPrefsProvider).onToday, isTrue, reason: 'Today\'s own switch is untouched');
     });

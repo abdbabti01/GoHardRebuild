@@ -53,7 +53,7 @@ void main() {
       await j.tapKey('nav-eat');
       // A tap while the keyboard is still leaving can land before the page settles: tap until the sheet is up.
       for (var i = 0; i < 4 && find.byKey(const Key('track-water')).evaluate().isEmpty; i++) {
-        await j.tapKey('eat-customize');
+        await j.openEatTracking();
         await j.settle(6);
       }
       await j.waitFor(find.byKey(const Key('track-water')));
@@ -73,10 +73,8 @@ void main() {
       // --- Goals in Eat (Today shows progress only): the shared form, empty.
       expect(find.byKey(const Key('today-goals')), findsNothing);
       await j.tapKey('nav-eat');
-      // Right after sign-up the link waits (disabled) until the account's profile, which holds the goals, has arrived.
-      await j.waitUntil(() async => tester.widget<TextButton>(find.descendant(of: find.byKey(const Key('eat-goals')), matching: find.byType(TextButton))).onPressed != null,
-          what: 'the profile to arrive so goals can be set');
-      await j.tapKey('eat-goals');
+      // Right after sign-up Set daily goals waits (disabled) until the account's profile, which holds the goals, has arrived.
+      await j.openEatGoals();
       await j.waitFor(find.byKey(const Key('goal-calories')), what: 'the goals sheet');
       expect(tester.widget<TextField>(find.byKey(const Key('goal-calories'))).controller!.text, isEmpty);
       await j.type('goal-calories', '2200');
@@ -117,7 +115,7 @@ void main() {
       await closeSheet();
       await j.tapKey('nav-eat');
       await top();
-      await j.tapKey('eat-goals');
+      await j.openEatGoals();
       await j.waitFor(find.byKey(const Key('water-suggestion')), what: 'the suggested starting goal');
       await j.tapKey('water-suggestion-use');
       await j.tapKey('goal-save');
@@ -197,7 +195,7 @@ void main() {
     await watch(1500);
     await j.tap(find.byKey(const Key('nav-eat')));
     await watch(1500);
-    await j.tap(find.byKey(const Key('eat-customize')));
+    await j.openEatTracking();
     await watch(1500);
     await j.tap(find.byKey(const Key('track-carbs')));
     await watch(1200);

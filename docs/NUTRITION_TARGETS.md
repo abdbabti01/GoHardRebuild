@@ -5,7 +5,7 @@ First built on `feature/target-estimator` (17 Nov 2026, merged 18 Nov). Reviewed
 equivalent). That review is still pending and is required before public release** (see *Open review questions*).
 Automated tests check arithmetic and behaviour against the published equations; they are not clinical validation.
 
-Eat › Edit goals (the goals sheet) keeps direct editing and has a secondary, outlined **Help me set my targets**.
+Eat › Nutrition settings › Edit goals (or Set daily goals on the summary while none is set; the goals sheet) keeps direct editing and has a secondary, outlined **Help me set my targets**.
 With no targets, Eat's nutrition summary offers **Set daily goals**, which opens the same sheet. Me › Nutrition goals
 is unchanged except for its note.
 

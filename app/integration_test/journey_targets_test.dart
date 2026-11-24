@@ -18,7 +18,7 @@ void main() {
 
     // Goals set by hand first, so there is a water goal (when water is shown) to keep.
     await j.tapKey('nav-eat');
-    await j.tapKey('eat-goals');
+    await j.openEatGoals();
     await j.type('goal-calories', '1800');
     await j.type('goal-protein', '90');
     final water = find.byKey(const Key('goal-water')).evaluate().isNotEmpty;
@@ -31,7 +31,7 @@ void main() {
     final waterBefore = (account['profile'] as Map)['waterGoalMl'];
     debugPrint('GOHARD_TGT water shown=$water before=$waterBefore');
 
-    await j.tapKey('eat-goals');
+    await j.openEatGoals();
     await j.tapKey('goals-help');
     await j.tapKey('tgt-goal-lose');
     await j.tapKey('tgt-continue');

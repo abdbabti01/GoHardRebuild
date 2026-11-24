@@ -94,7 +94,12 @@ String _g(num v) => formatNumber2((v * 10).round() / 10);
 
 /// What the briefing says, in [l]'s language. One or two short sentences; a question at the end is what its action
 /// does, and there is none once every goal is reached or the calorie target is.
-String briefingText(AppLocalizations l, Briefing b, {required String dayLabel}) {
+///
+/// [compact]: Eat's own coach, right above the rings (docs/FOOD_DATA.md › Compact top). The same state in fewer words and
+/// without the figures the rings show (amounts, goals, what is left or over); every qualification stays (an incomplete
+/// total, a goal recorded for an earlier day), and the question is the action's button, not repeated in the words.
+String briefingText(AppLocalizations l, Briefing b, {required String dayLabel, bool compact = false}) {
+  if (compact) return _compactText(l, b, dayLabel);
   final kcal = b.kcal ?? 0, protein = b.protein ?? 0;
   final c = b.a.calories, p = b.a.protein;
   String meal(String m) => mealLabel(l, m).toLowerCase();
@@ -148,6 +153,53 @@ String briefingText(AppLocalizations l, Briefing b, {required String dayLabel}) 
         ?proteinSaid,
         l.ebWantOptions,
       ].join(' ');
+    case BriefKind.logged:
+      return l.ebLogged(mealLabel(l, b.meal!));
+  }
+}
+
+String _compactText(AppLocalizations l, Briefing b, String dayLabel) {
+  final c = b.a.calories, p = b.a.protein;
+  // Protein beside the calorie words, by the same rule as the full text: "to go" only when every value is known.
+  final protein = !p.hasGoal || p.reached
+      ? null
+      : p.left == null
+          ? l.ebShortProteinMissing
+          : p.left! >= BriefRules.proteinLeftFrom
+              ? l.ebShortProteinToGo
+              : l.ebShortProteinNear;
+  switch (b.kind) {
+    case BriefKind.pastEmpty:
+      return l.ebPastEmpty(dayLabel);
+    case BriefKind.past:
+      final goal = c.over != null
+          ? l.ebShortPastOver
+          : c.state == GoalState.reached
+              ? l.ebShortPastAt
+              : c.left != null
+                  ? l.ebShortPastUnder
+                  : c.hasGoal && !b.kcalComplete
+                      ? l.ebShortKcalIncomplete
+                      : null;
+      return [l.ebShortPast(dayLabel), ?goal].join(' ');
+    case BriefKind.empty:
+      return l.ebEmpty(mealLabel(l, b.meal!).toLowerCase());
+    case BriefKind.headsUp:
+      return switch (b.headsUp!) {
+        HeadsUp.over => l.ebShortOver,
+        HeadsUp.near => l.ebShortNear,
+        HeadsUp.protein => l.ebShortProteinReached,
+      };
+    case BriefKind.reached:
+      final reached = c.hasGoal && p.hasGoal ? l.ebAllReached : c.hasGoal ? l.ebKcalTargetReached : l.ebProteinTargetReached;
+      return [reached, if (c.over != null) l.ebShortOverPlain].join(' ');
+    case BriefKind.unknownKcal:
+      return l.ebShortKcalIncomplete;
+    case BriefKind.left:
+      if (c.over != null) return [l.ebShortOverPlain, ?protein].join(' ');
+      if (c.state == GoalState.reached) return [l.ebKcalReachedPlain, ?protein].join(' ');
+      if (c.left != null && protein == l.ebShortProteinToGo) return l.ebShortRoomBoth;
+      return [if (c.left != null) l.ebShortRoomKcal, if (p.reached) l.ebProteinDone, ?protein].join(' ');
     case BriefKind.logged:
       return l.ebLogged(mealLabel(l, b.meal!));
   }

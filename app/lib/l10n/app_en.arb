@@ -18689,5 +18689,86 @@
   "nrMacroZero": "No energy from protein, carbs or fat was recorded, so there is no split.",
   "@nrMacroZero": {
     "description": "Eat macro donut when every value is known and all are zero."
+  },
+  "ebShortOver": "You’re above your calorie target today. That’s okay—I can suggest lighter options.",
+  "@ebShortOver": {
+    "description": "Compact Eat briefing, heads-up: recorded calories above the target (the amount is on the ring below)."
+  },
+  "ebShortNear": "You’re close to your calorie target, with time left in the day.",
+  "@ebShortNear": {
+    "description": "Compact Eat briefing, heads-up: near the calorie target before 17:00."
+  },
+  "ebShortProteinReached": "Protein goal reached. Want ideas for your next meal?",
+  "@ebShortProteinReached": {
+    "description": "Compact Eat briefing, heads-up: protein goal reached."
+  },
+  "ebShortKcalIncomplete": "Some foods have no calorie value, so the calorie total is incomplete.",
+  "@ebShortKcalIncomplete": {
+    "description": "Compact Eat briefing: the calorie total is incomplete."
+  },
+  "ebShortRoomBoth": "You still have room for calories and protein today.",
+  "@ebShortRoomBoth": {
+    "description": "Compact Eat briefing: below both targets (the amounts left are on the rings below)."
+  },
+  "ebShortRoomKcal": "You still have room for calories today.",
+  "@ebShortRoomKcal": {
+    "description": "Compact Eat briefing: below the calorie target."
+  },
+  "ebShortProteinToGo": "Protein is still below your goal.",
+  "@ebShortProteinToGo": {
+    "description": "Compact Eat briefing: protein below its goal."
+  },
+  "ebShortProteinNear": "Protein is nearly at your goal.",
+  "@ebShortProteinNear": {
+    "description": "Compact Eat briefing: protein within a few grams of its goal."
+  },
+  "ebShortProteinMissing": "Some protein values are missing.",
+  "@ebShortProteinMissing": {
+    "description": "Compact Eat briefing: protein total incomplete."
+  },
+  "ebShortOverPlain": "You’re above your calorie target today.",
+  "@ebShortOverPlain": {
+    "description": "Compact Eat briefing: calories above the target, said plainly."
+  },
+  "ebShortPast": "Here’s what you recorded on {day}.",
+  "@ebShortPast": {
+    "description": "Compact Eat briefing, earlier day. day = long date.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "ebShortPastOver": "Calories were above the target set for that day.",
+  "@ebShortPastOver": {
+    "description": "Compact Eat briefing, earlier day, against the goal recorded for it."
+  },
+  "ebShortPastUnder": "Calories were under the target set for that day.",
+  "@ebShortPastUnder": {
+    "description": "Compact Eat briefing, earlier day, against the goal recorded for it."
+  },
+  "ebShortPastAt": "Calories were at the target set for that day.",
+  "@ebShortPastAt": {
+    "description": "Compact Eat briefing, earlier day, against the goal recorded for it."
+  },
+  "eatNutritionSettings": "Nutrition settings",
+  "@eatNutritionSettings": {
+    "description": "Eat summary: opens a sheet with Edit goals and Customize tracking."
+  },
+  "eatNutritionDetails": "Nutrition details",
+  "@eatNutritionDetails": {
+    "description": "Eat summary: expands macro composition and explanations."
+  },
+  "eatGoalPercent": "{nutrient}: {percent} of goal",
+  "@eatGoalPercent": {
+    "description": "Eat Nutrition details: the share of a goal, e.g. \"Calories: 63 % of goal\".",
+    "placeholders": {
+      "nutrient": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
   }
 }

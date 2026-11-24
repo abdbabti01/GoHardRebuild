@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
 import 'package:gohard_rebuild/features/nutrition/eat_screen.dart' show EatScreen;
+import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart' show NutritionSurface;
 import 'package:gohard_rebuild/features/coach/day_coach_screen.dart' show DayCoachScreen;
 import 'package:gohard_rebuild/features/me/reminders.dart' show Notice, ReminderScheduler, reminderSchedulerProvider;
 
@@ -66,9 +67,15 @@ Json _lunch(double kcal, double? protein) => foodEntry('l1', day, 'Lunch', 'Past
 Finder _said(String s) => find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.textContaining(s, findRichText: true));
 
 void main() {
-  testWidgets('the bubble says the day: what is left, with What could I eat?', (tester) async {
+  testWidgets('the bubble says the day in short, with What could I eat?; the figures are the rings\' alone', (tester) async {
     await _openEat(tester, food: [_lunch(650, 40)], kcal: 2000, protein: 120);
-    expect(_said('You have 1,350 kcal and 80 g protein left.'), findsOneWidget);
+    expect(_said('You still have room for calories and protein today.'), findsOneWidget);
+    // Compact top (docs/FOOD_DATA.md): what is left is said once, under the rings, not again in the bubble.
+    for (final figure in ['1,350', '80 g', '650']) {
+      expect(_said(figure), findsNothing, reason: figure);
+    }
+    expect(find.text('1,350 kcal left'), findsOneWidget);
+    expect(find.text('80 g left'), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('eat-coach')), matching: find.byKey(const Key('eat-brief-ideas'))), findsOneWidget);
     expect(find.byKey(const Key('log-food')), findsWidgets, reason: 'logging stays where it was');
 
@@ -77,23 +84,28 @@ void main() {
   // One app per test: the coach keeps its words for a session.
   testWidgets('over the target: a heads-up the first time', (tester) async {
     await _openEat(tester, food: [_lunch(2150, 40)], kcal: 2000);
-    expect(_said('150 kcal above your target. That’s okay.'), findsOneWidget);
+    expect(_said('You’re above your calorie target today. That’s okay'), findsOneWidget);
+    expect(_said('150'), findsNothing, reason: 'the excess is under the ring');
+    expect(find.text('150 kcal over target'), findsOneWidget);
   });
 
   testWidgets('over the target, already said today: said plainly', (tester) async {
     await _openEat(tester, food: [_lunch(2150, 40)], kcal: 2000, prefs: {'seen': ['$day|over']});
-    expect(_said('Recorded calories are 150 kcal above your target today.'), findsOneWidget);
+    expect(_said('You’re above your calorie target today.'), findsOneWidget);
+    expect(_said('That’s okay'), findsNothing, reason: 'the heads-up is said once a day');
   });
 
   testWidgets('heads-ups turned off: said plainly', (tester) async {
     await _openEat(tester, food: [_lunch(2150, 40)], kcal: 2000, prefs: {'headsUps': false});
     expect(_said('That’s okay'), findsNothing);
-    expect(_said('Recorded calories are 150 kcal above'), findsOneWidget);
+    expect(_said('You’re above your calorie target today.'), findsOneWidget);
   });
 
   testWidgets('without the coach, the same words and What could I eat? are in a quiet panel; it opens the ideas with no AI', (tester) async {
     await _openEat(tester, food: [_lunch(650, null)], kcal: 2000, coach: false);
-    expect(find.descendant(of: find.byKey(const Key('eat-brief-panel')), matching: find.textContaining('You have 1,350 kcal left today.')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('eat-brief-panel')), matching: find.textContaining('You still have room for calories today.')), findsOneWidget);
+    // In the coach's place, above the summary.
+    expect(tester.getBottomLeft(find.byKey(const Key('eat-brief-panel'))).dy, lessThan(tester.getTopLeft(find.byKey(const Key('log-food')).first).dy));
     await tester.ensureVisible(find.byKey(const Key('eat-brief-ideas')));
     await tester.tap(find.byKey(const Key('eat-brief-ideas')));
     await tester.pumpAndSettle();
@@ -132,6 +144,7 @@ void main() {
 
       expect(find.descendant(of: shown, matching: find.textContaining('Lunch is logged. Want ideas for your next meal?', findRichText: true)), findsOneWidget,
           reason: 'not the one-time "save it as a meal" introduction');
+      expect(find.descendant(of: find.byType(NutritionSurface), matching: find.text('650')), findsOneWidget, reason: 'the totals updated with the briefing');
       if (coach) expect(find.descendant(of: shown, matching: find.byKey(const Key('eat-brief-ideas'))), findsOneWidget);
       if (!coach) expect(find.byKey(const Key('eat-coach')), findsNothing, reason: 'the coach stays off');
     });

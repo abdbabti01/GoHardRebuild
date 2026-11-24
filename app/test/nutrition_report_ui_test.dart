@@ -88,7 +88,7 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const Key('eat-goal-protein-status'))).data, 'Goal reached · 10 g above target');
     expect(_color(tester, 'eat-goal-calories-status'), panel.goalRedText);
     expect(_color(tester, 'eat-goal-protein-status'), panel.goalGreenText, reason: 'exceeding protein is never red');
-    expect(find.text('108%'), findsWidgets, reason: 'the real share, rounded up above the target');
+    expect(tester.widget<Text>(find.byKey(const Key('today-goal-calories-percent'), skipOffstage: false)).data, '108%', reason: 'the real share, rounded up above the target');
     // Today's glance (tab still built) uses the same rule and words.
     expect(tester.widget<Text>(find.byKey(const Key('today-goal-calories-status'), skipOffstage: false)).data, '150 kcal over target');
     // The bar is read out with its state, not only its colour.
@@ -100,7 +100,8 @@ void main() {
     await _openEat(tester, food: [_food('a', day, 800, 40), _food('b', day, null, 10)], kcal: 2000, protein: 140);
     expect(tester.widget<Text>(find.byKey(const Key('eat-goal-calories-status'))).data, 'Known intake');
     expect(find.text('Room remaining'), findsNothing);
-    expect(tester.widget<Text>(find.byKey(const Key('eat-goal-protein-status'))).data, 'Below target');
+    expect(find.byKey(const Key('eat-goal-calories-left')), findsNothing, reason: 'no exact remainder from an incomplete total');
+    expect(tester.widget<Text>(find.byKey(const Key('eat-goal-protein-left'))).data, '90 g left', reason: 'protein is complete: its remainder is exact');
   });
 
   testWidgets('both goals reached: said plainly, the action reads Find something to eat; the coach asks first and continuing gives options', (tester) async {
@@ -150,7 +151,7 @@ void main() {
     testWidgets('$lang at 320 px with 2× text: the bars and the weekly report fit', (tester) async {
       await _openEat(tester, food: [_food('a', day, 1900, 150), _food('b', '2026-10-28', 2200, null)], kcal: 2000, protein: 140, size: const Size(320, 2400), text: 2, lang: lang);
       expect(tester.takeException(), isNull);
-      expect(find.byKey(const Key('eat-goal-calories-status')), findsOneWidget);
+      expect(find.byKey(const Key('eat-goal-calories-left')), findsOneWidget);
       await _openReport(tester);
       expect(tester.takeException(), isNull);
       await _reportTo(tester, 'wr-calories');

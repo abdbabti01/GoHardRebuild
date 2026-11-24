@@ -24,14 +24,18 @@ beside the photograph is about 200–245 px), and at 1.5× text a 390 px phone w
 and at 2× text on any phone. Words wrap (French "161 kcal au-dessus de la cible" takes three lines); nothing is shrunk.
 Today's nutrition panel is 293 px at 390 × 844 with both goals and a missing value (270 px stacked; the target range
 is 280–340 px). Log food stays directly under the summary on Eat, ahead of the composition.
+Since 23 Nov 2026 (docs/FOOD_DATA.md › Compact top) Eat's form has no photograph: each ring sits beside its nutrient's name, the amount under
+both, then the goal and one line (what is left when it is exact, otherwise the state in words); the percentage moved
+into **Nutrition details**. Eat goes side by side from 124 text-scaled px per column (Today keeps 92 px and its
+percentage and state beside each ring).
 
 - **Colours and words are the assessment's**: `goalFill` / `goalText` / `goalStatus`, no thresholds of their own. Below,
   approaching, reached and above for calories; protein above its goal stays green "Goal reached · N g above target".
 - **Above the goal** the arc stops at one full circle; the real percentage (rounded up, "107 %") and the excess ("161
   kcal over target") are in words. Never a second lap.
 - **No goal**: a neutral disc (the recessed fill, no arc) with the nutrient's icon, the amount and "No goal"; no
-  percentage. On an earlier day: "No goal recorded for this day". Setting goals stays Eat's existing **Set daily goals**
-  / **Edit goals** link (Today keeps goals in Eat, as before).
+  percentage. On an earlier day: "No goal recorded for this day". Setting goals stays in Eat: **Set daily goals** right
+  on the summary while none is set, and **Nutrition settings › Edit goals** (Today keeps goals in Eat, as before).
 - **No entries** is words ("No food logged yet" / "Nothing is recorded for this day…"), never a ring at zero. **A
   recorded zero** is a ring at 0 % with "0 kcal", "0 %" and its state.
 - **Missing values**: each nutrient on its own. Nothing known: a dash and "No value entered yet", no percentage. A
@@ -57,7 +61,7 @@ Composition, not progress: kept apart from the rings, with its own colours and n
 
 - **Where**: the two existing macro breakdowns, no new panel. Eat: the recorded composition replaces the Carbs / Fat
   row inside the nutrition panel (`eat-macros`) when Customize tracking shows both carbs and fat; with one of them
-  hidden the old row stays. Help me set my targets › See macro breakdown: the **Estimated target split** (a
+  hidden the old row stays. Since 23 Nov 2026 both are inside Eat's folded **Nutrition details**. Help me set my targets › See macro breakdown: the **Estimated target split** (a
   hypothetical day at the edited targets; protein as typed, carbs and fat the rounded estimate, "about").
   Titles say which: **Recorded macro composition** vs **Estimated target split**.
 - **Energy, not grams**: each share is grams × 4 / 4 / 9 kcal (general Atwater factors, the same convention as
