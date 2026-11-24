@@ -13843,4 +13843,178 @@ class AppLocalizationsAr extends AppLocalizations {
   String eatGoalPercent(String nutrient, String percent) {
     return '$nutrient: $percent من الهدف';
   }
+
+  @override
+  String foodTagBrand(String brand) {
+    return 'العلامة التجارية: $brand';
+  }
+
+  @override
+  String get foodTagGeneric => 'غير تجاري';
+
+  @override
+  String foodSearchCorrected(String words) {
+    return 'النتائج لـ «$words».';
+  }
+
+  @override
+  String foodSearchAskedAs(String words) {
+    return 'قاعدة بيانات الأطعمة بالإنجليزية: جرى البحث عن «$words».';
+  }
+
+  @override
+  String get foodDescribeTitle => 'صِف وجبتك';
+
+  @override
+  String get foodDescribeSubtitle =>
+      'اكتب ما أكلته، مثل «120 غ دجاج و100 غ بطاطس». تراجعه قبل تسجيل أي شيء.';
+
+  @override
+  String get dcDescribeHint => 'مثلًا: بيضتان وشريحة توست';
+
+  @override
+  String get dcDescribeIntro =>
+      'أخبرني بما أكلته، مع الكميات إن كنت تعرفها. سأجد كل طعام في سجلات الأطعمة، وأسألك عمّا لا يمكنني معرفته، وأجهّز وجبة واحدة لتراجعها. لا يُسجَّل شيء حتى تضغط «سجّل الوجبة».';
+
+  @override
+  String dcUsesOne(int remaining) {
+    String _temp0 = intl.Intl.pluralLogic(
+      remaining,
+      locale: localeName,
+      other: 'يستخدم طلب ذكاء اصطناعي واحدًا · يتبقى $remaining طلب هذا الشهر',
+      many: 'يستخدم طلب ذكاء اصطناعي واحدًا · يتبقى $remaining طلبًا هذا الشهر',
+      few: 'يستخدم طلب ذكاء اصطناعي واحدًا · يتبقى $remaining طلبات هذا الشهر',
+      two: 'يستخدم طلب ذكاء اصطناعي واحدًا · يتبقى طلبان هذا الشهر',
+      one: 'يستخدم طلب ذكاء اصطناعي واحدًا · يتبقى طلب واحد هذا الشهر',
+      zero: 'يستخدم طلب ذكاء اصطناعي واحدًا · لم يتبقَّ شيء هذا الشهر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dcUsesOneUnknown =>
+      'يستخدم طلب ذكاء اصطناعي واحدًا · لا يمكن التحقق مما تبقى هذا الشهر الآن';
+
+  @override
+  String get dcUsesOneNoCount => 'يستخدم طلب ذكاء اصطناعي واحدًا';
+
+  @override
+  String get dcNeedsConnection =>
+      'فهم جملة جديدة يحتاج إلى اتصال. تبقى كلماتك هنا حتى تضغط «أعد المحاولة»؛ وإضافة الطعام والتسجيل يعملان دونه.';
+
+  @override
+  String get dcMealTitle => 'وجبتك';
+
+  @override
+  String dcMealFor(String meal, String date) {
+    return 'لـ$meal · $date';
+  }
+
+  @override
+  String dcMealWeighed(String food) {
+    return '$food: هل وُزن نيئًا أم مطبوخًا؟';
+  }
+
+  @override
+  String get dcMealRaw => 'نيء';
+
+  @override
+  String get dcMealCooked => 'مطبوخ';
+
+  @override
+  String dcMealMissing(String food) {
+    return 'لم يوجد سجل طعام لـ«$food». ابحث عنه أو أزله.';
+  }
+
+  @override
+  String get dcMealSearchOther => 'ابحث عن غيره';
+
+  @override
+  String dcMealRemoveFood(String food) {
+    return 'أزل $food';
+  }
+
+  @override
+  String get dcMealTotal => 'المجموع';
+
+  @override
+  String dcMealSoFar(String foods) {
+    return 'حتى الآن، دون $foods';
+  }
+
+  @override
+  String get dcMealReady =>
+      'جاهزة للمراجعة. لا يُسجَّل شيء حتى تضغط «سجّل الوجبة».';
+
+  @override
+  String get dcMealNeedsAnswers => 'أجب عن الأسئلة أعلاه لإكمال هذه الوجبة.';
+
+  @override
+  String get dcMealDiscard => 'تجاهل';
+
+  @override
+  String get dcMealDiscarded => 'تم التجاهل. لم يُسجَّل شيء.';
+
+  @override
+  String get dcMealLogged => 'سُجّلت. عدّلها من «الأكل» من الآن فصاعدًا.';
+
+  @override
+  String get dcMealReplaced => 'استُبدلت بوجبة أحدث أدناه.';
+
+  @override
+  String dcMealTooMany(int count) {
+    return 'قرأت أول $count أطعمة. أضف البقية بـ«إضافة طعام».';
+  }
+
+  @override
+  String get dcMealUnreadable =>
+      'تعذّرت قراءة جزء مما كتبته كطعام. أضف أي شيء ناقص بـ«إضافة طعام».';
+
+  @override
+  String get dcMealChangedMeanwhile =>
+      'تغيّرت وجبتك أثناء قراءتي، فلم أغيّرها. اطلب مجددًا على الوجبة كما هي الآن.';
+
+  @override
+  String get dcMealAlreadyLogged =>
+      'هذه الوجبة مسجّلة بالفعل، فلم أغيّرها. عدّل الطعام المسجّل من «الأكل».';
+
+  @override
+  String get dcMealNoDraft =>
+      'لا توجد وجبة قيد الإعداد لتغييرها. أخبرني أولًا بما أكلته.';
+
+  @override
+  String dcMealChangeRemoved(String food) {
+    return 'أُزيل $food.';
+  }
+
+  @override
+  String dcMealChangeAmount(String food, String amount) {
+    return '$food: الآن $amount.';
+  }
+
+  @override
+  String dcMealChangeAdded(String food) {
+    return 'أُضيف $food.';
+  }
+
+  @override
+  String dcMealChangeFull(String food, int count) {
+    return 'لم يُضف $food: تتسع الوجبة لـ$count أطعمة.';
+  }
+
+  @override
+  String get dcMealOwnValues => 'قيمك أنت';
+
+  @override
+  String get dcMealUsage =>
+      'قراءة كلماتك استخدمت طلب ذكاء اصطناعي واحدًا. الإجابة عن هذه الأسئلة وتغيير الكميات والتسجيل لا تستخدم شيئًا.';
+
+  @override
+  String dcMealHowMuch(String food) {
+    return 'كم من $food؟';
+  }
+
+  @override
+  String get dcMealLogUnavailable =>
+      'وصف الوجبة غير متاح على هذا الخادم بعد. إضافة الطعام والتسجيل ما زالا يعملان.';
 }

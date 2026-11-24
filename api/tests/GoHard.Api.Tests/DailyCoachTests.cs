@@ -106,7 +106,7 @@ public partial class CoachTests
         var expected = JsonNode.Parse($$"""
             {"kind":"portion","day":"shown","nutrient":null,"source":null,"items":[{"kind":"meal","id":"{{shake}}"}],
              "portion":{"change":"smaller","factor":0.5,"servings":null,"grams":null,"ingredient":null},"maxCalories":null,"minProtein":null,"meal":null,
-             "clarification":null,"unknownItems":[],"dropped":["item"],"ideas":[],"preferences":[]}
+             "clarification":null,"unknownItems":[],"dropped":["item"],"ideas":[],"preferences":[],"foods":[],"edits":[]}
             """);
         Assert.True(JsonNode.DeepEquals(expected, intent), intent.ToJsonString());
         foreach (var injected in new[] { "98765", "4321", "87654", "example.com" }) Assert.DoesNotContain(injected, body.GetProperty("intent").GetRawText());

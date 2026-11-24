@@ -110,7 +110,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(fakes.discovery.searches, ['rice']);
       expect(find.text('More foods'), findsOneWidget);
-      expect(top(tester, 'result-usda:2708402'), lessThan(top(tester, 'result-usda:171077')), reason: 'the answer is put in order: rice before what merely came with it');
+      expect(find.byKey(const Key('result-usda:2708402')), findsOneWidget);
+      expect(find.byKey(const Key('result-usda:171077')), findsNothing, reason: 'an answer sharing no word with the search (raw chicken for "rice") is not listed');
       expect(find.byKey(const Key('common-white-rice')), findsOneWidget, reason: 'the foods on the phone stay listed');
 
       await _tap(tester, 'result-usda:2708402');
@@ -292,14 +293,14 @@ void main() {
       expect(find.byKey(const Key('food-search-busy')), findsOneWidget);
 
       // A newer question while the first is still on its way.
-      await type('plugh');
+      await type('rice nfs');
       await tester.pump(LogFoodScreen.pause);
-      expect(held.searches, ['xyzzy', 'plugh']);
+      expect(held.searches, ['xyzzy', 'rice nfs']);
       held.pending['xyzzy']!.complete([chickenRaw()]);
       await tester.pump();
       expect(find.text('Chicken, breast, meat only, raw'), findsNothing, reason: 'the older answer is dropped');
       expect(find.byKey(const Key('food-search-busy')), findsOneWidget, reason: 'the current question is still being asked');
-      held.pending['plugh']!.complete([riceCooked()]);
+      held.pending['rice nfs']!.complete([riceCooked()]);
       await tester.pumpAndSettle();
       expect(find.text('Rice, cooked, NFS'), findsOneWidget);
 
@@ -324,14 +325,14 @@ void main() {
       await type('tofu');
       await _tap(tester, 'food-search-online');
       await _tap(tester, 'food-scope-recent');
-      held.pending['tofu']!.complete([chickenRaw()]);
+      held.pending['tofu']!.complete([FoodItem({...chickenRaw().j, 'sourceId': '172476', 'name': 'Tofu, raw, firm'})]);
       await tester.pumpAndSettle();
-      expect(find.text('Chicken, breast, meat only, raw'), findsNothing);
+      expect(find.text('Tofu, raw, firm'), findsNothing);
 
       // Each of those answers still belongs to its own question, and is shown when that is asked again: no new request.
       await _tap(tester, 'food-scope-search');
-      expect(find.text('Chicken, breast, meat only, raw'), findsOneWidget);
-      expect(held.searches, ['xyzzy', 'plugh', 'quux', 'egg', 'tofu']);
+      expect(find.text('Tofu, raw, firm'), findsOneWidget);
+      expect(held.searches, ['xyzzy', 'rice nfs', 'quux', 'egg', 'tofu']);
     });
 
     testWidgets('a category lists and filters common foods only, says so, and shows no unclassified food under it', (tester) async {
@@ -364,7 +365,7 @@ void main() {
       await pumpApp(tester, await _overrides(tester, FoodFakes(), seenFoods: [yogurt.j, hazelnutSpread().j]), home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'), size: const Size(390, 3200));
       await tester.enterText(find.byKey(const Key('food-search')), 'chobani');
       await tester.pumpAndSettle();
-      expect((find.text('Greek Yogurt, Vanilla').evaluate().length, find.text('Chobani').evaluate().length, find.text('Common foods').evaluate().length), (1, 1, 0));
+      expect((find.text('Greek Yogurt, Vanilla').evaluate().length, find.text('Brand: Chobani').evaluate().length, find.text('Common foods').evaluate().length), (1, 1, 0));
 
       await tester.enterText(find.byKey(const Key('food-search')), 'greek yogurt');
       await tester.pumpAndSettle();
@@ -401,7 +402,7 @@ void main() {
 
       await _tap(tester, 'food-scope-favourites');
       expect((rows('favourite-off:3017620422003'), rows('recent-usda:2708402'), rows('mine-user:s-oats')), (1, 0, 0));
-      expect(find.text('Favourite · Nutella, Ferrero'), findsOneWidget);
+      expect(find.text('Favourite · Brand: Nutella, Ferrero'), findsOneWidget);
       await _tap(tester, 'food-scope-mine');
       expect((rows('favourite-off:3017620422003'), rows('mine-user:s-oats')), (0, 1));
       expect(find.text('1 jar · 420 kcal'), findsOneWidget);
@@ -486,7 +487,7 @@ void main() {
     testWidgets('search that is not set up on the server says so before anything is asked, and common foods still work', (tester) async {
       final fakes = FoodFakes();
       final server = FakeServer()..capabilities = {'contractVersion': 1, 'minimumClientContract': 1, 'capabilities': ['food.barcode']};
-      final container = await pumpApp(tester, [...await _overrides(tester, fakes), transportProvider.overrideWithValue(server)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'));
+      final container = await pumpApp(tester, [...await _overrides(tester, fakes), transportProvider.overrideWithValue(server)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'), size: const Size(390, 2400));
       await tester.runAsync(() => container.read(compatibilityProvider.notifier).check());
       await tester.enterText(find.byKey(const Key('food-search')), 'chicken');
       await tester.pumpAndSettle();

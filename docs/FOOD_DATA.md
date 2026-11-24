@@ -7,12 +7,15 @@ How the app finds foods, where the numbers come from, what has to be configured,
 Eat → **Log food** (also from Today, and the + beside each meal) opens **Add food**, one place to find a food:
 
 - **Search**: everyday foods bundled with the app (see "Common foods") and the user's own foods appear as you
-  type, with no connection. **Search more foods** asks USDA for the same words; when the phone has nothing for
-  what was typed (three letters or more), that is asked by itself after a 0.6 s pause. Category chips filter the
+  type, with no connection. **Search more foods** asks USDA for the same words (corrected, in English); unless something on the
+  phone is named exactly (three letters or more), that is asked by itself after a 0.6 s pause (since 24 Nov 2026; before,
+  only when the phone had nothing). Category chips filter the
   common foods only, and say so: your own foods and USDA results have no category and are not shown under one.
 - **Scan** (top right): the camera reads a product barcode, or the digits can be typed.
 - **Recent**, **Favourites**, **My foods**: the user's own lists, narrowed by what is typed.
 - **Can't find it? Create your own food**: the manual form, as before.
+- **Describe your meal** (since 24 Nov 2026): a sentence about what was eaten, read by Leon or Leona into one meal to
+  review (see *Describe your meal* below).
 - The meal under the title starts as the meal the screen was opened for and can be changed; it carries into the form.
 
 A row shows the name, what tells the food apart (preparation or brand), the amount its values are for ("1 egg
@@ -96,17 +99,17 @@ table, endpoint or contract change behind it.
   minute), and refuses a portion the record does not state. `--candidates` lists what the API returned for an
   entry so a record can be chosen. Raise `VERSION` in the script when the foods change.
 - Every original name, its replacement record (FDC ID, preparation, starting portion) and the old and new values
-  side by side: `docs/COMMON_FOODS_COMPARISON.md`. 74 foods cover 75 of the 76 original names (string cheese is the
+  side by side: `docs/COMMON_FOODS_COMPARISON.md`. 74 foods cover 75 of the 76 original names (77 since catalog version 2, 24 Nov 2026: below) (string cheese is the
   part-skim mozzarella record).
 - Left out on purpose: "Protein bar" (USDA has only specific branded bars, no generic one) and "String cheese"
   (it is the part-skim mozzarella record, which is found by that name too). Records without count portions
   (mostly SR Legacy) start at 100 g; none was given an invented portion.
 
-**Relevance** (`features/nutrition/food_search.dart`, one rule for common foods, the user's foods and USDA's
-answer): case, spacing, accents and ligatures are ignored and simple plurals folded; every word typed has to be
-found; an exact name or alias comes before a name that starts with the words, then whole words among name,
-aliases, preparation and brand, then beginnings of words, then parts of words. USDA's answer is re-ordered by the
-same rule (plain "Rice, …" before "Snacks, rice cakes"), never thinned.
+**Relevance** (`features/nutrition/food_search.dart` › `relevance`, one rule for common foods, the user's foods, USDA's
+answer and meal matching; revised 24 Nov 2026, see *Search relevance* below): case, spacing, accents and ligatures are
+ignored and simple plurals folded; every word typed has to be found; then a tier (exact name or alias · a brand the search
+names · every word whole · the last word still being typed · beginnings of words · parts of words) and, within a tier, how
+much more specific the food is than what was asked.
 
 **What the search screen says when the wider search gives nothing** is one of six different things: the database
 answered with nothing; it could not be reached (this phone's connection or the server, the app cannot tell which);
@@ -114,6 +117,121 @@ it took too long; too many requests for now; not answering; not set up on this s
 foods found on the phone and is never worded as "no foods" or "offline". An answer to an earlier question, or to
 one since cleared or re-scoped, is dropped when it arrives; an answer already given is reused while the screen is
 open.
+
+### Search relevance (24 Nov 2026, `feature/food-search-describe-meal`)
+
+**What was wrong.** Searching "chicken breast" showed one cooked breast from the phone, and USDA's own answer starts with
+"Lunchmeat, chicken breast, sliced", rotisserie and breaded tenders; the plain raw breast is tenth and the plain roasted
+ones past the first 15. The app then *promoted* titles that merely start with the words ("Chicken breast tenders,
+breaded" above "Chicken, breast, boneless, skinless, raw"), the catalog had no raw breast, aliases such as "chicken" and
+"grilled chicken" made the roasted breast the exact answer for any chicken, French or Arabic words were sent to the
+English-only USDA as typed (it matched "de" and answered "Atole de avena"), and a misspelling ("chiken brest") found
+nothing anywhere (USDA answers 0 hits). Checked against USDA's live answers on 24 Nov 2026.
+
+**What it does now** (no AI anywhere in search; nothing here touches a food's values):
+
+- **Specificity.** Within a tier, a food that says more than the search asked comes later: nothing for small words and
+  plain descriptions (raw, cooked and every cooking method, boneless, skinless, meat only, lean, plain, fat level such as
+  skim or 2 %), 3 for something added or a product made from the food (breaded, coated, sauce, glazed, deli, lunchmeat,
+  nuggets, fast food, fried…), 2 for another word in the part of a provider title the search names or in its first part
+  ("rice *noodles*", "*Yogurt*, Greek, nonfat milk"), 1 for anything else. "Skin not eaten", "without sauce", "no added
+  fat", "from raw", "sans peau", "non cuit", "غير مطبوخ" are read as what they say. A word the search asks for costs
+  nothing, so "breaded chicken breast" puts breaded first.
+- **Preparation words mean the same in three languages** (`cuite` = cooked, `مشوي` = grilled) and "cooked" finds any way
+  of cooking but never raw; sautéed and fried still count as more than plain "cooked".
+- **Broader aliases are not exact.** An alias that is only part of another of the food's names ("chicken" beside
+  "chicken breast", "دجاج" beside "صدر دجاج", "rice" beside "white rice") still finds it but never as the exact answer. The
+  aliases "grilled chicken" / "poulet grillé" / "دجاج مشوي" were removed from the roasted breast.
+- **Brands.** A branded product whose brand the search names ranks above everything else that matches; when no brand is
+  named, a branded product counts as a little more specific, so plain foods come first and products follow (never
+  hidden). Rows say **Generic** or **Brand: Tyson** (a capitalised product name reads as a sentence; the record keeps the
+  source's name and ID).
+- **Repeats.** The same product listed again under another ID (same name, brand, basis, values and portions) is shown
+  once. Different preparations, values or portions are never merged.
+- **Misspellings** are corrected to the nearest word the app knows (each catalog food's names, preparations and aliases
+  in every language, and the translated staples): one edit for 4–6 letters, two from 7, never a word being typed, never a
+  word with no close match. Said on screen: "Showing results for “chicken breast”."
+- **French and Arabic for USDA.** A short list of everyday food words (`food_search.dart` › `_english`) puts the search in
+  English for the wider database ("poitrine de poulet cuite" → "breast chicken cooked"); unknown words are kept and small
+  words dropped; the screen says which words were sent. Results sharing no word at all with the search are not shown.
+- **When the wider search runs by itself.** After the 0.6 s pause, unless something on the phone is named *exactly*
+  (an everyday food or the person's own): "chicken thigh" or a brand is worth asking for even when the phone has other
+  chicken; "eggs" is not. Search more foods stays for every other case. An answer to an earlier question is still dropped
+  when it arrives, failures still never remove the foods found on the phone, and it is still never per keystroke.
+- **Your foods** stay first only when one of them is at least as good a match as the best everyday food, and at most 8
+  are listed before the others.
+- **Page size.** The API now asks USDA for 25 generic and 15 branded records (was 15 and 10): plain records were just
+  past the first page. Still two requests per search, cached 24 h, the same budgets.
+- **Catalog version 2** (77 foods): the raw breast (FDC 2646170, Foundation), raw thigh (2646171) and roasted thigh
+  (172388), each a real USDA record normalized by the API (`build-common-foods.mjs --reuse` keeps every existing record
+  byte for byte and looks up only new ones; for a local API with captured mail it confirms the disposable account). Raw
+  potato, beef, salmon and rice records were not added: USDA's public trial key ran out that day; they are found online.
+
+Tests: `food_relevance_test` (USDA's real answer to "chicken breast" as the API normalized it,
+`test/fixtures/usda_chicken_breast.json`; preparation, cut, skin, brand, repeats, misspellings, French and Arabic,
+broader aliases, raw/cooked reading), `food_search_test` (updated), `meal_log_ui_test` › search on screen (no AI request,
+no automatic wider search for an exact everyday food, a corrected search, a brand asked once, French sent in English).
+
+### Describe your meal (24 Nov 2026, `feature/food-search-describe-meal`)
+
+**Where.** Add food › **Describe your meal** (at the top of the empty search and in its bottom card) opens the existing
+coach conversation (Help with today) for that day and the meal chosen in Add food, with the field ready for a sentence.
+The same words typed in Eat's coach conversation are read the same way. No new card on Eat, no other chatbot.
+
+**Flow.** "I ate 120 g of chicken and 100 g of potatoes" → **one** request (`POST /coach/daily`, kind `ate`) reads the
+foods as words → the phone matches each to a real record with the same matcher as meal ideas and search
+(`meal_ideas.dart` › `FoodMatcher`: bundled foods, the person's foods, foods seen on this phone, then at most 6 food
+searches, which are free) → one draft card asks only what it cannot know, with buttons → **Review meal** opens the usual
+`MealReviewScreen` (day, meal, every amount, add/remove, totals) → **Log meal** is the only action that records, through
+the existing atomic `food.batch` (one operation ID: a double tap or a retry logs once; offline it waits in the outbox and
+is sent once). Leaving the review or the conversation logs nothing; every change in the review is kept on the draft.
+
+**What is asked, never guessed** (each answered on the phone, no AI):
+- *Weighed raw or cooked?* when the amount is a weight or volume, no preparation was said and the records say raw or
+  cooked. The weight said stays (it is what was weighed); a count ("2 eggs") is not asked.
+- *Which chicken?* when several records are equally good (raw breast and raw thigh for "chicken"): up to 3 buttons and
+  **Search for another**. "Chicken" is never taken as breast; oil, butter or sauce is never added.
+- *How much potatoes?* when no amount was said or it fits none of the record's own units: the usual amount form. Kilograms,
+  ounces, pounds and litres are converted exactly; nothing converts between weight and volume or raw and cooked, and no
+  standard portion is put in its place. A record of another preparation than said clears the amount (the existing
+  safeguard).
+- *No food record found* → **Find food** (Add food in selection mode, with the word in the search); everything else stays.
+  A food typed by hand there is marked "your own values".
+- Every food can be removed; **Add food** adds one; **Discard** drops the draft. Totals: "Total" once every food has a
+  record and an amount, otherwise "So far, without potatoes" (the confirmed ones only, named as such). Unknown values stay
+  unknown and partial sums say "known", as everywhere (`NutrientCoverage`). A food with a missing value never blocks
+  logging once its record and amount are confirmed.
+
+**Follow-ups** while a draft is open ("make the potatoes 150 g", "remove the chicken", "add one tablespoon of olive oil"):
+common changes are on the card and in the review, free. A typed one is one more request (kind `edit`) that carries only
+the draft's references and words (`d1 | Chicken breast · 120 g`) — never values, the journal, goals or anything else.
+The change is applied to a new copy of that draft (the old card says "Replaced"), and only if the draft is still exactly
+the one that was sent: a change made meanwhile, a discarded or logged draft, or another account means nothing is changed
+and the reply says so. A logged draft is closed for good ("Logged. Change it in Eat from now on."): no later message logs
+it again or edits history.
+
+**Day and meal.** "Yesterday" is the day before today; otherwise the day the conversation is about. The meal said, else
+the one chosen in Add food, else the time of day's. Both are changed in the review.
+
+**AI usage** (docs/PLUS_PREVIEW.md): under the field, before sending, "Uses 1 AI request · 14 remaining this month" from the
+server's own count ("… can't be checked right now" while it is unknown; no count on a server without allowances). One
+description is one charged request whatever the number of foods (up to 12; more are said, never dropped silently);
+a typed follow-up that changes something is one more; answering questions, matching, food searches, amounts, review and
+logging are never charged. A reading with no usable food or change is `unsupported` and not charged. At the limit the
+existing limit text and reset date show; the words and the draft stay, and the draft can still be reviewed and logged
+(Log meal is never behind the allowance). Offline: "Understanding a new sentence needs a connection" with the words kept
+for an explicit Try again (same request ID); nothing is sent later by itself.
+
+**Compatibility.** Capability `coach.meal-log` (declared with `coach.daily`'s rule). Only to a server that declares it does
+the phone send `features: ["log"]` and a draft; an older server gets neither, and Describe your meal says "isn't available
+on this server yet" while search and logging work as before. No migration, no new configuration, client contract 2.
+
+Code: API `DailyCoachService` (kinds `ate`/`edit`, `foods`/`edits` in the strict schema, `MealFood` checks), app
+`meal_ideas.dart` (`FoodMatcher`, `resolveMeal`, `answerState`, `chooseRecord`, `applyMealEdits`, `draftWords`),
+`day_coach.dart` (`mealCard`, `DayIntent.draft`), `day_coach_screen.dart` (draft operations and the card),
+`MealReviewScreen` (`onChanged`, `logLabel`). Tests: API `MealLogTests`; app `meal_log_test` (matching, questions,
+conversions, brands, totals, edits), `meal_log_ui_test` (the journey from Add food, follow-ups and late answers, allowance
+and offline, usage line, older server, suggestions never logged, fr-CA/ar at 320 px and 1.6× text).
 
 ## What is stored when food is logged
 
@@ -164,8 +282,8 @@ Both providers count requests per calling address, and every user of the API sha
 - After a provider answers "too many requests", nothing more is sent to it for 5 minutes.
 - Each call waits at most 8 seconds and is retried once.
 - The phone keeps up to 300 foods it has seen, per account, and answers a barcode looked up in the last 7 days from
-  there. The wider search is never run per keystroke: it runs on a tap, or once after a 0.6 s pause when the
-  phone has no match, and an answer is reused while the search screen stays open.
+  there. The wider search is never run per keystroke: it runs on a tap, or once after a 0.6 s pause when nothing on
+  the phone is named exactly, and an answer is reused while the search screen stays open.
 
 Known ceiling: the cache and the budgets live in one API process. A restart empties the cache, and a second API
 instance would need a shared cache before the budgets hold. At 10 barcode lookups a minute for all users, a busy

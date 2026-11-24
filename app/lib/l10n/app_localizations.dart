@@ -19901,6 +19901,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{nutrient}: {percent} of goal'**
   String eatGoalPercent(String nutrient, String percent);
+
+  /// Food row: a branded product, with its brand as the source names it.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand: {brand}'**
+  String foodTagBrand(String brand);
+
+  /// Food row: a generic food from the food database (not a brand’s product).
+  ///
+  /// In en, this message translates to:
+  /// **'Generic'**
+  String get foodTagGeneric;
+
+  /// Search: a misspelt word was corrected to a known food word.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing results for “{words}”.'**
+  String foodSearchCorrected(String words);
+
+  /// Search: the words sent to the English-only database, when they differ from what was typed.
+  ///
+  /// In en, this message translates to:
+  /// **'The food database is in English: searched for “{words}”.'**
+  String foodSearchAskedAs(String words);
+
+  /// Add food: opens the coach to read a sentence about what was eaten.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your meal'**
+  String get foodDescribeTitle;
+
+  /// Add food: under Describe your meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Say what you ate, like “120 g of chicken and 100 g of potatoes”. You review it before anything is logged.'**
+  String get foodDescribeSubtitle;
+
+  /// Coach input hint when opened from Describe your meal.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: 2 eggs and a slice of toast'**
+  String get dcDescribeHint;
+
+  /// Coach intro when opened from Describe your meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell me what you ate, with amounts if you know them. I’ll find each food in the food records, ask what I can’t know, and prepare one meal for you to review. Nothing is logged until you tap Log meal.'**
+  String get dcDescribeIntro;
+
+  /// Under the coach input: what sending costs and what is left of the monthly allowance (from the server).
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining, plural, =1{Uses 1 AI request · 1 remaining this month} other{Uses 1 AI request · {remaining} remaining this month}}'**
+  String dcUsesOne(int remaining);
+
+  /// Under the coach input when the allowance is unknown (offline, not loaded).
+  ///
+  /// In en, this message translates to:
+  /// **'Uses 1 AI request · what remains this month can’t be checked right now'**
+  String get dcUsesOneUnknown;
+
+  /// Under the coach input on a server without allowances.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses 1 AI request'**
+  String get dcUsesOneNoCount;
+
+  /// Coach: a typed request could not be sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Understanding a new sentence needs a connection. Your words are kept here until you tap Try again; Add food and logging work without one.'**
+  String get dcNeedsConnection;
+
+  /// Card title of a described meal (not logged yet).
+  ///
+  /// In en, this message translates to:
+  /// **'Your meal'**
+  String get dcMealTitle;
+
+  /// Described meal: where it will be logged (changeable in the review).
+  ///
+  /// In en, this message translates to:
+  /// **'For {meal} · {date}'**
+  String dcMealFor(String meal, String date);
+
+  /// Described meal: the amount was a weight and raw and cooked differ; the person chooses.
+  ///
+  /// In en, this message translates to:
+  /// **'{food}: weighed raw or cooked?'**
+  String dcMealWeighed(String food);
+
+  /// Button: the food was weighed raw.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw'**
+  String get dcMealRaw;
+
+  /// Button: the food was weighed cooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooked'**
+  String get dcMealCooked;
+
+  /// Described meal: a food with no record; everything else is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'No food record found for “{food}”. Find it, or remove it.'**
+  String dcMealMissing(String food);
+
+  /// Described meal: none of the offered records is right; opens food search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for another'**
+  String get dcMealSearchOther;
+
+  /// Described meal: takes a food out of the draft (nothing logged).
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {food}'**
+  String dcMealRemoveFood(String food);
+
+  /// Described meal: every food has a record and an amount. The French word may match English ("Total").
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get dcMealTotal;
+
+  /// Described meal: a sum of the confirmed foods only, naming those not counted.
+  ///
+  /// In en, this message translates to:
+  /// **'So far, without {foods}'**
+  String dcMealSoFar(String foods);
+
+  /// Described meal: all foods confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to review. Nothing is logged until you tap Log meal.'**
+  String get dcMealReady;
+
+  /// Described meal: some foods still need a record or an amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer the questions above to finish this meal.'**
+  String get dcMealNeedsAnswers;
+
+  /// Described meal: drops the draft; nothing is logged.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get dcMealDiscard;
+
+  /// Described meal after Discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discarded. Nothing was logged.'**
+  String get dcMealDiscarded;
+
+  /// Described meal after Log meal: the draft is closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged. Change it in Eat from now on.'**
+  String get dcMealLogged;
+
+  /// An older draft after a new description or an applied change.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaced by a newer meal below.'**
+  String get dcMealReplaced;
+
+  /// Described meal: the sentence named more foods than one meal holds.
+  ///
+  /// In en, this message translates to:
+  /// **'I read the first {count} foods. Add the rest with Add food.'**
+  String dcMealTooMany(int count);
+
+  /// Described meal: a food the server dropped.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of what you wrote couldn’t be read as a food. Add anything missing with Add food.'**
+  String get dcMealUnreadable;
+
+  /// A follow-up answer arrived after the draft was changed: not applied.
+  ///
+  /// In en, this message translates to:
+  /// **'Your meal changed while I was reading that, so I didn’t change it. Ask again about the meal as it is now.'**
+  String get dcMealChangedMeanwhile;
+
+  /// A follow-up after the draft was logged: nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'That meal is already logged, so I didn’t change it. Change logged food in Eat.'**
+  String get dcMealAlreadyLogged;
+
+  /// A change asked with no open draft.
+  ///
+  /// In en, this message translates to:
+  /// **'There’s no meal being prepared to change. Tell me what you ate first.'**
+  String get dcMealNoDraft;
+
+  /// Follow-up applied: a food removed from the draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {food}.'**
+  String dcMealChangeRemoved(String food);
+
+  /// Follow-up applied: a new amount.
+  ///
+  /// In en, this message translates to:
+  /// **'{food}: now {amount}.'**
+  String dcMealChangeAmount(String food, String amount);
+
+  /// Follow-up applied: a food added (it may still need confirming below).
+  ///
+  /// In en, this message translates to:
+  /// **'Added {food}.'**
+  String dcMealChangeAdded(String food);
+
+  /// Follow-up: the draft is full.
+  ///
+  /// In en, this message translates to:
+  /// **'{food} wasn’t added: one meal holds {count} foods.'**
+  String dcMealChangeFull(String food, int count);
+
+  /// Described meal: a food whose values the person typed (an estimate of their own), not a record.
+  ///
+  /// In en, this message translates to:
+  /// **'your own values'**
+  String get dcMealOwnValues;
+
+  /// Described meal: what the request paid for.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading your words used 1 AI request. Answering these questions, changing amounts and logging use none.'**
+  String get dcMealUsage;
+
+  /// Described meal: no amount was said for this food (or it fits none of its units).
+  ///
+  /// In en, this message translates to:
+  /// **'How much {food}?'**
+  String dcMealHowMuch(String food);
+
+  /// Coach opened from Describe your meal on a server without coach.meal-log.
+  ///
+  /// In en, this message translates to:
+  /// **'Describing a meal isn’t available on this server yet. Add food and logging still work.'**
+  String get dcMealLogUnavailable;
 }
 
 class _AppLocalizationsDelegate

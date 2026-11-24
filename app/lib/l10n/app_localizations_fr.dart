@@ -13552,6 +13552,178 @@ class AppLocalizationsFr extends AppLocalizations {
   String eatGoalPercent(String nutrient, String percent) {
     return '$nutrient : $percent de l’objectif';
   }
+
+  @override
+  String foodTagBrand(String brand) {
+    return 'Marque : $brand';
+  }
+
+  @override
+  String get foodTagGeneric => 'Générique';
+
+  @override
+  String foodSearchCorrected(String words) {
+    return 'Résultats pour « $words ».';
+  }
+
+  @override
+  String foodSearchAskedAs(String words) {
+    return 'La base d’aliments est en anglais : recherche de « $words ».';
+  }
+
+  @override
+  String get foodDescribeTitle => 'Décrire ton repas';
+
+  @override
+  String get foodDescribeSubtitle =>
+      'Dis ce que tu as mangé, par exemple « 120 g de poulet et 100 g de pommes de terre ». Tu vérifies avant que rien ne soit consigné.';
+
+  @override
+  String get dcDescribeHint => 'Par exemple : 2 œufs et une rôtie';
+
+  @override
+  String get dcDescribeIntro =>
+      'Dis-moi ce que tu as mangé, avec les quantités si tu les connais. Je trouve chaque aliment dans les fiches d’aliments, je te demande ce que je ne peux pas savoir et je prépare un repas à vérifier. Rien n’est consigné avant que tu touches Consigner le repas.';
+
+  @override
+  String dcUsesOne(int remaining) {
+    String _temp0 = intl.Intl.pluralLogic(
+      remaining,
+      locale: localeName,
+      other: 'Utilise 1 requête IA · $remaining restantes ce mois-ci',
+      one: 'Utilise 1 requête IA · $remaining restante ce mois-ci',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dcUsesOneUnknown =>
+      'Utilise 1 requête IA · le solde du mois ne peut pas être vérifié pour l’instant';
+
+  @override
+  String get dcUsesOneNoCount => 'Utilise 1 requête IA';
+
+  @override
+  String get dcNeedsConnection =>
+      'Comprendre une nouvelle phrase demande une connexion. Tes mots restent ici jusqu’à ce que tu touches Réessayer; Ajouter un aliment et la consignation fonctionnent sans connexion.';
+
+  @override
+  String get dcMealTitle => 'Ton repas';
+
+  @override
+  String dcMealFor(String meal, String date) {
+    return 'Pour $meal · $date';
+  }
+
+  @override
+  String dcMealWeighed(String food) {
+    return '$food : pesé cru ou cuit?';
+  }
+
+  @override
+  String get dcMealRaw => 'Cru';
+
+  @override
+  String get dcMealCooked => 'Cuit';
+
+  @override
+  String dcMealMissing(String food) {
+    return 'Aucune fiche d’aliment trouvée pour « $food ». Trouve-le ou retire-le.';
+  }
+
+  @override
+  String get dcMealSearchOther => 'Chercher un autre';
+
+  @override
+  String dcMealRemoveFood(String food) {
+    return 'Retirer $food';
+  }
+
+  @override
+  String get dcMealTotal => 'Total';
+
+  @override
+  String dcMealSoFar(String foods) {
+    return 'Pour l’instant, sans $foods';
+  }
+
+  @override
+  String get dcMealReady =>
+      'Prêt à vérifier. Rien n’est consigné avant que tu touches Consigner le repas.';
+
+  @override
+  String get dcMealNeedsAnswers =>
+      'Réponds aux questions ci-dessus pour terminer ce repas.';
+
+  @override
+  String get dcMealDiscard => 'Abandonner';
+
+  @override
+  String get dcMealDiscarded => 'Abandonné. Rien n’a été consigné.';
+
+  @override
+  String get dcMealLogged =>
+      'Consigné. Modifie-le dans Manger à partir de maintenant.';
+
+  @override
+  String get dcMealReplaced => 'Remplacé par un repas plus récent ci-dessous.';
+
+  @override
+  String dcMealTooMany(int count) {
+    return 'J’ai lu les $count premiers aliments. Ajoute les autres avec Ajouter un aliment.';
+  }
+
+  @override
+  String get dcMealUnreadable =>
+      'Une partie de ton message n’a pas pu être lue comme un aliment. Ajoute ce qui manque avec Ajouter un aliment.';
+
+  @override
+  String get dcMealChangedMeanwhile =>
+      'Ton repas a changé pendant que je lisais, alors je ne l’ai pas modifié. Redemande à partir du repas actuel.';
+
+  @override
+  String get dcMealAlreadyLogged =>
+      'Ce repas est déjà consigné, alors je ne l’ai pas modifié. Modifie les aliments consignés dans Manger.';
+
+  @override
+  String get dcMealNoDraft =>
+      'Aucun repas en préparation à modifier. Dis-moi d’abord ce que tu as mangé.';
+
+  @override
+  String dcMealChangeRemoved(String food) {
+    return '$food retiré.';
+  }
+
+  @override
+  String dcMealChangeAmount(String food, String amount) {
+    return '$food : maintenant $amount.';
+  }
+
+  @override
+  String dcMealChangeAdded(String food) {
+    return '$food ajouté.';
+  }
+
+  @override
+  String dcMealChangeFull(String food, int count) {
+    return '$food n’a pas été ajouté : un repas contient $count aliments au plus.';
+  }
+
+  @override
+  String get dcMealOwnValues => 'tes propres valeurs';
+
+  @override
+  String get dcMealUsage =>
+      'Lire tes mots a utilisé 1 requête IA. Répondre à ces questions, changer les quantités et consigner n’en utilisent aucune.';
+
+  @override
+  String dcMealHowMuch(String food) {
+    return 'Quelle quantité de $food?';
+  }
+
+  @override
+  String get dcMealLogUnavailable =>
+      'Décrire un repas n’est pas encore offert sur ce serveur. Ajouter un aliment et la consignation fonctionnent toujours.';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

@@ -1,5 +1,8 @@
 [
-["chicken-breast","Chicken breast","Baked or roasted · skinless","Proteins","chicken breast baked broiled or roasted skin not eaten",2705956,["chicken","chicken breast","grilled chicken","poulet","poitrine de poulet","blanc de poulet","filet de poulet"],"1 medium breast"],
+["chicken-breast","Chicken breast","Baked or roasted · skinless","Proteins","chicken breast baked broiled or roasted skin not eaten",2705956,["chicken","chicken breast","poulet","poitrine de poulet","blanc de poulet","filet de poulet"],"1 medium breast"],
+["chicken-breast-raw","Chicken breast","Raw · boneless, skinless","Proteins","chicken breast raw",2646170,["chicken","chicken breast","raw chicken breast","poulet","poitrine de poulet","blanc de poulet","filet de poulet"],null],
+["chicken-thigh-raw","Chicken thigh","Raw · boneless, skinless","Proteins","chicken thigh",2646171,["chicken","chicken thighs","boneless chicken thigh","poulet","cuisse de poulet","haut de cuisse de poulet"],null],
+["chicken-thigh-roasted","Chicken thigh","Roasted · meat only","Proteins","chicken thigh",172388,["chicken","chicken thighs","poulet","cuisse de poulet","haut de cuisse de poulet"],null],
 ["eggs","Eggs","Whole · raw","Proteins","egg whole raw",2707152,["egg","whole egg","oeuf","œuf","oeuf entier"],"1 egg"],
 ["salmon","Salmon","Atlantic, farmed · cooked","Proteins","salmon atlantic cooked",175168,["salmon fillet","saumon","filet de saumon"],null],
 ["ground-beef-90","Ground beef 90% lean","Patty · broiled","Proteins","ground beef 90% lean cooked",174031,["ground beef","lean ground beef","minced beef","beef mince","hamburger","boeuf haché","bœuf haché","boeuf haché maigre","steak haché"],null],

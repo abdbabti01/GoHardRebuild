@@ -1,8 +1,8 @@
 {
- "version": 1,
+ "version": 2,
  "provenance": {
   "source": "USDA FoodData Central (public domain, CC0)",
-  "retrieved": "2026-10-13",
+  "retrieved": "2026-10-13 to 2026-11-24",
   "method": "Each item is one FoodData Central record exactly as the GoHard rebuild API normalized it in GET /api/v1/foods/search: sourceId is the FDC ID, and the values, basis and portions are the record's own. The record for each everyday name was chosen by review. Name, qualifier, category and aliases are GoHard's labels for finding the food; they are not USDA data. Built by scripts/build-common-foods.mjs from scripts/common-foods.spec.json."
  },
  "categories": [
@@ -24,7 +24,6 @@
    "aliases": [
     "chicken",
     "chicken breast",
-    "grilled chicken",
     "poulet",
     "poitrine de poulet",
     "blanc de poulet",
@@ -97,6 +96,114 @@
     "sourceVersion": "2024-10-31",
     "language": "en",
     "retrievedAtUtc": "2026-10-13T23:09:35.5182843Z"
+   }
+  },
+  {
+   "id": "chicken-breast-raw",
+   "name": "Chicken breast",
+   "qualifier": "Raw · boneless, skinless",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken breast",
+    "raw chicken breast",
+    "poulet",
+    "poitrine de poulet",
+    "blanc de poulet",
+    "filet de poulet"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "2646170",
+    "barcode": null,
+    "name": "Chicken, breast, boneless, skinless, raw",
+    "brand": null,
+    "description": "Foundation · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 112,
+     "protein": 22.5,
+     "carbs": 0,
+     "fat": 1.93
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2023-10-26",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-24T16:19:55.9113042Z"
+   }
+  },
+  {
+   "id": "chicken-thigh-raw",
+   "name": "Chicken thigh",
+   "qualifier": "Raw · boneless, skinless",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken thighs",
+    "boneless chicken thigh",
+    "poulet",
+    "cuisse de poulet",
+    "haut de cuisse de poulet"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "2646171",
+    "barcode": null,
+    "name": "Chicken, thigh, boneless, skinless, raw",
+    "brand": null,
+    "description": "Foundation · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 149,
+     "protein": 18.6,
+     "carbs": 0,
+     "fat": 7.92
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2023-10-26",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-24T16:19:59.0523123Z"
+   }
+  },
+  {
+   "id": "chicken-thigh-roasted",
+   "name": "Chicken thigh",
+   "qualifier": "Roasted · meat only",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken thighs",
+    "poulet",
+    "cuisse de poulet",
+    "haut de cuisse de poulet"
+   ],
+   "portion": null,
+   "item": {
+    "source": "usda",
+    "sourceId": "172388",
+    "barcode": null,
+    "name": "Chicken, broilers or fryers, thigh, meat only, cooked, roasted",
+    "brand": null,
+    "description": "SR Legacy · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 179,
+     "protein": 24.8,
+     "carbs": 0,
+     "fat": 8.15
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-24T16:19:59.0523123Z"
    }
   },
   {

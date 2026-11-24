@@ -3,8 +3,20 @@
   "note": "French (fr-CA) and Arabic display names and search aliases for assets/data/common-foods.json, keyed by food id. Display and search only: nutrient values, portion weights, sourceId and provenance stay in the main file. 'portion' translates the main file's start portion label.",
   "foods": {
     "chicken-breast": {
-      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite au four ou rôtie · sans peau", "portion": "1 poitrine moyenne", "aliases": ["poulet grillé", "suprême de poulet"]},
-      "ar": {"name": "صدر دجاج", "qualifier": "مخبوز أو محمّر · بدون جلد", "portion": "صدر متوسط واحد", "aliases": ["دجاج", "صدور دجاج", "صدر الدجاج", "دجاج مشوي", "فراخ", "صدر فراخ"]}
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite au four ou rôtie · sans peau", "portion": "1 poitrine moyenne", "aliases": ["suprême de poulet"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "مخبوز أو محمّر · بدون جلد", "portion": "صدر متوسط واحد", "aliases": ["دجاج", "صدور دجاج", "صدر الدجاج", "فراخ", "صدر فراخ"]}
+    },
+    "chicken-breast-raw": {
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Crue · désossée, sans peau", "portion": null, "aliases": ["poitrine de poulet crue"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "نيء · بدون عظم وبدون جلد", "portion": null, "aliases": ["دجاج", "صدر دجاج نيء", "صدور دجاج", "فراخ", "صدر فراخ"]}
+    },
+    "chicken-thigh-raw": {
+      "fr": {"name": "Cuisse de poulet", "qualifier": "Crue · désossée, sans peau", "portion": null, "aliases": ["haut de cuisse de poulet", "cuisses de poulet"]},
+      "ar": {"name": "فخذ دجاج", "qualifier": "نيء · بدون عظم وبدون جلد", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج", "وراك دجاج", "فراخ"]}
+    },
+    "chicken-thigh-roasted": {
+      "fr": {"name": "Cuisse de poulet", "qualifier": "Rôtie · chair seulement", "portion": null, "aliases": ["haut de cuisse de poulet", "cuisses de poulet"]},
+      "ar": {"name": "فخذ دجاج", "qualifier": "محمّر · لحم فقط", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج", "وراك دجاج", "فراخ"]}
     },
     "eggs": {
       "fr": {"name": "Œufs", "qualifier": "Entiers · crus", "portion": "1 œuf", "aliases": ["oeufs"]},

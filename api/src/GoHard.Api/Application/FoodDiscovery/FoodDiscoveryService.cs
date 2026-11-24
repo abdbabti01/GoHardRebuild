@@ -75,9 +75,9 @@ public sealed class FoodDiscoveryService : IDisposable
         {
             // Basic foods first, then branded ones: asked for separately, because the branded catalogue is so much
             // larger that it would otherwise push every basic food off the first page.
-            var generic = await UsdaAsync(query, UsdaProvider.Generic, 15);
+            var generic = await UsdaAsync(query, UsdaProvider.Generic, 25);
             if (generic.Status != LookupStatus.Ok) return Lookup<FoodSearchResult>.Fail(generic.Status);
-            var branded = await UsdaAsync(query, UsdaProvider.Branded, 10);
+            var branded = await UsdaAsync(query, UsdaProvider.Branded, 15);
             // Branded results are an extra. Without them the basic foods are still a complete, honest answer.
             return Lookup<FoodSearchResult>.Ok(new([.. generic.Value!, .. branded.Value ?? []]));
         }, ct);

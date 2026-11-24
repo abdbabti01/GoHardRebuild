@@ -41,8 +41,10 @@ never behind Plus: every session stays reachable from Train › Workouts and fro
 
 **Charged (one successful provider-backed request):** Ask GoHard (`/coach/ask`), typed Help with today
 (`/coach/daily`), new AI meal ideas (`/coach/daily` with `features: ["ideas"]`), natural-language Eating out
-(`/restaurants/interpret`). All four go through `CoachService.GuardedAsync`, the one place the allowance is checked
-and recorded.
+(`/restaurants/interpret`), and since 24 Nov 2026 a described meal or a typed change to it (`/coach/daily` kinds `ate` /
+`edit`, docs/FOOD_DATA.md › Describe your meal): one per sentence however many foods, never per food, never for the
+questions, searches, amounts, review or logging that follow. All go through `CoachService.GuardedAsync`, the one place
+the allowance is checked and recorded.
 
 **Never charged:** opening any screen, avatar motion and greetings, briefings and local suggestions, deterministic
 calculations, filters, weekly reports, cached/viewed answers, food database search and barcode lookup, the restaurant

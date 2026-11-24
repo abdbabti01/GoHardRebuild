@@ -20,6 +20,7 @@ import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
 import 'eating_out_screen.dart' show openEatingOut;
+import '../coach/day_coach_screen.dart' show openDayCoach;
 import 'saved_meals_screens.dart' show openMealsLibrary;
 
 /// The lists a food can be picked from. Search covers everyday foods and the owner's own; the others are theirs.
@@ -53,6 +54,13 @@ class LogFoodScreen extends ConsumerStatefulWidget {
 }
 
 SearchFields _fields(Suggestion s) => s.common?.fields ?? SearchFields(s.item.name, brand: s.item.brand);
+
+/// The other words a search is also ranked by: its corrected spelling or its English words, when they differ.
+String? _also(SearchQuery iq) => normalizeSearch(iq.remote) == normalizeSearch(iq.typed) ? null : iq.remote;
+
+/// Whether one of [found] is named exactly by the search (as typed or in its other words).
+bool _exact(SearchQuery iq, Iterable<Suggestion> found) =>
+    found.any((s) => relevance(iq.typed, _fields(s))?.tier == 0 || _also(iq) != null && relevance(_also(iq)!, _fields(s))?.tier == 0);
 
 class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
   late final _query = TextEditingController(text: widget.query);
@@ -123,6 +131,13 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     if (logged == true && mounted) Navigator.pop(context, true);
   }
 
+  /// Describe your meal: the coach's conversation for this day and the meal chosen above, ready to read a sentence
+  /// ("120 g of chicken and 100 g of potatoes"). Opening it sends nothing. When a meal was logged there, this screen is done too.
+  Future<void> _describe() async {
+    final logged = await openDayCoach(context, day: widget.dayKey, meal: _meal, describe: true);
+    if (logged == true && mounted) Navigator.pop(context, true);
+  }
+
   /// Eating out for this day and the meal chosen above. When an order was logged there, this screen is done too.
   Future<void> _openEatingOut() async {
     final logged = await openEatingOut(context, dayKey: widget.dayKey, meal: _meal);
@@ -157,13 +172,19 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     });
     final catalog = ref.read(commonFoodsProvider).value;
     if (_results != null || question.length < 3 || catalog == null || !ref.read(compatibilityProvider).supports('food.search')) return;
-    final local = searchLocal(question, catalog: catalog, saved: _saved, journal: _journal, seen: ref.read(seenFoodsProvider).value ?? const []);
-    if (local.own.isEmpty && local.common.isEmpty) _debounce = Timer(LogFoodScreen.pause, _searchMore);
+    final iq = interpretQuery(question, catalog);
+    final local = searchLocal(question, catalog: catalog, saved: _saved, journal: _journal, seen: ref.read(seenFoodsProvider).value ?? const [], also: _also(iq));
+    // Asked by itself unless something on the phone is named exactly: "chicken thigh" or a brand is worth asking for even
+    // when the phone has other chicken; "eggs" is not.
+    if (!_exact(iq, [...local.own, ...local.common])) _debounce = Timer(LogFoodScreen.pause, _searchMore);
   }
 
-  /// Asks the wider database for what is typed, once. A second tap while it is answering joins the first.
+  /// Asks the wider database for what is typed, once, in the words it understands (corrected, in English). A second
+  /// tap while it is answering joins the first.
   Future<void> _searchMore() async {
-    final text = _query.text.trim(), question = _question;
+    final question = _question;
+    final catalog = ref.read(commonFoodsProvider).value ?? CommonFoodCatalog.empty;
+    final text = interpretQuery(_query.text, catalog).remote;
     if (question.length < 2 || _searching && _asked == question) return;
     _debounce?.cancel();
     final token = ++_token, answers = _answers;
@@ -251,6 +272,7 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     if (q.isEmpty && category == null) {
       final recent = localSuggestions(saved: const [], journal: journal, seen: const []).take(5);
       return [
+        if (!widget.pick) _LinkRow(key: const Key('food-describe'), title: l.foodDescribeTitle, subtitle: l.foodDescribeSubtitle, accent: true, onTap: _describe),
         if (recent.isNotEmpty) _GroupLabel(l.foodScopeRecent),
         for (final s in recent) _row(Suggestion(s.item, s.origin, entry: s.entry, common: catalog.of(s.item)), 'recent'),
         _note(l.foodSearchGuide, const Key('food-search-guide')),
@@ -260,20 +282,27 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     // What the wider search just returned is also kept on the phone as "seen"; it stays listed under More foods,
     // where it came from, instead of moving into Your foods the moment it arrives.
     final fresh = _asked == _question ? {for (final i in _results ?? const <FoodItem>[]) i.key} : const <String>{};
-    final local = searchLocal(q, catalog: catalog, saved: saved, journal: journal, seen: [for (final i in seen) if (!fresh.contains(i.key)) i], category: category);
+    final iq = interpretQuery(q, catalog), also = _also(iq);
+    final local = searchLocal(q, catalog: catalog, saved: saved, journal: journal, seen: [for (final i in seen) if (!fresh.contains(i.key)) i], category: category, also: also);
     final hasLocal = local.own.isNotEmpty || local.common.isNotEmpty;
-    int best(List<Suggestion> l) => l.isEmpty ? 9 : matchScore(q, _fields(l.first)) ?? 9;
-    final own = [if (local.own.isNotEmpty) _GroupLabel(l.foodGroupYours), for (final s in local.own.take(12)) _row(s, 'local')];
+    Relevance best(List<Suggestion> l) {
+      final a = l.isEmpty ? null : relevance(q, _fields(l.first)), b = l.isEmpty || also == null ? null : relevance(also, _fields(l.first));
+      return [?a, ?b, (tier: 9, penalty: 0)].reduce((x, y) => compareRelevance(x, y) <= 0 ? x : y);
+    }
+    // The person's own foods help, but a weak match among them never pushes an exact everyday food down the page.
+    final own = [if (local.own.isNotEmpty) _GroupLabel(l.foodGroupYours), for (final s in local.own.take(8)) _row(s, 'local')];
     final common = [
       if (local.common.isNotEmpty) _GroupLabel(categoryName ?? l.foodGroupCommon),
       for (final s in category == null ? local.common.take(12) : local.common) _row(s, 'common', id: s.common!.id),
     ];
     final shown = {for (final s in local.own) s.item.key, for (final s in local.common) s.item.key};
-    final found = _asked == _question && _results != null ? rankFound(q, _results!, catalog: catalog, shown: shown) : const <Suggestion>[];
+    final found = _asked == _question && _results != null ? rankFound(q, _results!, catalog: catalog, shown: shown, also: also) : const <Suggestion>[];
 
     return [
+      // A misspelling is corrected, and said, so the person sees what was searched.
+      if (iq.corrected != null && category == null) _note(l.foodSearchCorrected(iq.corrected!), const Key('food-search-corrected')),
       // Whichever group holds the better match comes first; your own foods win a tie.
-      ...(best(local.common) < best(local.own) ? [...common, ...own] : [...own, ...common]),
+      ...(compareRelevance(best(local.common), best(local.own)) < 0 ? [...common, ...own] : [...own, ...common]),
       if (category != null) ...[
         if (!hasLocal) _status(Icons.search_off, q.isEmpty ? l.foodCategoryEmpty(categoryName!) : l.foodCategoryNoMatch(categoryName!, q), key: const Key('food-search-empty')),
         // A category is a property of the catalog. Foods without one are left out, and that is said.
@@ -296,6 +325,8 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             key: const Key('food-search-empty'))
       else ...[
         _GroupLabel(l.foodGroupMore),
+        // The database is in English: when the words sent were not the words typed, which ones is said.
+        if (also != null && normalizeSearch(iq.remote) != normalizeSearch(iq.corrected ?? '')) _note(l.foodSearchAskedAs(iq.remote), const Key('food-search-asked-as')),
         for (final s in found) _row(s, 'result'),
         _note(l.foodSearchCredit, const Key('food-search-credit')),
       ],
@@ -422,6 +453,11 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
             onTap: () => _open(FoodDraft(dayKey: widget.dayKey, meal: _meal, name: q)),
           ),
           // Several foods at once, for this day and the meal chosen above. Not offered while picking one food for a meal.
+          if (!widget.pick)
+            GroupRow(
+              key: const Key('food-describe-row'), icon: Icons.chat_bubble_outline, title: l.foodDescribeTitle, subtitle: l.foodDescribeSubtitle,
+              onTap: _describe,
+            ),
           if (!widget.pick)
             GroupRow(
               key: const Key('food-saved-meals'), icon: Icons.menu_book_outlined, title: l.mealsLibraryTitle, subtitle: l.mealsFromAddFoodSubtitle,

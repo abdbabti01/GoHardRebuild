@@ -18770,5 +18770,253 @@
         "type": "String"
       }
     }
+  },
+  "foodTagBrand": "Brand: {brand}",
+  "@foodTagBrand": {
+    "description": "Food row: a branded product, with its brand as the source names it.",
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "foodTagGeneric": "Generic",
+  "@foodTagGeneric": {
+    "description": "Food row: a generic food from the food database (not a brand’s product)."
+  },
+  "foodSearchCorrected": "Showing results for “{words}”.",
+  "@foodSearchCorrected": {
+    "description": "Search: a misspelt word was corrected to a known food word.",
+    "placeholders": {
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "foodSearchAskedAs": "The food database is in English: searched for “{words}”.",
+  "@foodSearchAskedAs": {
+    "description": "Search: the words sent to the English-only database, when they differ from what was typed.",
+    "placeholders": {
+      "words": {
+        "type": "String"
+      }
+    }
+  },
+  "foodDescribeTitle": "Describe your meal",
+  "@foodDescribeTitle": {
+    "description": "Add food: opens the coach to read a sentence about what was eaten."
+  },
+  "foodDescribeSubtitle": "Say what you ate, like “120 g of chicken and 100 g of potatoes”. You review it before anything is logged.",
+  "@foodDescribeSubtitle": {
+    "description": "Add food: under Describe your meal."
+  },
+  "dcDescribeHint": "For example: 2 eggs and a slice of toast",
+  "@dcDescribeHint": {
+    "description": "Coach input hint when opened from Describe your meal."
+  },
+  "dcDescribeIntro": "Tell me what you ate, with amounts if you know them. I’ll find each food in the food records, ask what I can’t know, and prepare one meal for you to review. Nothing is logged until you tap Log meal.",
+  "@dcDescribeIntro": {
+    "description": "Coach intro when opened from Describe your meal."
+  },
+  "dcUsesOne": "{remaining, plural, =1{Uses 1 AI request · 1 remaining this month} other{Uses 1 AI request · {remaining} remaining this month}}",
+  "@dcUsesOne": {
+    "description": "Under the coach input: what sending costs and what is left of the monthly allowance (from the server).",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "dcUsesOneUnknown": "Uses 1 AI request · what remains this month can’t be checked right now",
+  "@dcUsesOneUnknown": {
+    "description": "Under the coach input when the allowance is unknown (offline, not loaded)."
+  },
+  "dcUsesOneNoCount": "Uses 1 AI request",
+  "@dcUsesOneNoCount": {
+    "description": "Under the coach input on a server without allowances."
+  },
+  "dcNeedsConnection": "Understanding a new sentence needs a connection. Your words are kept here until you tap Try again; Add food and logging work without one.",
+  "@dcNeedsConnection": {
+    "description": "Coach: a typed request could not be sent."
+  },
+  "dcMealTitle": "Your meal",
+  "@dcMealTitle": {
+    "description": "Card title of a described meal (not logged yet)."
+  },
+  "dcMealFor": "For {meal} · {date}",
+  "@dcMealFor": {
+    "description": "Described meal: where it will be logged (changeable in the review).",
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealWeighed": "{food}: weighed raw or cooked?",
+  "@dcMealWeighed": {
+    "description": "Described meal: the amount was a weight and raw and cooked differ; the person chooses.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealRaw": "Raw",
+  "@dcMealRaw": {
+    "description": "Button: the food was weighed raw."
+  },
+  "dcMealCooked": "Cooked",
+  "@dcMealCooked": {
+    "description": "Button: the food was weighed cooked."
+  },
+  "dcMealMissing": "No food record found for “{food}”. Find it, or remove it.",
+  "@dcMealMissing": {
+    "description": "Described meal: a food with no record; everything else is kept.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealSearchOther": "Search for another",
+  "@dcMealSearchOther": {
+    "description": "Described meal: none of the offered records is right; opens food search."
+  },
+  "dcMealRemoveFood": "Remove {food}",
+  "@dcMealRemoveFood": {
+    "description": "Described meal: takes a food out of the draft (nothing logged).",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealTotal": "Total",
+  "@dcMealTotal": {
+    "description": "Described meal: every food has a record and an amount. The French word may match English (\"Total\")."
+  },
+  "dcMealSoFar": "So far, without {foods}",
+  "@dcMealSoFar": {
+    "description": "Described meal: a sum of the confirmed foods only, naming those not counted.",
+    "placeholders": {
+      "foods": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealReady": "Ready to review. Nothing is logged until you tap Log meal.",
+  "@dcMealReady": {
+    "description": "Described meal: all foods confirmed."
+  },
+  "dcMealNeedsAnswers": "Answer the questions above to finish this meal.",
+  "@dcMealNeedsAnswers": {
+    "description": "Described meal: some foods still need a record or an amount."
+  },
+  "dcMealDiscard": "Discard",
+  "@dcMealDiscard": {
+    "description": "Described meal: drops the draft; nothing is logged."
+  },
+  "dcMealDiscarded": "Discarded. Nothing was logged.",
+  "@dcMealDiscarded": {
+    "description": "Described meal after Discard."
+  },
+  "dcMealLogged": "Logged. Change it in Eat from now on.",
+  "@dcMealLogged": {
+    "description": "Described meal after Log meal: the draft is closed."
+  },
+  "dcMealReplaced": "Replaced by a newer meal below.",
+  "@dcMealReplaced": {
+    "description": "An older draft after a new description or an applied change."
+  },
+  "dcMealTooMany": "I read the first {count} foods. Add the rest with Add food.",
+  "@dcMealTooMany": {
+    "description": "Described meal: the sentence named more foods than one meal holds.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dcMealUnreadable": "Part of what you wrote couldn’t be read as a food. Add anything missing with Add food.",
+  "@dcMealUnreadable": {
+    "description": "Described meal: a food the server dropped."
+  },
+  "dcMealChangedMeanwhile": "Your meal changed while I was reading that, so I didn’t change it. Ask again about the meal as it is now.",
+  "@dcMealChangedMeanwhile": {
+    "description": "A follow-up answer arrived after the draft was changed: not applied."
+  },
+  "dcMealAlreadyLogged": "That meal is already logged, so I didn’t change it. Change logged food in Eat.",
+  "@dcMealAlreadyLogged": {
+    "description": "A follow-up after the draft was logged: nothing changed."
+  },
+  "dcMealNoDraft": "There’s no meal being prepared to change. Tell me what you ate first.",
+  "@dcMealNoDraft": {
+    "description": "A change asked with no open draft."
+  },
+  "dcMealChangeRemoved": "Removed {food}.",
+  "@dcMealChangeRemoved": {
+    "description": "Follow-up applied: a food removed from the draft.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealChangeAmount": "{food}: now {amount}.",
+  "@dcMealChangeAmount": {
+    "description": "Follow-up applied: a new amount.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealChangeAdded": "Added {food}.",
+  "@dcMealChangeAdded": {
+    "description": "Follow-up applied: a food added (it may still need confirming below).",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealChangeFull": "{food} wasn’t added: one meal holds {count} foods.",
+  "@dcMealChangeFull": {
+    "description": "Follow-up: the draft is full.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dcMealOwnValues": "your own values",
+  "@dcMealOwnValues": {
+    "description": "Described meal: a food whose values the person typed (an estimate of their own), not a record."
+  },
+  "dcMealUsage": "Reading your words used 1 AI request. Answering these questions, changing amounts and logging use none.",
+  "@dcMealUsage": {
+    "description": "Described meal: what the request paid for."
+  },
+  "dcMealHowMuch": "How much {food}?",
+  "@dcMealHowMuch": {
+    "description": "Described meal: no amount was said for this food (or it fits none of its units).",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealLogUnavailable": "Describing a meal isn’t available on this server yet. Add food and logging still work.",
+  "@dcMealLogUnavailable": {
+    "description": "Coach opened from Describe your meal on a server without coach.meal-log."
   }
 }

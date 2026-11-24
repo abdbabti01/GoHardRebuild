@@ -2,7 +2,9 @@
 // with today). It is not a model: every Eating out request gets the same fixed structured reply, and a Help with today
 // request a fixed rule (a word "fail" → HTTP 500; "smaller" → a smaller portion of the item discussed; a saved item whose
 // name is in the words → that item, and "with 150 g of rice" → that food of it at those grams; "quick"/"protein"/"idea"
-// with ideas available → two fixed ideas; otherwise "today"), so a real-app journey can exercise the app and API end to end
+// with ideas available → two fixed ideas; with meal logging available, "I ate/had …" → the foods read by a fixed pattern
+// ("120 g of chicken", "2 eggs", "a tablespoon of olive oil"), and with a meal draft "make the X N g" / "remove the X" /
+// "add …" → those changes; otherwise "today"), so a real-app journey can exercise the app and API end to end
 // without a key. Never point a deployed API at it.
 //
 //   node scripts/coach-stub.mjs [port]        (default 5137, bound to 127.0.0.1)
@@ -16,12 +18,41 @@ const reply = {
   keep: [{ itemId: 'subway-ca:potato-rings-4', quantity: 1 }], exclude: [], prefer: [], avoid: [], priority: 'protein',
   clarification: null, unknownItems: [],
 };
+/** A food as the meal rule reads it: name, amount and unit only when written as "120 g of x", "2 eggs", "a tablespoon of x". */
+function food(name, quantity = null, unit = null, noun = null) {
+  const n = name.trim().replace(/^(of|some|the) /, '');
+  return { name: n, label: n, preparation: null, brand: null, quantity, unit, noun };
+}
+function said(part) {
+  const p = part.trim().replace(/[.!]$/, '');
+  let m;
+  if ((m = p.match(/^(\d+(?:\.\d+)?) ?(g|kg|oz|lb|ml|l)\b (?:of )?(.+)$/))) return food(m[3], +m[1], m[2]);
+  if ((m = p.match(/^(?:a|an|one|1) (tablespoon|teaspoon|cup|slice|piece) (?:of )?(.+)$/))) return food(m[2], 1, 'piece', m[1]);
+  if ((m = p.match(/^(\d+) ([a-z]+?)s?$/))) return food(m[2], +m[1], 'piece', m[2]);
+  return food(p);
+}
+
 /** The fixed rule for a Help with today request (see the top of this file). */
 function daily(user) {
   const request = (user.split('<request>\n').at(-1) ?? '').split('\n</request>')[0].toLowerCase();
   const items = [...user.matchAll(/^- ([mrf]\d+) \| (\w+) \| "(.*)"/gm)].map((m) => ({ ref: m[1], name: m[3].toLowerCase() }));
   const base = { kind: 'today', day: 'shown', nutrient: null, source: null, refs: [], change: null, factor: null, servings: null, grams: null, ingredient: null,
-    maxCalories: null, minProtein: null, meal: null, clarification: null, unknownItems: [], ideas: [], preferences: [] };
+    maxCalories: null, minProtein: null, meal: null, clarification: null, unknownItems: [], ideas: [], preferences: [], foods: [], edits: [] };
+  if (/meal logging: available/i.test(user)) {
+    const draft = [...user.matchAll(/^- (d\d+) \| (.*)$/gm)].map((m) => ({ ref: m[1], text: m[2].toLowerCase() }));
+    const refOf = (word) => draft.find((d) => d.text.includes(word.replace(/e?s$/, '')))?.ref ?? null;
+    if (draft.length) {
+      const edits = [];
+      for (const m of request.matchAll(/make the ([a-z ]+?) (\d+(?:\.\d+)?) ?(g|ml)\b/g)) edits.push({ op: 'amount', ref: refOf(m[1]), food: food(m[1], +m[2], m[3]) });
+      for (const m of request.matchAll(/remove the ([a-z ]+)/g)) edits.push({ op: 'remove', ref: refOf(m[1].trim()), food: null });
+      for (const m of request.matchAll(/add (.+)/g)) edits.push({ op: 'add', ref: null, food: said(m[1]) });
+      if (edits.length) return { ...base, kind: 'edit', edits };
+    }
+    if (/\b(ate|had|log)\b/.test(request)) {
+      const foods = request.replace(/^.*?\b(ate|had|log)\b/, '').split(/,| and /).map((p) => p.trim()).filter(Boolean).map(said);
+      return { ...base, kind: 'ate', foods, day: /yesterday/.test(request) ? 'yesterday' : 'shown' };
+    }
+  }
   // "quick ... protein" with ideas available → two fixed ideas, one of them with a food no catalog has.
   if (/new ideas: available/i.test(user) && /quick|protein|idea/.test(request)) {
     return { ...base, kind: 'ideas', preferences: ['quick', 'moreProtein'], ideas: [

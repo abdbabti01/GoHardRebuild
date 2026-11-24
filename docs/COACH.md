@@ -412,6 +412,14 @@ until it has started (no frames are requested for that). `coach_companion_test` 
 
 ## Help with today (28 Oct 2026)
 
+> 24 Nov 2026: a described meal ("I ate 120 g of chicken and 100 g of potatoes") is kind `ate` with `foods` (words only:
+> name at the detail said, label, preparation and brand only when said, amount in g/kg/oz/lb/ml/l/piece+noun/serving or
+> none); a follow-up to the open draft is kind `edit` with `edits` (amount/remove by the draft's reference `d1`…, add a
+> food), sent only with `features: ["log"]` (capability `coach.meal-log`) and the optional request field
+> `draft: [{ref, text}]` (≤ 12, words ≤ 100). At most 12 foods are kept (`dropped: ["foods"]` says more were named); an
+> `ate`/`edit` with nothing usable, or an `edit` with no draft sent, is `unsupported` (not charged). See docs/FOOD_DATA.md ›
+> Describe your meal.
+
 > 29 Oct 2026: a typed request may change one food of a saved meal for this time ("my chicken meal, but with 150 g of
 > rice today"): `portion.ingredient`, resolved and checked on the phone. Eat's coach also offers the usual meal and,
 > once, meal suggestions and a meal reminder. See docs/MEAL_HABITS_REMINDERS.md.

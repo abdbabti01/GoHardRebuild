@@ -13336,4 +13336,175 @@ class AppLocalizationsEn extends AppLocalizations {
   String eatGoalPercent(String nutrient, String percent) {
     return '$nutrient: $percent of goal';
   }
+
+  @override
+  String foodTagBrand(String brand) {
+    return 'Brand: $brand';
+  }
+
+  @override
+  String get foodTagGeneric => 'Generic';
+
+  @override
+  String foodSearchCorrected(String words) {
+    return 'Showing results for “$words”.';
+  }
+
+  @override
+  String foodSearchAskedAs(String words) {
+    return 'The food database is in English: searched for “$words”.';
+  }
+
+  @override
+  String get foodDescribeTitle => 'Describe your meal';
+
+  @override
+  String get foodDescribeSubtitle =>
+      'Say what you ate, like “120 g of chicken and 100 g of potatoes”. You review it before anything is logged.';
+
+  @override
+  String get dcDescribeHint => 'For example: 2 eggs and a slice of toast';
+
+  @override
+  String get dcDescribeIntro =>
+      'Tell me what you ate, with amounts if you know them. I’ll find each food in the food records, ask what I can’t know, and prepare one meal for you to review. Nothing is logged until you tap Log meal.';
+
+  @override
+  String dcUsesOne(int remaining) {
+    String _temp0 = intl.Intl.pluralLogic(
+      remaining,
+      locale: localeName,
+      other: 'Uses 1 AI request · $remaining remaining this month',
+      one: 'Uses 1 AI request · 1 remaining this month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dcUsesOneUnknown =>
+      'Uses 1 AI request · what remains this month can’t be checked right now';
+
+  @override
+  String get dcUsesOneNoCount => 'Uses 1 AI request';
+
+  @override
+  String get dcNeedsConnection =>
+      'Understanding a new sentence needs a connection. Your words are kept here until you tap Try again; Add food and logging work without one.';
+
+  @override
+  String get dcMealTitle => 'Your meal';
+
+  @override
+  String dcMealFor(String meal, String date) {
+    return 'For $meal · $date';
+  }
+
+  @override
+  String dcMealWeighed(String food) {
+    return '$food: weighed raw or cooked?';
+  }
+
+  @override
+  String get dcMealRaw => 'Raw';
+
+  @override
+  String get dcMealCooked => 'Cooked';
+
+  @override
+  String dcMealMissing(String food) {
+    return 'No food record found for “$food”. Find it, or remove it.';
+  }
+
+  @override
+  String get dcMealSearchOther => 'Search for another';
+
+  @override
+  String dcMealRemoveFood(String food) {
+    return 'Remove $food';
+  }
+
+  @override
+  String get dcMealTotal => 'Total';
+
+  @override
+  String dcMealSoFar(String foods) {
+    return 'So far, without $foods';
+  }
+
+  @override
+  String get dcMealReady =>
+      'Ready to review. Nothing is logged until you tap Log meal.';
+
+  @override
+  String get dcMealNeedsAnswers =>
+      'Answer the questions above to finish this meal.';
+
+  @override
+  String get dcMealDiscard => 'Discard';
+
+  @override
+  String get dcMealDiscarded => 'Discarded. Nothing was logged.';
+
+  @override
+  String get dcMealLogged => 'Logged. Change it in Eat from now on.';
+
+  @override
+  String get dcMealReplaced => 'Replaced by a newer meal below.';
+
+  @override
+  String dcMealTooMany(int count) {
+    return 'I read the first $count foods. Add the rest with Add food.';
+  }
+
+  @override
+  String get dcMealUnreadable =>
+      'Part of what you wrote couldn’t be read as a food. Add anything missing with Add food.';
+
+  @override
+  String get dcMealChangedMeanwhile =>
+      'Your meal changed while I was reading that, so I didn’t change it. Ask again about the meal as it is now.';
+
+  @override
+  String get dcMealAlreadyLogged =>
+      'That meal is already logged, so I didn’t change it. Change logged food in Eat.';
+
+  @override
+  String get dcMealNoDraft =>
+      'There’s no meal being prepared to change. Tell me what you ate first.';
+
+  @override
+  String dcMealChangeRemoved(String food) {
+    return 'Removed $food.';
+  }
+
+  @override
+  String dcMealChangeAmount(String food, String amount) {
+    return '$food: now $amount.';
+  }
+
+  @override
+  String dcMealChangeAdded(String food) {
+    return 'Added $food.';
+  }
+
+  @override
+  String dcMealChangeFull(String food, int count) {
+    return '$food wasn’t added: one meal holds $count foods.';
+  }
+
+  @override
+  String get dcMealOwnValues => 'your own values';
+
+  @override
+  String get dcMealUsage =>
+      'Reading your words used 1 AI request. Answering these questions, changing amounts and logging use none.';
+
+  @override
+  String dcMealHowMuch(String food) {
+    return 'How much $food?';
+  }
+
+  @override
+  String get dcMealLogUnavailable =>
+      'Describing a meal isn’t available on this server yet. Add food and logging still work.';
 }

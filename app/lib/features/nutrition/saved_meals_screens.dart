@@ -502,10 +502,10 @@ class _Stop implements Exception {
 /// variation change templates only, and never anything already logged.
 class MealReviewScreen extends ConsumerStatefulWidget {
   const MealReviewScreen({super.key, required this.body, required this.dayKey, required this.meal, this.saved, this.initialFactor, this.initialAmount, this.initialMeasure,
-      this.initialParts}) : entry = null;
+      this.initialParts, this.onChanged, this.logLabel}) : entry = null;
   MealReviewScreen.entry(FoodEntry this.entry, {super.key})
       : body = MealMath.ofEntry(entry)!.recipe, dayKey = entry.dayKey, meal = entry.meal, saved = null, initialFactor = null, initialAmount = null, initialMeasure = null,
-        initialParts = null;
+        initialParts = null, onChanged = null, logLabel = null;
   final MealBody body;
   final SavedMeal? saved;
   final String dayKey, meal;
@@ -519,6 +519,13 @@ class MealReviewScreen extends ConsumerStatefulWidget {
   /// A meal's foods for this time only, already changed (the coach's "with 150 g of rice today"): the saved definition
   /// is [body], unchanged until Update saved meal.
   final List<MealComponent>? initialParts;
+
+  /// A meal's foods, day and meal after each change made here (a described meal keeps them as its draft, so leaving
+  /// the review loses nothing). Never called for a recipe, and never a write: only Log records anything.
+  final void Function(List<MealComponent> parts, String dayKey, String meal)? onChanged;
+
+  /// The main action's words when they should differ from "Log this time" (a described meal: "Log meal").
+  final String? logLabel;
   @override
   ConsumerState<MealReviewScreen> createState() => _MealReviewScreenState();
 }
@@ -565,11 +572,19 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     super.dispose();
   }
 
-  void _multiply(double f) => setState(() {
-        _factor = f;
-        _parts = MealMath.scaled(widget.body.components, f, (c, q) => _describe(ref, context.l10n, c, q));
-        _savedAmounts = _savedOf(_parts.length);
-      });
+  void _multiply(double f) {
+    setState(() {
+      _factor = f;
+      _parts = MealMath.scaled(widget.body.components, f, (c, q) => _describe(ref, context.l10n, c, q));
+      _savedAmounts = _savedOf(_parts.length);
+    });
+    _changed();
+  }
+
+  /// Tells [MealReviewScreen.onChanged] what the review shows now.
+  void _changed() {
+    if (!_recipe) widget.onChanged?.call(_parts, _day, _meal);
+  }
 
   Future<void> _custom() async {
     final f = await showDialog<double>(context: context, builder: (_) => const _MultiplierDialog());
@@ -588,18 +603,22 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
         _factor = null;
       }
     });
+    _changed();
   }
 
-  void _removePart(int i) => setState(() {
-        if (_recipe) {
-          _batch = _batch.copyWith(components: [..._batch.components]..removeAt(i));
-          _batchChanged = true;
-        } else {
-          _parts = [..._parts]..removeAt(i);
-          _savedAmounts = [..._savedAmounts]..removeAt(i);
-          _factor = null;
-        }
-      });
+  void _removePart(int i) {
+    setState(() {
+      if (_recipe) {
+        _batch = _batch.copyWith(components: [..._batch.components]..removeAt(i));
+        _batchChanged = true;
+      } else {
+        _parts = [..._parts]..removeAt(i);
+        _savedAmounts = [..._savedAmounts]..removeAt(i);
+        _factor = null;
+      }
+    });
+    _changed();
+  }
 
   Future<void> _addPart() async {
     final c = await _pick(context, dayKey: _day);
@@ -614,6 +633,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
         _factor = null;
       }
     });
+    _changed();
   }
 
   /// The same portion in the other measure, through the recipe's own servings and weighed batch.
@@ -631,7 +651,9 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(context: context, initialDate: parseDayKey(_day), firstDate: DateTime.utc(2020), lastDate: parseDayKey(ref.read(todayKeyProvider)).add(const Duration(days: 1)));
-    if (picked != null) setState(() => _day = dayKeyOf(picked)); // changing the day records nothing
+    if (picked == null) return;
+    setState(() => _day = dayKeyOf(picked)); // changing the day records nothing
+    _changed();
   }
 
   Future<void> _log() async {
@@ -715,7 +737,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
       actions: [if (_recipe) CoachHelpEntry(id: 'meals.recipes', label: l.mealsHelpLabel)],
       bottom: Column(mainAxisSize: MainAxisSize.min, children: [
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusLine(Icons.error_outline, _error!, key: const Key('meal-error'), tone: Tone.error)),
-        PrimaryButton(entry != null ? l.foodSaveChanges : l.mealsLogThisTime, key: const Key('meal-log'), busy: _busy, onPressed: supported ? _log : null),
+        PrimaryButton(entry != null ? l.foodSaveChanges : widget.logLabel ?? l.mealsLogThisTime, key: const Key('meal-log'), busy: _busy, onPressed: supported ? _log : null),
         // The template actions are quieter than Log, and say what they change.
         if (!_recipe && saved != null && live != null && !live.isDeleted)
           Wrap(alignment: WrapAlignment.center, children: [
@@ -734,7 +756,10 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           key: const Key('meal-review-meal'), initialValue: _meal, isExpanded: true, dropdownColor: context.c.surface,
           decoration: InputDecoration(labelText: l.foodMealLabel, prefixIcon: const Padding(padding: EdgeInsets.all(7), child: IconTile(Icons.restaurant, circle: true, size: 34))),
           items: [for (final m in meals) DropdownMenuItem(value: m, child: Text(mealLabel(l, m)))],
-          onChanged: (m) => setState(() => _meal = m ?? _meal), // changing the meal records nothing
+          onChanged: (m) {
+            setState(() => _meal = m ?? _meal); // changing the meal records nothing
+            _changed();
+          },
         ),
         InkWell(
           key: const Key('meal-review-date'), onTap: _pickDate,

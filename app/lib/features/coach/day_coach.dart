@@ -14,6 +14,7 @@ import '../nutrition/nutrition_assessment.dart';
 import '../nutrition/nutrition_surface.dart' show formatKcal;
 import '../nutrition/saved_meals.dart';
 import '../today/daily.dart';
+import 'meal_ideas.dart' show itemLabel, maxMealFoods;
 import '../today/today_greeting.dart' show todayLine;
 
 /// Help with today and food (docs/COACH.md › Help with today): what Leon or Leona says about the day and about food,
@@ -309,7 +310,23 @@ List<MealComponent>? ingredientParts(MealBody b, Object? change) {
 class DayIntent {
   const DayIntent(this.kind,
       {this.today = false, this.nutrient, this.source, this.items = const [], this.change, this.factor, this.servings, this.grams, this.maxCalories, this.minProtein,
-      this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient, this.ideas = const [], this.preferences = const [], this.proposed, this.proceed = false});
+      this.meal, this.clarification, this.unknownItems = const [], this.ai = false, this.ingredient, this.ideas = const [], this.preferences = const [], this.proposed, this.proceed = false,
+      this.draft, this.changes = const [], this.yesterday = false, this.dropped = const []});
+
+  /// `ate` and `edit`: the meal being prepared from what the person said (docs/FOOD_DATA.md › Describe your meal),
+  /// `{draftId, rev, dayKey, meal, items, logged?, replaced?, discarded?}` with items as in meal_ideas.dart. Matched and kept
+  /// on the phone; null on an `edit` that could not be applied (see [changes]).
+  final Json? draft;
+
+  /// `edit`: what the follow-up changed (`{op: remove | amount | add | full, label, amount}`), or why nothing changed
+  /// (`{op: stale | logged | none}`).
+  final List<Json> changes;
+
+  /// `ate`: the person said they ate it yesterday.
+  final bool yesterday;
+
+  /// What the server left out of the person's words (`foods`: more than a meal holds; `food`: unreadable).
+  final List<String> dropped;
 
   /// `eat` only: the person chose to go on after being told where the day stands (a goal reached): the options follow
   /// without the question again. Set on the phone only; a server answer never sets it.
@@ -322,9 +339,15 @@ class DayIntent {
   final Object? proposed;
   final List<String> preferences;
 
-  DayIntent withIdeas(List<Json> matched) => DayIntent(kind, today: today, nutrient: nutrient, source: source, items: items, change: change, factor: factor,
-      servings: servings, grams: grams, maxCalories: maxCalories, minProtein: minProtein, meal: meal, clarification: clarification, unknownItems: unknownItems,
-      ai: ai, ingredient: ingredient, ideas: matched, preferences: preferences, proceed: proceed);
+  DayIntent withIdeas(List<Json> matched) => _copy(ideas: matched);
+
+  /// The same intent with its meal [draft] (and an edit's [changes]) as matched on the phone.
+  DayIntent withDraft(Json? draft, {List<Json>? changes}) => _copy(draft: draft, changes: changes, keepDraft: false);
+
+  DayIntent _copy({List<Json>? ideas, Json? draft, List<Json>? changes, bool keepDraft = true}) => DayIntent(kind, today: today, nutrient: nutrient, source: source,
+      items: items, change: change, factor: factor, servings: servings, grams: grams, maxCalories: maxCalories, minProtein: minProtein, meal: meal,
+      clarification: clarification, unknownItems: unknownItems, ai: ai, ingredient: ingredient, ideas: ideas ?? this.ideas, preferences: preferences,
+      proceed: proceed, draft: keepDraft ? this.draft : draft, changes: changes ?? this.changes, yesterday: yesterday, dropped: dropped);
 
   /// today | recorded | goal | suggest | portion | compare | training | restaurant | clarify | unsupported
   final String kind;
@@ -348,7 +371,7 @@ class DayIntent {
 
   /// `eat`: What could I eat? on the phone (no AI). `ideas`: new ideas the server's model proposed as words, matched to
   /// real food records on the phone before they are stored here (features/coach/meal_ideas.dart).
-  static const kinds = {'today', 'recorded', 'goal', 'suggest', 'portion', 'compare', 'training', 'restaurant', 'clarify', 'unsupported', 'eat', 'ideas'};
+  static const kinds = {'today', 'recorded', 'goal', 'suggest', 'portion', 'compare', 'training', 'restaurant', 'clarify', 'unsupported', 'eat', 'ideas', 'ate', 'edit'};
 
   /// Preferences the person said, from the allowlist. Only protein and calories are checked by GoHard; the others are
   /// passed on as asked and said to be unchecked.
@@ -359,6 +382,7 @@ class DayIntent {
         'change': change, 'factor': factor, 'servings': servings, 'grams': grams, 'maxCalories': maxCalories, 'minProtein': minProtein, 'meal': meal,
         'clarification': clarification, 'unknownItems': unknownItems, 'ai': ai, 'ingredient': ingredient, 'ideas': ideas, 'preferences': preferences,
         if (proceed) 'proceed': true,
+        'draft': ?draft, if (changes.isNotEmpty) 'changes': changes, if (yesterday) 'yesterday': true, if (dropped.isNotEmpty) 'dropped': dropped,
       };
 
   /// [j] as stored here, or the server's intent (`items`, `portion`, `day`). Anything off the allowlist reads as nothing.
@@ -382,7 +406,13 @@ class DayIntent {
         // Stored ideas are the phone's own matched ones; a server answer's raw ideas are read by meal_ideas.dart instead.
         ideas: [for (final i in j['ideas'] as List? ?? const []) if (i is Map && i['parts'] is List) Map<String, dynamic>.from(i)],
         preferences: [for (final p in j['preferences'] as List? ?? const []) if (p is String && preferenceIds.contains(p)) p],
-        proposed: ai && j['kind'] == 'ideas' ? j['ideas'] : null, proceed: !ai && j['proceed'] == true);
+        // A server answer's foods or edits (words) are read by meal_ideas.dart into a draft; a stored intent keeps the draft.
+        proposed: ai && j['kind'] == 'ideas' ? j['ideas'] : ai && j['kind'] == 'ate' ? j['foods'] : ai && j['kind'] == 'edit' ? j['edits'] : null,
+        proceed: !ai && j['proceed'] == true,
+        draft: !ai && j['draft'] is Map ? Map<String, dynamic>.from(j['draft'] as Map) : null,
+        changes: [for (final c in j['changes'] as List? ?? const []) if (c is Map) Map<String, dynamic>.from(c)],
+        yesterday: j['yesterday'] == true || j['day'] == 'yesterday',
+        dropped: [for (final d in j['dropped'] as List? ?? const []) if (d is String) d]);
   }
 }
 
@@ -612,6 +642,29 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
       card(x, all: true);
     }
     actions.addAll([_action('eatingOut'), _action('addFood'), _action('meals')]);
+  }
+
+  /// A described meal (kind `ate`) or a change to it (`edit`): what changed or why nothing did, what was left out of the
+  /// words, and the draft's card. A draft is about its own day (yesterday, or the day it was described for).
+  void mealDraft() {
+    for (final c in intent.changes) {
+      final said = switch (c['op']) {
+        'remove' => l.dcMealChangeRemoved('${c['label']}'),
+        'amount' => l.dcMealChangeAmount('${c['label']}', '${c['amount']}'),
+        'add' => l.dcMealChangeAdded('${c['label']}'),
+        'full' => l.dcMealChangeFull('${c['label']}', maxMealFoods),
+        'stale' => l.dcMealChangedMeanwhile,
+        'logged' => l.dcMealAlreadyLogged,
+        _ => l.dcMealNoDraft,
+      };
+      lines.add(said);
+    }
+    if (intent.dropped.contains('foods')) lines.add(l.dcMealTooMany(maxMealFoods));
+    if (intent.dropped.contains('food')) lines.add(l.dcMealUnreadable);
+    final d = intent.draft;
+    if (d == null) return;
+    day = d['dayKey'] as String? ?? day;
+    cards.add(mealCard(d, l));
   }
 
   /// The model's ideas, as matched on the phone: totals from the food records only, at the person's own limits when
@@ -894,6 +947,8 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
       } else {
         ideaCards();
       }
+    case 'ate' || 'edit':
+      mealDraft();
     case 'restaurant':
       lines.add(l.dcRestaurant);
       actions.add(_action('eatingOut'));
@@ -903,9 +958,27 @@ Json resolveDay(DayIntent intent, DayRecords r, AppLocalizations l, {List<Json> 
       lines.add(l.dcUnsupported);
   }
   if (r.pending > 0 && intent.kind != 'training' && intent.kind != 'restaurant' && intent.kind != 'unsupported') lines.add(l.dcPending);
+  // A described meal is worked out from its own food records, not from the day's journal: logging it never makes it stale.
+  final meal = intent.kind == 'ate' || intent.kind == 'edit';
   return {
-    'dayKey': day, 'revision': dayRevision(r, day, itemIds: [for (final c in cards) c['id'] as String], training: training), 'training': training,
-    'lines': lines, 'cards': cards, 'actions': actions, 'intent': intent.toJson(), 'ai': intent.ai,
+    'dayKey': day, 'revision': meal ? 'meal' : dayRevision(r, day, itemIds: [for (final c in cards) c['id'] as String], training: training), 'training': training,
+    'lines': lines, 'cards': cards, 'actions': actions, 'intent': intent.toJson(), 'ai': intent.ai, if (meal) 'static': true,
+  };
+}
+
+/// A described meal's card (docs/FOOD_DATA.md › Describe your meal): its foods in order with what each still needs, and the
+/// sum of the confirmed ones — complete only once every food has a record and an amount; otherwise "so far, without …",
+/// naming what is not counted. Unknown values stay unknown (the shared coverage rules); nothing here is logged.
+Json mealCard(Json draft, AppLocalizations l) {
+  final items = [for (final i in draft['items'] as List? ?? const []) Map<String, dynamic>.from(i as Map)];
+  final parts = [for (final i in items) if (i['status'] == 'ready') MealComponent(Map<String, dynamic>.from(i['part'] as Map))];
+  final open = [for (final i in items) if (i['status'] != 'ready') itemLabel(i)];
+  final totals = NutrientCoverage.ofParts(parts.map((c) => c.values));
+  return {
+    'kind': 'draft', 'id': 'draft', 'name': l.dcMealTitle, 'draft': draft, 'complete': open.isEmpty && parts.isNotEmpty, 'without': open,
+    // The amounts in words for a follow-up's history; never the values (those are this phone's own business).
+    'amount': [for (final c in parts) '${c.amount} ${c.name}'].join(' · '),
+    if (parts.isNotEmpty) 'totals': {'kcal': _total(totals[Nutrient.calories]!), 'protein': _total(totals[Nutrient.protein]!)},
   };
 }
 

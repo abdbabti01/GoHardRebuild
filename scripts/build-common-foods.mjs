@@ -6,10 +6,12 @@
 // record cannot know: a short name, a preparation line, a category and search aliases. It never writes a
 // nutrient, a portion or a source ID of its own.
 //
-//   node scripts/build-common-foods.mjs --cache <dir outside the repo> [--api <origin>] [--candidates [id,id]] [--offline]
+//   node scripts/build-common-foods.mjs --cache <dir outside the repo> [--api <origin>] [--candidates [id,id]] [--offline] [--reuse]
 //
 //   --candidates   print what the API returned for each (or the named) entry, to choose an fdcId from
 //   --offline      never touch the network: fail if an answer is not in the cache
+//   --reuse        an entry already in the committed catalog with the same id and fdcId keeps its record exactly as
+//                  it is there (nothing asked); only new or changed entries are looked up
 //
 // Answers are cached per query in --cache, so a re-run asks the API nothing it already asked. When something
 // must be fetched, ONE disposable account is registered on the testing API, used at no more than 20 lookups a
@@ -20,7 +22,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
-const VERSION = 1;
+const VERSION = 2;
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
 const value = (name) => (args.includes(`--${name}`) ? args[args.indexOf(`--${name}`) + 1] : undefined);
@@ -61,8 +63,20 @@ async function search(query) {
   if (searches >= MAX_SEARCHES) throw new Error(`Stopped at ${MAX_SEARCHES} searches in one run.`);
   if (!account) {
     const password = randomUUID().replace(/-/g, ''); // random, used once, never printed
-    const r = await call('POST', '/auth/register', { email: `catalog-${Date.now()}@example.test`, password, displayName: 'Catalog build' });
+    const email = `catalog-${Date.now()}@example.test`;
+    const r = await call('POST', '/auth/register', { email, password, displayName: 'Catalog build' });
     account = { token: r.accessToken, password };
+    // A local API with captured mail (Development only) holds the verification code; a deployed one has no such route.
+    let code = null;
+    for (let n = 0; n < 10 && !code; n++) {
+      const mail = await fetch(`${api}/dev/mail/latest?to=${encodeURIComponent(email)}`).catch(() => null);
+      if (mail?.status === 404 && n > 0 && !(await fetch(`${api}/dev/mail/latest?to=x`).catch(() => null))) break;
+      code = mail?.ok ? (await mail.json()).code : null;
+      if (!code) await sleep(500);
+    }
+    if (code) await call('POST', '/account/email-verification/confirm', { code }, account.token);
+    // The first token predates verification: sign in again for one that carries it.
+    if (code) account.token = (await call('POST', '/auth/login', { email, password })).accessToken;
     console.error('Registered one disposable account.');
   }
   let results;
@@ -100,11 +114,13 @@ const line = (i) => `${i.sourceId.padEnd(8)} ${i.name}${i.brand ? ` [${i.brand}]
 try {
   const only = flag('candidates') && value('candidates') && !value('candidates').startsWith('--') ? value('candidates').split(',') : null;
   const foods = [], left = [];
+  const committed = flag('reuse') && existsSync(out) ? new Map(JSON.parse(readFileSync(out, 'utf8')).foods.map((f) => [f.id, f.item])) : new Map();
   for (const [id, name, qualifier, category, query, fdcId, aliases, portion = null] of SPEC) {
     if (only && !only.includes(id)) continue;
     if (!CATEGORIES.includes(category)) throw new Error(`${id}: unknown category ${category}`);
     if (query == null) { left.push(id); continue; }
-    const answer = await search(query);
+    const kept = !flag('candidates') && committed.get(id)?.sourceId === String(fdcId) ? committed.get(id) : null;
+    const answer = kept ? { results: [kept] } : await search(query);
     if (flag('candidates')) {
       console.log(`\n## ${id} — ${name} (${qualifier}) — "${query}"${fdcId ? ` — chosen ${fdcId}` : ''}`);
       for (const i of answer.results) if (!i.brand) console.log(`  ${line(i)}`);

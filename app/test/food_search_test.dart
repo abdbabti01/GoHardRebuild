@@ -82,18 +82,19 @@ void main() {
       expect(searchWords('glass'), ['glass'], reason: 'not every final s is a plural');
     });
 
-    test('an exact name beats a beginning, which beats a word, which beats part of a word', () {
+    test('an exact name beats a named brand, which beats whole words, a word being typed, beginnings and parts of words', () {
       int? score(String q, String name, {List<String> aliases = const [], String? qualifier, String? brand}) => matchScore(q, SearchFields(name, aliases: aliases, qualifier: qualifier, brand: brand));
       expect(score('eggs', 'Eggs'), 0);
       expect(score('egg', 'Eggs', aliases: ['oeuf']), 0);
       expect(score('OEUF', 'Eggs', aliases: ['œuf']), 0);
-      expect(score('rice', 'Rice, white, cooked'), 1, reason: 'the head of a provider title');
-      expect(score('nutella', 'Hazelnut spread', brand: 'Nutella, Ferrero'), 1, reason: 'the brand, exactly');
+      expect(score('nutella', 'Hazelnut spread', brand: 'Nutella, Ferrero'), 1, reason: 'a brand the search names');
+      expect(score('rice', 'Rice, white, cooked'), 2, reason: 'every word, whole');
       expect(score('rice', 'Rice cakes'), 2);
-      expect(score('chick', 'Chicken breast'), 2, reason: 'the word still being typed');
-      expect(score('rice', 'Snacks, rice cakes'), 3);
-      expect(score('raw egg', 'Eggs', aliases: ['egg'], qualifier: 'Whole · raw'), 3, reason: 'the preparation is searched too');
-      expect(score('bre', 'Chicken breast'), 4);
+      expect(score('rice', 'Snacks, rice cakes'), 2, reason: 'found too, and ranked by how much more it says (below)');
+      expect(score('raw egg', 'Eggs', aliases: ['egg'], qualifier: 'Whole · raw'), 2, reason: 'the preparation is searched too');
+      expect(score('chick', 'Chicken breast'), 3, reason: 'the word still being typed');
+      expect(score('bre', 'Chicken breast'), 3, reason: 'one word being typed');
+      expect(score('chi bre', 'Chicken breast'), 4, reason: 'every word as the beginning of a word');
       expect(score('nut', 'Walnuts'), 5);
       expect(score('chicken soup', 'Chicken breast'), isNull, reason: 'every word has to be found');
       expect(score('', 'Anything'), 0);
@@ -129,8 +130,8 @@ void main() {
       expect(ids('œuf').first, 'eggs');
       expect(ids('oeufs').first, 'eggs');
       expect(ids('riz').take(2), ['brown-rice', 'white-rice']);
-      expect(ids('poitrine de poulet'), ['chicken-breast']);
-      expect(ids('blanc de poulet'), ['chicken-breast']);
+      expect(ids('poitrine de poulet'), ['chicken-breast', 'chicken-breast-raw']);
+      expect(ids('blanc de poulet'), ['chicken-breast', 'chicken-breast-raw']);
       expect(ids('pâtes'), ['whole-wheat-pasta']);
       expect(ids('epinards'), ['spinach']);
       expect(ids('lait écrémé').first, 'skim-milk');
@@ -170,12 +171,12 @@ void main() {
       final byBrand = find('chobani', seen: [chobani, hazelnutSpread()]);
       expect([for (final s in byBrand.own) s.item.name], ['Greek Yogurt, Vanilla']);
       expect(byBrand.common, isEmpty, reason: 'no generic food answers to a brand');
-      expect(rowFacts(byBrand.own.single).detail, 'Chobani', reason: 'the row says whose it is');
+      expect(rowFacts(byBrand.own.single).detail, 'Brand: Chobani', reason: 'the row says whose it is');
       expect([for (final s in find('ferrero', seen: [chobani, hazelnutSpread()]).own) s.item.name], ['Nutella']);
 
       // A plain name finds both, and each stays what it is.
       final both = find('greek yogurt', seen: [chobani]);
-      expect([[for (final s in both.own) rowFacts(s).detail], [for (final s in both.common) rowFacts(s).title]], [['Chobani'], ['Greek yogurt']]);
+      expect([[for (final s in both.own) rowFacts(s).detail], [for (final s in both.common) rowFacts(s).title]], [['Brand: Chobani'], ['Greek yogurt']]);
       expect(rowFacts(both.own.single).protein, 8);
     });
 
@@ -189,12 +190,13 @@ void main() {
       expect(rowFacts(found.own.last).title, 'Eggs', reason: 'the same record reads the same wherever it is met');
     });
 
-    test('a wider answer is put in the app\'s order, without what is already listed, and loses nothing', () {
+    test('a wider answer is put in the app\'s order, without what is already listed or shares no word with the search', () {
       FoodItem usda(String id, String name) => FoodItem({'source': 'usda', 'sourceId': id, 'name': name, 'basis': '100g', 'nutrients': {'calories': 100, 'protein': null, 'carbs': null, 'fat': null}, 'servings': []});
       final white = catalog.foods.firstWhere((f) => f.id == 'white-rice');
       final answer = [usda('1', 'Snacks, rice cakes, brown rice, buckwheat'), usda('2', 'Rice cake'), usda('3', 'Wild thing, NFS'), white.item, usda('4', 'Rice, cooked, NFS')];
       final ranked = rankFound('rice', answer, catalog: catalog, shown: {white.item.key});
-      expect([for (final s in ranked) s.item.name], ['Rice, cooked, NFS', 'Rice cake', 'Snacks, rice cakes, brown rice, buckwheat', 'Wild thing, NFS']);
+      // "Wild thing" was an answer to nothing typed (a provider matching a small word): it is not shown.
+      expect([for (final s in ranked) s.item.name], ['Rice, cooked, NFS', 'Rice cake', 'Snacks, rice cakes, brown rice, buckwheat']);
       expect(rankFound('rice', answer, catalog: catalog).firstWhere((s) => s.item.key == white.item.key).common!.name, 'White rice');
     });
 
@@ -202,7 +204,7 @@ void main() {
       final salmon = find('salmon').common.single;
       expect((rowFacts(salmon).basis, rowFacts(salmon).calories), ('100 g', 206));
       final drink = rowFacts(Suggestion(sparseDrink(), Origin.found));
-      expect((drink.basis, drink.calories, drink.protein, drink.detail), ('100 ml', 42, null, 'Example Drinks'));
+      expect((drink.basis, drink.calories, drink.protein, drink.detail), ('100 ml', 42, null, 'Brand: Example Drinks'));
       final jar = rowFacts(Suggestion(ownOats(), Origin.mine));
       expect((jar.basis, jar.calories, jar.detail), ('1 jar', 420, 'My food'));
       final typed = FoodEntry(foodEntry('f', '2026-10-08', 'Lunch', 'Soup', '1 bowl', calories: 250));

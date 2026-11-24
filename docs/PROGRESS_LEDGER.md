@@ -2938,3 +2938,44 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - 24 Nov 2026: owner tested IPA 84 and approved; `main` fast-forwarded 27877fe → c524e4f (with `feature/eat-meals-first`).
   CI 258 (45417821253) passed on `main`; Railway devoted-caring success, hosted Ready (17 migrations), contract 2.
   IPA 84 reused (app code unchanged). Release notes in docs/RELEASE_AND_ROLLBACK.md.
+
+### 24 Nov 2026 — Food search relevance and Describe your meal (`feature/food-search-describe-meal`, from main 2211ad0)
+
+- Owner request: make ordinary foods easy to find ("chicken breast": raw and cooked plain breasts), let brands lead when
+  named, and let people describe a meal in words to Leon/Leona with clear AI usage. docs/FOOD_DATA.md › Search relevance,
+  Describe your meal; docs/COACH.md; docs/PLUS_PREVIEW.md.
+- Cause of the old results (checked against USDA's live answers with the public trial key, query words only): USDA's own
+  order for "chicken breast" starts with lunchmeat, rotisserie and breaded tenders (plain raw 10th, plain roasted past
+  the first 15); the app then promoted titles that merely start with the words; the catalog had no raw breast; broad
+  aliases ("chicken", "grilled chicken") made the roasted breast the exact answer; French/Arabic words went to USDA as typed
+  (it matched "de"); misspellings found nothing (USDA: 0 hits).
+- Search: one relevance rule (tier + specificity), brand tier, generic-first when no brand, repeats collapsed, corrected
+  spelling (said on screen), French/Arabic staples put in English for USDA (said), unrelated provider rows dropped, wider
+  search by itself unless something on the phone is named exactly, USDA page sizes 25/15. Catalog v2 (77): raw breast
+  2646170, raw thigh 2646171, roasted thigh 172388, normalized by the branch API from saved real USDA responses replayed
+  locally (`build-common-foods.mjs --reuse`; existing records byte-identical). Not added (trial key exhausted): raw
+  potato, beef, salmon, rice.
+- Describe your meal: `POST /coach/daily` kinds `ate`/`edit`, capability `coach.meal-log`, optional `draft` words; strict
+  schema with `foods`/`edits`; server keeps ≤ 12 foods, drops figures in names, out-of-range amounts, refs not in the draft;
+  empty readings are `unsupported` (not charged). App: shared `FoodMatcher` (meal ideas and meals), raw-or-cooked question
+  for weighed foods, which-food choice, amount form, Find food, exact kg/oz/lb/l conversion, one draft card → existing
+  `MealReviewScreen` (`onChanged` keeps edits on the draft, `logLabel` "Log meal") → existing atomic `food.batch`. Follow-ups
+  carry only references and words and apply only to the unchanged draft that was sent; logged drafts are closed.
+  Usage line under the field from the server's allowance.
+- Tests (this machine): API full suite `dotnet test` — 270 passed, 0 failed; new `MealLogTests` (2) with stubbed provider. App full
+  suite `flutter test -j 2` — 1030 passed, 0 failed; new `food_relevance_test` (11, on USDA's real "chicken breast" answer as the API
+  normalized it), `meal_log_test` (10), `meal_log_ui_test` (10, scripted coach client); updated `food_search_test`,
+  `food_ui_test` (labels "Brand: …"; answers sharing no word with the search are no longer listed), `day_coach_ui_test`
+  unchanged and passing. `flutter analyze`, `check-l10n.mjs` clean.
+- Local end to end (branch API on 127.0.0.1:5136, disposable DB `gohard_mealtalk`, coach provider = `scripts/coach-stub.mjs`,
+  a STUB; USDA = saved real responses replayed locally): one described meal charged 1, the same request ID again 0, a
+  follow-up 1, an invalid draft 0, a food search 0 (scratchpad `e2e-meal.mjs`, disposable account deleted).
+- Native (emulator, not a phone): `journey_describe_meal_test` passed on Pixel_7 (x64 debug APK installed by adb, `flutter drive
+  --use-application-binary`) against the branch API above: search showed the raw and cooked breasts and the corrected
+  misspelling; Describe your meal asked raw or cooked for both foods and which chicken, Review › Log meal logged Chicken
+  breast and Potato once; the account held both entries; allowance used 0 → 1. Captures in docs/evidence/describe-meal-device/.
+  The coach was the STUB, so this proves the app/API path only.
+- Not verified: live Groq reading of meal sentences (no key here), live USDA brand coverage beyond the queries above,
+  iPhone, VoiceOver.
+- CI/IPA: RESULT_CI. Not merged, not deployed (needs the API deploy for `coach.meal-log`; an older server keeps search
+  and manual logging, and Describe your meal says it is unavailable).
