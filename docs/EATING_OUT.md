@@ -8,8 +8,9 @@ number taken from the chains' own published Canadian nutrition information and c
 
 - **Where:** Eat › the **Eating out** panel (since 27 Oct 2026; for the day shown and the meal of the time of day) and
   Add food › **Eating out** (for the day and the meal chosen there). Both carry the day and meal through to the review.
-- **Finding it (27 Oct 2026):** Eat runs header and coach › nutrition summary (Log food its primary action, Saved meals &
-  recipes beside it) › **Eating out** panel › History & trends › meal groups. The panel is a `PanelLink` (the pale
+- **Finding it (27 Oct 2026; order changed 23 Nov 2026, docs/FOOD_DATA.md › Eat page order):** Eat runs header and
+  coach › nutrition summary (Log food its primary action, Saved meals & recipes beside it) › meal groups › Meal
+  reminders › **Eating out** panel › History & trends. Add food keeps its own Eating out entry. The panel is a `PanelLink` (the pale
   accent tint, panel radius, outlined storefront icon): title *Eating out*, "Find a restaurant order that fits your
   goals.", the catalog's own chain names joined with " · " (each name kept whole with no-break spaces, so the list wraps
   between names; absent while the bundled catalog is being read), and **Choose a restaurant →** in the accent (the arrow

@@ -48,8 +48,9 @@ class EatDayRequest extends Notifier<({String day, bool goals})?> {
 }
 
 /// The dated food journal: the day's overview, one Log food action, then Breakfast, Lunch, Dinner and Snack,
-/// built only from food the user logged as eaten. Each entry is its own row with the name, portion and values
-/// that were saved with it; nothing is merged into a meal name or worked out again from a food database.
+/// built only from food the user logged as eaten, and after them Eating out and History & trends. Each entry is its
+/// own row with the name, portion and values that were saved with it; nothing is merged into a meal name or worked out
+/// again from a food database.
 class EatScreen extends ConsumerStatefulWidget {
   const EatScreen({super.key});
   @override
@@ -96,7 +97,18 @@ class _EatScreenState extends ConsumerState<EatScreen> {
   static String _mealNow(DateTime t) => t.hour < 11 ? 'Breakfast' : t.hour < 16 ? 'Lunch' : t.hour < 21 ? 'Dinner' : 'Snack';
 
   /// Eating out for [day] and the meal of the time of day: the panel and the coach's shortcut open the same thing.
-  Future<void> _openEatingOut(String day) => openEatingOut(context, dayKey: day, meal: _mealNow(DateTime.now()));
+  /// Back from a logged order, the meals come into view: the panel is under them, and the review may have changed the
+  /// meal or day, so the journal is shown from its heading.
+  Future<void> _openEatingOut(String day) async {
+    if (await openEatingOut(context, dayKey: day, meal: _mealNow(DateTime.now())) != true || !mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final meals = _mealsHeading.currentContext;
+      if (meals != null && meals.mounted) Scrollable.ensureVisible(meals, duration: const Duration(milliseconds: 250)).ignore();
+    });
+  }
+
+  /// The heading over the meals, to bring them into view.
+  final _mealsHeading = GlobalKey();
 
   /// Add food opened on Favourites or My foods, for [day]. A shortcut, never a log: the amount is still reviewed and confirmed.
   static Future<void> openSavedFoods(BuildContext context, {required String day, required FoodScope scope}) =>
@@ -220,7 +232,7 @@ class _EatScreenState extends ConsumerState<EatScreen> {
       }
     }
     // Eating out, once, after the hints above have had their turn (a first visit stays about logging a meal). The
-    // panel under the summary is always there; this only points to it.
+    // panel after the meals is always there; this only points to it.
     if (_hint == '' && inView) {
       const id = 'eat.out';
       if (ref.read(coachPrefsProvider).mayIntroduce(owner, id)) {
@@ -428,7 +440,10 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                       if (coachOn && coach?.say != null)
                         TabCoach(key: const Key('eat-coach'), id: 'eat', say: coach!.say!, avatarLabel: l.eatHelpFrom(guide.displayName(l)), onAvatarTap: () => _help(context, day))
                       else if (coachOn)
-                        _CoachProblem(onRetry: () => setState(() {})),
+                        _CoachProblem(onRetry: () => setState(() {}))
+                      // Without the coach, its one message is a compact panel in its place (or the notice, if it failed),
+                      // once the day's food has been read.
+                      else if (rows.hasValue && !rows.hasError) ...[const SizedBox(height: 12), ...?coach?.panel, if (coach == null) _CoachProblem(onRetry: () => setState(() {}))],
                     ]),
             ),
           ),
@@ -452,31 +467,8 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                         onPressed: () => openMealsLibrary(context, dayKey: day, meal: _mealNow(DateTime.now()))),
                   ]),
                 ),
-                // Without the coach, its one message is a compact panel here instead (or the notice, if it failed).
-                if (!coachOn) ...[const SizedBox(height: 12), ...?coach?.panel, if (coach == null) _CoachProblem(onRetry: () => setState(() {}))],
-                const SizedBox(height: 16),
-                // Eating out, always here (coach or not): a restaurant order from verified menus, for the same day and the
-                // meal of the time of day. The chains named are the catalog's own, so the line never claims more.
-                () {
-                  final names = [for (final ch in ref.watch(restaurantCatalogProvider).value?.chains ?? const <RestaurantChain>[]) ch.name];
-                  return PanelLink(
-                    key: const Key('eat-eating-out'), icon: const Icon(Icons.storefront_outlined), title: l.eatOutTitle, subtitle: l.eatOutPanelBody,
-                    // Each name stays whole on one line; the list wraps between names.
-                    detail: names.isEmpty ? null : names.map((n) => n.replaceAll(' ', String.fromCharCode(0xa0))).join(' · '),
-                    action: l.eatOutPanelAction,
-                    semanticLabel: [l.eatOutTitle, l.eatOutPanelBody, if (names.isNotEmpty) names.join(', '), l.eatOutPanelAction].join('. '),
-                    onTap: () => _openEatingOut(day),
-                  );
-                }(),
-                const SizedBox(height: 16),
-                // The one way to History & trends (charts by week and month, the calendar, the days with entries): under
-                // the day's summary, secondary to Log food. It opens the history on the day shown and changes nothing.
-                PanelLink(
-                  key: const Key('eat-history'), icon: const GoIcon(GoGlyph.history), title: l.eatHistoryTrends, subtitle: l.eatHistoryTrendsSubtitle,
-                  semanticLabel: l.eatHistoryTrendsSaid, onTap: () => _openHistory(day, today),
-                ),
                 const SizedBox(height: 28),
-                Heading(day == today ? l.eatTodaysMeals : l.eatMeals, size: 20),
+                Heading(day == today ? l.eatTodaysMeals : l.eatMeals, key: _mealsHeading, size: 20),
                 const SizedBox(height: 12),
                 // One quiet group per meal: the meal as its heading (outlined icon, name, what its foods add up to as a
                 // quieter second line), each logged food as its own row, then a small "+ Add food" footer for this meal
@@ -545,6 +537,27 @@ class _EatScreenState extends ConsumerState<EatScreen> {
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(key: const Key('eat-reminders'), icon: const Icon(Icons.notifications_none, size: 20), label: Text(l.eatMealReminders),
                       onPressed: () => push(context, const RemindersScreen())),
+                ),
+                const SizedBox(height: 16),
+                // Eating out, after the meals (coach or not): a restaurant order from verified menus, for the same day and the
+                // meal of the time of day. The chains named are the catalog's own, so the line never claims more.
+                () {
+                  final names = [for (final ch in ref.watch(restaurantCatalogProvider).value?.chains ?? const <RestaurantChain>[]) ch.name];
+                  return PanelLink(
+                    key: const Key('eat-eating-out'), icon: const Icon(Icons.storefront_outlined), title: l.eatOutTitle, subtitle: l.eatOutPanelBody,
+                    // Each name stays whole on one line; the list wraps between names.
+                    detail: names.isEmpty ? null : names.map((n) => n.replaceAll(' ', String.fromCharCode(0xa0))).join(' · '),
+                    action: l.eatOutPanelAction,
+                    semanticLabel: [l.eatOutTitle, l.eatOutPanelBody, if (names.isNotEmpty) names.join(', '), l.eatOutPanelAction].join('. '),
+                    onTap: () => _openEatingOut(day),
+                  );
+                }(),
+                const SizedBox(height: 16),
+                // The one way to History & trends (charts by week and month, the calendar, the days with entries): after
+                // the meals and Eating out, secondary to Log food. It opens the history on the day shown and changes nothing.
+                PanelLink(
+                  key: const Key('eat-history'), icon: const GoIcon(GoGlyph.history), title: l.eatHistoryTrends, subtitle: l.eatHistoryTrendsSubtitle,
+                  semanticLabel: l.eatHistoryTrendsSaid, onTap: () => _openHistory(day, today),
                 ),
               ],
             ]),

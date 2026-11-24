@@ -20,7 +20,12 @@ import 'package:gohard_rebuild/features/coach/coach_rig.dart' show rigImageProvi
 import 'package:gohard_rebuild/features/nutrition/eat_screen.dart';
 import 'package:gohard_rebuild/features/nutrition/eating_out.dart';
 import 'package:gohard_rebuild/features/nutrition/eating_out_screen.dart';
+import 'package:gohard_rebuild/core/widgets.dart' show GroupCard;
 import 'package:gohard_rebuild/features/nutrition/food_item.dart';
+import 'package:gohard_rebuild/features/nutrition/log_food_screen.dart' show LogFoodScreen;
+import 'package:gohard_rebuild/features/nutrition/meal_habits_ui.dart' show BriefingPanel, UsualMealPanel;
+import 'package:gohard_rebuild/features/nutrition/nutrition_history.dart' show NutritionHistoryScreen;
+import 'package:gohard_rebuild/features/shell/home_shell.dart' show GoNavigationBar;
 import 'package:gohard_rebuild/features/nutrition/nutrition_surface.dart' show NutritionSurface;
 import 'package:gohard_rebuild/features/nutrition/restaurants.dart';
 import 'package:gohard_rebuild/features/nutrition/saved_meals.dart';
@@ -183,7 +188,7 @@ void main() {
     expect(store.draft.chainId, 'subway-ca');
   });
 
-  testWidgets('Eating out is its own panel under the summary, before History; it names the catalog\'s chains and opens Eating out for the day picked', (tester) async {
+  testWidgets('Eating out is its own panel after the meals, before History; it names the catalog\'s chains and opens Eating out for the day picked', (tester) async {
     final (overrides, fakes, _, ai) = await _fixture(tester);
     await pumpApp(tester, overrides, size: const Size(390, 1600));
     await tester.tap(find.byKey(const Key('nav-eat')));
@@ -195,7 +200,7 @@ void main() {
     expect(find.descendant(of: find.byType(NutritionSurface), matching: find.byKey(const Key('eat-eating-out'))), findsNothing, reason: 'the small summary entry is gone');
     expect(find.descendant(of: find.byType(NutritionSurface), matching: find.byKey(const Key('eat-saved-meals'))), findsOneWidget, reason: 'Saved meals keeps its entry');
     final y = tester.getTopLeft(panel).dy;
-    expect(tester.getBottomLeft(find.byType(NutritionSurface)).dy < y && y < tester.getTopLeft(find.descendant(of: eat, matching: find.byKey(const Key('eat-history')))).dy, isTrue);
+    expect(tester.getBottomLeft(find.descendant(of: eat, matching: find.byKey(const Key('eat-reminders')))).dy < y && y < tester.getTopLeft(find.descendant(of: eat, matching: find.byKey(const Key('eat-history')))).dy, isTrue);
     for (final words in ['Find a restaurant order that fits your goals.', 'Choose a restaurant ']) {
       expect(find.descendant(of: panel, matching: find.textContaining(words, findRichText: true)), findsOneWidget);
     }
@@ -247,6 +252,114 @@ void main() {
       expect(c.read(coachPrefsProvider).seen('one', 'eat.out'), isFalse);
       expect(find.descendant(of: find.byType(EatScreen), matching: find.byKey(const Key('eat-eating-out'))), findsOneWidget);
     }
+  });
+
+  group('Eat page order (docs/FOOD_DATA.md › Eat page order)', () {
+    final eat = find.byType(EatScreen);
+    Finder inEat(String key) => find.descendant(of: eat, matching: find.byKey(Key(key)));
+    Finder group(String meal) => find.ancestor(of: inEat('eat-add-$meal'), matching: find.byType(GroupCard)).first;
+    String mealNow() => switch (DateTime.now().hour) { < 11 => 'Breakfast', < 16 => 'Lunch', < 21 => 'Dinner', _ => 'Snack' };
+
+    testWidgets('coach or its panel, summary, every meal, reminders, Eating out, History: today and an earlier day, empty and logged, coach on and off', (tester) async {
+      final logged = [foodEntry('f1', day, 'Breakfast', 'Porridge', '1 bowl', calories: 300), foodEntry('f2', day, 'Snack', 'Apple', '1', calories: 95)];
+      for (final (coach, food) in [
+        for (final coach in const [CoachPrefs(dismissed: {'one|eat.first'}), CoachPrefs(onTabs: false)]) for (final food in [const <Json>[], logged]) (coach, food),
+      ]) {
+        final why = 'coach ${coach.onTabs ? 'on' : 'off'}, ${food.isEmpty ? 'nothing' : 'food'} logged';
+        await tester.pumpWidget(const SizedBox());
+        final (overrides, _, _, _) = await _fixture(tester, food: food, coach: coach);
+        await pumpApp(tester, overrides, size: const Size(390, 2600));
+        await tester.tap(find.byKey(const Key('nav-eat')));
+        await tester.pumpAndSettle();
+        for (final past in [false, true]) {
+          if (past) await _tap(tester, find.descendant(of: eat, matching: find.byTooltip('Previous day')));
+          final reason = '$why, ${past ? 'an earlier day' : 'today'}';
+          double top(Finder f) => tester.getTopLeft(f).dy;
+          double bottom(Finder f) => tester.getBottomLeft(f).dy;
+          final summary = find.descendant(of: eat, matching: find.byType(NutritionSurface));
+          // The coach's message, or without the coach its compact panel, comes before the summary.
+          final say = coach.onTabs ? inEat('eat-coach') : find.descendant(of: eat, matching: find.byWidgetPredicate((w) => w is BriefingPanel || w is UsualMealPanel));
+          expect(say, findsOneWidget, reason: reason);
+          expect(bottom(say) <= top(summary), isTrue, reason: reason);
+          // Log food and Saved meals & recipes stay in the summary.
+          for (final key in ['log-food', 'eat-saved-meals']) {
+            expect(find.descendant(of: summary, matching: find.byKey(Key(key))), findsOneWidget, reason: reason);
+          }
+          // Then the journal's heading (never "Today's meals" on an earlier day) and the meals in their order.
+          final heading = find.descendant(of: eat, matching: find.text(past ? 'Meals' : "Today's meals"));
+          expect(heading, findsOneWidget, reason: reason);
+          if (past) expect(find.descendant(of: eat, matching: find.text("Today's meals")), findsNothing);
+          final order = [summary, heading, group('breakfast'), group('lunch'), group('dinner'), group('snack'), inEat('eat-reminders'), inEat('eat-eating-out'), inEat('eat-history')];
+          for (var i = 1; i < order.length; i++) {
+            expect(bottom(order[i - 1]) <= top(order[i]), isTrue, reason: '$reason: item $i of the page order');
+          }
+          // Nothing else between the summary and the first meal (only the heading and its spacing).
+          expect(top(group('breakfast')) - bottom(summary), lessThan(100), reason: reason);
+        }
+        if (food.isNotEmpty) {
+          // Back on the logged day, a meal keeps its own actions in its group.
+          await _tap(tester, inEat('eat-back-to-today'));
+          expect(find.descendant(of: group('breakfast'), matching: find.byKey(const Key('eat-copy-meal-breakfast'))), findsOneWidget, reason: why);
+          expect(find.descendant(of: group('breakfast'), matching: find.byKey(const Key('eat-save-meal-breakfast'))), findsOneWidget, reason: why);
+        }
+      }
+    });
+
+    testWidgets('the last panel scrolls clear of the floating bar on a notched phone, with normal and large text', (tester) async {
+      for (final (size, text) in [(const Size(390, 844), 1.0), (const Size(320, 640), 2.0)]) {
+        await tester.pumpWidget(const SizedBox());
+        final (overrides, _, _, _) = await _fixture(tester, coach: const CoachPrefs(dismissed: {'one|eat.first'}));
+        await pumpApp(tester, overrides, size: size, textScale: text, insets: phoneInsets);
+        await tester.tap(find.byKey(const Key('nav-eat')));
+        await tester.pumpAndSettle();
+        final position = tester.state<ScrollableState>(find.descendant(of: eat, matching: find.byType(Scrollable)).first).position;
+        for (var i = 0; i < 20 && position.pixels < position.maxScrollExtent; i++) {
+          position.jumpTo(position.maxScrollExtent); // the lazy list learns its full length as it goes
+          await tester.pumpAndSettle();
+        }
+        final history = inEat('eat-history');
+        expect(history, findsOneWidget);
+        expect(tester.getBottomLeft(history).dy, lessThanOrEqualTo(tester.getTopLeft(find.byType(GoNavigationBar)).dy), reason: 'History & trends ends above the bar at ${size.width}px, text ×$text');
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets('an earlier day stays chosen through Eating out, History, Add food and back; a logged order brings the meals into view', (tester) async {
+      final (overrides, _, _, _) = await _fixture(tester, coach: const CoachPrefs(dismissed: {'one|eat.first'}));
+      await pumpApp(tester, overrides, size: const Size(390, 844), insets: phoneInsets);
+      await tester.tap(find.byKey(const Key('nav-eat')));
+      await tester.pumpAndSettle();
+      await _tap(tester, find.descendant(of: eat, matching: find.byTooltip('Previous day')));
+      const earlier = '2026-10-10';
+      Future<void> back() async {
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        // The header may be scrolled out of the lazy list; the journal's own heading says which day is shown.
+        expect(find.descendant(of: eat, matching: find.text('Meals')), findsOneWidget, reason: 'still the day picked');
+        expect(find.descendant(of: eat, matching: find.text("Today's meals")), findsNothing);
+      }
+
+      await _tap(tester, inEat('eat-eating-out'));
+      final out = tester.widget<EatingOutScreen>(find.byType(EatingOutScreen));
+      expect((out.dayKey, out.meal), (earlier, mealNow()));
+      await back();
+      await _tap(tester, inEat('eat-history'));
+      expect(tester.widget<NutritionHistoryScreen>(find.byType(NutritionHistoryScreen)).selected, earlier);
+      await back();
+      await _tap(tester, inEat('eat-add-dinner'));
+      final add = tester.widget<LogFoodScreen>(find.byType(LogFoodScreen));
+      expect((add.dayKey, add.meal), (earlier, 'Dinner'));
+      await back();
+
+      // Eating out pops true once an order is logged: Eat, left at its end, shows the journal from its heading.
+      await _tap(tester, inEat('eat-eating-out'));
+      Navigator.of(tester.element(find.byType(EatingOutScreen))).pop(true);
+      await tester.pumpAndSettle();
+      final heading = find.descendant(of: eat, matching: find.text('Meals'));
+      final y = tester.getTopLeft(heading).dy;
+      expect(y >= 0 && y < 844 / 2, isTrue, reason: 'the meals heading is in view near the top (at $y)');
+      expect(inEat('eat-back-to-today').hitTestable(), findsNothing, reason: 'scrolled past the header, still the day picked');
+    });
   });
 
   testWidgets('nothing logged or saved: the first visit stays about logging; the next visit introduces Eating out, not with the keyboard up, once, never with hints off', (tester) async {

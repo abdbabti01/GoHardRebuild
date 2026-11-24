@@ -26,6 +26,8 @@ import 'package:gohard_rebuild/data/models.dart';
 import 'package:gohard_rebuild/data/session.dart';
 import 'package:gohard_rebuild/features/coach/coach_avatar.dart';
 import 'package:gohard_rebuild/features/coach/coach_bubble.dart';
+import 'package:gohard_rebuild/features/coach/coach_prefs.dart';
+import 'package:gohard_rebuild/features/nutrition/eat_screen.dart' show EatScreen;
 import 'package:gohard_rebuild/features/nutrition/eating_out.dart' show restaurantCatalogProvider;
 import 'package:gohard_rebuild/features/nutrition/restaurants.dart' show RestaurantCatalog;
 import 'package:gohard_rebuild/features/weather/weather.dart';
@@ -546,6 +548,45 @@ void main() {
       await _save(tester, await _capture(tester), 'state-$name');
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox()); // stops an open run screen's display timer
+    });
+  }
+
+  // Eat's page order (docs/FOOD_DATA.md › Eat page order): the phone's own viewport from the top, and the whole page.
+  // Each prints where the Breakfast group starts, so the same render before and after a layout change can be compared.
+  for (final (name, accent, mode, size, scale, coach, past) in [
+    ('today-light', Accent.blue, ThemeMode.light, const Size(390, 844), 1.0, true, false),
+    ('today-dark', Accent.pink, ThemeMode.dark, const Size(390, 844), 1.0, true, false),
+    ('today-coach-off-light', Accent.blue, ThemeMode.light, const Size(390, 844), 1.0, false, false),
+    ('past-day-light', Accent.green, ThemeMode.light, const Size(390, 844), 1.0, true, true),
+    ('large-text-320', Accent.blue, ThemeMode.light, const Size(320, 640), 2.0, true, false),
+    ('full-today-light', Accent.blue, ThemeMode.light, const Size(390, 2700), 1.0, true, false),
+    ('full-past-day-dark', Accent.pink, ThemeMode.dark, const Size(390, 2700), 1.0, false, true),
+    ('full-large-text-320', Accent.blue, ThemeMode.light, const Size(320, 7000), 2.0, true, false),
+  ]) {
+    testWidgets('eat layout: $name', (tester) async {
+      final catalog = restaurantCatalogProvider.overrideWith((ref) async => RestaurantCatalog.parse(File('assets/data/restaurant-catalog.json').readAsStringSync())!);
+      final coachStore = CoachPrefsStore(MemorySecretStore())..value = CoachPrefs(onTabs: coach, greeted: 'one|$_today');
+      await pumpApp(tester, [...await _fixture(tester, accent, mode), catalog, coachPrefsStoreProvider.overrideWithValue(coachStore)],
+          size: size, textScale: scale, insets: phoneInsets, settle: false);
+      await _settle(tester);
+      await _open(tester, 'eat');
+      if (past) {
+        await tester.tap(find.descendant(of: find.byType(EatScreen), matching: find.byIcon(Icons.chevron_left)));
+        await _settle(tester);
+      }
+      // Where Breakfast starts at scroll offset 0. Too far down to be built: the full-page render of the same state says.
+      final add = find.byKey(const Key('eat-add-breakfast'));
+      final top = add.evaluate().isEmpty ? 'not built' : '${tester.getTopLeft(find.ancestor(of: add, matching: find.byType(GroupCard)).first).dy.round()}';
+      // ignore: avoid_print
+      print('EAT_LAYOUT $renderLanguage $name breakfast-top=$top viewport=${size.height.round()}');
+      await _save(tester, await _capture(tester), 'eat-layout/$name');
+      // The phone viewport again at one fixed scroll offset, where the first screen's worth of summary has gone by.
+      if (size.height == 844) {
+        tester.state<ScrollableState>(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first).position.jumpTo(700);
+        await _settle(tester);
+        await _save(tester, await _capture(tester), 'eat-layout/$name-scrolled-700');
+      }
+      expect(tester.takeException(), isNull);
     });
   }
 

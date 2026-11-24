@@ -45,7 +45,8 @@ choose something else. Logged at breakfast on 4 recent days." with three choices
 - **Choose something else** — Add food on that meal (search, favourites, saved meals all one tap away).
 - **Not today** — no suggestion for that meal today.
 
-With the coach hidden on Train and Eat, the same three choices appear in a compact pale panel under the day's summary.
+With the coach hidden on Train and Eat, the same three choices appear in a compact pale panel in the coach's place (on
+Eat, above the day's summary since 23 Nov 2026).
 Log food, Saved meals and every meal's Add food are unchanged.
 
 **One entry point per meal (18 Nov 2026, docs/MEAL_COPY_WORKOUT_PANEL.md).** When that meal was logged yesterday, its

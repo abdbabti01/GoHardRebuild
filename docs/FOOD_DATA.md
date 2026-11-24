@@ -258,7 +258,7 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
 
 Since 30 Oct 2026 its top bar opens the **Weekly report** (calories and protein for one Monday–Sunday week, with goals compared only on days this phone recorded them): docs/EAT_COMPANION.md › Weekly report. The trends screen itself still compares nothing with a goal.
 
-Eat's **History & trends** (since 23 Oct 2026 a full-width panel under the day's summary, above the meals, key `eat-history`; it replaces the History screen) shows what was logged
+Eat's **History & trends** (since 23 Oct 2026 a full-width panel, key `eat-history`, at the end of the page since 23 Nov 2026; it replaces the History screen) shows what was logged
 per day, week and month. Code: `intake_history.dart` (the pure projection), `nutrition_history.dart` (the screen,
 the bar chart and the calendar). No API change, migration, dependency or permission: it reads the same local records
 as Eat (`foodJournalProvider`, `waterEntriesProvider`), grouped by day once per change of the records
@@ -294,6 +294,26 @@ no preference and queues no command.
 - **Goals** are not drawn: earlier days' goals were never stored.
 - Tests: `nutrition_trends_test` (states, denominators, periods), `nutrition_trends_ui_test`, `water_ui_test`;
   renders `nutrition_trends_render_test` (gated) in `docs/evidence/nutrition-trends`; Native `journey_trends_test`.
+
+### Eat page order (23 Nov 2026, feature/eat-meals-first)
+
+The day's meals come straight after its summary, so reviewing and logging them is the first thing below it. From the
+top: date header › the coach's message, or with the coach off its compact panel (briefing or usual meal) in the same
+place › nutrition summary (Log food, Saved meals & recipes, water, goals and tracking, unchanged) › *Today's meals* (an
+earlier day: *Meals*) with Breakfast, Lunch, Dinner, Snack and each meal's own actions (Add food, Same as yesterday,
+Copy meal, Save as meal) › the logged-food note and Meal reminders › **Eating out** › **History & trends**. The same
+order holds for today and earlier days, empty and logged. It is one list in reading order, so screen readers traverse
+it as shown; it ends with the floating bar's height. The panels, their keys and styling are unchanged; Add food keeps
+its Eating out entry. Back from a logged Eating out order, Eat brings the meals' heading into view (the order may have
+gone to another meal or day, so no single group is picked). Today's own layout is untouched.
+
+At 390 × 844 with the render fixture (`render_test.dart` › eat layout, scroll offset 0) the Breakfast group starts
+285 px higher in English (1472 → 1187), 305 in French, 297 in Arabic; on an earlier empty day 1074 → 789. With 2× text at
+320 px it starts 822 px higher (3452 → 2630; French 4095 → 3070, Arabic 3537 → 2746). With a coach message and the
+summary it is still below the fold at 844 (on an empty earlier day its heading peeks under the floating bar): the change
+does not promise the first meal above the fold. Renders: after in `docs/evidence/design/eat-layout/` and
+`docs/evidence/localization/{fr,ar}/design/eat-layout/`, before (main 27877fe, same test) in
+`docs/evidence/eat-layout-before/{en,fr,ar}/`; the `*-scrolled-700` pair shows the same viewport at the same offset.
 
 ### What is shown follows the account (17 Oct 2026)
 

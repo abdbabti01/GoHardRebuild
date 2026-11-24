@@ -377,7 +377,7 @@ the visit after its first (that first visit keeps the usual words about logging 
 order—or improve the one you want." with the guide action **Find an order** (opens Eating out for the day shown and the
 meal of the time of day, like the panel). Built-in words, no AI request; chosen and marked seen only while Eat is the tab
 in view, its route current and the keyboard down; Coaching hints and *Show coach on Train and Eat* govern it. It only
-points to the permanent Eating out panel under the summary, which stays with the coach or hints off.
+points to the permanent Eating out panel (after the meals since 23 Nov 2026), which stays with the coach or hints off.
 
 #### Run / Walk and Steps (18 Oct 2026; corrected the same day)
 

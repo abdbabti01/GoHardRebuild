@@ -440,7 +440,7 @@ void main() {
       await tester.drag(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first, const Offset(0, -2500));
       await _frames(tester, 600);
       expect(coach, findsNothing, reason: 'out of the lazy list, so built again on the way back');
-      await tester.drag(find.byKey(const Key('eat-add-lunch')), const Offset(0, 2500));
+      await tester.drag(find.descendant(of: find.byType(EatScreen), matching: find.byType(Scrollable)).first, const Offset(0, 2500));
       await tester.pump();
       await tester.pump();
       final face = tester.state<CoachCompanionState>(find.descendant(of: coach, matching: find.byType(CoachCompanion)));

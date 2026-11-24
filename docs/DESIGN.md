@@ -242,7 +242,7 @@ Superseded on the same day by Today option 2 above (the photo-header tiles and t
   960 × 640, JPEG 82), through the same `PanelPhoto` fade into the theme's tint. In a paired tile the words may use 85 %
   of the width over the photograph's faded side.
 - Today has no Run / Walk History link: the tile's one action is Start / Resume. **Run / Walk history** is in Train ›
-  Workouts, beside Run / Walk. Nutrition history is **History & trends** in Eat: since 23 Oct 2026 a full-width pale panel (history glyph, serif title, "Review your intake by week or month", chevron) under the day's summary and above the meals, the one entry.
+  Workouts, beside Run / Walk. Nutrition history is **History & trends** in Eat: since 23 Oct 2026 a full-width pale panel (history glyph, serif title, "Review your intake by week or month", chevron) at the end of Eat after the meals and the Eating out panel (since 23 Nov 2026; under the summary before that), the one entry.
 - The Nutrition panel on Today: the words, Log food, Journal, and (when water is tracked) the water line with **+250 mL**
   and **Other amount**; no goals link and no sliders icon (both in Eat, Customize tracking now labelled).
 - Renders: `docs/evidence/today-history-water/`; device captures `docs/evidence/screenshots/thw-01…08`.

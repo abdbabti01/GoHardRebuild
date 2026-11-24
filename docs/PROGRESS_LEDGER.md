@@ -2882,3 +2882,24 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   normal-text renders in all three languages) and reviewed. Emulator, iPhone, VoiceOver/TalkBack still not run.
 - Code 428b40d: CI 231 (44603006735) passed; unsigned IPA run 80 (44605226349, tag `ipa-nutrition-rings-side-428b40d`)
   passed and supersedes IPA 79. Not merged, not deployed.
+
+### 23 Nov 2026 — Eat: meals before Eating out and History & trends (`feature/eat-meals-first`, from main 27877fe)
+
+- Owner request: on iPhone, Eating out and History & trends pushed Breakfast far down. Eat now runs header › coach
+  message (coach off: its compact panel, moved from under the summary into the coach's place) › nutrition summary
+  (unchanged) › *Today's meals* / *Meals* › Breakfast, Lunch, Dinner, Snack with their own actions › logged-food note
+  and Meal reminders › Eating out › History & trends. Same widgets, keys and styling; no string, API, sync, calculation
+  or entitlement change; Today untouched. Back from a logged Eating out order, Eat scrolls the meals' heading into view
+  (the panel is now at the end). docs/FOOD_DATA.md › Eat page order.
+- Breakfast group top at scroll offset 0, same render fixture (`render_test.dart` › eat layout), main → branch:
+  390 × 844 en 1472 → 1187, fr 1507 → 1202, ar 1400 → 1103; coach off en 1441 → 1156; empty earlier day en 1074 → 789;
+  320 px 2× text en 3452 → 2630, fr 4095 → 3070, ar 3537 → 2746. At 844 the first screen is still the coach and the
+  summary: Breakfast stays below the fold with today's data. Renders before/after reviewed, incl. a `-scrolled-700` pair.
+- Tests: `eating_out_ui_test` (+3: page order today/earlier day × empty/logged × coach on/off; last panel clear of the
+  floating bar at 390 and 320/2×; earlier day kept through Eating out, History, Add food and back, and the scroll after
+  a logged order), placement expectations updated in `eating_out_ui_test`, `nutrition_trends_ui_test`; harness
+  scrolls added in `water_ui_test`, `coach_companion_test`, gated `move_render_test`. Full app suite 990 passed
+  (`-j 2`), `flutter analyze` clean, `check-l10n` OK. The new order test fails against main's Eat (checked).
+- Pre-existing, not touched: gated `move_render_test` › water eat-earlier-day-blue-light fails at `trends-calendar`
+  on main too. **Not run:** emulator journeys (`journey_eatout_entry_test`, `journey_trends_test` etc. tap these
+  panels through `Journey.tap`, which scrolls), iPhone, VoiceOver/TalkBack on a device.

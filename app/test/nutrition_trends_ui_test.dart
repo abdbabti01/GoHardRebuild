@@ -100,7 +100,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Eat has one History & trends entry: a full-width panel under the day\'s summary, above the meals, also with nothing logged', (tester) async {
+  testWidgets('Eat has one History & trends entry: a full-width panel at the end of the page, after the meals and Eating out, also with nothing logged', (tester) async {
     for (final food in [_food, const <Json>[]]) {
       await pumpApp(tester, (await tester.runAsync(() => overridesFor(day: _today, food: food)))!, size: const Size(390, 1600));
       await tester.tap(find.byKey(const Key('nav-eat')));
@@ -109,9 +109,12 @@ void main() {
       expect(panel, findsOneWidget);
       expect(find.text('History & trends'), findsOneWidget, reason: 'the old link under the date is gone');
       expect(find.descendant(of: panel, matching: find.text('Review your intake by week or month, with a weekly report')), findsOneWidget);
-      final box = tester.getRect(panel), summary = tester.getRect(find.byKey(const Key('eat-customize'))), meals = tester.getRect(find.text("Today's meals"));
-      expect((box.top > summary.bottom, box.bottom < meals.top), (true, true), reason: 'below the summary and its tools, above the meals');
+      final box = tester.getRect(panel), reminders = tester.getRect(find.byKey(const Key('eat-reminders'))), out = tester.getRect(find.byKey(const Key('eat-eating-out')));
+      expect((box.top > reminders.bottom, box.top > out.bottom), (true, true), reason: 'after the meals, their reminders and Eating out: the last panel');
       expect(box.width, closeTo(390 - 2 * 20, 12), reason: 'full width');
+      // At the end of the page: on screen first, so the node is read as the reader meets it.
+      await tester.ensureVisible(panel);
+      await tester.pumpAndSettle();
       expect(tester.getSemantics(panel), matchesSemantics(label: 'History and trends. Review your intake by week or month, with a weekly report', isButton: true, hasTapAction: true));
       await tester.tap(panel);
       await tester.pumpAndSettle();

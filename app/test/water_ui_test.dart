@@ -149,6 +149,9 @@ void main() {
     await tester.pumpAndSettle();
     final row = find.byKey(const Key('eat-water'));
     expect(find.descendant(of: row, matching: find.text('0 / 2,000 mL')), findsOneWidget, reason: 'today keeps its goal progress');
+    // History & trends is at the end of Eat, after the meals: brought clear of the floating bar first.
+    await tester.runAsync(() => Scrollable.ensureVisible(tester.element(find.byKey(const Key('eat-history'))), alignment: 0.5));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('eat-history')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('trends-calendar')));

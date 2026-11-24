@@ -34,7 +34,7 @@ make it, to open Eat or to refresh the journal; the same records always give the
 
 Its action is **What could I eat?** (today only). When the day's food changed while Eat was not on screen (logged from an idea's review, Add food, another phone), the visit back shows the updated briefing; the one-time introductions (saved foods, history, saved meals, Eating out, meal suggestions) wait for a later visit to the tab. With the coach off, the panel shows the same updated words. Without goals it also offers **Set goals** (Eat's own goal sheet).
 **Ask me** stays. With the coach hidden on Train and Eat, the same words and What could I eat? appear in one compact
-pale panel under the day's summary (the usual meal takes that place when there is one). Log food and every meal's Add
+pale panel in the coach's place, above the day's summary (since 23 Nov 2026; the usual meal takes that place when there is one). Log food and every meal's Add
 food are unchanged.
 
 ### Completeness rules

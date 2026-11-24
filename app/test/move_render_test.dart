@@ -208,12 +208,16 @@ final _water2 = <String, (Accent, ThemeMode, Size, double, Future<void> Function
   'eat-history-blue-light': (Accent.blue, ThemeMode.light, const Size(390, 1100), 1, (t) async {
     await t.tap(find.byKey(const Key('nav-eat')));
     await t.pump(const Duration(milliseconds: 600));
+    await t.runAsync(() => Scrollable.ensureVisible(t.element(find.byKey(const Key('eat-history'))), alignment: 0.5)); // at the end of Eat, clear of the bar
+    await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.byKey(const Key('eat-history')));
     await t.pump(const Duration(milliseconds: 600));
   }),
   'eat-earlier-day-blue-light': (Accent.blue, ThemeMode.light, const Size(390, 1100), 1, (t) async {
     await t.tap(find.byKey(const Key('nav-eat')));
     await t.pump(const Duration(milliseconds: 600));
+    await t.runAsync(() => Scrollable.ensureVisible(t.element(find.byKey(const Key('eat-history'))), alignment: 0.5)); // at the end of Eat, clear of the bar
+    await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.byKey(const Key('eat-history')));
     await t.pump(const Duration(milliseconds: 600));
     await _settle(t);
