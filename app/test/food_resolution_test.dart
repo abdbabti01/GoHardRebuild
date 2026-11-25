@@ -156,7 +156,8 @@ void main() {
       // The model wrote "chicken breast" and "roasted" for "chicken": not in the sentence, not taken as said.
       final old = (name: 'chicken breast', label: 'chicken', preparation: 'roasted', brand: null, quantity: 100.0, unit: 'g', noun: null, evidence: null);
       final f = withSentence(old, 'I ate 100 g of chicken');
-      expect(f.evidence, 'chicken');
+      expect(f.evidence, 'I ate 100 g of chicken');
+      expect(foodPart(f, f.evidence!), 'I ate 100 g of chicken');
       expect(status((await resolveMeal([f], sources())).single), 'state', reason: 'raw or cooked was not said; neither was the cut nor "roasted"');
       final eggs = withSentence((name: 'egg', label: 'eggs', preparation: null, brand: null, quantity: 2.0, unit: 'piece', noun: 'egg', evidence: null), 'two eggs');
       final e = (await resolveMeal([eggs], sources())).single;
@@ -164,6 +165,52 @@ void main() {
       // Words the person did say stay said.
       final said2 = withSentence((name: 'potatoes', label: 'boiled potatoes', preparation: 'boiled', brand: null, quantity: 100.0, unit: 'g', noun: null, evidence: null), 'I had 100 g of boiled potatoes');
       expect(id((await resolveMeal([said2], sources())).single), 'potato-boiled-nfs');
+    });
+  });
+
+  group('mixed foods: one food\'s words never stand for another\'s', () {
+    SaidFood food(String name, String label, String? prep, double q, {String? evidence}) =>
+        (name: name, label: label, preparation: prep, brand: null, quantity: q, unit: 'g', noun: null, evidence: evidence);
+
+    for (final shape in ['deployed (no evidence)', 'new (per-food evidence)']) {
+      final old = shape.startsWith('deployed');
+      test('$shape: "100 g of boiled potatoes and 100 g of chicken" — "boiled" is the potatoes\', never the chicken\'s', () async {
+        const sentence = 'I had 100 g of boiled potatoes and 100 g of chicken';
+        // The model copied "boiled" onto the chicken too.
+        final foods = [
+          food('potatoes', 'boiled potatoes', 'boiled', 100, evidence: old ? null : '100 g of boiled potatoes'),
+          food('chicken', 'boiled chicken', 'boiled', 100, evidence: old ? null : '100 g of chicken'),
+        ];
+        final items = await resolveMeal([for (final f in foods) withSentence(f, sentence)], sources());
+        expect((id(items[0]), items[0]['general']), ('potato-boiled-nfs', true), reason: 'boiled said of the potatoes; the peel was not');
+        expect(status(items[1]), 'state', reason: 'nothing was said about how the chicken was cooked: raw or cooked is asked for its 100 g');
+        final cooked = await answerState(items[1], 'cooked', sources());
+        expect((id(cooked), cooked['general']), ('chicken-cooked-nfs', true), reason: 'the general cooked chicken, never "boiled" from the potatoes');
+      });
+
+      test('$shape: "raw carrots and 120 g of cooked chicken" — raw is the carrots\', cooked is the chicken\'s', () async {
+        const sentence = 'I had 80 g of raw carrots and 120 g of cooked chicken';
+        // The model wrote "raw" on the chicken.
+        final foods = [
+          food('carrots', 'raw carrots', 'raw', 80, evidence: old ? null : '80 g of raw carrots'),
+          food('chicken', 'chicken', 'raw', 120, evidence: old ? null : '120 g of cooked chicken'),
+        ];
+        final items = await resolveMeal([for (final f in foods) withSentence(f, sentence)], sources());
+        expect((status(items[0]), id(items[0])), ('ready', 'carrots'));
+        expect((id(items[1]), items[1]['general']), ('chicken-cooked-nfs', true), reason: 'cooked, from the chicken\'s own words; never raw');
+      });
+    }
+
+    test('a span naming two foods says nothing of either\'s details (a too-wide evidence, or "with")', () async {
+      // New shape, but the model gave a span covering both foods for the chicken.
+      final wide = food('chicken', 'chicken', null, 100, evidence: 'boiled potatoes with 100 g of chicken');
+      expect(foodPart(wide, wide.evidence!), '', reason: 'one part names potatoes and chicken: not this food\'s alone');
+      expect(status((await resolveMeal([wide], sources())).single), 'state', reason: '"boiled" is not taken for the chicken');
+      // Arabic and French joins split the same way.
+      final ar = food('chicken', 'دجاج مطبوخ', null, 100);
+      expect(foodPart(ar, 'أكلت بطاطس مسلوقة و دجاج مطبوخ'), 'دجاج مطبوخ');
+      final fr = food('potatoes', 'pommes de terre bouillies', null, 100);
+      expect(foodPart(fr, 'du poulet et des pommes de terre bouillies'), 'des pommes de terre bouillies');
     });
   });
 

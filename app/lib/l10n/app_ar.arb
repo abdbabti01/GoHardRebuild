@@ -3367,6 +3367,6 @@
   "foodSearchMoreResults": "هناك أطعمة أخرى مطابقة: أضف كلمة لتضييق البحث.",
   "dcMealAmountButton": "غيّر الكمية",
   "dcMealGeneralName": "{food} (عام)",
-  "dcMealGeneralNote": "سجل عام: لا يُفترض ما لم تذكره. غيّر الطعام إن كنت تعرف أكثر.",
+  "dcMealGeneralNote": "يستخدم تقديرًا غذائيًا عامًا. غيّر الطعام أو الحصة لتطابق أدق.",
   "dcMealStandardSize": "حجم قياسي: {portion}"
 }

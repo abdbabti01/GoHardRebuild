@@ -413,7 +413,7 @@ for it when details are not specified, e.g. "Potato, NFS", "Egg, whole, cooked, 
 to part and cooking method, NS as to skin eaten", "Rice, cooked, NFS", "Milk, NFS", "Yogurt, NFS", ground beef of
 unspecified fat), that record is taken **without a question** when it shows everything said and names nothing that was
 not. It is said to be general on the card ("2 eggs (100 g) · Eggs (general) (Whole · cooked, way not specified)",
-"General record: what you didn't say isn't assumed. Change food if you know more.") and in the review and the journal
+"Uses a general nutrition estimate. Change the food or portion for a closer match.") and in the review and the journal
 ("Eggs (general)"); a standard portion is said ("Standard size: 1 egg (50 g)"); Change food and Change amount are on the
 item. Explicit words win ("raw eggs", "egg whites", "fried eggs", "boiled peeled potatoes" take that record). A record is
 never a default only because it is the only one: the default is the catalog's reviewed decision, not a score. A
@@ -475,12 +475,18 @@ request-ID rules; every question, choice, search, amount, estimate and calculati
 - *Works before deploying this API*: Describe your meal end to end (the deployed server already declares
   `coach.meal-log`), the same everyday defaults, questions, estimates, Change food/amount, review and logging, search with
   its wider answer, Looked up before, the catalog. All of that is on the phone.
-- *Missing original words*: the deployed server sends no `evidence`, so the phone takes it from the person's own sentence
-  (`withSentence`): only words of the label, name and preparation that the sentence itself contains count as said. "breast"
-  or "roasted" added by the model for "I ate 100 g of chicken" is not taken as said, so the answer is never trusted beyond
-  the person's words. The known limit: a word said for another food of the same sentence also counts.
-- *Needs the new API*: per-food evidence from the model (more exact than the sentence check, one food at a time), the
-  prompt asking for it, and `more` (without it the "more results" note is not shown). Older apps ignore both fields.
+- *Missing original words*: the deployed server sends no `evidence`, so the phone keeps the person's sentence
+  (`withSentence`) and reads each food's details only from **that food's own part of it** (`foodPart`): the sentence is
+  split at "and", commas, "+", "then", "et", "puis", "و", and a part belongs to a food when it names that food's family
+  (or, for a food without a known family, holds every word of its label) and no other family. Nothing the model added is
+  trusted: "breast" or "roasted" for "I ate 100 g of chicken" is not taken as said, and a word said for one food never
+  counts for another ("boiled potatoes and chicken": the chicken is not boiled; "raw carrots and cooked chicken": the
+  chicken is cooked, never raw). When no single part belongs to the food (two foods in one phrase, "potatoes with
+  chicken"), nothing is taken as said for it: the reviewed general record is used if it fits, otherwise the usual
+  concise question (raw or cooked for a weight, the cut, the skin).
+- *Needs the new API*: per-food evidence from the model (the words it quotes must appear in the sentence; a quoted span
+  that names two foods is narrowed the same way), the prompt asking for it, and `more` (without it the "more results" note
+  is not shown). Older apps ignore both fields. Both shapes are tested (`food_resolution_test` › mixed foods).
 - No capability, migration or configuration change. Drafts kept from IPA 86 still read; nothing logged changes.
 
 **Catalog version 3** (131 foods, eight of them reviewed general records, `scripts/common-foods.spec.json`): every entry has reviewed `attrs`; 46 new records from

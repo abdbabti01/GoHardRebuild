@@ -3095,3 +3095,21 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Code 37888b4: CI 273 (45539794436) passed (api, app); replacement unsigned IPA run 88 (45541369716, tag
   `ipa-food-defaults-37888b4`) passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media), supersedes IPA 87; tag CI 274
   passed. Not merged, not deployed.
+
+### 26 Nov 2026 — Per-food evidence in mixed meals, clearer general-record note (same branch, before merge)
+
+- Owner request: one food's words must never validate details the model added to another food; keep everyday defaults.
+  docs/FOOD_DATA.md › Food resolution › Compatibility.
+- Fixed: with the deployed server (no `evidence`) the phone used the whole sentence as every food's evidence, so in
+  "boiled potatoes and chicken" a model-added "boiled" on the chicken counted as said. Now each food's details come only
+  from its own part of the sentence (`foodPart`: split at and / commas / + / then / et / puis / و; a part is the food's when
+  it names that food's family and no other). No single part → nothing taken as said for it → the reviewed general record
+  if it fits, otherwise the usual concise question. The same narrowing applies to a server `evidence` span that names two
+  foods.
+- Changed wording (card): "Uses a general nutrition estimate. Change the food or portion for a closer match." (en / fr /
+  ar), replacing "General record: what you didn't say isn't assumed…". General records remain an estimate.
+- Tests: `food_resolution_test` 25 (mixed foods in both response shapes: "boiled potatoes and chicken" → Potato
+  (general) + raw-or-cooked question for the chicken, answered cooked → Chicken (general), never boiled; "raw carrots and
+  cooked chicken" → raw carrots + Chicken (general), never raw; a two-food span; French and Arabic joins). App 1083/1083,
+  `flutter analyze` clean, `check-l10n.mjs` OK (3369). No API code changed.
+- Live Groq still not verified (no key). Not merged, not deployed.

@@ -3367,6 +3367,6 @@
   "foodSearchMoreResults": "D’autres aliments correspondent : ajoute un mot pour préciser la recherche.",
   "dcMealAmountButton": "Changer la quantité",
   "dcMealGeneralName": "{food} (général)",
-  "dcMealGeneralNote": "Aliment général : ce que tu n’as pas précisé n’est pas supposé. Change d’aliment si tu en sais plus.",
+  "dcMealGeneralNote": "Utilise une estimation nutritionnelle générale. Change l’aliment ou la portion pour une valeur plus juste.",
   "dcMealStandardSize": "Taille standard : {portion}"
 }

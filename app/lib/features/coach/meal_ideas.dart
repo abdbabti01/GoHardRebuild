@@ -358,11 +358,12 @@ const _measures = {'cup', 'tablespoon', 'teaspoon', 'tbsp', 'tsp', 'glass', 'bow
 bool _weighed(SaidFood f) =>
     f.quantity != null && (const {'g', 'kg', 'oz', 'lb', 'ml', 'l'}.contains(f.unit) || f.unit == 'piece' && f.noun != null && _measures.contains(searchWords(f.noun!).firstOrNull));
 
-/// What was said about [f], as the resolver reads it: the person's own words ([SaidFood.evidence]) when the server gave
-/// them, so a detail the model added and the person did not say is not taken as said; the food itself is also known by
-/// the model's English name. Without evidence (an older server), the label, name and preparation, as before.
+/// What was said about [f], as the resolver reads it: the person's own words for this food ([SaidFood.evidence], narrowed
+/// to this food's own part by [foodPart]), so a detail the model added, or one said of another food, is not taken as said;
+/// the food itself is also known by the model's English name. Without evidence (a draft kept from before evidence), the
+/// label, name and preparation, as before.
 Said describeSaid(SaidFood f, {Map<String, String> confirmed = const {}}) {
-  final words = f.evidence ?? [f.label, f.name, ?f.preparation].join(' ');
+  final words = f.evidence == null ? [f.label, f.name, ?f.preparation].join(' ') : foodPart(f, f.evidence!);
   final traits = readTraits(words);
   final family = traits[Attr.family] ?? readTraits('${f.name} ${f.label}')[Attr.family];
   if (family != null && family.isNotEmpty) traits[Attr.family] = family;
@@ -372,15 +373,33 @@ Said describeSaid(SaidFood f, {Map<String, String> confirmed = const {}}) {
 }
 
 /// [f] with evidence taken from the person's own [sentence] when the server gave none (a server from before `evidence`):
-/// only the words of the label, name and preparation that the sentence itself contains, so a detail the model added
-/// ("breast" for "chicken", "roasted") is not taken as said. The food itself is still known by its name.
-// ponytail: whole-sentence check; a word said of another food in the same sentence also counts here.
-SaidFood withSentence(SaidFood f, String sentence) {
-  if (f.evidence != null) return f;
-  final said = searchWords(sentence).toSet();
-  final words = {for (final w in searchWords([f.label, f.name, ?f.preparation].join(' '))) if (said.contains(w)) w};
-  return (name: f.name, label: f.label, preparation: f.preparation, brand: f.brand, quantity: f.quantity, unit: f.unit, noun: f.noun,
-      evidence: words.join(' '));
+/// the sentence itself, which [describeSaid] narrows to this food's own part ([foodPart]). A detail the model added
+/// ("breast" for "chicken", "roasted"), or one the person said of another food, is not taken as said.
+SaidFood withSentence(SaidFood f, String sentence) => f.evidence != null
+    ? f
+    : (name: f.name, label: f.label, preparation: f.preparation, brand: f.brand, quantity: f.quantity, unit: f.unit, noun: f.noun, evidence: sentence);
+
+/// Where one food's words end and the next one's begin: commas, "and", "et", "و", "then", "+", new lines.
+final _between = RegExp(r'\s*(?:[,;+\n]|\band\b|\bet\b|\bthen\b|\bpuis\b|(?:^|\s)و\s*)\s*', caseSensitive: false);
+
+/// The part of [text] that is about [f] alone, or '' when that cannot be told: [text] split where one food ends and
+/// the next begins, and the one part that names this food — by its family ("chicken", "poulet", "دجاج") or, for a food
+/// without one, by every word of its label — and names no other food's family. A part naming two foods ("boiled
+/// potatoes with chicken") or none says nothing of this food's details, so its preparation, cut or skin are not taken
+/// as said: the reviewed everyday default, or a short question, takes their place. Pure.
+String foodPart(SaidFood f, String text) {
+  final family = readTraits('${f.name} ${f.label}')[Attr.family];
+  final label = searchWords(f.label).toSet();
+  bool mine(String part) {
+    final named = readTraits(part)[Attr.family];
+    if (named != null && named.length > 1) return false; // two foods in one part: neither's details are known from it
+    if (family != null && named != null) return named.intersection(family).isNotEmpty;
+    final words = searchWords(part).toSet();
+    return named == null && label.isNotEmpty && label.every(words.contains);
+  }
+
+  final parts = [for (final p in text.split(_between)) if (p.trim().isNotEmpty && mine(p)) p.trim()];
+  return parts.length == 1 ? parts.single : '';
 }
 
 /// [food] (a matched record) at what the person said: grams or millilitres when weighed, else the said count.

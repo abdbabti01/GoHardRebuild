@@ -20394,10 +20394,10 @@ abstract class AppLocalizations {
   /// **'{food} (general)'**
   String dcMealGeneralName(String food);
 
-  /// Described meal card: the item uses a general record chosen without a question.
+  /// Described meal card: the item uses a general record (an estimate) chosen without a question.
   ///
   /// In en, this message translates to:
-  /// **'General record: what you didn’t say isn’t assumed. Change food if you know more.'**
+  /// **'Uses a general nutrition estimate. Change the food or portion for a closer match.'**
   String get dcMealGeneralNote;
 
   /// Described meal card: the weight of a counted portion comes from the record, not from the person.

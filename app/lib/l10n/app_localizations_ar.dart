@@ -14179,7 +14179,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dcMealGeneralNote =>
-      'سجل عام: لا يُفترض ما لم تذكره. غيّر الطعام إن كنت تعرف أكثر.';
+      'يستخدم تقديرًا غذائيًا عامًا. غيّر الطعام أو الحصة لتطابق أدق.';
 
   @override
   String dcMealStandardSize(String portion) {

@@ -19274,9 +19274,9 @@
       }
     }
   },
-  "dcMealGeneralNote": "General record: what you didn’t say isn’t assumed. Change food if you know more.",
+  "dcMealGeneralNote": "Uses a general nutrition estimate. Change the food or portion for a closer match.",
   "@dcMealGeneralNote": {
-    "description": "Described meal card: the item uses a general record chosen without a question."
+    "description": "Described meal card: the item uses a general record (an estimate) chosen without a question."
   },
   "dcMealStandardSize": "Standard size: {portion}",
   "@dcMealStandardSize": {

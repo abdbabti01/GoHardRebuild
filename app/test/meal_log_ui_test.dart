@@ -165,7 +165,7 @@ void main() {
     // Cooked potatoes: USDA's general cooked potato, said as general, with Change food: no question.
     expect(find.text('Which matches your potatoes?'), findsNothing);
     expect(find.textContaining('100 g · Potato (general)'), findsOneWidget);
-    expect(find.text('General record: what you didn’t say isn’t assumed. Change food if you know more.'), findsOneWidget);
+    expect(find.text('Uses a general nutrition estimate. Change the food or portion for a closer match.'), findsOneWidget);
     expect(find.text('Ready to review. Nothing is logged until you tap Log meal.'), findsOneWidget);
     expect(find.textContaining('120 g · Chicken breast'), findsOneWidget);
     expect(find.textContaining('100 g · Potato'), findsOneWidget);
@@ -390,7 +390,7 @@ void main() {
       expect(find.textContaining('Chicken thigh (Cooked, way not specified · skin not eaten)'), findsOneWidget, reason: 'the whole preparation, never a roasted record');
       expect(find.textContaining('130 g · Potato (general)'), findsOneWidget, reason: 'the general cooked potato, never baked with skin');
       expect(find.textContaining('(Cooked · way not specified)'), findsOneWidget);
-      expect(find.text('General record: what you didn’t say isn’t assumed. Change food if you know more.'), findsOneWidget);
+      expect(find.text('Uses a general nutrition estimate. Change the food or portion for a closer match.'), findsOneWidget);
       expect(_keyed('day-meal-review-'), findsNothing, reason: 'the thighs still need an answer');
 
       await _tap(tester, _keyed('day-meal-notsure-').first);

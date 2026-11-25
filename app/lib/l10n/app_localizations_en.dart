@@ -13671,7 +13671,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dcMealGeneralNote =>
-      'General record: what you didn’t say isn’t assumed. Change food if you know more.';
+      'Uses a general nutrition estimate. Change the food or portion for a closer match.';
 
   @override
   String dcMealStandardSize(String portion) {
