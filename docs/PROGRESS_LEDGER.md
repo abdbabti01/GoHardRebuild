@@ -3113,3 +3113,7 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   cooked chicken" → raw carrots + Chicken (general), never raw; a two-food span; French and Arabic joins). App 1083/1083,
   `flutter analyze` clean, `check-l10n.mjs` OK (3369). No API code changed.
 - Live Groq still not verified (no key). Not merged, not deployed.
+- Code e835c3a: CI 276 (45615882465) passed (api; app after one re-run of the app job — first attempt failed in
+  `coach_companion_test` "no replay…" on a lifecycle timing check, untouched by this branch, passes 3/3 locally);
+  replacement unsigned IPA run 89 (45619769101, tag `ipa-food-mixed-e835c3a`) passed, artifact GoHard-Dev-unsigned-ipa
+  (22.3 MB, no exercise-preview media), supersedes IPA 88; tag CI 277 passed. Not merged, not deployed.
