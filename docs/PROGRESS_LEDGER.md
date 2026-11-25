@@ -3065,3 +3065,30 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   the label as before and shows no "more" note).
 - Code 9415107: CI 270 (45527526327) passed (api, app); unsigned IPA run 87 (45529554381, tag `ipa-food-resolution-9415107`)
   passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media or preview options); tag CI 271 passed. Not merged, not deployed.
+
+### 26 Nov 2026 — Everyday defaults, retrieval and compatibility checks (same branch, before merge)
+
+- Owner clarification: sensible everyday defaults, not a questionnaire. docs/FOOD_DATA.md › Food resolution › Everyday
+  defaults, Compatibility, Search (pagination).
+- Changed: catalog v3 now 131 foods; 8 reviewed general records added from the FDC downloads (cooked potato boiled /
+  baked / roasted with peel not specified; chicken with part, way and skin not specified; cooked rice; milk; yogurt; Greek
+  yogurt plain, milk not specified) and `generic` set on the general cooked egg. The resolver takes a reviewed general
+  record without a question when it shows everything said and names nothing that was not (never because it is the only
+  record); the card says "(general)" and "General record: what you didn't say isn't assumed…", the review and journal
+  keep "(general)", a counted portion says "Standard size: 1 egg (50 g)". Explicit words win (raw eggs, egg whites,
+  fried eggs, boiled peeled potatoes). The "way not specified" chicken records are labelled so in every language.
+- Changed: retrieval asks the food search unless a reviewed record on the phone shows everything said (it used to wait
+  for "nothing compatible"), so a weak or unprovable local match no longer blocks a better remote one (grilled chicken
+  breast, cooked broccoli). Bounded, cached and once per query as before.
+- Changed: an answer without `evidence` (the server deployed now) takes the said details only from the person's own
+  sentence (`withSentence`), so model-added words are not trusted; the same defaults apply.
+- Corrected: pagination is GoHard's adapter limit (first 25 basic + 15 branded), not USDA's (its search pages:
+  pageSize ≤ 200, pageNumber). Docs and comments corrected; no paging added (narrowing reaches the rest).
+- Already correct and kept: "cooked chicken thighs" asks about the skin (no general thigh record exists; the options name
+  their whole preparation, none roasted); fully specified descriptions stay fast; no AI for choices, search or logging.
+- Found: the test fixture's "remote" rice used FDC 2708402, now the catalog's general rice; fixture ID changed.
+- Tests: app 1078/1078 (`food_resolution_test` 20, card tests 3 incl. "2 eggs" and the reported sentence through the log,
+  meal_log/search/l10n/ideas updated for the defaults), API 270/270, `flutter analyze` clean, `check-l10n.mjs` OK (3369).
+  Native (emulator Pixel_9, disposable DB `gohard_defaults`, STUB coach): passed; entries Chicken breast + Potato (general),
+  allowance 0 → 1; the reported sentence asks the thigh's skin with the full preparation and shows Potato (general).
+- Live Groq still not verified (no key). Not merged, not deployed.

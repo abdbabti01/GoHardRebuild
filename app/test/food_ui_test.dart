@@ -110,11 +110,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(fakes.discovery.searches, ['rice']);
       expect(find.text('More foods'), findsOneWidget);
-      expect(find.byKey(const Key('result-usda:2708402')), findsOneWidget);
+      expect(find.byKey(const Key('result-usda:999402')), findsOneWidget);
       expect(find.byKey(const Key('result-usda:171077')), findsNothing, reason: 'an answer sharing no word with the search (raw chicken for "rice") is not listed');
       expect(find.byKey(const Key('common-white-rice')), findsOneWidget, reason: 'the foods on the phone stay listed');
 
-      await _tap(tester, 'result-usda:2708402');
+      await _tap(tester, 'result-usda:999402');
       expect((_field(tester, 'food-name'), _field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('Rice, cooked, NFS', '1', '203.82'), reason: 'one stated serving of 158 g');
       await _tap(tester, 'food-cancel');
       expect((_field(tester, 'food-search'), find.text('Rice, cooked, NFS').evaluate().length), ('rice', 1), reason: 'the search and its results are still there');
@@ -147,11 +147,11 @@ void main() {
       await pumpApp(tester, await _overrides(tester, fakes, seenFoods: [riceCooked().j]), home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'), size: const Size(390, 3200));
       await tester.enterText(find.byKey(const Key('food-search')), 'rice');
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('local-usda:2708402')), findsOneWidget, reason: 'before asking, a food seen earlier is found on the phone');
+      expect(find.byKey(const Key('local-usda:999402')), findsOneWidget, reason: 'before asking, a food seen earlier is found on the phone');
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('result-usda:2708402')), findsOneWidget, reason: 'what the database answered is listed where it came from');
-      expect(find.byKey(const Key('local-usda:2708402')), findsNothing, reason: 'and not twice, nor as one of your foods');
+      expect(find.byKey(const Key('result-usda:999402')), findsOneWidget, reason: 'what the database answered is listed where it came from');
+      expect(find.byKey(const Key('local-usda:999402')), findsNothing, reason: 'and not twice, nor as one of your foods');
     });
 
     testWidgets('a barcode seen many times is one lookup and one draft; a web link is ignored; a double tap logs once', (tester) async {
@@ -386,10 +386,10 @@ void main() {
       expect(find.text('1 bowl · 250 kcal'), findsOneWidget);
       expect(find.text('— protein'), findsOneWidget, reason: 'an unknown value is a dash');
 
-      await _tap(tester, 'recent-usda:2708402');
+      await _tap(tester, 'recent-usda:999402');
       expect((_field(tester, 'food-quantity'), _field(tester, 'food-calories')), ('2', '407.64'), reason: 'starts from the amount it was logged with');
       await _tap(tester, 'food-favourite');
-      expect(fakes.savedFoods.favourited.single.sourceId, '2708402');
+      expect(fakes.savedFoods.favourited.single.sourceId, '999402');
       expect(fakes.journal.saved, isEmpty, reason: 'marking a favourite is not eating');
       await _tap(tester, 'food-save');
       expect((fakes.journal.saved.single.dayKey, fakes.journal.saved.single.meal, fakes.journal.saved.single.quantity), (_day, 'Lunch', 2), reason: 'logged for the day and meal chosen now');
@@ -402,13 +402,13 @@ void main() {
       int rows(String key) => find.byKey(Key(key)).evaluate().length;
 
       await _tap(tester, 'food-scope-favourites');
-      expect((rows('favourite-off:3017620422003'), rows('recent-usda:2708402'), rows('mine-user:s-oats')), (1, 0, 0));
+      expect((rows('favourite-off:3017620422003'), rows('recent-usda:999402'), rows('mine-user:s-oats')), (1, 0, 0));
       expect(find.text('Favourite · Brand: Nutella, Ferrero'), findsOneWidget);
       await _tap(tester, 'food-scope-mine');
       expect((rows('favourite-off:3017620422003'), rows('mine-user:s-oats')), (0, 1));
       expect(find.text('1 jar · 420 kcal'), findsOneWidget);
       await _tap(tester, 'food-scope-recent');
-      expect((rows('recent-usda:2708402'), rows('mine-user:s-oats')), (1, 0));
+      expect((rows('recent-usda:999402'), rows('mine-user:s-oats')), (1, 0));
 
       await tester.enterText(find.byKey(const Key('food-search')), 'zebra');
       await tester.pumpAndSettle();
@@ -416,7 +416,7 @@ void main() {
       await tester.pump(LogFoodScreen.pause);
       expect(find.byKey(const Key('food-search-busy')), findsNothing, reason: 'the owner\'s lists never ask the wider database');
       await _tap(tester, 'food-search-clear');
-      expect(rows('recent-usda:2708402'), 1);
+      expect(rows('recent-usda:999402'), 1);
       expect(find.byKey(const Key('food-manual')), findsOneWidget, reason: 'creating a food is reachable from every list');
     });
 

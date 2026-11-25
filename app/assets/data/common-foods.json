@@ -3,7 +3,7 @@
  "provenance": {
   "source": "USDA FoodData Central (public domain, CC0)",
   "retrieved": "2026-10-13 to 2026-11-25",
-  "datasets": "FoodData Central downloadable datasets: Survey (FNDDS) 2024-10-31, Foundation 2026-10-29, SR Legacy 2018-04 (new entries of version 3); earlier entries from the live search",
+  "datasets": "FoodData Central downloadable datasets: Survey (FNDDS) 2024-10-31, Foundation 2026-10-29, SR Legacy 2018-04 (entries added in version 3); earlier entries from the live search",
   "method": "Each item is one FoodData Central record exactly as the GoHard rebuild API normalized it in GET /api/v1/foods/search: sourceId is the FDC ID, and the values, basis and portions are the record's own. The record for each everyday name was chosen by review. Name, qualifier, category and aliases are GoHard's labels for finding the food; they are not USDA data. Built by scripts/build-common-foods.mjs from scripts/common-foods.spec.json."
  },
  "categories": [
@@ -4663,7 +4663,7 @@
   {
    "id": "chicken-breast-cooked",
    "name": "Chicken breast",
-   "qualifier": "Cooked · skin not eaten",
+   "qualifier": "Cooked, way not specified · skin not eaten",
    "category": "Proteins",
    "aliases": [
     "chicken",
@@ -4741,7 +4741,7 @@
   {
    "id": "chicken-breast-cooked-skin",
    "name": "Chicken breast",
-   "qualifier": "Cooked · skin eaten",
+   "qualifier": "Cooked, way not specified · skin eaten",
    "category": "Proteins",
    "aliases": [
     "chicken",
@@ -4859,7 +4859,7 @@
   {
    "id": "chicken-thigh-cooked",
    "name": "Chicken thigh",
-   "qualifier": "Cooked · skin not eaten",
+   "qualifier": "Cooked, way not specified · skin not eaten",
    "category": "Proteins",
    "aliases": [
     "chicken",
@@ -4917,7 +4917,7 @@
   {
    "id": "chicken-thigh-cooked-skin",
    "name": "Chicken thigh",
-   "qualifier": "Cooked · skin eaten",
+   "qualifier": "Cooked, way not specified · skin eaten",
    "category": "Proteins",
    "aliases": [
     "chicken",
@@ -5835,7 +5835,8 @@
     "cut": "whole",
     "state": "cooked",
     "method": "*",
-    "addedFat": "*"
+    "addedFat": "*",
+    "generic": true
    },
    "item": {
     "source": "usda",
@@ -5891,8 +5892,7 @@
     "method": [
      "boiled",
      "poached"
-    ],
-    "addedFat": "no"
+    ]
    },
    "item": {
     "source": "usda",
@@ -6494,6 +6494,512 @@
     "sourceVersion": "2019-04-01",
     "language": "en",
     "retrievedAtUtc": "2026-11-25T00:00:51.7060612Z"
+   }
+  },
+  {
+   "id": "potato-boiled-nfs",
+   "name": "Potato",
+   "qualifier": "Boiled · peel and fat not specified",
+   "category": "Carbohydrates",
+   "aliases": [
+    "potato",
+    "potatoes",
+    "boiled potato",
+    "pomme de terre",
+    "patate"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "potato",
+    "state": "cooked",
+    "method": "boiled",
+    "skin": "*",
+    "addedFat": "*",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2709385",
+    "barcode": null,
+    "name": "Potato, boiled, NFS",
+    "brand": null,
+    "description": "Survey (FNDDS) · White potatoes, baked or boiled · steamer bags;steamed potato NS as to plain or flavored",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 126,
+     "protein": 1.87,
+     "carbs": 20.4,
+     "fat": 4.25
+    },
+    "servings": [
+     {
+      "label": "1 small",
+      "grams": 130,
+      "milliliters": null
+     },
+     {
+      "label": "1 new potato",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium",
+      "grams": 170,
+      "milliliters": null
+     },
+     {
+      "label": "1 baby potato",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 300,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 160,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:48:50.0611485Z"
+   }
+  },
+  {
+   "id": "potato-baked-nfs",
+   "name": "Potato",
+   "qualifier": "Baked · peel not specified",
+   "category": "Carbohydrates",
+   "aliases": [
+    "potato",
+    "potatoes",
+    "baked potato",
+    "pomme de terre",
+    "patate"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "potato",
+    "state": "cooked",
+    "method": "baked",
+    "skin": "*",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2709383",
+    "barcode": null,
+    "name": "Potato, baked, NFS",
+    "brand": null,
+    "description": "Survey (FNDDS) · White potatoes, baked or boiled",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 93,
+     "protein": 1.95,
+     "carbs": 21.4,
+     "fat": 0.1
+    },
+    "servings": [
+     {
+      "label": "1 small",
+      "grams": 230,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 400,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium",
+      "grams": 285,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 130,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:48:53.2051838Z"
+   }
+  },
+  {
+   "id": "potato-roasted-nfs",
+   "name": "Potato",
+   "qualifier": "Roasted · peel and fat not specified",
+   "category": "Carbohydrates",
+   "aliases": [
+    "potato",
+    "potatoes",
+    "roasted potato",
+    "pomme de terre",
+    "patate"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "potato",
+    "state": "cooked",
+    "method": "roasted",
+    "skin": "*",
+    "addedFat": "*",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2709402",
+    "barcode": null,
+    "name": "Potato, roasted, NFS",
+    "brand": null,
+    "description": "Survey (FNDDS) · White potatoes, baked or boiled · grilled",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 126,
+     "protein": 1.87,
+     "carbs": 20.4,
+     "fat": 4.25
+    },
+    "servings": [
+     {
+      "label": "1 cup",
+      "grams": 160,
+      "milliliters": null
+     },
+     {
+      "label": "1 large",
+      "grams": 300,
+      "milliliters": null
+     },
+     {
+      "label": "1 small",
+      "grams": 130,
+      "milliliters": null
+     },
+     {
+      "label": "1 new potato",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium",
+      "grams": 170,
+      "milliliters": null
+     },
+     {
+      "label": "1 baby potato",
+      "grams": 60,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:48:56.4129344Z"
+   }
+  },
+  {
+   "id": "chicken-cooked-nfs",
+   "name": "Chicken",
+   "qualifier": "Cooked · part, way and skin not specified",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "cooked chicken",
+    "poulet",
+    "poulet cuit"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "chicken",
+    "cut": "*",
+    "state": "cooked",
+    "method": "*",
+    "skin": "*",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2705929",
+    "barcode": null,
+    "name": "Chicken, NS as to part and cooking method, NS as to skin eaten",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · any source",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 164,
+     "protein": 26.8,
+     "carbs": 0,
+     "fat": 6.36
+    },
+    "servings": [
+     {
+      "label": "1 slice",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 piece",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:48:59.6218038Z"
+   }
+  },
+  {
+   "id": "rice-cooked-nfs",
+   "name": "Rice",
+   "qualifier": "Cooked · kind not specified",
+   "category": "Carbohydrates",
+   "aliases": [
+    "rice",
+    "cooked rice",
+    "riz",
+    "riz cuit"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "rice",
+    "variety": "*",
+    "state": "cooked",
+    "addedFat": "*",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2708402",
+    "barcode": null,
+    "name": "Rice, cooked, NFS",
+    "brand": null,
+    "description": "Survey (FNDDS) · Rice",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 129,
+     "protein": 2.67,
+     "carbs": 28,
+     "fat": 0.28
+    },
+    "servings": [
+     {
+      "label": "1 cup, cooked",
+      "grams": 158,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:49:02.8325204Z"
+   }
+  },
+  {
+   "id": "milk-nfs",
+   "name": "Milk",
+   "qualifier": "Fat level not specified",
+   "category": "Dairy",
+   "aliases": [
+    "milk",
+    "lait"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "milk",
+    "fat": "*",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2705384",
+    "barcode": null,
+    "name": "Milk, NFS",
+    "brand": null,
+    "description": "Survey (FNDDS) · Milk, reduced fat",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 52,
+     "protein": 3.33,
+     "carbs": 4.83,
+     "fat": 2.14
+    },
+    "servings": [
+     {
+      "label": "Guideline amount per fl oz of beverage",
+      "grams": 2.5,
+      "milliliters": null
+     },
+     {
+      "label": "1 fl oz",
+      "grams": 30.5,
+      "milliliters": null
+     },
+     {
+      "label": "Guideline amount per cup of hot cereal",
+      "grams": 61,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 244,
+      "milliliters": null
+     },
+     {
+      "label": "1 individual school container",
+      "grams": 244,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:49:06.0348203Z"
+   }
+  },
+  {
+   "id": "yogurt-nfs",
+   "name": "Yogurt",
+   "qualifier": "Kind not specified",
+   "category": "Dairy",
+   "aliases": [
+    "yogurt",
+    "yogourt",
+    "yaourt"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "yogurt",
+    "variety": "*",
+    "fat": "*",
+    "addition": "*",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2705414",
+    "barcode": null,
+    "name": "Yogurt, NFS",
+    "brand": null,
+    "description": "Survey (FNDDS) · Yogurt, regular",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 94,
+     "protein": 6.67,
+     "carbs": 10.2,
+     "fat": 2.87
+    },
+    "servings": [
+     {
+      "label": "1 4 oz container",
+      "grams": 113,
+      "milliliters": null
+     },
+     {
+      "label": "1 container, NFS",
+      "grams": 170,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 245,
+      "milliliters": null
+     },
+     {
+      "label": "1 6 oz container",
+      "grams": 170,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:49:09.2312461Z"
+   }
+  },
+  {
+   "id": "greek-yogurt-plain",
+   "name": "Greek yogurt",
+   "qualifier": "Plain · milk not specified",
+   "category": "Proteins",
+   "aliases": [
+    "greek yogurt",
+    "yogourt grec",
+    "yaourt grec"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "yogurt",
+    "variety": "greek",
+    "fat": "*",
+    "addition": "none",
+    "generic": true
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2705421",
+    "barcode": null,
+    "name": "Yogurt, Greek, NS as to type of milk, plain",
+    "brand": null,
+    "description": "Survey (FNDDS) · Yogurt, Greek",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 67,
+     "protein": 10.2,
+     "carbs": 3.6,
+     "fat": 1.36
+    },
+    "servings": [
+     {
+      "label": "1 5.3 oz container",
+      "grams": 150,
+      "milliliters": null
+     },
+     {
+      "label": "1 6 oz container",
+      "grams": 170,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup",
+      "grams": 245,
+      "milliliters": null
+     },
+     {
+      "label": "1 container, NFS",
+      "grams": 150,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T02:49:12.4473244Z"
    }
   }
  ]

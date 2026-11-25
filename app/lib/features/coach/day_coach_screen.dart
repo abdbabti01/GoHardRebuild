@@ -256,7 +256,8 @@ class DayConversation extends Notifier<AskState> {
       if (intent.kind == 'ate' && sources != null) {
         // One meal from every food said, matched here; the day said (yesterday) or the one this conversation is about.
         final proposed = intent.proposed as Map?;
-        final items = await resolveMeal(saidFoodsOf(proposed?['foods']), await sources());
+        // A server from before `evidence`: the person's own sentence stands in for it (only its words count as said).
+        final items = await resolveMeal([for (final f in saidFoodsOf(proposed?['foods'])) withSentence(f, question)], await sources());
         // Foods beyond the first twelve: each named and waiting to be added with Add food or left out; when the server could
         // not name them, the draft says some are missing until the person leaves them out (never complete before).
         final extra = [for (final e in proposed?['extra'] as List? ?? const []) if (e is String && e.trim().isNotEmpty) {'label': e.trim(), 'state': 'open'}];
@@ -265,7 +266,7 @@ class DayConversation extends Notifier<AskState> {
           if (extra.isNotEmpty) 'extra': extra, if (extra.isEmpty && intent.dropped.contains('foods')) 'overflow': true});
         replace = openDraft?.id;
       } else if (intent.kind == 'edit' && sources != null) {
-        final applied = await _edited(open, mealEditsOf(intent.proposed), sources);
+        final applied = await _edited(open, [for (final e in mealEditsOf(intent.proposed)) (op: e.op, ref: e.ref, food: e.food == null ? null : withSentence(e.food!, question))], sources);
         intent = intent.withDraft(applied.draft, changes: applied.changes);
         replace = applied.replace;
       }
@@ -918,7 +919,8 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
       case 'ready':
         final part = MealComponent(Map<String, dynamic>.from(it['part'] as Map));
         final own = part.item.source == 'user' && (it['part'] as Map)['match'] == null;
-        final text = ['${part.amount} · ${part.name}', if ((it['part'] as Map)['match'] is String) '(${(it['part'] as Map)['match']})', if (own) '· ${l.dcMealOwnValues}'].join(' ');
+        final general = it['general'] == true, standard = (it['part'] as Map)['standard'];
+        final text = ['${part.amount} · ${general ? l.dcMealGeneralName(part.name) : part.name}', if ((it['part'] as Map)['match'] is String) '(${(it['part'] as Map)['match']})', if (own) '· ${l.dcMealOwnValues}'].join(' ');
         return [
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -930,6 +932,9 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
               ),
             ),
           ),
+          // A general record or a standard portion is said, so the food chosen is never mistaken for what was said.
+          if (general) Text(l.dcMealGeneralNote, key: Key('day-meal-general-$id-$ref_'), style: context.caption),
+          if (standard is String) Text(l.dcMealStandardSize(standard), key: Key('day-meal-standard-$id-$ref_'), style: context.caption),
           Transform.translate(
             offset: Offset(context.isRtl ? 8 : -8, 0),
             child: Wrap(spacing: 4, children: [
@@ -1109,7 +1114,12 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
   /// (so leaving keeps it); its Log meal is the only thing that records food, once.
   Future<void> _reviewMeal(String id, Json d) async {
     final l = context.l10n;
-    final parts = [for (final i in d['items'] as List) if ((i as Map)['status'] == 'ready') Map<String, dynamic>.from(i['part'] as Map)];
+    // A general record keeps saying so through the review and into the journal: "Eggs (general)".
+    final parts = [
+      for (final i in d['items'] as List)
+        if ((i as Map)['status'] == 'ready')
+          i['general'] == true ? {...Map<String, dynamic>.from(i['part'] as Map), 'name': l.dcMealGeneralName(MealComponent(Map<String, dynamic>.from(i['part'] as Map)).name)} : Map<String, dynamic>.from(i['part'] as Map),
+    ];
     final logged = await push<bool>(context, MealReviewScreen(
       body: MealBody({'kind': MealBody.meal, 'name': l.dcMealTitle, 'components': parts}), dayKey: d['dayKey'] as String, meal: d['meal'] as String, logLabel: l.mealsLogMeal,
       onChanged: (parts, day, meal) => _convo.changeDraft(id, (draft) => {

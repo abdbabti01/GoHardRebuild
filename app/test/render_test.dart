@@ -241,7 +241,7 @@ Future<void> _open(WidgetTester tester, String screen) async {
         await tester.scrollUntilVisible(find.byKey(const Key('food-search-online')), 200, scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last);
         await tap('food-search-online');
         // The fixture already logged this rice, so it is listed once, under Your foods, and not again as a wider result.
-        if (screen == 'food-preview') await tap(find.byKey(const Key('local-usda:2708402')).evaluate().isEmpty ? 'result-usda:2708402' : 'local-usda:2708402');
+        if (screen == 'food-preview') await tap(find.byKey(const Key('local-usda:999402')).evaluate().isEmpty ? 'result-usda:999402' : 'local-usda:999402');
         if (screen == 'food-preview-unknown') await tap('result-off:5449000000996');
       }
     case 'food-common' || 'food-common-preview':

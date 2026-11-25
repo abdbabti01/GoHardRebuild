@@ -162,8 +162,10 @@ void main() {
     expect(find.text('Not said: which part, skin or peel'), findsOneWidget);
     await _tap(tester, find.textContaining('Chicken breast (Raw · boneless, skinless)'));
     await _tap(tester, _keyed('day-meal-cooked-').first);
-    expect(find.text('Which matches your potatoes?'), findsOneWidget, reason: 'cooked potatoes: how, and whether the peel was eaten');
-    await _tap(tester, find.textContaining('Potato (Boiled · peeled)'));
+    // Cooked potatoes: USDA's general cooked potato, said as general, with Change food: no question.
+    expect(find.text('Which matches your potatoes?'), findsNothing);
+    expect(find.textContaining('100 g · Potato (general)'), findsOneWidget);
+    expect(find.text('General record: what you didn’t say isn’t assumed. Change food if you know more.'), findsOneWidget);
     expect(find.text('Ready to review. Nothing is logged until you tap Log meal.'), findsOneWidget);
     expect(find.textContaining('120 g · Chicken breast'), findsOneWidget);
     expect(find.textContaining('100 g · Potato'), findsOneWidget);
@@ -185,7 +187,7 @@ void main() {
     await _settle(tester);
     expect(f.fakes.journal.meals.length, 1, reason: 'one atomic meal log, once');
     final logged = f.fakes.journal.meals.single;
-    expect([for (final d in logged) (d.name, d.quantity, d.unitId, d.dayKey, d.meal)], [('Chicken breast', 120.0, 'g', day, 'Lunch'), ('Potato', 100.0, 'g', day, 'Lunch')]);
+    expect([for (final d in logged) (d.name, d.quantity, d.unitId, d.dayKey, d.meal)], [('Chicken breast', 120.0, 'g', day, 'Lunch'), ('Potato (general)', 100.0, 'g', day, 'Lunch')]);
     expect(logged.first.item?.sourceId, '2646170', reason: 'the record chosen, with its source identity');
     expect(result, [true], reason: 'Add food closes, as after any log');
     expect(f.ai.requests.length, 1, reason: 'logging never asks the AI');
@@ -377,35 +379,55 @@ void main() {
   });
 
   group('food resolution on the card', () {
-    testWidgets('"100 g cooked chicken thighs and 130 g cooked potatoes": one useful choice each; "I\'m not sure" is disclosed and stays an estimate through the log; one request', (tester) async {
+    testWidgets('"100 g cooked chicken thighs and 130 g cooked potatoes": general potatoes said as general; the thighs ask about the skin with the whole preparation; I\'m not sure is disclosed; one request', (tester) async {
       final f = _Fixture();
       final semantics = tester.ensureSemantics();
       await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 3000));
       f.ai.reply = (r) async => ate([said('cooked chicken thighs', 100, 'g'), said('cooked potatoes', 130, 'g')]);
       await _say(tester, 'I had 100 g of cooked chicken thighs and 130 g of cooked potatoes');
       expect(find.text('Which matches your cooked chicken thighs?'), findsOneWidget);
-      expect(find.text('Not said: skin or peel'), findsOneWidget, reason: 'cooking method left open by records that do not specify it; only the skin is asked');
-      expect(find.text('Which matches your cooked potatoes?'), findsOneWidget);
-      expect(find.text('Not said: how it was cooked, skin or peel'), findsOneWidget);
-      expect(_keyed('day-meal-review-'), findsNothing, reason: 'nothing ready until each is answered');
-      expect(find.textContaining('Total:'), findsNothing);
-
-      await _tap(tester, find.textContaining('Chicken thigh (Cooked · skin not eaten)'));
-      expect(find.textContaining('100 g · Chicken thigh'), findsOneWidget, reason: 'the said 100 g kept for the record chosen');
-      expect(find.text('Which matches your cooked potatoes?'), findsOneWidget, reason: 'the potatoes are untouched');
+      expect(find.text('Not said: skin or peel'), findsOneWidget);
+      expect(find.textContaining('Chicken thigh (Cooked, way not specified · skin not eaten)'), findsOneWidget, reason: 'the whole preparation, never a roasted record');
+      expect(find.textContaining('130 g · Potato (general)'), findsOneWidget, reason: 'the general cooked potato, never baked with skin');
+      expect(find.textContaining('(Cooked · way not specified)'), findsOneWidget);
+      expect(find.text('General record: what you didn’t say isn’t assumed. Change food if you know more.'), findsOneWidget);
+      expect(_keyed('day-meal-review-'), findsNothing, reason: 'the thighs still need an answer');
 
       await _tap(tester, _keyed('day-meal-notsure-').first);
       expect(find.textContaining('as an estimate?'), findsOneWidget, reason: 'the record and that it may differ are said before anything is used');
-      expect(find.text('This record does not say how it was prepared.'), findsOneWidget);
       await _tap(tester, _keyed('day-meal-estimate-').first);
-      expect(find.textContaining('130 g · Potato (estimate)'), findsOneWidget);
+      expect(find.textContaining('100 g · Chicken (estimate)'), findsOneWidget);
 
       await _tap(tester, _keyed('day-meal-review-').first);
+      expect(find.text('Potato (general)'), findsOneWidget, reason: 'said as general in the review too');
       await _tap(tester, find.byKey(const Key('meal-log')));
-      expect([for (final e in f.fakes.journal.meals.single) (e.name, e.quantity)], [('Chicken thigh', 100.0), ('Potato (estimate)', 130.0)]);
-      expect(f.fakes.journal.meals.single.last.item?.sourceId, '2709382', reason: 'USDA\'s own record for a potato cooked in a way not specified: its values, not an average');
+      expect([for (final e in f.fakes.journal.meals.single) (e.name, e.quantity)], [('Chicken (estimate)', 100.0), ('Potato (general)', 130.0)],
+          reason: 'the journal keeps saying which foods were estimates or general records');
+      expect([for (final e in f.fakes.journal.meals.single) e.item?.sourceId], ['2705929', '2709382'], reason: 'real records\' own values, never an average');
       expect(f.ai.requests.length, 1, reason: 'choices, the estimate, the review and logging ask no AI');
       semantics.dispose();
+    });
+
+    testWidgets('"2 eggs": the general cooked egg with its standard size, no question; Change food and Change amount there; corrections ask no AI', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Breakfast'), size: const Size(390, 3000));
+      f.ai.reply = (r) async => ate([said('eggs', 2, 'piece', 'egg')]);
+      await _say(tester, 'I had 2 eggs');
+      expect(find.textContaining('2 eggs (100 g) · Eggs (general) (Whole · cooked, way not specified)'), findsOneWidget, reason: 'what was chosen, and its grams');
+      expect(find.text('Standard size: 1 egg (50 g)'), findsOneWidget, reason: 'a standard size, not one given');
+      expect(find.textContaining('fried'), findsNothing);
+      expect(_keyed('day-meal-change-'), findsOneWidget);
+      expect(_keyed('day-meal-amount-'), findsOneWidget);
+      expect(_keyed('day-meal-review-'), findsOneWidget, reason: 'ready: nothing to ask');
+      await _tap(tester, _keyed('day-meal-change-').first);
+      expect(tester.widget<LogFoodScreen>(find.byType(LogFoodScreen)).pick, isTrue, reason: 'Change food opens the usual food picker');
+      await tester.pageBack();
+      await _settle(tester);
+      await _tap(tester, _keyed('day-meal-review-').first);
+      expect(find.text('Eggs (general)'), findsOneWidget);
+      await _tap(tester, find.byKey(const Key('meal-log')));
+      expect([for (final e in f.fakes.journal.meals.single) (e.name, e.amount)], [('Eggs (general)', '2 eggs (100 g)')]);
+      expect(f.ai.requests.length, 1, reason: 'Change food, the review and logging ask no AI');
     });
 
     testWidgets('Change food starts from the same amount when it means the same weight; a lookup that did not answer keeps the item for Try again', (tester) async {

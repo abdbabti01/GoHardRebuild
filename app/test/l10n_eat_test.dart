@@ -33,14 +33,18 @@ void main() {
   test('French and Arabic names find the same food, with the same values and portions', () {
     final english = first('chicken breast');
     expect(english.id, 'chicken-breast');
-    for (final q in ['poulet', 'Poitrine de poulet', 'دجاج', 'صدر الدجاج', 'صَدْر دجاج']) {
+    // "Poulet" and "دجاج" alone name chicken in general, as "chicken" does (the general record): same food in every language.
+    for (final (q, en) in [('poulet', 'chicken'), ('دجاج', 'chicken')]) {
+      expect(first(q).id, first(en).id, reason: q);
+    }
+    for (final q in ['Poitrine de poulet', 'صدر الدجاج', 'صَدْر دجاج']) {
       final f = first(q);
       expect(f.id, english.id, reason: q);
       expect(f.item.key, english.item.key);
       expect(f.item.nutrients, english.item.nutrients);
       expect([for (final s in f.item.servings) s.grams], [for (final s in english.item.servings) s.grams]);
     }
-    expect(first('ارز').id, anyOf('brown-rice', 'white-rice'), reason: 'hamza folded');
+    expect(first('ارز').id, first('rice').id, reason: 'hamza folded');
     expect(first('أرز أبيض').id, 'white-rice', reason: 'a variant is not merged with another');
     expect(first('أرز بني').id, 'brown-rice');
   });

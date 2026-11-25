@@ -53,14 +53,16 @@ void main() {
       expect(cooked.take(2), unorderedEquals(['Chicken breast, stewed, skin not eaten', 'Chicken breast, grilled without sauce, skin not eaten']),
           reason: '"cooked" finds any way of cooking, plain ones first (no added fat, sauce or coating)');
       expect(local('chicken breast raw'), ['Chicken breast · Raw · boneless, skinless', 'Chicken breast · Raw · with skin']);
-      expect(local('chicken thigh'), containsAll(['Chicken thigh · Raw · boneless, skinless', 'Chicken thigh · Roasted · meat only', 'Chicken thigh · Cooked · skin not eaten']));
+      expect(local('chicken thigh'), containsAll(['Chicken thigh · Raw · boneless, skinless', 'Chicken thigh · Roasted · meat only', 'Chicken thigh · Cooked, way not specified · skin not eaten']));
       expect(local('chicken thigh'), everyElement(startsWith('Chicken thigh')));
     });
 
     test('a broader word is not taken as the narrower food: "chicken" is breast and thigh, raw and cooked, none of them exactly', () {
       final chicken = searchLocal('chicken', catalog: catalog, saved: const [], journal: const [], seen: const []).common;
       expect([for (final s in chicken.take(10)) s.common!.id], everyElement(startsWith('chicken-')), reason: 'breasts and thighs, raw and cooked');
+      // Only the general record (part, way and skin not specified) is chicken exactly; no specific cut is.
       for (final s in chicken) {
+        if (s.common!.id == 'chicken-cooked-nfs') continue;
         expect(relevance('chicken', s.common!.fields)!.tier, isNot(0), reason: s.common!.id);
       }
       expect(relevance('rice', catalog.foods.firstWhere((f) => f.id == 'white-rice').fields)!.tier, isNot(0), reason: 'rice is white or brown');
@@ -70,8 +72,8 @@ void main() {
 
     test('milk: the dairy milks before almond milk, each named for what it is', () {
       final milk = local('milk');
-      expect(milk.take(4), unorderedEquals(['Milk · Whole · 3.25%', 'Milk 2% · Reduced fat', 'Milk 1% · Low fat', 'Skim milk · Fat free']));
-      expect(milk[4], 'Almond milk · Unsweetened');
+      expect(milk.take(5), unorderedEquals(['Milk · Fat level not specified', 'Milk · Whole · 3.25%', 'Milk 2% · Reduced fat', 'Milk 1% · Low fat', 'Skim milk · Fat free']));
+      expect(milk[5], 'Almond milk · Unsweetened');
     });
   });
 

@@ -3365,5 +3365,8 @@
   "dcMealChosen": "{food}: {amount}",
   "foodGroupSeen": "بحثت عنها سابقًا",
   "foodSearchMoreResults": "هناك أطعمة أخرى مطابقة: أضف كلمة لتضييق البحث.",
-  "dcMealAmountButton": "غيّر الكمية"
+  "dcMealAmountButton": "غيّر الكمية",
+  "dcMealGeneralName": "{food} (عام)",
+  "dcMealGeneralNote": "سجل عام: لا يُفترض ما لم تذكره. غيّر الطعام إن كنت تعرف أكثر.",
+  "dcMealStandardSize": "حجم قياسي: {portion}"
 }

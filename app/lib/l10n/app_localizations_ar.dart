@@ -14171,4 +14171,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dcMealAmountButton => 'غيّر الكمية';
+
+  @override
+  String dcMealGeneralName(String food) {
+    return '$food (عام)';
+  }
+
+  @override
+  String get dcMealGeneralNote =>
+      'سجل عام: لا يُفترض ما لم تذكره. غيّر الطعام إن كنت تعرف أكثر.';
+
+  @override
+  String dcMealStandardSize(String portion) {
+    return 'حجم قياسي: $portion';
+  }
 }

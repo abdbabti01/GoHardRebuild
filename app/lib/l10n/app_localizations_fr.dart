@@ -13881,6 +13881,20 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dcMealAmountButton => 'Changer la quantité';
+
+  @override
+  String dcMealGeneralName(String food) {
+    return '$food (général)';
+  }
+
+  @override
+  String get dcMealGeneralNote =>
+      'Aliment général : ce que tu n’as pas précisé n’est pas supposé. Change d’aliment si tu en sais plus.';
+
+  @override
+  String dcMealStandardSize(String portion) {
+    return 'Taille standard : $portion';
+  }
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

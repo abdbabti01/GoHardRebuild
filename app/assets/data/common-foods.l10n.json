@@ -351,24 +351,24 @@
       "ar": {"name": "بطاطا حلوة", "qualifier": "مطبوخة · الطريقة غير محددة", "portion": null, "aliases": []}
     },
     "chicken-breast-cooked": {
-      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite · sans la peau", "portion": null, "aliases": ["blanc de poulet", "poulet"]},
-      "ar": {"name": "صدر دجاج", "qualifier": "مطبوخ · بدون جلد", "portion": null, "aliases": ["دجاج", "صدور دجاج"]}
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite, cuisson non précisée · sans la peau", "portion": null, "aliases": ["blanc de poulet", "poulet"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "مطبوخ، الطريقة غير محددة · بدون جلد", "portion": null, "aliases": ["دجاج", "صدور دجاج"]}
     },
     "chicken-breast-cooked-skin": {
-      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite · avec la peau", "portion": null, "aliases": ["poulet"]},
-      "ar": {"name": "صدر دجاج", "qualifier": "مطبوخ · مع الجلد", "portion": null, "aliases": ["دجاج"]}
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite, cuisson non précisée · avec la peau", "portion": null, "aliases": ["poulet"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "مطبوخ، الطريقة غير محددة · مع الجلد", "portion": null, "aliases": ["دجاج"]}
     },
     "chicken-breast-raw-skin": {
       "fr": {"name": "Poitrine de poulet", "qualifier": "Crue · avec la peau", "portion": null, "aliases": ["poulet"]},
       "ar": {"name": "صدر دجاج", "qualifier": "نيء · مع الجلد", "portion": null, "aliases": ["دجاج"]}
     },
     "chicken-thigh-cooked": {
-      "fr": {"name": "Cuisse de poulet", "qualifier": "Cuite · sans la peau", "portion": null, "aliases": ["haut de cuisse de poulet", "poulet"]},
-      "ar": {"name": "فخذ دجاج", "qualifier": "مطبوخ · بدون جلد", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج"]}
+      "fr": {"name": "Cuisse de poulet", "qualifier": "Cuite, cuisson non précisée · sans la peau", "portion": null, "aliases": ["haut de cuisse de poulet", "poulet"]},
+      "ar": {"name": "فخذ دجاج", "qualifier": "مطبوخ، الطريقة غير محددة · بدون جلد", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج"]}
     },
     "chicken-thigh-cooked-skin": {
-      "fr": {"name": "Cuisse de poulet", "qualifier": "Cuite · avec la peau", "portion": null, "aliases": ["poulet"]},
-      "ar": {"name": "فخذ دجاج", "qualifier": "مطبوخ · مع الجلد", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج"]}
+      "fr": {"name": "Cuisse de poulet", "qualifier": "Cuite, cuisson non précisée · avec la peau", "portion": null, "aliases": ["poulet"]},
+      "ar": {"name": "فخذ دجاج", "qualifier": "مطبوخ، الطريقة غير محددة · مع الجلد", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج"]}
     },
     "chicken-thigh-raw-skin": {
       "fr": {"name": "Cuisse de poulet", "qualifier": "Crue · avec la peau", "portion": null, "aliases": ["poulet"]},
@@ -493,6 +493,38 @@
     "couscous-dry": {
       "fr": {"name": "Couscous", "qualifier": "Sec · non cuit", "portion": null, "aliases": []},
       "ar": {"name": "كسكس", "qualifier": "جاف · غير مطبوخ", "portion": null, "aliases": ["كسكسي"]}
+    },
+    "potato-boiled-nfs": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Bouillie · pelure et gras non précisés", "portion": null, "aliases": []},
+      "ar": {"name": "بطاطس", "qualifier": "مسلوقة · القشر والدهون غير محددين", "portion": null, "aliases": []}
+    },
+    "potato-baked-nfs": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Cuite au four · pelure non précisée", "portion": null, "aliases": []},
+      "ar": {"name": "بطاطس", "qualifier": "مخبوزة · القشر غير محدد", "portion": null, "aliases": []}
+    },
+    "potato-roasted-nfs": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Rôtie · pelure et gras non précisés", "portion": null, "aliases": []},
+      "ar": {"name": "بطاطس", "qualifier": "محمرة · القشر والدهون غير محددين", "portion": null, "aliases": []}
+    },
+    "chicken-cooked-nfs": {
+      "fr": {"name": "Poulet", "qualifier": "Cuit · partie, cuisson et peau non précisées", "portion": null, "aliases": []},
+      "ar": {"name": "دجاج", "qualifier": "مطبوخ · الجزء والطريقة والجلد غير محددة", "portion": null, "aliases": []}
+    },
+    "rice-cooked-nfs": {
+      "fr": {"name": "Riz", "qualifier": "Cuit · sorte non précisée", "portion": null, "aliases": []},
+      "ar": {"name": "أرز", "qualifier": "مطبوخ · النوع غير محدد", "portion": null, "aliases": []}
+    },
+    "milk-nfs": {
+      "fr": {"name": "Lait", "qualifier": "Teneur en gras non précisée", "portion": null, "aliases": []},
+      "ar": {"name": "حليب", "qualifier": "نسبة الدسم غير محددة", "portion": null, "aliases": []}
+    },
+    "yogurt-nfs": {
+      "fr": {"name": "Yogourt", "qualifier": "Sorte non précisée", "portion": null, "aliases": []},
+      "ar": {"name": "زبادي", "qualifier": "النوع غير محدد", "portion": null, "aliases": []}
+    },
+    "greek-yogurt-plain": {
+      "fr": {"name": "Yogourt grec", "qualifier": "Nature · lait non précisé", "portion": null, "aliases": []},
+      "ar": {"name": "زبادي يوناني", "qualifier": "سادة · نوع الحليب غير محدد", "portion": null, "aliases": []}
     }
   }
 }

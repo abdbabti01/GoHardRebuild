@@ -19264,5 +19264,27 @@
   "dcMealAmountButton": "Change amount",
   "@dcMealAmountButton": {
     "description": "Described meal card: change this item’s amount."
+  },
+  "dcMealGeneralName": "{food} (general)",
+  "@dcMealGeneralName": {
+    "description": "A food logged from a general record (details not specified): its name in the review and journal.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealGeneralNote": "General record: what you didn’t say isn’t assumed. Change food if you know more.",
+  "@dcMealGeneralNote": {
+    "description": "Described meal card: the item uses a general record chosen without a question."
+  },
+  "dcMealStandardSize": "Standard size: {portion}",
+  "@dcMealStandardSize": {
+    "description": "Described meal card: the weight of a counted portion comes from the record, not from the person.",
+    "placeholders": {
+      "portion": {
+        "type": "String"
+      }
+    }
   }
 }

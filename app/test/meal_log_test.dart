@@ -40,10 +40,9 @@ void main() {
       // Values only from the record: 120 g of 112 kcal / 22.5 g per 100 g.
       expect(part(breast).values['calories'], closeTo(134.4, 1e-9));
       expect(part(breast).values['protein'], closeTo(27, 1e-9));
-      // Potatoes, cooked: how and whether the peel was eaten are asked, never the one baked record taken.
+      // Potatoes, cooked: USDA's general cooked potato, said as general; never the baked, skin-on record.
       final potato = await answerState(items[1], 'cooked', sources());
-      expect(potato['status'], 'record');
-      expect(potato['unresolved'], ['method', 'skin']);
+      expect((potato['status'], potato['general'], part(potato).item.sourceId, part(potato).quantity), ('ready', true, '2709382', 100.0));
     });
 
     test('what was said is used; a count is not asked raw or cooked; nothing is added that was not said', () async {
@@ -74,12 +73,10 @@ void main() {
       expect(searched, ['dragonfruit'], reason: 'only the food nothing on the phone matched');
     });
 
-    test('only records of the preparation said are offered; the amount said is kept for the one chosen', () async {
+    test('the preparation said is kept: cooked oats take the general cooked oatmeal, never dry oats, at the amount said', () async {
       final item = (await resolveMeal([said('oats', 40, 'g', null, 'cooked')], sources())).single;
-      expect(item['status'], 'record');
-      expect([for (final o in item['options'] as List) (o as Map)['match']], everyElement(contains('Cooked')));
-      final chosen = chooseRecord(item, 0);
-      expect((chosen['status'], part(chosen).quantity), ('ready', 40.0));
+      expect((item['status'], item['general'], part(item).quantity), ('ready', true, 40.0));
+      expect((item['part'] as Map)['match'], contains('Cooked'));
     });
 
     test('a brand said is offered only as that brand, and confirmed; without one a branded product is never offered', () async {
@@ -99,16 +96,16 @@ void main() {
         said('apple', 150, 'g'), said('banana', 120, 'g'), said('almonds', 30, 'g'), said('greek yogurt', 170, 'g'), said('bread', 60, 'g'), said('white bread', 60, 'g'),
         said('oats', 40, 'g'), said('potatoes', 100, 'g'), said('chicken', 120, 'g'),
       ], sources(seen: [toast]));
-      expect([for (final i in items) i['status']], ['ready', 'ready', 'ready', 'record', 'record', 'ready', 'state', 'state', 'state'],
-          reason: 'fruit and nuts as they come; yogurt and bread ask which, never raw or cooked; oats, potatoes and chicken ask how they were weighed');
+      expect([for (final i in items) i['status']], ['ready', 'ready', 'ready', 'ready', 'record', 'ready', 'state', 'state', 'state'],
+          reason: 'fruit and nuts as they come; Greek yogurt takes its general record; bread asks which; oats, potatoes and chicken ask how they were weighed');
       expect(part(items[5]).item.name, 'Bread, white', reason: 'the reviewed white bread; the toasted record seen before is never taken by itself');
       // Said in the words ("riz cuit", "cooked rice") or as a preparation: never asked again.
       final rice = (await resolveMeal([(name: 'rice', label: 'riz cuit', preparation: null, brand: null, quantity: 150, unit: 'g', noun: null, evidence: null)], sources())).single;
-      expect(rice['status'], 'record', reason: 'cooked said in French; white or brown was not');
+      expect((rice['status'], rice['general']), ('ready', true), reason: 'cooked said in French; white or brown was not: the general cooked rice');
       final cooked = (await resolveMeal([said('cooked rice', 150, 'g')], sources())).single;
       expect(cooked['status'], isNot('state'));
       final answered = await answerState(items[7], 'cooked', sources());
-      expect(answered['status'], 'record', reason: 'answered once: not asked again; how they were cooked is the next choice');
+      expect((answered['status'], answered['general']), ('ready', true), reason: 'answered once: not asked again; the general cooked potato');
       // The safeguards stay: chicken is never taken as breast, and nothing is added.
       final raw = await answerState(items[8], 'raw', sources());
       expect((raw['status'], (raw['options'] as List).length), ('record', 4));

@@ -78,7 +78,8 @@ class FoodDiscovery {
   static const _answered = Duration(minutes: 10);
   final _answers = <String, ({List<FoodItem> items, bool more, DateTime at})>{};
 
-  /// Whether the last answer to [query] said more foods match than it holds (a narrower search finds them).
+  /// Whether the last answer to [query] said more foods match than it holds (GoHard's API asks USDA for one page only; a
+  /// narrower search finds the rest).
   bool hasMore(String query) => _answers[query.trim().split(RegExp(r'\s+')).join(' ').toLowerCase()]?.more ?? false;
 
   /// A packaged product by its barcode. A product looked up in the last week is answered from the phone; when

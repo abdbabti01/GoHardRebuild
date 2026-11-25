@@ -162,10 +162,13 @@ class FoodMatcher {
 
   /// A suggestion's tie-break (docs/FOOD_DATA.md › Food resolution › Suggestions): among equally good reviewed catalog
   /// records, the one that adds the fewest details the idea did not propose ("eggs" → eggs cooked in a way not specified,
-  /// not raw, boiled or fried). Never a record that says nothing is specified (NFS) while another is there, and never for
-  /// a meal the person describes: what someone ate is never chosen for them. Several still equal stay a choice.
+  /// not raw, boiled or fried): the catalog's reviewed everyday default (a general record) when there is one. Several still
+  /// equal stay a choice.
   List<FoodCandidate> _plainest(List<FoodCandidate> sure) {
     if (sure.length < 2 || sure.any((c) => sources.reviewed[c.item.key] == null)) return sure;
+    // The reviewed everyday default (a general record) is the plainest of all.
+    final general = [for (final c in sure) if (sources.reviewed[c.item.key]!.generic) c];
+    if (general.length == 1) return general;
     final specific = [for (final c in sure) if (!sources.reviewed[c.item.key]!.generic) c];
     if (specific.isEmpty) return sure;
     // Details it names, less those it says are not specified: the record that leaves most open is the plainest.
@@ -210,7 +213,9 @@ class FoodMatcher {
     }
     var failed = false;
     final local = resolveFood(said, found);
-    if ((local.outcome == Outcome.none || f.brand != null && !found.any((c) => c.brand != null)) && sources.search != null) {
+    // Relevant records on the phone are not enough: unless one of them shows everything said (a record that cannot show
+    // "grilled" is no match for grilled chicken), the search is asked too, and its records are weighed with the rest.
+    if ((!local.adequate || f.brand != null && !found.any((c) => c.brand != null)) && sources.search != null) {
       var answer = _remote[query];
       if (answer == null && _searches < sources.maxSearches) {
         _searches++;
@@ -366,10 +371,27 @@ Said describeSaid(SaidFood f, {Map<String, String> confirmed = const {}}) {
       confirmed: {for (final e in confirmed.entries) if (Attr.values.any((a) => a.name == e.key)) Attr.values.byName(e.key): e.value});
 }
 
+/// [f] with evidence taken from the person's own [sentence] when the server gave none (a server from before `evidence`):
+/// only the words of the label, name and preparation that the sentence itself contains, so a detail the model added
+/// ("breast" for "chicken", "roasted") is not taken as said. The food itself is still known by its name.
+// ponytail: whole-sentence check; a word said of another food in the same sentence also counts here.
+SaidFood withSentence(SaidFood f, String sentence) {
+  if (f.evidence != null) return f;
+  final said = searchWords(sentence).toSet();
+  final words = {for (final w in searchWords([f.label, f.name, ?f.preparation].join(' '))) if (said.contains(w)) w};
+  return (name: f.name, label: f.label, preparation: f.preparation, brand: f.brand, quantity: f.quantity, unit: f.unit, noun: f.noun,
+      evidence: words.join(' '));
+}
+
 /// [food] (a matched record) at what the person said: grams or millilitres when weighed, else the said count.
+/// A count said ("2 eggs") placed in a record's own counted portion carries that portion's size as `standard` ("1 egg
+/// (50 g)"): the weight is the record's standard size, not one the person gave, and the card says so.
 Json _placeSaid(Json food, SaidFood f) {
   final m = f.quantity == null || f.unit == null ? null : _metric(f.quantity!, f.unit!);
-  return placeFood(food, label: f.label, quantity: m?.$1 ?? f.quantity, unit: m?.$2 ?? f.unit, noun: f.noun);
+  final placed = placeFood(food, label: f.label, quantity: m?.$1 ?? f.quantity, unit: m?.$2 ?? f.unit, noun: f.noun);
+  if (placed['confirm'] != null || m != null || f.quantity == null) return placed;
+  final item = FoodItem(food['item'] as Json), unit = FoodScaling.unit(item, placed['unit'] as String);
+  return FoodScaling.measured(item, 1, unit) == null ? placed : {...placed, 'standard': FoodScaling.describe(item, 1, unit)};
 }
 
 /// The amount as the person said it ("150 g", "2 egg", "4 oz"), for the reply's words and a follow-up's draft.
@@ -395,7 +417,8 @@ Future<Json> resolveSaid(String ref, SaidFood f, FoodMatcher matcher, {Map<Strin
       return item(found.failed ? 'unavailable' : 'missing');
     case Outcome.resolved:
       final placed = _placeSaid(_food(r.chosen!.record), f);
-      return placed['confirm'] == null ? item('ready', {'part': placed}) : item('amount', {'food': placed['food']});
+      final general = {if (r.general) 'general': true};
+      return placed['confirm'] == null ? item('ready', {'part': placed, ...general}) : item('amount', {'food': placed['food'], ...general});
     case Outcome.clarify:
       if (r.ask == Attr.state) return item('state');
       return item('record', {
@@ -458,7 +481,7 @@ Json chooseRecord(Json item, int option) {
 /// An item with the food and amount the person chose in the usual forms (Choose amount, Find food). An estimate stays one
 /// only while it is the same food ([sameFood]: a new amount); another food chosen is no longer that estimate.
 Json readyWith(Json item, Json part, {bool sameFood = false}) =>
-    {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], if (sameFood) 'estimate': ?item['estimate'], 'status': 'ready', 'part': part};
+    {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], if (sameFood) 'estimate': ?item['estimate'], if (sameFood) 'general': ?item['general'], 'status': 'ready', 'part': part};
 
 /// The food an item is about, as shown: its record's name once matched, else the person's word for it.
 String itemLabel(Json item) => item['status'] == 'ready'

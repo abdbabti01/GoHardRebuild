@@ -218,8 +218,10 @@ FoodItem chickenRaw() => FoodItem({
       'nutrients': {'calories': 120, 'protein': 22.5, 'carbs': 0, 'fat': 2.62}, 'servings': [],
     });
 
+// A wider-search answer for the tests: an ID that is not a catalog record (the real 2708402 "Rice, cooked, NFS" became the
+// catalog's general cooked rice in version 3, and a catalog record is listed under Common foods, not More foods).
 FoodItem riceCooked() => FoodItem({
-      'source': 'usda', 'sourceId': '2708402', 'name': 'Rice, cooked, NFS', 'description': 'Survey (FNDDS) · Rice', 'basis': '100g',
+      'source': 'usda', 'sourceId': '999402', 'name': 'Rice, cooked, NFS', 'description': 'Survey (FNDDS) · Rice', 'basis': '100g',
       'nutrients': {'calories': 129, 'protein': 2.67, 'carbs': 27.99, 'fat': 0.28}, 'servings': [{'label': '1 cup, cooked', 'grams': 158, 'milliliters': null}],
     });
 

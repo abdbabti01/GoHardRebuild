@@ -56,8 +56,8 @@ void main() {
     await j.waitFor(find.text('Which matches your chicken?'), what: 'which chicken: breast or thigh, skin or not');
     await j.tap(find.textContaining('Chicken breast (Raw · boneless, skinless)'));
     await j.tap(prefixed('day-meal-cooked-').first);
-    await j.waitFor(find.text('Which matches your potatoes?'), what: 'which potatoes: how they were cooked, peel or not');
-    await j.tap(find.textContaining('Potato (Boiled · peeled)'));
+    // Cooked potatoes: the general cooked potato, said as general (no question).
+    await j.waitFor(find.textContaining('Potato (general)'), what: 'the general cooked potato');
     await j.waitFor(find.text('Ready to review. Nothing is logged until you tap Log meal.'), what: 'a complete meal');
     await j.shot('dm-05-ready');
 
@@ -71,7 +71,7 @@ void main() {
     // The account holds both foods once; reading the sentence was charged once, logging nothing.
     await j.waitUntil(() async => ((await j.snapshot(token))['foodEntries'] as List).length == 2, what: 'two entries on the account');
     final names = [for (final e in (await j.snapshot(token))['foodEntries'] as List) (e as Map)['name']];
-    expect(names, unorderedEquals(['Chicken breast', 'Potato']));
+    expect(names, unorderedEquals(['Chicken breast', 'Potato (general)']));
     final after = await used();
     expect(after - before, 1, reason: 'one charged request for the sentence; questions, review and logging free');
     debugPrint('GOHARD_DESCRIBE allowance used before=$before after=$after entries=$names');
@@ -83,8 +83,8 @@ void main() {
     await j.type('day-input', 'I had 100 g of cooked chicken thighs and 130 g of cooked potatoes');
     await j.tapKey('day-send');
     await j.waitFor(find.text('Which matches your cooked chicken thighs?'), what: 'the thigh choice', seconds: 40);
-    expect(find.text('Which matches your cooked potatoes?'), findsOneWidget);
-    expect(find.textContaining('Ready to review'), findsNothing, reason: 'neither was taken without asking');
+    expect(find.textContaining('Potato (general)'), findsOneWidget, reason: 'the general cooked potato, said as general');
+    expect(find.textContaining('Ready to review'), findsNothing, reason: 'the thighs\' skin is still asked');
     await j.shot('dm-08-reported-sentence');
     debugPrint('GOHARD_REPORTED allowance used=${await used()} (one more request for the second sentence)');
   });

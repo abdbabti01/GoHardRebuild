@@ -118,21 +118,21 @@ void main() {
       expect((first.common!.id, rowFacts(first).title), ('chicken-breast', 'Chicken breast'));
       expect(rowFacts(first).detail, allOf(contains('skinless'), contains('roasted')));
       expect(first.item.name, contains('skin not eaten'), reason: 'the record itself is a cooked, skinless breast');
-      expect(ids('chicken').first, 'chicken-breast');
+      expect(ids('chicken').first, 'chicken-cooked-nfs', reason: 'plain "chicken" leads with the general chicken record, never a specific cut');
     });
 
     test('rice: plain rice above rice cakes, which stay a snack', () {
       // Cooked and dry, white and brown (catalog v3): every plain rice before the snack.
       expect(ids('rice').last, 'rice-cakes');
       expect([for (final s in find('rice').common) s.common!.category], [...List.filled(ids('rice').length - 1, 'Carbohydrates'), 'Snacks']);
-      expect({for (final s in find('rice').common.take(ids('rice').length - 1)) rowFacts(s).title}, {'Brown rice', 'White rice'});
+      expect({for (final s in find('rice').common.take(ids('rice').length - 1)) rowFacts(s).title}, {'Rice', 'Brown rice', 'White rice'});
       expect(ids('rice cake'), ['rice-cakes']);
     });
 
     test('French names and accents find the same foods', () {
       expect(ids('œuf').first, startsWith('eggs'));
       expect(ids('oeufs').first, startsWith('eggs'));
-      expect(ids('riz').take(2), ['brown-rice', 'white-rice']);
+      expect(ids('riz').take(3), containsAll(['rice-cooked-nfs', 'brown-rice']));
       expect(ids('poitrine de poulet'), everyElement(startsWith('chicken-breast')));
       expect(ids('poitrine de poulet'), containsAll(['chicken-breast', 'chicken-breast-raw']));
       expect(ids('blanc de poulet'), everyElement(startsWith('chicken-breast')));

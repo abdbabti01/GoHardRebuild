@@ -13663,4 +13663,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dcMealAmountButton => 'Change amount';
+
+  @override
+  String dcMealGeneralName(String food) {
+    return '$food (general)';
+  }
+
+  @override
+  String get dcMealGeneralNote =>
+      'General record: what you didn’t say isn’t assumed. Change food if you know more.';
+
+  @override
+  String dcMealStandardSize(String portion) {
+    return 'Standard size: $portion';
+  }
 }

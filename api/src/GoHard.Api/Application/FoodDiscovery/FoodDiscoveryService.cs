@@ -23,8 +23,8 @@ public sealed class FoodDataOptions
     public bool UsdaConfigured => !string.IsNullOrWhiteSpace(UsdaApiKey) && !string.Equals(UsdaApiKey.Trim(), "DEMO_KEY", StringComparison.OrdinalIgnoreCase);
 }
 
-/// <summary><c>More</c>: a provider page came back full, so more foods may match than were returned (the app suggests a
-/// narrower search). Optional for clients: an older app ignores it.</summary>
+/// <summary><c>More</c>: one of GoHard's pages came back full (it asks USDA for the first page only, though USDA can page), so
+/// more foods may match than were returned (the app suggests a narrower search). Optional: an older app ignores it.</summary>
 public sealed record FoodSearchResult(List<FoodItem> Results, bool More = false);
 
 /// <summary>

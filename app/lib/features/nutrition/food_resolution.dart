@@ -61,8 +61,16 @@ enum Outcome { resolved, clarify, none }
 /// [unresolved]: the material details not said that set them apart. [estimate]: a reviewed record to offer as "I'm not
 /// sure", with what it would assume ([assumes]). [ask]: a detail to ask before choosing (raw or cooked, for a weighed food).
 class Resolution<T> {
-  const Resolution(this.outcome, {this.chosen, this.options = const [], this.unresolved = const [], this.estimate, this.assumes = const [], this.ask, this.reason = ''});
+  const Resolution(this.outcome,
+      {this.chosen, this.options = const [], this.unresolved = const [], this.estimate, this.assumes = const [], this.ask, this.reason = '', this.general = false, this.adequate = false});
   final Outcome outcome;
+
+  /// [chosen] is a reviewed everyday default (a general record: what it does not say is not specified), shown as such.
+  final bool general;
+
+  /// A reviewed record matches everything said (whatever else it names): retrieval need not look further. Relevant
+  /// candidates may exist without this (a record that cannot show "grilled" is no match for grilled chicken).
+  final bool adequate;
   final Candidate<T>? chosen;
   final List<Candidate<T>> options;
   final List<Attr> unresolved;
@@ -129,15 +137,28 @@ Resolution<T> resolveFood<T>(Said said, List<Candidate<T>> candidates) {
     compatible = [for (final c in compatible) if (!(c.traits[Attr.state]?.contains('raw') ?? false)) c];
   }
   if (compatible.isEmpty) return Resolution(Outcome.none, reason: candidates.isEmpty ? 'nothing found' : 'nothing compatible');
+  final adequate = compatible.any((c) => c.reviewed && unproven(c).isEmpty && !brandUnproven(c));
 
   // Weighed, raw or cooked not said, and the records differ or say it: asked first, it decides what the weight means.
   if (stateMatters && state == null && compatible.any((c) => c.traits[Attr.state] != null && !_anyOf(c.traits[Attr.state]))) {
-    return Resolution(Outcome.clarify, ask: Attr.state, unresolved: const [Attr.state], reason: 'raw or cooked not said');
+    return Resolution(Outcome.clarify, ask: Attr.state, unresolved: const [Attr.state], reason: 'raw or cooked not said', adequate: adequate);
   }
 
   int byOrigin(Candidate<T> a, Candidate<T> b) => a.origin.index != b.origin.index ? a.origin.index.compareTo(b.origin.index) : a.order.compareTo(b.order);
   final auto = [for (final c in compatible) if (c.reviewed && !c.generic && assumed(c).isEmpty && unproven(c).isEmpty && !brandUnproven(c)) c]..sort(byOrigin);
-  if (auto.isNotEmpty) return Resolution(Outcome.resolved, chosen: auto.first, reason: 'every detail agrees');
+  if (auto.isNotEmpty) return Resolution(Outcome.resolved, chosen: auto.first, reason: 'every detail agrees', adequate: true);
+
+  // A reviewed everyday default (docs/FOOD_DATA.md › Everyday defaults): a record the catalog marks `generic` — USDA's own
+  // record for the food when details are not specified ("Potato, NFS", "Egg, whole, cooked, NS as to cooking method") —
+  // taken without a question when it shows everything said and names nothing that was not; it is said to be general, and
+  // Change food stays. Never a record only because it is the only one.
+  List<Attr> named(Candidate<T> c) => [
+        for (final a in Attr.values)
+          if (a != Attr.family && said.value(a) == null && c.traits[a] != null && !_anyOf(c.traits[a]) && !c.traits[a]!.contains('none') && !(a == Attr.state && !stateMatters))
+            a,
+      ];
+  final general = [for (final c in compatible) if (c.reviewed && c.generic && unproven(c).isEmpty && !brandUnproven(c) && named(c).isEmpty) c]..sort(byOrigin);
+  if (general.isNotEmpty) return Resolution(Outcome.resolved, chosen: general.first, general: true, reason: 'a general record', adequate: true);
 
   // Choices: the records that take the least for granted, reviewed first; equivalent ones (the same material details) once.
   int cost(Candidate<T> c) => assumed(c).length + unknown(c) + unproven(c).length + (brandUnproven(c) ? 1 : 0);
@@ -159,5 +180,5 @@ Resolution<T> resolveFood<T>(Said said, List<Candidate<T>> candidates) {
     ..sort((a, b) => a.generic != b.generic ? (a.generic ? -1 : 1) : assumed(a).length != assumed(b).length ? assumed(a).length.compareTo(assumed(b).length) : byOrigin(a, b));
   final estimate = reviewed.firstOrNull;
   return Resolution(Outcome.clarify, options: options, unresolved: unresolved, estimate: estimate,
-      assumes: estimate == null ? const [] : assumed(estimate), reason: options.length == 1 ? 'one record, not proven' : 'details not said');
+      assumes: estimate == null ? const [] : assumed(estimate), reason: options.length == 1 ? 'one record, not proven' : 'details not said', adequate: adequate);
 }

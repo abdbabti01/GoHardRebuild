@@ -20387,6 +20387,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change amount'**
   String get dcMealAmountButton;
+
+  /// A food logged from a general record (details not specified): its name in the review and journal.
+  ///
+  /// In en, this message translates to:
+  /// **'{food} (general)'**
+  String dcMealGeneralName(String food);
+
+  /// Described meal card: the item uses a general record chosen without a question.
+  ///
+  /// In en, this message translates to:
+  /// **'General record: what you didn’t say isn’t assumed. Change food if you know more.'**
+  String get dcMealGeneralNote;
+
+  /// Described meal card: the weight of a counted portion comes from the record, not from the person.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard size: {portion}'**
+  String dcMealStandardSize(String portion);
 }
 
 class _AppLocalizationsDelegate

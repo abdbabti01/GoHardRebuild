@@ -407,6 +407,22 @@ suppressed the wider search, and the catalog had one).
   cooked first), **none** (Find food); the caller adds **amount** (the record's units do not fit) and **unavailable** (the
   search did not answer). The reason and the unresolved details travel with the item to the card.
 
+**Everyday defaults** (revised 26 Nov 2026, owner's clarification: sensible defaults, not a questionnaire). When the
+details are not said and the catalog has a **reviewed general record** for the food (`attrs.generic`: USDA's own record
+for it when details are not specified, e.g. "Potato, NFS", "Egg, whole, cooked, NS as to cooking method", "Chicken, NS as
+to part and cooking method, NS as to skin eaten", "Rice, cooked, NFS", "Milk, NFS", "Yogurt, NFS", ground beef of
+unspecified fat), that record is taken **without a question** when it shows everything said and names nothing that was
+not. It is said to be general on the card ("2 eggs (100 g) · Eggs (general) (Whole · cooked, way not specified)",
+"General record: what you didn't say isn't assumed. Change food if you know more.") and in the review and the journal
+("Eggs (general)"); a standard portion is said ("Standard size: 1 egg (50 g)"); Change food and Change amount are on the
+item. Explicit words win ("raw eggs", "egg whites", "fried eggs", "boiled peeled potatoes" take that record). A record is
+never a default only because it is the only one: the default is the catalog's reviewed decision, not a score. A
+question is asked only when no general record fits and the records differ in a detail that matters for the family (the
+profiles below): cooked chicken thighs (no general thigh record — every thigh record states the skin, and the general
+chicken record cannot show "thigh"), raw chicken, dry rice (white or brown), bread (white or whole wheat). Raw or cooked
+is still asked for a weighed amount (it decides what the weight means). No general record is used for pasta (plain "pasta"
+means regular pasta) or bread (none exists).
+
 **Acceptance rules for a described meal** (what someone ate is never chosen for them):
 
 1. A record that *contradicts* anything said is not a candidate (raw for cooked, skin eaten for skinless, another brand,
@@ -434,9 +450,9 @@ item says its amount and record and offers **Change food** (the picker starts fr
 same thing — grams of food in the same state — and from the new record's own start otherwise; no yield or density is ever
 applied), **Change amount** and **Remove**. After a choice the result is announced to a screen reader (the button is gone).
 
-**I'm not sure** offers one reviewed record, said before it is used: "Use Potato (Cooked · way not specified) as an
+**I'm not sure** offers one reviewed record, said before it is used: "Use Chicken (Cooked · part, way and skin not specified) as an
 estimate? Its own values are used as they are, and may differ from what you ate." — USDA's not-specified record when
-there is one, else the reviewed record that takes least for granted. Accepted, it is named "Potato (estimate)" through the
+there is one, else the reviewed record that takes least for granted. Accepted, it is named "Chicken (estimate)" through the
 review and the logged entry (the entry's own name: no new field), with that record's real values. Without a reviewed
 record nothing is offered: Search for another or Find food.
 
@@ -454,12 +470,20 @@ breast" or "roasted" added by the model is not taken as said. Without evidence (
 name and preparation, as before. One provider call per description, the same allowance, guard, reservations, charging and
 request-ID rules; every question, choice, search, amount, estimate and calculation here is local and free.
 
-**Compatibility.** New app + older server: no `evidence` (the label is read instead), no `more` (no note); everything else
-works. Older app + new server: the extra fields are ignored. No capability, migration or configuration change. Drafts kept
-from IPA 86 still read: their items keep their statuses, a `state` question is answered by the new resolver, ready items
-stay as they were, and nothing logged changes.
+**Compatibility** (checked against the response shape of the server deployed now, main 1ebe45b: `foods` without
+`evidence`, search without `more`; `food_resolution_test` › retrieval and compatibility).
+- *Works before deploying this API*: Describe your meal end to end (the deployed server already declares
+  `coach.meal-log`), the same everyday defaults, questions, estimates, Change food/amount, review and logging, search with
+  its wider answer, Looked up before, the catalog. All of that is on the phone.
+- *Missing original words*: the deployed server sends no `evidence`, so the phone takes it from the person's own sentence
+  (`withSentence`): only words of the label, name and preparation that the sentence itself contains count as said. "breast"
+  or "roasted" added by the model for "I ate 100 g of chicken" is not taken as said, so the answer is never trusted beyond
+  the person's words. The known limit: a word said for another food of the same sentence also counts.
+- *Needs the new API*: per-food evidence from the model (more exact than the sentence check, one food at a time), the
+  prompt asking for it, and `more` (without it the "more results" note is not shown). Older apps ignore both fields.
+- No capability, migration or configuration change. Drafts kept from IPA 86 still read; nothing logged changes.
 
-**Catalog version 3** (123 foods, `scripts/common-foods.spec.json`): every entry has reviewed `attrs`; 46 new records from
+**Catalog version 3** (131 foods, eight of them reviewed general records, `scripts/common-foods.spec.json`): every entry has reviewed `attrs`; 46 new records from
 the official FoodData Central downloads (FNDDS 2024-10-31, Foundation 2026-10-29, SR Legacy 2018-04) instead of repeated
 trial-key calls: a local stand-in (`scripts/usda-dataset-server.mjs`) answers the API's own search call from the files
 (kept outside git), so each record is the GoHard API's own normalization (`UsdaProvider.Parse`), and
@@ -469,18 +493,19 @@ descriptions, and portion order. Earlier records stay byte for byte (`--reuse`).
 
 | Family | Variants in the catalog |
 |---|---|
-| Potato | raw (with skin); boiled peeled; boiled skin eaten; baked skin eaten; baked peeled; roasted skin eaten; cooked, way not specified |
+| Potato | raw (with skin); boiled peeled; boiled skin eaten; baked skin eaten; baked peeled; roasted skin eaten; general: cooked; boiled, baked and roasted with peel not specified |
 | Sweet potato | raw; baked; baked, no added fat; boiled; cooked, way not specified |
-| Chicken breast | raw skinless; raw with skin; cooked skin not eaten; cooked skin eaten (way not specified); baked or roasted, skinless |
+| Chicken | general: cooked, part, way and skin not specified |
+| Chicken breast | raw skinless; raw with skin; cooked (way not specified) skin not eaten / skin eaten; baked or roasted, skinless |
 | Chicken thigh | raw skinless; raw with skin; cooked skin not eaten; cooked skin eaten; roasted meat only |
-| Rice | white and brown, each dry and cooked (cooking fat not specified, and no added fat) |
+| Rice | general: cooked, kind not specified; white and brown, each dry and cooked |
 | Pasta | regular dry and cooked; whole wheat dry and cooked |
 | Oats | dry; oatmeal cooked with water, no added fat; oatmeal cooked, way not specified |
 | Ground beef | 90 %, 85 %, 80 % lean raw; 90 % broiled patty; 80 % pan-browned; cooked, fat level not specified |
 | Fish | salmon raw and cooked; cod raw and cooked; tilapia raw and baked or broiled; tuna canned in water |
-| Eggs | whole raw; cooked, way not specified; boiled or poached; fried; whites |
-| Milk | whole, 2 %, 1 %, skim; almond (its own family) |
-| Yogurt | plain low fat; plain whole milk; Greek nonfat; Greek whole milk |
+| Eggs | general: whole, cooked, way not specified; whole raw; boiled or poached; fried; whites |
+| Milk | general: fat level not specified; whole, 2 %, 1 %, skim; almond (its own family) |
+| Yogurt | general: kind not specified; Greek plain, milk not specified; plain low fat; plain whole milk; Greek nonfat; Greek whole milk |
 | Bread | whole wheat; white |
 | Legumes | black beans, chickpeas, lentils cooked from dried; lentils dry |
 | Couscous | dry; cooked |
@@ -497,8 +522,10 @@ a bundled food matches exactly** ("potato" shows the plain potatoes, then sweet 
 answer below). Once per question, remembered, stale answers dropped, failures still never remove what is shown, offline
 search unchanged, nothing per keystroke. A wider answer that names the food better than anything on the phone is listed
 first. Foods only met in earlier searches are listed as **Looked up before**, no longer under "Your foods". When a
-provider page comes back full, the API says `more` and the screen says "More foods match than are shown: add a word to
-narrow the search" (no pagination in the provider answer). Search and lookups use no AI allowance.
+page comes back full, the API says `more` and the screen says "More foods match than are shown: add a word to narrow the
+search". The limit is GoHard's, not USDA's: FoodData Central's search pages (`pageSize` up to 200, `pageNumber` through the
+whole result set, per its API specification), while GoHard's adapter asks only for the first 25 basic and 15 branded
+results and does not page. Narrowing reaches the rest; paging is not added. Search and lookups use no AI allowance.
 
 Tests: `food_resolution_test` (19: the reported sentence and its raw-or-cooked variant; explicit descriptions; "chicken"
 and "potato"; one underspecified record; rice, pasta, ground beef, milk, yogurt, bread, sandwich, couscous; contradictions
