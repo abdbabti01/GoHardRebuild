@@ -145,6 +145,36 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Food resolution: everyday defaults, per-food evidence, catalog v3 — deployed to testing 25 Nov 2026 (`main` 5fe71ec)
+
+- **What:** Describe your meal now separates reading, retrieval, ranking and resolution (docs/FOOD_DATA.md › Food
+  resolution). Typed food attributes in en/fr/ar (unknown ≠ false); only reviewed records are accepted without asking;
+  a **reviewed general record** (USDA "not further specified") is used without a question when it shows everything said
+  and names nothing that was not, shown as "Potato (general)" with "Uses a general nutrition estimate. Change the food or
+  portion for a closer match." and a standard portion ("Standard size: 1 egg (50 g)"). Explicit words win (raw eggs, egg
+  whites, boiled peeled potatoes). Questions only where a detail matters and no general record fits (cooked chicken
+  thighs: the skin; raw or cooked for a weight). Each food's details come only from its own words: in "boiled potatoes and
+  chicken" the chicken is not boiled; in "raw carrots and cooked chicken" it is cooked, never raw. Search always widens
+  after the pause; Change food / Change amount / Remove on each item; "I'm not sure" estimates are disclosed. Catalog v3
+  (131 foods) from the official FDC downloads.
+- **API:** optional `evidence` per described food (kept only when the words appear in the question) and `more` on
+  `/foods/search`. Additive; no migration, no new configuration, contract 2. Older apps ignore both; this app works with
+  the older server shape too (tested). Charging unchanged.
+- **Build:** app code e835c3a (CI 276); unsigned IPA run 89 from e835c3a (tag `ipa-food-mixed-e835c3a`, artifact
+  GoHard-Dev-unsigned-ipa), supersedes IPA 88 and 86. 5fe71ec adds only the ledger, so **IPA 89 has the deployed app
+  code**. No exercise-preview code, media or build options.
+- **Merged and deployed:** authorized by the owner's request of 25 Nov 2026. `main` fast-forwarded ac324ff → 5fe71ec (main
+  had no newer commits; nothing to resolve). CI 278 passed on the branch head and CI 279 on `main`. Railway devoted-caring
+  deployment 8062420392 reported Success; hosted `/health/ready` Ready with 17 migrations (unchanged),
+  `/api/v1/capabilities` contract 2 and advertises `coach.meal-log` and `food.search`; `/coach/daily` and `/foods/search`
+  without a token 401. diplomatic-intuition not touched. No variable, secret, subscription or hosted account changed or
+  created.
+- **Verified:** API 270/270, app 1083/1083, analyze, l10n; mixed-meal tests in both response shapes; emulator journey of
+  the defaults with the coach **stub**. **Not verified:** the hosted `evidence`/`more` fields (behind sign-in; no account
+  created), live Groq reading of meal sentences (no key here: left for the owner's iPhone test), iPhone, VoiceOver.
+- **Rollback:** revert the six commits ac324ff..5fe71ec on `main`; the API change is additive, no data or schema is
+  affected. Entries logged with general records stay valid food entries.
+
 ### Food search relevance, Describe your meal and the Add food invitation — deployed to testing 25 Nov 2026 (`main` 1ebe45b)
 
 - **What:** Food search ranks plain everyday foods before products (raw and cooked chicken breast first), respects
