@@ -314,7 +314,7 @@ void main() {
 
       // A category chosen while asking: the wider database has no categories, so its answer has no place there.
       await type('egg');
-      await _tap(tester, 'food-search-online');
+      await tester.pump(LogFoodScreen.pause); // asked by itself after the pause
       await _tap(tester, 'food-category-Proteins');
       held.pending['egg']!.complete([riceCooked()]);
       await tester.pumpAndSettle();
@@ -323,7 +323,7 @@ void main() {
       // Another list chosen while asking.
       await _tap(tester, 'food-category-all');
       await type('tofu');
-      await _tap(tester, 'food-search-online');
+      await tester.pump(LogFoodScreen.pause);
       await _tap(tester, 'food-scope-recent');
       held.pending['tofu']!.complete([FoodItem({...chickenRaw().j, 'sourceId': '172476', 'name': 'Tofu, raw, firm'})]);
       await tester.pumpAndSettle();
@@ -357,7 +357,8 @@ void main() {
       expect(find.text('No common food in Fruits matches "oat".'), findsOneWidget);
 
       await _tap(tester, 'food-category-all');
-      expect((find.text('Overnight oats').evaluate().length, find.byKey(const Key('food-search-online')).evaluate().length, find.byKey(const Key('food-category-note')).evaluate().length), (1, 1, 0));
+      // Back to every food: the person's own oats again, no category note; the wider search is asked by itself after the pause.
+      expect((find.text('Overnight oats').evaluate().length, find.byKey(const Key('food-category-note')).evaluate().length), (1, 0));
     });
 
     testWidgets('a brand typed finds the branded food and no generic one', (tester) async {
@@ -491,7 +492,7 @@ void main() {
     testWidgets('search that is not set up on the server says so before anything is asked, and common foods still work', (tester) async {
       final fakes = FoodFakes();
       final server = FakeServer()..capabilities = {'contractVersion': 1, 'minimumClientContract': 1, 'capabilities': ['food.barcode']};
-      final container = await pumpApp(tester, [...await _overrides(tester, fakes), transportProvider.overrideWithValue(server)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'), size: const Size(390, 2400));
+      final container = await pumpApp(tester, [...await _overrides(tester, fakes), transportProvider.overrideWithValue(server)], home: const LogFoodScreen(dayKey: _day, meal: 'Lunch'), size: const Size(390, 5000));
       await tester.runAsync(() => container.read(compatibilityProvider.notifier).check());
       await tester.enterText(find.byKey(const Key('food-search')), 'chicken');
       await tester.pumpAndSettle();

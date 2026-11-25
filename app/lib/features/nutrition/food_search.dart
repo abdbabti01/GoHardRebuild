@@ -414,6 +414,7 @@ class CommonFood {
         category = j['category'] as String,
         aliases = [for (final a in j['aliases'] as List? ?? const []) a as String],
         portion = j['portion'] as String?,
+        attrs = j['attrs'] is Map ? Map<String, dynamic>.from(j['attrs'] as Map) : const {},
         item = FoodItem(j['item'] as Json),
         words = {
           for (final e in (words ?? const <String, dynamic>{}).entries)
@@ -426,6 +427,10 @@ class CommonFood {
 
   /// The label of the source-stated portion a new entry starts from ("1 egg"), or null to start at 100 g.
   final String? portion;
+
+  /// The record's reviewed details (family, cut, raw or cooked, method, skin, fat…; docs/FOOD_DATA.md › Food resolution):
+  /// GoHard's labels for matching a description, never USDA data. Empty when nothing was reviewed.
+  final Map<String, dynamic> attrs;
   final FoodItem item;
 
   /// The food's words by language code ("fr", "ar"), from `common-foods.l10n.json`. English is the main file's.
@@ -463,12 +468,6 @@ class CommonFoodCatalog {
       foods: [for (final f in (j['foods'] as List).cast<Json>()) CommonFood(f, words[f['id']] as Json?)]);
   }
   static final empty = CommonFoodCatalog(version: 0, provenance: const {}, categories: const [], foods: const []);
-
-  /// Foods eaten as they come, or whose weight cooking barely changes: how they were weighed (raw or cooked) changes
-  /// nothing that matters. Whole categories, and a few foods filed elsewhere (a banana is a carbohydrate here).
-  static const _asIsCategories = {'Vegetables', 'Fruits', 'Dairy', 'Fats & Oils', 'Snacks', 'Beverages'};
-  static const _asIsFoods = {'banana', 'eggs', 'egg-whites', 'tofu'};
-  static bool eatenAsIs(CommonFood f) => _asIsCategories.contains(f.category) || _asIsFoods.contains(f.id);
 
   /// Every word the app knows a food by (each food's names, preparations and aliases in every language, and the
   /// translated staples): what a misspelt search word is corrected to.

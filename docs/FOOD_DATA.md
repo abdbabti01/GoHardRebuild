@@ -154,7 +154,7 @@ nothing anywhere (USDA answers 0 hits). Checked against USDA's live answers on 2
 - **French and Arabic for USDA.** A short list of everyday food words (`food_search.dart` › `_english`) puts the search in
   English for the wider database ("poitrine de poulet cuite" → "breast chicken cooked"); unknown words are kept and small
   words dropped; the screen says which words were sent. Results sharing no word at all with the search are not shown.
-- **When the wider search runs by itself.** After the 0.6 s pause, unless something on the phone is named *exactly*
+- **When the wider search runs by itself** (revised 26 Nov 2026: now always after the pause, see *Food resolution › Search*). After the 0.6 s pause, unless something on the phone is named *exactly*
   (an everyday food or the person's own): "chicken thigh" or a brand is worth asking for even when the phone has other
   chicken; "eggs" is not. **Search more foods and brands** stays under the results for every other case, so an exact
   everyday match ("chicken breast") never hides branded products: one tap asks once, and the products follow the plain
@@ -377,6 +377,137 @@ On the phone (`features/nutrition/water.dart`, `nutrition_tools.dart`):
 - Water is off until turned on in Customize tracking, with carbs and fat shown or hidden; hiding changes nothing
   stored (entries, goals and logged values stay). It is offered only where the server declares `water.entries`, so
   nothing is queued that an older server could never accept.
+
+### Food resolution (26 Nov 2026, `feature/food-resolution`)
+
+**The bug it fixes** (IPA 86, reproduced locally with no model involved, `food_resolution_test` › the reported sentence):
+"100 g of cooked chicken thighs and 130 g of cooked potatoes" became *Chicken thigh — roasted, meat only* and *Potato —
+baked, with skin*, ready to review. The model's words were fine (`chicken thighs`, `potatoes`, `cooked`). Retrieval stopped
+at the first source with a hit (the bundled catalog) and never looked further; "cooked" matched any cooking method; the
+catalog held one cooked thigh and one potato; and a single "sure" match was taken as the answer. Roasted, meat only, baked
+and peel eaten were never said. Searching "potato" showed one ordinary potato for the same reason (an exact local name
+suppressed the wider search, and the catalog had one).
+
+**Four parts, one set of food semantics** (`food_traits.dart`, `food_resolution.dart`, `meal_ideas.dart`):
+
+- *Interpretation* — what was said. `readTraits` reads a text into typed attributes, the same way for what a person said
+  and for a record's description: family (chicken, potato, rice…), cut or part (breast, thigh, ground, white), state
+  (raw/dry or cooked), method, skin or peel, fat level (2 %, 90 % lean…), variety (white/brown, whole wheat, Greek), added
+  fat, additions (breaded, sauce, flavoured, restaurant). Phrases before words, in English, Canadian French and Arabic
+  ("skin not eaten", "sans peau", "بدون جلد", "non pelé", "مطبوخة"); "from raw", "from frozen" and "dry heat" are read as
+  what they are (what it was made from, a way of cooking), never as the weight basis. An attribute not mentioned is
+  absent: **unknown, never false**. `*` is a record saying a detail is not specified (USDA's "NS as to …", "NFS"). Said
+  details come from the person's own words for the food (`evidence`, below), never from what the model added.
+- *Retrieval* — `FoodMatcher.candidates`: the bundled catalog, the person's saved foods and foods seen on this phone, all
+  at once (where a record comes from orders it, it never stops the look); then, only when none of them is compatible, the
+  account's food search, at most 6 times per request, once per query, and remembered by `FoodDiscovery` for ten minutes, so
+  answering a question never repeats a provider call. A search that does not answer is reported as such (`unavailable`).
+- *Ranking* — unchanged `relevance` for manual search (tier, then specificity), with source as a factor only (see Search).
+- *Resolution* — `resolveFood`, pure, with explicit outcomes: **resolved** (one record), **clarify** (a choice, or raw or
+  cooked first), **none** (Find food); the caller adds **amount** (the record's units do not fit) and **unavailable** (the
+  search did not answer). The reason and the unresolved details travel with the item to the card.
+
+**Acceptance rules for a described meal** (what someone ate is never chosen for them):
+
+1. A record that *contradicts* anything said is not a candidate (raw for cooked, skin eaten for skinless, another brand,
+   another family: sweet potato for potato). A record with additions (breaded, sauce, flavoured, restaurant) only when said.
+2. A record taken without asking must be **reviewed** (the catalog's own `attrs`), must **prove** everything said (a record
+   that does not say it, or says it is not specified, cannot prove "roasted" or "no added fat"), and must **add nothing
+   material that was not said**. One record found is not proof; a close name is not proof; a score is not proof.
+3. What is material is a small, documented profile per family (`familyProfiles`): *asked* details (chicken: part, raw or
+   cooked, skin; potato: raw or cooked, method, peel; rice/pasta: kind, dry or cooked; ground beef: part, fat level, raw or
+   cooked; milk: fat level; yogurt: kind and fat; bread: kind; eggs: part; fish, oats, couscous, legumes: raw or cooked) and
+   *defaultable* details, where USDA's "not specified" record is taken without asking (cooking fat everywhere — asking about
+   oil for every food would be endless; the method of eggs, chicken, fish, grains). What the plain word means is a default
+   (an egg is a whole egg, pasta is regular pasta). Any family without a profile only checks what was said. Raw or cooked
+   is asked only for an amount weighed or measured; for whole items eaten, raw records are left out when cooked ones exist.
+4. Several reviewed records with the same material details are one choice (equivalence by attributes); the first in the
+   catalog's order stands for them. Values from different records are never combined.
+5. Saved and seen foods and the food search's records are candidates beside the catalog, but never taken without asking.
+   Choosing one is the person's confirmation. Nothing said becomes a personal default.
+
+**What the person sees** (the Leon/Leona draft card, no new screen): for each item, at most one question at a time —
+"Weighed raw or cooked?" first when it matters, then **"Which matches your potatoes?"** with up to 5 real records (the
+ones that take least for granted; options never invented, never a combination), "Not said: how it was cooked, skin or
+peel", **Search for another**, **I'm not sure** and **Remove**. Each item is resolved on its own; answered ones stay. A ready
+item says its amount and record and offers **Change food** (the picker starts from the same amount when it still means the
+same thing — grams of food in the same state — and from the new record's own start otherwise; no yield or density is ever
+applied), **Change amount** and **Remove**. After a choice the result is announced to a screen reader (the button is gone).
+
+**I'm not sure** offers one reviewed record, said before it is used: "Use Potato (Cooked · way not specified) as an
+estimate? Its own values are used as they are, and may differ from what you ate." — USDA's not-specified record when
+there is one, else the reviewed record that takes least for granted. Accepted, it is named "Potato (estimate)" through the
+review and the logged entry (the entry's own name: no new field), with that record's real values. Without a reviewed
+record nothing is offered: Search for another or Find food.
+
+**Unresolved items never vanish**: the total says "So far, without potatoes"; Review and Log meal wait until every item
+is resolved, removed or accepted as an estimate. Nothing is logged automatically.
+
+**Suggestions are not descriptions.** Meal ideas keep their own policy: a preparation the idea proposes is part of the
+suggestion, and among equally good reviewed records an idea takes the one that adds the fewest details (`_plainest`:
+"eggs" → eggs cooked in a way not specified, never an NFS record when another is there). Ideas never write the journal.
+
+**The model contract** (`POST /coach/daily`, kind `ate`, additive): each food also has `evidence`, the person's own words
+for it copied from their message. The server keeps it only when it really is part of the message (case and spacing
+aside, 120 characters at most), else it is null; the phone reads said details from the evidence only, so "chicken
+breast" or "roasted" added by the model is not taken as said. Without evidence (an older server) the phone reads the label,
+name and preparation, as before. One provider call per description, the same allowance, guard, reservations, charging and
+request-ID rules; every question, choice, search, amount, estimate and calculation here is local and free.
+
+**Compatibility.** New app + older server: no `evidence` (the label is read instead), no `more` (no note); everything else
+works. Older app + new server: the extra fields are ignored. No capability, migration or configuration change. Drafts kept
+from IPA 86 still read: their items keep their statuses, a `state` question is answered by the new resolver, ready items
+stay as they were, and nothing logged changes.
+
+**Catalog version 3** (123 foods, `scripts/common-foods.spec.json`): every entry has reviewed `attrs`; 46 new records from
+the official FoodData Central downloads (FNDDS 2024-10-31, Foundation 2026-10-29, SR Legacy 2018-04) instead of repeated
+trial-key calls: a local stand-in (`scripts/usda-dataset-server.mjs`) answers the API's own search call from the files
+(kept outside git), so each record is the GoHard API's own normalization (`UsdaProvider.Parse`), and
+`build-common-foods.mjs --verify` checked all 77 earlier records against it: same records, names, bases, versions and
+portions; differences only in rounding (the live search keeps one more decimal, ≤ 0.6 %), the order of FNDDS's additional
+descriptions, and portion order. Earlier records stay byte for byte (`--reuse`). Coverage matrix:
+
+| Family | Variants in the catalog |
+|---|---|
+| Potato | raw (with skin); boiled peeled; boiled skin eaten; baked skin eaten; baked peeled; roasted skin eaten; cooked, way not specified |
+| Sweet potato | raw; baked; baked, no added fat; boiled; cooked, way not specified |
+| Chicken breast | raw skinless; raw with skin; cooked skin not eaten; cooked skin eaten (way not specified); baked or roasted, skinless |
+| Chicken thigh | raw skinless; raw with skin; cooked skin not eaten; cooked skin eaten; roasted meat only |
+| Rice | white and brown, each dry and cooked (cooking fat not specified, and no added fat) |
+| Pasta | regular dry and cooked; whole wheat dry and cooked |
+| Oats | dry; oatmeal cooked with water, no added fat; oatmeal cooked, way not specified |
+| Ground beef | 90 %, 85 %, 80 % lean raw; 90 % broiled patty; 80 % pan-browned; cooked, fat level not specified |
+| Fish | salmon raw and cooked; cod raw and cooked; tilapia raw and baked or broiled; tuna canned in water |
+| Eggs | whole raw; cooked, way not specified; boiled or poached; fried; whites |
+| Milk | whole, 2 %, 1 %, skim; almond (its own family) |
+| Yogurt | plain low fat; plain whole milk; Greek nonfat; Greek whole milk |
+| Bread | whole wheat; white |
+| Legumes | black beans, chickpeas, lentils cooked from dried; lentils dry |
+| Couscous | dry; cooked |
+
+Genuine gaps, said rather than filled with a lookalike: chicken drumsticks and wings, turkey other than roasted breast,
+beef cuts other than ground, pork other than tenderloin, shrimp raw, fried or mashed potatoes, sweet potato skin
+variants (the records do not state it), rice kinds (basmati, jasmine), bread kinds (rye, sourdough, pita), flavoured
+yogurts, scrambled eggs, legumes with "fat not specified" (FNDDS has none: the choice is no fat or fat added), oats cooked
+with milk, and plant milks other than almond. They are found by the food search and confirmed by the person. Canadian
+brands are only what USDA's branded data holds.
+
+**Search** (Add food): the phone's foods are shown at once; the wider search is now asked after the 0.6 s pause **even when
+a bundled food matches exactly** ("potato" shows the plain potatoes, then sweet potatoes, then products, and the wider
+answer below). Once per question, remembered, stale answers dropped, failures still never remove what is shown, offline
+search unchanged, nothing per keystroke. A wider answer that names the food better than anything on the phone is listed
+first. Foods only met in earlier searches are listed as **Looked up before**, no longer under "Your foods". When a
+provider page comes back full, the API says `more` and the screen says "More foods match than are shown: add a word to
+narrow the search" (no pagination in the provider answer). Search and lookups use no AI allowance.
+
+Tests: `food_resolution_test` (19: the reported sentence and its raw-or-cooked variant; explicit descriptions; "chicken"
+and "potato"; one underspecified record; rice, pasta, ground beef, milk, yogurt, bread, sandwich, couscous; contradictions
+and brands; negation, French, Arabic; evidence; saved records beside the catalog; one search per query, Try again;
+estimates; follow-up amounts), `meal_log_test` (13, rewritten to these rules), `meal_log_ui_test` › food resolution on
+the card (the reported sentence through Log meal with an estimate, one request; Change food keeping the amount;
+unavailable), search tests updated for the catalog (`food_search_test`, `food_relevance_test`), API `MealLogTests`
+(evidence kept and dropped) and `FoodDataTests` (`more`). Renders: docs/evidence/food-resolution/ (en light, fr-CA dark,
+ar at 320 px with 2× text).
 
 ### One tap for a drink, and History (18 Oct 2026, GoHard_Today_History_Water_Corrections)
 

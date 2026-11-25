@@ -13794,6 +13794,93 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get foodInviteBodyShort =>
       'Tu vérifies avant que rien ne soit consigné.';
+
+  @override
+  String dcMealWhichMatches(String food) {
+    return 'Lequel correspond à « $food »?';
+  }
+
+  @override
+  String dcMealNotSaid(String details) {
+    return 'Non précisé : $details';
+  }
+
+  @override
+  String get dcAttrCut => 'la partie';
+
+  @override
+  String get dcAttrState => 'cru ou cuit';
+
+  @override
+  String get dcAttrMethod => 'le mode de cuisson';
+
+  @override
+  String get dcAttrSkin => 'la peau ou la pelure';
+
+  @override
+  String get dcAttrFat => 'la teneur en gras';
+
+  @override
+  String get dcAttrVariety => 'la sorte';
+
+  @override
+  String get dcAttrAddedFat => 'le gras ajouté';
+
+  @override
+  String get dcAttrAddition => 'ce qui a été ajouté';
+
+  @override
+  String get dcMealNotSure => 'Je ne sais pas';
+
+  @override
+  String dcMealEstimateOffer(String food) {
+    return 'Utiliser $food comme estimation? Ses propres valeurs sont utilisées telles quelles et peuvent différer de ce que tu as mangé.';
+  }
+
+  @override
+  String get dcMealEstimateGeneric =>
+      'Cet aliment ne précise pas comment il a été préparé.';
+
+  @override
+  String get dcMealUseEstimate => 'Utiliser cette estimation';
+
+  @override
+  String dcMealEstimateName(String food) {
+    return '$food (estimation)';
+  }
+
+  @override
+  String get dcMealChangeFood => 'Changer d’aliment';
+
+  @override
+  String dcMealChangeFoodOf(String food) {
+    return 'Changer d’aliment : $food';
+  }
+
+  @override
+  String dcMealChangeAmountOf(String food) {
+    return 'Changer la quantité : $food';
+  }
+
+  @override
+  String dcMealLookupUnavailable(String food) {
+    return 'Impossible de chercher $food pour l’instant. Rien d’autre n’a changé.';
+  }
+
+  @override
+  String dcMealChosen(String food, String amount) {
+    return '$food : $amount';
+  }
+
+  @override
+  String get foodGroupSeen => 'Déjà cherchés';
+
+  @override
+  String get foodSearchMoreResults =>
+      'D’autres aliments correspondent : ajoute un mot pour préciser la recherche.';
+
+  @override
+  String get dcMealAmountButton => 'Changer la quantité';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

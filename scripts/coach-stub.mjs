@@ -18,13 +18,16 @@ const reply = {
   keep: [{ itemId: 'subway-ca:potato-rings-4', quantity: 1 }], exclude: [], prefer: [], avoid: [], priority: 'protein',
   clarification: null, unknownItems: [],
 };
-/** A food as the meal rule reads it: name, amount and unit only when written as "120 g of x", "2 eggs", "a tablespoon of x". */
+/** A food as the meal rule reads it (with its words as evidence): name, amount and unit only when written as "120 g of x", "2 eggs", "a tablespoon of x". */
 function food(name, quantity = null, unit = null, noun = null) {
   const n = name.trim().replace(/^(of|some|the) /, '');
   return { name: n, label: n, preparation: null, brand: null, quantity, unit, noun };
 }
 function said(part) {
   const p = part.trim().replace(/[.!]$/, '');
+  return { ...parsed(p), evidence: p }; // the person's own words for this food, as the real contract asks
+}
+function parsed(p) {
   let m;
   if ((m = p.match(/^(\d+(?:\.\d+)?) ?(g|kg|oz|lb|ml|l)\b (?:of )?(.+)$/))) return food(m[3], +m[1], m[2]);
   if ((m = p.match(/^(?:a|an|one|1) (tablespoon|teaspoon|cup|slice|piece) (?:of )?(.+)$/))) return food(m[2], 1, 'piece', m[1]);

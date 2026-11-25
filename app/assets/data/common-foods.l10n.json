@@ -309,6 +309,190 @@
     "coconut-water": {
       "fr": {"name": "Eau de coco", "qualifier": "Non sucrée", "portion": null, "aliases": []},
       "ar": {"name": "ماء جوز الهند", "qualifier": "غير محلّى", "portion": null, "aliases": ["ماء النارجيل", "مياه جوز الهند", "ماء جوز هند"]}
+    },
+    "potato-boiled-peeled": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Bouillie · pelée", "portion": null, "aliases": ["patate bouillie", "pommes de terre bouillies"]},
+      "ar": {"name": "بطاطس", "qualifier": "مسلوقة · مقشرة", "portion": null, "aliases": ["بطاطا", "بطاطس مسلوقة"]}
+    },
+    "potato-boiled-skin": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Bouillie · avec la pelure", "portion": null, "aliases": ["patate bouillie"]},
+      "ar": {"name": "بطاطس", "qualifier": "مسلوقة · بقشرها", "portion": null, "aliases": ["بطاطا", "بطاطس مسلوقة"]}
+    },
+    "potato-baked-peeled": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Cuite au four · pelée", "portion": null, "aliases": ["patate au four"]},
+      "ar": {"name": "بطاطس", "qualifier": "مخبوزة · مقشرة", "portion": null, "aliases": ["بطاطا", "بطاطس مخبوزة"]}
+    },
+    "potato-roasted": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Rôtie · avec la pelure", "portion": null, "aliases": ["patates rôties", "pommes de terre rôties"]},
+      "ar": {"name": "بطاطس", "qualifier": "محمرة · بقشرها", "portion": null, "aliases": ["بطاطا", "بطاطس محمرة"]}
+    },
+    "potato-raw": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Crue · avec la pelure", "portion": null, "aliases": ["patate crue"]},
+      "ar": {"name": "بطاطس", "qualifier": "نيئة · بقشرها", "portion": null, "aliases": ["بطاطا", "بطاطس نيئة"]}
+    },
+    "potato-nfs": {
+      "fr": {"name": "Pomme de terre", "qualifier": "Cuite · façon non précisée", "portion": null, "aliases": ["patate"]},
+      "ar": {"name": "بطاطس", "qualifier": "مطبوخة · الطريقة غير محددة", "portion": null, "aliases": ["بطاطا"]}
+    },
+    "sweet-potato-baked": {
+      "fr": {"name": "Patate douce", "qualifier": "Cuite au four", "portion": null, "aliases": []},
+      "ar": {"name": "بطاطا حلوة", "qualifier": "مخبوزة", "portion": null, "aliases": ["بطاطا حلوة مخبوزة"]}
+    },
+    "sweet-potato-boiled": {
+      "fr": {"name": "Patate douce", "qualifier": "Bouillie", "portion": null, "aliases": []},
+      "ar": {"name": "بطاطا حلوة", "qualifier": "مسلوقة", "portion": null, "aliases": ["بطاطا حلوة مسلوقة"]}
+    },
+    "sweet-potato-raw": {
+      "fr": {"name": "Patate douce", "qualifier": "Crue", "portion": null, "aliases": []},
+      "ar": {"name": "بطاطا حلوة", "qualifier": "نيئة", "portion": null, "aliases": []}
+    },
+    "sweet-potato-nfs": {
+      "fr": {"name": "Patate douce", "qualifier": "Cuite · façon non précisée", "portion": null, "aliases": []},
+      "ar": {"name": "بطاطا حلوة", "qualifier": "مطبوخة · الطريقة غير محددة", "portion": null, "aliases": []}
+    },
+    "chicken-breast-cooked": {
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite · sans la peau", "portion": null, "aliases": ["blanc de poulet", "poulet"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "مطبوخ · بدون جلد", "portion": null, "aliases": ["دجاج", "صدور دجاج"]}
+    },
+    "chicken-breast-cooked-skin": {
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Cuite · avec la peau", "portion": null, "aliases": ["poulet"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "مطبوخ · مع الجلد", "portion": null, "aliases": ["دجاج"]}
+    },
+    "chicken-breast-raw-skin": {
+      "fr": {"name": "Poitrine de poulet", "qualifier": "Crue · avec la peau", "portion": null, "aliases": ["poulet"]},
+      "ar": {"name": "صدر دجاج", "qualifier": "نيء · مع الجلد", "portion": null, "aliases": ["دجاج"]}
+    },
+    "chicken-thigh-cooked": {
+      "fr": {"name": "Cuisse de poulet", "qualifier": "Cuite · sans la peau", "portion": null, "aliases": ["haut de cuisse de poulet", "poulet"]},
+      "ar": {"name": "فخذ دجاج", "qualifier": "مطبوخ · بدون جلد", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج"]}
+    },
+    "chicken-thigh-cooked-skin": {
+      "fr": {"name": "Cuisse de poulet", "qualifier": "Cuite · avec la peau", "portion": null, "aliases": ["poulet"]},
+      "ar": {"name": "فخذ دجاج", "qualifier": "مطبوخ · مع الجلد", "portion": null, "aliases": ["دجاج", "أفخاذ دجاج"]}
+    },
+    "chicken-thigh-raw-skin": {
+      "fr": {"name": "Cuisse de poulet", "qualifier": "Crue · avec la peau", "portion": null, "aliases": ["poulet"]},
+      "ar": {"name": "فخذ دجاج", "qualifier": "نيء · مع الجلد", "portion": null, "aliases": ["دجاج"]}
+    },
+    "white-rice-cooked": {
+      "fr": {"name": "Riz blanc", "qualifier": "Cuit", "portion": null, "aliases": ["riz"]},
+      "ar": {"name": "أرز أبيض", "qualifier": "مطبوخ", "portion": null, "aliases": ["أرز", "رز"]}
+    },
+    "brown-rice-cooked": {
+      "fr": {"name": "Riz brun", "qualifier": "Cuit", "portion": null, "aliases": ["riz", "riz complet"]},
+      "ar": {"name": "أرز بني", "qualifier": "مطبوخ", "portion": null, "aliases": ["أرز", "رز"]}
+    },
+    "white-rice-dry": {
+      "fr": {"name": "Riz blanc", "qualifier": "Sec · non cuit", "portion": null, "aliases": ["riz"]},
+      "ar": {"name": "أرز أبيض", "qualifier": "جاف · غير مطبوخ", "portion": null, "aliases": ["أرز", "رز"]}
+    },
+    "brown-rice-dry": {
+      "fr": {"name": "Riz brun", "qualifier": "Sec · non cuit", "portion": null, "aliases": ["riz"]},
+      "ar": {"name": "أرز بني", "qualifier": "جاف · غير مطبوخ", "portion": null, "aliases": ["أرز", "رز"]}
+    },
+    "pasta-cooked": {
+      "fr": {"name": "Pâtes", "qualifier": "Cuites", "portion": null, "aliases": ["spaghetti", "macaroni"]},
+      "ar": {"name": "معكرونة", "qualifier": "مطبوخة", "portion": null, "aliases": ["مكرونة", "سباغيتي"]}
+    },
+    "pasta-dry": {
+      "fr": {"name": "Pâtes", "qualifier": "Sèches · non cuites", "portion": null, "aliases": ["spaghetti", "macaroni"]},
+      "ar": {"name": "معكرونة", "qualifier": "جافة · غير مطبوخة", "portion": null, "aliases": ["مكرونة"]}
+    },
+    "whole-wheat-pasta-dry": {
+      "fr": {"name": "Pâtes de blé entier", "qualifier": "Sèches · non cuites", "portion": null, "aliases": ["pâtes complètes"]},
+      "ar": {"name": "معكرونة قمح كامل", "qualifier": "جافة · غير مطبوخة", "portion": null, "aliases": ["معكرونة"]}
+    },
+    "oatmeal-cooked": {
+      "fr": {"name": "Gruau", "qualifier": "Cuit à l’eau · sans gras ajouté", "portion": null, "aliases": ["avoine", "porridge"]},
+      "ar": {"name": "شوفان", "qualifier": "مطبوخ بالماء · بدون دهون مضافة", "portion": null, "aliases": ["عصيدة الشوفان"]}
+    },
+    "oatmeal-nfs": {
+      "fr": {"name": "Gruau", "qualifier": "Cuit · façon non précisée", "portion": null, "aliases": ["avoine"]},
+      "ar": {"name": "شوفان", "qualifier": "مطبوخ · الطريقة غير محددة", "portion": null, "aliases": []}
+    },
+    "ground-beef-90-raw": {
+      "fr": {"name": "Bœuf haché maigre (90 %)", "qualifier": "Cru", "portion": null, "aliases": ["boeuf haché"]},
+      "ar": {"name": "لحم بقري مفروم 90% قليل الدهن", "qualifier": "نيء", "portion": null, "aliases": ["لحم مفروم"]}
+    },
+    "ground-beef-85-raw": {
+      "fr": {"name": "Bœuf haché (85 %)", "qualifier": "Cru", "portion": null, "aliases": ["boeuf haché"]},
+      "ar": {"name": "لحم بقري مفروم 85%", "qualifier": "نيء", "portion": null, "aliases": ["لحم مفروم"]}
+    },
+    "ground-beef-80-raw": {
+      "fr": {"name": "Bœuf haché (80 %)", "qualifier": "Cru", "portion": null, "aliases": ["boeuf haché"]},
+      "ar": {"name": "لحم بقري مفروم 80%", "qualifier": "نيء", "portion": null, "aliases": ["لحم مفروم"]}
+    },
+    "ground-beef-80": {
+      "fr": {"name": "Bœuf haché (80 %)", "qualifier": "Cuit · revenu à la poêle", "portion": null, "aliases": ["boeuf haché"]},
+      "ar": {"name": "لحم بقري مفروم 80%", "qualifier": "مطبوخ · محمر في المقلاة", "portion": null, "aliases": ["لحم مفروم"]}
+    },
+    "ground-beef-cooked-nfs": {
+      "fr": {"name": "Bœuf haché", "qualifier": "Cuit · teneur en gras non précisée", "portion": null, "aliases": ["boeuf haché"]},
+      "ar": {"name": "لحم بقري مفروم", "qualifier": "مطبوخ · نسبة الدهن غير محددة", "portion": null, "aliases": ["لحم مفروم"]}
+    },
+    "salmon-raw": {
+      "fr": {"name": "Saumon", "qualifier": "Atlantique, d’élevage · cru", "portion": null, "aliases": []},
+      "ar": {"name": "سلمون", "qualifier": "أطلسي، مستزرع · نيء", "portion": null, "aliases": ["سمك السلمون"]}
+    },
+    "cod-raw": {
+      "fr": {"name": "Morue", "qualifier": "Atlantique · crue", "portion": null, "aliases": ["cabillaud"]},
+      "ar": {"name": "سمك القد", "qualifier": "أطلسي · نيء", "portion": null, "aliases": []}
+    },
+    "tilapia": {
+      "fr": {"name": "Tilapia", "qualifier": "Cuit au four ou grillé", "portion": null, "aliases": []},
+      "ar": {"name": "بلطي", "qualifier": "مخبوز أو مشوي", "portion": null, "aliases": ["سمك البلطي"]}
+    },
+    "tilapia-raw": {
+      "fr": {"name": "Tilapia", "qualifier": "Cru", "portion": null, "aliases": []},
+      "ar": {"name": "بلطي", "qualifier": "نيء", "portion": null, "aliases": ["سمك البلطي"]}
+    },
+    "eggs-cooked": {
+      "fr": {"name": "Œufs", "qualifier": "Entiers · cuits, façon non précisée", "portion": null, "aliases": ["oeuf", "oeufs"]},
+      "ar": {"name": "بيض", "qualifier": "كامل · مطبوخ، الطريقة غير محددة", "portion": null, "aliases": ["بيضة"]}
+    },
+    "eggs-boiled": {
+      "fr": {"name": "Œufs", "qualifier": "Entiers · cuits durs ou pochés", "portion": null, "aliases": ["oeuf dur", "oeuf poché"]},
+      "ar": {"name": "بيض", "qualifier": "كامل · مسلوق أو مسلوق بدون قشر", "portion": null, "aliases": ["بيض مسلوق"]}
+    },
+    "eggs-fried": {
+      "fr": {"name": "Œufs", "qualifier": "Entiers · frits", "portion": null, "aliases": ["oeuf au plat", "oeuf frit"]},
+      "ar": {"name": "بيض", "qualifier": "كامل · مقلي", "portion": null, "aliases": ["بيض مقلي"]}
+    },
+    "milk-whole": {
+      "fr": {"name": "Lait", "qualifier": "Entier · 3,25 %", "portion": null, "aliases": ["lait homo", "lait entier"]},
+      "ar": {"name": "حليب", "qualifier": "كامل الدسم · 3.25%", "portion": null, "aliases": ["حليب كامل الدسم"]}
+    },
+    "milk-1": {
+      "fr": {"name": "Lait 1 %", "qualifier": "Faible en gras", "portion": null, "aliases": ["lait"]},
+      "ar": {"name": "حليب 1%", "qualifier": "قليل الدسم", "portion": null, "aliases": ["حليب"]}
+    },
+    "yogurt-plain-low": {
+      "fr": {"name": "Yogourt", "qualifier": "Nature · faible en gras", "portion": null, "aliases": ["yaourt", "yogourt nature"]},
+      "ar": {"name": "زبادي", "qualifier": "سادة · قليل الدسم", "portion": null, "aliases": ["لبن زبادي"]}
+    },
+    "yogurt-plain-whole": {
+      "fr": {"name": "Yogourt", "qualifier": "Nature · lait entier", "portion": null, "aliases": ["yaourt", "yogourt nature"]},
+      "ar": {"name": "زبادي", "qualifier": "سادة · حليب كامل الدسم", "portion": null, "aliases": ["لبن زبادي"]}
+    },
+    "greek-yogurt-whole": {
+      "fr": {"name": "Yogourt grec", "qualifier": "Nature · lait entier", "portion": null, "aliases": ["yaourt grec"]},
+      "ar": {"name": "زبادي يوناني", "qualifier": "سادة · حليب كامل الدسم", "portion": null, "aliases": []}
+    },
+    "white-bread": {
+      "fr": {"name": "Pain blanc", "qualifier": "Tranché", "portion": null, "aliases": ["pain", "rôtie"]},
+      "ar": {"name": "خبز أبيض", "qualifier": "شرائح", "portion": null, "aliases": ["خبز", "توست"]}
+    },
+    "lentils-dry": {
+      "fr": {"name": "Lentilles", "qualifier": "Sèches · non cuites", "portion": null, "aliases": ["lentille"]},
+      "ar": {"name": "عدس", "qualifier": "جاف · غير مطبوخ", "portion": null, "aliases": []}
+    },
+    "couscous": {
+      "fr": {"name": "Couscous", "qualifier": "Nature · cuit", "portion": null, "aliases": []},
+      "ar": {"name": "كسكس", "qualifier": "سادة · مطبوخ", "portion": null, "aliases": ["كسكسي"]}
+    },
+    "couscous-dry": {
+      "fr": {"name": "Couscous", "qualifier": "Sec · non cuit", "portion": null, "aliases": []},
+      "ar": {"name": "كسكس", "qualifier": "جاف · غير مطبوخ", "portion": null, "aliases": ["كسكسي"]}
     }
   }
 }

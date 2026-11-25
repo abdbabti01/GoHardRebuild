@@ -19129,5 +19129,140 @@
   "foodInviteBodyShort": "You review it before anything is logged.",
   "@foodInviteBodyShort": {
     "description": "Add food invitation at very large text on a narrow phone: the promise of a review, in place of the longer sentence."
+  },
+  "dcMealWhichMatches": "Which matches your {food}?",
+  "@dcMealWhichMatches": {
+    "description": "Described meal card: one choice among real records for a food.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealNotSaid": "Not said: {details}",
+  "@dcMealNotSaid": {
+    "description": "Described meal card: the details the person did not say that set the choices apart.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "dcAttrCut": "which part",
+  "@dcAttrCut": {
+    "description": "A food detail not said (chicken breast or thigh…)."
+  },
+  "dcAttrState": "raw or cooked",
+  "@dcAttrState": {
+    "description": "A food detail not said."
+  },
+  "dcAttrMethod": "how it was cooked",
+  "@dcAttrMethod": {
+    "description": "A food detail not said."
+  },
+  "dcAttrSkin": "skin or peel",
+  "@dcAttrSkin": {
+    "description": "A food detail not said."
+  },
+  "dcAttrFat": "fat level",
+  "@dcAttrFat": {
+    "description": "A food detail not said (milk 2%, ground beef 90% lean…)."
+  },
+  "dcAttrVariety": "which kind",
+  "@dcAttrVariety": {
+    "description": "A food detail not said (white or brown rice…)."
+  },
+  "dcAttrAddedFat": "added fat",
+  "@dcAttrAddedFat": {
+    "description": "A food detail not said."
+  },
+  "dcAttrAddition": "what was added",
+  "@dcAttrAddition": {
+    "description": "A food detail not said (sauce, breading…)."
+  },
+  "dcMealNotSure": "I’m not sure",
+  "@dcMealNotSure": {
+    "description": "Described meal card: offers a disclosed estimate instead of choosing."
+  },
+  "dcMealEstimateOffer": "Use {food} as an estimate? Its own values are used as they are, and may differ from what you ate.",
+  "@dcMealEstimateOffer": {
+    "description": "Described meal card: the estimate offered by I’m not sure.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealEstimateGeneric": "This record does not say how it was prepared.",
+  "@dcMealEstimateGeneric": {
+    "description": "Described meal card: the estimate is USDA’s not-specified record."
+  },
+  "dcMealUseEstimate": "Use this estimate",
+  "@dcMealUseEstimate": {
+    "description": "Described meal card: accept the disclosed estimate."
+  },
+  "dcMealEstimateName": "{food} (estimate)",
+  "@dcMealEstimateName": {
+    "description": "Name of a food logged from an accepted estimate.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealChangeFood": "Change food",
+  "@dcMealChangeFood": {
+    "description": "Described meal card: choose another food for this item."
+  },
+  "dcMealChangeFoodOf": "Change food: {food}",
+  "@dcMealChangeFoodOf": {
+    "description": "Screen reader label of Change food.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealChangeAmountOf": "Change amount: {food}",
+  "@dcMealChangeAmountOf": {
+    "description": "Screen reader label of Change amount.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealLookupUnavailable": "Couldn’t look up {food} right now. Nothing else changed.",
+  "@dcMealLookupUnavailable": {
+    "description": "Described meal card: the food search did not answer for this item.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealChosen": "{food}: {amount}",
+  "@dcMealChosen": {
+    "description": "Screen reader announcement after a choice on the meal card.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGroupSeen": "Looked up before",
+  "@foodGroupSeen": {
+    "description": "Add food: foods met in earlier searches (kept on the phone), not the person’s own."
+  },
+  "foodSearchMoreResults": "More foods match than are shown: add a word to narrow the search.",
+  "@foodSearchMoreResults": {
+    "description": "Add food: the wider database has more results than one answer holds."
+  },
+  "dcMealAmountButton": "Change amount",
+  "@dcMealAmountButton": {
+    "description": "Described meal card: change this item’s amount."
   }
 }

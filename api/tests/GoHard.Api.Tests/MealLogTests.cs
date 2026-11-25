@@ -38,8 +38,8 @@ public partial class CoachTests
             "Tuna salad 77777", "1 bowl", new Macros(432.1m, 31.7m, null, 12)))).Status);
 
         fake.Respond = _ => Task.FromResult(Message(Ate([
-            MealFood("chicken", 120, "g", extra: new { calories = 198, protein = 37.2, fdcId = "2646170" }),
-            MealFood("potatoes", 100, "g"),
+            MealFood("chicken", 120, "g", extra: new { calories = 198, protein = 37.2, fdcId = "2646170", evidence = "120 G of  chicken" }),
+            MealFood("potatoes", 100, "g", extra: new { evidence = "100 g of boiled peeled potatoes" }),     // words the person did not write
             MealFood("chicken 165 kcal", 1, "piece", "breast"),                // a figure in a name: never kept
             MealFood("rice", 9999, "kg", prep: "cooked"),                      // out of range: the food stays, no amount
             MealFood("eggs", 2, "piece", "egg"),
@@ -56,6 +56,10 @@ public partial class CoachTests
         Assert.Equal(("cooked", null, null), (foods[2]!["preparation"]!.GetValue<string>(), foods[2]!["quantity"], foods[2]!["unit"]));
         Assert.Equal(("egg", "Chobani"), (foods[3]!["noun"]!.GetValue<string>(), foods[4]!["brand"]!.GetValue<string>()));
         Assert.Equal(["food", "quantity"], intent["dropped"]!.AsArray().Select(x => x!.GetValue<string>()));
+        // Evidence is kept only when it is the person's own words (case and spacing aside), else it is none.
+        Assert.Equal("120 G of  chicken", foods[0]!["evidence"]!.GetValue<string>());
+        Assert.Null(foods[1]!["evidence"]);
+        Assert.Contains("evidence = the person's own words", SystemText(fake.Calls[0].Body));
         foreach (var never in new[] { "98765", "198", "37.2", "2646170", "165" }) Assert.DoesNotContain(never, body.GetProperty("intent").GetRawText());
 
         // One call, one charge, for five foods. The model is told logging is available; nothing of the journal is sent.

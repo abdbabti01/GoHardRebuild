@@ -140,7 +140,7 @@ void main() {
       final ideas = await resolveIdeas([
         (title: 'Eggs on toast', foods: [f('egg', 2, 'piece', noun: 'egg'), f('whole wheat bread', 1, 'piece', noun: 'slice'), f('banana', 2, 'ml')]),
         (title: 'Bowl', foods: [f('farro', 150, 'g', prep: 'cooked'), f('dragonfruit zzz', 100, 'g'), f('mango zzz', 100, 'g'), f('kiwi zzz', 100, 'g'), f('lychee zzz', 100, 'g')]),
-      ], IdeaSources(common: common, search: (q) async {
+      ], IdeaSources.fromCatalog(catalog, search: (q) async {
         searched.add(q);
         return q.startsWith('farro') ? [branded, plain] : const [];
       }));
@@ -158,7 +158,9 @@ void main() {
       final ideas = await resolveIdeas([
         (title: 'Porridge', foods: [f('oats', 40, 'g', prep: 'cooked')]),
         (title: 'Raw egg?', foods: [f('egg', 1, 'piece', noun: 'egg', prep: 'raw')]),
-      ], IdeaSources(common: common));
+        // Without the catalog's cooked oats, so the only oats are dry: the preparation proposed is never swapped for it.
+      ], IdeaSources.fromCatalog(CommonFoodCatalog(version: catalog.version, provenance: catalog.provenance, categories: catalog.categories,
+          foods: [for (final c in catalog.foods) if (!c.id.startsWith('oatmeal-')) c])));
       expect(ideas[0]['parts'], isEmpty);
       final which = (ideas[0]['confirm'] as List).single as Map;
       expect(which['confirm'], 'record');
@@ -197,7 +199,7 @@ void main() {
       final matched = await resolveIdeas([
         (title: 'Eggs', foods: [f('egg', 4, 'piece', noun: 'egg')]),
         (title: 'Mystery', foods: [f('dragonfruit zzz', 100, 'g')]),
-      ], IdeaSources(common: common));
+      ], IdeaSources.fromCatalog(catalog));
       final records = DayRecords(today: today, shown: today, entries: (_) => const [], mealNow: 'Lunch', calorieGoal: 2000);
       // The model's own words cannot carry a value: ideas are read by name, quantity and unit only.
       expect(ideasOf([{'title': 'X', 'foods': [{'name': 'egg', 'quantity': 2, 'unit': 'piece', 'calories': 9999, 'protein': 9999}]}]).single.foods.single.quantity, 2);
@@ -213,7 +215,7 @@ void main() {
     });
 
     test('"different from my usual" leaves out ideas sharing a food with the usual meal; a stored reply reads back the same', () async {
-      final matched = await resolveIdeas([(title: 'Eggs', foods: [f('egg', 2, 'piece', noun: 'egg')]), (title: 'Banana', foods: [f('banana', 1, 'piece', noun: 'banana')])], IdeaSources(common: common));
+      final matched = await resolveIdeas([(title: 'Eggs', foods: [f('egg', 2, 'piece', noun: 'egg')]), (title: 'Banana', foods: [f('banana', 1, 'piece', noun: 'banana')])], IdeaSources.fromCatalog(catalog));
       final egg = (matched[0]['parts'] as List).single as Map;
       final usualEntry = FoodEntry({'id': 'u', 'dayKey': addDays(today, -1), 'meal': 'Lunch', 'name': 'Eggs', 'amountDescription': '2', 'macros': const {}, 'source': {'item': egg['item'], 'quantity': 2, 'unit': egg['unit']}});
       final records = DayRecords(today: today, shown: today, entries: (_) => const [], mealNow: 'Lunch',

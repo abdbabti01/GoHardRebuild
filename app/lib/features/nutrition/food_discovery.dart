@@ -57,19 +57,29 @@ class FoodDiscovery {
         _ => LookupProblem.unavailable,
       });
 
-  /// Text search of basic and branded foods in the wider database. Never per keystroke: the screen asks on a
-  /// tap, or once after a pause when the phone itself has nothing for what was typed.
+  /// Text search of basic and branded foods in the wider database. Never per keystroke: the screen asks once after a
+  /// pause or on a tap. The same words asked again within [_answered] are answered from the last answer (a meal's
+  /// questions, Add food and the coach share it), so a clarification never repeats a provider call; failures are not kept.
   Future<List<FoodItem>> search(String query) async {
     final q = query.trim().split(RegExp(r'\s+')).join(' ');
     if (q.length < 2) throw const LookupFailure(LookupProblem.invalid);
-    return _once<List<FoodItem>>('search:${q.toLowerCase()}', () async {
+    final key = q.toLowerCase(), kept = _answers[key];
+    if (kept != null && _clock.utcNow().difference(kept.at) < _answered) return kept.items;
+    return _once<List<FoodItem>>('search:$key', () async {
       final r = await _get('/foods/search?q=${Uri.encodeQueryComponent(q)}');
       if (!r.ok) throw _failure(r);
       final items = [for (final i in (r.data as Json)['results'] as List? ?? const []) FoodItem(i as Json)];
+      _answers[key] = (items: items, more: (r.data as Json)['more'] == true, at: _clock.utcNow());
       await remember(items);
       return items;
     });
   }
+
+  static const _answered = Duration(minutes: 10);
+  final _answers = <String, ({List<FoodItem> items, bool more, DateTime at})>{};
+
+  /// Whether the last answer to [query] said more foods match than it holds (a narrower search finds them).
+  bool hasMore(String query) => _answers[query.trim().split(RegExp(r'\s+')).join(' ').toLowerCase()]?.more ?? false;
 
   /// A packaged product by its barcode. A product looked up in the last week is answered from the phone; when
   /// the server cannot be reached, an older copy is still better than nothing and is returned as it was.

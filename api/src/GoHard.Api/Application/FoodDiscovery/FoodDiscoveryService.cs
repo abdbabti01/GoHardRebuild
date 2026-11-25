@@ -23,7 +23,9 @@ public sealed class FoodDataOptions
     public bool UsdaConfigured => !string.IsNullOrWhiteSpace(UsdaApiKey) && !string.Equals(UsdaApiKey.Trim(), "DEMO_KEY", StringComparison.OrdinalIgnoreCase);
 }
 
-public sealed record FoodSearchResult(List<FoodItem> Results);
+/// <summary><c>More</c>: a provider page came back full, so more foods may match than were returned (the app suggests a
+/// narrower search). Optional for clients: an older app ignores it.</summary>
+public sealed record FoodSearchResult(List<FoodItem> Results, bool More = false);
 
 /// <summary>
 /// The one door the app uses for food data. It remembers answers, lets identical requests in flight share one
@@ -66,6 +68,9 @@ public sealed class FoodDiscoveryService : IDisposable
             token => _off.ProductAsync(code, token)), ct);
     }
 
+    /// <summary>USDA page sizes: basic foods, then branded ones.</summary>
+    public const int GenericPage = 25, BrandedPage = 15;
+
     public Task<Lookup<FoodSearchResult>> SearchAsync(string? raw, CancellationToken ct)
     {
         var query = string.Join(' ', (raw ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
@@ -75,11 +80,12 @@ public sealed class FoodDiscoveryService : IDisposable
         {
             // Basic foods first, then branded ones: asked for separately, because the branded catalogue is so much
             // larger that it would otherwise push every basic food off the first page.
-            var generic = await UsdaAsync(query, UsdaProvider.Generic, 25);
+            var generic = await UsdaAsync(query, UsdaProvider.Generic, GenericPage);
             if (generic.Status != LookupStatus.Ok) return Lookup<FoodSearchResult>.Fail(generic.Status);
-            var branded = await UsdaAsync(query, UsdaProvider.Branded, 15);
+            var branded = await UsdaAsync(query, UsdaProvider.Branded, BrandedPage);
             // Branded results are an extra. Without them the basic foods are still a complete, honest answer.
-            return Lookup<FoodSearchResult>.Ok(new([.. generic.Value!, .. branded.Value ?? []]));
+            var more = generic.Value!.Count >= GenericPage || (branded.Value?.Count ?? 0) >= BrandedPage;
+            return Lookup<FoodSearchResult>.Ok(new([.. generic.Value!, .. branded.Value ?? []], more));
         }, ct);
     }
 

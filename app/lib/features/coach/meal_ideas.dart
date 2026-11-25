@@ -1,6 +1,8 @@
 import '../../data/models.dart';
 import '../nutrition/food_item.dart';
+import '../nutrition/food_resolution.dart';
 import '../nutrition/food_search.dart';
+import '../nutrition/food_traits.dart';
 import '../../core/units.dart' show formatNumber2;
 import '../nutrition/saved_meals.dart' show MealComponent;
 
@@ -30,14 +32,27 @@ typedef FoodCandidate = ({FoodItem item, SearchFields fields, String name, Strin
 /// phone. [search] is the account's food search (null offline or on an older server); it is asked at most
 /// [maxSearches] times per request, and only for foods nothing on the phone matched.
 class IdeaSources {
-  const IdeaSources({this.common = const [], this.mine = const [], this.seen = const [], this.search, this.maxSearches = 3, this.asIs = const {}});
+  const IdeaSources({this.common = const [], this.mine = const [], this.seen = const [], this.search, this.maxSearches = 3, this.reviewed = const {}});
+
+  /// The bundled catalog's foods (named in [lang]) with their reviewed details, and the person's own and seen foods.
+  factory IdeaSources.fromCatalog(CommonFoodCatalog catalog, {String lang = 'en', List<FoodItem> mine = const [], List<FoodItem> seen = const [],
+          Future<List<FoodItem>> Function(String query)? search, int maxSearches = 3}) =>
+      IdeaSources(
+        common: [for (final c in catalog.foods) (item: c.item, fields: c.fields, name: c.nameIn(lang), detail: c.qualifierIn(lang), startUnit: c.unitId)],
+        mine: [for (final i in mine) candidateOf(i)],
+        seen: [for (final i in seen) candidateOf(i)],
+        search: search,
+        maxSearches: maxSearches,
+        reviewed: {for (final (n, c) in catalog.foods.indexed) c.item.key: (traits: traitsOf(c.attrs), generic: isGeneric(c.attrs), order: n)},
+      );
+
   final List<FoodCandidate> common, mine, seen;
   final Future<List<FoodItem>> Function(String query)? search;
   final int maxSearches;
 
-  /// The keys of everyday foods eaten as they come ([CommonFoodCatalog.eatenAsIs]: fruit, vegetables, dairy, bananas, eggs…): for these,
-  /// "Weighed raw or cooked?" changes nothing that matters and is not asked.
-  final Set<String> asIs;
+  /// The catalog's reviewed details by record key (docs/FOOD_DATA.md › Food resolution): only these can be taken without
+  /// asking. Any other record is known by its name alone.
+  final Map<String, ({Traits traits, bool generic, int order})> reviewed;
 }
 
 FoodCandidate candidateOf(FoodItem item, {String? name}) =>
@@ -142,8 +157,78 @@ class FoodMatcher {
       }
     }
     final maybe = sure.isEmpty && preparation != null ? onPhone(named) : const <FoodCandidate>[];
-    return (sure: sure, maybe: maybe);
+    return (sure: _plainest(sure), maybe: maybe);
   }
+
+  /// A suggestion's tie-break (docs/FOOD_DATA.md › Food resolution › Suggestions): among equally good reviewed catalog
+  /// records, the one that adds the fewest details the idea did not propose ("eggs" → eggs cooked in a way not specified,
+  /// not raw, boiled or fried). Never a record that says nothing is specified (NFS) while another is there, and never for
+  /// a meal the person describes: what someone ate is never chosen for them. Several still equal stay a choice.
+  List<FoodCandidate> _plainest(List<FoodCandidate> sure) {
+    if (sure.length < 2 || sure.any((c) => sources.reviewed[c.item.key] == null)) return sure;
+    final specific = [for (final c in sure) if (!sources.reviewed[c.item.key]!.generic) c];
+    if (specific.isEmpty) return sure;
+    // Details it names, less those it says are not specified: the record that leaves most open is the plainest.
+    int details(FoodCandidate c) {
+      final t = sources.reviewed[c.item.key]!.traits.entries.where((e) => e.key != Attr.family && e.key != Attr.cut && !e.value.contains('none'));
+      return t.where((e) => !e.value.contains(any)).length - t.where((e) => e.value.contains(any)).length;
+    }
+    final least = specific.map(details).reduce((a, b) => a < b ? a : b);
+    return [for (final c in specific) if (details(c) == least) c];
+  }
+
+  /// Every record a described food could be (docs/FOOD_DATA.md › Food resolution › Retrieval): the bundled catalog, the
+  /// person's own foods and foods seen on this phone, all at once (where a record comes from is a ranking factor, never a
+  /// reason to stop looking); then, when none of them is compatible with what was said, the account's food search, at most
+  /// [IdeaSources.maxSearches] times per request and once per query. [failed]: that search did not answer (offline,
+  /// timeout, rate limit), so "nothing found" is not known.
+  Future<({List<Candidate<FoodCandidate>> found, bool failed})> candidates(SaidFood f, Said said) async {
+    final words = identityWords(f.name);
+    final query = [?f.brand, words.isEmpty ? f.name : words].join(' ');
+    final family = said.family;
+    String? brandOf(FoodItem i) => (i.brand ?? '').trim().isEmpty ? null : normalizeSearch(i.brand!);
+    Candidate<FoodCandidate> make(FoodCandidate c, Found from, int order) {
+      final r = from == Found.catalog ? sources.reviewed[c.item.key] : null;
+      return Candidate(c, r?.traits ?? readTraits(c.item.name), origin: from, order: r?.order ?? order, generic: r?.generic ?? false, brand: brandOf(c.item));
+    }
+
+    bool relevant(Candidate<FoodCandidate> c) {
+      if (family != null && c.family == family) return true;
+      if (family != null && c.family != null) return false;
+      for (final q in {query, f.label}) {
+        if ((relevance(q, c.record.fields)?.tier ?? 9) <= 2) return true;
+      }
+      return false;
+    }
+
+    final found = <Candidate<FoodCandidate>>[], keys = <String>{};
+    for (final (from, pool) in [(Found.catalog, sources.common), (Found.saved, sources.mine), (Found.seen, sources.seen)]) {
+      for (final (n, c) in pool.indexed) {
+        final cand = make(c, from, n);
+        if (relevant(cand) && keys.add(c.item.key)) found.add(cand);
+      }
+    }
+    var failed = false;
+    final local = resolveFood(said, found);
+    if ((local.outcome == Outcome.none || f.brand != null && !found.any((c) => c.brand != null)) && sources.search != null) {
+      var answer = _remote[query];
+      if (answer == null && _searches < sources.maxSearches) {
+        _searches++;
+        try {
+          answer = _remote[query] = await sources.search!(query);
+        } on Object {
+          failed = true; // offline, timed out, rate limited: kept for an explicit Try again
+        }
+      }
+      for (final (n, i) in (answer ?? const <FoodItem>[]).indexed) {
+        final cand = make(candidateOf(i), Found.remote, n);
+        if (relevant(cand) && keys.add(i.key)) found.add(cand);
+      }
+    }
+    return (found: found, failed: failed);
+  }
+
+  final _remote = <String, List<FoodItem>>{};
 }
 
 /// Matches every food of [ideas] (as the server checked them) and returns the ideas as stored on a reply:
@@ -219,8 +304,10 @@ List<({String title, List<IdeaFood> foods})> ideasOf(Object? j) => [
 // ---------------------------------------------------------------------------- a meal the person describes
 
 /// One food the person said they ate (docs/FOOD_DATA.md › Describe your meal), as the server checked it: their words and
-/// only what they said about it — preparation, brand, amount, unit. Never a record and never a value.
-typedef SaidFood = ({String name, String label, String? preparation, String? brand, double? quantity, String? unit, String? noun});
+/// only what they said about it — preparation, brand, amount, unit. Never a record and never a value. [evidence]: the
+/// person's own words for this food, as the server found them in the sentence (null from an older server); only what
+/// those words say counts as said.
+typedef SaidFood = ({String name, String label, String? preparation, String? brand, double? quantity, String? unit, String? noun, String? evidence});
 
 /// The units a described amount may be in: metric, ounces and pounds (converted exactly), or a count of the record's own.
 const mealUnits = {'g', 'kg', 'oz', 'lb', 'ml', 'l', 'piece', 'serving'};
@@ -228,7 +315,8 @@ const mealUnits = {'g', 'kg', 'oz', 'lb', 'ml', 'l', 'piece', 'serving'};
 /// The most foods one described meal holds (the server reads at most as many).
 const maxMealFoods = 12;
 
-Json saidJson(SaidFood f) => {'name': f.name, 'label': f.label, 'preparation': f.preparation, 'brand': f.brand, 'quantity': f.quantity, 'unit': f.unit, 'noun': f.noun};
+Json saidJson(SaidFood f) =>
+    {'name': f.name, 'label': f.label, 'preparation': f.preparation, 'brand': f.brand, 'quantity': f.quantity, 'unit': f.unit, 'noun': f.noun, 'evidence': ?f.evidence};
 
 /// [j] as a said food, or null when it has no name. An amount without a known unit is no amount.
 SaidFood? saidOf(Object? j) {
@@ -239,15 +327,14 @@ SaidFood? saidOf(Object? j) {
   final q = j['quantity'], unit = s('unit');
   final quantity = q is num && q.isFinite && q > 0 && unit != null && mealUnits.contains(unit) ? q.toDouble() : null;
   return (name: name, label: s('label') ?? name, preparation: s('preparation'), brand: s('brand'), quantity: quantity, unit: quantity == null ? null : unit,
-      noun: quantity == null ? null : s('noun'));
+      noun: quantity == null ? null : s('noun'), evidence: s('evidence'));
 }
 
 /// The foods of a server's `ate` answer, read defensively: anything without a name is left out.
 List<SaidFood> saidFoodsOf(Object? j) => [for (final f in j is List ? j : const []) ?saidOf(f)];
 
-SaidFood _with(SaidFood f, {String? preparation, double? quantity, String? unit, String? noun, bool amount = false}) => (
-      name: f.name, label: f.label, preparation: preparation ?? f.preparation, brand: f.brand,
-      quantity: amount ? quantity : f.quantity, unit: amount ? unit : f.unit, noun: amount ? noun : f.noun);
+SaidFood _with(SaidFood f, {double? quantity, String? unit, String? noun}) => (
+      name: f.name, label: f.label, preparation: f.preparation, brand: f.brand, quantity: quantity, unit: unit, noun: noun, evidence: f.evidence);
 
 /// An amount said in kilograms, ounces, pounds or litres, in grams or millilitres: exact by definition. Never between a
 /// weight and a volume, and never between raw and cooked.
@@ -260,8 +347,24 @@ SaidFood _with(SaidFood f, {String? preparation, double? quantity, String? unit,
       _ => null,
     };
 
-/// Whether the amount was said as a weight or volume: then raw or cooked matters (a cooked weight is not a raw weight).
-bool _weighed(SaidFood f) => f.quantity != null && const {'g', 'kg', 'oz', 'lb', 'ml', 'l'}.contains(f.unit);
+/// Things a counted amount measures out rather than counts ("a cup of rice"): raw or cooked matters for them as for a weight.
+const _measures = {'cup', 'tablespoon', 'teaspoon', 'tbsp', 'tsp', 'glass', 'bowl', 'scoop', 'handful', 'ladle', 'spoon'};
+
+bool _weighed(SaidFood f) =>
+    f.quantity != null && (const {'g', 'kg', 'oz', 'lb', 'ml', 'l'}.contains(f.unit) || f.unit == 'piece' && f.noun != null && _measures.contains(searchWords(f.noun!).firstOrNull));
+
+/// What was said about [f], as the resolver reads it: the person's own words ([SaidFood.evidence]) when the server gave
+/// them, so a detail the model added and the person did not say is not taken as said; the food itself is also known by
+/// the model's English name. Without evidence (an older server), the label, name and preparation, as before.
+Said describeSaid(SaidFood f, {Map<String, String> confirmed = const {}}) {
+  final words = f.evidence ?? [f.label, f.name, ?f.preparation].join(' ');
+  final traits = readTraits(words);
+  final family = traits[Attr.family] ?? readTraits('${f.name} ${f.label}')[Attr.family];
+  if (family != null && family.isNotEmpty) traits[Attr.family] = family;
+  final brand = f.brand == null || f.evidence != null && !normalizeSearch(f.evidence!).contains(normalizeSearch(f.brand!)) ? null : normalizeSearch(f.brand!);
+  return Said(traits, weighed: _weighed(f), counted: f.unit == 'piece' && !_weighed(f), brand: brand,
+      confirmed: {for (final e in confirmed.entries) if (Attr.values.any((a) => a.name == e.key)) Attr.values.byName(e.key): e.value});
+}
 
 /// [food] (a matched record) at what the person said: grams or millilitres when weighed, else the said count.
 Json _placeSaid(Json food, SaidFood f) {
@@ -272,42 +375,71 @@ Json _placeSaid(Json food, SaidFood f) {
 /// The amount as the person said it ("150 g", "2 egg", "4 oz"), for the reply's words and a follow-up's draft.
 String saidAmount(SaidFood f) => f.quantity == null ? '' : '${formatNumber2(f.quantity!)} ${f.unit == 'piece' ? f.noun ?? '' : f.unit}'.trim();
 
-/// One food of a described meal as its draft keeps it: `{ref, said, status, …}`, in the order it was said. `status`:
+/// One food of a described meal as its draft keeps it: `{ref, said, confirmed?, status, …}`, in the order it was said
+/// (docs/FOOD_DATA.md › Food resolution). `status`:
 /// * `ready`: a record and an amount in its own units (`part`, a MealComponent with the record's `match`);
-/// * `state`: weighed, no preparation said, and the records say raw or cooked: "Weighed raw or cooked?";
-/// * `record`: several records (`options`, at most 3, each maybe `differs`: another preparation than said);
-/// * `amount`: a record (`food`) and no amount that fits its units ("How much?"); `asked` when it differs from what was said;
-/// * `missing`: no record found: Find food, everything else kept.
-Future<Json> resolveSaid(String ref, SaidFood f, FoodMatcher matcher) async {
-  // A preparation in the food's own words counts as said ("cooked rice", "riz cuit"), even when not given separately.
-  final named = foodState(SearchFields(f.name)) != null;
-  final prep = f.preparation ?? (named ? null : foodState(SearchFields(f.label)));
-  final m = await matcher.match(f.name, preparation: prep, brand: f.brand);
-  Json item(String status, [Json more = const {}]) => {'ref': ref, 'said': saidJson(f), 'status': status, ...more};
-  final options = m.sure.length == 1 ? m.sure : [...m.sure, ...m.maybe];
-  if (options.isEmpty) return item('missing');
-  // Weighed with no preparation said, and a record that says raw or cooked for a food whose weight cooking changes:
-  // asked, never assumed. Not for an apple, a yogurt or bread, and never again once said.
-  if (prep == null && !named && _weighed(f) && options.any((c) => !matcher.sources.asIs.contains(c.item.key) && foodState(c.fields) != null)) return item('state');
-  if (options.length == 1 && m.sure.length == 1) {
-    final placed = _placeSaid(_food(options.single), f);
-    return placed['confirm'] == null ? item('ready', {'part': placed}) : item('amount', {'food': placed['food']});
+/// * `state`: weighed and raw or cooked not said: "Weighed raw or cooked?";
+/// * `record`: the records it could be (`options`, at most [maxOptions], each a real record), the details not said that set
+///   them apart (`unresolved`), and maybe `estimate` ("I'm not sure": a reviewed record and what it `assumes`);
+/// * `amount`: a record (`food`) and no amount that fits its units ("How much?");
+/// * `missing`: nothing suitable found: Find food, everything else kept;
+/// * `unavailable`: nothing on the phone and the food search did not answer: Try again (no AI), Find food.
+/// `confirmed`: details the person answered here (`{state: cooked}`), kept through every later step.
+Future<Json> resolveSaid(String ref, SaidFood f, FoodMatcher matcher, {Map<String, String> confirmed = const {}}) async {
+  final said = describeSaid(f, confirmed: confirmed);
+  Json item(String status, [Json more = const {}]) => {'ref': ref, 'said': saidJson(f), if (confirmed.isNotEmpty) 'confirmed': confirmed, 'status': status, ...more};
+  final found = await matcher.candidates(f, said);
+  final r = resolveFood(said, found.found);
+  switch (r.outcome) {
+    case Outcome.none:
+      return item(found.failed ? 'unavailable' : 'missing');
+    case Outcome.resolved:
+      final placed = _placeSaid(_food(r.chosen!.record), f);
+      return placed['confirm'] == null ? item('ready', {'part': placed}) : item('amount', {'food': placed['food']});
+    case Outcome.clarify:
+      if (r.ask == Attr.state) return item('state');
+      return item('record', {
+        'options': [for (final c in r.options) _food(c.record)],
+        'unresolved': [for (final a in r.unresolved) a.name],
+        if (r.estimate case final e?) 'estimate': {..._food(e.record), 'assumes': [for (final a in r.assumes) a.name], if (e.generic) 'generic': true},
+      });
   }
-  return item('record', {'options': [for (final c in options.take(maxChoices)) {..._food(c), if (!m.sure.contains(c)) 'differs': prep}]});
+}
+
+/// The details an item's person confirmed here (`{state: cooked}`).
+Map<String, String> confirmedOf(Json item) => {for (final e in (item['confirmed'] as Map? ?? const {}).entries) '${e.key}': '${e.value}'};
+
+/// "Raw" or "Cooked" for an item asking how it was weighed: matched again with that confirmed (still maybe a choice, or no
+/// record of it: Find food). The amount stays the one the person said: it is what they weighed. No AI.
+Future<Json> answerState(Json item, String state, IdeaSources sources) async {
+  final f = saidOf(item['said']);
+  if (item['status'] != 'state' || f == null || !const {'raw', 'cooked'}.contains(state)) return item;
+  return resolveSaid(item['ref'] as String, f, FoodMatcher(sources), confirmed: {...confirmedOf(item), 'state': state});
+}
+
+/// An item whose food search did not answer, looked up again on the person's tap (no AI, the same words).
+Future<Json> retryItem(Json item, IdeaSources sources) async {
+  final f = saidOf(item['said']);
+  if (item['status'] != 'unavailable' || f == null) return item;
+  return resolveSaid(item['ref'] as String, f, FoodMatcher(sources), confirmed: confirmedOf(item));
+}
+
+/// "I'm not sure", accepted: the offered reviewed record (the resolver's estimate) at the said amount, named as an estimate
+/// ([named] gives the shown name, "Potato (estimate)") so the review and the logged entry say so. Its own values, never an
+/// average. The amount is asked when it does not fit the record's units.
+Json acceptEstimate(Json item, String Function(String name) named) {
+  final e = item['estimate'] is Map ? Map<String, dynamic>.from(item['estimate'] as Map) : null, f = saidOf(item['said']);
+  if (item['status'] != 'record' || e == null || f == null) return item;
+  final food = <String, dynamic>{'item': e['item'], 'name': named('${e['name']}'), 'match': ?e['match']};
+  final base = {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], 'estimate': {'assumes': e['assumes'] ?? const []}};
+  final placed = _placeSaid(food, f);
+  return placed['confirm'] == null ? {...base, 'status': 'ready', 'part': placed} : {...base, 'status': 'amount', 'food': food};
 }
 
 /// Every food of a described meal matched (at most [maxMealFoods]), each with a reference `d1`, `d2`… that a follow-up names.
 Future<List<Json>> resolveMeal(List<SaidFood> foods, IdeaSources sources) async {
   final matcher = FoodMatcher(sources);
   return [for (final (i, f) in foods.take(maxMealFoods).indexed) await resolveSaid('d${i + 1}', f, matcher)];
-}
-
-/// "Raw" or "Cooked" for an item asking how it was weighed: matched again in that preparation (still maybe a choice, or no
-/// record of it: Find food). The amount stays the one the person said: it is what they weighed.
-Future<Json> answerState(Json item, String state, IdeaSources sources) async {
-  final f = saidOf(item['said']);
-  if (item['status'] != 'state' || f == null || !const {'raw', 'cooked'}.contains(state)) return item;
-  return resolveSaid(item['ref'] as String, _with(f, preparation: state), FoodMatcher(sources));
 }
 
 /// The record chosen for an item asking which one: placed at the said amount, or asking for an amount when the amount does
@@ -323,8 +455,10 @@ Json chooseRecord(Json item, int option) {
   return placed['confirm'] == null ? {...base, 'status': 'ready', 'part': placed} : {...base, 'status': 'amount', 'food': chosen};
 }
 
-/// An item with the food and amount the person chose in the usual forms (Choose amount, Find food).
-Json readyWith(Json item, Json part) => {'ref': item['ref'], 'said': item['said'], 'status': 'ready', 'part': part};
+/// An item with the food and amount the person chose in the usual forms (Choose amount, Find food). An estimate stays one
+/// only while it is the same food ([sameFood]: a new amount); another food chosen is no longer that estimate.
+Json readyWith(Json item, Json part, {bool sameFood = false}) =>
+    {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], if (sameFood) 'estimate': ?item['estimate'], 'status': 'ready', 'part': part};
 
 /// The food an item is about, as shown: its record's name once matched, else the person's word for it.
 String itemLabel(Json item) => item['status'] == 'ready'
@@ -363,8 +497,8 @@ Future<({List<Json> items, List<Json> changes})> applyMealEdits(List<Json> items
     } else if (e.op == 'amount' && at >= 0 && e.food?.quantity != null) {
       final old = out[at], f = saidOf(old['said']);
       if (f == null) continue;
-      final said = _with(f, quantity: e.food!.quantity, unit: e.food!.unit, noun: e.food!.noun, amount: true);
-      final base = {'ref': old['ref'], 'said': saidJson(said)};
+      final said = _with(f, quantity: e.food!.quantity, unit: e.food!.unit, noun: e.food!.noun);
+      final base = {'ref': old['ref'], 'said': saidJson(said), 'confirmed': ?old['confirmed'], 'estimate': ?old['estimate']};
       final part = old['part'] is Map ? Map<String, dynamic>.from(old['part'] as Map) : null;
       final food = part != null
           ? <String, dynamic>{'item': part['item'], 'name': part['name'], 'match': ?part['match']}
@@ -374,7 +508,7 @@ Future<({List<Json> items, List<Json> changes})> applyMealEdits(List<Json> items
         final placed = _placeSaid(food, said);
         next = placed['confirm'] == null ? {...base, 'status': 'ready', 'part': placed} : {...base, 'status': 'amount', 'food': food};
       } else {
-        next = await resolveSaid(old['ref'] as String, said, matcher);
+        next = await resolveSaid(old['ref'] as String, said, matcher, confirmed: confirmedOf(old));
       }
       out[at] = next;
       changes.add({'op': 'amount', 'label': itemLabel(next), 'amount': saidAmount(said)});

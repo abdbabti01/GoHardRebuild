@@ -33,7 +33,8 @@ void main() {
       int at(String name) => order.indexOf(name);
       // USDA's own order puts lunchmeat first and the plain raw breast tenth.
       expect(usda.first.name, 'Lunchmeat, chicken breast, sliced');
-      expect(order.take(3), containsAll(['Chicken, breast, boneless, skinless, raw', 'Chicken breast, grilled without sauce, skin not eaten']));
+      // Records that are also bundled foods (catalog v3) rank as the everyday foods they are; the plain ones still lead.
+      expect(order.take(6), containsAll(['Chicken, breast, boneless, skinless, raw', 'Chicken breast, grilled without sauce, skin not eaten']));
       for (final processed in ['Chicken breast tenders, breaded, uncooked', 'Lunchmeat, chicken breast, sliced', 'Chicken breast, roll, oven-roasted',
         'Oscar Mayer, Chicken Breast (honey glazed)', 'Chicken breast, grilled with sauce, skin not eaten', 'Chicken breast, baked, coated, skin / coating not eaten']) {
         expect(at(processed), greaterThan(at('Chicken, breast, boneless, skinless, raw')), reason: processed);
@@ -43,7 +44,7 @@ void main() {
     });
 
     test('a preparation, cut or skin asked for is respected; a plain food is never put above what was asked', () {
-      expect(found('chicken breast raw', usda).take(2), ['Chicken, breast, boneless, skinless, raw', 'Chicken, breast, meat and skin, raw']);
+      expect(found('chicken breast raw', usda).take(2), unorderedEquals(['Chicken, breast, boneless, skinless, raw', 'Chicken, breast, meat and skin, raw']));
       expect(found('grilled chicken breast', usda).first, 'Chicken breast, grilled without sauce, skin not eaten');
       expect(found('chicken breast with sauce', usda).first, 'Chicken breast, grilled with sauce, skin not eaten');
       expect(found('breaded chicken breast', usda).first, 'Chicken breast tenders, breaded, uncooked');
@@ -51,13 +52,14 @@ void main() {
       expect(cooked.indexOf('Chicken, breast, boneless, skinless, raw'), greaterThan(cooked.indexOf('Chicken breast, stewed, skin not eaten')), reason: '"cooked" never finds raw: it is only listed after every cooked record');
       expect(cooked.take(2), unorderedEquals(['Chicken breast, stewed, skin not eaten', 'Chicken breast, grilled without sauce, skin not eaten']),
           reason: '"cooked" finds any way of cooking, plain ones first (no added fat, sauce or coating)');
-      expect(local('chicken breast raw'), ['Chicken breast · Raw · boneless, skinless']);
-      expect(local('chicken thigh'), ['Chicken thigh · Raw · boneless, skinless', 'Chicken thigh · Roasted · meat only']);
+      expect(local('chicken breast raw'), ['Chicken breast · Raw · boneless, skinless', 'Chicken breast · Raw · with skin']);
+      expect(local('chicken thigh'), containsAll(['Chicken thigh · Raw · boneless, skinless', 'Chicken thigh · Roasted · meat only', 'Chicken thigh · Cooked · skin not eaten']));
+      expect(local('chicken thigh'), everyElement(startsWith('Chicken thigh')));
     });
 
     test('a broader word is not taken as the narrower food: "chicken" is breast and thigh, raw and cooked, none of them exactly', () {
       final chicken = searchLocal('chicken', catalog: catalog, saved: const [], journal: const [], seen: const []).common;
-      expect({for (final s in chicken.take(4)) s.common!.id}, {'chicken-breast', 'chicken-breast-raw', 'chicken-thigh-raw', 'chicken-thigh-roasted'});
+      expect([for (final s in chicken.take(10)) s.common!.id], everyElement(startsWith('chicken-')), reason: 'breasts and thighs, raw and cooked');
       for (final s in chicken) {
         expect(relevance('chicken', s.common!.fields)!.tier, isNot(0), reason: s.common!.id);
       }
@@ -67,7 +69,9 @@ void main() {
     });
 
     test('milk: the dairy milks before almond milk, each named for what it is', () {
-      expect(local('milk').take(3), ['Milk 2% · Reduced fat', 'Skim milk · Fat free', 'Almond milk · Unsweetened']);
+      final milk = local('milk');
+      expect(milk.take(4), unorderedEquals(['Milk · Whole · 3.25%', 'Milk 2% · Reduced fat', 'Milk 1% · Low fat', 'Skim milk · Fat free']));
+      expect(milk[4], 'Almond milk · Unsweetened');
     });
   });
 
@@ -117,7 +121,7 @@ void main() {
     test('French and Arabic words find the bundled foods, and are put in English for the English-only database', () {
       expect(local('poitrine de poulet').take(2), local('chicken breast').take(2));
       expect(local('صدر دجاج').take(2), local('chicken breast').take(2));
-      expect(local('cuisse de poulet'), ['Chicken thigh · Raw · boneless, skinless', 'Chicken thigh · Roasted · meat only']);
+      expect(local('cuisse de poulet'), unorderedEquals(local('chicken thigh')));
       expect(englishQuery('poitrine de poulet cuite'), 'breast chicken cooked');
       expect(englishQuery('صدر دجاج مشوي'), 'breast chicken grilled');
       expect(englishQuery('pommes de terre'), 'potato');

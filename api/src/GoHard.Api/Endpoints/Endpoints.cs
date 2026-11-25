@@ -285,7 +285,7 @@ public static class GoHardEndpoints
 
         // Food data from outside providers. Reading only: nothing here records anything as eaten.
         var foods = me.MapGroup("/foods").RequireRateLimiting("food-data");
-        foods.MapGet("/search", async (string? q, FoodDiscoveryService s, CancellationToken ct) => Lookup(await s.SearchAsync(q, ct), r => new { results = r.Results }));
+        foods.MapGet("/search", async (string? q, FoodDiscoveryService s, CancellationToken ct) => Lookup(await s.SearchAsync(q, ct), r => new { results = r.Results, more = r.More }));
         foods.MapGet("/barcode/{code}", async (string code, FoodDiscoveryService s, CancellationToken ct) => Lookup(await s.BarcodeAsync(code, ct), item => new { item }));
 
         // Optional weather for the Today background. Coarse places only; a failure here touches nothing else.

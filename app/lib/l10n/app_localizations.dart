@@ -20249,6 +20249,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You review it before anything is logged.'**
   String get foodInviteBodyShort;
+
+  /// Described meal card: one choice among real records for a food.
+  ///
+  /// In en, this message translates to:
+  /// **'Which matches your {food}?'**
+  String dcMealWhichMatches(String food);
+
+  /// Described meal card: the details the person did not say that set the choices apart.
+  ///
+  /// In en, this message translates to:
+  /// **'Not said: {details}'**
+  String dcMealNotSaid(String details);
+
+  /// A food detail not said (chicken breast or thigh…).
+  ///
+  /// In en, this message translates to:
+  /// **'which part'**
+  String get dcAttrCut;
+
+  /// A food detail not said.
+  ///
+  /// In en, this message translates to:
+  /// **'raw or cooked'**
+  String get dcAttrState;
+
+  /// A food detail not said.
+  ///
+  /// In en, this message translates to:
+  /// **'how it was cooked'**
+  String get dcAttrMethod;
+
+  /// A food detail not said.
+  ///
+  /// In en, this message translates to:
+  /// **'skin or peel'**
+  String get dcAttrSkin;
+
+  /// A food detail not said (milk 2%, ground beef 90% lean…).
+  ///
+  /// In en, this message translates to:
+  /// **'fat level'**
+  String get dcAttrFat;
+
+  /// A food detail not said (white or brown rice…).
+  ///
+  /// In en, this message translates to:
+  /// **'which kind'**
+  String get dcAttrVariety;
+
+  /// A food detail not said.
+  ///
+  /// In en, this message translates to:
+  /// **'added fat'**
+  String get dcAttrAddedFat;
+
+  /// A food detail not said (sauce, breading…).
+  ///
+  /// In en, this message translates to:
+  /// **'what was added'**
+  String get dcAttrAddition;
+
+  /// Described meal card: offers a disclosed estimate instead of choosing.
+  ///
+  /// In en, this message translates to:
+  /// **'I’m not sure'**
+  String get dcMealNotSure;
+
+  /// Described meal card: the estimate offered by I’m not sure.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {food} as an estimate? Its own values are used as they are, and may differ from what you ate.'**
+  String dcMealEstimateOffer(String food);
+
+  /// Described meal card: the estimate is USDA’s not-specified record.
+  ///
+  /// In en, this message translates to:
+  /// **'This record does not say how it was prepared.'**
+  String get dcMealEstimateGeneric;
+
+  /// Described meal card: accept the disclosed estimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this estimate'**
+  String get dcMealUseEstimate;
+
+  /// Name of a food logged from an accepted estimate.
+  ///
+  /// In en, this message translates to:
+  /// **'{food} (estimate)'**
+  String dcMealEstimateName(String food);
+
+  /// Described meal card: choose another food for this item.
+  ///
+  /// In en, this message translates to:
+  /// **'Change food'**
+  String get dcMealChangeFood;
+
+  /// Screen reader label of Change food.
+  ///
+  /// In en, this message translates to:
+  /// **'Change food: {food}'**
+  String dcMealChangeFoodOf(String food);
+
+  /// Screen reader label of Change amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Change amount: {food}'**
+  String dcMealChangeAmountOf(String food);
+
+  /// Described meal card: the food search did not answer for this item.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t look up {food} right now. Nothing else changed.'**
+  String dcMealLookupUnavailable(String food);
+
+  /// Screen reader announcement after a choice on the meal card.
+  ///
+  /// In en, this message translates to:
+  /// **'{food}: {amount}'**
+  String dcMealChosen(String food, String amount);
+
+  /// Add food: foods met in earlier searches (kept on the phone), not the person’s own.
+  ///
+  /// In en, this message translates to:
+  /// **'Looked up before'**
+  String get foodGroupSeen;
+
+  /// Add food: the wider database has more results than one answer holds.
+  ///
+  /// In en, this message translates to:
+  /// **'More foods match than are shown: add a word to narrow the search.'**
+  String get foodSearchMoreResults;
+
+  /// Described meal card: change this item’s amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Change amount'**
+  String get dcMealAmountButton;
 }
 
 class _AppLocalizationsDelegate

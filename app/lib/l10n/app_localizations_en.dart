@@ -13576,4 +13576,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foodInviteBodyShort => 'You review it before anything is logged.';
+
+  @override
+  String dcMealWhichMatches(String food) {
+    return 'Which matches your $food?';
+  }
+
+  @override
+  String dcMealNotSaid(String details) {
+    return 'Not said: $details';
+  }
+
+  @override
+  String get dcAttrCut => 'which part';
+
+  @override
+  String get dcAttrState => 'raw or cooked';
+
+  @override
+  String get dcAttrMethod => 'how it was cooked';
+
+  @override
+  String get dcAttrSkin => 'skin or peel';
+
+  @override
+  String get dcAttrFat => 'fat level';
+
+  @override
+  String get dcAttrVariety => 'which kind';
+
+  @override
+  String get dcAttrAddedFat => 'added fat';
+
+  @override
+  String get dcAttrAddition => 'what was added';
+
+  @override
+  String get dcMealNotSure => 'I’m not sure';
+
+  @override
+  String dcMealEstimateOffer(String food) {
+    return 'Use $food as an estimate? Its own values are used as they are, and may differ from what you ate.';
+  }
+
+  @override
+  String get dcMealEstimateGeneric =>
+      'This record does not say how it was prepared.';
+
+  @override
+  String get dcMealUseEstimate => 'Use this estimate';
+
+  @override
+  String dcMealEstimateName(String food) {
+    return '$food (estimate)';
+  }
+
+  @override
+  String get dcMealChangeFood => 'Change food';
+
+  @override
+  String dcMealChangeFoodOf(String food) {
+    return 'Change food: $food';
+  }
+
+  @override
+  String dcMealChangeAmountOf(String food) {
+    return 'Change amount: $food';
+  }
+
+  @override
+  String dcMealLookupUnavailable(String food) {
+    return 'Couldn’t look up $food right now. Nothing else changed.';
+  }
+
+  @override
+  String dcMealChosen(String food, String amount) {
+    return '$food: $amount';
+  }
+
+  @override
+  String get foodGroupSeen => 'Looked up before';
+
+  @override
+  String get foodSearchMoreResults =>
+      'More foods match than are shown: add a word to narrow the search.';
+
+  @override
+  String get dcMealAmountButton => 'Change amount';
 }

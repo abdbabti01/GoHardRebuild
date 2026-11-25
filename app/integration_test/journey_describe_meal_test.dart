@@ -53,9 +53,11 @@ void main() {
     await j.waitFor(find.text('chicken · 120 g: weighed raw or cooked?'), what: 'the raw-or-cooked question', seconds: 40);
     await j.shot('dm-04-questions');
     await j.tap(prefixed('day-meal-raw-').first);
-    await j.waitFor(find.text('Which chicken?'), what: 'which chicken');
-    await j.tap(find.textContaining('Chicken breast (Raw'));
+    await j.waitFor(find.text('Which matches your chicken?'), what: 'which chicken: breast or thigh, skin or not');
+    await j.tap(find.textContaining('Chicken breast (Raw · boneless, skinless)'));
     await j.tap(prefixed('day-meal-cooked-').first);
+    await j.waitFor(find.text('Which matches your potatoes?'), what: 'which potatoes: how they were cooked, peel or not');
+    await j.tap(find.textContaining('Potato (Boiled · peeled)'));
     await j.waitFor(find.text('Ready to review. Nothing is logged until you tap Log meal.'), what: 'a complete meal');
     await j.shot('dm-05-ready');
 
@@ -73,5 +75,17 @@ void main() {
     final after = await used();
     expect(after - before, 1, reason: 'one charged request for the sentence; questions, review and logging free');
     debugPrint('GOHARD_DESCRIBE allowance used before=$before after=$after entries=$names');
+
+    // The sentence reported from IPA 86: nothing taken as said that was not; one choice each (captured, not logged).
+    await j.tap(find.descendant(of: eat, matching: find.byKey(const Key('log-food'))));
+    await j.tapKey('food-describe');
+    await j.waitFor(find.byKey(const Key('day-input')), what: 'the coach again');
+    await j.type('day-input', 'I had 100 g of cooked chicken thighs and 130 g of cooked potatoes');
+    await j.tapKey('day-send');
+    await j.waitFor(find.text('Which matches your cooked chicken thighs?'), what: 'the thigh choice', seconds: 40);
+    expect(find.text('Which matches your cooked potatoes?'), findsOneWidget);
+    expect(find.textContaining('Ready to review'), findsNothing, reason: 'neither was taken without asking');
+    await j.shot('dm-08-reported-sentence');
+    debugPrint('GOHARD_REPORTED allowance used=${await used()} (one more request for the second sentence)');
   });
 }

@@ -1,0 +1,221 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:gohard_rebuild/data/models.dart';
+import 'package:gohard_rebuild/features/coach/meal_ideas.dart';
+import 'package:gohard_rebuild/features/nutrition/food_item.dart';
+import 'package:gohard_rebuild/features/nutrition/food_search.dart';
+import 'package:gohard_rebuild/features/nutrition/food_traits.dart';
+import 'package:gohard_rebuild/features/nutrition/saved_meals.dart' show MealComponent;
+
+/// Described-meal resolution (docs/FOOD_DATA.md › Food resolution): what was said, which records are found, and whether
+/// one may be taken without asking. Words as the server would check them; no model, no network.
+void main() {
+  final catalog = CommonFoodCatalog.parse(File('assets/data/common-foods.json').readAsStringSync(),
+      overlay: File('assets/data/common-foods.l10n.json').readAsStringSync());
+  SaidFood said(String name, [double? q, String? unit, String? noun, String? evidence, String? brand]) =>
+      (name: name, label: name, preparation: null, brand: brand, quantity: q, unit: unit, noun: noun, evidence: evidence ?? [if (q != null) '${q.round()} ${unit == 'piece' ? noun ?? '' : unit}', name].join(' '));
+  IdeaSources sources({List<FoodItem> seen = const [], List<FoodItem> mine = const [], List<FoodItem> Function(String q)? search, List<String>? searched, bool fails = false}) =>
+      IdeaSources.fromCatalog(catalog, seen: seen, mine: mine, maxSearches: 6,
+          search: search == null && !fails ? null : (q) async {
+            searched?.add(q);
+            if (fails) throw StateError('offline');
+            return search!(q);
+          });
+  String status(Json i) => i['status'] as String;
+  List<String> optionNames(Json i) => [for (final o in i['options'] as List) '${(o as Map)['name']} · ${o['match']}'];
+  MealComponent part(Json i) => MealComponent(Map<String, dynamic>.from(i['part'] as Map));
+  String id(Json i) => catalog.of(part(i).item)!.id;
+  FoodItem usda(String id, String name, {String? brand, double kcal = 100}) =>
+      FoodItem({'source': 'usda', 'sourceId': id, 'name': name, 'brand': brand, 'basis': '100g', 'nutrients': {'calories': kcal}, 'servings': []});
+
+  group('the reported sentence (IPA 86)', () {
+    test('"100 g of cooked chicken thighs and 130 g of cooked potatoes": no roasted, skinless, baked or skin-on is taken as said', () async {
+      final items = await resolveMeal([said('cooked chicken thighs', 100, 'g'), said('cooked potatoes', 130, 'g')], sources());
+      expect([for (final i in items) status(i)], ['record', 'record'], reason: 'one useful choice each, nothing taken as said');
+      expect(optionNames(items[0]), ['Chicken thigh · Cooked · skin not eaten', 'Chicken thigh · Cooked · skin eaten'],
+          reason: 'a way of cooking was not said either, so the records that do not specify it are offered; only the skin is asked');
+      expect(items[0]['unresolved'], ['skin']);
+      expect(optionNames(items[1]), containsAll(['Potato · Boiled · peeled', 'Potato · Boiled · skin eaten', 'Potato · Baked · with skin']),
+          reason: 'how the potatoes were cooked and whether the peel was eaten were not said');
+      expect(items[1]['unresolved'], ['method', 'skin']);
+      expect((items[1]['estimate'] as Map)['generic'], isTrue, reason: 'I\'m not sure offers USDA\'s record for a potato cooked in an unspecified way');
+      // Both amounts are kept for whatever is chosen.
+      final thigh = chooseRecord(items[0], 0), potato = chooseRecord(items[1], 0);
+      expect((part(thigh).quantity, part(potato).quantity), (100.0, 130.0));
+    });
+
+    test('the same words without "cooked": raw or cooked is asked first, and the answer is kept', () async {
+      final items = await resolveMeal([said('chicken thighs', 100, 'g'), said('potatoes', 130, 'g')], sources());
+      expect([for (final i in items) status(i)], ['state', 'state']);
+      final cooked = await answerState(items[0], 'cooked', sources());
+      expect(status(cooked), 'record');
+      expect(cooked['confirmed'], {'state': 'cooked'});
+      final raw = await answerState(items[1], 'raw', sources());
+      expect(status(raw), 'record', reason: 'one raw potato record, but it says "with skin", which was not said: confirmed, never taken');
+      expect(optionNames(raw), ['Potato · Raw · with skin']);
+      expect(raw['unresolved'], ['skin']);
+    });
+  });
+
+  group('explicit descriptions stay fast', () {
+    test('"100 g roasted skinless chicken breast and 100 g boiled peeled potatoes": used directly, nothing asked', () async {
+      final items = await resolveMeal([said('roasted skinless chicken breast', 100, 'g'), said('boiled peeled potatoes', 100, 'g')], sources());
+      expect([for (final i in items) status(i)], ['ready', 'ready']);
+      expect([id(items[0]), id(items[1])], ['chicken-breast', 'potato-boiled-peeled']);
+    });
+
+    test('"2 eggs": the record that does not specify how they were cooked, no question; "2 fried eggs": fried', () async {
+      final eggs = (await resolveMeal([said('eggs', 2, 'piece', 'egg')], sources())).single;
+      expect((status(eggs), id(eggs)), ('ready', 'eggs-cooked'));
+      expect(part(eggs).amount, startsWith('2 '));
+      final fried = (await resolveMeal([said('fried eggs', 2, 'piece', 'egg')], sources())).single;
+      expect(id(fried), 'eggs-fried');
+    });
+  });
+
+  group('ambiguous descriptions ask only what matters', () {
+    test('"100 g chicken and 100 g potato": raw or cooked, then one choice each; both amounts kept; each resolved on its own', () async {
+      final items = await resolveMeal([said('chicken', 100, 'g'), said('potato', 100, 'g')], sources());
+      expect([for (final i in items) status(i)], ['state', 'state']);
+      final chicken = await answerState(items[0], 'cooked', sources());
+      expect(optionNames(chicken), ['Chicken breast · Cooked · skin not eaten', 'Chicken breast · Cooked · skin eaten', 'Chicken thigh · Cooked · skin not eaten', 'Chicken thigh · Cooked · skin eaten'],
+          reason: '"chicken" is never taken as breast');
+      expect(chicken['unresolved'], ['cut', 'skin']);
+      final breast = chooseRecord(chicken, 0);
+      expect((status(breast), part(breast).quantity), ('ready', 100.0));
+      expect(status(items[1]), 'state', reason: 'the potato is untouched while the chicken is answered');
+    });
+
+    test('one record found is not proof: a single underspecified candidate is a choice, never taken', () async {
+      // Only an external record named "Chicken, roasted" (no cut, no skin): never taken by itself.
+      final one = [usda('900', 'Chicken, roasted')];
+      final f = IdeaSources(seen: [for (final i in one) candidateOf(i)]);
+      final item = (await resolveMeal([said('chicken', 100, 'g', null, '100 g cooked chicken')], f)).single;
+      expect(status(item), 'record');
+      expect((item['options'] as List).length, 1);
+      // And a reviewed record that contradicts what was said is no candidate at all.
+      final raw = (await resolveMeal([said('broccoli', 100, 'g', null, '100 g cooked broccoli')], sources())).single;
+      expect(status(raw), 'missing', reason: 'the only broccoli is raw; cooked broccoli was said');
+    });
+
+    test('rice and pasta: dry or cooked weight is asked; the plain word "pasta" is regular pasta, "rice" asks white or brown', () async {
+      final rice = (await resolveMeal([said('rice', 150, 'g')], sources())).single;
+      expect(status(rice), 'state');
+      final cookedRice = await answerState(rice, 'cooked', sources());
+      expect(optionNames(cookedRice), ['White rice · Cooked', 'Brown rice · Cooked']);
+      final dryRice = await answerState(rice, 'raw', sources());
+      expect(optionNames(dryRice), ['White rice · Dry · uncooked', 'Brown rice · Dry · uncooked']);
+      final pasta = await answerState((await resolveMeal([said('pasta', 80, 'g')], sources())).single, 'raw', sources());
+      expect((status(pasta), id(pasta)), ('ready', 'pasta-dry'));
+    });
+
+    test('ground beef: the fat level is asked; "I\'m not sure" offers the record that does not specify it', () async {
+      final beef = await answerState((await resolveMeal([said('ground beef', 150, 'g')], sources())).single, 'cooked', sources());
+      expect(status(beef), 'record');
+      expect(beef['unresolved'], contains('fat'));
+      expect(optionNames(beef), containsAll(['Ground beef 90% lean · Patty · broiled', 'Ground beef 80% lean · Cooked · pan-browned']));
+      expect(((beef['estimate'] as Map)['generic'], (beef['estimate'] as Map)['name']), (true, 'Ground beef'));
+    });
+
+    test('milk: which milk is asked; a glass is not a unit of any record, so the amount is asked too, never converted', () async {
+      final milk = (await resolveMeal([said('milk', 1, 'piece', 'glass')], sources())).single;
+      expect(status(milk), 'record');
+      expect(milk['unresolved'], ['fat']);
+      final chosen = chooseRecord(milk, 0);
+      expect(status(chosen), 'amount', reason: 'a glass holds no stated amount');
+    });
+
+    test('yogurt: which yogurt, then how much (one yogurt names no container weight); bread: which bread, then which slice', () async {
+      final yogurt = (await resolveMeal([said('yogurt', 1, 'piece', 'yogurt')], sources())).single;
+      expect(status(yogurt), 'record');
+      expect(yogurt['unresolved'], containsAll(['variety', 'fat']));
+      expect(status(chooseRecord(yogurt, 0)), 'amount');
+      final bread = (await resolveMeal([said('bread', 2, 'piece', 'slice')], sources())).single;
+      expect(optionNames(bread), ['Whole wheat bread · Sliced loaf', 'White bread · Sliced loaf']);
+      expect(status(chooseRecord(bread, 1)), 'amount', reason: 'several slice sizes: the person chooses, never an assumed one');
+    });
+
+    test('a sandwich or couscous: a mixed dish is never split into a recipe; couscous asks dry or cooked', () async {
+      final searched = <String>[];
+      final sandwich = (await resolveMeal([said('sandwich', 1, 'piece', 'sandwich')], sources(searched: searched, search: (q) => const []))).single;
+      expect(status(sandwich), 'missing', reason: 'nothing suitable: Find food, no ingredients invented');
+      expect(searched, ['sandwich']);
+      final couscous = await answerState((await resolveMeal([said('couscous', 150, 'g')], sources())).single, 'cooked', sources());
+      expect((status(couscous), id(couscous)), ('ready', 'couscous'));
+    });
+  });
+
+  group('what was said is respected', () {
+    test('contradictions exclude: raw is never cooked, skin eaten is never skinless, another brand is never the brand said', () async {
+      final skin = (await resolveMeal([said('chicken breast with skin', 100, 'g', null, '100 g cooked chicken breast with skin')], sources())).single;
+      expect(id(skin), 'chicken-breast-cooked-skin', reason: 'cooked and skin said; the way of cooking was not, so the record that does not specify it');
+      final rawSkinless = (await resolveMeal([said('raw skinless chicken thigh', 100, 'g')], sources())).single;
+      expect(id(rawSkinless), 'chicken-thigh-raw');
+      final brands = [usda('1', 'GREEK YOGURT', brand: 'CHOBANI'), usda('2', 'GREEK YOGURT', brand: 'OIKOS')];
+      final chobani = (await resolveMeal([said('greek yogurt', 170, 'g', null, '170 g Chobani greek yogurt', 'Chobani')], sources(search: (q) => brands))).single;
+      expect([for (final o in chobani['options'] as List) FoodItem(((o as Map)['item'] as Map).cast()).brand], ['CHOBANI'],
+          reason: 'only the brand said; a generic record cannot show a brand either');
+    });
+
+    test('negation and other languages: "without skin", "sans peau", "بدون جلد", "skin not eaten" all mean the same', () {
+      for (final words in ['chicken thigh without skin', 'cuisse de poulet sans peau', 'فخذ دجاج بدون جلد', 'Chicken thigh, skin not eaten', 'skinless chicken thigh']) {
+        final t = readTraits(words);
+        expect([t[Attr.family], t[Attr.cut], t[Attr.skin]], [{'chicken'}, {'thigh'}, {'no'}], reason: words);
+      }
+      expect(readTraits('pommes de terre bouillies avec la peau')[Attr.skin], {'yes'});
+      expect(readTraits('Chicken breast, baked, broiled, or roasted, skin not eaten, from raw')[Attr.state], {'cooked'}, reason: '"from raw" is what it was made from');
+      expect(readTraits('Fish, salmon, Atlantic, farmed, cooked, dry heat')[Attr.state], {'cooked'}, reason: '"dry heat" is a way of cooking, not dry food');
+      expect(readTraits('riz blanc cuit')[Attr.variety], {'white'});
+      expect(readTraits('blanc de poulet')[Attr.cut], {'breast'});
+    });
+
+    test('a detail the model added but the person did not say is not taken as said (the person\'s words are the evidence)', () async {
+      // The model wrote "chicken breast" for "chicken": only the person's words count.
+      final f = (name: 'chicken breast', label: 'chicken', preparation: 'roasted', brand: null, quantity: 100.0, unit: 'g', noun: null, evidence: '100 g of chicken');
+      expect(status((await resolveMeal([f], sources())).single), 'state', reason: 'neither the cut nor "roasted" was said');
+    });
+  });
+
+  group('retrieval', () {
+    test('a saved or seen record is considered beside the catalog, never in its place; it is never taken without asking', () async {
+      final mine = usda('77', 'Chicken thigh, cooked, skin not eaten');
+      final item = (await resolveMeal([said('cooked chicken thighs', 100, 'g')], sources(mine: [mine]))).single;
+      expect(status(item), 'record');
+      expect([for (final o in item['options'] as List) FoodItem(((o as Map)['item'] as Map).cast()).sourceId], contains('77'));
+    });
+
+    test('the food search is asked once per query, and a failed search keeps the item for Try again', () async {
+      final searched = <String>[];
+      final items = await resolveMeal([said('dragonfruit', 100, 'g'), said('dragonfruit', 50, 'g')], sources(searched: searched, search: (q) => const []));
+      expect(searched, ['dragonfruit'], reason: 'the same words are not searched twice in one request');
+      expect(status(items.first), 'missing');
+      final offline = (await resolveMeal([said('dragonfruit', 100, 'g')], sources(fails: true))).single;
+      expect(status(offline), 'unavailable');
+      final again = await retryItem(offline, sources(search: (q) => [usda('5', 'Dragonfruit, raw')]));
+      expect(status(again), 'record', reason: 'found on the explicit Try again, still confirmed by the person');
+    });
+  });
+
+  group('estimates and changes', () {
+    test('"I\'m not sure" uses a real record, says so in its name, and keeps the said amount', () async {
+      final potatoes = (await resolveMeal([said('cooked potatoes', 130, 'g')], sources())).single;
+      final e = acceptEstimate(potatoes, (n) => '$n (estimate)');
+      expect((status(e), part(e).name, part(e).quantity, part(e).item.sourceId), ('ready', 'Potato (estimate)', 130.0, '2709382'));
+      expect(e['estimate'], isNotNull);
+    });
+
+    test('a follow-up amount keeps the chosen record and confirmed details', () async {
+      final thigh = chooseRecord((await resolveMeal([said('cooked chicken thighs', 100, 'g')], sources())).single, 1);
+      final edited = await applyMealEdits([thigh], [(op: 'amount', ref: 'd1', food: said('chicken thighs', 150, 'g'))], sources());
+      expect((status(edited.items.single), part(edited.items.single).quantity, part(edited.items.single).item.sourceId), ('ready', 150.0, part(thigh).item.sourceId));
+    });
+  });
+
+  test('every family profile names only known attributes, and the catalog\'s reviewed details are readable', () {
+    for (final f in catalog.foods) {
+      expect(() => traitsOf(f.attrs), returnsNormally, reason: f.id);
+      expect(traitsOf(f.attrs)[Attr.family], isNotNull, reason: '${f.id} has a family');
+    }
+  });
+}

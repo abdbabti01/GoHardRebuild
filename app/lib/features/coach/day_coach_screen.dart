@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
@@ -20,7 +21,7 @@ import '../nutrition/food_form.dart' show FoodFormScreen;
 import '../nutrition/food_repository.dart' show FoodDraft, mealLabel;
 import '../nutrition/food_repository.dart' show SavedFood;
 import '../nutrition/nutrient_coverage.dart' show Nutrient;
-import '../nutrition/log_food_screen.dart' show LogFoodScreen;
+import '../nutrition/log_food_screen.dart' show LogFoodScreen, keepAmountOf;
 import '../nutrition/nutrition_surface.dart' show formatKcal;
 import '../nutrition/saved_meals.dart';
 import '../nutrition/saved_meals_screens.dart' show MealReviewScreen, openMealsLibrary;
@@ -33,9 +34,8 @@ import 'coach_prefs.dart';
 import 'coach_rig.dart' show RigFrame;
 import 'day_coach.dart';
 import 'meal_ideas.dart';
-import '../nutrition/food_discovery.dart' show LookupFailure;
 import '../nutrition/food_item.dart' show FoodItem;
-import '../nutrition/food_search.dart' show CommonFood, CommonFoodCatalog, foodLang;
+import '../nutrition/food_search.dart' show CommonFoodCatalog, foodLang;
 import '../nutrition/meal_habits_ui.dart' show usualMealProvider, reviewUsualMeal;
 import '../plus/entitlement.dart' show entitlementProvider, plusProvider;
 import '../../core/clock.dart' show addDays;
@@ -449,7 +449,7 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
     final lang = foodLang(context.l10n);
     final commonF = ref.read(commonFoodsProvider.future), seenF = ref.read(seenFoodsProvider.future);
     final discovery = ref.read(foodDiscoveryProvider);
-    final mine = [for (final r in ref.read(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) candidateOf(r.value.item)];
+    final mine = [for (final r in ref.read(savedFoodsProvider).value ?? const <Stored<SavedFood>>[]) if (!r.value.isDeleted) r.value.item];
     // Loaded on demand: nothing may have read the bundled foods or the phone's seen foods yet (a fresh start).
     Future<T?> loaded<T>(Future<T> f) async {
       try {
@@ -458,22 +458,14 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
         return null;
       }
     }
-    final common = (await loaded(commonF))?.foods ?? const <CommonFood>[];
+    final catalog = await loaded(commonF) ?? CommonFoodCatalog.empty;
     final seen = await loaded(seenF) ?? const <FoodItem>[];
-    return IdeaSources(
-      common: [for (final c in common) (item: c.item, fields: c.fields, name: c.nameIn(lang), detail: c.qualifierIn(lang), startUnit: c.unitId)],
-      mine: mine,
-      seen: [for (final i in seen) candidateOf(i)],
-      asIs: {for (final c in common) if (CommonFoodCatalog.eatenAsIs(c)) c.item.key},
-      // A meal of up to 12 foods may search for up to 6 of them; the rest stay "find it" (never dropped).
+    return IdeaSources.fromCatalog(
+      catalog, lang: lang, mine: mine, seen: seen,
+      // A meal of up to 12 foods may search for up to 6 of them; the rest stay "find it" (never dropped). A search that does
+      // not answer (offline, timeout, rate limit) is reported as such to the item, which keeps a Try again.
       maxSearches: 6,
-      search: (q) async {
-        try {
-          return await discovery.search(q).timeout(const Duration(seconds: 8));
-        } on LookupFailure {
-          return const [];
-        }
-      },
+      search: (q) => discovery.search(q).timeout(const Duration(seconds: 8)),
     );
   }
 
@@ -929,17 +921,22 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
         final text = ['${part.amount} · ${part.name}', if ((it['part'] as Map)['match'] is String) '(${(it['part'] as Map)['match']})', if (own) '· ${l.dcMealOwnValues}'].join(' ');
         return [
           Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(children: [
-              Expanded(
-                child: Semantics(
-                  button: true, hint: l.dcChooseAmount,
-                  child: InkWell(
-                    key: Key('day-meal-item-$id-$ref_'), onTap: () => _amountFor(id, it, d, part: part),
-                    child: ConstrainedBox(constraints: const BoxConstraints(minHeight: Targets.minimum), child: Align(alignment: AlignmentDirectional.centerStart, child: Text(text, style: context.body))),
-                  ),
-                ),
+            padding: const EdgeInsets.only(top: 8),
+            child: Semantics(
+              button: true, hint: l.dcChooseAmount,
+              child: InkWell(
+                key: Key('day-meal-item-$id-$ref_'), onTap: () => _amountFor(id, it, d, part: part),
+                child: ConstrainedBox(constraints: const BoxConstraints(minHeight: Targets.minimum), child: Align(alignment: AlignmentDirectional.centerStart, child: Text(text, style: context.body))),
               ),
+            ),
+          ),
+          Transform.translate(
+            offset: Offset(context.isRtl ? 8 : -8, 0),
+            child: Wrap(spacing: 4, children: [
+              TextButton(key: Key('day-meal-change-$id-$ref_'), onPressed: () => _pickInto(id, d, it, keep: part),
+                  child: Semantics(label: l.dcMealChangeFoodOf(label), excludeSemantics: true, child: Text(l.dcMealChangeFood))),
+              TextButton(key: Key('day-meal-amount-$id-$ref_'), onPressed: () => _amountFor(id, it, d, part: part),
+                  child: Semantics(label: l.dcMealChangeAmountOf(label), excludeSemantics: true, child: Text(l.dcMealAmountButton))),
               remove,
             ]),
           ),
@@ -962,16 +959,47 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
           ),
         ];
       case 'record':
+        final estimate = it['estimate'] is Map ? Map<String, dynamic>.from(it['estimate'] as Map) : null;
+        final notSaid = [for (final a in it['unresolved'] as List? ?? const []) _attrLabel(l, '$a')];
+        String named(Map o) => ['${o['name']}', if (o['match'] is String) '(${o['match']})'].join(' ');
+        // "I'm not sure" asked: the estimate, disclosed, to accept or go back to the choices.
+        if (it['offer'] == true && estimate != null) {
+          return [
+            question(l.dcMealWhichMatches(label)),
+            Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.dcMealEstimateOffer(named(estimate)), key: Key('day-meal-offer-$id-$ref_'), style: context.body)),
+            if (estimate['generic'] == true) Text(l.dcMealEstimateGeneric, style: context.caption),
+            Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              SecondaryButton(l.dcMealUseEstimate, key: Key('day-meal-estimate-$id-$ref_'),
+                  onPressed: () => change((item) => acceptEstimate(item, l.dcMealEstimateName))),
+              TextButton(key: Key('day-meal-offer-back-$id-$ref_'), onPressed: () => change((item) => {...item}..remove('offer')), child: Text(l.builderBack)),
+            ]),
+          ];
+        }
         return [
-          question(l.dcIdeaWhich(label)),
+          question(l.dcMealWhichMatches(label)),
+          if (notSaid.isNotEmpty) Text(l.dcMealNotSaid(notSaid.join(', ')), key: Key('day-meal-unsaid-$id-$ref_'), style: context.caption),
           for (final (o, opt) in (it['options'] as List).indexed)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: SecondaryButton(['${(opt as Map)['name']}', if (opt['match'] is String) '(${opt['match']})'].join(' '), key: Key('day-meal-pick-$id-$ref_-$o'),
-                  onPressed: () => change((item) => chooseRecord(item, o))),
+              child: SecondaryButton(named(opt as Map), key: Key('day-meal-pick-$id-$ref_-$o'),
+                  onPressed: () => _settled(id, () => change((item) => chooseRecord(item, o)), ref_)),
             ),
           Wrap(spacing: 4, children: [
             TextButton.icon(key: Key('day-meal-search-$id-$ref_'), onPressed: () => _pickInto(id, d, it), icon: const Icon(Icons.search), label: Text(l.dcMealSearchOther)),
+            if (estimate != null) TextButton(key: Key('day-meal-notsure-$id-$ref_'), onPressed: () => change((item) => {...item, 'offer': true}), child: Text(l.dcMealNotSure)),
+            remove,
+          ]),
+        ];
+      case 'unavailable':
+        return [
+          question(l.dcMealLookupUnavailable(label)),
+          Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            SecondaryButton(l.coachAskRetry, key: Key('day-meal-retry-$id-$ref_'), icon: Icons.refresh,
+                onPressed: () => _convo.changeDraftLater(id, (draft) async {
+                      final next = await retryItem(it, await _sources());
+                      return {...draft, 'items': [for (final x in draft['items'] as List) (x as Map)['ref'] == ref_ ? next : x]};
+                    }, _records, l)),
+            TextButton(key: Key('day-meal-find-$id-$ref_'), onPressed: () => _pickInto(id, d, it), child: Text(l.dcFindFood)),
             remove,
           ]),
         ];
@@ -1020,6 +1048,30 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
     ];
   }
 
+  static String _attrLabel(AppLocalizations l, String attr) => switch (attr) {
+        'cut' => l.dcAttrCut,
+        'state' => l.dcAttrState,
+        'method' => l.dcAttrMethod,
+        'skin' => l.dcAttrSkin,
+        'fat' => l.dcAttrFat,
+        'variety' => l.dcAttrVariety,
+        'addedFat' => l.dcAttrAddedFat,
+        _ => l.dcAttrAddition,
+      };
+
+  /// A choice made on the card: applied, then said to a screen reader (the button it was on is gone), so focus is not lost.
+  void _settled(String id, void Function() apply, String ref_) {
+    apply();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final item = [for (final m in ref.read(dayConversationProvider).messages) if (m['id'] == id) ((m['reply'] as Map?)?['intent'] as Map?)?['draft']]
+          .whereType<Map>().expand((d) => d['items'] as List? ?? const []).cast<Map>().where((x) => x['ref'] == ref_).firstOrNull;
+      if (item == null || item['status'] != 'ready') return;
+      final part = MealComponent(Map<String, dynamic>.from(item['part'] as Map));
+      SemanticsService.sendAnnouncement(View.of(context), context.l10n.dcMealChosen(part.name, part.amount), Directionality.of(context));
+    });
+  }
+
   /// The usual amount form, in its selection mode, for an item's record: a confirmed food changes amount, a food needing one
   /// gets one. Values are worked out from the record at once; nothing is logged and no saved food, meal or entry changes.
   Future<void> _amountFor(String id, Json it, Json d, {MealComponent? part}) async {
@@ -1034,14 +1086,15 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
     final chosen = await push<FoodDraft>(context, FoodFormScreen(draft: start, pick: true));
     if (chosen == null || !mounted) return;
     final next = {...MealComponent.ofDraft(chosen).j, if (food['match'] is String) 'match': food['match']};
-    _convo.changeDraft(id, (draft) => {...draft, 'items': [for (final x in draft['items'] as List) (x as Map)['ref'] == it['ref'] ? readyWith(Map<String, dynamic>.from(x), next) : x]}, _records(), l);
+    _convo.changeDraft(id, (draft) => {...draft, 'items': [for (final x in draft['items'] as List) (x as Map)['ref'] == it['ref'] ? readyWith(Map<String, dynamic>.from(x), next, sameFood: true) : x]}, _records(), l);
   }
 
   /// Add food in its selection mode: a food for an item that needs one (Find food, Search for another), or a new food
   /// ([it] null). Everything else in the meal stays as it is.
-  Future<void> _pickInto(String id, Json d, Json? it) async {
+  Future<void> _pickInto(String id, Json d, Json? it, {MealComponent? keep}) async {
     final l = context.l10n, said = it == null ? null : saidOf(it['said']);
-    final chosen = await push<FoodDraft>(context, LogFoodScreen(dayKey: d['dayKey'] as String, meal: d['meal'] as String, pick: true, query: said?.label ?? ''));
+    final chosen = await push<FoodDraft>(context, LogFoodScreen(dayKey: d['dayKey'] as String, meal: d['meal'] as String, pick: true, query: said?.label ?? '',
+        keep: keep == null ? null : keepAmountOf(keep)));
     if (chosen == null || !mounted) return;
     final part = MealComponent.ofDraft(chosen).j;
     _convo.changeDraft(id, (draft) {

@@ -14085,4 +14085,90 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get foodInviteBodyShort => 'تراجعها قبل تسجيل أي شيء.';
+
+  @override
+  String dcMealWhichMatches(String food) {
+    return 'أيّ هذه يطابق «$food»؟';
+  }
+
+  @override
+  String dcMealNotSaid(String details) {
+    return 'لم يُذكر: $details';
+  }
+
+  @override
+  String get dcAttrCut => 'الجزء';
+
+  @override
+  String get dcAttrState => 'نيء أو مطبوخ';
+
+  @override
+  String get dcAttrMethod => 'طريقة الطهي';
+
+  @override
+  String get dcAttrSkin => 'الجلد أو القشر';
+
+  @override
+  String get dcAttrFat => 'نسبة الدهن';
+
+  @override
+  String get dcAttrVariety => 'النوع';
+
+  @override
+  String get dcAttrAddedFat => 'الدهون المضافة';
+
+  @override
+  String get dcAttrAddition => 'ما أضيف إليه';
+
+  @override
+  String get dcMealNotSure => 'لست متأكدًا';
+
+  @override
+  String dcMealEstimateOffer(String food) {
+    return 'استخدام $food كتقدير؟ تُستخدم قيمه كما هي، وقد تختلف عما أكلته.';
+  }
+
+  @override
+  String get dcMealEstimateGeneric => 'هذا السجل لا يذكر طريقة التحضير.';
+
+  @override
+  String get dcMealUseEstimate => 'استخدم هذا التقدير';
+
+  @override
+  String dcMealEstimateName(String food) {
+    return '$food (تقدير)';
+  }
+
+  @override
+  String get dcMealChangeFood => 'غيّر الطعام';
+
+  @override
+  String dcMealChangeFoodOf(String food) {
+    return 'غيّر الطعام: $food';
+  }
+
+  @override
+  String dcMealChangeAmountOf(String food) {
+    return 'غيّر الكمية: $food';
+  }
+
+  @override
+  String dcMealLookupUnavailable(String food) {
+    return 'تعذّر البحث عن $food الآن. لم يتغير شيء آخر.';
+  }
+
+  @override
+  String dcMealChosen(String food, String amount) {
+    return '$food: $amount';
+  }
+
+  @override
+  String get foodGroupSeen => 'بحثت عنها سابقًا';
+
+  @override
+  String get foodSearchMoreResults =>
+      'هناك أطعمة أخرى مطابقة: أضف كلمة لتضييق البحث.';
+
+  @override
+  String get dcMealAmountButton => 'غيّر الكمية';
 }

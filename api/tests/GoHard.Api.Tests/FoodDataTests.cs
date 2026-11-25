@@ -385,8 +385,10 @@ public class FoodDataTests(PostgresFixture pg)
         };
         var b = await Account.RegisterAsync(keyed);
         Assert.Contains("food.search", (await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/capabilities")).GetProperty("capabilities").EnumerateArray().Select(c => c.GetString()));
-        var results = (await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/foods/search?q=chicken%20breast")).GetProperty("results");
-        Assert.Equal(7, results.GetArrayLength());
+        var answer = await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/foods/search?q=chicken%20breast");
+        Assert.Equal(7, answer.GetProperty("results").GetArrayLength());
+        // Neither page came back full: no hint of more (an optional field an older app ignores).
+        Assert.False(answer.GetProperty("more").GetBoolean());
         Assert.Equal((HttpStatusCode.NotFound, "NOT_FOUND"), await Get(b.Http, "/foods/barcode/96385074"));
         // One person cannot spend everyone's provider budget: the fourth request inside a minute is refused here.
         await b.Http.GetAsync("/api/v1/foods/search?q=chicken%20breast");

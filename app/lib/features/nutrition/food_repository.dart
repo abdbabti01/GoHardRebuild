@@ -55,9 +55,11 @@ class FoodDraft {
 
   /// A new entry for a chosen food: one serving (or 100 g / 100 ml) of it, with that amount's values. A catalog
   /// food gives the everyday `name` it is logged under and the `unitId` it starts in; the food itself is the same.
-  factory FoodDraft.of(FoodItem item, {required String dayKey, required String meal, String? name, String? unitId}) {
+  /// [startAt]: a start amount in [unitId] (an amount kept from the food it replaces); else the food's own start.
+  factory FoodDraft.of(FoodItem item, {required String dayKey, required String meal, String? name, String? unitId, double? startAt}) {
     final start = unitId == null ? null : FoodScaling.unit(item, unitId);
-    final (double quantity, FoodUnit unit) = start == null ? FoodScaling.initial(item) : (start.id.startsWith('serving') ? 1 : 100, start);
+    final (double q, FoodUnit unit) = start == null ? FoodScaling.initial(item) : (start.id.startsWith('serving') ? 1 : 100, start);
+    final quantity = start != null && startAt != null && startAt > 0 ? startAt : q;
     final scaled = FoodScaling.scale(item, quantity, unit);
     return FoodDraft(dayKey: dayKey, meal: meal, name: name ?? item.name, amount: FoodScaling.describe(item, quantity, unit),
         calories: scaled['calories'], protein: scaled['protein'], carbs: scaled['carbs'], fat: scaled['fat'], item: item, quantity: quantity, unitId: unit.id);

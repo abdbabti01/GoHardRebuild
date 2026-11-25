@@ -14,13 +14,11 @@ import 'package:gohard_rebuild/l10n/app_localizations_en.dart';
 void main() {
   final catalog = CommonFoodCatalog.parse(File('assets/data/common-foods.json').readAsStringSync(),
       overlay: File('assets/data/common-foods.l10n.json').readAsStringSync());
-  final common = [for (final c in catalog.foods) (item: c.item, fields: c.fields, name: c.name, detail: c.qualifier, startUnit: c.unitId)];
   final l = AppLocalizationsEn();
   SaidFood said(String name, [double? q, String? unit, String? noun, String? prep, String? brand]) =>
-      (name: name, label: name, preparation: prep, brand: brand, quantity: q, unit: unit, noun: noun);
-  IdeaSources sources({List<FoodItem> seen = const [], List<FoodItem> Function(String q)? search, List<String>? searched}) => IdeaSources(
-      common: common, seen: [for (final i in seen) candidateOf(i)], maxSearches: 6,
-      asIs: {for (final c in catalog.foods) if (CommonFoodCatalog.eatenAsIs(c)) c.item.key},
+      (name: name, label: name, preparation: prep, brand: brand, quantity: q, unit: unit, noun: noun, evidence: null);
+  IdeaSources sources({List<FoodItem> seen = const [], List<FoodItem> Function(String q)? search, List<String>? searched}) => IdeaSources.fromCatalog(
+      catalog, seen: seen, maxSearches: 6,
       search: search == null ? null : (q) async {
         searched?.add(q);
         return search(q);
@@ -28,41 +26,44 @@ void main() {
   MealComponent part(Json item) => MealComponent(Map<String, dynamic>.from(item['part'] as Map));
 
   group('one sentence, one draft', () {
-    test('"120 g of chicken and 100 g of potatoes": two foods, each asking how it was weighed; chicken is never taken as breast', () async {
+    test('"120 g of chicken and 100 g of potatoes": each asks how it was weighed; then one choice each, never breast for "chicken"', () async {
       final items = await resolveMeal([said('chicken', 120, 'g'), said('potatoes', 100, 'g')], sources());
       expect([for (final i in items) (i['ref'], i['status'])], [('d1', 'state'), ('d2', 'state')]);
-      // Raw: breast or thigh, the person's choice (the same grams for either: it is what they weighed).
+      // Raw: breast or thigh, skin or not, the person's choice (the same grams for any: it is what they weighed).
       final raw = await answerState(items[0], 'raw', sources());
       expect(raw['status'], 'record');
-      expect([for (final o in raw['options'] as List) '${(o as Map)['name']} (${o['match']})'], ['Chicken breast (Raw · boneless, skinless)', 'Chicken thigh (Raw · boneless, skinless)']);
+      expect([for (final o in raw['options'] as List) '${(o as Map)['name']} (${o['match']})'],
+          ['Chicken breast (Raw · boneless, skinless)', 'Chicken thigh (Raw · boneless, skinless)', 'Chicken breast (Raw · with skin)', 'Chicken thigh (Raw · with skin)']);
+      expect(raw['unresolved'], ['cut', 'skin']);
       final breast = chooseRecord(raw, 0);
       expect((breast['status'], part(breast).quantity, part(breast).unitId, part(breast).item.sourceId), ('ready', 120.0, 'g', '2646170'));
       // Values only from the record: 120 g of 112 kcal / 22.5 g per 100 g.
       expect(part(breast).values['calories'], closeTo(134.4, 1e-9));
       expect(part(breast).values['protein'], closeTo(27, 1e-9));
-      // Potatoes: the catalog has only a baked potato; "cooked" takes it at the weight said.
+      // Potatoes, cooked: how and whether the peel was eaten are asked, never the one baked record taken.
       final potato = await answerState(items[1], 'cooked', sources());
-      expect((potato['status'], part(potato).name, part(potato).quantity), ('ready', 'Potato', 100.0));
+      expect(potato['status'], 'record');
+      expect(potato['unresolved'], ['method', 'skin']);
     });
 
-    test('a preparation said is used; a count is not asked raw or cooked; nothing is added that was not said', () async {
-      final items = await resolveMeal([said('chicken breast', 150, 'g', null, 'cooked'), said('egg', 2, 'piece', 'egg'), said('olive oil', 1, 'piece', 'tablespoon')], sources());
+    test('what was said is used; a count is not asked raw or cooked; nothing is added that was not said', () async {
+      final items = await resolveMeal([said('skinless chicken breast', 150, 'g', null, 'cooked'), said('egg', 2, 'piece', 'egg'), said('olive oil', 1, 'piece', 'tablespoon')], sources());
       expect([for (final i in items) i['status']], ['ready', 'ready', 'ready']);
       expect([for (final i in items) part(i).amount], ['150 g', '2 eggs (100 g)', '1 tablespoon (14 g)']);
       expect(items.length, 3, reason: 'no oil, butter or sauce of its own');
     });
 
     test('no amount said: choose one; a unit the record lacks: choose one; never a standard portion in its place', () async {
-      final items = await resolveMeal([said('banana'), said('greek yogurt', 1, 'piece', 'bowl')], sources());
+      final items = await resolveMeal([said('banana'), said('nonfat greek yogurt', 1, 'piece', 'bowl')], sources());
       expect([for (final i in items) i['status']], ['amount', 'amount']);
       expect((items[0]['food'] as Map)['name'], 'Banana');
     });
 
     test('ounces and pounds are converted exactly; never between weight and volume, or raw and cooked', () async {
-      final oz = await resolveMeal([said('chicken breast', 4, 'oz', null, 'raw')], sources());
+      final oz = await resolveMeal([said('skinless chicken breast', 4, 'oz', null, 'raw')], sources());
       expect(part(oz.single).quantity, closeTo(113.3980925, 1e-9));
       expect(part(oz.single).unitId, 'g');
-      final ml = await resolveMeal([said('chicken breast', 100, 'ml', null, 'raw')], sources());
+      final ml = await resolveMeal([said('skinless chicken breast', 100, 'ml', null, 'raw')], sources());
       expect(ml.single['status'], 'amount', reason: 'a breast has no volume: the amount is chosen, not guessed');
     });
 
@@ -73,19 +74,22 @@ void main() {
       expect(searched, ['dragonfruit'], reason: 'only the food nothing on the phone matched');
     });
 
-    test('another preparation than said clears the amount: a fresh one is chosen', () async {
+    test('only records of the preparation said are offered; the amount said is kept for the one chosen', () async {
       final item = (await resolveMeal([said('oats', 40, 'g', null, 'cooked')], sources())).single;
       expect(item['status'], 'record');
+      expect([for (final o in item['options'] as List) (o as Map)['match']], everyElement(contains('Cooked')));
       final chosen = chooseRecord(item, 0);
-      expect((chosen['status'], chosen['asked']), ('amount', 'cooked'));
+      expect((chosen['status'], part(chosen).quantity), ('ready', 40.0));
     });
 
-    test('a brand said is matched only to that brand; without one a branded product is never chosen', () async {
+    test('a brand said is offered only as that brand, and confirmed; without one a branded product is never offered', () async {
       final chobani = FoodItem({'source': 'usda', 'sourceId': '900103', 'name': 'Plain Non-Fat Greek Yogurt', 'brand': 'Chobani', 'basis': '100g',
         'nutrients': {'calories': 59, 'protein': 10, 'carbs': 4, 'fat': null}, 'servings': []});
       final branded = (await resolveMeal([said('greek yogurt', 170, 'g', null, null, 'Chobani')], sources(seen: [chobani]))).single;
-      expect((branded['status'], part(branded).item.brand), ('ready', 'Chobani'));
-      final plain = (await resolveMeal([said('greek yogurt', 170, 'g')], sources(seen: [chobani]))).single;
+      expect(branded['status'], 'record', reason: 'a product seen before is never taken without asking');
+      expect([for (final o in branded['options'] as List) FoodItem(((o as Map)['item'] as Map).cast()).brand], ['Chobani']);
+      final plain = (await resolveMeal([said('nonfat greek yogurt', 170, 'g')], sources(seen: [chobani]))).single;
+      expect(plain['status'], 'ready');
       expect(part(plain).item.brand, isNull);
     });
 
@@ -95,19 +99,19 @@ void main() {
         said('apple', 150, 'g'), said('banana', 120, 'g'), said('almonds', 30, 'g'), said('greek yogurt', 170, 'g'), said('bread', 60, 'g'), said('white bread', 60, 'g'),
         said('oats', 40, 'g'), said('potatoes', 100, 'g'), said('chicken', 120, 'g'),
       ], sources(seen: [toast]));
-      expect([for (final i in items) i['status']], ['ready', 'ready', 'ready', 'ready', 'ready', 'ready', 'state', 'state', 'state'],
-          reason: 'apple, banana, almonds, yogurt and bread (toasted or not) are eaten as they come; oats, potatoes and chicken are weighed dry/raw or cooked');
-      expect(part(items[5]).item.sourceId, 't1', reason: 'toasted bread is bread, not a cooked food to ask about');
+      expect([for (final i in items) i['status']], ['ready', 'ready', 'ready', 'record', 'record', 'ready', 'state', 'state', 'state'],
+          reason: 'fruit and nuts as they come; yogurt and bread ask which, never raw or cooked; oats, potatoes and chicken ask how they were weighed');
+      expect(part(items[5]).item.name, 'Bread, white', reason: 'the reviewed white bread; the toasted record seen before is never taken by itself');
       // Said in the words ("riz cuit", "cooked rice") or as a preparation: never asked again.
-      final rice = (await resolveMeal([(name: 'rice', label: 'riz cuit', preparation: null, brand: null, quantity: 150, unit: 'g', noun: null)], sources())).single;
-      expect(rice['status'], isNot('state'));
+      final rice = (await resolveMeal([(name: 'rice', label: 'riz cuit', preparation: null, brand: null, quantity: 150, unit: 'g', noun: null, evidence: null)], sources())).single;
+      expect(rice['status'], 'record', reason: 'cooked said in French; white or brown was not');
       final cooked = (await resolveMeal([said('cooked rice', 150, 'g')], sources())).single;
       expect(cooked['status'], isNot('state'));
       final answered = await answerState(items[7], 'cooked', sources());
-      expect(answered['status'], 'ready', reason: 'answered once: not asked again');
+      expect(answered['status'], 'record', reason: 'answered once: not asked again; how they were cooked is the next choice');
       // The safeguards stay: chicken is never taken as breast, and nothing is added.
       final raw = await answerState(items[8], 'raw', sources());
-      expect((raw['status'], (raw['options'] as List).length), ('record', 2));
+      expect((raw['status'], (raw['options'] as List).length), ('record', 4));
       expect(items.length, 9);
     });
   });
@@ -145,17 +149,17 @@ void main() {
       final card = mealCard(draft, l);
       expect(card['complete'], false);
       expect(card['without'], ['chicken']);
-      expect(kcalSaid(l, Map<String, dynamic>.from((card['totals'] as Map)['kcal'] as Map)), '143 kcal', reason: 'the eggs alone, named as so far');
+      expect(kcalSaid(l, Map<String, dynamic>.from((card['totals'] as Map)['kcal'] as Map)), '176 kcal', reason: 'the eggs alone (cooked in a way not said: USDA\'s record for that), named as so far');
       expect(card['amount'], isNot(contains('kcal')), reason: 'a follow-up never carries values');
       final sparse = FoodItem({'source': 'user', 'sourceId': 'u1', 'name': 'Soup', 'basis': 'serving', 'nutrients': {'calories': 90, 'protein': null}, 'servings': [{'label': '1 bowl'}]});
       final withSoup = [...items.take(1), readyWith({'ref': 'd3', 'said': saidJson(said('soup'))}, MealComponent({'item': sparse.j, 'quantity': 1, 'unit': 'serving:0', 'name': 'Soup', 'amount': '1 bowl'}).j)];
       final full = mealCard({...draft, 'items': withSoup}, l);
       expect(full['complete'], true, reason: 'a food with a missing value is still a confirmed food');
-      expect(proteinSaid(l, Map<String, dynamic>.from((full['totals'] as Map)['protein'] as Map)), '12.4 g protein known', reason: 'never a complete total, never zero');
+      expect(proteinSaid(l, Map<String, dynamic>.from((full['totals'] as Map)['protein'] as Map)), '11.8 g protein known', reason: 'never a complete total, never zero');
     });
 
     test('a follow-up changes only the draft: an amount in the record\'s units, a removal, an addition; an unknown reference nothing', () async {
-      final items = await resolveMeal([said('chicken breast', 120, 'g', null, 'raw'), said('potato', 100, 'g', null, 'cooked')], sources());
+      final items = await resolveMeal([said('skinless chicken breast', 120, 'g', null, 'raw'), said('boiled peeled potato', 100, 'g')], sources());
       final edited = await applyMealEdits(items, [
         (op: 'amount', ref: 'd2', food: said('potatoes', 150, 'g')),
         (op: 'remove', ref: 'd1', food: null),

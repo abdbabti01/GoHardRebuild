@@ -3025,3 +3025,41 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - 25 Nov 2026: merged and deployed as authorized. `main` fast-forwarded 2211ad0 → 1ebe45b; CI 267 (45487837784) passed on `main`;
   Railway devoted-caring redeployed, hosted Ready (17 migrations), contract 2, `coach.meal-log` advertised. Deployed commit
   1ebe45b; IPA 86 source commit 8c85823 (same app code). Release notes in docs/RELEASE_AND_ROLLBACK.md.
+
+### 26 Nov 2026 — Food resolution: retrieval, ranking and resolution apart (`feature/food-resolution`, from main ac324ff)
+
+- Owner request: fix food discovery and meal matching at the architecture level after IPA 86 took "100 g of cooked chicken
+  thighs and 130 g of cooked potatoes" as roasted, meat-only thighs and a baked, skin-on potato. docs/FOOD_DATA.md › Food
+  resolution (the rules, the catalog matrix and its gaps).
+- Root cause (reproduced first, no model involved: `food_resolution_test` failed with `['ready', 'ready']`): the matcher
+  stopped at the first source with a hit, "cooked" matched any cooking method, the catalog had one cooked thigh and one
+  potato, and a single "sure" match was accepted. Search "potato": an exact local name suppressed the wider search.
+- Built: `food_traits.dart` (typed attributes read from said words and record descriptions, en/fr-CA/ar, negation, unknown
+  ≠ false, `*` = not specified; family profiles of material details), `food_resolution.dart` (pure resolver with outcomes,
+  reasons and unresolved details; reviewed-only acceptance; equivalence by attributes; "I'm not sure" estimate),
+  `FoodMatcher.candidates` (all local sources at once, then bounded, once-per-query search; `unavailable` on failure),
+  the card (Which matches your …?, Not said, I'm not sure with disclosure, Change food / Change amount / Remove, Try again,
+  announcement after a choice), suggestions' own tie-break, Add food search (always asked after the pause, Looked up
+  before, better wider match first, "more" note), `FoodDiscovery` 10-minute answer memo. API: optional `evidence` per
+  described food (kept only when in the person's message) and `more` on food search; prompt asks for evidence.
+- Catalog v3: 123 foods (46 new) with reviewed `attrs`, from the FDC downloadable datasets through the API's own
+  normalization (`scripts/usda-dataset-server.mjs`, `build-common-foods.mjs --verify/--reuse/--datasets`; raw files in
+  C:\dev\usda-fdc, outside git). Verify: 77 earlier records → 26 identical, 51 differing only in rounding (≤ 0.6 %),
+  description suffix order or portion order; none in identity, basis, portions or values beyond rounding. Earlier
+  records kept byte for byte. Gaps listed in FOOD_DATA.
+- Found while rendering: "cuisses" (plural rule gave "cuiss") and Arabic/French feminine forms (مطبوخة, pelée) were not
+  read; fixed, covered by the fr/ar renders.
+- Tests (this machine): API 270/270 (`MealLogTests` evidence kept/dropped, overflow; `FoodDataTests` `more`). App full suite
+  1076/1076; `food_resolution_test` 19, `meal_log_test` 13 (rewritten to the rules), `meal_log_ui_test` + food resolution
+  on the card (reported sentence through Log meal with an estimate, one request; Change food; unavailable), search and
+  ideas tests updated for the catalog. `flutter analyze` clean, `check-l10n.mjs` OK (3366). Renders:
+  docs/evidence/food-resolution/ (en light 390, fr-CA dark 390, ar 320 px 2×).
+- Native (emulator Pixel_9, not a phone): `journey_describe_meal_test` passed against the branch API on a disposable DB
+  (`gohard_resolve`, dropped), coach = STUB with evidence, USDA = saved real answers replayed: invitation, search, the
+  described meal (raw or cooked, which chicken, which potatoes), Log meal once, allowance 0 → 1; then the reported sentence
+  asked "Which matches your cooked chicken thighs?" (skin only) and the potatoes, nothing taken, allowance 2.
+  Captures docs/evidence/describe-meal-device/ (dm-08 the reported sentence).
+- Live Groq: not verified (no key on this machine; no hosted account created). The stub (`scripts/coach-stub.mjs`, now with
+  evidence) proves the app/API path only.
+- Not merged, not deployed. Deploying needs the API for `evidence` and `more` (both optional: without them the app reads
+  the label as before and shows no "more" note).

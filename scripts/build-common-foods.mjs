@@ -7,11 +7,20 @@
 // nutrient, a portion or a source ID of its own.
 //
 //   node scripts/build-common-foods.mjs --cache <dir outside the repo> [--api <origin>] [--candidates [id,id]] [--offline] [--reuse]
+//                                       [--verify] [--datasets "<release names>"]
 //
 //   --candidates   print what the API returned for each (or the named) entry, to choose an fdcId from
 //   --offline      never touch the network: fail if an answer is not in the cache
 //   --reuse        an entry already in the committed catalog with the same id and fdcId keeps its record exactly as
 //                  it is there (nothing asked); only new or changed entries are looked up
+//   --verify       ask the API for every committed record again (`fdc <id>`) and report any that differ (all but the
+//                  retrieval time): with --api pointed at a local API whose USDA source is scripts/usda-dataset-server.mjs,
+//                  this checks that the downloaded datasets normalize to exactly what the live search gave
+//   --datasets     the dataset releases the records were taken from, kept in the catalog's provenance
+//
+// Records can come from the live search or, without the live API, from the official downloadable datasets: run a local
+// API with USDA_BaseUrl pointing at scripts/usda-dataset-server.mjs and give an entry the query "fdc <id>". Either way the
+// GoHard API's own normalization makes the record.
 //
 // Answers are cached per query in --cache, so a re-run asks the API nothing it already asked. When something
 // must be fetched, ONE disposable account is registered on the testing API, used at no more than 20 lookups a
@@ -22,7 +31,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
-const VERSION = 2;
+const VERSION = 3;
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
 const value = (name) => (args.includes(`--${name}`) ? args[args.indexOf(`--${name}`) + 1] : undefined);
@@ -34,10 +43,13 @@ const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'app', 'assets',
 const MAX_SEARCHES = 200, SPACING_MS = 3200;
 
 // scripts/common-foods.spec.json, one row per everyday food:
-//   [id, name shown in rows, preparation shown under it, category, query sent to the API, chosen fdcId, aliases, portion]
+//   [id, name shown in rows, preparation shown under it, category, query sent to the API, chosen fdcId, aliases, portion, attrs]
 // Aliases only help a search find the entry (English and French); they never change which food it is.
 // `portion` is the label of one of the record's OWN portions ("1 egg") that a new entry starts from; null starts
 // at 100 g. It selects among what the source states and is refused if the record has no such portion.
+// `attrs`: the reviewed details of the record (docs/FOOD_DATA.md › Food resolution): family, cut, state (raw | cooked),
+// method, skin (yes | no), fat, variety, addedFat (yes | no), addition, each a value or "*" (the record says it is not
+// specified); a detail left out is unknown. GoHard's labels for matching a description, never USDA data.
 // An entry with no query or no fdcId is left out of the catalog and listed at the end of the run.
 const SPEC = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'common-foods.spec.json'), 'utf8'));
 
@@ -115,7 +127,23 @@ try {
   const only = flag('candidates') && value('candidates') && !value('candidates').startsWith('--') ? value('candidates').split(',') : null;
   const foods = [], left = [];
   const committed = flag('reuse') && existsSync(out) ? new Map(JSON.parse(readFileSync(out, 'utf8')).foods.map((f) => [f.id, f.item])) : new Map();
-  for (const [id, name, qualifier, category, query, fdcId, aliases, portion = null] of SPEC) {
+  if (flag('verify')) {
+    const committed = JSON.parse(readFileSync(out, 'utf8')).foods;
+    const strip = (i) => JSON.stringify({ ...i, retrievedAtUtc: undefined });
+    let same = 0, missing = 0;
+    for (const f of committed) {
+      const answer = await search(`fdc ${f.item.sourceId}`);
+      const got = answer.results.find((i) => i.sourceId === f.item.sourceId);
+      if (!got) { missing++; console.log(`${f.id}: ${f.item.sourceId} not in the datasets`); continue; }
+      if (strip(got) === strip(f.item)) { same++; continue; }
+      console.log(`DIFF ${f.id} (${f.item.sourceId})
+  committed ${strip(f.item)}
+  datasets  ${strip(got)}`);
+    }
+    console.log(`Verified ${committed.length}: ${same} identical, ${missing} not in the datasets, ${committed.length - same - missing} different.`);
+    process.exitCode = committed.length - same - missing === 0 ? 0 : 1;
+  }
+  for (const [id, name, qualifier, category, query, fdcId, aliases, portion = null, attrs = {}] of flag('verify') ? [] : SPEC) {
     if (only && !only.includes(id)) continue;
     if (!CATEGORIES.includes(category)) throw new Error(`${id}: unknown category ${category}`);
     if (query == null) { left.push(id); continue; }
@@ -131,9 +159,9 @@ try {
     if (!item) throw new Error(`${id}: the answer to "${query}" has no record ${fdcId}`);
     if (!name || !qualifier) throw new Error(`${id}: name and qualifier are required`);
     if (portion != null && !item.servings.some((s) => s.label === portion && (s.grams > 0 || s.milliliters > 0))) throw new Error(`${id}: the record states no portion "${portion}"`);
-    foods.push({ id, name, qualifier, category, aliases, portion, item });
+    foods.push({ id, name, qualifier, category, aliases, portion, attrs, item });
   }
-  if (!flag('candidates')) {
+  if (!flag('candidates') && !flag('verify')) {
     if (new Set(foods.map((f) => f.id)).size !== foods.length || new Set(foods.map((f) => f.item.sourceId)).size !== foods.length) throw new Error('Two entries share an id or a record.');
     const retrieved = foods.map((f) => f.item.retrievedAtUtc.slice(0, 10)).sort();
     mkdirSync(dirname(out), { recursive: true });
@@ -142,6 +170,7 @@ try {
       provenance: {
         source: 'USDA FoodData Central (public domain, CC0)',
         retrieved: retrieved[0] === retrieved.at(-1) ? retrieved[0] : `${retrieved[0]} to ${retrieved.at(-1)}`,
+        ...(value('datasets') ? { datasets: value('datasets') } : {}),
         method: 'Each item is one FoodData Central record exactly as the GoHard rebuild API normalized it in GET /api/v1/foods/search: sourceId is the FDC ID, and the values, basis and portions are the record\'s own. The record for each everyday name was chosen by review. Name, qualifier, category and aliases are GoHard\'s labels for finding the food; they are not USDA data. Built by scripts/build-common-foods.mjs from scripts/common-foods.spec.json.',
       },
       categories: CATEGORIES,

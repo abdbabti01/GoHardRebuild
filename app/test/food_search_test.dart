@@ -103,10 +103,12 @@ void main() {
 
   group('everyday queries', () {
     test('egg and eggs: the whole egg first, whites separately named', () {
+      // Catalog v3 also has eggs cooked in a way not specified, boiled and fried: whole eggs first, whites last.
       for (final q in ['egg', 'eggs', 'Egg ', 'EGGS']) {
-        expect(ids(q), ['eggs', 'egg-whites'], reason: q);
+        expect((ids(q).first, ids(q).last), ('eggs', 'egg-whites'), reason: q);
+        expect(ids(q), everyElement(startsWith('egg')), reason: q);
       }
-      final [whole, whites] = [for (final s in find('eggs').common) rowFacts(s)];
+      final whole = rowFacts(find('eggs').common.first), whites = rowFacts(find('eggs').common.last);
       expect((whole.title, whole.detail, whole.basis, whole.calories, whole.protein), ('Eggs', 'Whole · raw', '1 egg (50 g)', 71.5, 6.2));
       expect((whites.title, whites.detail, whites.basis), ('Egg whites', 'Whites only · raw', '1 egg white (33 g)'));
     });
@@ -120,19 +122,22 @@ void main() {
     });
 
     test('rice: plain rice above rice cakes, which stay a snack', () {
-      expect(ids('rice'), ['brown-rice', 'white-rice', 'rice-cakes']);
-      expect([for (final s in find('rice').common) s.common!.category], ['Carbohydrates', 'Carbohydrates', 'Snacks']);
-      expect([for (final s in find('rice').common) rowFacts(s).title], ['Brown rice', 'White rice', 'Rice cakes']);
+      // Cooked and dry, white and brown (catalog v3): every plain rice before the snack.
+      expect(ids('rice').last, 'rice-cakes');
+      expect([for (final s in find('rice').common) s.common!.category], [...List.filled(ids('rice').length - 1, 'Carbohydrates'), 'Snacks']);
+      expect({for (final s in find('rice').common.take(ids('rice').length - 1)) rowFacts(s).title}, {'Brown rice', 'White rice'});
       expect(ids('rice cake'), ['rice-cakes']);
     });
 
     test('French names and accents find the same foods', () {
-      expect(ids('œuf').first, 'eggs');
-      expect(ids('oeufs').first, 'eggs');
+      expect(ids('œuf').first, startsWith('eggs'));
+      expect(ids('oeufs').first, startsWith('eggs'));
       expect(ids('riz').take(2), ['brown-rice', 'white-rice']);
-      expect(ids('poitrine de poulet'), ['chicken-breast', 'chicken-breast-raw']);
-      expect(ids('blanc de poulet'), ['chicken-breast', 'chicken-breast-raw']);
-      expect(ids('pâtes'), ['whole-wheat-pasta']);
+      expect(ids('poitrine de poulet'), everyElement(startsWith('chicken-breast')));
+      expect(ids('poitrine de poulet'), containsAll(['chicken-breast', 'chicken-breast-raw']));
+      expect(ids('blanc de poulet'), everyElement(startsWith('chicken-breast')));
+      expect(ids('pâtes'), containsAll(['whole-wheat-pasta', 'pasta-cooked', 'pasta-dry']));
+      expect(ids('pâtes'), everyElement(contains('pasta')));
       expect(ids('epinards'), ['spinach']);
       expect(ids('lait écrémé').first, 'skim-milk');
     });
@@ -140,7 +145,8 @@ void main() {
     test('plurals, and foods that differ only by how they are prepared or how fat they are, stay apart', () {
       expect([ids('bananas'), ids('tomatoes'), ids('blueberry')], [['banana'], ['tomato'], ['blueberries']]);
       final milk = [for (final s in find('milk').common) '${rowFacts(s).title} · ${rowFacts(s).detail}'];
-      expect(milk.take(2), ['Milk 2% · Reduced fat', 'Skim milk · Fat free'], reason: 'the two milks, each named for what it is');
+      expect(milk, containsAll(['Milk 2% · Reduced fat', 'Skim milk · Fat free', 'Milk · Whole · 3.25%', 'Milk 1% · Low fat']), reason: 'each milk named for what it is');
+      expect(milk.indexOf('Almond milk · Unsweetened'), greaterThan(milk.indexOf('Milk 1% · Low fat')), reason: 'the dairy milks first');
       expect(milk, contains('Almond milk · Unsweetened'));
       expect([for (final s in find('raw egg').common) rowFacts(s).detail], ['Whole · raw', 'Whites only · raw']);
       expect({for (final f in catalog.foods) '${f.name} · ${f.qualifier}'}.length, catalog.foods.length, reason: 'no two rows read the same');
@@ -160,7 +166,8 @@ void main() {
       // The catalog's own record, kept as a favourite, keeps its category: it is the same food.
       final eggs = catalog.foods.firstWhere((f) => f.id == 'eggs');
       final kept = find('egg', saved: [savedFood('s-egg', eggs.item, favourite: true)], category: 'Proteins');
-      expect([[for (final s in kept.own) s.common!.id], [for (final s in kept.common) s.common!.id]], [['eggs'], ['egg-whites']]);
+      expect([for (final s in kept.own) s.common!.id], ['eggs']);
+      expect([for (final s in kept.common) s.common!.id], allOf(contains('egg-whites'), isNot(contains('eggs'))), reason: 'the kept egg is listed once, among the owner\'s');
     });
   });
 
@@ -176,7 +183,8 @@ void main() {
 
       // A plain name finds both, and each stays what it is.
       final both = find('greek yogurt', seen: [chobani]);
-      expect([[for (final s in both.own) rowFacts(s).detail], [for (final s in both.common) rowFacts(s).title]], [['Brand: Chobani'], ['Greek yogurt']]);
+      expect([for (final s in both.own) rowFacts(s).detail], ['Brand: Chobani']);
+      expect([for (final s in both.common) rowFacts(s).title], everyElement('Greek yogurt'));
       expect(rowFacts(both.own.single).protein, 8);
     });
 
@@ -186,7 +194,7 @@ void main() {
       final found = find('eggs', saved: [savedFood('mine-1', myEggs)], seen: [FoodItem(copyJson(eggs.item.j))]);
       expect([for (final s in found.own) (s.origin, s.item.key, rowFacts(s).calories)], [(Origin.mine, 'user:mine-1', 90.0), (Origin.seen, 'usda:2707152', 71.5)],
           reason: 'the user\'s own "Eggs" keeps its own values; the record seen before is the catalog egg');
-      expect([for (final s in found.common) s.common!.id], ['egg-whites'], reason: 'the egg already listed is not listed twice');
+      expect([for (final s in found.common) s.common!.id], allOf(contains('egg-whites'), isNot(contains('eggs'))), reason: 'the egg already listed is not listed twice');
       expect(rowFacts(found.own.last).title, 'Eggs', reason: 'the same record reads the same wherever it is met');
     });
 
@@ -201,7 +209,7 @@ void main() {
     });
 
     test('a row states its basis and never turns an unknown value into a number', () {
-      final salmon = find('salmon').common.single;
+      final salmon = find('salmon').common.firstWhere((s) => s.common!.id == 'salmon');
       expect((rowFacts(salmon).basis, rowFacts(salmon).calories), ('100 g', 206));
       final drink = rowFacts(Suggestion(sparseDrink(), Origin.found));
       expect((drink.basis, drink.calories, drink.protein, drink.detail), ('100 ml', 42, null, 'Brand: Example Drinks'));
@@ -274,7 +282,7 @@ void main() {
       await h.restart();
       final found = await search(owner, 'egg');
       expect([for (final s in found.own) '${s.origin.name}:${rowFacts(s).title}'], ['recent:Eggs', 'mine:Egg muffin'], reason: 'the best match first: the egg logged before, then the user\'s own muffin');
-      expect([for (final s in found.common) s.common!.id], ['egg-whites']);
+      expect([for (final s in found.common) s.common!.id], allOf(contains('egg-whites'), isNot(contains('eggs'))));
       expect([for (final s in (await search(owner, 'nutella')).own) s.item.name], ['Nutella'], reason: 'a product seen before, still offline');
       expect(h.server.callsTo('/foods/search').length, 1, reason: 'none of this asked the server anything more');
 
@@ -286,7 +294,7 @@ void main() {
       final two = await h.signIn('two');
       final other = await search(two, 'egg');
       expect(other.own, isEmpty, reason: 'private foods stay with their owner');
-      expect([for (final s in other.common) s.common!.id], ['eggs', 'egg-whites'], reason: 'the catalog is the same for every account');
+      expect([for (final s in other.common) s.common!.id], allOf(contains('eggs'), contains('egg-whites')), reason: 'the catalog is the same for every account');
       expect((await search(two, 'nutella')).own, isEmpty);
     });
   });

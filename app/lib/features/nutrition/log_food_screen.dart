@@ -19,12 +19,25 @@ import 'food_form.dart';
 import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
+import 'food_traits.dart' show Attr, readTraits, traitsOf;
+import 'saved_meals.dart' show MealComponent;
 import 'eating_out_screen.dart' show openEatingOut;
 import '../coach/coach_prefs.dart' show coachPrefsProvider;
 import '../coach/day_coach_screen.dart' show openDayCoach, dayConversationProvider;
 import '../plus/entitlement.dart' show plusProvider;
 import '../plus/plus_screen.dart' show resetDate;
 import 'saved_meals_screens.dart' show openMealsLibrary;
+
+/// An amount a picked food may start from when it replaces another (Change food on a described meal): kept only when it
+/// still means the same thing — grams or millilitres of food in the same state (raw stays raw, cooked stays cooked).
+/// Anything else starts from the new food's own amount: no yield or density is ever applied.
+typedef KeepAmount = ({double quantity, String unitId, String? state});
+
+/// The amount of [part] as a [KeepAmount], or null when it is a count or a serving (those belong to their own record).
+KeepAmount? keepAmountOf(MealComponent part) {
+  if (part.unitId != 'g' && part.unitId != 'ml') return null;
+  return (quantity: part.quantity, unitId: part.unitId, state: readTraits(part.item.name)[Attr.state]?.first);
+}
 
 /// The lists a food can be picked from. Search covers everyday foods and the owner's own; the others are theirs.
 enum FoodScope { search, recent, favourites, mine }
@@ -35,7 +48,10 @@ enum FoodScope { search, recent, favourites, mine }
 /// The day is carried into the form, and so is the meal, which can be changed here first. What was typed, the
 /// list and category chosen and the scroll position are still here on return.
 class LogFoodScreen extends ConsumerStatefulWidget {
-  const LogFoodScreen({super.key, required this.dayKey, required this.meal, this.scope = FoodScope.search, this.pick = false, this.query = ''});
+  const LogFoodScreen({super.key, required this.dayKey, required this.meal, this.scope = FoodScope.search, this.pick = false, this.query = '', this.keep});
+
+  /// While picking a replacement food: the amount it may start from (see [KeepAmount]).
+  final KeepAmount? keep;
 
   /// Words already in the search (an idea's food that still needs a match). Nothing is chosen for the person.
   final String query;
@@ -60,10 +76,6 @@ SearchFields _fields(Suggestion s) => s.common?.fields ?? SearchFields(s.item.na
 
 /// The other words a search is also ranked by: its corrected spelling or its English words, when they differ.
 String? _also(SearchQuery iq) => normalizeSearch(iq.remote) == normalizeSearch(iq.typed) ? null : iq.remote;
-
-/// Whether one of [found] is named exactly by the search (as typed or in its other words).
-bool _exact(SearchQuery iq, Iterable<Suggestion> found) =>
-    found.any((s) => relevance(iq.typed, _fields(s))?.tier == 0 || _also(iq) != null && relevance(_also(iq)!, _fields(s))?.tier == 0);
 
 class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
   late final _query = TextEditingController(text: widget.query);
@@ -121,9 +133,14 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
 
   void _choose(Suggestion s) {
     final e = s.entry, common = s.common;
+    // A replacement keeps the amount when it means the same weight of food in the same state; anything else starts afresh.
+    final keep = widget.keep;
+    final item = _withPortions(s.item);
+    final sameBasis = keep != null && FoodScaling.units(item).any((u) => u.id == keep.unitId) &&
+        (common == null ? readTraits(item.name)[Attr.state]?.first : traitsOf(common.attrs)[Attr.state]?.first ?? readTraits(item.name)[Attr.state]?.first) == keep.state;
     // A food logged before starts from the same amount and values it was logged with, for the day and meal chosen now.
     _open(e == null
-        ? FoodDraft.of(_withPortions(s.item), dayKey: widget.dayKey, meal: _meal, name: common?.nameIn(foodLang(context.l10n)), unitId: common?.unitId)
+        ? FoodDraft.of(item, dayKey: widget.dayKey, meal: _meal, name: common?.nameIn(foodLang(context.l10n)), unitId: sameBasis ? keep.unitId : common?.unitId, startAt: sameBasis ? keep.quantity : null)
         : FoodDraft(dayKey: widget.dayKey, meal: _meal, name: e.name, amount: e.amountDescription, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat,
             item: e.source == null ? null : s.item, quantity: (e.source?['quantity'] as num?)?.toDouble(), unitId: e.source?['unit'] as String?));
   }
@@ -235,11 +252,10 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     });
     final catalog = ref.read(commonFoodsProvider).value;
     if (_results != null || question.length < 3 || catalog == null || !ref.read(compatibilityProvider).supports('food.search')) return;
-    final iq = interpretQuery(question, catalog);
-    final local = searchLocal(question, catalog: catalog, saved: _saved, journal: _journal, seen: ref.read(seenFoodsProvider).value ?? const [], also: _also(iq));
-    // Asked by itself unless something on the phone is named exactly: "chicken thigh" or a brand is worth asking for even
-    // when the phone has other chicken; "eggs" is not.
-    if (!_exact(iq, [...local.own, ...local.common])) _debounce = Timer(LogFoodScreen.pause, _searchMore);
+    // Asked by itself after the pause, even when the phone names the food exactly: other preparations and brands are
+    // worth seeing ("potato" has more than the phone's). The phone's foods are shown at once; the answer is added below
+    // them, once per question (kept for the screen, and by FoodDiscovery for ten minutes).
+    _debounce = Timer(LogFoodScreen.pause, _searchMore);
   }
 
   /// Asks the wider database for what is typed, once, in the words it understands (corrected, in English). A second
@@ -351,8 +367,15 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
       final a = l.isEmpty ? null : relevance(q, _fields(l.first)), b = l.isEmpty || also == null ? null : relevance(also, _fields(l.first));
       return [?a, ?b, (tier: 9, penalty: 0)].reduce((x, y) => compareRelevance(x, y) <= 0 ? x : y);
     }
-    // The person's own foods help, but a weak match among them never pushes an exact everyday food down the page.
-    final own = [if (local.own.isNotEmpty) _GroupLabel(l.foodGroupYours), for (final s in local.own.take(8)) _row(s, 'local')];
+    // The person's own foods help, but a weak match among them never pushes an exact everyday food down the page. Foods
+    // only met in an earlier search are not theirs: they are listed as looked up before.
+    final mine = [for (final s in local.own) if (s.origin != Origin.seen) s], before = [for (final s in local.own) if (s.origin == Origin.seen) s];
+    final own = [
+      if (mine.isNotEmpty) _GroupLabel(l.foodGroupYours),
+      for (final s in mine.take(8)) _row(s, 'local'),
+      if (before.isNotEmpty) _GroupLabel(l.foodGroupSeen),
+      for (final s in before.take(8)) _row(s, 'local'),
+    ];
     final common = [
       if (local.common.isNotEmpty) _GroupLabel(categoryName ?? l.foodGroupCommon),
       for (final s in category == null ? local.common.take(12) : local.common) _row(s, 'common', id: s.common!.id),
@@ -360,11 +383,17 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
     final shown = {for (final s in local.own) s.item.key, for (final s in local.common) s.item.key};
     final found = _asked == _question && _results != null ? rankFound(q, _results!, catalog: catalog, shown: shown, also: also) : const <Suggestion>[];
 
+    // Whichever group holds the better match comes first; your own foods win a tie. Where a food comes from is a ranking
+    // factor, never a reason to hide a better one: a wider answer that names the food better than anything on the phone
+    // is listed first.
+    final phone = compareRelevance(best(local.common), best(local.own)) < 0 ? [...common, ...own] : [...own, ...common];
+    final phoneBest = [best(local.common), best(local.own)].reduce((x, y) => compareRelevance(x, y) <= 0 ? x : y);
+    final widerFirst = category == null && found.isNotEmpty && compareRelevance(best(found), phoneBest) < 0;
     return [
       // A misspelling is corrected, and said, so the person sees what was searched.
       if (iq.corrected != null && category == null) _note(l.foodSearchCorrected(iq.corrected!), const Key('food-search-corrected')),
-      // Whichever group holds the better match comes first; your own foods win a tie.
-      ...(compareRelevance(best(local.common), best(local.own)) < 0 ? [...common, ...own] : [...own, ...common]),
+      if (!widerFirst) ...phone,
+      ...[
       if (category != null) ...[
         if (!hasLocal) _status(Icons.search_off, q.isEmpty ? l.foodCategoryEmpty(categoryName!) : l.foodCategoryNoMatch(categoryName!, q), key: const Key('food-search-empty')),
         // A category is a property of the catalog. Foods without one are left out, and that is said.
@@ -390,8 +419,12 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
         // The database is in English: when the words sent were not the words typed, which ones is said.
         if (also != null && normalizeSearch(iq.remote) != normalizeSearch(iq.corrected ?? '')) _note(l.foodSearchAskedAs(iq.remote), const Key('food-search-asked-as')),
         for (final s in found) _row(s, 'result'),
+        // The provider's page came back full: more foods match than are shown. A narrower search finds them.
+        if (ref.read(foodDiscoveryProvider).hasMore(iq.remote)) _note(l.foodSearchMoreResults, const Key('food-search-more-results')),
         _note(l.foodSearchCredit, const Key('food-search-credit')),
       ],
+      ],
+      if (widerFirst) ...phone,
     ];
   }
 

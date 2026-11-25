@@ -55,7 +55,9 @@ public sealed record DailyIntent(string Kind, string Day, string? Nutrient, stri
 /// <param name="Name">The food in plain English at the detail the person gave ("chicken", not "chicken breast").</param>
 /// <param name="Label">The food as the person called it, in their language, without the amount.</param>
 /// <param name="Unit">g, kg, oz, lb, ml, l, piece (with <c>Noun</c>: "egg", "slice", "tablespoon") or serving.</param>
-public sealed record DailyMealFood(string Name, string Label, string? Preparation, string? Brand, double? Quantity, string? Unit, string? Noun);
+/// <param name="Evidence">The person's own words for this food, exactly as they appear in their message (checked); null when the
+/// model gave none that does. The phone takes only what these words say as said.</param>
+public sealed record DailyMealFood(string Name, string Label, string? Preparation, string? Brand, double? Quantity, string? Unit, string? Noun, string? Evidence = null);
 /// <summary>A change to the meal being prepared (kind "edit"): "amount" or "remove" of a draft food by its reference, or "add" a food.</summary>
 public sealed record DailyEdit(string Op, string? Ref, DailyMealFood? Food);
 
@@ -128,7 +130,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
         if (output is not { } o)
             return failure?.Status == CoachStatus.Busy ? new(DailyStatus.Busy, RetryAfterSeconds: failure.RetryAfterSeconds) : new(DailyStatus.Unavailable);
         if (Check(o, items, r.Focus?.Count > 0 && items.Any(i => i.Discussed), ideas: r.Features?.Contains("ideas") == true, log: r.Features?.Contains("log") == true,
-                draft: [.. (r.Draft ?? []).Select(d => d.Ref!)]) is not { } intent)
+                draft: [.. (r.Draft ?? []).Select(d => d.Ref!)], question: r.Question) is not { } intent)
         {
             log.LogInformation("Daily coach interpretation dropped: it did not follow the schema");
             return new(DailyStatus.Unavailable);
@@ -199,7 +201,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
         - ideas (kind "ideas" only, else []): up to 3 different ideas, each a short title in the person's language and 1 to 6 everyday whole foods or simple products. For each food: name = its plain everyday name in English as a food database lists it ("chicken breast", "greek yogurt plain", "rolled oats"), never a brand unless the person named one; label = the same food in the person's language; preparation = "cooked", "raw", "boiled", "baked" and so on, or null; quantity and unit = an ordinary amount in "g", "ml", "piece" (with noun, the singular thing counted, such as "egg" or "slice") or "serving". Never calories, protein, prices, times or health claims, in titles either.
         - preferences: the person's own preferences for this request, from: quick, sweet, noCooking, vegetarian, cheaper, moreProtein, lighter, different (different from their usual meal). A request for a restaurant or fast-food order is "restaurant", not ideas.
         - ingredient: only for that case, else null. Never a food the person did not name, and never a guess at which food they meant.
-        - foods (kind "ate" only, else []): every food or drink the person names, in their order, one entry each: all of them, however many (never stop early; GoHard keeps the first 12 and names the rest to the person). name = the food in plain English at exactly the detail the person gave ("chicken" stays "chicken", never "chicken breast"; "potatoes" stays "potatoes"); label = the food as the person said it, in their language, without the amount; preparation = only a preparation the person stated ("raw", "boiled", "grilled", "cooked"), else null; brand = only a brand the person named, else null; quantity and unit = only the amount the person stated, in "g", "kg", "oz", "lb", "ml", "l", "piece" (with noun = the thing counted in the singular, such as "egg", "slice", "cup", "tablespoon", "breast") or "serving", else both null. Never add a food, oil, butter, sauce or drink the person did not name, never choose a preparation, cut or brand for them, and never convert an amount.
+        - foods (kind "ate" only, else []): every food or drink the person names, in their order, one entry each: all of them, however many (never stop early; GoHard keeps the first 12 and names the rest to the person). name = the food in plain English at exactly the detail the person gave ("chicken" stays "chicken", never "chicken breast"; "potatoes" stays "potatoes"); label = the food as the person said it, in their language, without the amount; preparation = only a preparation the person stated ("raw", "boiled", "grilled", "cooked"), else null; brand = only a brand the person named, else null; quantity and unit = only the amount the person stated, in "g", "kg", "oz", "lb", "ml", "l", "piece" (with noun = the thing counted in the singular, such as "egg", "slice", "cup", "tablespoon", "breast") or "serving", else both null; evidence = the person's own words for this food copied exactly from their message, amount, preparation and all ("150 g of cooked chicken thighs"), else null. Never add a food, oil, butter, sauce or drink the person did not name, never choose a preparation, cut or brand for them, and never convert an amount.
         - edits (kind "edit" only, else []): each change to the foods in <meal_draft>: op "amount" (ref of the draft food, food = that food with the new quantity and unit), "remove" (ref, food null) or "add" (ref null, food = the new food, with the same rules as foods). Only refs listed in <meal_draft>; a food you cannot match to one is a "clarify".
         - day: for "ate", "yesterday" when the person says they ate it yesterday.
         - Numbers you return are only the person's own words: maxCalories and minProtein (for this meal, not the day), factor (a multiplier such as 0.5 for half), servings, grams. "Smaller" or "bigger" without a number is change "smaller" or "larger". Never estimate calories, protein or any nutrition value, and never invent a target the person did not state.
@@ -298,11 +300,11 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
 
     private static JsonObject MealFoodSchema() => new()
     {
-        ["type"] = "object", ["additionalProperties"] = false, ["required"] = new JsonArray("name", "label", "preparation", "brand", "quantity", "unit", "noun"),
+        ["type"] = "object", ["additionalProperties"] = false, ["required"] = new JsonArray("name", "label", "preparation", "brand", "quantity", "unit", "noun", "evidence"),
         ["properties"] = new JsonObject
         {
             ["name"] = Type("string"), ["label"] = Type("string"), ["preparation"] = Maybe(Type("string")), ["brand"] = Maybe(Type("string")),
-            ["quantity"] = Maybe(Type("number")), ["unit"] = Maybe(Enum(MealUnits)), ["noun"] = Maybe(Type("string")),
+            ["quantity"] = Maybe(Type("number")), ["unit"] = Maybe(Enum(MealUnits)), ["noun"] = Maybe(Type("string")), ["evidence"] = Maybe(Type("string")),
         },
     };
 
@@ -311,7 +313,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
     /// properties are ignored (a model cannot add a calorie value by adding a field); a reference that was not offered
     /// and an out-of-range number are dropped and named in Dropped.
     /// </summary>
-    internal static DailyIntent? Check(JsonElement o, List<Item> items, bool hasFocus = false, bool ideas = false, bool log = false, IReadOnlyCollection<string>? draft = null)
+    internal static DailyIntent? Check(JsonElement o, List<Item> items, bool hasFocus = false, bool ideas = false, bool log = false, IReadOnlyCollection<string>? draft = null, string? question = null)
     {
         try
         {
@@ -373,7 +375,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
             {
                 var all = A("foods").ToList();
                 foreach (var x in all.Take(MaxMealFoods))
-                    if (MealFood(x, dropped) is { } food) foods.Add(food);
+                    if (MealFood(x, dropped, question) is { } food) foods.Add(food);
                 // More foods than one description holds: the first twelve read, the next twelve named for the person to add
                 // with Add food or leave out, never dropped silently. When they cannot all be named, none is: "foods" alone
                 // says some are missing, and the phone asks for the rest to be described separately.
@@ -391,7 +393,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
                 {
                     var op = x.ValueKind == JsonValueKind.Object && x.TryGetProperty("op", out var ov) && ov.ValueKind == JsonValueKind.String ? ov.GetString() : null;
                     var target = x.ValueKind == JsonValueKind.Object && x.TryGetProperty("ref", out var rv) && rv.ValueKind == JsonValueKind.String ? rv.GetString() : null;
-                    var food = x.ValueKind == JsonValueKind.Object && x.TryGetProperty("food", out var fv) && fv.ValueKind == JsonValueKind.Object ? MealFood(fv, dropped) : null;
+                    var food = x.ValueKind == JsonValueKind.Object && x.TryGetProperty("food", out var fv) && fv.ValueKind == JsonValueKind.Object ? MealFood(fv, dropped, question) : null;
                     var known = target is not null && draft!.Contains(target);
                     DailyEdit? edit = op switch
                     {
@@ -417,7 +419,7 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
     /// preparation and brand only as short words, and an amount only with a unit and in range for it (else neither). A food
     /// without a usable name is dropped and named in <paramref name="dropped"/>; an amount out of range is dropped, the food kept.
     /// </summary>
-    private static DailyMealFood? MealFood(JsonElement f, List<string> dropped)
+    private static DailyMealFood? MealFood(JsonElement f, List<string> dropped, string? question = null)
     {
         static string? Str(JsonElement e, string n, int max) =>
             e.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String && v.GetString()!.Trim() is { Length: > 0 } s && s.Length <= max && !RestaurantService.Figure.IsMatch(s)
@@ -436,7 +438,20 @@ public sealed class DailyCoachService(CoachService coach, ILogger<DailyCoachServ
         };
         if (q is not null && !inRange) dropped.Add("quantity");
         return new(name, Str(f, "label", 60) ?? name, Str(f, "preparation", 40), Str(f, "brand", 60), inRange ? q : null, inRange ? unit : null,
-            unit == "piece" && inRange ? Str(f, "noun", 30) : null);
+            unit == "piece" && inRange ? Str(f, "noun", 30) : null, Evidence(f, question));
+    }
+
+    /// <summary>
+    /// The model's "evidence" for a food, kept only when it is really part of the person's message (case, spacing and
+    /// apostrophes aside) and short: the person's own words, figures and all. Anything else is no evidence, so nothing it
+    /// says is taken as said.
+    /// </summary>
+    private static string? Evidence(JsonElement f, string? question)
+    {
+        if (question is null || !f.TryGetProperty("evidence", out var v) || v.ValueKind != JsonValueKind.String) return null;
+        static string Fold(string t) => string.Join(' ', t.Replace('’', '\'').ToLowerInvariant().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        var said = v.GetString()!.Trim();
+        return said.Length is > 0 and <= 120 && Fold(question).Contains(Fold(said)) ? CoachService.Untrusted(said) : null;
     }
 
     /// <summary>

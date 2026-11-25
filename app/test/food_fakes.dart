@@ -89,7 +89,13 @@ class RecordingSavedFoods implements SavedFoodRepository {
 }
 
 class ScriptedDiscovery implements FoodDiscovery {
-  ScriptedDiscovery({this.results = const [], this.products = const {}, this.searchProblem, this.barcodeProblem});
+  ScriptedDiscovery({this.results = const [], this.products = const {}, this.searchProblem, this.barcodeProblem, this.more = false});
+
+  /// The answer's "more" flag (the provider's page came back full).
+  final bool more;
+
+  @override
+  bool hasMore(String query) => more && searches.isNotEmpty;
   final List<FoodItem> results;
   final Map<String, FoodItem> products;
   final LookupProblem? searchProblem, barcodeProblem;
@@ -129,7 +135,8 @@ class HeldDiscovery extends ScriptedDiscovery {
 }
 
 /// The catalog the app ships, read straight from the asset file the app bundles.
-CommonFoodCatalog shippedCatalog() => CommonFoodCatalog.parse(File('assets/data/common-foods.json').readAsStringSync());
+CommonFoodCatalog shippedCatalog() => CommonFoodCatalog.parse(File('assets/data/common-foods.json').readAsStringSync(),
+    overlay: File('assets/data/common-foods.l10n.json').readAsStringSync());
 
 class RecordingProfiles implements ProfileRepository {
   final goals = <(int?, int?)>[];
