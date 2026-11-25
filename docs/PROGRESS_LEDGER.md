@@ -3092,3 +3092,6 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   Native (emulator Pixel_9, disposable DB `gohard_defaults`, STUB coach): passed; entries Chicken breast + Potato (general),
   allowance 0 → 1; the reported sentence asks the thigh's skin with the full preparation and shows Potato (general).
 - Live Groq still not verified (no key). Not merged, not deployed.
+- Code 37888b4: CI 273 (45539794436) passed (api, app); replacement unsigned IPA run 88 (45541369716, tag
+  `ipa-food-defaults-37888b4`) passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media), supersedes IPA 87; tag CI 274
+  passed. Not merged, not deployed.
