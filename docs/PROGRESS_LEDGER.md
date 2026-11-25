@@ -3063,3 +3063,5 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   evidence) proves the app/API path only.
 - Not merged, not deployed. Deploying needs the API for `evidence` and `more` (both optional: without them the app reads
   the label as before and shows no "more" note).
+- Code 9415107: CI 270 (45527526327) passed (api, app); unsigned IPA run 87 (45529554381, tag `ipa-food-resolution-9415107`)
+  passed, artifact GoHard-Dev-unsigned-ipa (no exercise-preview media or preview options); tag CI 271 passed. Not merged, not deployed.
