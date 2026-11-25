@@ -3142,3 +3142,6 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   273/274 locally (`FoodProviderTests` +4) — the one failure, `AccountEmailTests.Provider_trouble_retries…`, is intermittent
   (1 of 3 alone: an 8-digit number in logs), untouched by this branch. Device journey on Pixel_9 at 1.6 text with the coach
   STUB: passed. Live Groq not verified (no key).
+- Code 8dccdba: CI 282 (45694513036) passed (api, app); unsigned IPA run 90 (45700354801, tag `ipa-food-identity-8dccdba`)
+  passed, artifact GoHard-Dev-unsigned-ipa (22.4 MB, no exercise-preview media), supersedes IPA 89 for testing this branch;
+  tag CI 283 passed. Not merged, not deployed.
