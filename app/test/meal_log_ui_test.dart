@@ -2,6 +2,7 @@
 // over a real local database for the conversation, the bundled foods for matching, and the server's reading of the words
 // SCRIPTED (no AI, no network): these tests prove what the app does with an answer, never that a live model reads well.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -314,6 +315,128 @@ void main() {
     });
   }
 
+  group('food identity on the card', () {
+    final drumstickPage = [
+      for (final r in (jsonDecode(File('test/fixtures/usda_items_chicken_drumstick.json').readAsStringSync()) as Json)['results'] as List) FoodItem(r as Json),
+    ];
+    final liver = FoodItem({'source': 'usda', 'sourceId': '171061', 'name': 'Chicken, liver, all classes, cooked, simmered', 'basis': '100g', 'nutrients': {'calories': 167}, 'servings': []});
+
+    testWidgets('the reported sentence: "3 cooked chicken drumsticks" asks only the skin, among drumsticks; the eggs beside it are untouched; one request, logged once', (tester) async {
+      final f = _Fixture(discovery: ScriptedDiscovery(results: [liver, ...drumstickPage]));
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 3000));
+      f.ai.reply = (r) async => ate([
+        {...said('chicken', 3, 'piece', 'drumstick'), 'label': 'cooked chicken drumsticks', 'evidence': '3 cooked chicken drumsticks'},
+        {...said('eggs', 2, 'piece', 'egg'), 'evidence': '2 eggs'},
+      ]);
+      await _say(tester, 'I had 3 cooked chicken drumsticks and 2 eggs');
+      expect(find.text('Which matches your cooked chicken drumsticks?'), findsOneWidget);
+      expect(find.text('Not said: skin or peel'), findsOneWidget, reason: 'the part was said: never "which part"');
+      expect(find.textContaining('which part'), findsNothing);
+      expect(find.text('Chicken drumstick (Cooked, way not specified · skin not eaten)'), findsOneWidget);
+      expect(find.text('Chicken drumstick (Cooked, way not specified · skin eaten)'), findsOneWidget);
+      expect(find.textContaining(RegExp('liver|giblet|heart|gizzard', caseSensitive: false)), findsNothing);
+      final eggs = find.textContaining('2 eggs (100 g) · Eggs (general)');
+      expect(eggs, findsOneWidget);
+
+      await _tap(tester, _keyed('day-meal-pick-').at(1));
+      expect(find.textContaining('3 drumsticks (180 g) · Chicken drumstick'), findsOneWidget);
+      expect(find.text('Standard size: 1 drumstick (60 g)'), findsOneWidget);
+      expect(eggs, findsOneWidget, reason: 'answering one food changes no other');
+      await _tap(tester, _keyed('day-meal-review-').first);
+      await _tap(tester, find.byKey(const Key('meal-log')));
+      expect([for (final e in f.fakes.journal.meals.single) (e.item?.sourceId, e.quantity)], [('2706000', 3.0), ('2707153', 2.0)]);
+      expect(f.fakes.journal.meals.length, 1, reason: 'logged once');
+      expect(f.ai.requests.length, 1, reason: 'the choice, the review and logging ask no AI');
+    });
+
+    testWidgets('records found by the search are offered by what their names establish, with the record itself under each; three at a time', (tester) async {
+      final f = _Fixture(discovery: ScriptedDiscovery(results: [liver, ...drumstickPage]));
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 3000));
+      f.ai.reply = (r) async => ate([{...said('chicken drumsticks', 2, 'piece', 'drumstick'), 'label': 'stewed chicken drumsticks', 'evidence': '2 stewed chicken drumsticks'}]);
+      await _say(tester, 'I had 2 stewed chicken drumsticks');
+      expect(find.text('Drumstick · stewed · skin eaten'), findsOneWidget);
+      expect(find.text('Drumstick · stewed · skin not eaten'), findsOneWidget);
+      expect(find.text('Chicken drumstick, stewed, skin eaten · USDA 2706014'), findsOneWidget, reason: 'the provider\'s own name and ID, unchanged');
+      expect(_keyed('day-meal-more-'), findsNothing, reason: 'two choices: nothing more to show');
+      await _tap(tester, _keyed('day-meal-pick-').first);
+      expect(find.textContaining('Chicken drumstick, stewed, skin eaten'), findsOneWidget);
+      expect(f.ai.requests.length, 1);
+    });
+
+    testWidgets('the only food removed, the next sentence is read as a meal again and gets its own card', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch', describe: true), size: const Size(390, 3000));
+      f.ai.reply = (r) async => ate([{...said('chicken drumsticks', 3, 'piece', 'drumstick'), 'evidence': '3 cooked chicken drumsticks'}]);
+      await _say(tester, 'I had 3 cooked chicken drumsticks');
+      await _tap(tester, _keyed('day-meal-remove-').first);
+      f.ai.reply = (r) async => ate([{...said('eggs', 2, 'piece', 'egg'), 'evidence': '2 eggs'}]);
+      await _say(tester, 'I had 2 eggs');
+      expect(f.ai.requests.last['features'], ['log']);
+      expect(find.textContaining('2 eggs (100 g) · Eggs (general)'), findsOneWidget);
+    });
+
+    testWidgets('"More options" shows the other equally good records after three', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 3000));
+      f.ai.reply = (r) async => ate([{...said('chicken', 120, 'g'), 'evidence': '120 g of raw chicken'}]);
+      await _say(tester, 'I had 120 g of raw chicken');
+      expect(_keyed('day-meal-pick-'), findsNWidgets(3));
+      await _tap(tester, _keyed('day-meal-more-').first);
+      expect(_keyed('day-meal-pick-'), findsNWidgets(6));
+      expect(find.text('Chicken wing (Raw · with skin)'), findsOneWidget);
+      expect(f.ai.requests.length, 1);
+    });
+
+    testWidgets('weighed with the bones: the weight eaten is worked out from what was left, said beside it, and logged; 260 g is never used as eaten', (tester) async {
+      final f = _Fixture();
+      await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(390, 3000));
+      const sentence = '260 g cooked chicken drumsticks weighed with bones and skin; I did not eat the skin.';
+      f.ai.reply = (r) async => ate([{...said('chicken drumsticks', 260, 'g'), 'label': 'cooked chicken drumsticks', 'evidence': sentence}]);
+      await _say(tester, sentence);
+      expect(find.text('Chicken drumstick · 260 g weighed with bones: how much was eaten?'), findsOneWidget);
+      expect(_keyed('day-meal-review-'), findsNothing, reason: 'nothing is complete until the weight eaten is given');
+      await tester.enterText(_keyed('day-meal-left-').first, '300');
+      await tester.pumpAndSettle();
+      expect(find.text('Enter less than 260 g.'), findsOneWidget);
+      expect(_keyed('day-meal-use-left-'), findsNothing);
+      await tester.enterText(_keyed('day-meal-left-').first, '80');
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('Use 180 g eaten'));
+      expect(find.textContaining('180 g · Chicken drumstick (Cooked, way not specified · skin not eaten)'), findsOneWidget);
+      expect(find.text('Weighed 260 g with bones · 80 g left'), findsOneWidget);
+      await _tap(tester, _keyed('day-meal-review-').first);
+      await _tap(tester, find.byKey(const Key('meal-log')));
+      final logged = f.fakes.journal.meals.single.single;
+      expect((logged.item?.sourceId, logged.quantity), ('2706001', 180.0));
+      expect(logged.calories, closeTo(172 * 1.8, 0.5), reason: 'the record\x27s values for the 180 g eaten');
+      expect(f.ai.requests.length, 1);
+    });
+
+    for (final lang in ['fr-CA', 'ar']) {
+      testWidgets('$lang: drumstick choices and the bones question at 320 px with 1.6× text, nothing overflows', (tester) async {
+        final f = _Fixture(discovery: ScriptedDiscovery(results: drumstickPage));
+        final c = await pumpApp(tester, await f.overrides(tester), home: const DayCoachScreen(day: day, meal: 'Lunch'), size: const Size(320, 2400), textScale: 1.6);
+        c.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(lang));
+        await tester.pumpAndSettle();
+        final words = lang == 'ar' ? ['3 سيقان دجاج مطبوخة', '260 غ سيقان دجاج مطبوخة بدون جلد بالعظم', '2 سيقان دجاج مسلوقة برفق']
+            : ['3 pilons de poulet cuits', '260 g de pilons cuits sans la peau, pesés avec les os', '2 pilons de poulet mijotés'];
+        f.ai.reply = (r) async => ate([
+          {...said('chicken', 3, 'piece', 'drumstick'), 'label': words[0], 'evidence': words[0]},
+          {...said('chicken drumsticks', 260, 'g'), 'label': words[1], 'evidence': words[1]},
+          {...said('chicken drumsticks', 2, 'piece', 'drumstick'), 'label': words[2], 'evidence': '2 stewed chicken drumsticks ${words[2]}'},
+        ]);
+        await _say(tester, words.join(', '));
+        expect(_keyed('day-meal-edible-'), findsOneWidget, reason: 'the weight with bones asks what was eaten');
+        for (var i = 0; i < 10; i++) {
+          await tester.drag(find.byType(Scrollable).first, const Offset(0, -250));
+          await tester.pumpAndSettle();
+        }
+        expect(tester.takeException(), isNull);
+        expect(find.textContaining(lang == 'ar' ? 'ساق (دبوس)' : 'Pilon'), findsWidgets);
+      });
+    }
+  });
+
   group('search on screen', () {
     testWidgets('chicken breast: raw and cooked from the phone at once, the wider search once after the pause, no AI; a misspelling is corrected and said', (tester) async {
       final discovery = ScriptedDiscovery(results: [
@@ -394,9 +517,11 @@ void main() {
       expect(_keyed('day-meal-review-'), findsNothing, reason: 'the thighs still need an answer');
 
       await _tap(tester, _keyed('day-meal-notsure-').first);
-      expect(find.textContaining('as an estimate?'), findsOneWidget, reason: 'the record and that it may differ are said before anything is used');
+      expect(find.text('Chicken (Cooked · part, way and skin not specified) is not a cooked chicken thighs record. Use it as a broader estimate? Its own values are used as they are.'), findsOneWidget,
+          reason: 'the general chicken cannot show "thigh": said to be another record before anything is used');
       await _tap(tester, _keyed('day-meal-estimate-').first);
       expect(find.textContaining('100 g · Chicken (estimate)'), findsOneWidget);
+      expect(find.text('A broader record than what you said, used as an estimate.'), findsOneWidget);
 
       await _tap(tester, _keyed('day-meal-review-').first);
       expect(find.text('Potato (general)'), findsOneWidget, reason: 'said as general in the review too');
@@ -737,6 +862,48 @@ void main() {
         final image = (await tester.runAsync(() => tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot'))).toImage(pixelRatio: 2)))!;
         await tester.runAsync(() async {
           final file = File('../docs/evidence/food-resolution/$name.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
+        });
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    // The reported screen after the fix: drumsticks asked by their skin only, records found by the search labelled by what
+    // they establish, and a weight with bones asking what was eaten.
+    final drumstickPage = [
+      for (final r in (jsonDecode(File('test/fixtures/usda_items_chicken_drumstick.json').readAsStringSync()) as Json)['results'] as List) FoodItem(r as Json),
+    ];
+    for (final (name, lang, size, text, mode, words) in [
+      ('drumsticks-en-light-390', 'en', const Size(390, 1700), 1.0, ThemeMode.light,
+          ['3 cooked chicken drumsticks', '2 stewed chicken drumsticks', '260 g cooked chicken drumsticks weighed with bones; skin not eaten']),
+      ('drumsticks-fr-dark-390', 'fr-CA', const Size(390, 1900), 1.0, ThemeMode.dark,
+          ['3 pilons de poulet cuits', '2 pilons de poulet mijotés', '260 g de pilons cuits sans la peau, pesés avec les os']),
+      ('drumsticks-ar-light-320-2x', 'ar', const Size(320, 4200), 2.0, ThemeMode.light,
+          ['3 سيقان دجاج مطبوخة', '2 سيقان دجاج مطهوة', '260 غ سيقان دجاج مطبوخة بدون جلد بالعظم']),
+    ]) {
+      testWidgets('drumstick card: $name', (tester) async {
+        final store = AppearanceStore(MemorySecretStore())
+          ..accent = Accent.blue
+          ..mode = mode;
+        final f = _Fixture(discovery: ScriptedDiscovery(results: drumstickPage));
+        final c = await pumpApp(tester, [...await f.overrides(tester), appearanceStoreProvider.overrideWithValue(store)], home: const DayCoachScreen(day: day, meal: 'Lunch'),
+            size: size, textScale: text, insets: phoneInsets, settle: false);
+        c.read(devicePrefsProvider.notifier).setMotion(MotionPref.reduced);
+        c.read(devicePrefsProvider.notifier).setLanguage(AppLanguage.parse(lang));
+        await _settle(tester);
+        f.ai.reply = (r) async => ate([
+          {...said('chicken', 3, 'piece', 'drumstick'), 'label': words[0], 'evidence': words[0]},
+          {...said('chicken drumsticks', 2, 'piece', 'drumstick'), 'label': words[1], 'evidence': '${words[1]} (stewed)'},
+          {...said('chicken drumsticks', 260, 'g'), 'label': words[2], 'evidence': words[2]},
+        ]);
+        await _say(tester, words.join('; '));
+        await _toEnd(tester);
+        await tester.drag(find.byType(Scrollable).first, Offset(0, size.height * 0.6));
+        await tester.pumpAndSettle();
+        final image = (await tester.runAsync(() => tester.renderObject<RenderRepaintBoundary>(find.byKey(const Key('shot'))).toImage(pixelRatio: 2)))!;
+        await tester.runAsync(() async {
+          final file = File('../docs/evidence/food-identity/$name.png');
           await file.parent.create(recursive: true);
           await file.writeAsBytes((await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List());
         });

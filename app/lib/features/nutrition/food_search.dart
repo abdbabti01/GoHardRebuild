@@ -9,6 +9,7 @@ import '../../core/units.dart' show formatNumber2;
 import '../../data/models.dart';
 import 'food_discovery.dart';
 import 'food_item.dart';
+import 'food_traits.dart' show sameFood, traitsOf;
 
 /// Finding a food by what people call it: the bundled catalog of everyday foods, and one relevance rule shared by
 /// the catalog, the owner's own foods and the wider database's answers. Nothing here touches the network or the
@@ -524,10 +525,13 @@ SearchFields _fieldsOf(Suggestion s) => s.common?.fields ?? SearchFields(s.item.
   final have = {for (final s in own) if (s.common != null) s.item.key};
   final common = [for (final f in catalog.foods) if (!have.contains(f.item.key)) Suggestion(f.item, Origin.common, common: f)];
   bool inCategory(Suggestion s) => category == null || s.common?.category == category;
+  // Another part or another food made with it is not what a food named by its part was searched for ("chicken thigh" never
+  // lists the whole leg or the liver): the catalog's reviewed details decide (docs/FOOD_DATA.md › Food identity).
+  bool same(Suggestion s) => s.common == null || (sameFood(query, traitsOf(s.common!.attrs), partsOnly: true) ?? (also == null ? null : sameFood(also, traitsOf(s.common!.attrs), partsOnly: true)) ?? true);
   // With nothing typed, only the catalog is browsed (by category); the owner's foods have their own lists.
   return (
     own: query.trim().isEmpty && category == null ? const [] : rankByRelevance(query, own.where(inCategory), _fieldsOf, also: also),
-    common: rankByRelevance(query, common.where(inCategory), _fieldsOf, also: also),
+    common: rankByRelevance(query, common.where((s) => inCategory(s) && same(s)), _fieldsOf, also: also),
   );
 }
 

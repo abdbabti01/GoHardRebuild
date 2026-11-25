@@ -13,10 +13,14 @@ enum Found { catalog, saved, seen, remote }
 
 /// One record that could be meant, with its attributes. [T] is the caller's record type.
 class Candidate<T> {
-  const Candidate(this.record, this.traits, {required this.origin, this.order = 0, this.generic = false, this.brand});
+  const Candidate(this.record, this.traits, {required this.origin, this.order = 0, this.generic = false, this.brand, this.other = const {}});
   final T record;
   final Traits traits;
   final Found origin;
+
+  /// Words of the record's name that make it another food made with this one ([productWords]: "orange" in "Orange
+  /// chicken"); empty for a reviewed record.
+  final Set<String> other;
 
   /// The product's brand, normalized; null for a generic food.
   final String? brand;
@@ -34,9 +38,21 @@ class Candidate<T> {
 
 /// What was said about one food: its attributes, and those the person confirmed since (an answered question).
 class Said {
-  const Said(this.traits, {this.confirmed = const {}, this.weighed = false, this.counted = false, this.brand});
+  const Said(this.traits, {this.confirmed = const {}, this.weighed = false, this.counted = false, this.brand, this.words = const {}});
   final Traits traits;
   final Map<Attr, String> confirmed;
+
+  /// Every word said for this food (normalized), in the person's words and the model's name: another food made with it
+  /// ("orange chicken") is matched only when its words are among them. Empty: not known, not checked.
+  final Set<String> words;
+
+  /// What the person said or confirmed of [a]: never what the plain word means by default.
+  Set<String>? stated(Attr a) {
+    final c = confirmed[a];
+    if (c != null) return {c};
+    final s = traits[a];
+    return s == null || s.isEmpty ? null : s;
+  }
 
   /// An amount in grams, millilitres or a measure (a cup): how it was weighed matters. [counted]: a count of whole items.
   final bool weighed, counted;
@@ -58,12 +74,18 @@ class Said {
 enum Outcome { resolved, clarify, none }
 
 /// The answer for one food. [options]: the choices worth offering, best first (one per distinct set of material details).
-/// [unresolved]: the material details not said that set them apart. [estimate]: a reviewed record to offer as "I'm not
-/// sure", with what it would assume ([assumes]). [ask]: a detail to ask before choosing (raw or cooked, for a weighed food).
+/// [unresolved]: the material details the person did not say that set them apart ("Not said: skin"); [unshown]: details
+/// the person did say that some of the options cannot show (never "not said"). [estimate]: a reviewed record to offer as
+/// "I'm not sure", with what it would assume ([assumes]); [substitute]: it is not a record of the food said (USDA's general
+/// chicken for drumsticks), offered only when no record of that food is there, said so, and taken only on the person's
+/// tap. [ask]: a detail to ask before choosing (raw or cooked, for a weighed food).
 class Resolution<T> {
   const Resolution(this.outcome,
-      {this.chosen, this.options = const [], this.unresolved = const [], this.estimate, this.assumes = const [], this.ask, this.reason = '', this.general = false, this.adequate = false});
+      {this.chosen, this.options = const [], this.unresolved = const [], this.unshown = const [], this.estimate, this.assumes = const [], this.substitute = false, this.ask,
+      this.reason = '', this.general = false, this.adequate = false});
   final Outcome outcome;
+  final List<Attr> unshown;
+  final bool substitute;
 
   /// [chosen] is a reviewed everyday default (a general record: what it does not say is not specified), shown as such.
   final bool general;
@@ -80,8 +102,8 @@ class Resolution<T> {
   final String reason;
 }
 
-/// The most choices offered at once; the rest are found with "Search for another".
-const maxOptions = 5;
+/// The most choices kept for one food (the card shows three, then "More options"); the rest are found with "Search for another".
+const maxOptions = 6;
 
 bool _anyOf(Set<String>? v) => v != null && v.contains(any);
 
@@ -108,8 +130,21 @@ Resolution<T> resolveFood<T>(Said said, List<Candidate<T>> candidates) {
     // Something made of the food (breaded, in sauce, flavoured, from a restaurant) only when it was said.
     final add = c.traits[Attr.addition] ?? (c.reviewed ? const {'none'} : null);
     if (add != null && !add.contains('none') && !_anyOf(add) && said.value(Attr.addition) == null) return true;
+    // A part that is another food than the meat (liver, heart, gizzard, giblets, skin…) only when that part was said.
+    final cut = c.traits[Attr.cut];
+    if (cut != null && cut.length == 1 && explicitParts.contains(cut.first) && !(said.value(Attr.cut)?.contains(cut.first) ?? false)) return true;
+    // Another food made with this one ("Orange chicken", "Chicken spread", "Soup, chicken") only when its words were said.
+    if (said.words.isNotEmpty && c.other.any((w) => !said.words.contains(w))) return true;
     return false;
   }
+
+  // The food itself: a record shows the family said and, for a known family, the part said ("drumstick"). One that does
+  // not (a remote "Chicken, broilers or fryers, meat only", USDA's "Chicken, NS as to part") is not this food: never taken,
+  // never a choice, at most a disclosed substitute when nothing else is there. Unknown is neither a match nor a contradiction.
+  final part = family == null ? null : said.stated(Attr.cut);
+  bool establishes(Candidate<T> c) =>
+      (family == null || (c.traits[Attr.family]?.contains(family) ?? false)) &&
+      (part == null || !_anyOf(c.traits[Attr.cut]) && (c.traits[Attr.cut]?.intersection(part).isNotEmpty ?? false));
 
   // What a record would take for granted: material details not said that it names (more specific than what was said).
   List<Attr> assumed(Candidate<T> c) => [
@@ -137,6 +172,16 @@ Resolution<T> resolveFood<T>(Said said, List<Candidate<T>> candidates) {
     compatible = [for (final c in compatible) if (!(c.traits[Attr.state]?.contains('raw') ?? false)) c];
   }
   if (compatible.isEmpty) return Resolution(Outcome.none, reason: candidates.isEmpty ? 'nothing found' : 'nothing compatible');
+  int byOrigin(Candidate<T> a, Candidate<T> b) => a.origin.index != b.origin.index ? a.origin.index.compareTo(b.origin.index) : a.order.compareTo(b.order);
+  final broader = [for (final c in compatible) if (!establishes(c)) c];
+  compatible = [for (final c in compatible) if (establishes(c)) c];
+  if (compatible.isEmpty) {
+    // No record of the food said: a reviewed broader record (the general chicken for drumsticks) may be offered, said to be
+    // another record, and taken only on the person's tap. Otherwise nothing suitable: Find food.
+    final sub = ([for (final c in broader) if (c.reviewed) c]..sort((a, b) => a.generic != b.generic ? (a.generic ? -1 : 1) : byOrigin(a, b))).firstOrNull;
+    if (sub == null) return const Resolution(Outcome.none, reason: 'no record of this food');
+    return Resolution(Outcome.clarify, estimate: sub, assumes: assumed(sub), substitute: true, reason: 'only a broader record');
+  }
   final adequate = compatible.any((c) => c.reviewed && unproven(c).isEmpty && !brandUnproven(c));
 
   // Weighed, raw or cooked not said, and the records differ or say it: asked first, it decides what the weight means.
@@ -144,7 +189,6 @@ Resolution<T> resolveFood<T>(Said said, List<Candidate<T>> candidates) {
     return Resolution(Outcome.clarify, ask: Attr.state, unresolved: const [Attr.state], reason: 'raw or cooked not said', adequate: adequate);
   }
 
-  int byOrigin(Candidate<T> a, Candidate<T> b) => a.origin.index != b.origin.index ? a.origin.index.compareTo(b.origin.index) : a.order.compareTo(b.order);
   final auto = [for (final c in compatible) if (c.reviewed && !c.generic && assumed(c).isEmpty && unproven(c).isEmpty && !brandUnproven(c)) c]..sort(byOrigin);
   if (auto.isNotEmpty) return Resolution(Outcome.resolved, chosen: auto.first, reason: 'every detail agrees', adequate: true);
 
@@ -160,25 +204,33 @@ Resolution<T> resolveFood<T>(Said said, List<Candidate<T>> candidates) {
   final general = [for (final c in compatible) if (c.reviewed && c.generic && unproven(c).isEmpty && !brandUnproven(c) && named(c).isEmpty) c]..sort(byOrigin);
   if (general.isNotEmpty) return Resolution(Outcome.resolved, chosen: general.first, general: true, reason: 'a general record', adequate: true);
 
-  // Choices: the records that take the least for granted, reviewed first; equivalent ones (the same material details) once.
-  int cost(Candidate<T> c) => assumed(c).length + unknown(c) + unproven(c).length + (brandUnproven(c) ? 1 : 0);
+  // Choices, ranked by: what was said and the record shows (a record that cannot show a said detail comes after every one
+  // that can), then the fewest details taken for granted or left unknown, then reviewed first, then source order. Only the
+  // best rank is offered (a better record is never listed with worse ones), each set of material details once.
+  int misses(Candidate<T> c) => unproven(c).length + (brandUnproven(c) ? 1 : 0);
+  int extra(Candidate<T> c) => assumed(c).length + unknown(c);
+  int rank(Candidate<T> a, Candidate<T> b) => misses(a) != misses(b) ? misses(a).compareTo(misses(b)) : extra(a) != extra(b) ? extra(a).compareTo(extra(b))
+      : a.reviewed != b.reviewed ? (a.reviewed ? -1 : 1) : byOrigin(a, b);
   final specific = [for (final c in compatible) if (!c.generic) c];
-  final pool = specific.isEmpty ? compatible : specific;
-  final least = pool.map(cost).reduce((a, b) => a < b ? a : b);
-  final ranked = [for (final c in pool) if (cost(c) == least || !c.reviewed) c]
-    ..sort((a, b) => a.reviewed != b.reviewed ? (a.reviewed ? -1 : 1) : cost(a) != cost(b) ? cost(a).compareTo(cost(b)) : byOrigin(a, b));
+  final ranked = [...(specific.isEmpty ? compatible : specific)]..sort(rank);
+  final best = ranked.first;
   final options = <Candidate<T>>[], seen = <String>{};
   for (final c in ranked) {
-    final key = c.reviewed ? [for (final a in [...asked, ...profile.defaultable]) '${a.name}=${(c.traits[a]?.toList()?..sort())?.join('/')}'].join(';') : 'x${options.length}';
+    if (misses(c) != misses(best) || extra(c) != extra(best)) break;
+    final key = [for (final a in [...asked, ...profile.defaultable]) '${a.name}=${(c.traits[a]?.toList()?..sort())?.join('/')}', ...unproven(c).map((a) => a.name)].join(';');
     if (seen.add(key)) options.add(c);
     if (options.length == maxOptions) break;
   }
-  final unresolved = {for (final c in options) ...assumed(c), for (final c in options) ...unproven(c)}.toList()..sort((a, b) => a.index.compareTo(b.index));
+  List<Attr> sorted(Iterable<Attr> s) => s.toSet().toList()..sort((a, b) => a.index.compareTo(b.index));
 
-  // "I'm not sure": the reviewed record that takes least for granted, a record that says the details are not specified first.
-  final reviewed = [for (final c in compatible) if (c.reviewed) c]
-    ..sort((a, b) => a.generic != b.generic ? (a.generic ? -1 : 1) : assumed(a).length != assumed(b).length ? assumed(a).length.compareTo(assumed(b).length) : byOrigin(a, b));
-  final estimate = reviewed.firstOrNull;
-  return Resolution(Outcome.clarify, options: options, unresolved: unresolved, estimate: estimate,
-      assumes: estimate == null ? const [] : assumed(estimate), reason: options.length == 1 ? 'one record, not proven' : 'details not said', adequate: adequate);
+  // "I'm not sure": the reviewed record that takes least for granted, a record that says the details are not specified
+  // first (USDA's general chicken rather than a guess at the skin), then one of this food. A general record that does not
+  // show the part said is a substitute, and said to be one.
+  final reviewed = [for (final c in [...compatible, ...broader]) if (c.reviewed) c]
+    ..sort((a, b) => a.generic != b.generic ? (a.generic ? -1 : 1) : establishes(a) != establishes(b) ? (establishes(a) ? -1 : 1)
+        : assumed(a).length != assumed(b).length ? assumed(a).length.compareTo(assumed(b).length) : byOrigin(a, b));
+  final estimate = [for (final c in reviewed) if (c.generic || establishes(c)) c].firstOrNull;
+  return Resolution(Outcome.clarify, options: options, unresolved: sorted([for (final c in options) ...assumed(c)]), unshown: sorted([for (final c in options) ...unproven(c)]),
+      estimate: estimate, assumes: estimate == null ? const [] : assumed(estimate), substitute: estimate != null && !establishes(estimate),
+      reason: options.length == 1 ? 'one record, not proven' : 'details not said', adequate: adequate);
 }

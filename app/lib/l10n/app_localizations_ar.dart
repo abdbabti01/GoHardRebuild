@@ -14185,4 +14185,121 @@ class AppLocalizationsAr extends AppLocalizations {
   String dcMealStandardSize(String portion) {
     return 'حجم قياسي: $portion';
   }
+
+  @override
+  String dcFoodPart(String part) {
+    String _temp0 = intl.Intl.selectLogic(part, {
+      'drumstick': 'ساق (دبوس)',
+      'wing': 'جناح',
+      'thigh': 'فخذ',
+      'breast': 'صدر',
+      'leg': 'رجل كاملة',
+      'liver': 'كبد',
+      'heart': 'قلب',
+      'gizzard': 'قانصة',
+      'giblets': 'أحشاء',
+      'neck': 'رقبة',
+      'back': 'ظهر',
+      'feet': 'أقدام',
+      'tail': 'ذيل',
+      'skin': 'جلد',
+      'whole': 'طائر كامل',
+      'ground': 'مفروم',
+      'steak': 'ستيك',
+      'other': '$part',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'raw': 'نيء',
+      'cooked': 'مطبوخ',
+      'other': '$state',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodMethod(String method) {
+    String _temp0 = intl.Intl.selectLogic(method, {
+      'baked': 'مخبوز',
+      'boiled': 'مسلوق',
+      'roasted': 'محمّر في الفرن',
+      'grilled': 'مشوي',
+      'broiled': 'مشوي تحت الشواية',
+      'steamed': 'على البخار',
+      'poached': 'مسلوق برفق',
+      'stewed': 'مطهو',
+      'fried': 'مقلي',
+      'scrambled': 'مخفوق',
+      'mashed': 'مهروس',
+      'microwaved': 'في الميكروويف',
+      'rotisserie': 'مشوي على السيخ',
+      'simmered': 'مطهو على نار هادئة',
+      'other': '$method',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodSkin(String skin) {
+    String _temp0 = intl.Intl.selectLogic(skin, {
+      'yes': 'مع الجلد',
+      'no': 'بدون جلد',
+      'other': '$skin',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcMealNoRecordOf(String food) {
+    return 'لم يُعثر على سجل لـ«$food».';
+  }
+
+  @override
+  String dcMealSubstituteOffer(String estimate, String food) {
+    return '$estimate ليس سجلًا لـ«$food». استخدامه كتقدير أعم؟ تُستخدم قيمه كما هي.';
+  }
+
+  @override
+  String get dcMealSubstituteNote => 'سجل أعم مما ذكرت، مستخدم كتقدير.';
+
+  @override
+  String dcMealEdibleQ(String food, String weight) {
+    return '$food · $weight وُزن مع العظم: كم أكلت منه؟';
+  }
+
+  @override
+  String get dcMealEdibleLeft => 'العظم والجلد المتبقي (غ)';
+
+  @override
+  String dcMealEdibleUse(String weight) {
+    return 'استخدم $weight مأكولة';
+  }
+
+  @override
+  String get dcMealEdibleEaten => 'أدخل الوزن المأكول';
+
+  @override
+  String dcMealEdibleTooMuch(String weight) {
+    return 'أدخل أقل من $weight.';
+  }
+
+  @override
+  String dcMealWeighedNote(String weight) {
+    return 'وُزن $weight مع العظم';
+  }
+
+  @override
+  String dcMealLeftNote(String left) {
+    return 'تبقّى $left';
+  }
+
+  @override
+  String get foodGroupRelated => 'أطعمة ذات صلة';
+
+  @override
+  String get dcMealMoreOptions => 'خيارات أخرى';
 }

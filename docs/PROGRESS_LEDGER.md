@@ -3117,3 +3117,28 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
   `coach_companion_test` "no replay…" on a lifecycle timing check, untouched by this branch, passes 3/3 locally);
   replacement unsigned IPA run 89 (45619769101, tag `ipa-food-mixed-e835c3a`) passed, artifact GoHard-Dev-unsigned-ipa
   (22.3 MB, no exercise-preview media), supersedes IPA 88; tag CI 277 passed. Not merged, not deployed.
+
+### 25 Nov 2026 — Food identity: describe and search offer the food that was named (`feature/food-identity`, from main f35e273)
+
+- Owner report: "Which matches your chicken drumsticks? Not said: which part" offered only giblets, liver, heart and
+  gizzard. docs/FOOD_DATA.md › Food identity.
+- Reproduced (`food_identity_test` › the reported screen, first run on the old code: searched `[chicken]` → giblets, liver,
+  heart, gizzard, chicken roll; unresolved `[cut, method]`). Causes: the search used the model's `name` ("chicken"; the part
+  was in `noun`), whose USDA first page is parts, organs and dishes (live: no drumstick in 25 of 847); every family record
+  was relevant and an unstated part no contradiction; every remote record was offered; "Not said" mixed said-but-unshown
+  details with unsaid ones; no drumstick in the catalog.
+- Changed (app): parts and organs in en/fr-CA/ar with one-part-per-record precedence; identity before ranking (a record
+  must show the family and the part said; organs, skin, giblets only when said; dishes/products only when their words were
+  said); best-rank options only, three shown + More options (six); `unresolved` (not said) apart from `unshown`; disclosed
+  substitute when no record of the food exists; identity query ("chicken drumstick"); short truthful labels for search
+  records with name and FDC ID under them; manual search lists Related foods apart and leaves other parts out of the
+  catalog list; weighed-with-bones items ask the weight eaten (leftovers subtracted or entered), never a bone share;
+  detail-only sentence parts join their food; two foods of one family keep their parts. Catalog 143 (+12 FDC records:
+  drumstick ×5, wing ×3, whole leg ×2, liver ×2), built with the API's own normalization from the official downloads.
+- USDA live (DEMO_KEY, 10/hour): plain keyword search works (OR); intermittent nginx 400 intercepts, including every
+  attempt at "+word", page 2 and a plural: operators and paging not verified, not used; a 400 is a failed lookup (test).
+  Sanitized fixtures saved. No API source change: no API deployment needed for this fix.
+- Tests: app 1110/1110 (`food_identity_test` 20, card tests 7), `flutter analyze` clean, `check-l10n.mjs` OK (3385); API
+  273/274 locally (`FoodProviderTests` +4) — the one failure, `AccountEmailTests.Provider_trouble_retries…`, is intermittent
+  (1 of 3 alone: an 8-digit number in logs), untouched by this branch. Device journey on Pixel_9 at 1.6 text with the coach
+  STUB: passed. Live Groq not verified (no key).

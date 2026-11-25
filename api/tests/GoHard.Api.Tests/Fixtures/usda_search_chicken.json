@@ -1,0 +1,1180 @@
+{
+ "_recorded": "GET api.nal.usda.gov/fdc/v1/foods/search?query=chicken&dataType=Foundation,SR Legacy,Survey (FNDDS)&pageSize=25 on 2026-11-25 (DEMO_KEY); trimmed to the fields UsdaProvider reads",
+ "totalHits": 847,
+ "currentPage": 1,
+ "totalPages": 34,
+ "foods": [
+  {
+   "fdcId": 2706087,
+   "description": "Chicken, chicken roll, roasted",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 26.68
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 6.33
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 164
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 slice",
+     "gramWeight": 28
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 cup, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 cubic inch",
+     "gramWeight": 17
+    }
+   ]
+  },
+  {
+   "fdcId": 2706443,
+   "description": "Orange chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Stir-fry and soy-based sauce mixtures",
+   "additionalDescriptions": "Lemon chicken",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 14.46
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 12.68
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 22.46
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 262
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 chicken drumstick with sauce",
+     "gramWeight": 71
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 252
+    },
+    {
+     "disseminationText": "1 chicken wing with sauce",
+     "gramWeight": 47
+    },
+    {
+     "disseminationText": "1 chicken leg with sauce",
+     "gramWeight": 156
+    },
+    {
+     "disseminationText": "1 chicken thigh with sauce",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1/2 chicken breast with sauce",
+     "gramWeight": 134
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 189
+    }
+   ]
+  },
+  {
+   "fdcId": 2706538,
+   "description": "Biryani with chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Rice mixed dishes",
+   "additionalDescriptions": "Indian rice with chicken",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 7.15
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 2.38
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 13.55
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 104
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 196
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 245
+    }
+   ]
+  },
+  {
+   "fdcId": 2707134,
+   "description": "Soup, chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Soups, broth-based",
+   "additionalDescriptions": "turkey;chicken soup, NFS",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 3.44
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 1.14
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 4.04
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 40
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 245
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 245
+    }
+   ]
+  },
+  {
+   "fdcId": 2706085,
+   "description": "Chicken feet",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 19.4
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 14.6
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0.2
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 215
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 foot",
+     "gramWeight": 35
+    }
+   ]
+  },
+  {
+   "fdcId": 2706084,
+   "description": "Chicken skin",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 20.19
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 40.34
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 450
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 oz, raw (yield after cooking)",
+     "gramWeight": 20
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 30
+    },
+    {
+     "disseminationText": "1/2 chicken, skin only",
+     "gramWeight": 55
+    }
+   ]
+  },
+  {
+   "fdcId": 2706081,
+   "description": "Chicken, back",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 25.73
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 20.8
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 298
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 small back (yield after cooking, bone removed)",
+     "gramWeight": 110
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 large back (yield after cooking, bone removed)",
+     "gramWeight": 160
+    },
+    {
+     "disseminationText": "1 medium back (yield after cooking, bone removed)",
+     "gramWeight": 130
+    }
+   ]
+  },
+  {
+   "fdcId": 2706091,
+   "description": "Chicken, ground",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 27.14
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 10.31
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 201
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 patty",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "1 cup, cooked",
+     "gramWeight": 130
+    }
+   ]
+  },
+  {
+   "fdcId": 2706083,
+   "description": "Chicken, tail",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 20.36
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 40.68
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 454
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 30
+    },
+    {
+     "disseminationText": "1 tail",
+     "gramWeight": 30
+    }
+   ]
+  },
+  {
+   "fdcId": 2706797,
+   "description": "Almond chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Stir-fry and soy-based sauce mixtures",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 15.66
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 13.16
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 4.46
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 195
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1/2 chicken breast with sauce",
+     "gramWeight": 128
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 242
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 181
+    }
+   ]
+  },
+  {
+   "fdcId": 2706434,
+   "description": "Barbecue chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Poultry mixed dishes",
+   "additionalDescriptions": "bbq;with or with sauce;shredded or pulled;turkey",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 19
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 4.64
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 12.23
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 167
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 240
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 180
+    }
+   ]
+  },
+  {
+   "fdcId": 2708745,
+   "description": "Chicken cornbread",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Poultry mixed dishes",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 13.78
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 8.21
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 9.38
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 167
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cubic inch",
+     "gramWeight": 7.6
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 92
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 92
+    },
+    {
+     "disseminationText": "1 piece (2-1/2\" x 2-1/2\" x 1-1/2\")",
+     "gramWeight": 67
+    }
+   ]
+  },
+  {
+   "fdcId": 2706437,
+   "description": "Chicken curry",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Poultry mixed dishes",
+   "additionalDescriptions": "other poultry",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 6.48
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 6.48
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 6.54
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 107
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 240
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 240
+    }
+   ]
+  },
+  {
+   "fdcId": 2706445,
+   "description": "Chicken kiev",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Poultry mixed dishes",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 21.31
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 19.21
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 5.45
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 280
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 258
+    },
+    {
+     "disseminationText": "1 serving (1 whole breast)",
+     "gramWeight": 258
+    }
+   ]
+  },
+  {
+   "fdcId": 173858,
+   "description": "Chicken spread",
+   "dataType": "SR Legacy",
+   "foodCategory": "Sausages and Luncheon Meats",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 17.6
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 18
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 4.05
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 158
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 2706428,
+   "description": "Chicken with gravy",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Poultry mixed dishes",
+   "additionalDescriptions": "",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 18.88
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 5.21
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 1.58
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 129
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 chicken wing with gravy",
+     "gramWeight": 44
+    },
+    {
+     "disseminationText": "1 slice with gravy",
+     "gramWeight": 22
+    },
+    {
+     "disseminationText": "1 chicken thigh with gravy",
+     "gramWeight": 78
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 244
+    },
+    {
+     "disseminationText": "1 chicken drumstick with gravy",
+     "gramWeight": 68
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 244
+    },
+    {
+     "disseminationText": "1/2 chicken breast with gravy",
+     "gramWeight": 129
+    },
+    {
+     "disseminationText": "1 chicken leg with gravy",
+     "gramWeight": 145
+    }
+   ]
+  },
+  {
+   "fdcId": 169886,
+   "description": "Chicken, meatless",
+   "dataType": "SR Legacy",
+   "foodCategory": "Legumes and Legume Products",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 12.7
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 3.64
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 224
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 23.6
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 2706426,
+   "description": "Chili with chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Poultry mixed dishes",
+   "additionalDescriptions": "turkey",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 14.11
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 3.71
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 2.41
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 100
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 255
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 255
+    }
+   ]
+  },
+  {
+   "fdcId": 2708589,
+   "description": "Chimichanga, chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Other Mexican mixed dishes",
+   "additionalDescriptions": "fish or shrimp;turkey;cheese",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 12.5
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 16.42
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 25.76
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 304
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 item, any size",
+     "gramWeight": 190
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 120
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 190
+    }
+   ]
+  },
+  {
+   "fdcId": 2708713,
+   "description": "Empanada, chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Turnovers and other grain-based items",
+   "additionalDescriptions": "seafood;picadillo or pastelillo;meat pie;cheese;turkey",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 12.57
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 16.46
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 27.45
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 309
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 105
+    },
+    {
+     "disseminationText": "1 small/individual",
+     "gramWeight": 35
+    },
+    {
+     "disseminationText": "1 regular/large",
+     "gramWeight": 130
+    }
+   ]
+  },
+  {
+   "fdcId": 2708568,
+   "description": "Enchilada, chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Other Mexican mixed dishes",
+   "additionalDescriptions": "cheese;fish or shrimp;turkey;beans",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 10.03
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 9.02
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 14.64
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 178
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 enchilada, any size",
+     "gramWeight": 150
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 170
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 150
+    }
+   ]
+  },
+  {
+   "fdcId": 2708604,
+   "description": "Fajita, chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Other Mexican mixed dishes",
+   "additionalDescriptions": "cheese;turkey",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 11.33
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 9.8
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 17.99
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 206
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 fajita",
+     "gramWeight": 95
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 95
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 120
+    }
+   ]
+  },
+  {
+   "fdcId": 173564,
+   "description": "Fat, chicken",
+   "dataType": "SR Legacy",
+   "foodCategory": "Fats and Oils",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 900
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 99.8
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 171624,
+   "description": "Frankfurter, chicken",
+   "dataType": "SR Legacy",
+   "foodCategory": "Sausages and Luncheon Meats",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 2.74
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 223
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 16.2
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 15.5
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 2706154,
+   "description": "Liver, chicken",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Liver and organ meats",
+   "additionalDescriptions": "other poultry liver;turkey",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 20.02
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 8.69
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 6.48
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 189
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 oz yields",
+     "gramWeight": 20
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 cup",
+     "gramWeight": 140
+    },
+    {
+     "disseminationText": "1 liver",
+     "gramWeight": 22
+    }
+   ]
+  }
+ ]
+}

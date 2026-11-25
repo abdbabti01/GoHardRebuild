@@ -1,0 +1,1421 @@
+{
+ "_recorded": "GET api.nal.usda.gov/fdc/v1/foods/search?query=chicken drumstick&dataType=Foundation,SR Legacy,Survey (FNDDS)&pageSize=25 on 2026-11-25 (DEMO_KEY); trimmed to the fields UsdaProvider reads",
+ "totalHits": 867,
+ "currentPage": 1,
+ "totalPages": 35,
+ "foods": [
+  {
+   "fdcId": 2706008,
+   "description": "Chicken drumstick, rotisserie, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "fast food, restaurant, school, or other place;roasted and pre-cooked, ready-to-eat, ready-to-heat;rotisserie from any source;NS as to skin eaten",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 25.65
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 11.46
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0.12
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 206
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 drumstick",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    }
+   ]
+  },
+  {
+   "fdcId": 2706009,
+   "description": "Chicken drumstick, rotisserie, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "roasted and pre-cooked, ready-to-eat, ready-to-heat;fast food, restaurant, school, or other place;rotisserie from any source",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 27.71
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 6.76
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 172
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 drumstick",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    }
+   ]
+  },
+  {
+   "fdcId": 2706016,
+   "description": "Chicken drumstick, sauteed, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "with or without fat;any source",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 22.7
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 11.85
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 204
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 45
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 80
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 60
+    }
+   ]
+  },
+  {
+   "fdcId": 2706017,
+   "description": "Chicken drumstick, sauteed, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "any source;with or without fat;NS as to skin eaten",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 23.57
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 7.53
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 169
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 40
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 65
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    }
+   ]
+  },
+  {
+   "fdcId": 2706014,
+   "description": "Chicken drumstick, stewed, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "braised;any source;NS as to skin eaten",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 22.54
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 10.64
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 186
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 65
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 65
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 90
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 65
+    }
+   ]
+  },
+  {
+   "fdcId": 2706015,
+   "description": "Chicken drumstick, stewed, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "braised;any source",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 23.71
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 5.9
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 148
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 55
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 70
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 55
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 45
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 55
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    }
+   ]
+  },
+  {
+   "fdcId": 2727566,
+   "description": "Chicken, drumstick, meat and skin, raw",
+   "dataType": "Foundation",
+   "foodCategory": "Poultry Products",
+   "additionalDescriptions": "",
+   "publishedDate": "2025-04-24",
+   "foodNutrients": [
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 5.94
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 18.4
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": -0.475
+    },
+    {
+     "nutrientId": 2047,
+     "nutrientName": "Energy (Atwater General Factors)",
+     "unitName": "KCAL",
+     "value": 125
+    },
+    {
+     "nutrientId": 2048,
+     "nutrientName": "Energy (Atwater Specific Factors)",
+     "unitName": "KCAL",
+     "value": 130
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 172855,
+   "description": "Chicken, skin (drumsticks and thighs), raw",
+   "dataType": "SR Legacy",
+   "foodCategory": "Poultry Products",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 44.2
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0.79
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 440
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 9.58
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 2706012,
+   "description": "Chicken drumstick, grilled with sauce, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "barbecued with sauce;any source;with sauce or marinade",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 18.68
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 10.15
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 7.28
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 200
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 65
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 110
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 165
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 85
+    }
+   ]
+  },
+  {
+   "fdcId": 2706013,
+   "description": "Chicken drumstick, grilled with sauce, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "with sauce or marinade;any source;barbecued with sauce",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 19.39
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 6.62
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 7.28
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 172
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 75
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 75
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 165
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 55
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 100
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 75
+    }
+   ]
+  },
+  {
+   "fdcId": 172854,
+   "description": "Chicken, skin (drumsticks and thighs), cooked, braised",
+   "dataType": "SR Legacy",
+   "foodCategory": "Poultry Products",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 14.6
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 42.8
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 443
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 174496,
+   "description": "Chicken, skin (drumsticks and thighs), cooked, roasted",
+   "dataType": "SR Legacy",
+   "foodCategory": "Poultry Products",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 16.6
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 44
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 462
+    }
+   ],
+   "foodMeasures": []
+  },
+  {
+   "fdcId": 2706025,
+   "description": "Chicken drumstick, baked, coated, skin / coating eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "NS as skin / coating eaten;NS as to prepared with skin;any source;NS as to coated or uncoated;prepared skinless;broiled or roasted with coating",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 21.04
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 11.01
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 3.98
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 205
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 65
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 110
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 85
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    }
+   ]
+  },
+  {
+   "fdcId": 2706026,
+   "description": "Chicken drumstick, baked, coated, skin / coating not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "NS as to prepared with skin;NS as to coated or uncoated;any source;broiled or roasted with coating",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 23.57
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 7.53
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 169
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 40
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 65
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 50
+    }
+   ]
+  },
+  {
+   "fdcId": 2706010,
+   "description": "Chicken drumstick, grilled without sauce, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "barbecued without sauce;any source;NS as to skin eaten",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 22.7
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 11.85
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 204
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 80
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 45
+    }
+   ]
+  },
+  {
+   "fdcId": 2706011,
+   "description": "Chicken drumstick, grilled without sauce, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "barbecued without sauce;any source",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 23.57
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 7.53
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 169
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 large drumstick",
+     "gramWeight": 65
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 drumstick, NS as to size",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 small drumstick",
+     "gramWeight": 40
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 medium drumstick",
+     "gramWeight": 50
+    }
+   ]
+  },
+  {
+   "fdcId": 2706000,
+   "description": "Chicken drumstick, NS as to cooking method, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "any source;NS as to skin eaten",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 25.65
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 11.46
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0.12
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 206
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 60
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 drumstick",
+     "gramWeight": 60
+    }
+   ]
+  },
+  {
+   "fdcId": 2706001,
+   "description": "Chicken drumstick, NS as to cooking method, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "any source",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 27.71
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 6.76
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 172
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 drumstick",
+     "gramWeight": 50
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    }
+   ]
+  },
+  {
+   "fdcId": 2705986,
+   "description": "Chicken leg, drumstick and thigh, rotisserie, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "NS as to skin eaten;roasted and pre-cooked, ready-to-eat, ready-to-heat;rotisserie from any source;fast food, restaurant, school, or other place",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 23.77
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 13.63
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0.12
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 218
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 leg",
+     "gramWeight": 140
+    },
+    {
+     "disseminationText": "1 leg quarter (yield after cooking, bone removed)",
+     "gramWeight": 140
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 140
+    }
+   ]
+  },
+  {
+   "fdcId": 2705987,
+   "description": "Chicken leg, drumstick and thigh, rotisserie, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "rotisserie from any source;fast food, restaurant, school, or other place;roasted and pre-cooked, ready-to-eat, ready-to-heat",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 25.54
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 9.15
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 185
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 leg",
+     "gramWeight": 120
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 leg quarter (yield after cooking, bone removed)",
+     "gramWeight": 120
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 120
+    }
+   ]
+  },
+  {
+   "fdcId": 2705994,
+   "description": "Chicken leg, drumstick and thigh, sauteed, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "any source;with or without fat",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 22.65
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 14.52
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 228
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 leg, NS as to size",
+     "gramWeight": 140
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 140
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 leg quarter (yield after cooking, bone removed)",
+     "gramWeight": 140
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 small leg",
+     "gramWeight": 120
+    },
+    {
+     "disseminationText": "1 large leg",
+     "gramWeight": 185
+    },
+    {
+     "disseminationText": "1 medium leg",
+     "gramWeight": 140
+    }
+   ]
+  },
+  {
+   "fdcId": 2705995,
+   "description": "Chicken leg, drumstick and thigh, sauteed, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "NS as to skin eaten;with or without fat;any source",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 23.87
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 8.96
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 183
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 leg quarter (yield after cooking, bone removed)",
+     "gramWeight": 120
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 leg, NS as to size",
+     "gramWeight": 120
+    },
+    {
+     "disseminationText": "1 medium leg",
+     "gramWeight": 120
+    },
+    {
+     "disseminationText": "1 small leg",
+     "gramWeight": 105
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 large leg",
+     "gramWeight": 155
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 120
+    }
+   ]
+  },
+  {
+   "fdcId": 2705988,
+   "description": "Chicken leg, drumstick and thigh, stewed, skin eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "any source;NS as to skin eaten;braised",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 22.45
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 13.44
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 211
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 leg, NS as to size",
+     "gramWeight": 155
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 155
+    },
+    {
+     "disseminationText": "1 leg quarter (yield after cooking, bone removed)",
+     "gramWeight": 155
+    },
+    {
+     "disseminationText": "1 large leg",
+     "gramWeight": 200
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    },
+    {
+     "disseminationText": "1 small leg",
+     "gramWeight": 130
+    },
+    {
+     "disseminationText": "1 medium leg",
+     "gramWeight": 155
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    }
+   ]
+  },
+  {
+   "fdcId": 2705989,
+   "description": "Chicken leg, drumstick and thigh, stewed, skin not eaten",
+   "dataType": "Survey (FNDDS)",
+   "foodCategory": "Chicken, whole pieces",
+   "additionalDescriptions": "braised;any source",
+   "publishedDate": "2024-10-31",
+   "foodNutrients": [
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 24.1
+    },
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 7.5
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 164
+    }
+   ],
+   "foodMeasures": [
+    {
+     "disseminationText": "1 large leg",
+     "gramWeight": 170
+    },
+    {
+     "disseminationText": "1 small leg",
+     "gramWeight": 110
+    },
+    {
+     "disseminationText": "1 cup, cooked, diced",
+     "gramWeight": 135
+    },
+    {
+     "disseminationText": "1 leg, NS as to size",
+     "gramWeight": 130
+    },
+    {
+     "disseminationText": "1 leg quarter (yield after cooking, bone and skin removed)",
+     "gramWeight": 130
+    },
+    {
+     "disseminationText": "Quantity not specified",
+     "gramWeight": 130
+    },
+    {
+     "disseminationText": "1 medium leg",
+     "gramWeight": 130
+    },
+    {
+     "disseminationText": "1 oz, cooked",
+     "gramWeight": 28.35
+    }
+   ]
+  },
+  {
+   "fdcId": 171126,
+   "description": "Chicken, broiler, rotisserie, BBQ, drumstick, meat and skin",
+   "dataType": "SR Legacy",
+   "foodCategory": "Poultry Products",
+   "additionalDescriptions": "",
+   "publishedDate": "2019-04-01",
+   "foodNutrients": [
+    {
+     "nutrientId": 1004,
+     "nutrientName": "Total lipid (fat)",
+     "unitName": "G",
+     "value": 11.5
+    },
+    {
+     "nutrientId": 1008,
+     "nutrientName": "Energy",
+     "unitName": "KCAL",
+     "value": 206
+    },
+    {
+     "nutrientId": 1003,
+     "nutrientName": "Protein",
+     "unitName": "G",
+     "value": 25.6
+    },
+    {
+     "nutrientId": 1005,
+     "nutrientName": "Carbohydrate, by difference",
+     "unitName": "G",
+     "value": 0.12
+    }
+   ],
+   "foodMeasures": []
+  }
+ ]
+}

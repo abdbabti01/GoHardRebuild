@@ -267,9 +267,10 @@ void main() {
 
   group('estimates and changes', () {
     test('"I\'m not sure" uses a real record, says so in its name, and keeps the said amount', () async {
-      // Cooked chicken thighs ask about the skin; "I'm not sure" offers USDA's general cooked chicken, disclosed first.
+      // Cooked chicken thighs ask about the skin; "I'm not sure" offers USDA's general cooked chicken, disclosed first, and
+      // said to be another record than a thigh (it cannot show "thigh").
       final thighs = (await resolveMeal([said('cooked chicken thighs', 100, 'g')], sources())).single;
-      expect((thighs['estimate'] as Map)['generic'], isTrue);
+      expect(((thighs['estimate'] as Map)['generic'], (thighs['estimate'] as Map)['substitute']), (true, true));
       final e = acceptEstimate(thighs, (n) => '$n (estimate)');
       expect((status(e), part(e).name, part(e).quantity, part(e).item.sourceId), ('ready', 'Chicken (estimate)', 100.0, '2705929'));
       expect(e['estimate'], isNotNull);

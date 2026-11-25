@@ -186,13 +186,16 @@ class FoodMatcher {
   /// [IdeaSources.maxSearches] times per request and once per query. [failed]: that search did not answer (offline,
   /// timeout, rate limit), so "nothing found" is not known.
   Future<({List<Candidate<FoodCandidate>> found, bool failed})> candidates(SaidFood f, Said said) async {
-    final words = identityWords(f.name);
+    // The food as the person identified it: "chicken drumstick", never only the model's "chicken" (docs/FOOD_DATA.md › Food
+    // identity). How it was prepared is left to the records, so a record that says it differently is still found.
+    final words = identityQuery(f.name, said.traits);
     final query = [?f.brand, words.isEmpty ? f.name : words].join(' ');
     final family = said.family;
     String? brandOf(FoodItem i) => (i.brand ?? '').trim().isEmpty ? null : normalizeSearch(i.brand!);
     Candidate<FoodCandidate> make(FoodCandidate c, Found from, int order) {
       final r = from == Found.catalog ? sources.reviewed[c.item.key] : null;
-      return Candidate(c, r?.traits ?? readTraits(c.item.name), origin: from, order: r?.order ?? order, generic: r?.generic ?? false, brand: brandOf(c.item));
+      return Candidate(c, r?.traits ?? readTraits(c.item.name), origin: from, order: r?.order ?? order, generic: r?.generic ?? false, brand: brandOf(c.item),
+          other: r != null ? const {} : productWords(c.item.name));
     }
 
     bool relevant(Candidate<FoodCandidate> c) {
@@ -363,14 +366,18 @@ bool _weighed(SaidFood f) =>
 /// the food itself is also known by the model's English name. Without evidence (a draft kept from before evidence), the
 /// label, name and preparation, as before.
 Said describeSaid(SaidFood f, {Map<String, String> confirmed = const {}}) {
-  final words = f.evidence == null ? [f.label, f.name, ?f.preparation].join(' ') : foodPart(f, f.evidence!);
+  final words = ownWords(f);
   final traits = readTraits(words);
   final family = traits[Attr.family] ?? readTraits('${f.name} ${f.label}')[Attr.family];
   if (family != null && family.isNotEmpty) traits[Attr.family] = family;
   final brand = f.brand == null || f.evidence != null && !normalizeSearch(f.evidence!).contains(normalizeSearch(f.brand!)) ? null : normalizeSearch(f.brand!);
-  return Said(traits, weighed: _weighed(f), counted: f.unit == 'piece' && !_weighed(f), brand: brand,
+  return Said(traits, weighed: _weighed(f), counted: f.unit == 'piece' && !_weighed(f), brand: brand, words: searchWords('$words ${f.name} ${f.label}').toSet(),
       confirmed: {for (final e in confirmed.entries) if (Attr.values.any((a) => a.name == e.key)) Attr.values.byName(e.key): e.value});
 }
+
+/// The person's own words for [f] alone: its part of the evidence ([foodPart]), or, without evidence (a draft kept from
+/// before evidence), the label, name and preparation.
+String ownWords(SaidFood f) => f.evidence == null ? [f.label, f.name, ?f.preparation].join(' ') : foodPart(f, f.evidence!);
 
 /// [f] with evidence taken from the person's own [sentence] when the server gave none (a server from before `evidence`):
 /// the sentence itself, which [describeSaid] narrows to this food's own part ([foodPart]). A detail the model added
@@ -386,20 +393,38 @@ final _between = RegExp(r'\s*(?:[,;+\n]|\band\b|\bet\b|\bthen\b|\bpuis\b|(?:^|\s
 /// the next begins, and the one part that names this food — by its family ("chicken", "poulet", "دجاج") or, for a food
 /// without one, by every word of its label — and names no other food's family. A part naming two foods ("boiled
 /// potatoes with chicken") or none says nothing of this food's details, so its preparation, cut or skin are not taken
-/// as said: the reviewed everyday default, or a short question, takes their place. Pure.
+/// as said: the reviewed everyday default, or a short question, takes their place. A part that names no food and only adds
+/// details ([detailOnly]: "…weighed with bones and skin; I did not eat the skin") belongs to the food just before it. Pure.
 String foodPart(SaidFood f, String text) {
-  final family = readTraits('${f.name} ${f.label}')[Attr.family];
+  final self = readTraits('${f.name} ${f.label}'), family = self[Attr.family], cut = self[Attr.cut];
   final label = searchWords(f.label).toSet();
   bool mine(String part) {
-    final named = readTraits(part)[Attr.family];
+    final t = readTraits(part), named = t[Attr.family];
     if (named != null && named.length > 1) return false; // two foods in one part: neither's details are known from it
+    // Two foods of one family ("chicken breast and chicken thighs"): a part naming another cut is the other one's.
+    if (cut != null && t[Attr.cut] != null && t[Attr.cut]!.intersection(cut).isEmpty) return false;
     if (family != null && named != null) return named.intersection(family).isNotEmpty;
+    // This food's own part named without its family ("260 g de pilons cuits" for chicken drumsticks).
+    if (named == null && cut != null && (t[Attr.cut]?.intersection(cut).isNotEmpty ?? false)) return true;
     final words = searchWords(part).toSet();
     return named == null && label.isNotEmpty && label.every(words.contains);
   }
 
-  final parts = [for (final p in text.split(_between)) if (p.trim().isNotEmpty && mine(p)) p.trim()];
-  return parts.length == 1 ? parts.single : '';
+  final own = <String>[];
+  var owned = 0;
+  bool? last; // whether the last part that named a food named this one
+  for (final p in [for (final p in text.split(_between)) if (p.trim().isNotEmpty) p.trim()]) {
+    if (detailOnly(p)) {
+      if (last == true) own.add(p);
+    } else if (mine(p)) {
+      own.add(p);
+      owned++;
+      last = true;
+    } else {
+      last = false;
+    }
+  }
+  return owned == 1 ? own.join(' · ') : '';
 }
 
 /// [food] (a matched record) at what the person said: grams or millilitres when weighed, else the said count.
@@ -407,10 +432,35 @@ String foodPart(SaidFood f, String text) {
 /// (50 g)"): the weight is the record's standard size, not one the person gave, and the card says so.
 Json _placeSaid(Json food, SaidFood f) {
   final m = f.quantity == null || f.unit == null ? null : _metric(f.quantity!, f.unit!);
+  // A weight taken with the bones in is not what was eaten: never placed as if it were (`edible` asks for what was).
+  if (m != null && m.$2 == 'g' && weighedWithBones(ownWords(f))) return {'confirm': 'edible', 'food': food, 'weighed': m.$1};
   final placed = placeFood(food, label: f.label, quantity: m?.$1 ?? f.quantity, unit: m?.$2 ?? f.unit, noun: f.noun);
   if (placed['confirm'] != null || m != null || f.quantity == null) return placed;
   final item = FoodItem(food['item'] as Json), unit = FoodScaling.unit(item, placed['unit'] as String);
   return FoodScaling.measured(item, 1, unit) == null ? placed : {...placed, 'standard': FoodScaling.describe(item, 1, unit)};
+}
+
+/// [base] (ref, said, …) with what [_placeSaid] gave for [food]: ready, the weight eaten to give (`edible`, weighed with
+/// the bones), or an amount to choose.
+Json _settled(Json base, Json placed, Json food) => switch (placed['confirm']) {
+      null => {...base, 'status': 'ready', 'part': placed},
+      'edible' => {...base, 'status': 'edible', 'food': food, 'weighed': placed['weighed']},
+      _ => {...base, 'status': 'amount', 'food': food},
+    };
+
+/// An item weighed with the bones in (`edible`), with the weight eaten given: [eaten] grams, or what was weighed less the
+/// [left] grams of bones and skin weighed after. The record's values are for what is eaten, so they apply to that
+/// weight only; what was weighed and left is kept and said. Never a fixed bone share. No AI.
+Json answerEdible(Json item, {double? eaten, double? left}) {
+  final weighed = (item['weighed'] as num?)?.toDouble(), f = saidOf(item['said']);
+  if (item['status'] != 'edible' || weighed == null || f == null) return item;
+  if (left != null && (!left.isFinite || left < 0 || left >= weighed)) return item;
+  final grams = eaten ?? (left == null ? null : weighed - left);
+  if (grams == null || !grams.isFinite || grams <= 0 || grams > weighed) return item;
+  final food = Map<String, dynamic>.from(item['food'] as Map);
+  final placed = placeFood(food, label: f.label, quantity: grams, unit: 'g');
+  final base = {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], 'estimate': ?item['estimate'], 'general': ?item['general'], 'weighed': weighed, 'left': ?left};
+  return placed['confirm'] == null ? {...base, 'status': 'ready', 'part': placed} : {...base, 'status': 'amount', 'food': food};
 }
 
 /// The amount as the person said it ("150 g", "2 egg", "4 oz"), for the reply's words and a follow-up's draft.
@@ -435,17 +485,26 @@ Future<Json> resolveSaid(String ref, SaidFood f, FoodMatcher matcher, {Map<Strin
     case Outcome.none:
       return item(found.failed ? 'unavailable' : 'missing');
     case Outcome.resolved:
-      final placed = _placeSaid(_food(r.chosen!.record), f);
-      final general = {if (r.general) 'general': true};
-      return placed['confirm'] == null ? item('ready', {'part': placed, ...general}) : item('amount', {'food': placed['food'], ...general});
+      final food = _food(r.chosen!.record);
+      return _settled({'ref': ref, 'said': saidJson(f), if (confirmed.isNotEmpty) 'confirmed': confirmed, if (r.general) 'general': true}, _placeSaid(food, f), food);
     case Outcome.clarify:
       if (r.ask == Attr.state) return item('state');
+      if (r.options.isEmpty && found.failed) return item('unavailable');
       return item('record', {
-        'options': [for (final c in r.options) _food(c.record)],
+        'options': [for (final c in r.options) {..._food(c.record), if (!c.reviewed) 'facts': factsOf(c.traits)}],
         'unresolved': [for (final a in r.unresolved) a.name],
-        if (r.estimate case final e?) 'estimate': {..._food(e.record), 'assumes': [for (final a in r.assumes) a.name], if (e.generic) 'generic': true},
+        if (r.unshown.isNotEmpty) 'unshown': [for (final a in r.unshown) a.name],
+        if (r.estimate case final e?)
+          'estimate': {..._food(e.record), 'assumes': [for (final a in r.assumes) a.name], if (e.generic) 'generic': true, if (r.substitute) 'substitute': true},
       });
   }
+}
+
+/// What a record's own name establishes, for a short truthful label ("Drumstick · cooked · skin eaten"): the part, raw or
+/// cooked, the one way of cooking, and the skin, each only when the name says it.
+Json factsOf(Traits t) {
+  String? one(Attr a) => t[a] != null && t[a]!.length == 1 && t[a]!.single != any ? t[a]!.single : null;
+  return {'cut': ?one(Attr.cut), 'state': ?one(Attr.state), 'method': ?(one(Attr.method) == 'none' ? null : one(Attr.method)), 'skin': ?one(Attr.skin)};
 }
 
 /// The details an item's person confirmed here (`{state: cooked}`).
@@ -473,9 +532,8 @@ Json acceptEstimate(Json item, String Function(String name) named) {
   final e = item['estimate'] is Map ? Map<String, dynamic>.from(item['estimate'] as Map) : null, f = saidOf(item['said']);
   if (item['status'] != 'record' || e == null || f == null) return item;
   final food = <String, dynamic>{'item': e['item'], 'name': named('${e['name']}'), 'match': ?e['match']};
-  final base = {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], 'estimate': {'assumes': e['assumes'] ?? const []}};
-  final placed = _placeSaid(food, f);
-  return placed['confirm'] == null ? {...base, 'status': 'ready', 'part': placed} : {...base, 'status': 'amount', 'food': food};
+  final base = {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], 'estimate': {'assumes': e['assumes'] ?? const [], if (e['substitute'] == true) 'substitute': true}};
+  return _settled(base, _placeSaid(food, f), food);
 }
 
 /// Every food of a described meal matched (at most [maxMealFoods]), each with a reference `d1`, `d2`… that a follow-up names.
@@ -491,21 +549,23 @@ Json chooseRecord(Json item, int option) {
   if (item['status'] != 'record' || f == null || option < 0 || option >= options.length) return item;
   final chosen = Map<String, dynamic>.from(options[option] as Map);
   final asked = chosen.remove('differs');
+  chosen.remove('facts');
   final base = {'ref': item['ref'], 'said': item['said']};
   if (asked is String) return {...base, 'status': 'amount', 'food': chosen, 'asked': asked};
-  final placed = _placeSaid(chosen, f);
-  return placed['confirm'] == null ? {...base, 'status': 'ready', 'part': placed} : {...base, 'status': 'amount', 'food': chosen};
+  return _settled(base, _placeSaid(chosen, f), chosen);
 }
 
 /// An item with the food and amount the person chose in the usual forms (Choose amount, Find food). An estimate stays one
-/// only while it is the same food ([sameFood]: a new amount); another food chosen is no longer that estimate.
+/// only while it is the same food ([sameFood]: a new amount); another food chosen is no longer that estimate. A weight taken with
+/// the bones stays said beside a weight eaten entered for the same food.
 Json readyWith(Json item, Json part, {bool sameFood = false}) =>
-    {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], if (sameFood) 'estimate': ?item['estimate'], if (sameFood) 'general': ?item['general'], 'status': 'ready', 'part': part};
+    {'ref': item['ref'], 'said': item['said'], 'confirmed': ?item['confirmed'], if (sameFood) 'estimate': ?item['estimate'], if (sameFood) 'general': ?item['general'],
+      if (sameFood) 'weighed': ?item['weighed'], 'status': 'ready', 'part': part};
 
 /// The food an item is about, as shown: its record's name once matched, else the person's word for it.
 String itemLabel(Json item) => item['status'] == 'ready'
     ? MealComponent(Map<String, dynamic>.from(item['part'] as Map)).name
-    : item['status'] == 'amount' ? '${(item['food'] as Map)['name']}' : saidOf(item['said'])?.label ?? '';
+    : const {'amount', 'edible'}.contains(item['status']) ? '${(item['food'] as Map)['name']}' : saidOf(item['said'])?.label ?? '';
 
 /// The next free reference of a draft (`d1`…`d12`), or null when it is full.
 String? nextRef(List<Json> items) {
@@ -544,11 +604,10 @@ Future<({List<Json> items, List<Json> changes})> applyMealEdits(List<Json> items
       final part = old['part'] is Map ? Map<String, dynamic>.from(old['part'] as Map) : null;
       final food = part != null
           ? <String, dynamic>{'item': part['item'], 'name': part['name'], 'match': ?part['match']}
-          : old['status'] == 'amount' ? Map<String, dynamic>.from(old['food'] as Map) : null;
+          : const {'amount', 'edible'}.contains(old['status']) ? Map<String, dynamic>.from(old['food'] as Map) : null;
       Json next;
       if (food != null) {
-        final placed = _placeSaid(food, said);
-        next = placed['confirm'] == null ? {...base, 'status': 'ready', 'part': placed} : {...base, 'status': 'amount', 'food': food};
+        next = _settled(base, _placeSaid(food, said), food);
       } else {
         next = await resolveSaid(old['ref'] as String, said, matcher, confirmed: confirmedOf(old));
       }

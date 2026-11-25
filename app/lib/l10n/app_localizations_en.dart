@@ -13677,4 +13677,122 @@ class AppLocalizationsEn extends AppLocalizations {
   String dcMealStandardSize(String portion) {
     return 'Standard size: $portion';
   }
+
+  @override
+  String dcFoodPart(String part) {
+    String _temp0 = intl.Intl.selectLogic(part, {
+      'drumstick': 'Drumstick',
+      'wing': 'Wing',
+      'thigh': 'Thigh',
+      'breast': 'Breast',
+      'leg': 'Whole leg',
+      'liver': 'Liver',
+      'heart': 'Heart',
+      'gizzard': 'Gizzard',
+      'giblets': 'Giblets',
+      'neck': 'Neck',
+      'back': 'Back',
+      'feet': 'Feet',
+      'tail': 'Tail',
+      'skin': 'Skin',
+      'whole': 'Whole bird',
+      'ground': 'Ground',
+      'steak': 'Steak',
+      'other': '$part',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'raw': 'raw',
+      'cooked': 'cooked',
+      'other': '$state',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodMethod(String method) {
+    String _temp0 = intl.Intl.selectLogic(method, {
+      'baked': 'baked',
+      'boiled': 'boiled',
+      'roasted': 'roasted',
+      'grilled': 'grilled',
+      'broiled': 'broiled',
+      'steamed': 'steamed',
+      'poached': 'poached',
+      'stewed': 'stewed',
+      'fried': 'fried',
+      'scrambled': 'scrambled',
+      'mashed': 'mashed',
+      'microwaved': 'microwaved',
+      'rotisserie': 'rotisserie',
+      'simmered': 'simmered',
+      'other': '$method',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodSkin(String skin) {
+    String _temp0 = intl.Intl.selectLogic(skin, {
+      'yes': 'skin eaten',
+      'no': 'skin not eaten',
+      'other': '$skin',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcMealNoRecordOf(String food) {
+    return 'No $food record found.';
+  }
+
+  @override
+  String dcMealSubstituteOffer(String estimate, String food) {
+    return '$estimate is not a $food record. Use it as a broader estimate? Its own values are used as they are.';
+  }
+
+  @override
+  String get dcMealSubstituteNote =>
+      'A broader record than what you said, used as an estimate.';
+
+  @override
+  String dcMealEdibleQ(String food, String weight) {
+    return '$food · $weight weighed with bones: how much was eaten?';
+  }
+
+  @override
+  String get dcMealEdibleLeft => 'Bones and skin left (g)';
+
+  @override
+  String dcMealEdibleUse(String weight) {
+    return 'Use $weight eaten';
+  }
+
+  @override
+  String get dcMealEdibleEaten => 'Enter weight eaten';
+
+  @override
+  String dcMealEdibleTooMuch(String weight) {
+    return 'Enter less than $weight.';
+  }
+
+  @override
+  String dcMealWeighedNote(String weight) {
+    return 'Weighed $weight with bones';
+  }
+
+  @override
+  String dcMealLeftNote(String left) {
+    return '$left left';
+  }
+
+  @override
+  String get foodGroupRelated => 'Related foods';
+
+  @override
+  String get dcMealMoreOptions => 'More options';
 }

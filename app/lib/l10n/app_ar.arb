@@ -3368,5 +3368,21 @@
   "dcMealAmountButton": "غيّر الكمية",
   "dcMealGeneralName": "{food} (عام)",
   "dcMealGeneralNote": "يستخدم تقديرًا غذائيًا عامًا. غيّر الطعام أو الحصة لتطابق أدق.",
-  "dcMealStandardSize": "حجم قياسي: {portion}"
+  "dcMealStandardSize": "حجم قياسي: {portion}",
+  "dcFoodPart": "{part, select, drumstick{ساق (دبوس)} wing{جناح} thigh{فخذ} breast{صدر} leg{رجل كاملة} liver{كبد} heart{قلب} gizzard{قانصة} giblets{أحشاء} neck{رقبة} back{ظهر} feet{أقدام} tail{ذيل} skin{جلد} whole{طائر كامل} ground{مفروم} steak{ستيك} other{{part}}}",
+  "dcFoodState": "{state, select, raw{نيء} cooked{مطبوخ} other{{state}}}",
+  "dcFoodMethod": "{method, select, baked{مخبوز} boiled{مسلوق} roasted{محمّر في الفرن} grilled{مشوي} broiled{مشوي تحت الشواية} steamed{على البخار} poached{مسلوق برفق} stewed{مطهو} fried{مقلي} scrambled{مخفوق} mashed{مهروس} microwaved{في الميكروويف} rotisserie{مشوي على السيخ} simmered{مطهو على نار هادئة} other{{method}}}",
+  "dcFoodSkin": "{skin, select, yes{مع الجلد} no{بدون جلد} other{{skin}}}",
+  "dcMealNoRecordOf": "لم يُعثر على سجل لـ«{food}».",
+  "dcMealSubstituteOffer": "{estimate} ليس سجلًا لـ«{food}». استخدامه كتقدير أعم؟ تُستخدم قيمه كما هي.",
+  "dcMealSubstituteNote": "سجل أعم مما ذكرت، مستخدم كتقدير.",
+  "dcMealEdibleQ": "{food} · {weight} وُزن مع العظم: كم أكلت منه؟",
+  "dcMealEdibleLeft": "العظم والجلد المتبقي (غ)",
+  "dcMealEdibleUse": "استخدم {weight} مأكولة",
+  "dcMealEdibleEaten": "أدخل الوزن المأكول",
+  "dcMealEdibleTooMuch": "أدخل أقل من {weight}.",
+  "dcMealWeighedNote": "وُزن {weight} مع العظم",
+  "dcMealLeftNote": "تبقّى {left}",
+  "foodGroupRelated": "أطعمة ذات صلة",
+  "dcMealMoreOptions": "خيارات أخرى"
 }

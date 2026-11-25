@@ -20405,6 +20405,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Standard size: {portion}'**
   String dcMealStandardSize(String portion);
+
+  /// Described meal card: the part a record establishes, first word of a short choice label ("Drumstick · cooked · skin eaten").
+  ///
+  /// In en, this message translates to:
+  /// **'{part, select, drumstick{Drumstick} wing{Wing} thigh{Thigh} breast{Breast} leg{Whole leg} liver{Liver} heart{Heart} gizzard{Gizzard} giblets{Giblets} neck{Neck} back{Back} feet{Feet} tail{Tail} skin{Skin} whole{Whole bird} ground{Ground} steak{Steak} other{{part}}}'**
+  String dcFoodPart(String part);
+
+  /// Described meal card: raw or cooked, as a record establishes it, in a short choice label.
+  ///
+  /// In en, this message translates to:
+  /// **'{state, select, raw{raw} cooked{cooked} other{{state}}}'**
+  String dcFoodState(String state);
+
+  /// Described meal card: the way of cooking a record establishes, in a short choice label.
+  ///
+  /// In en, this message translates to:
+  /// **'{method, select, baked{baked} boiled{boiled} roasted{roasted} grilled{grilled} broiled{broiled} steamed{steamed} poached{poached} stewed{stewed} fried{fried} scrambled{scrambled} mashed{mashed} microwaved{microwaved} rotisserie{rotisserie} simmered{simmered} other{{method}}}'**
+  String dcFoodMethod(String method);
+
+  /// Described meal card: whether a record says the skin was eaten, in a short choice label.
+  ///
+  /// In en, this message translates to:
+  /// **'{skin, select, yes{skin eaten} no{skin not eaten} other{{skin}}}'**
+  String dcFoodSkin(String skin);
+
+  /// Described meal card: no record of the food said, only a broader one (offered as a disclosed estimate) or none.
+  ///
+  /// In en, this message translates to:
+  /// **'No {food} record found.'**
+  String dcMealNoRecordOf(String food);
+
+  /// Described meal card: a broader record (general chicken for drumsticks) offered instead of the food said; taken only on a tap.
+  ///
+  /// In en, this message translates to:
+  /// **'{estimate} is not a {food} record. Use it as a broader estimate? Its own values are used as they are.'**
+  String dcMealSubstituteOffer(String estimate, String food);
+
+  /// Described meal card: the item uses a broader record the person accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'A broader record than what you said, used as an estimate.'**
+  String get dcMealSubstituteNote;
+
+  /// Described meal card: a weight taken with the bones is not what was eaten; asks for the weight eaten.
+  ///
+  /// In en, this message translates to:
+  /// **'{food} · {weight} weighed with bones: how much was eaten?'**
+  String dcMealEdibleQ(String food, String weight);
+
+  /// Described meal card: field for the weight of what was left after eating, subtracted from the weight with bones.
+  ///
+  /// In en, this message translates to:
+  /// **'Bones and skin left (g)'**
+  String get dcMealEdibleLeft;
+
+  /// Described meal card: confirms the weight eaten worked out from the weight left.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {weight} eaten'**
+  String dcMealEdibleUse(String weight);
+
+  /// Described meal card: opens the amount form to enter the weight eaten directly.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter weight eaten'**
+  String get dcMealEdibleEaten;
+
+  /// Described meal card: what was left must be less than what was weighed.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter less than {weight}.'**
+  String dcMealEdibleTooMuch(String weight);
+
+  /// Described meal card: the weight taken with bones, kept beside the weight eaten.
+  ///
+  /// In en, this message translates to:
+  /// **'Weighed {weight} with bones'**
+  String dcMealWeighedNote(String weight);
+
+  /// Described meal card: the weight of bones and skin left, beside the weight with bones.
+  ///
+  /// In en, this message translates to:
+  /// **'{left} left'**
+  String dcMealLeftNote(String left);
+
+  /// Add food: wider-database results that are not the food searched for (another part, a dish made with it).
+  ///
+  /// In en, this message translates to:
+  /// **'Related foods'**
+  String get foodGroupRelated;
+
+  /// Described meal card: shows the other equally good records after the first three.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get dcMealMoreOptions;
 }
 
 class _AppLocalizationsDelegate

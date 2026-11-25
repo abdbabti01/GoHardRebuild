@@ -19286,5 +19286,130 @@
         "type": "String"
       }
     }
+  },
+  "dcFoodPart": "{part, select, drumstick{Drumstick} wing{Wing} thigh{Thigh} breast{Breast} leg{Whole leg} liver{Liver} heart{Heart} gizzard{Gizzard} giblets{Giblets} neck{Neck} back{Back} feet{Feet} tail{Tail} skin{Skin} whole{Whole bird} ground{Ground} steak{Steak} other{{part}}}",
+  "@dcFoodPart": {
+    "description": "Described meal card: the part a record establishes, first word of a short choice label (\"Drumstick · cooked · skin eaten\").",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      }
+    }
+  },
+  "dcFoodState": "{state, select, raw{raw} cooked{cooked} other{{state}}}",
+  "@dcFoodState": {
+    "description": "Described meal card: raw or cooked, as a record establishes it, in a short choice label.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "dcFoodMethod": "{method, select, baked{baked} boiled{boiled} roasted{roasted} grilled{grilled} broiled{broiled} steamed{steamed} poached{poached} stewed{stewed} fried{fried} scrambled{scrambled} mashed{mashed} microwaved{microwaved} rotisserie{rotisserie} simmered{simmered} other{{method}}}",
+  "@dcFoodMethod": {
+    "description": "Described meal card: the way of cooking a record establishes, in a short choice label.",
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "dcFoodSkin": "{skin, select, yes{skin eaten} no{skin not eaten} other{{skin}}}",
+  "@dcFoodSkin": {
+    "description": "Described meal card: whether a record says the skin was eaten, in a short choice label.",
+    "placeholders": {
+      "skin": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealNoRecordOf": "No {food} record found.",
+  "@dcMealNoRecordOf": {
+    "description": "Described meal card: no record of the food said, only a broader one (offered as a disclosed estimate) or none.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealSubstituteOffer": "{estimate} is not a {food} record. Use it as a broader estimate? Its own values are used as they are.",
+  "@dcMealSubstituteOffer": {
+    "description": "Described meal card: a broader record (general chicken for drumsticks) offered instead of the food said; taken only on a tap.",
+    "placeholders": {
+      "estimate": {
+        "type": "String"
+      },
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealSubstituteNote": "A broader record than what you said, used as an estimate.",
+  "@dcMealSubstituteNote": {
+    "description": "Described meal card: the item uses a broader record the person accepted."
+  },
+  "dcMealEdibleQ": "{food} · {weight} weighed with bones: how much was eaten?",
+  "@dcMealEdibleQ": {
+    "description": "Described meal card: a weight taken with the bones is not what was eaten; asks for the weight eaten.",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealEdibleLeft": "Bones and skin left (g)",
+  "@dcMealEdibleLeft": {
+    "description": "Described meal card: field for the weight of what was left after eating, subtracted from the weight with bones."
+  },
+  "dcMealEdibleUse": "Use {weight} eaten",
+  "@dcMealEdibleUse": {
+    "description": "Described meal card: confirms the weight eaten worked out from the weight left.",
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealEdibleEaten": "Enter weight eaten",
+  "@dcMealEdibleEaten": {
+    "description": "Described meal card: opens the amount form to enter the weight eaten directly."
+  },
+  "dcMealEdibleTooMuch": "Enter less than {weight}.",
+  "@dcMealEdibleTooMuch": {
+    "description": "Described meal card: what was left must be less than what was weighed.",
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealWeighedNote": "Weighed {weight} with bones",
+  "@dcMealWeighedNote": {
+    "description": "Described meal card: the weight taken with bones, kept beside the weight eaten.",
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "dcMealLeftNote": "{left} left",
+  "@dcMealLeftNote": {
+    "description": "Described meal card: the weight of bones and skin left, beside the weight with bones.",
+    "placeholders": {
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "foodGroupRelated": "Related foods",
+  "@foodGroupRelated": {
+    "description": "Add food: wider-database results that are not the food searched for (another part, a dish made with it)."
+  },
+  "dcMealMoreOptions": "More options",
+  "@dcMealMoreOptions": {
+    "description": "Described meal card: shows the other equally good records after the first three."
   }
 }

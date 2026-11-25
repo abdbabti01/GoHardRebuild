@@ -215,6 +215,61 @@ public class FoodProviderTests
             ? new HttpResponseMessage(HttpStatusCode.BadGateway) : StubProvider.Json(StubProvider.Recorded("usda_search_generic.json"))));
         Assert.Equal(5, (await partial.SearchAsync("rice", default)).Value!.Results.Count);  // basic foods alone are still an honest answer
     }
+
+    /// <summary>Live answers recorded 25 Nov 2026 (docs/FOOD_DATA.md › Food identity): "chicken drumstick" is all drumsticks
+    /// on its first page; plain "chicken" is parts, organs and dishes, with no drumstick among its first 25 of 847.</summary>
+    [Fact]
+    public void Recorded_live_searches_keep_the_identity_the_query_named()
+    {
+        var drumsticks = UsdaProvider.Parse(Recorded("usda_search_chicken_drumstick.json"), At);
+        Assert.Equal(25, drumsticks.Count);
+        Assert.All(drumsticks, f => Assert.Contains("drumstick", f.Name, StringComparison.OrdinalIgnoreCase));
+        var rotisserie = drumsticks.Single(f => f.SourceId == "2706008");
+        Assert.Equal(("Chicken drumstick, rotisserie, skin eaten", FoodBasis.Per100g), (rotisserie.Name, rotisserie.Basis));
+        Assert.Contains(rotisserie.Servings, s => s.Label == "1 drumstick" && s.Grams > 0);
+
+        var chicken = UsdaProvider.Parse(Recorded("usda_search_chicken.json"), At);
+        Assert.DoesNotContain(chicken, f => f.Name.Contains("drumstick", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(chicken, f => f.Name == "Liver, chicken");
+    }
+
+    /// <summary>The app's realistic search answers (app/test/fixtures) are exactly what this server sends for the recorded
+    /// USDA responses: this normalization, serialized as the endpoint serializes it. GOHARD_UPDATE_GOLDEN=1 rewrites them.</summary>
+    [Theory]
+    [InlineData("usda_search_chicken_drumstick.json", "usda_items_chicken_drumstick.json", "chicken drumstick")]
+    [InlineData("usda_search_chicken.json", "usda_items_chicken.json", "chicken")]
+    public void The_apps_recorded_answers_are_this_servers_normalization(string recorded, string golden, string query)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "app", "pubspec.yaml"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        var path = Path.Combine(dir!.FullName, "app", "test", "fixtures", golden);
+        var note = $"GET /api/v1/foods/search?q={query} as the GoHard API normalizes USDA FoodData Central's live answer of 25 Nov 2026 " +
+                   $"(api/tests/GoHard.Api.Tests/Fixtures/{recorded}; generic data types, first 25). Public domain (CC0). No test reaches USDA.";
+        var json = JsonSerializer.Serialize(new { note, results = UsdaProvider.Parse(Recorded(recorded), At) }, new JsonSerializerOptions(JsonSerializerDefaults.Web)) + "\n";
+        if (Environment.GetEnvironmentVariable("GOHARD_UPDATE_GOLDEN") == "1") File.WriteAllText(path, json);
+        Assert.Equal(json, File.ReadAllText(path).Replace("\r\n", "\n"));
+    }
+
+    /// <summary>USDA's front end sometimes answers a valid search with an nginx 400 ("x-nginx-intercept: portal-foods-search"),
+    /// seen live on 25 Nov 2026 for queries that succeeded moments before or after. It is a failed lookup, retried once and
+    /// never remembered; never "no such food".</summary>
+    [Fact]
+    public async Task An_intercepted_400_is_a_failed_lookup_not_an_empty_answer()
+    {
+        var calls = 0;
+        var (service, _, _, _) = Service(usda: _ => Task.FromResult(Interlocked.Increment(ref calls) == 1
+            ? new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("<html><h1>400 Bad Request</h1></html>", Encoding.UTF8, "text/html") }
+            : StubProvider.Json(StubProvider.Recorded("usda_search_chicken_drumstick.json"))));
+        var found = await service.SearchAsync("chicken drumstick", default);
+        Assert.Equal(LookupStatus.Ok, found.Status);                    // the one retry got the answer
+        Assert.Contains(found.Value!.Results, r => r.SourceId == "2706008");
+
+        var (down, _, always, _) = Service(usda: _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)));
+        Assert.Equal(LookupStatus.Unavailable, (await down.SearchAsync("chicken drumstick", default)).Status);
+        await down.SearchAsync("chicken drumstick", default);
+        Assert.Equal(4, always.Requests.Count);                         // not remembered: asked again next time
+    }
 }
 
 /// <summary>Goals, food sources, reusable foods and the lookup endpoints on real PostgreSQL.</summary>

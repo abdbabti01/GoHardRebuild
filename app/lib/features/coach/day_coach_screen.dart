@@ -10,7 +10,7 @@ import '../../core/compatibility.dart';
 import '../../core/format.dart' show longDate;
 import '../../core/language.dart';
 import '../../core/theme.dart';
-import '../../core/units.dart' show formatNumber;
+import '../../core/units.dart' show formatNumber, formatNumber2;
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
@@ -934,7 +934,12 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
           ),
           // A general record or a standard portion is said, so the food chosen is never mistaken for what was said.
           if (general) Text(l.dcMealGeneralNote, key: Key('day-meal-general-$id-$ref_'), style: context.caption),
+          if ((it['estimate'] as Map?)?['substitute'] == true) Text(l.dcMealSubstituteNote, key: Key('day-meal-substitute-$id-$ref_'), style: context.caption),
           if (standard is String) Text(l.dcMealStandardSize(standard), key: Key('day-meal-standard-$id-$ref_'), style: context.caption),
+          // Weighed with the bones: what was weighed and left is kept beside the weight eaten.
+          if (it['weighed'] is num)
+            Text([l.dcMealWeighedNote('${formatNumber2((it['weighed'] as num).toDouble())} g'), if (it['left'] is num) l.dcMealLeftNote('${formatNumber2((it['left'] as num).toDouble())} g')].join(' · '),
+                key: Key('day-meal-weighed-$id-$ref_'), style: context.caption),
           Transform.translate(
             offset: Offset(context.isRtl ? 8 : -8, 0),
             child: Wrap(spacing: 4, children: [
@@ -965,31 +970,57 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
         ];
       case 'record':
         final estimate = it['estimate'] is Map ? Map<String, dynamic>.from(it['estimate'] as Map) : null;
+        // Only details the person did not say: a detail they said is never "not said", even when a record cannot show it.
         final notSaid = [for (final a in it['unresolved'] as List? ?? const []) _attrLabel(l, '$a')];
+        final options = it['options'] as List? ?? const [];
+        final substitute = estimate?['substitute'] == true, said_ = said?.label ?? label;
         String named(Map o) => ['${o['name']}', if (o['match'] is String) '(${o['match']})'].join(' ');
-        // "I'm not sure" asked: the estimate, disclosed, to accept or go back to the choices.
-        if (it['offer'] == true && estimate != null) {
+        // A record found by its name says what its name establishes, briefly ("Drumstick · cooked · skin eaten"); its own
+        // name and source stay under it, unchanged.
+        String choice(Map o) {
+          final f = o['facts'];
+          if (f is! Map || f['cut'] is! String) return named(o);
+          return [l.dcFoodPart('${f['cut']}'), if (f['method'] is String) l.dcFoodMethod('${f['method']}') else if (f['state'] is String) l.dcFoodState('${f['state']}'),
+              if (f['skin'] is String) l.dcFoodSkin('${f['skin']}')].join(' · ');
+        }
+        String source(Map o) {
+          final i = FoodItem(Map<String, dynamic>.from(o['item'] as Map));
+          return [i.name, if (i.source == 'usda') 'USDA ${i.sourceId}' else if (i.source == 'off') 'Open Food Facts ${i.sourceId}'].join(' · ');
+        }
+        // "I'm not sure" asked, or no record of the food said at all: the estimate, disclosed (a broader record says it is
+        // not the food said), to accept or go back to the choices.
+        if ((it['offer'] == true || options.isEmpty) && estimate != null) {
           return [
-            question(l.dcMealWhichMatches(label)),
-            Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.dcMealEstimateOffer(named(estimate)), key: Key('day-meal-offer-$id-$ref_'), style: context.body)),
-            if (estimate['generic'] == true) Text(l.dcMealEstimateGeneric, style: context.caption),
+            question(options.isEmpty ? l.dcMealNoRecordOf(said_) : l.dcMealWhichMatches(label)),
+            Padding(padding: const EdgeInsets.only(top: 6), child: Text(substitute ? l.dcMealSubstituteOffer(named(estimate), said_) : l.dcMealEstimateOffer(named(estimate)),
+                key: Key('day-meal-offer-$id-$ref_'), style: context.body)),
+            if (estimate['generic'] == true && !substitute) Text(l.dcMealEstimateGeneric, style: context.caption),
             Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
               SecondaryButton(l.dcMealUseEstimate, key: Key('day-meal-estimate-$id-$ref_'),
                   onPressed: () => change((item) => acceptEstimate(item, l.dcMealEstimateName))),
-              TextButton(key: Key('day-meal-offer-back-$id-$ref_'), onPressed: () => change((item) => {...item}..remove('offer')), child: Text(l.builderBack)),
+              if (options.isNotEmpty) TextButton(key: Key('day-meal-offer-back-$id-$ref_'), onPressed: () => change((item) => {...item}..remove('offer')), child: Text(l.builderBack))
+              else ...[
+                TextButton.icon(key: Key('day-meal-search-$id-$ref_'), onPressed: () => _pickInto(id, d, it), icon: const Icon(Icons.search), label: Text(l.dcMealSearchOther)),
+                remove,
+              ],
             ]),
           ];
         }
         return [
           question(l.dcMealWhichMatches(label)),
           if (notSaid.isNotEmpty) Text(l.dcMealNotSaid(notSaid.join(', ')), key: Key('day-meal-unsaid-$id-$ref_'), style: context.caption),
-          for (final (o, opt) in (it['options'] as List).indexed)
+          for (final (o, opt) in options.indexed) if (o < 3 || it['more'] == true) ...[
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: SecondaryButton(named(opt as Map), key: Key('day-meal-pick-$id-$ref_-$o'),
+              child: SecondaryButton(choice(opt as Map), key: Key('day-meal-pick-$id-$ref_-$o'),
                   onPressed: () => _settled(id, () => change((item) => chooseRecord(item, o)), ref_)),
             ),
+            if (opt['facts'] is Map && (opt['facts'] as Map)['cut'] is String) Text(source(opt), key: Key('day-meal-source-$id-$ref_-$o'), style: context.caption),
+          ],
           Wrap(spacing: 4, children: [
+            // Three choices at once; the other equally good ones on a tap.
+            if (options.length > 3 && it['more'] != true)
+              TextButton(key: Key('day-meal-more-$id-$ref_'), onPressed: () => change((item) => {...item, 'more': true}), child: Text(l.dcMealMoreOptions)),
             TextButton.icon(key: Key('day-meal-search-$id-$ref_'), onPressed: () => _pickInto(id, d, it), icon: const Icon(Icons.search), label: Text(l.dcMealSearchOther)),
             if (estimate != null) TextButton(key: Key('day-meal-notsure-$id-$ref_'), onPressed: () => change((item) => {...item, 'offer': true}), child: Text(l.dcMealNotSure)),
             remove,
@@ -1005,6 +1036,19 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
                       return {...draft, 'items': [for (final x in draft['items'] as List) (x as Map)['ref'] == ref_ ? next : x]};
                     }, _records, l)),
             TextButton(key: Key('day-meal-find-$id-$ref_'), onPressed: () => _pickInto(id, d, it), child: Text(l.dcFindFood)),
+            remove,
+          ]),
+        ];
+      case 'edible':
+        // Weighed with the bones: the record's values are for what is eaten, so the weight eaten is asked, worked out from
+        // what was left or entered directly. Never a fixed bone share.
+        final food = Map<String, dynamic>.from(it['food'] as Map), weighed = (it['weighed'] as num).toDouble();
+        return [
+          question(l.dcMealEdibleQ('${food['name']}', '${formatNumber2(weighed)} g')),
+          _EdibleLeft(key: Key('day-meal-edible-$id-$ref_'), id: '$id-$ref_', weighed: weighed,
+              onUse: (left) => _settled(id, () => change((item) => answerEdible(item, left: left)), ref_)),
+          Wrap(spacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            TextButton(key: Key('day-meal-eaten-$id-$ref_'), onPressed: () => _amountFor(id, it, d), child: Text(l.dcMealEdibleEaten)),
             remove,
           ]),
         ];
@@ -1224,5 +1268,48 @@ class _DayCoachScreenState extends ConsumerState<DayCoachScreen> {
       case 'training':
         await openAskGoHard(context, const CoachContext(label: 'Your training'));
     }
+  }
+}
+
+/// What was left after eating something weighed with the bones (bones, skin), and the weight eaten it leaves: confirmed
+/// only by the person's tap, only for less than what was weighed.
+class _EdibleLeft extends StatefulWidget {
+  const _EdibleLeft({super.key, required this.id, required this.weighed, required this.onUse});
+  final String id;
+  final double weighed;
+  final void Function(double left) onUse;
+
+  @override
+  State<_EdibleLeft> createState() => _EdibleLeftState();
+}
+
+class _EdibleLeftState extends State<_EdibleLeft> {
+  final _left = TextEditingController();
+
+  @override
+  void dispose() {
+    _left.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final left = double.tryParse(_left.text.trim().replaceAll(',', '.'));
+    final ok = left != null && left.isFinite && left >= 0 && left < widget.weighed;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: TextField(
+            key: Key('day-meal-left-${widget.id}'), controller: _left, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(labelText: l.dcMealEdibleLeft, errorText: left != null && !ok ? l.dcMealEdibleTooMuch('${formatNumber2(widget.weighed)} g') : null),
+            onChanged: (_) => setState(() {}),
+          ),
+        ),
+        if (ok) SecondaryButton(l.dcMealEdibleUse('${formatNumber2(widget.weighed - left)} g'), key: Key('day-meal-use-left-${widget.id}'), onPressed: () => widget.onUse(left)),
+      ]),
+    );
   }
 }

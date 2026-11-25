@@ -443,8 +443,8 @@ means regular pasta) or bread (none exists).
    Choosing one is the person's confirmation. Nothing said becomes a personal default.
 
 **What the person sees** (the Leon/Leona draft card, no new screen): for each item, at most one question at a time —
-"Weighed raw or cooked?" first when it matters, then **"Which matches your potatoes?"** with up to 5 real records (the
-ones that take least for granted; options never invented, never a combination), "Not said: how it was cooked, skin or
+"Weighed raw or cooked?" first when it matters, then **"Which matches your potatoes?"** with real records, three at a time
+and up to six with **More options** (the ones that take least for granted; options never invented, never a combination), "Not said: how it was cooked, skin or
 peel", **Search for another**, **I'm not sure** and **Remove**. Each item is resolved on its own; answered ones stay. A ready
 item says its amount and record and offers **Change food** (the picker starts from the same amount when it still means the
 same thing — grams of food in the same state — and from the new record's own start otherwise; no yield or density is ever
@@ -504,6 +504,10 @@ descriptions, and portion order. Earlier records stay byte for byte (`--reuse`).
 | Chicken | general: cooked, part, way and skin not specified |
 | Chicken breast | raw skinless; raw with skin; cooked (way not specified) skin not eaten / skin eaten; baked or roasted, skinless |
 | Chicken thigh | raw skinless; raw with skin; cooked skin not eaten; cooked skin eaten; roasted meat only |
+| Chicken drumstick | raw with skin; cooked (way not specified) skin not eaten / skin eaten; baked, broiled or roasted skin not eaten / skin eaten (25 Nov 2026) |
+| Chicken wing | raw with skin; cooked, way not specified; baked, broiled or roasted (25 Nov 2026) |
+| Chicken leg (drumstick and thigh) | cooked, way not specified, skin not eaten / skin eaten (25 Nov 2026) |
+| Chicken liver | raw; cooked, simmered (25 Nov 2026) |
 | Rice | general: cooked, kind not specified; white and brown, each dry and cooked |
 | Pasta | regular dry and cooked; whole wheat dry and cooked |
 | Oats | dry; oatmeal cooked with water, no added fat; oatmeal cooked, way not specified |
@@ -516,7 +520,7 @@ descriptions, and portion order. Earlier records stay byte for byte (`--reuse`).
 | Legumes | black beans, chickpeas, lentils cooked from dried; lentils dry |
 | Couscous | dry; cooked |
 
-Genuine gaps, said rather than filled with a lookalike: chicken drumsticks and wings, turkey other than roasted breast,
+Genuine gaps, said rather than filled with a lookalike: turkey other than roasted breast,
 beef cuts other than ground, pork other than tenderloin, shrimp raw, fried or mashed potatoes, sweet potato skin
 variants (the records do not state it), rice kinds (basmati, jasmine), bread kinds (rye, sourdough, pita), flavoured
 yogurts, scrambled eggs, legumes with "fat not specified" (FNDDS has none: the choice is no fat or fat added), oats cooked
@@ -541,6 +545,93 @@ the card (the reported sentence through Log meal with an estimate, one request; 
 unavailable), search tests updated for the catalog (`food_search_test`, `food_relevance_test`), API `MealLogTests`
 (evidence kept and dropped) and `FoodDataTests` (`more`). Renders: docs/evidence/food-resolution/ (en light, fr-CA dark,
 ar at 320 px with 2× text).
+
+### Food identity (25 Nov 2026, `feature/food-identity`)
+
+**What was wrong** (reproduced, `food_identity_test` › the reported screen). "Which matches your chicken drumsticks? Not said:
+which part" offered giblets, liver, heart and gizzard. (1) Retrieval searched the model's `name` only, and the prompt keeps
+it at the person's detail with the part in `noun` ("chicken", noun "drumstick"): USDA's first page for "chicken" is feet,
+skin, back, tail, liver and dishes, no drumstick among 25 of 847 (recorded live). (2) Every record of the family was
+relevant, a part its name did not state was no contradiction, and every searched record was offered whatever it cost.
+(3) "Not said" listed details the person *had* said but a record could not show. (4) The catalog had no drumstick.
+
+**Identity first** (one representation for words and records, `food_traits.dart`). Parts are read in English, Canadian
+French and Arabic, singular and plural (drumstick/pilon/ساق·دبوس, wing/aile/جناح, whole leg, liver/foie/كبدة, heart,
+gizzard, giblets, neck, back, feet, tail, chicken skin, whole bird); a record naming several parts is the one that is
+another food first ("Chicken, skin (drumsticks and thighs)" is skin), then the whole bird, then the whole leg ("Chicken leg,
+drumstick and thigh" is a leg). USDA's "NS as to cooking method" is cooked. A record whose name, before its first comma,
+holds words this file does not know ("Orange chicken", "Chicken spread", "Soup, chicken") is another food made with it
+(`productWords`; a leading category such as "Fish," is skipped). Then, before any ranking (`resolveFood`):
+- a record must **show** the family and, for a known family, the part said: unknown is neither a match nor a
+  contradiction, so a record that does not state "drumstick" (or says "NS as to part") is never taken nor offered;
+- liver, heart, gizzard, giblets, neck, back, feet, tail and skin (`explicitParts`) only when that part was said, never
+  for "chicken" or for another part; another food made with it only when its words were said;
+- choices are the best rank only: what was said and the record shows first, then the fewest details taken for granted
+  or left unknown, then reviewed, then source order; one per set of material details; three shown, up to six with More
+  options. "Not said" is only what the person did not say (`unresolved`); a said detail a record cannot show is kept
+  apart (`unshown`) and never called "not said";
+- when no record of the food is there, a reviewed broader record may be offered as a **substitute**, said so ("Chicken
+  (Cooked · part, way and skin not specified) is not a cooked chicken thighs record. Use it as a broader estimate?") and
+  taken only on a tap; the ready item says "A broader record than what you said, used as an estimate." "I'm not sure"
+  follows the same rule. A search that did not answer stays Try again, never a substitute or "nothing found".
+
+**Retrieval** keeps the identity: the query is the name's identity words plus the family and part the person said
+(`identityQuery`: "chicken drumstick" for the name "chicken" with "3 cooked chicken drumsticks", "3 pilons de poulet cuits"
+or "3 سيقان دجاج مطبوخة"); preparation is left to the records. USDA's search, checked live 25 Nov 2026 (DEMO_KEY, 10 an hour):
+plain keywords work and are combined by OR ("chicken drumstick" 867 hits, "chicken" 847); the first page for "chicken
+drumstick" is all drumsticks (recorded in `api/tests/GoHard.Api.Tests/Fixtures/usda_search_chicken_drumstick.json` and
+`usda_search_chicken.json`; the app fixtures are made from them by the API's own `UsdaProvider.Parse` and kept identical by a
+test). USDA's front end also answered valid requests with an nginx 400 (`x-nginx-intercept: portal-foods-search`) that
+succeeded moments before or after, and on every attempt at the required-word operator ("+chicken +drumstick"), at page 2
+and at a plural; so the operators and paging USDA documents could not be verified live and are not used. A 400 is a failed
+lookup (retried once, never remembered, never "no such food": `An_intercepted_400_is_a_failed_lookup_not_an_empty_answer`).
+No second query or paging is added: the identity query finds the food on page 1, and the request budget (three searches
+per request, each query once) is unchanged. No API change.
+
+**Manual search** (Add food): a catalog food that is another part, or a part that is another food, is not listed for a food
+named by its part ("chicken thigh" never lists the whole leg; "chicken" never lists liver); the wider answer lists the food
+searched first and **Related foods** after (another part, organs, dishes made with it). Nothing is hidden; brands as before.
+
+**Short, truthful labels**: a record found by the search is offered by what its own name establishes ("Drumstick · stewed ·
+skin eaten", in each language) with its own name and source under it ("Chicken drumstick, stewed, skin eaten · USDA
+2706014"); nothing it does not state is added and no preparation it states is hidden. Catalog records keep their reviewed
+names and preparations. The record, its ID and its values are unchanged.
+
+**Weighed with the bones** ("260 g cooked chicken drumsticks weighed with bones and skin; I did not eat the skin"; also
+"bone-in", "on the bone", "avec les os", "بالعظم"): the record's values are for what is eaten, so 260 g is never used as
+eaten. The item asks "Chicken drumstick · 260 g weighed with bones: how much was eaten?" with **Bones and skin left (g)**
+(eaten = weighed − left, only for less than weighed) or **Enter weight eaten** (the amount form). The ready item keeps
+"Weighed 260 g with bones · 80 g left". No bone share is assumed: USDA gives edible portions ("1 drumstick", 50 g without
+skin), not a yield for this case, so none is offered. A sentence part that only adds details ("I did not eat the skin")
+belongs to the food before it (`detailOnly`); two foods of one family keep their own parts ("chicken breast and chicken
+thighs").
+
+**Catalog** (143 foods, +12, same build path and provenance, `--reuse`: earlier records untouched): chicken drumstick
+(FNDDS 2706000, 2706001, 2706002, 2706003; Foundation 2727566), wing (FNDDS 2706056, 2706057; Foundation 2727568), whole
+leg (FNDDS 2705982, 2705983), liver (SR Legacy 171060, 171061), each with reviewed attrs, none marked general (USDA has no
+drumstick record with the skin not specified, so the skin is the one question for "cooked drumsticks"). Audit of
+neighbouring gaps with the same failure: organs, skin, giblets and whole birds of every family are now never offered unless
+said, and dishes or products made with a food only when their words are said; turkey, beef and pork cuts other than those
+listed remain search-only (above).
+
+**Defaults kept**: "2 eggs" (general cooked egg, standard size), cooked potatoes (general), explicit raw/boiled/fried eggs
+and peeled/skin-on potatoes, "chicken" (general cooked chicken). Questions still asked: raw or cooked for a weight; the skin
+for drumsticks or thighs (no general record); which part for plain raw chicken; the size when a count fits several of the
+record's portions.
+
+AI: unchanged. One request per description, nothing per food, search or answer; choices, the bones answer, review and
+logging are local and free. Tests: `food_identity_test` (20: the reported screen before and after; organs, other parts and
+dishes mixed in; drumstick against thigh, leg, breast, wing and liver; a remote record absent from the catalog; roasted and
+skinless; eggs and potatoes; mixed preparations and one family twice in both response shapes; bones in both shapes; French,
+Arabic, singular, plural; offline, nothing suitable, the search budget), `meal_log_ui_test` › food identity on the card (7:
+the reported sentence beside untouched eggs through Log meal, one request; search records' labels; the only food removed
+then a new sentence; More options; the bones flow through Log meal; fr-CA and ar at 320 px with 1.6× text), API
+`FoodProviderTests` (recorded live searches, the app fixtures, the 400). Renders: docs/evidence/food-identity/ (en light,
+fr-CA dark, ar at 320 px with 2× text). Device (`integration_test/journey_food_identity_test.dart`, emulator Pixel_9 at
+system font scale 1.6, local branch API on a disposable database, coach **stub**): bones flow logged as 180 g, 277.2 kcal,
+allowance 0 → 1; drumstick choices; French and Arabic cards; docs/evidence/food-identity/device/. The stub copies a whole
+phrase into `name`, which the server limits to 60 characters, so the device sentence is "260 g roasted skinless chicken
+drumsticks on the bone" (a live model gives a short name).
 
 ### One tap for a drink, and History (18 Oct 2026, GoHard_Today_History_Water_Corrections)
 

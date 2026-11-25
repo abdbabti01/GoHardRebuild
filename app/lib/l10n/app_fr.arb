@@ -3368,5 +3368,21 @@
   "dcMealAmountButton": "Changer la quantité",
   "dcMealGeneralName": "{food} (général)",
   "dcMealGeneralNote": "Utilise une estimation nutritionnelle générale. Change l’aliment ou la portion pour une valeur plus juste.",
-  "dcMealStandardSize": "Taille standard : {portion}"
+  "dcMealStandardSize": "Taille standard : {portion}",
+  "dcFoodPart": "{part, select, drumstick{Pilon} wing{Aile} thigh{Haut de cuisse} breast{Poitrine} leg{Cuisse entière} liver{Foie} heart{Cœur} gizzard{Gésier} giblets{Abats} neck{Cou} back{Dos} feet{Pattes} tail{Queue} skin{Peau} whole{Volaille entière} ground{Haché} steak{Bifteck} other{{part}}}",
+  "dcFoodState": "{state, select, raw{cru} cooked{cuit} other{{state}}}",
+  "dcFoodMethod": "{method, select, baked{cuit au four} boiled{bouilli} roasted{rôti} grilled{grillé} broiled{grillé au four} steamed{à la vapeur} poached{poché} stewed{mijoté} fried{frit} scrambled{brouillé} mashed{en purée} microwaved{au micro-ondes} rotisserie{rôti à la broche} simmered{cuit à feu doux} other{{method}}}",
+  "dcFoodSkin": "{skin, select, yes{peau mangée} no{sans la peau} other{{skin}}}",
+  "dcMealNoRecordOf": "Aucune fiche pour « {food} ».",
+  "dcMealSubstituteOffer": "{estimate} n’est pas une fiche de « {food} ». L’utiliser comme estimation plus générale? Ses propres valeurs sont utilisées telles quelles.",
+  "dcMealSubstituteNote": "Une fiche plus générale que ce que tu as dit, utilisée comme estimation.",
+  "dcMealEdibleQ": "{food} · {weight} pesé avec les os : combien as-tu mangé?",
+  "dcMealEdibleLeft": "Os et peau restants (g)",
+  "dcMealEdibleUse": "Utiliser {weight} mangés",
+  "dcMealEdibleEaten": "Entrer le poids mangé",
+  "dcMealEdibleTooMuch": "Entre moins de {weight}.",
+  "dcMealWeighedNote": "Pesé {weight} avec les os",
+  "dcMealLeftNote": "{left} restants",
+  "foodGroupRelated": "Aliments apparentés",
+  "dcMealMoreOptions": "Plus de choix"
 }

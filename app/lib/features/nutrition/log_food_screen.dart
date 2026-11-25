@@ -19,7 +19,7 @@ import 'food_form.dart';
 import 'food_item.dart';
 import 'food_repository.dart';
 import 'food_search.dart';
-import 'food_traits.dart' show Attr, readTraits, traitsOf;
+import 'food_traits.dart' show Attr, namesSameFood, readTraits, traitsOf;
 import 'saved_meals.dart' show MealComponent;
 import 'eating_out_screen.dart' show openEatingOut;
 import '../coach/coach_prefs.dart' show coachPrefsProvider;
@@ -418,7 +418,13 @@ class _LogFoodScreenState extends ConsumerState<LogFoodScreen> {
         _GroupLabel(l.foodGroupMore),
         // The database is in English: when the words sent were not the words typed, which ones is said.
         if (also != null && normalizeSearch(iq.remote) != normalizeSearch(iq.corrected ?? '')) _note(l.foodSearchAskedAs(iq.remote), const Key('food-search-asked-as')),
-        for (final s in found) _row(s, 'result'),
+        // The food searched for first; another part of it or a dish made with it (liver for "chicken drumstick", "Orange
+        // chicken") after, under its own heading. Nothing is hidden.
+        for (final s in found) if (namesSameFood(q, s.item.name) ?? true) _row(s, 'result'),
+        if (found.any((s) => namesSameFood(q, s.item.name) == false)) ...[
+          _GroupLabel(l.foodGroupRelated),
+          for (final s in found) if (namesSameFood(q, s.item.name) == false) _row(s, 'related'),
+        ],
         // The provider's page came back full: more foods match than are shown. A narrower search finds them.
         if (ref.read(foodDiscoveryProvider).hasMore(iq.remote)) _note(l.foodSearchMoreResults, const Key('food-search-more-results')),
         _note(l.foodSearchCredit, const Key('food-search-credit')),

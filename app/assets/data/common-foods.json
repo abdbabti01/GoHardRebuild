@@ -7001,6 +7001,675 @@
     "language": "en",
     "retrievedAtUtc": "2026-11-25T02:49:12.4473244Z"
    }
+  },
+  {
+   "id": "chicken-drumstick-cooked",
+   "name": "Chicken drumstick",
+   "qualifier": "Cooked, way not specified · skin not eaten",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken drumstick",
+    "chicken drumsticks",
+    "drumstick",
+    "poulet",
+    "pilon de poulet",
+    "pilons de poulet"
+   ],
+   "portion": "1 drumstick",
+   "attrs": {
+    "family": "chicken",
+    "cut": "drumstick",
+    "state": "cooked",
+    "method": "*",
+    "skin": "no"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2706001",
+    "barcode": null,
+    "name": "Chicken drumstick, NS as to cooking method, skin not eaten",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · any source",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 172,
+     "protein": 27.7,
+     "carbs": 0,
+     "fat": 6.76
+    },
+    "servings": [
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 drumstick",
+      "grams": 50,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:07:46.148883Z"
+   }
+  },
+  {
+   "id": "chicken-drumstick-cooked-skin",
+   "name": "Chicken drumstick",
+   "qualifier": "Cooked, way not specified · skin eaten",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken drumstick",
+    "chicken drumsticks",
+    "drumstick",
+    "poulet",
+    "pilon de poulet",
+    "pilons de poulet"
+   ],
+   "portion": "1 drumstick",
+   "attrs": {
+    "family": "chicken",
+    "cut": "drumstick",
+    "state": "cooked",
+    "method": "*",
+    "skin": "yes"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2706000",
+    "barcode": null,
+    "name": "Chicken drumstick, NS as to cooking method, skin eaten",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · NS as to skin eaten;any source",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 206,
+     "protein": 25.6,
+     "carbs": 0.12,
+     "fat": 11.5
+    },
+    "servings": [
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 drumstick",
+      "grams": 60,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:07:49.296923Z"
+   }
+  },
+  {
+   "id": "chicken-drumstick-roasted",
+   "name": "Chicken drumstick",
+   "qualifier": "Baked, broiled or roasted · skin not eaten",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken drumstick",
+    "chicken drumsticks",
+    "drumstick",
+    "poulet",
+    "pilon de poulet",
+    "pilons de poulet"
+   ],
+   "portion": "1 medium drumstick",
+   "attrs": {
+    "family": "chicken",
+    "cut": "drumstick",
+    "state": "cooked",
+    "method": [
+     "baked",
+     "broiled",
+     "roasted"
+    ],
+    "skin": "no"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2706003",
+    "barcode": null,
+    "name": "Chicken drumstick, baked, broiled, or roasted, skin not eaten, from raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 154,
+     "protein": 24.1,
+     "carbs": 0,
+     "fat": 5.67
+    },
+    "servings": [
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 medium drumstick",
+      "grams": 50,
+      "milliliters": null
+     },
+     {
+      "label": "1 large drumstick",
+      "grams": 65,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 small drumstick",
+      "grams": 40,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:07:52.4979462Z"
+   }
+  },
+  {
+   "id": "chicken-drumstick-roasted-skin",
+   "name": "Chicken drumstick",
+   "qualifier": "Baked, broiled or roasted · skin eaten",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken drumstick",
+    "chicken drumsticks",
+    "drumstick",
+    "poulet",
+    "pilon de poulet",
+    "pilons de poulet"
+   ],
+   "portion": "1 medium drumstick",
+   "attrs": {
+    "family": "chicken",
+    "cut": "drumstick",
+    "state": "cooked",
+    "method": [
+     "baked",
+     "broiled",
+     "roasted"
+    ],
+    "skin": "yes"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2706002",
+    "barcode": null,
+    "name": "Chicken drumstick, baked, broiled, or roasted, skin eaten, from raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · NS as to skin eaten",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 190,
+     "protein": 23.2,
+     "carbs": 0,
+     "fat": 10.1
+    },
+    "servings": [
+     {
+      "label": "1 medium drumstick",
+      "grams": 60,
+      "milliliters": null
+     },
+     {
+      "label": "1 large drumstick",
+      "grams": 80,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 small drumstick",
+      "grams": 45,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:07:55.7267775Z"
+   }
+  },
+  {
+   "id": "chicken-drumstick-raw-skin",
+   "name": "Chicken drumstick",
+   "qualifier": "Raw · with skin",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken drumstick",
+    "chicken drumsticks",
+    "drumstick",
+    "poulet",
+    "pilon de poulet",
+    "pilons de poulet"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "chicken",
+    "cut": "drumstick",
+    "state": "raw",
+    "method": "none",
+    "skin": "yes"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2727566",
+    "barcode": null,
+    "name": "Chicken, drumstick, meat and skin, raw",
+    "brand": null,
+    "description": "Foundation · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 130,
+     "protein": 18.4,
+     "carbs": null,
+     "fat": 5.94
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2025-04-24",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:07:58.9144268Z"
+   }
+  },
+  {
+   "id": "chicken-wing-cooked",
+   "name": "Chicken wing",
+   "qualifier": "Cooked, way not specified",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken wing",
+    "chicken wings",
+    "wing",
+    "poulet",
+    "aile de poulet",
+    "ailes de poulet",
+    "ailerons de poulet"
+   ],
+   "portion": "1 wing, any size",
+   "attrs": {
+    "family": "chicken",
+    "cut": "wing",
+    "state": "cooked",
+    "method": "*"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2706056",
+    "barcode": null,
+    "name": "Chicken wing, NS as to cooking method",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · drummette without sauce or seasoning;any source",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 257,
+     "protein": 23.4,
+     "carbs": 0.6,
+     "fat": 18
+    },
+    "servings": [
+     {
+      "label": "1 drummette",
+      "grams": 22,
+      "milliliters": null
+     },
+     {
+      "label": "1 wing, any size",
+      "grams": 35,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:08:02.1298137Z"
+   }
+  },
+  {
+   "id": "chicken-wing-roasted",
+   "name": "Chicken wing",
+   "qualifier": "Baked, broiled or roasted",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken wing",
+    "chicken wings",
+    "wing",
+    "poulet",
+    "aile de poulet",
+    "ailes de poulet",
+    "ailerons de poulet"
+   ],
+   "portion": "1 wing, any size",
+   "attrs": {
+    "family": "chicken",
+    "cut": "wing",
+    "state": "cooked",
+    "method": [
+     "baked",
+     "broiled",
+     "roasted"
+    ]
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2706057",
+    "barcode": null,
+    "name": "Chicken wing, baked, broiled, or roasted, from raw",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · drummette without sauce or seasoning, from raw",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 252,
+     "protein": 23.6,
+     "carbs": 0,
+     "fat": 16.7
+    },
+    "servings": [
+     {
+      "label": "1 wing, any size",
+      "grams": 35,
+      "milliliters": null
+     },
+     {
+      "label": "1 drummette",
+      "grams": 22,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:08:05.3326355Z"
+   }
+  },
+  {
+   "id": "chicken-wing-raw-skin",
+   "name": "Chicken wing",
+   "qualifier": "Raw · with skin",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken wing",
+    "chicken wings",
+    "wing",
+    "poulet",
+    "aile de poulet",
+    "ailes de poulet",
+    "ailerons de poulet"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "chicken",
+    "cut": "wing",
+    "state": "raw",
+    "method": "none",
+    "skin": "yes"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2727568",
+    "barcode": null,
+    "name": "Chicken, wing, meat and skin, raw",
+    "brand": null,
+    "description": "Foundation · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 173,
+     "protein": 18.4,
+     "carbs": null,
+     "fat": 10.6
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2025-04-24",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:08:08.547413Z"
+   }
+  },
+  {
+   "id": "chicken-leg-cooked",
+   "name": "Chicken leg (drumstick and thigh)",
+   "qualifier": "Cooked, way not specified · skin not eaten",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken leg",
+    "chicken legs",
+    "leg quarter",
+    "poulet",
+    "cuisse de poulet entière"
+   ],
+   "portion": "1 leg",
+   "attrs": {
+    "family": "chicken",
+    "cut": "leg",
+    "state": "cooked",
+    "method": "*",
+    "skin": "no"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2705983",
+    "barcode": null,
+    "name": "Chicken leg, drumstick and thigh, NS as to cooking method, skin not eaten",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · any source",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 185,
+     "protein": 25.5,
+     "carbs": 0,
+     "fat": 9.15
+    },
+    "servings": [
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     },
+     {
+      "label": "1 leg",
+      "grams": 120,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:08:11.7519798Z"
+   }
+  },
+  {
+   "id": "chicken-leg-cooked-skin",
+   "name": "Chicken leg (drumstick and thigh)",
+   "qualifier": "Cooked, way not specified · skin eaten",
+   "category": "Proteins",
+   "aliases": [
+    "chicken",
+    "chicken leg",
+    "chicken legs",
+    "leg quarter",
+    "poulet",
+    "cuisse de poulet entière"
+   ],
+   "portion": "1 leg",
+   "attrs": {
+    "family": "chicken",
+    "cut": "leg",
+    "state": "cooked",
+    "method": "*",
+    "skin": "yes"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "2705982",
+    "barcode": null,
+    "name": "Chicken leg, drumstick and thigh, NS as to cooking method, skin eaten",
+    "brand": null,
+    "description": "Survey (FNDDS) · Chicken, whole pieces · NS as to skin eaten;any source",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 218,
+     "protein": 23.8,
+     "carbs": 0.12,
+     "fat": 13.6
+    },
+    "servings": [
+     {
+      "label": "1 leg",
+      "grams": 140,
+      "milliliters": null
+     },
+     {
+      "label": "1 oz, cooked",
+      "grams": 28.35,
+      "milliliters": null
+     },
+     {
+      "label": "1 cup, cooked, diced",
+      "grams": 135,
+      "milliliters": null
+     }
+    ],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2024-10-31",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:08:14.9641892Z"
+   }
+  },
+  {
+   "id": "chicken-liver-cooked",
+   "name": "Chicken liver",
+   "qualifier": "Cooked, simmered",
+   "category": "Proteins",
+   "aliases": [
+    "chicken liver",
+    "chicken livers",
+    "foie de poulet",
+    "foies de volaille"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "chicken",
+    "cut": "liver",
+    "state": "cooked",
+    "method": "simmered"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "171061",
+    "barcode": null,
+    "name": "Chicken, liver, all classes, cooked, simmered",
+    "brand": null,
+    "description": "SR Legacy · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 167,
+     "protein": 24.5,
+     "carbs": 0.87,
+     "fat": 6.51
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:08:18.164356Z"
+   }
+  },
+  {
+   "id": "chicken-liver-raw",
+   "name": "Chicken liver",
+   "qualifier": "Raw",
+   "category": "Proteins",
+   "aliases": [
+    "chicken liver",
+    "chicken livers",
+    "foie de poulet",
+    "foies de volaille"
+   ],
+   "portion": null,
+   "attrs": {
+    "family": "chicken",
+    "cut": "liver",
+    "state": "raw",
+    "method": "none"
+   },
+   "item": {
+    "source": "usda",
+    "sourceId": "171060",
+    "barcode": null,
+    "name": "Chicken, liver, all classes, raw",
+    "brand": null,
+    "description": "SR Legacy · Poultry Products",
+    "basis": "100g",
+    "nutrients": {
+     "calories": 119,
+     "protein": 16.9,
+     "carbs": 0.73,
+     "fat": 4.83
+    },
+    "servings": [],
+    "imageUrl": null,
+    "imageAttribution": null,
+    "sourceVersion": "2019-04-01",
+    "language": "en",
+    "retrievedAtUtc": "2026-11-25T19:08:21.3646465Z"
+   }
   }
  ]
 }

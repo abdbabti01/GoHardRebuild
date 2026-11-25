@@ -29,11 +29,13 @@ void main() {
     test('"120 g of chicken and 100 g of potatoes": each asks how it was weighed; then one choice each, never breast for "chicken"', () async {
       final items = await resolveMeal([said('chicken', 120, 'g'), said('potatoes', 100, 'g')], sources());
       expect([for (final i in items) (i['ref'], i['status'])], [('d1', 'state'), ('d2', 'state')]);
-      // Raw: breast or thigh, skin or not, the person's choice (the same grams for any: it is what they weighed).
+      // Raw: which part, skin or not, the person's choice (the same grams for any: it is what they weighed). The card shows three,
+      // then More options; liver, giblets and the whole leg are never among them for "chicken".
       final raw = await answerState(items[0], 'raw', sources());
       expect(raw['status'], 'record');
       expect([for (final o in raw['options'] as List) '${(o as Map)['name']} (${o['match']})'],
-          ['Chicken breast (Raw · boneless, skinless)', 'Chicken thigh (Raw · boneless, skinless)', 'Chicken breast (Raw · with skin)', 'Chicken thigh (Raw · with skin)']);
+          ['Chicken breast (Raw · boneless, skinless)', 'Chicken thigh (Raw · boneless, skinless)', 'Chicken breast (Raw · with skin)', 'Chicken thigh (Raw · with skin)',
+            'Chicken drumstick (Raw · with skin)', 'Chicken wing (Raw · with skin)']);
       expect(raw['unresolved'], ['cut', 'skin']);
       final breast = chooseRecord(raw, 0);
       expect((breast['status'], part(breast).quantity, part(breast).unitId, part(breast).item.sourceId), ('ready', 120.0, 'g', '2646170'));
@@ -108,7 +110,7 @@ void main() {
       expect((answered['status'], answered['general']), ('ready', true), reason: 'answered once: not asked again; the general cooked potato');
       // The safeguards stay: chicken is never taken as breast, and nothing is added.
       final raw = await answerState(items[8], 'raw', sources());
-      expect((raw['status'], (raw['options'] as List).length), ('record', 4));
+      expect((raw['status'], (raw['options'] as List).length), ('record', 6));
       expect(items.length, 9);
     });
   });

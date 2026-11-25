@@ -13895,6 +13895,124 @@ class AppLocalizationsFr extends AppLocalizations {
   String dcMealStandardSize(String portion) {
     return 'Taille standard : $portion';
   }
+
+  @override
+  String dcFoodPart(String part) {
+    String _temp0 = intl.Intl.selectLogic(part, {
+      'drumstick': 'Pilon',
+      'wing': 'Aile',
+      'thigh': 'Haut de cuisse',
+      'breast': 'Poitrine',
+      'leg': 'Cuisse entière',
+      'liver': 'Foie',
+      'heart': 'Cœur',
+      'gizzard': 'Gésier',
+      'giblets': 'Abats',
+      'neck': 'Cou',
+      'back': 'Dos',
+      'feet': 'Pattes',
+      'tail': 'Queue',
+      'skin': 'Peau',
+      'whole': 'Volaille entière',
+      'ground': 'Haché',
+      'steak': 'Bifteck',
+      'other': '$part',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'raw': 'cru',
+      'cooked': 'cuit',
+      'other': '$state',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodMethod(String method) {
+    String _temp0 = intl.Intl.selectLogic(method, {
+      'baked': 'cuit au four',
+      'boiled': 'bouilli',
+      'roasted': 'rôti',
+      'grilled': 'grillé',
+      'broiled': 'grillé au four',
+      'steamed': 'à la vapeur',
+      'poached': 'poché',
+      'stewed': 'mijoté',
+      'fried': 'frit',
+      'scrambled': 'brouillé',
+      'mashed': 'en purée',
+      'microwaved': 'au micro-ondes',
+      'rotisserie': 'rôti à la broche',
+      'simmered': 'cuit à feu doux',
+      'other': '$method',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcFoodSkin(String skin) {
+    String _temp0 = intl.Intl.selectLogic(skin, {
+      'yes': 'peau mangée',
+      'no': 'sans la peau',
+      'other': '$skin',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String dcMealNoRecordOf(String food) {
+    return 'Aucune fiche pour « $food ».';
+  }
+
+  @override
+  String dcMealSubstituteOffer(String estimate, String food) {
+    return '$estimate n’est pas une fiche de « $food ». L’utiliser comme estimation plus générale? Ses propres valeurs sont utilisées telles quelles.';
+  }
+
+  @override
+  String get dcMealSubstituteNote =>
+      'Une fiche plus générale que ce que tu as dit, utilisée comme estimation.';
+
+  @override
+  String dcMealEdibleQ(String food, String weight) {
+    return '$food · $weight pesé avec les os : combien as-tu mangé?';
+  }
+
+  @override
+  String get dcMealEdibleLeft => 'Os et peau restants (g)';
+
+  @override
+  String dcMealEdibleUse(String weight) {
+    return 'Utiliser $weight mangés';
+  }
+
+  @override
+  String get dcMealEdibleEaten => 'Entrer le poids mangé';
+
+  @override
+  String dcMealEdibleTooMuch(String weight) {
+    return 'Entre moins de $weight.';
+  }
+
+  @override
+  String dcMealWeighedNote(String weight) {
+    return 'Pesé $weight avec les os';
+  }
+
+  @override
+  String dcMealLeftNote(String left) {
+    return '$left restants';
+  }
+
+  @override
+  String get foodGroupRelated => 'Aliments apparentés';
+
+  @override
+  String get dcMealMoreOptions => 'Plus de choix';
 }
 
 /// The translations for French, as used in Canada (`fr_CA`).

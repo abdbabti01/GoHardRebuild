@@ -525,6 +525,54 @@
     "greek-yogurt-plain": {
       "fr": {"name": "Yogourt grec", "qualifier": "Nature · lait non précisé", "portion": null, "aliases": []},
       "ar": {"name": "زبادي يوناني", "qualifier": "سادة · نوع الحليب غير محدد", "portion": null, "aliases": []}
+    },
+    "chicken-drumstick-cooked": {
+      "fr": {"name": "Pilon de poulet", "qualifier": "Cuit, cuisson non précisée · sans la peau", "portion": null, "aliases": ["poulet", "pilon de poulet", "pilons de poulet"]},
+      "ar": {"name": "ساق دجاج (دبوس)", "qualifier": "مطبوخ، الطريقة غير محددة · بدون جلد", "portion": null, "aliases": ["دجاج", "ساق دجاج", "سيقان دجاج", "دبوس دجاج"]}
+    },
+    "chicken-drumstick-cooked-skin": {
+      "fr": {"name": "Pilon de poulet", "qualifier": "Cuit, cuisson non précisée · avec la peau", "portion": null, "aliases": ["poulet", "pilon de poulet", "pilons de poulet"]},
+      "ar": {"name": "ساق دجاج (دبوس)", "qualifier": "مطبوخ، الطريقة غير محددة · مع الجلد", "portion": null, "aliases": ["دجاج", "ساق دجاج", "سيقان دجاج", "دبوس دجاج"]}
+    },
+    "chicken-drumstick-roasted": {
+      "fr": {"name": "Pilon de poulet", "qualifier": "Au four, grillé ou rôti · sans la peau", "portion": null, "aliases": ["poulet", "pilon de poulet", "pilons de poulet"]},
+      "ar": {"name": "ساق دجاج (دبوس)", "qualifier": "مخبوز أو مشوي أو محمّر · بدون جلد", "portion": null, "aliases": ["دجاج", "ساق دجاج", "سيقان دجاج", "دبوس دجاج"]}
+    },
+    "chicken-drumstick-roasted-skin": {
+      "fr": {"name": "Pilon de poulet", "qualifier": "Au four, grillé ou rôti · avec la peau", "portion": null, "aliases": ["poulet", "pilon de poulet", "pilons de poulet"]},
+      "ar": {"name": "ساق دجاج (دبوس)", "qualifier": "مخبوز أو مشوي أو محمّر · مع الجلد", "portion": null, "aliases": ["دجاج", "ساق دجاج", "سيقان دجاج", "دبوس دجاج"]}
+    },
+    "chicken-drumstick-raw-skin": {
+      "fr": {"name": "Pilon de poulet", "qualifier": "Cru · avec la peau", "portion": null, "aliases": ["poulet", "pilon de poulet", "pilons de poulet"]},
+      "ar": {"name": "ساق دجاج (دبوس)", "qualifier": "نيء · مع الجلد", "portion": null, "aliases": ["دجاج", "ساق دجاج", "سيقان دجاج", "دبوس دجاج"]}
+    },
+    "chicken-wing-cooked": {
+      "fr": {"name": "Aile de poulet", "qualifier": "Cuite, cuisson non précisée", "portion": null, "aliases": ["poulet", "aile de poulet", "ailes de poulet", "ailerons de poulet"]},
+      "ar": {"name": "جناح دجاج", "qualifier": "مطبوخ، الطريقة غير محددة", "portion": null, "aliases": ["دجاج", "أجنحة دجاج", "جناح دجاج"]}
+    },
+    "chicken-wing-roasted": {
+      "fr": {"name": "Aile de poulet", "qualifier": "Au four, grillée ou rôtie", "portion": null, "aliases": ["poulet", "aile de poulet", "ailes de poulet", "ailerons de poulet"]},
+      "ar": {"name": "جناح دجاج", "qualifier": "مخبوز أو مشوي أو محمّر", "portion": null, "aliases": ["دجاج", "أجنحة دجاج", "جناح دجاج"]}
+    },
+    "chicken-wing-raw-skin": {
+      "fr": {"name": "Aile de poulet", "qualifier": "Crue · avec la peau", "portion": null, "aliases": ["poulet", "aile de poulet", "ailes de poulet", "ailerons de poulet"]},
+      "ar": {"name": "جناح دجاج", "qualifier": "نيء · مع الجلد", "portion": null, "aliases": ["دجاج", "أجنحة دجاج", "جناح دجاج"]}
+    },
+    "chicken-leg-cooked": {
+      "fr": {"name": "Cuisse de poulet entière (pilon et haut de cuisse)", "qualifier": "Cuite, cuisson non précisée · sans la peau", "portion": null, "aliases": ["poulet", "cuisse de poulet entière"]},
+      "ar": {"name": "رجل دجاج كاملة (ساق وفخذ)", "qualifier": "مطبوخة، الطريقة غير محددة · بدون جلد", "portion": null, "aliases": ["دجاج", "رجل دجاج"]}
+    },
+    "chicken-leg-cooked-skin": {
+      "fr": {"name": "Cuisse de poulet entière (pilon et haut de cuisse)", "qualifier": "Cuite, cuisson non précisée · avec la peau", "portion": null, "aliases": ["poulet", "cuisse de poulet entière"]},
+      "ar": {"name": "رجل دجاج كاملة (ساق وفخذ)", "qualifier": "مطبوخة، الطريقة غير محددة · مع الجلد", "portion": null, "aliases": ["دجاج", "رجل دجاج"]}
+    },
+    "chicken-liver-cooked": {
+      "fr": {"name": "Foie de poulet", "qualifier": "Cuit, mijoté à feu doux", "portion": null, "aliases": ["foie de poulet", "foies de volaille"]},
+      "ar": {"name": "كبدة دجاج", "qualifier": "مطبوخة على نار هادئة", "portion": null, "aliases": ["كبدة دجاج", "كبد دجاج"]}
+    },
+    "chicken-liver-raw": {
+      "fr": {"name": "Foie de poulet", "qualifier": "Cru", "portion": null, "aliases": ["foie de poulet", "foies de volaille"]},
+      "ar": {"name": "كبدة دجاج", "qualifier": "نيئة", "portion": null, "aliases": ["كبدة دجاج", "كبد دجاج"]}
     }
   }
 }
