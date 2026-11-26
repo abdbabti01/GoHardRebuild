@@ -3145,3 +3145,10 @@ price; no Subscribe / trial / Restore action. Unmerged work and the deferred vid
 - Code 8dccdba: CI 282 (45694513036) passed (api, app); unsigned IPA run 90 (45700354801, tag `ipa-food-identity-8dccdba`)
   passed, artifact GoHard-Dev-unsigned-ipa (22.4 MB, no exercise-preview media), supersedes IPA 89 for testing this branch;
   tag CI 283 passed. Not merged, not deployed.
+
+### 25 Nov 2026 — Food identity merged and deployed; branch cleanup
+
+- `main` fast-forwarded f35e273 → d53431c; CI 285 passed (attempt 3); Railway devoted-caring 8074665981 Success, Ready, 17
+  migrations. IPA 90 reused. docs/RELEASE_AND_ROLLBACK.md › Food identity.
+- Merged branches, their worktrees and remotes deleted; unmerged Leon, mannequin, wger and exercise-preview branches kept.
+  Recovery SHAs: docs/BRANCH_CLEANUP.md.

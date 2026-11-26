@@ -145,6 +145,34 @@ no secrets; the API address is the only build-time setting.
 
 ## Releases
 
+### Food identity: the food named is the food offered — deployed to testing 25 Nov 2026 (`main` d53431c)
+
+- **What:** Describe your meal and food search keep the food's identity (docs/FOOD_DATA.md › Food identity). "Cooked
+  chicken drumsticks" offers drumsticks only (skin eaten / not eaten), never giblets, liver, heart or gizzard, and no
+  "which part" question. Parts and organs are understood in en/fr-CA/ar; a record must show the food and the part said;
+  organs, skin, giblets and dishes appear only when their words were said. Search asks USDA for "chicken drumstick", not
+  "chicken". Three best choices plus More options, short labels with the USDA name and ID beneath; "Not said" lists only
+  what was not said. When no record of the food exists, a broader one is offered, labelled, and used only if chosen. A
+  weight taken with the bones asks the weight eaten (leftovers subtracted or entered); no bone share is assumed. Manual
+  search lists other parts and dishes under Related foods. Catalog 143 (+12 FDC records: drumstick, wing, whole leg,
+  liver).
+- **API:** no source change (tests and recorded USDA fixtures only); no migration, no configuration, contract 2. Railway
+  redeployed the same API on the push.
+- **Build:** app code 8dccdba (CI 282); unsigned IPA run 90 from 8dccdba (tag `ipa-food-identity-8dccdba`, artifact
+  GoHard-Dev-unsigned-ipa), supersedes IPA 89. d53431c adds only the ledger, so **IPA 90 has the deployed app code**. No
+  exercise-preview code, media or build options.
+- **Merged and deployed:** authorized by the owner's request of 25 Nov 2026. `main` fast-forwarded f35e273 → d53431c (no
+  newer main commits). CI 284 passed on the branch head and CI 285 on `main`. Railway devoted-caring deployment
+  8074665981 reported Success; hosted `/health/ready` Ready with 17 migrations, `/api/v1/capabilities` contract 2 with
+  `coach.meal-log` and `food.search`; `/coach/daily` and `/foods/search` without a token 401. diplomatic-intuition not
+  touched; no variable, secret, subscription or hosted account changed or created.
+- **Verified:** app 1110/1110, analyze, l10n; API 273/274 locally (one existing intermittent account-email test; CI
+  passed); live USDA plain search (fixtures); emulator journey with the coach **stub** at 1.6× text. **Not verified:**
+  live Groq reading of meal sentences (no key here), USDA search operators and paging (intermittent 400s), iPhone,
+  VoiceOver.
+- **Rollback:** revert 8dccdba and d53431c on `main`; app-only, no data or schema affected. Entries logged from the new
+  catalog records stay valid food entries.
+
 ### Food resolution: everyday defaults, per-food evidence, catalog v3 — deployed to testing 25 Nov 2026 (`main` 5fe71ec)
 
 - **What:** Describe your meal now separates reading, retrieval, ranking and resolution (docs/FOOD_DATA.md › Food
