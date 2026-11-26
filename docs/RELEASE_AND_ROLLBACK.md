@@ -162,7 +162,9 @@ no secrets; the API address is the only build-time setting.
   GoHard-Dev-unsigned-ipa), supersedes IPA 89. d53431c adds only the ledger, so **IPA 90 has the deployed app code**. No
   exercise-preview code, media or build options.
 - **Merged and deployed:** authorized by the owner's request of 25 Nov 2026. `main` fast-forwarded f35e273 → d53431c (no
-  newer main commits). CI 284 passed on the branch head and CI 285 on `main`. Railway devoted-caring deployment
+  newer main commits). CI 284 passed on the branch head and CI 285 on `main` (attempt 3; attempt 1:
+  Maven Central 429 while the APK build fetched Gradle plugins, after 1110 tests passed; attempt 2: the known
+  `coach_companion_test` "no replay" flake). Railway devoted-caring deployment
   8074665981 reported Success; hosted `/health/ready` Ready with 17 migrations, `/api/v1/capabilities` contract 2 with
   `coach.meal-log` and `food.search`; `/coach/daily` and `/foods/search` without a token 401. diplomatic-intuition not
   touched; no variable, secret, subscription or hosted account changed or created.
